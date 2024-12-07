@@ -9,6 +9,7 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
+//stype-check off
 
 #include "../framework/layer_validation_tests.h"
 
@@ -222,7 +223,38 @@ TEST_F(NegativeLayerSettings, DuplicateMessageLimitNone) {
     VkPhysicalDeviceProperties2KHR properties2 = vku::InitStructHelper(&bogus_struct);
 
     const uint32_t default_value = 10; // what we set in vkconfig
-    for (uint32_t i = 0; i < default_value + 1; i++) {
+    for (uint32_t i = 0; i < default_value; i++) {
+        m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+        vk::GetPhysicalDeviceProperties2KHR(Gpu(), &properties2);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Limit should prevent the message from coming through now
+    vk::GetPhysicalDeviceProperties2KHR(Gpu(), &properties2);
+}
+
+TEST_F(NegativeLayerSettings, DuplicateMessageLimitDisable) {
+    TEST_DESCRIPTION("use enable_message_limit explicitly");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    VkBool32 enable_message_limit = VK_FALSE;
+    uint32_t value = 3;
+    const VkLayerSettingEXT settings[2] = {
+        {OBJECT_LAYER_NAME, "enable_message_limit", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &enable_message_limit},
+        {OBJECT_LAYER_NAME, "duplicate_message_limit", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &value}};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, settings};
+
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+
+    // Create an invalid pNext structure to trigger the stateless validation warning
+    VkBaseOutStructure bogus_struct{};
+    bogus_struct.sType = static_cast<VkStructureType>(0x33333333);
+    VkPhysicalDeviceProperties2KHR properties2 = vku::InitStructHelper(&bogus_struct);
+
+    const uint32_t default_value = 10;  // what we set in vkconfig
+    const uint32_t count = default_value + 5;
+    for (uint32_t i = 0; i < count; i++) {
         m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceProperties2-pNext-pNext");
         vk::GetPhysicalDeviceProperties2KHR(Gpu(), &properties2);
         m_errorMonitor->VerifyFound();

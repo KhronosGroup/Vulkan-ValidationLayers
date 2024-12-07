@@ -162,6 +162,7 @@ const char *VK_LAYER_CHECK_IMAGE_LAYOUT = "check_image_layout";
 // ---
 const char *VK_LAYER_MESSAGE_ID_FILTER = "message_id_filter";
 const char *VK_LAYER_CUSTOM_STYPE_LIST = "custom_stype_list";
+const char *VK_LAYER_ENABLE_MESSAGE_LIMIT = "enable_message_limit";
 const char *VK_LAYER_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
 
 // GloablSettings
@@ -576,13 +577,19 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
     CreateFilterMessageIdList(string_message_id_filter, ",", debug_report->filter_message_ids);
 
     // Duplicate message limit
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT)) {
-        uint32_t config_limit_setting = 0;
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT, config_limit_setting);
-        if (config_limit_setting != 0) {
-            debug_report->duplicate_message_limit = config_limit_setting;
-        }
+    bool enable_message_limit = true;       // default in JSON
+    uint32_t duplicate_message_limit = 10;  // default in JSON
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_ENABLE_MESSAGE_LIMIT)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_ENABLE_MESSAGE_LIMIT, enable_message_limit);
     }
+    if (enable_message_limit) {
+        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT)) {
+            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_DUPLICATE_MESSAGE_LIMIT, duplicate_message_limit);
+        }
+    } else {
+        duplicate_message_limit = 0;
+    }
+    debug_report->duplicate_message_limit = duplicate_message_limit;
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME,
@@ -663,13 +670,13 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
                 "will not be seen.");
             report_flags |= kInformationBit;
         }
-        // If any non-stdout debugprintf is being used, just turn off duplicate_message_limit, it will prevent people thinking
+        // If any non-stdout DebugPrintf is being used, just turn off duplicate_message_limit, it will prevent people thinking
         // DebugPrintf is broken because nothing is printing.
         if (!settings_data->gpuav_settings->debug_printf_to_stdout && debug_report->duplicate_message_limit != 0) {
             debug_report->duplicate_message_limit = 0;
             setting_warnings.emplace_back("DebugPrintf logs can possibly print many times, but duplicate_message_limit is set to " +
                                           std::to_string(debug_report->duplicate_message_limit) +
-                                          ", setting duplicate_message_limit to zero.");
+                                          ", setting enable_message_limit to false so all logs are printed.");
         }
     }
 
