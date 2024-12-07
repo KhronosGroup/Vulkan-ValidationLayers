@@ -600,3 +600,16 @@ TEST_F(NegativeDeviceFeatureProperty, RobustBufferAccessUpdateAfterBind12) {
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDeviceFeatureProperty, Create14DeviceDuplicatedFeatures) {
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    RETURN_IF_SKIP(InitDeviceFeatureProperty());
+
+    VkPhysicalDeviceHostImageCopyFeatures features_hic = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan14Features features_14 = vku::InitStructHelper(&features_hic);
+    m_second_device_ci.pNext = &features_14;
+    m_second_device_ci.pEnabledFeatures = nullptr;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-10360");
+    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
+    m_errorMonitor->VerifyFound();
+}
