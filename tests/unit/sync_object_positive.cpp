@@ -53,8 +53,8 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersImage) {
     // Change layouts while changing ownership
     image_barrier.srcQueueFamilyIndex = no_gfx_queue->family_index;
     image_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
-    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR;
+    image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
     image_barrier.oldLayout = image.Layout();
     // Make sure the new layout is different from the old
     if (image_barrier.oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
@@ -82,8 +82,8 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     vkt::CommandBuffer no_gfx_cb(*m_device, no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    auto buffer_barrier = buffer.BufferMemoryBarrier(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR, VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR,
-                                                     VK_ACCESS_2_NONE_KHR, VK_ACCESS_2_NONE_KHR, 0, VK_WHOLE_SIZE);
+    auto buffer_barrier = buffer.BufferMemoryBarrier(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                                     VK_ACCESS_2_NONE, VK_ACCESS_2_NONE, 0, VK_WHOLE_SIZE);
 
     // Let gfx own it.
     buffer_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -97,8 +97,8 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     // Transfer it to gfx
     buffer_barrier.srcQueueFamilyIndex = no_gfx_queue->family_index;
     buffer_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR;
-    buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR;
+    buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
 
     ValidOwnershipTransfer(m_errorMonitor, no_gfx_queue, no_gfx_cb, m_default_queue, m_command_buffer, &buffer_barrier, nullptr);
 }
@@ -731,10 +731,10 @@ TEST_F(PositiveSyncObject, LongSemaphoreChain) {
 TEST_F(PositiveSyncObject, ExternalSemaphore) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;
 #else
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
 
     AddRequiredExtensions(extension_name);
@@ -744,18 +744,18 @@ TEST_F(PositiveSyncObject, ExternalSemaphore) {
     RETURN_IF_SKIP(Init());
 
     // Check for external semaphore import and export capability
-    VkPhysicalDeviceExternalSemaphoreInfoKHR esi = vku::InitStructHelper();
+    VkPhysicalDeviceExternalSemaphoreInfo esi = vku::InitStructHelper();
     esi.handleType = handle_type;
     VkExternalSemaphorePropertiesKHR esp = vku::InitStructHelper();
     vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(Gpu(), &esi, &esp);
 
-    if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
-        !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+    if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT) ||
+        !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT)) {
         GTEST_SKIP() << "External semaphore does not support importing and exporting";
     }
 
     // Create a semaphore to export payload from
-    VkExportSemaphoreCreateInfoKHR esci = vku::InitStructHelper();
+    VkExportSemaphoreCreateInfo esci = vku::InitStructHelper();
     esci.handleTypes = handle_type;
     VkSemaphoreCreateInfo sci = vku::InitStructHelper(&esci);
 
@@ -804,10 +804,10 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
         "Should be roughly equivalant to the CTS *cross_instance*timeline_semaphore* tests");
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 #else
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -821,26 +821,26 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
     }
 
     // Check for external semaphore import and export capability
-    VkSemaphoreTypeCreateInfoKHR tci = vku::InitStructHelper();
-    tci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+    VkSemaphoreTypeCreateInfo tci = vku::InitStructHelper();
+    tci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
 
-    VkPhysicalDeviceExternalSemaphoreInfoKHR esi = vku::InitStructHelper(&tci);
+    VkPhysicalDeviceExternalSemaphoreInfo esi = vku::InitStructHelper(&tci);
     esi.handleType = handle_type;
 
     VkExternalSemaphorePropertiesKHR esp = vku::InitStructHelper();
 
     vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(Gpu(), &esi, &esp);
 
-    if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
-        !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+    if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT) ||
+        !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT)) {
         GTEST_SKIP() << "External semaphore does not support importing and exporting, skipping test";
     }
 
     // Create a semaphore to export payload from
-    VkExportSemaphoreCreateInfoKHR esci = vku::InitStructHelper();
+    VkExportSemaphoreCreateInfo esci = vku::InitStructHelper();
     esci.handleTypes = handle_type;
-    VkSemaphoreTypeCreateInfoKHR stci = vku::InitStructHelper(&esci);
-    stci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+    VkSemaphoreTypeCreateInfo stci = vku::InitStructHelper(&esci);
+    stci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     VkSemaphoreCreateInfo sci = vku::InitStructHelper(&stci);
 
     vkt::Semaphore export_semaphore(*m_device, sci);
@@ -890,10 +890,10 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
 TEST_F(PositiveSyncObject, ExternalFence) {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 #else
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -902,18 +902,18 @@ TEST_F(PositiveSyncObject, ExternalFence) {
     RETURN_IF_SKIP(Init());
 
     // Check for external fence import and export capability
-    VkPhysicalDeviceExternalFenceInfoKHR efi = vku::InitStructHelper();
+    VkPhysicalDeviceExternalFenceInfo efi = vku::InitStructHelper();
     efi.handleType = handle_type;
     VkExternalFencePropertiesKHR efp = vku::InitStructHelper();
     vk::GetPhysicalDeviceExternalFencePropertiesKHR(Gpu(), &efi, &efp);
 
-    if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
-        !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
+    if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT) ||
+        !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT)) {
         GTEST_SKIP() << "External fence does not support importing and exporting, skipping test.";
     }
 
     // Create a fence to export payload from
-    VkExportFenceCreateInfoKHR efci = vku::InitStructHelper();
+    VkExportFenceCreateInfo efci = vku::InitStructHelper();
     efci.handleTypes = handle_type;
     VkFenceCreateInfo fci = vku::InitStructHelper(&efci);
     vkt::Fence export_fence(*m_device, fci);
@@ -949,7 +949,7 @@ TEST_F(PositiveSyncObject, ExternalFence) {
 
 TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
@@ -957,19 +957,19 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
     RETURN_IF_SKIP(Init());
 
     // Check for external fence import and export capability
-    VkPhysicalDeviceExternalFenceInfoKHR efi = vku::InitStructHelper();
+    VkPhysicalDeviceExternalFenceInfo efi = vku::InitStructHelper();
     efi.handleType = handle_type;
     VkExternalFencePropertiesKHR efp = vku::InitStructHelper();
     vk::GetPhysicalDeviceExternalFencePropertiesKHR(Gpu(), &efi, &efp);
 
-    if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
-        !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
+    if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT) ||
+        !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT)) {
         GTEST_SKIP() << "External fence does not support importing and exporting, skipping test.";
         return;
     }
 
     // Create a fence to export payload from
-    VkExportFenceCreateInfoKHR efci = vku::InitStructHelper();
+    VkExportFenceCreateInfo efci = vku::InitStructHelper();
     efci.handleTypes = handle_type;
     VkFenceCreateInfo fci = vku::InitStructHelper(&efci);
     vkt::Fence export_fence(*m_device, fci);
@@ -1001,7 +1001,7 @@ TEST_F(PositiveSyncObject, ExternalFenceSyncFdLoop) {
 
 TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
@@ -1012,18 +1012,18 @@ TEST_F(PositiveSyncObject, ExternalFenceSubmitCmdBuffer) {
     }
 
     // Check for external fence export capability
-    VkPhysicalDeviceExternalFenceInfoKHR efi = vku::InitStructHelper();
+    VkPhysicalDeviceExternalFenceInfo efi = vku::InitStructHelper();
     efi.handleType = handle_type;
     VkExternalFencePropertiesKHR efp = vku::InitStructHelper();
     vk::GetPhysicalDeviceExternalFencePropertiesKHR(Gpu(), &efi, &efp);
 
-    if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR)) {
+    if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT)) {
         GTEST_SKIP() << "External fence does not support exporting, skipping test.";
         return;
     }
 
     // Create a fence to export payload from
-    VkExportFenceCreateInfoKHR efci = vku::InitStructHelper();
+    VkExportFenceCreateInfo efci = vku::InitStructHelper();
     efci.handleTypes = handle_type;
     VkFenceCreateInfo fci = vku::InitStructHelper(&efci);
     vkt::Fence export_fence(*m_device, fci);
@@ -1758,7 +1758,7 @@ TEST_F(PositiveSyncObject, DynamicRenderingLocalReadImageBarrier) {
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR);
+    image.SetLayout(VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ);
 
     VkFormat colorAttachment = VK_FORMAT_R16_UNORM;
 
@@ -1776,8 +1776,8 @@ TEST_F(PositiveSyncObject, DynamicRenderingLocalReadImageBarrier) {
     VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
     imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     imageMemoryBarrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR;
-    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR;
+    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
     imageMemoryBarrier.image = image.handle();
     imageMemoryBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
 
@@ -1866,10 +1866,10 @@ TEST_F(PositiveSyncObject, SubmitImportedBinarySemaphoreWithNonZeroValue) {
     TEST_DESCRIPTION("QueueSubmit2 can specify arbitrary payload value for binary semaphore and it should be ignored");
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 #else
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
     AddRequiredExtensions(extension_name);
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -1877,17 +1877,17 @@ TEST_F(PositiveSyncObject, SubmitImportedBinarySemaphoreWithNonZeroValue) {
     RETURN_IF_SKIP(Init());
 
     // Check semaphore's import/export capability
-    VkPhysicalDeviceExternalSemaphoreInfoKHR semaphore_info = vku::InitStructHelper();
+    VkPhysicalDeviceExternalSemaphoreInfo semaphore_info = vku::InitStructHelper();
     semaphore_info.handleType = handle_type;
     VkExternalSemaphorePropertiesKHR semaphore_properties = vku::InitStructHelper();
     vk::GetPhysicalDeviceExternalSemaphorePropertiesKHR(Gpu(), &semaphore_info, &semaphore_properties);
-    if (!(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
-        !(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+    if (!(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT) ||
+        !(semaphore_properties.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT)) {
         GTEST_SKIP() << "Semaphore does not support import and/or export";
     }
 
     // Signaling semaphore
-    VkExportSemaphoreCreateInfoKHR export_info = vku::InitStructHelper();
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper();
     export_info.handleTypes = handle_type;
     VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&export_info);
     vkt::Semaphore semaphore(*m_device, semaphore_ci);
@@ -2147,7 +2147,7 @@ TEST_F(PositiveSyncObject, TimelineHostWaitThenSubmitSignal) {
         GTEST_SKIP() << "Test not supported by MockICD (WaitSemaphores)";
     }
 
-    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     auto thread = [&semaphore]() { semaphore.Wait(1, kWaitTimeout); };
     std::thread t(thread);
 
@@ -2169,7 +2169,7 @@ TEST_F(PositiveSyncObject, TimelineHostWaitThenSubmitLargerSignal) {
         GTEST_SKIP() << "Test not supported by MockICD (WaitSemaphores)";
     }
 
-    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     auto thread = [&semaphore]() { semaphore.Wait(1, kWaitTimeout); };
     std::thread t(thread);
 
@@ -2190,7 +2190,7 @@ TEST_F(PositiveSyncObject, TimelineHostWaitThenHostSignal) {
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD (WaitSemaphores)";
     }
-    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     auto thread = [&semaphore]() { semaphore.Wait(1, kWaitTimeout); };
     std::thread t(thread);
 
@@ -2208,7 +2208,7 @@ TEST_F(PositiveSyncObject, TimelineHostSignalThenHostWait) {
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
 
-    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE_KHR);
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     semaphore.Signal(1);
     semaphore.Wait(1, kWaitTimeout);
 }

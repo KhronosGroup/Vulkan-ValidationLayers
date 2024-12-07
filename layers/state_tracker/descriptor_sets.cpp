@@ -340,7 +340,7 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutC
         }
 
         non_inline_descriptor_count_ +=
-            (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) ? 1 : binding_info.descriptorCount;
+            (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) ? 1 : binding_info.descriptorCount;
 
         if (IsDynamicDescriptor(binding_info.descriptorType)) {
             dynamic_descriptor_count_ += binding_info.descriptorCount;

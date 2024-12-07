@@ -920,7 +920,7 @@ TEST_F(PositivePipeline, ShaderTileImageColor) {
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
@@ -954,7 +954,7 @@ TEST_F(PositivePipeline, ShaderTileImageDepth) {
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
@@ -984,7 +984,7 @@ TEST_F(PositivePipeline, ShaderTileImageStencil) {
 
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
     pipeline_rendering_info.depthAttachmentFormat = depth_format;
@@ -1392,8 +1392,8 @@ TEST_F(PositivePipeline, CreationFeedbackCount0) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkPipelineCreationFeedbackCreateInfoEXT feedback_info = vku::InitStructHelper();
-    VkPipelineCreationFeedbackEXT feedbacks[1] = {};
+    VkPipelineCreationFeedbackCreateInfo feedback_info = vku::InitStructHelper();
+    VkPipelineCreationFeedback feedbacks[1] = {};
     // Set flags to known value that the driver has to overwrite
     feedbacks[0].flags = VK_PIPELINE_CREATION_FEEDBACK_FLAG_BITS_MAX_ENUM;
 
@@ -1614,7 +1614,7 @@ TEST_F(PositivePipeline, ViewportStateNotSet) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
     pipe.gp_ci_.pViewportState = nullptr;
     pipe.CreateGraphicsPipeline();
@@ -1641,7 +1641,7 @@ TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     pipe.gp_ci_.pRasterizationState = &rasterization_state;
     pipe.gp_ci_.pViewportState = nullptr;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
@@ -1724,8 +1724,8 @@ TEST_F(PositivePipeline, IgnoredPipelineCreateFlags) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkPipelineCreateFlags2CreateInfoKHR pipelineCreateFlags2 = vku::InitStructHelper();
-    pipelineCreateFlags2.flags = VK_PIPELINE_CREATE_2_DISABLE_OPTIMIZATION_BIT_KHR;
+    VkPipelineCreateFlags2CreateInfo pipelineCreateFlags2 = vku::InitStructHelper();
+    pipelineCreateFlags2.flags = VK_PIPELINE_CREATE_2_DISABLE_OPTIMIZATION_BIT;
 
     CreatePipelineHelper pipe(*this, &pipelineCreateFlags2);
     pipe.gp_ci_.flags = 0x80000000;
@@ -1800,7 +1800,7 @@ TEST_F(PositivePipeline, NoRasterizationStateDynamicRendering) {
     RETURN_IF_SKIP(Init());
 
     VkFormat color_formats = VK_FORMAT_UNDEFINED;
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 

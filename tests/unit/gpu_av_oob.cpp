@@ -58,9 +58,9 @@ TEST_F(NegativeGpuAVOOB, RobustBuffer) {
 
     VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
 
-    VkPipelineRobustnessCreateInfoEXT pipeline_robustness_ci = vku::InitStructHelper();
-    pipeline_robustness_ci.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT;
-    pipeline_robustness_ci.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT;
+    VkPipelineRobustnessCreateInfo pipeline_robustness_ci = vku::InitStructHelper();
+    pipeline_robustness_ci.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS;
+    pipeline_robustness_ci.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS;
 
     CreatePipelineHelper robust_pipe(*this, &pipeline_robustness_ci);
     robust_pipe.shader_stages_[0] = vs.GetStageCreateInfo();
@@ -201,7 +201,7 @@ void NegativeGpuAVOOB::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSi
     pipe.gp_ci_.layout = pipeline_layout.handle();
 
     VkFormat color_formats = VK_FORMAT_UNDEFINED;
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     const auto depth_format = FindSupportedDepthOnlyFormat(Gpu());
 
     if (shader_objects) {
@@ -1855,7 +1855,7 @@ TEST_F(NegativeGpuAVOOB, DeviceGeneratedCommandsCompute) {
         pre_process_size = mem_reqs2.memoryRequirements.size;
     }
 
-    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_ci.size = pre_process_size;

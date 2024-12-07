@@ -670,10 +670,10 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
         return barrier;
     }
 
-    VkBufferMemoryBarrier2KHR BufferMemoryBarrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
-                                                  VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access, VkDeviceSize offset,
-                                                  VkDeviceSize size) const {
-        VkBufferMemoryBarrier2KHR barrier = vku::InitStructHelper();
+    VkBufferMemoryBarrier2 BufferMemoryBarrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
+                                               VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access, VkDeviceSize offset,
+                                               VkDeviceSize size) const {
+        VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
         barrier.buffer = handle();
         barrier.srcStageMask = src_stage;
         barrier.dstStageMask = dst_stage;
@@ -790,11 +790,10 @@ class Image : public internal::NonDispHandle<VkImage> {
         return barrier;
     }
 
-    VkImageMemoryBarrier2KHR ImageMemoryBarrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
-                                                VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access,
-                                                VkImageLayout old_layout, VkImageLayout new_layout,
-                                                const VkImageSubresourceRange &range) const {
-        VkImageMemoryBarrier2KHR barrier = vku::InitStructHelper();
+    VkImageMemoryBarrier2 ImageMemoryBarrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
+                                             VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access, VkImageLayout old_layout,
+                                             VkImageLayout new_layout, const VkImageSubresourceRange &range) const {
+        VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
         barrier.srcStageMask = src_stage;
         barrier.dstStageMask = dst_stage;
         barrier.srcAccessMask = src_access;
@@ -1179,7 +1178,7 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
                          uint32_t clear_count = 0, VkClearValue *clear_values = nullptr);
     void NextSubpass(VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
     void EndRenderPass();
-    void BeginRendering(const VkRenderingInfoKHR &renderingInfo);
+    void BeginRendering(const VkRenderingInfo &renderingInfo);
     void BeginRenderingColor(const VkImageView imageView, VkRect2D render_area);
     void EndRendering();
 

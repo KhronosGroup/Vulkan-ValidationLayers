@@ -52,7 +52,7 @@ void DeviceGeneratedCommandsTest::SetPreProcessBuffer(VkGeneratedCommandsInfoEXT
         VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
         allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
-        VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
+        VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
         buffer_usage_flags.usage = VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
         buffer_ci.size = pre_process_size;
@@ -70,7 +70,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CreateIndirectExecutionSetPipeline) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
-    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
     CreatePipelineHelper pipe(*this, &pipe_flags2);
     pipe.CreateGraphicsPipeline();
@@ -137,7 +137,7 @@ TEST_F(PositiveDeviceGeneratedCommands, GetGeneratedCommandsMemoryRequirements) 
 
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
     CreatePipelineHelper pipe(*this, &pipe_flags2);
     pipe.CreateGraphicsPipeline();
@@ -184,7 +184,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsGraphics) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
-    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
     CreatePipelineHelper pipe(*this, &pipe_flags2);
     pipe.CreateGraphicsPipeline();
@@ -236,7 +236,7 @@ TEST_F(PositiveDeviceGeneratedCommands, UpdateIndirectExecutionSetPipeline) {
     RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
     InitRenderTarget();
 
-    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
     CreatePipelineHelper pipe(*this, &pipe_flags2);
     pipe.CreateGraphicsPipeline();
@@ -308,7 +308,7 @@ TEST_F(PositiveDeviceGeneratedCommands, CmdExecuteGeneratedCommandsCompute) {
     command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
-    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
     CreateComputePipelineHelper pipe(*this, &pipe_flags2);
     pipe.CreateComputePipeline();

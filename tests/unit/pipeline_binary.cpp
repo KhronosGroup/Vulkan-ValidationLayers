@@ -92,7 +92,7 @@ TEST_F(NegativePipelineBinary, ReleaseCapturedDataAllocator) {
     compute_create_info.stage = cs.GetStageCreateInfo();
     compute_create_info.layout = pipeline_layout.handle();
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
     compute_create_info.pNext = &flags2;
 
@@ -140,7 +140,7 @@ TEST_F(NegativePipelineBinary, ReleaseCapturedData) {
         m_errorMonitor->VerifyFound();
     }
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
 
     CreateComputePipelineHelper pipe2(*this, &flags2);
@@ -167,7 +167,7 @@ TEST_F(NegativePipelineBinary, Destroy) {
     AddRequiredFeature(vkt::Feature::pipelineBinaries);
     RETURN_IF_SKIP(Init());
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
 
     CreateComputePipelineHelper pipe(*this, &flags2);
@@ -227,7 +227,7 @@ TEST_F(NegativePipelineBinary, ComputePipeline) {
     ASSERT_EQ(VK_SUCCESS, err);
 
     {
-        VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+        VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
         flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateComputePipelines-pNext-09617");
         CreateComputePipelineHelper pipe(*this, &flags2);
@@ -266,7 +266,7 @@ TEST_F(NegativePipelineBinary, ComputePipeline) {
     }
 
     {
-        VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+        VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
         flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
 
         CreateComputePipelineHelper pipe(*this, &flags2);
@@ -298,7 +298,7 @@ TEST_F(NegativePipelineBinary, ComputePipeline) {
         feedback.flags = VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT |
                          VK_PIPELINE_CREATION_FEEDBACK_BASE_PIPELINE_ACCELERATION_BIT;
 
-        flags2.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT;
+        flags2.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
         flags2.pNext = &binary_info;
         binary_info.pNext = &feedback_create_info;
 
@@ -392,7 +392,7 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
                                                                0};
 
     {
-        VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+        VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
         flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
         graphics_pipeline_create_info.pNext = &flags2;
 
@@ -438,7 +438,7 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
     }
 
     {
-        VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+        VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
         flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
         graphics_pipeline_create_info.pNext = &flags2;
 
@@ -473,7 +473,7 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
         feedback.flags = VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT |
                          VK_PIPELINE_CREATION_FEEDBACK_BASE_PIPELINE_ACCELERATION_BIT;
 
-        flags2.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT;
+        flags2.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
         flags2.pNext = &binary_info;
         binary_info.pNext = &feedback_create_info;
 
@@ -530,7 +530,7 @@ TEST_F(NegativePipelineBinary, Creation2) {
     AddRequiredFeature(vkt::Feature::pipelineBinaries);
     RETURN_IF_SKIP(Init());
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
 
     CreateComputePipelineHelper pipe(*this, &flags2);
@@ -581,7 +581,7 @@ TEST_F(NegativePipelineBinary, Creation3) {
     compute_create_info.stage = cs.GetStageCreateInfo();
     compute_create_info.layout = pipeline_layout.handle();
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
     compute_create_info.pNext = &flags2;
 
@@ -609,7 +609,7 @@ TEST_F(NegativePipelineBinary, Creation4) {
     AddRequiredFeature(vkt::Feature::pipelineBinaries);
     RETURN_IF_SKIP(Init());
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
 
     CreateComputePipelineHelper pipe(*this, &flags2);
@@ -659,7 +659,7 @@ TEST_F(NegativePipelineBinary, Creation5) {
         GTEST_SKIP() << "pipelineBinaryInternalCache is VK_FALSE";
     }
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
 
     CreateComputePipelineHelper pipe(*this, &flags2);
@@ -729,7 +729,7 @@ TEST_F(NegativePipelineBinary, CreateCacheControl) {
     compute_create_info.stage = cs.GetStageCreateInfo();
     compute_create_info.layout = pipeline_layout.handle();
 
-    VkPipelineCreateFlags2CreateInfoKHR flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
     compute_create_info.pNext = &flags2;
 

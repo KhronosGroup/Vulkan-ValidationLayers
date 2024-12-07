@@ -208,7 +208,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSubpassDependency(const ErrorObject& error_obj, const Location& loc, const VkSubpassDependency2& barrier) const;
 
     bool ValidateDependencyInfo(const LogObjectList& objlist, const Location& dep_info_loc, const vvl::CommandBuffer& cb_state,
-                                const VkDependencyInfoKHR& dep_info) const;
+                                const VkDependencyInfo& dep_info) const;
 
     bool ValidateHostStage(const LogObjectList& objlist, const Location& barrier_loc,
                            const OwnershipTransferBarrier& barrier) const;
@@ -302,7 +302,7 @@ class CoreChecks : public ValidationStateTracker {
                                             const VkBufferMemoryBarrier* buffer_mem_barriers, uint32_t image_mem_barrier_count,
                                             const VkImageMemoryBarrier* image_barriers) const;
     bool ValidateRenderPassPipelineBarriers(const Location& loc, const vvl::CommandBuffer& cb_state,
-                                            const VkDependencyInfoKHR& dep_info) const;
+                                            const VkDependencyInfo& dep_info) const;
 
     bool ValidateStageMasksAgainstQueueCapabilities(const LogObjectList& objlist, const Location& stage_mask_loc,
                                                     VkQueueFlags queue_flags, VkPipelineStageFlags2KHR stage_mask) const;
@@ -685,7 +685,7 @@ class CoreChecks : public ValidationStateTracker {
                                                    const VkAttachmentSampleCountInfoAMD& attachment_sample_count_info,
                                                    const Location& create_info_loc) const;
     bool ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline& pipeline,
-                                              const VkPipelineRobustnessCreateInfoEXT& pipeline_robustness_info,
+                                              const VkPipelineRobustnessCreateInfo& pipeline_robustness_info,
                                               const Location& loc) const;
     uint32_t CalcShaderStageCount(const vvl::Pipeline& pipeline, VkShaderStageFlagBits stageBit) const;
     bool GroupHasValidIndex(const vvl::Pipeline& pipeline, uint32_t group, uint32_t stage) const;
@@ -958,7 +958,7 @@ class CoreChecks : public ValidationStateTracker {
                         VkPipelineStageFlags dst_stage_mask, uint32_t bufferBarrierCount,
                         const VkBufferMemoryBarrier* pBufferMemBarriers, uint32_t imageMemBarrierCount,
                         const VkImageMemoryBarrier* pImageMemBarriers);
-    void RecordBarriers(Func func_name, vvl::CommandBuffer& cb_state, const VkDependencyInfoKHR& dep_info);
+    void RecordBarriers(Func func_name, vvl::CommandBuffer& cb_state, const VkDependencyInfo& dep_info);
 
     void TransitionFinalSubpassLayouts(vvl::CommandBuffer& cb_state);
 
@@ -1358,13 +1358,13 @@ class CoreChecks : public ValidationStateTracker {
                                    const RecordObject& record_obj) override;
     bool ValidateRenderPassStripeSubmitInfo(VkQueue queue, const vvl::CommandBuffer& cb_state, const void* pNext,
                                             const Location& loc) const;
-    bool ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+    bool ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                               const ErrorObject& error_obj) const;
     bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                      const ErrorObject& error_obj) const override;
-    void RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
+    void RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                             const RecordObject& record_obj);
     void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
                                        const RecordObject& record_obj) override;
@@ -1638,8 +1638,7 @@ class CoreChecks : public ValidationStateTracker {
                                                 VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                 const VkWriteDescriptorSet* pDescriptorWrites,
                                                 const ErrorObject& error_obj) const override;
-    bool PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
-                                              const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
+    bool PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer, const VkPushDescriptorSetInfo* pPushDescriptorSetInfo,
                                               const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
                                                  const VkPushDescriptorSetInfoKHR* pPushDescriptorSetInfo,
@@ -1784,7 +1783,7 @@ class CoreChecks : public ValidationStateTracker {
                                               VkQueryResultFlags flags, const RecordObject& record_obj) override;
     bool ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
                                   uint32_t offset, uint32_t size, const Location& loc) const;
-    bool PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
+    bool PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
                                              const ErrorObject& error_obj) const override;
@@ -2004,7 +2003,7 @@ class CoreChecks : public ValidationStateTracker {
                                                   VkDescriptorUpdateTemplate descriptorUpdateTemplate, VkPipelineLayout layout,
                                                   uint32_t set, const void* pData, const Location& loc) const;
     bool PreCallValidateCmdPushDescriptorSetWithTemplate2(
-        VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
+        VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo,
         const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
         VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR* pPushDescriptorSetWithTemplateInfo,
@@ -2623,19 +2622,19 @@ class CoreChecks : public ValidationStateTracker {
                                        const VkGeneratedCommandsInfoEXT& generated_commands_info, bool preprocessed,
                                        const Location& info_loc) const;
 
-    bool ValidateRenderingAttachmentLocationsKHR(const VkRenderingAttachmentLocationInfoKHR& location_info,
-                                                 const LogObjectList objlist, const Location& loc_info) const;
+    bool ValidateRenderingAttachmentLocations(const VkRenderingAttachmentLocationInfo& location_info, const LogObjectList objlist,
+                                              const Location& loc_info) const;
     bool PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
-                                                           const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
+                                                           const VkRenderingAttachmentLocationInfo* pLocationInfo,
                                                            const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
                                                               const VkRenderingAttachmentLocationInfoKHR* pLocationInfo,
                                                               const ErrorObject& error_obj) const override;
 
-    bool ValidateRenderingInputAttachmentIndicesKHR(const VkRenderingInputAttachmentIndexInfoKHR& index_info,
-                                                    const LogObjectList objlist, const Location& loc_info) const;
+    bool ValidateRenderingInputAttachmentIndices(const VkRenderingInputAttachmentIndexInfo& index_info, const LogObjectList objlist,
+                                                 const Location& loc_info) const;
     bool PreCallValidateCmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
-                                                              const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,
+                                                              const VkRenderingInputAttachmentIndexInfo* pLocationInfo,
                                                               const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(VkCommandBuffer commandBuffer,
                                                                  const VkRenderingInputAttachmentIndexInfoKHR* pLocationInfo,

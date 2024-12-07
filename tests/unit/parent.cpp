@@ -257,7 +257,7 @@ TEST_F(NegativeParent, RenderPassCommandBuffer) {
     // one for each the framebuffer and renderpass being different from the CommandBuffer
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-commonparent");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-commonparent");
-    auto subpass_begin_info = vku::InitStruct<VkSubpassBeginInfoKHR>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
+    auto subpass_begin_info = vku::InitStruct<VkSubpassBeginInfo>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBeginRenderPass2(command_buffer.handle(), &m_renderPassBeginInfo, &subpass_begin_info);
     m_errorMonitor->VerifyFound();
     command_buffer.End();
@@ -830,7 +830,7 @@ TEST_F(NegativeParent, MapMemory2) {
     m_device->Physical().SetMemoryType(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     vkt::DeviceMemory memory(*m_second_device, memory_info);
 
-    VkMemoryMapInfoKHR map_info = vku::InitStructHelper();
+    VkMemoryMapInfo map_info = vku::InitStructHelper();
     map_info.memory = memory;
     map_info.offset = 0;
     map_info.size = memory_info.allocationSize;

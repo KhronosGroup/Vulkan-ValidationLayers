@@ -1781,7 +1781,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetQCOM) {
 
     {
         VkSubpassFragmentDensityMapOffsetEndInfoQCOM offsetting = vku::InitStructHelper();
-        VkSubpassEndInfoKHR subpassEndInfo = vku::InitStructHelper(&offsetting);
+        VkSubpassEndInfo subpassEndInfo = vku::InitStructHelper(&offsetting);
         VkOffset2D m_vOffsets[2];
         offsetting.pFragmentDensityOffsets = m_vOffsets;
         offsetting.fragmentDensityOffsetCount = 2;
@@ -2466,14 +2466,14 @@ TEST_F(NegativeFragmentShadingRate, DISABLED_Framebuffer) {
         ivci.subresourceRange.levelCount = 1;
         ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-        VkFramebufferAttachmentImageInfoKHR fb_fdm = vku::InitStructHelper();
+        VkFramebufferAttachmentImageInfo fb_fdm = vku::InitStructHelper();
         fb_fdm.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
         fb_fdm.width = frame_width;
         fb_fdm.height = frame_height;
         fb_fdm.layerCount = 1;
         fb_fdm.viewFormatCount = 1;
         fb_fdm.pViewFormats = &attachment_format;
-        VkFramebufferAttachmentsCreateInfoKHR fb_aci_fdm = vku::InitStructHelper();
+        VkFramebufferAttachmentsCreateInfo fb_aci_fdm = vku::InitStructHelper();
         fb_aci_fdm.attachmentImageInfoCount = 1;
         fb_aci_fdm.pAttachmentImageInfos = &fb_fdm;
 
@@ -2900,7 +2900,7 @@ TEST_F(NegativeFragmentShadingRate, ImagelessAttachmentFragmentDensity) {
     fb_aci_fdm.pAttachmentImageInfos = &fb_fdm;
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper(&fb_aci_fdm);
-    fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     fb_info.renderPass = render_pass.handle();
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = nullptr;

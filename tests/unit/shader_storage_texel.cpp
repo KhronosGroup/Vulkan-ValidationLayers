@@ -127,7 +127,7 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
     VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
     vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_R8G8B8A8_UINT, &fmt_props);
-    if ((fmt_props_3.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) == 0) {
+    if ((fmt_props_3.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
 

@@ -936,7 +936,7 @@ Semaphore::Semaphore(const Device &dev, VkSemaphoreType type, uint64_t initial_v
         init(dev, vku::InitStruct<VkSemaphoreCreateInfo>());
     } else {
         VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
-        semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+        semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
         semaphore_type_ci.initialValue = initial_value;
         VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&semaphore_type_ci);
         init(dev, semaphore_ci);
@@ -1269,11 +1269,11 @@ bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, cons
         VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT |
         VK_FORMAT_FEATURE_2_BLIT_SRC_BIT | VK_FORMAT_FEATURE_2_BLIT_DST_BIT | VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
     if (dev.IsEnabledExtension(VK_IMG_FILTER_CUBIC_EXTENSION_NAME)) {
-        all_feature_flags |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT;
+        all_feature_flags |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT;
     }
 
     if (dev.IsEnabledExtension(VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        all_feature_flags |= VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR;
+        all_feature_flags |= VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT;
     }
 
     if (dev.IsEnabledExtension(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) {
@@ -1281,18 +1281,18 @@ bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, cons
     }
 
     if (dev.IsEnabledExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
-        all_feature_flags |= VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT_KHR |
-                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT_KHR |
-                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT_KHR |
-                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT_KHR |
-                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT_KHR |
-                             VK_FORMAT_FEATURE_2_DISJOINT_BIT_KHR | VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT_KHR;
+        all_feature_flags |= VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT |
+                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT |
+                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT |
+                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT |
+                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT |
+                             VK_FORMAT_FEATURE_2_DISJOINT_BIT | VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT;
     }
 
     if (dev.IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        all_feature_flags |= VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR |
-                             VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR |
-                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR;
+        all_feature_flags |= VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT |
+                             VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT |
+                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT;
     }
 
     if ((features & all_feature_flags) == 0) return false;  // whole format unsupported
@@ -1588,7 +1588,7 @@ Buffer AccelerationStructureNV::CreateScratchBuffer(const Device &device, VkBuff
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     void *pNext = nullptr;
     if (buffer_device_address) {
-        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
         pNext = &alloc_flags;
     }
 
@@ -1905,7 +1905,7 @@ void CommandBuffer::NextSubpass(VkSubpassContents contents) { vk::CmdNextSubpass
 
 void CommandBuffer::EndRenderPass() { vk::CmdEndRenderPass(handle()); }
 
-void CommandBuffer::BeginRendering(const VkRenderingInfoKHR &renderingInfo) {
+void CommandBuffer::BeginRendering(const VkRenderingInfo &renderingInfo) {
     if (vk::CmdBeginRenderingKHR) {
         vk::CmdBeginRenderingKHR(handle(), &renderingInfo);
     } else {
@@ -1914,11 +1914,11 @@ void CommandBuffer::BeginRendering(const VkRenderingInfoKHR &renderingInfo) {
 }
 
 void CommandBuffer::BeginRenderingColor(const VkImageView imageView, VkRect2D render_area) {
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = imageView;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
+    VkRenderingInfo renderingInfo = vku::InitStructHelper();
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachments = &color_attachment;
     renderingInfo.layerCount = 1;

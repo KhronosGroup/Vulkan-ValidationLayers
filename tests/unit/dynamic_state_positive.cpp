@@ -123,7 +123,7 @@ TEST_F(PositiveDynamicState, CmdSetVertexInputEXTStride) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     pipe.gp_ci_.pVertexInputState = nullptr;
     pipe.CreateGraphicsPipeline();
 
@@ -281,7 +281,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     ds_state.depthWriteEnable = VK_TRUE;
 
     CreatePipelineHelper pipe(*this);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.ds_ci_ = ds_state;
     pipe.CreateGraphicsPipeline();
@@ -322,8 +322,8 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
 
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
     CreatePipelineHelper pipe(*this);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.ds_ci_ = ds_state;
     pipe.CreateGraphicsPipeline();
@@ -824,7 +824,7 @@ TEST_F(PositiveDynamicState, RasterizationSamplesDynamicRendering) {
     vkt::Image resolve_image(*m_device, 32u, 32u, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView resolve_image_view = resolve_image.CreateView();
 
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
@@ -1147,7 +1147,7 @@ TEST_F(PositiveDynamicState, DynamicColorBlendEnable) {
     vkt::Image depth_image(*m_device, 32, 32, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
-    VkRenderingAttachmentInfoKHR color_attachments[3];
+    VkRenderingAttachmentInfo color_attachments[3];
     color_attachments[0] = vku::InitStructHelper();
     color_attachments[0].imageView = image_view1.handle();
     color_attachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -1156,7 +1156,7 @@ TEST_F(PositiveDynamicState, DynamicColorBlendEnable) {
     color_attachments[2] = color_attachments[0];
     color_attachments[2].imageView = image_view3.handle();
 
-    VkRenderingAttachmentInfoKHR depth_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_attachment.imageView = depth_image_view.handle();
 
@@ -1166,7 +1166,7 @@ TEST_F(PositiveDynamicState, DynamicColorBlendEnable) {
     rendering_info.colorAttachmentCount = 3u;
     rendering_info.pColorAttachments = color_attachments;
 
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
     pipeline_rendering_info.depthAttachmentFormat = depth_stencil_format;

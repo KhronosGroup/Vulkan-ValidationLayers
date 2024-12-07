@@ -195,7 +195,7 @@ TEST_F(NegativeSyncValWsi, SubmitDoesNotWaitForAcquire) {
     layout_transition.image = swapchain_images[image_index];
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
@@ -237,7 +237,7 @@ TEST_F(NegativeSyncValWsi, PresentDoesNotWaitForSubmit2) {
     layout_transition.subresourceRange.baseArrayLayer = 0;
     layout_transition.subresourceRange.layerCount = 1;
 
-    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 

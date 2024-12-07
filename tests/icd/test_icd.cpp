@@ -2162,7 +2162,7 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalD
         props_3->linearTilingFeatures = pFormatProperties->formatProperties.linearTilingFeatures;
         props_3->optimalTilingFeatures = pFormatProperties->formatProperties.optimalTilingFeatures;
         props_3->bufferFeatures = pFormatProperties->formatProperties.bufferFeatures;
-        props_3->optimalTilingFeatures |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT;
+        props_3->optimalTilingFeatures |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT;
 
         switch (format) {
             case VK_FORMAT_R32_SINT:
@@ -2326,21 +2326,21 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerforma
         }
         // arbitrary
         pCounters[0].unit = VK_PERFORMANCE_COUNTER_UNIT_GENERIC_KHR;
-        pCounters[0].scope = VK_QUERY_SCOPE_COMMAND_BUFFER_KHR;
+        pCounters[0].scope = VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_BUFFER_KHR;
         pCounters[0].storage = VK_PERFORMANCE_COUNTER_STORAGE_INT32_KHR;
         pCounters[0].uuid[0] = 0x01;
         if (*pCounterCount == 1) {
             return VK_INCOMPLETE;
         }
         pCounters[1].unit = VK_PERFORMANCE_COUNTER_UNIT_GENERIC_KHR;
-        pCounters[1].scope = VK_QUERY_SCOPE_RENDER_PASS_KHR;
+        pCounters[1].scope = VK_PERFORMANCE_COUNTER_SCOPE_RENDER_PASS_KHR;
         pCounters[1].storage = VK_PERFORMANCE_COUNTER_STORAGE_INT32_KHR;
         pCounters[1].uuid[0] = 0x02;
         if (*pCounterCount == 2) {
             return VK_INCOMPLETE;
         }
         pCounters[2].unit = VK_PERFORMANCE_COUNTER_UNIT_GENERIC_KHR;
-        pCounters[2].scope = VK_QUERY_SCOPE_COMMAND_KHR;
+        pCounters[2].scope = VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR;
         pCounters[2].storage = VK_PERFORMANCE_COUNTER_STORAGE_INT32_KHR;
         pCounters[2].uuid[0] = 0x03;
         *pCounterCount = 3;
@@ -2411,7 +2411,7 @@ GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL MapMemory2(VkDevice device, const VkMemoryMapInfoKHR* pMemoryMapInfo, void** ppData) {
+static VKAPI_ATTR VkResult VKAPI_CALL MapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData) {
     return MapMemory(device, pMemoryMapInfo->memory, pMemoryMapInfo->offset, pMemoryMapInfo->size, pMemoryMapInfo->flags, ppData);
 }
 
@@ -2419,7 +2419,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL MapMemory2KHR(VkDevice device, const VkMem
     return MapMemory2(device, pMemoryMapInfo, ppData);
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2(VkDevice device, const VkMemoryUnmapInfoKHR* pMemoryUnmapInfo) {
+static VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo) {
     UnmapMemory(device, pMemoryUnmapInfo->memory);
     return VK_SUCCESS;
 }

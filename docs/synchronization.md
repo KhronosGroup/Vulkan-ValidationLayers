@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2023 LunarG, Inc. -->
+<!-- Copyright 2015-2024 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -16,7 +16,7 @@ Authors: Tobin Ehlis, John Zulauf
 
 ## Overview
 
-The Vulkan API features a number of unique synchronization primitives to express execution and memory dependencies and currently validation only has limited support for tracking fence and semaphore primitives.  
+The Vulkan API features a number of unique synchronization primitives to express execution and memory dependencies and currently validation only has limited support for tracking fence and semaphore primitives.
 
 
 
@@ -99,7 +99,7 @@ For read operations the most recent access rules apply to prior reads with execu
 
 ![sync_wrr](images/sync_wrr.png)
 
-For write hazard checks in a given range of memory addresses, if there are intervening read operations between the current write and the most recent previous write, these intervening read operations are considered the most recent access. In that case, write-after-write checks are not done. 
+For write hazard checks in a given range of memory addresses, if there are intervening read operations between the current write and the most recent previous write, these intervening read operations are considered the most recent access. In that case, write-after-write checks are not done.
 
 Consider the following sequence of operations one the same memory address:
 
@@ -138,7 +138,7 @@ Memory access is characterized by the _memory extent_ and _memory usage_.  Memor
 
 ### Memory Address Space
 
-To simplify tracking and updating the state of memory extents as listed below, state is stored in a consistent way for all resource types. Also, to eliminate needing to define separate address spaces for each device memory allocations, VkMemory are placed at “fake” base addresses (FBA) within a global address space using a simple “next available” allocation scheme. (Which is robust for all rational Vulkan usage models for months of runtime.) Additionally, because the actual memory organization of certain resources is opaque, an "opaque range" is allocated with an independent FBA to the extent needed to hold the Synchronization Validation internal representation of these opaque resources. 
+To simplify tracking and updating the state of memory extents as listed below, state is stored in a consistent way for all resource types. Also, to eliminate needing to define separate address spaces for each device memory allocations, VkMemory are placed at “fake” base addresses (FBA) within a global address space using a simple “next available” allocation scheme. (Which is robust for all rational Vulkan usage models for months of runtime.) Additionally, because the actual memory organization of certain resources is opaque, an "opaque range" is allocated with an independent FBA to the extent needed to hold the Synchronization Validation internal representation of these opaque resources.
 
 
 ### Memory Extent Definitions and Comparisons
@@ -240,23 +240,23 @@ For convenience,  the tables below show the pipeline stages and access masks aff
 
 | Vulkan 1.2 Pipeline Stage          | Synchronization2 Pipeline Stages                             |
 | ---------------------------------- | ------------------------------------------------------------ |
-| VK_PIPELINE_STAGE_TRANSFER_BIT     | VK_PIPELINE_STAGE_2_COPY_BIT_KHR				VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR				VK_PIPELINE_STAGE_2_BLIT_BIT_KHR				VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR |
-| VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT_KHR 				    VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT_KHR |
+| VK_PIPELINE_STAGE_TRANSFER_BIT     | VK_PIPELINE_STAGE_2_COPY_BIT				VK_PIPELINE_STAGE_2_RESOLVE_BIT				VK_PIPELINE_STAGE_2_BLIT_BIT				VK_PIPELINE_STAGE_2_CLEAR_BIT |
+| VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT 				    VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT |
 
 
 
 | Vulkan 1.2 Access Mask     | Synchronization2 Access Masks                                |
 | -------------------------- | ------------------------------------------------------------ |
-| VK_ACCESS_SHADER_READ_BIT  | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT_KHR VK_ACCESS_2_SHADER_STORAGE_READ_BIT_KHR |
-| VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR                     |
+| VK_ACCESS_SHADER_READ_BIT  | VK_ACCESS_2_SHADER_SAMPLED_READ_BIT VK_ACCESS_2_SHADER_STORAGE_READ_BIT |
+| VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT                     |
 
    These stages also affect the Stage / Access map described in the next section.
 
- 
+
 
 ### Memory Usage Specification
 
-Vulkan classifies memory access by pipeline stage and access. However for purposes of tracking specific access, availability, and visibility state changes the two masks would allow for aliasing that could hide hazards.   In order to avoid that aliasing, the valid combinations of Stage and Access flags can be combined into memory usages-- with each represented by a unique index (currently 79 valid combinations) )and tracked with single bit within a mask(list in roughly pipeline order). 
+Vulkan classifies memory access by pipeline stage and access. However for purposes of tracking specific access, availability, and visibility state changes the two masks would allow for aliasing that could hide hazards.   In order to avoid that aliasing, the valid combinations of Stage and Access flags can be combined into memory usages-- with each represented by a unique index (currently 79 valid combinations) )and tracked with single bit within a mask(list in roughly pipeline order).
 
 <table>
   <tr>
@@ -509,7 +509,7 @@ Stores:
     * Stage/Access of usage.  Updated on stage read
     * Execution (read) barriers -- the union of destination execution scopes for synchronization operations affecting this read at this stage. Cleared at read operation for this stage.
     * Sync stages -- all read stages that have synchronously executed after this stage Cleared at read operation for this stage.
-    * Queue Id: The queue on which the access was made. Set at queue submit time. 
+    * Queue Id: The queue on which the access was made. Set at queue submit time.
     * Usage Tag. Updated on on stage read
 
 Implements:
@@ -520,9 +520,9 @@ Implements:
 
 Queue Id and Sync stages are used for semaphore, queue, and fence wait operations, and for synchronization operation replay at queue submit time.
 
-#### ResourceAccessRangeMap 
+#### ResourceAccessRangeMap
 
-#### ResourceAccessRangeMap 
+#### ResourceAccessRangeMap
 
 Interval tree of ResourceAccessState records within the unified "fake" address space, comprising VkDeviceMemory linear ranges and opaque ranges
 
@@ -545,7 +545,7 @@ Implements:
 
 #### CommandBufferAccessContext
 
-container for all access contexts for a specific command buffer, and state reflecting the current context.  
+container for all access contexts for a specific command buffer, and state reflecting the current context.
 
 Stores:
 
@@ -602,11 +602,11 @@ The ResourceAccessState is the leaf level structure at which the synchronization
 *   Update: Record the state change based an “ordinary” memory access
     *   Read usages: add or update the current usage to the read usage list, clearing the stage barriers and updating the stage read tag.  Updates the sync stages information of read stages with barriers to current read.
     *   Write usages: erase read usages, update write usage and clear write barriers and update the write tag
-    
+
 *   Resolve: Combine access states from different contexts
     *   If one write tag is strictly after another, the later state is preserved
     *   If the write tags match, the pre-stage read information is resolved as a union of stages accessed, with most recent usage retained if stage present in both contexts.
-    
+
 *   Execution Barrier
     *   Effect on read usage (per stage with usage)
         *   If the _source execution scope_ includes the stage, or intersects with the mask of barriers, the _destination execution scope_ is OR’d with the barrier mask.
@@ -651,7 +651,7 @@ The ResourceAccessState is the leaf level structure at which the synchronization
     *   For write access
         *    If there have been read accesses since the last write,  test each per-stage read record, if any read does not have a barrier for the write access stage, report WAR hazard.
         *    If there is a write recorded, and no read accesses since, test stage/access flag vs. write barriers.  If there is no write barrier for stage/access, report WAW hazard
-        > Note: Excluding WAW checks when reads after last write reflect the MRA principle discussed.  If those reads were not hazards, no WAW hazard would be possible unless a WAR hazard exists. 
+        > Note: Excluding WAW checks when reads after last write reflect the MRA principle discussed.  If those reads were not hazards, no WAW hazard would be possible unless a WAR hazard exists.
     *   For accesses with Ordering Guarantees
         *   Certain operations (rasterization, load, store, clear, resolve) have guaranteed ordering at the sample level.
         *   Hazard check performed for these operations supply ordering execution and access scope masks, indicating the stages and accesses that have ordering guarantees.  If the last write (for read access) or the last write and all last reads (for write accesses) are all with the access and execution scopes, there is no hazard.
@@ -735,7 +735,7 @@ As noted above Image Layout Transition are typically implemented in the context 
 
 ### Renderpass Operations
 
-As within a renderpass instance subpasses may execute dependently or independently, and include implicit image layout transitions, barriers, load, store and resolve operations.  These operations use the Access Context objects connected in the render pass dependency graph.  All validation operations are performed on a backward-looking basis, with operations in higher index subpasses begin validated against previous access, without deferral or replay of earlier accesses.  
+As within a renderpass instance subpasses may execute dependently or independently, and include implicit image layout transitions, barriers, load, store and resolve operations.  These operations use the Access Context objects connected in the render pass dependency graph.  All validation operations are performed on a backward-looking basis, with operations in higher index subpasses begin validated against previous access, without deferral or replay of earlier accesses.
 
 
 #### Resource Access State Resolution
@@ -751,7 +751,7 @@ Note:  there is a bit of a complication arising from the following:
 
 #### Resource Stage/Access Validation and Update
 
-For simple stage/access references, hazard detection operates on the state found in the Access Context, or failing that on the state returned by state resolution above. The detail is encapsulated within the Access Context, and for any given stage/access and address range, may be divided between state stored currently within Access Context and state resolved. 
+For simple stage/access references, hazard detection operates on the state found in the Access Context, or failing that on the state returned by state resolution above. The detail is encapsulated within the Access Context, and for any given stage/access and address range, may be divided between state stored currently within Access Context and state resolved.
 
 State update likewise operates on state either from the Access Context of the subpass, or resolved from the DAG, with the updated state stored into the subpass Access Context. This detail is also encapsulated in the Access Context, and Access Context objects _outside_ of a renderpass instance simply have an empty “previous” context graph.
 
@@ -760,7 +760,7 @@ State update likewise operates on state either from the Access Context of the su
 
 For renderpass begin/next entry points, two types of accesses occur -- image layout transitions and load operations. As these operations and tests occur on the boundary between subpasses (or between “external” and a subpass) they are handled within the Begin/Next validate and record functions. If no implicit accesses (layout transition or load operation), no state update occurs, leaving the subpass barrier application to the lazy resolve operations described above.
 
-**TODO/KNOWN LIMITATION: **First phase does not include implementation of multi-view renderpass support. 
+**TODO/KNOWN LIMITATION: **First phase does not include implementation of multi-view renderpass support.
 
 #### Subpass Image Layout Transitions
 
@@ -886,7 +886,7 @@ Resolve operations export the state of the subpass access contexts to the access
 
 #### CmdPipelineBarrier
 
-For each memory, buffer, and image barrier defined use the range traversal functions to update all accesses in source scope. For images, prior to update (i.e. in PreValidate…) test for image layout transition hazards as described above. 
+For each memory, buffer, and image barrier defined use the range traversal functions to update all accesses in source scope. For images, prior to update (i.e. in PreValidate…) test for image layout transition hazards as described above.
 
 Apply global execution barriers from the src/dstStageMask.
 
@@ -904,12 +904,12 @@ CmdWaitEvent uses both the source execution scope map and the usage tag to deter
 
 Semaphore Operations synchronize accesses between submitted command buffers at submission "batch" granularity. Semaphores (unlike barriers and events) can synchronize both accesses within command buffers submitted to a single queue, and (more typically) between accesses within command buffers on different queues.  Semaphores, like events, are two part synchronization operations.  The first scope of the combined operation is defined relative to the signaling queue, and includes the usual chaining of the first scopes with prior accesses and synchronization operations.  The second scope of the wait operation is applied to all accesses within the first scope of the signal operation.  For semaphores synchronizing different queues, the second scope of the combined operation *replaces* the barrier state for access imported into the QueueBatchContext.
 
-There are additional impacts to the application of barriers/event and hazard detection for accesses which are from different queues -- i.e. that are *not* in submission order.  Since barriers and events are defined only to include operations that are earlier in submission order, barriers (and event) first scopes do not include accesses performed in other queues. For those accesses, only the chaining effects of earlier synchronization operations, such as semaphore, include a given access within the first scope of a barrier. Hazard detection is also affected in that implicit ordering guarantees are not applied to accesses not in submission order.   
+There are additional impacts to the application of barriers/event and hazard detection for accesses which are from different queues -- i.e. that are *not* in submission order.  Since barriers and events are defined only to include operations that are earlier in submission order, barriers (and event) first scopes do not include accesses performed in other queues. For those accesses, only the chaining effects of earlier synchronization operations, such as semaphore, include a given access within the first scope of a barrier. Hazard detection is also affected in that implicit ordering guarantees are not applied to accesses not in submission order.
 
 
 ### Command Buffer Action Commands
 
-Recorded action command describe compute, graphics, or transfer actions to be executed on a device when the containing command buffer is submitted to a queue of the appropriate capabilities. Validation of these consists (in the first phase of implementation) of hazard detection for all known &lt;range, stage/access> pairs against the current access context. The access context is then updated for the same set of &lt;range, stage/access> pair.  Each update is tagged with the Usage Tag as described above 
+Recorded action command describe compute, graphics, or transfer actions to be executed on a device when the containing command buffer is submitted to a queue of the appropriate capabilities. Validation of these consists (in the first phase of implementation) of hazard detection for all known &lt;range, stage/access> pairs against the current access context. The access context is then updated for the same set of &lt;range, stage/access> pair.  Each update is tagged with the Usage Tag as described above
 
 #### Commands
 
@@ -1138,7 +1138,7 @@ Recording and validating `vkCmdExecuteCommands `which is more similar in scope t
 These are read only, but as the actual indices and vertices referenced are only known at shader execution time, the entire bound resource is treated as being read by draw commands that reference these bound resources
 
 	Vertex
-	
+
 	Index
 
 ##### Bound Descriptor Set Access
@@ -1313,11 +1313,11 @@ The stage/access for each bound descriptor referenced by a draw or dispatch call
 
 Color attachment use is controlled by the fragment shader output declarations and `VkPipelineRasterizationStateCreateInfo::rasterizerDiscardEnable`. Fragment shader output variables with Location decorations correspond to the pColorAttachments index for the current subpass. The renderArea portion of these attachments is treated as stage/access SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, unless `rasterizerDiscardEnable `is true -- in which case a operations on color attachments result in no memory accesses.
 
-**TODO/KNOWN LIMITATION:** Memory access checks not suppressed for  VK_CULL_MODE_FRONT_AND_BACK -- would need to ensure we have sufficient information to know TOPOLOGY being emitted to rasterization fixed function state. 
+**TODO/KNOWN LIMITATION:** Memory access checks not suppressed for  VK_CULL_MODE_FRONT_AND_BACK -- would need to ensure we have sufficient information to know TOPOLOGY being emitted to rasterization fixed function state.
 
 **TODO/KNOWN LIMITATION: **First phase does not include component granularity access tracking.
 
-> Designer’s note.  Given the “inmost loop” nature of component read/write enable, it is likely the performance and memory use will be unacceptable unless the opaque range encoding changes the apparent memory organization of components to be at least just above the x, y, and z dimensions, s.t. the effective “run-length-compression” of the range maps is not lost. Storing access state byte-by-byte is likely not going to be acceptable.  Whether this encoding should be adaptive (only present for images with component level information or globally present in the opaque range Synchronization Validation specific encoding) is a design detail TBD. For broadest application this may mean that non-aliased linear tiling images should also be given an an validation specific opaque encoding w.r.t. component granularity information. 
+> Designer’s note.  Given the “inmost loop” nature of component read/write enable, it is likely the performance and memory use will be unacceptable unless the opaque range encoding changes the apparent memory organization of components to be at least just above the x, y, and z dimensions, s.t. the effective “run-length-compression” of the range maps is not lost. Storing access state byte-by-byte is likely not going to be acceptable.  Whether this encoding should be adaptive (only present for images with component level information or globally present in the opaque range Synchronization Validation specific encoding) is a design detail TBD. For broadest application this may mean that non-aliased linear tiling images should also be given an an validation specific opaque encoding w.r.t. component granularity information.
 
 
 ##### Depth/Stencil Attachments

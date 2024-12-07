@@ -200,7 +200,7 @@ GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &dev
     // Create instance buffer
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer instances_buffer(
         device, instances_.vk_instances.size() * sizeof(VkAccelerationStructureInstanceKHR),
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
@@ -542,7 +542,7 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
             assert(device_scratch_);  // So far null pointers are not supported
             if (!device_scratch_->initialized()) {
                 VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-                alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+                alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
                 if (scratch_size > 0) {
                     device_scratch_->init(*device_, scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
@@ -627,7 +627,7 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
 
     indirect_buffer_ = std::make_unique<vkt::Buffer>();
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
     indirect_buffer_->init(*device_, 1 * vk_info_.geometryCount * sizeof(VkAccelerationStructureBuildRangeInfoKHR),
                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps,
@@ -860,7 +860,7 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
 
     // Allocate vertex and index buffers
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -1008,7 +1008,7 @@ GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device &device) {
 
     // Allocate vertex and index buffers
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -1050,7 +1050,7 @@ GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device &device) {
     const VkDeviceSize aabb_buffer_size = sizeof(aabbs[0]) * aabbs.size();
     vkt::Buffer aabb_buffer;
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -1119,7 +1119,7 @@ std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceBottomLevel(c
     auto as = std::make_shared<AccelerationStructureKHR>(&device);
     as->SetSize(size);
     as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
-    as->SetDeviceBufferMemoryAllocateFlags(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR);
+    as->SetDeviceBufferMemoryAllocateFlags(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
     as->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -1143,7 +1143,7 @@ std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceTopLevel(cons
     auto as = std::make_shared<AccelerationStructureKHR>(&device);
     as->SetSize(size);
     as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
-    as->SetDeviceBufferMemoryAllocateFlags(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR);
+    as->SetDeviceBufferMemoryAllocateFlags(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
     as->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -1547,7 +1547,7 @@ void Pipeline::BuildSbt() {
     sbt_buffer_info.usage =
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     sbt_buffer_.init(*device_, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
 
 #ifdef VVL_DEBUG_LOG_SBT

@@ -412,7 +412,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
     return skip;
 }
 
-bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const VkSubmitInfo2KHR &submit,
+bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const VkSubmitInfo2 &submit,
                                              const Location &submit_loc) const {
     bool skip = false;
     for (uint32_t i = 0; i < submit.waitSemaphoreInfoCount; ++i) {
@@ -696,8 +696,8 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
-                                             const VkDependencyInfoKHR *pDependencyInfo, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo *pDependencyInfo,
+                                             const ErrorObject &error_obj) const {
     const LogObjectList objlist(commandBuffer, event);
 
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -940,7 +940,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
 }
 
 bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, const vvl::CommandBuffer &cb_state,
-                                                    const VkDependencyInfoKHR &dep_info) const {
+                                                    const VkDependencyInfo &dep_info) const {
     bool skip = false;
     const auto &rp_state = cb_state.activeRenderPass;
     if (rp_state->UsesDynamicRendering()) {
@@ -1005,17 +1005,17 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
                                                             VkQueueFlags queue_flags, VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
     // these are always allowed by queues, calls that restrict them have dedicated VUs.
-    stage_mask &= ~(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR | VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT_KHR |
-                    VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT_KHR | VK_PIPELINE_STAGE_2_HOST_BIT_KHR);
+    stage_mask &= ~(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
+                    VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT | VK_PIPELINE_STAGE_2_HOST_BIT);
     if (stage_mask == 0) {
         return skip;
     }
 
     static const std::array<std::pair<VkPipelineStageFlags2KHR, VkQueueFlags>, 4> metaFlags{
-        {{VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR, VK_QUEUE_GRAPHICS_BIT},
-         {VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT},
-         {VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR, VK_QUEUE_GRAPHICS_BIT},
-         {VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR, VK_QUEUE_GRAPHICS_BIT}}};
+        {{VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT},
+         {VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT},
+         {VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT, VK_QUEUE_GRAPHICS_BIT},
+         {VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT, VK_QUEUE_GRAPHICS_BIT}}};
 
     for (const auto &entry : metaFlags) {
         if (((entry.first & stage_mask) != 0) && ((entry.second & queue_flags) == 0)) {
@@ -1030,7 +1030,7 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
         return skip;
     }
 
-    auto supported_flags = sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, queue_flags);
+    auto supported_flags = sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, queue_flags);
 
     auto bad_flags = stage_mask & ~supported_flags;
 
@@ -1098,10 +1098,10 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
     }
 
     // Early out if all commands set
-    if ((stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR) != 0) return skip;
+    if ((stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) != 0) return skip;
 
     // or if only generic memory accesses are specified (or we got a 0 mask)
-    access_mask &= ~(VK_ACCESS_2_MEMORY_READ_BIT_KHR | VK_ACCESS_2_MEMORY_WRITE_BIT_KHR);
+    access_mask &= ~(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT);
     if (access_mask == 0) return skip;
 
     const auto valid_accesses = sync_utils::CompatibleAccessMask(expanded_pipeline_stages);
@@ -1409,9 +1409,9 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const E
             skip |= LogError("VUID-vkSetEvent-event-09543", event, error_obj.location.dot(Field::event),
                              "(%s) that is already in use by a command buffer.", FormatHandle(event).c_str());
         }
-        if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR) {
+        if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT) {
             skip |= LogError("VUID-vkSetEvent-event-03941", event, error_obj.location.dot(Field::event),
-                             "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR.", FormatHandle(event).c_str());
+                             "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT.", FormatHandle(event).c_str());
         }
     }
     return skip;
@@ -1420,9 +1420,9 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const E
 bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject &error_obj) const {
     bool skip = false;
     if (auto event_state = Get<vvl::Event>(event)) {
-        if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR) {
+        if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT) {
             skip |= LogError("VUID-vkResetEvent-event-03823", event, error_obj.location.dot(Field::event),
-                             "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR.", FormatHandle(event).c_str());
+                             "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT.", FormatHandle(event).c_str());
         }
     }
     return skip;
@@ -1431,9 +1431,9 @@ bool CoreChecks::PreCallValidateResetEvent(VkDevice device, VkEvent event, const
 bool CoreChecks::PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject &error_obj) const {
     bool skip = false;
     if (auto event_state = Get<vvl::Event>(event)) {
-        if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR) {
+        if (event_state->flags & VK_EVENT_CREATE_DEVICE_ONLY_BIT) {
             skip |= LogError("VUID-vkGetEventStatus-event-03940", event, error_obj.location.dot(Field::event),
-                             "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT_KHR.", FormatHandle(event).c_str());
+                             "(%s) was created with VK_EVENT_CREATE_DEVICE_ONLY_BIT.", FormatHandle(event).c_str());
         }
     }
     return skip;
@@ -1524,8 +1524,8 @@ static inline VkQueueFlags SubpassToQueueFlags(uint32_t subpass) {
 bool CoreChecks::ValidateSubpassDependency(const ErrorObject &error_obj, const Location &in_loc,
                                            const VkSubpassDependency2 &dependency) const {
     bool skip = false;
-    VkMemoryBarrier2KHR converted_barrier;
-    const auto *mem_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2KHR>(dependency.pNext);
+    VkMemoryBarrier2 converted_barrier;
+    const auto *mem_barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(dependency.pNext);
     const Location loc = mem_barrier ? in_loc.dot(Field::pNext) : in_loc;
 
     if (mem_barrier) {
@@ -1589,7 +1589,7 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &layout_loc, V
             is_error |= ((usage_flags & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) == 0);
             is_error |= ((usage_flags & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) == 0);
             break;
-        case VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR:
+        case VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ:
             is_error = !IsShaderTileImageUsageValid(usage_flags);
             break;
         case VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR:
@@ -1741,12 +1741,12 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
         }
 
         if (!enabled_features.dynamicRenderingLocalRead) {
-            if (img_barrier.newLayout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR) {
+            if (img_barrier.newLayout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
                 auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kDynamicRenderingLocalReadNew);
                 skip |= LogError(vuid, img_barrier.image, image_loc, "(%s) cannot have newLayout = %s.",
                                  FormatHandle(img_barrier.image).c_str(), string_VkImageLayout(img_barrier.newLayout));
             }
-            if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR) {
+            if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
                 auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kDynamicRenderingLocalReadOld);
                 skip |= LogError(vuid, img_barrier.image, image_loc, "(%s) cannot have oldLayout = %s.",
                                  FormatHandle(img_barrier.image).c_str(), string_VkImageLayout(img_barrier.oldLayout));
@@ -1781,7 +1781,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
                     auto guard = image_view_image_state->layout_range_map->ReadLock();
 
                     for (const auto &entry : *image_view_image_state->layout_range_map) {
-                        if (entry.second != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR && entry.second != VK_IMAGE_LAYOUT_GENERAL) {
+                        if (entry.second != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && entry.second != VK_IMAGE_LAYOUT_GENERAL) {
                             const auto &vuid = sync_vuid_maps::GetShaderTileImageVUID(
                                 barrier_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageLayout);
                             skip |= LogError(vuid, img_barrier.image, barrier_loc, "image layout is %s.",
@@ -2043,7 +2043,7 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, Vk
     }
 }
 
-void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, const VkDependencyInfoKHR &dep_info) {
+void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, const VkDependencyInfo &dep_info) {
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
         Location barrier_loc(func_name, Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
         const BufferBarrier barrier(dep_info.pBufferMemoryBarriers[i]);
@@ -2449,7 +2449,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandB
 }
 
 bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Location &dep_info_loc,
-                                        const vvl::CommandBuffer &cb_state, const VkDependencyInfoKHR &dep_info) const {
+                                        const vvl::CommandBuffer &cb_state, const VkDependencyInfo &dep_info) const {
     bool skip = false;
 
     // Tracks duplicate layout transition for image barriers.

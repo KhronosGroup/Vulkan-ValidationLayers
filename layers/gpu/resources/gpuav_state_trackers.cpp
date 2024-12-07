@@ -571,8 +571,8 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
             return;
         }
 
-        VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
-        semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+        VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
+        semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
         semaphore_type_create_info.initialValue = 0;
 
         VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
@@ -604,7 +604,7 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
     }
 
     if (barrier_command_buffer_ != VK_NULL_HANDLE) {
-        VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
+        VkTimelineSemaphoreSubmitInfo timeline_semaphore_submit_info = vku::InitStructHelper();
         timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
         timeline_semaphore_submit_info.pSignalSemaphoreValues = &seq;
 

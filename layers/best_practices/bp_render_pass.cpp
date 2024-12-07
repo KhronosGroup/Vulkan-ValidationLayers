@@ -405,8 +405,8 @@ void BestPractices::RecordCmdBeginRenderPass(bp_state::CommandBuffer& cb_state, 
         }
 
         // If renderpass doesn't load attachment, no need to validate image in queue
-        if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_NONE_KHR) ||
-            (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_NONE_KHR)) {
+        if ((!vkuFormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_NONE) ||
+            (vkuFormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_NONE)) {
             continue;
         }
 
@@ -640,7 +640,7 @@ void BestPractices::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer
     StateTracker::PostCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, record_obj);
 }
 
-void BestPractices::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
+void BestPractices::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
                                                     const RecordObject& record_obj) {
     StateTracker::PostCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
 }

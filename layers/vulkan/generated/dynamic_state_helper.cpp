@@ -838,7 +838,7 @@ std::string DescribeDynamicStateDependency(CBDynamicState dynamic_state, const v
             if (!pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
                 ss << "vkCmdSetLineStippleEnableEXT last set stippledLineEnable to VK_TRUE.\n";
             } else {
-                ss << "VkPipelineRasterizationLineStateCreateInfoEXT::stippledLineEnable was VK_TRUE in the last bound graphics "
+                ss << "VkPipelineRasterizationLineStateCreateInfo::stippledLineEnable was VK_TRUE in the last bound graphics "
                       "pipeline.\n";
             }
             break;

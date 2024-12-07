@@ -977,12 +977,12 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
 
             if ((resource_variable.info.is_write_without_format) &&
-                !(buffer_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
+                !(buffer_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, buffer_view);
                 return dev_state.LogError(vuids.storage_texel_buffer_write_without_format_07029, objlist, loc,
                                           "the descriptor %s has %s with format of %s which is missing "
-                                          "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR.\n"
+                                          "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT.\n"
                                           "(supported features: %s).",
                                           DescribeDescriptor(resource_variable, index).c_str(),
                                           dev_state.FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),

@@ -643,18 +643,18 @@ TEST_F(NegativeAndroidExternalResolve, DynamicRendering) {
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     const vkt::ImageView resolve_view(*m_device, ivci);
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = color_view.handle();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
     color_attachment.resolveImageView = resolve_view.handle();
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingAttachmentInfoKHR ds_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo ds_attachment = vku::InitStructHelper();
     ds_attachment.imageView = VK_NULL_HANDLE;
     ds_attachment.resolveMode = VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
     begin_rendering_info.colorAttachmentCount = 1;
@@ -672,7 +672,7 @@ TEST_F(NegativeAndroidExternalResolve, DynamicRendering) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.colorAttachmentCount = 2;
-    VkRenderingAttachmentInfoKHR attachments[2]{color_attachment, ds_attachment};
+    VkRenderingAttachmentInfo attachments[2]{color_attachment, ds_attachment};
     begin_rendering_info.pColorAttachments = attachments;
     begin_rendering_info.pDepthAttachment = nullptr;
     begin_rendering_info.pStencilAttachment = nullptr;
@@ -740,13 +740,13 @@ TEST_F(NegativeAndroidExternalResolve, DynamicRenderingResolveModeNonNullColor) 
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     const vkt::ImageView resolve_view(*m_device, ivci);
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = color_view.handle();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID;
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
     begin_rendering_info.colorAttachmentCount = 1;
@@ -895,14 +895,14 @@ TEST_F(NegativeAndroidExternalResolve, MissingImageUsage) {
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     const vkt::ImageView resolve_view(*m_device, ivci);
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = color_view.handle();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID;
     color_attachment.resolveImageView = resolve_view.handle();
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
     begin_rendering_info.colorAttachmentCount = 1;
@@ -971,14 +971,14 @@ TEST_F(NegativeAndroidExternalResolve, ClearAttachment) {
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     const vkt::ImageView resolve_view(*m_device, ivci);
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = color_view.handle();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID;
     color_attachment.resolveImageView = resolve_view.handle();
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
     begin_rendering_info.colorAttachmentCount = 1;
@@ -1058,14 +1058,14 @@ TEST_F(NegativeAndroidExternalResolve, DrawDynamicRasterizationSamples) {
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     const vkt::ImageView resolve_view(*m_device, ivci);
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = color_view.handle();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID;
     color_attachment.resolveImageView = resolve_view.handle();
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {32, 32}};
     begin_rendering_info.colorAttachmentCount = 1;

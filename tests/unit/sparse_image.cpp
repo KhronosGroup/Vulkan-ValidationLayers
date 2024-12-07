@@ -760,10 +760,10 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 #ifdef _WIN32
     const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 #else
     const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
 
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
@@ -783,8 +783,8 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     VkExternalBufferPropertiesKHR external_buffer_props = {VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES_KHR, nullptr, {0, 0, 0}};
     vk::GetPhysicalDeviceExternalBufferPropertiesKHR(Gpu(), &external_buffer_info, &external_buffer_props);
     if (!(external_buffer_props.externalMemoryProperties.compatibleHandleTypes & handle_type) ||
-        !(external_buffer_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_KHR) ||
-        !(external_buffer_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_KHR)) {
+        !(external_buffer_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) ||
+        !(external_buffer_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
         GTEST_SKIP() << "External buffer does not support importing and exporting";
     }
 
@@ -794,10 +794,10 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
 
     // Check if dedicated allocation is required
     const bool dedicated_allocation =
-        external_buffer_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT_KHR;
+        external_buffer_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT;
 
     /// Allocate buffer and buffer memory with no supported external type
-    VkExternalMemoryBufferCreateInfoKHR external_memory_buffer_info = vku::InitStructHelper();
+    VkExternalMemoryBufferCreateInfo external_memory_buffer_info = vku::InitStructHelper();
     external_memory_buffer_info.handleTypes = handle_type;  // TODO ".handleTypes = 0;" used handle_type for debugging purposes
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&external_memory_buffer_info);
     buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
@@ -806,12 +806,12 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkMemoryAllocateInfo buffer_mem_alloc = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0);
-    VkExportMemoryAllocateInfoKHR export_info = vku::InitStructHelper();
+    VkExportMemoryAllocateInfo export_info = vku::InitStructHelper();
     export_info.handleTypes = handle_type;
     buffer_mem_alloc.pNext = &export_info;
 
     // Add dedicated allocation info to pNext chain if required
-    VkMemoryDedicatedAllocateInfoKHR dedicated_info = vku::InitStructHelper();
+    VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
     dedicated_info.buffer = buffer;
     if (dedicated_allocation) {
         export_info.pNext = &dedicated_info;

@@ -399,7 +399,7 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer com
 }
 
 bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
-                                                           const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                           const VkPushDescriptorSetInfo *pPushDescriptorSetInfo,
                                                            const ErrorObject &error_obj) const {
     bool skip = false;
     // Checked by chassis: commandBuffer: "VUID-vkCmdPushDescriptorSet2-commandBuffer-parameter"
@@ -1227,7 +1227,7 @@ bool ObjectLifetimes::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice dev
                                    "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent",
                                    create_info_loc.dot(Field::descriptorSetLayout));
         }
-        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
+        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS) {
             skip |= ValidateObject(pCreateInfo->pipelineLayout, kVulkanObjectTypePipelineLayout, false,
                                    "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00352",
                                    "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent",

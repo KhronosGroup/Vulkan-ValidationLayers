@@ -165,7 +165,7 @@ array elements, those elements are not required to have been written.
 The instrumentation code needs to know which elements of a descriptor array have been written, so that it can tell if one is used
 that has not been written.
 
-Note that currently, `VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT` validation is not working and all accesses are reported as valid.
+Note that currently, `VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK` validation is not working and all accesses are reported as valid.
 
 ### Buffer device address validation
 The vkGetBufferDeviceAddressEXT routine can be used to get a GPU address that a shader can use to directly address a particular buffer.

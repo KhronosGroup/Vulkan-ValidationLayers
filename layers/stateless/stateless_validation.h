@@ -624,7 +624,7 @@ class StatelessValidation : public ValidationObject {
                                                     const VkWriteDescriptorSet *pDescriptorWrites,
                                                     const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
-                                                     const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                     const VkPushDescriptorSetInfo *pPushDescriptorSetInfo,
                                                      const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                         uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors,
@@ -765,7 +765,7 @@ class StatelessValidation : public ValidationObject {
         const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *pBindDescriptorBufferEmbeddedSamplersInfo,
         const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdPushDescriptorSetWithTemplate2(
-        VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
+        VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo *pPushDescriptorSetWithTemplateInfo,
         const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
                                                       const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
@@ -933,7 +933,7 @@ class StatelessValidation : public ValidationObject {
                                                     const ErrorObject &error_obj) const;
 
     bool ValidateCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size, const Location &loc) const;
-    bool manual_PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR *pPushConstantsInfo,
+    bool manual_PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo *pPushConstantsInfo,
                                                  const ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void *pValues,

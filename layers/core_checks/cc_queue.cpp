@@ -292,7 +292,7 @@ bool CoreChecks::ValidateRenderPassStripeSubmitInfo(VkQueue queue, const vvl::Co
     return skip;
 }
 
-bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
                                       const ErrorObject &error_obj) const {
     bool skip = false;
     if (auto fence_state = Get<vvl::Fence>(fence)) {
@@ -317,13 +317,13 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const Location submit_loc = error_obj.location.dot(Struct::VkSubmitInfo2, Field::pSubmits, submit_idx);
-        const VkSubmitInfo2KHR &submit = pSubmits[submit_idx];
+        const VkSubmitInfo2 &submit = pSubmits[submit_idx];
         const auto perf_submit = vku::FindStructInPNextChain<VkPerformanceQuerySubmitInfoKHR>(submit.pNext);
         const uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, submit, submit_loc);
 
-        const bool protected_submit = (submit.flags & VK_SUBMIT_PROTECTED_BIT_KHR) != 0;
+        const bool protected_submit = (submit.flags & VK_SUBMIT_PROTECTED_BIT) != 0;
         if ((protected_submit == true) && ((queue_state->create_flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
             skip |= LogError("VUID-vkQueueSubmit2-queue-06447", queue, submit_loc,
                              "contains a protected submission to %s which was not created with "
@@ -351,13 +351,13 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
             if ((cb_state->unprotected == true) && (protected_submit == true)) {
                 const LogObjectList objlist(cb_state->Handle(), queue);
                 skip |= LogError("VUID-VkSubmitInfo2-flags-03886", objlist, cb_loc,
-                                 "is unprotected while %s.flags (%s) has VK_SUBMIT_PROTECTED_BIT_KHR set",
-                                 submit_loc.Fields().c_str(), string_VkSubmitFlags(submit.flags).c_str());
+                                 "is unprotected while %s.flags (%s) has VK_SUBMIT_PROTECTED_BIT set", submit_loc.Fields().c_str(),
+                                 string_VkSubmitFlags(submit.flags).c_str());
             }
             if ((cb_state->unprotected == false) && (protected_submit == false)) {
                 const LogObjectList objlist(cb_state->Handle(), queue);
                 skip |= LogError("VUID-VkSubmitInfo2-flags-03887", objlist, cb_loc,
-                                 "is protected while %s.flags (%s) has VK_SUBMIT_PROTECTED_BIT_KHR not set",
+                                 "is protected while %s.flags (%s) has VK_SUBMIT_PROTECTED_BIT not set",
                                  submit_loc.Fields().c_str(), string_VkSubmitFlags(submit.flags).c_str());
             }
 

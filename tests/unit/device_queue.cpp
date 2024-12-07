@@ -206,11 +206,11 @@ TEST_F(NegativeDeviceQueue, MismatchedGlobalPriority) {
         GTEST_SKIP() << "Multiple queues from same queue family are required to run this test";
     }
 
-    VkDeviceQueueGlobalPriorityCreateInfoKHR queue_global_priority_ci[2] = {};
+    VkDeviceQueueGlobalPriorityCreateInfo queue_global_priority_ci[2] = {};
     queue_global_priority_ci[0] = vku::InitStructHelper();
-    queue_global_priority_ci[0].globalPriority = VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR;
+    queue_global_priority_ci[0].globalPriority = VK_QUEUE_GLOBAL_PRIORITY_LOW;
     queue_global_priority_ci[1] = vku::InitStructHelper();
-    queue_global_priority_ci[1].globalPriority = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR;
+    queue_global_priority_ci[1].globalPriority = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM;
 
     float priorities[] = {1.0f, 1.0f};
     VkDeviceQueueCreateInfo device_queue_ci[2] = {};

@@ -183,7 +183,7 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
         vk::ResetCommandBuffer(command_buffer, 0);
     }
     if (rp2Supported && rp2_vuid) {
-        VkSubpassBeginInfoKHR subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO_KHR, nullptr, VK_SUBPASS_CONTENTS_INLINE};
+        VkSubpassBeginInfo subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO_KHR, nullptr, VK_SUBPASS_CONTENTS_INLINE};
         vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
         error_monitor->SetDesiredError(rp2_vuid);
         vk::CmdBeginRenderPass2KHR(command_buffer, begin_info, &subpass_begin_info);

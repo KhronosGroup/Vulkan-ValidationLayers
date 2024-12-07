@@ -120,13 +120,13 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
 
     const auto* graphics_lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
     if (create_info.renderPass == VK_NULL_HANDLE &&
-        !vku::FindStructInPNextChain<VkPipelineRenderingCreateInfoKHR>(create_info.pNext) &&
+        !vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext) &&
         (!graphics_lib_info ||
          (graphics_lib_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
                                       VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0)) {
         skip |= LogWarning(
             "BestPractices-Pipeline-NoRendering", device, create_info_loc,
-            "renderPass is VK_NULL_HANDLE and pNext chain does not contain an instance of VkPipelineRenderingCreateInfoKHR.");
+            "renderPass is VK_NULL_HANDLE and pNext chain does not contain an instance of VkPipelineRenderingCreateInfo.");
     }
 
     if (VendorCheckEnabled(kBPVendorArm)) {

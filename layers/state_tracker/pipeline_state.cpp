@@ -253,7 +253,7 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
                 case VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE:
                 case VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT:
                 case VK_DYNAMIC_STATE_POLYGON_MODE_EXT:
-                case VK_DYNAMIC_STATE_LINE_STIPPLE_KHR:
+                case VK_DYNAMIC_STATE_LINE_STIPPLE:
                 case VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT:
                 case VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT:
                 case VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT:
@@ -391,24 +391,24 @@ static CBDynamicFlags GetRayTracingDynamicState(Pipeline &pipe_state) {
 
 static bool UsesPipelineRobustness(const void *pNext, const Pipeline &pipe_state) {
     bool result = false;
-    const auto robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pNext);
+    const auto robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pNext);
     if (!robustness_info) {
         return false;
     }
-    result |= (robustness_info->storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) ||
-              (robustness_info->storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT);
-    result |= (robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) ||
-              (robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT);
+    result |= (robustness_info->storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) ||
+              (robustness_info->storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS);
+    result |= (robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) ||
+              (robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS);
     if (!result) {
         for (const auto &stage_ci : pipe_state.shader_stages_ci) {
-            const auto stage_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(stage_ci.pNext);
+            const auto stage_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(stage_ci.pNext);
             if (stage_robustness_info) {
                 result |=
-                    (stage_robustness_info->storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) ||
-                    (stage_robustness_info->storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT);
+                    (stage_robustness_info->storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) ||
+                    (stage_robustness_info->storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS);
                 result |=
-                    (stage_robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) ||
-                    (stage_robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT);
+                    (stage_robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) ||
+                    (stage_robustness_info->uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS);
             }
         }
     }
@@ -417,19 +417,18 @@ static bool UsesPipelineRobustness(const void *pNext, const Pipeline &pipe_state
 
 static bool UsesPipelineVertexRobustness(const void *pNext, const Pipeline &pipe_state) {
     bool result = false;
-    const auto robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pNext);
+    const auto robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pNext);
     if (!robustness_info) {
         return false;
     }
-    result |= (robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) ||
-              (robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT);
+    result |= (robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) ||
+              (robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS);
     if (!result) {
         for (const auto &stage_ci : pipe_state.shader_stages_ci) {
-            const auto stage_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(stage_ci.pNext);
+            const auto stage_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(stage_ci.pNext);
             if (stage_robustness_info) {
-                result |=
-                    (stage_robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) ||
-                    (stage_robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT);
+                result |= (stage_robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) ||
+                          (stage_robustness_info->vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS);
             }
         }
     }
@@ -510,7 +509,7 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const Pipeline &pipeline) {
 }
 
 static VkPipelineCreateFlags2KHR GetPipelineCreateFlags(const void *pNext, VkPipelineCreateFlags flags) {
-    const auto flags2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfoKHR>(pNext);
+    const auto flags2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(pNext);
     if (flags2) {
         return flags2->flags;
     }
@@ -1130,7 +1129,7 @@ bool LastBound::IsStippledLineEnable() const {
             return cb_state.dynamic_state_value.stippled_line_enable;
         }
     } else {
-        if (const auto line_state_ci = vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(
+        if (const auto line_state_ci = vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfo>(
                 pipeline_state->RasterizationStatePNext())) {
             return line_state_ci->stippledLineEnable;
         }

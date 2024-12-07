@@ -2152,7 +2152,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectFragment) {
                                   GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl));
     const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source));
 
-    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
+    VkRenderingInfo renderingInfo = vku::InitStructHelper();
     renderingInfo.colorAttachmentCount = 0;
     renderingInfo.layerCount = 1;
     renderingInfo.renderArea = {{0, 0}, {1, 1}};
@@ -2821,7 +2821,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_ShaderObjectMultiCreate) {
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2, shader_create_infos, nullptr, shaders);
 
-    VkRenderingInfoKHR renderingInfo = vku::InitStructHelper();
+    VkRenderingInfo renderingInfo = vku::InitStructHelper();
     renderingInfo.colorAttachmentCount = 0;
     renderingInfo.layerCount = 1;
     renderingInfo.renderArea = {{0, 0}, {1, 1}};
@@ -3799,7 +3799,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsCompute) {
         pre_process_size = mem_reqs2.memoryRequirements.size;
     }
 
-    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_ci.size = pre_process_size;
@@ -3894,7 +3894,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsGraphics) {
         pre_process_size = mem_reqs2.memoryRequirements.size;
     }
 
-    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_ci.size = pre_process_size;
@@ -3988,7 +3988,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_DeviceGeneratedCommandsIES) {
         }
     )glsl";
 
-    VkPipelineCreateFlags2CreateInfoKHR pipe_flags2 = vku::InitStructHelper();
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
     CreateComputePipelineHelper init_pipe(*this, &pipe_flags2);
     init_pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
@@ -4027,7 +4027,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_DeviceGeneratedCommandsIES) {
         pre_process_size = mem_reqs2.memoryRequirements.size;
     }
 
-    VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_ci.size = pre_process_size;
@@ -4197,7 +4197,7 @@ TEST_F(NegativeDebugPrintf, InlineUniformBlock) {
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 8, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr},
                                            {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                        },
                                        0, nullptr, 0, nullptr, &pool_inline_info);
@@ -4207,7 +4207,7 @@ TEST_F(NegativeDebugPrintf, InlineUniformBlock) {
     descriptor_set.UpdateDescriptorSets();
 
     const uint32_t print_value = 5;
-    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = vku::InitStructHelper();
+    VkWriteDescriptorSetInlineUniformBlock write_inline_uniform = vku::InitStructHelper();
     write_inline_uniform.dataSize = 4;
     write_inline_uniform.pData = &print_value;
 
@@ -4216,7 +4216,7 @@ TEST_F(NegativeDebugPrintf, InlineUniformBlock) {
     descriptor_writes.dstBinding = 1;
     descriptor_writes.dstArrayElement = 4;  // offset 4 bytes
     descriptor_writes.descriptorCount = 4;  // Write 4 bytes
-    descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     vk::UpdateDescriptorSets(device(), 1, &descriptor_writes, 0, nullptr);
 
     CreateComputePipelineHelper pipe(*this);

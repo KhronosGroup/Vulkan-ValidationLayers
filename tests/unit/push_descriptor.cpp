@@ -70,7 +70,7 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
     update_template_entry.stride = sizeof(SimpleTemplateData);
 
-    VkDescriptorUpdateTemplateCreateInfoKHR update_template_ci = vku::InitStructHelper();
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
     update_template_ci.descriptorUpdateEntryCount = 1;
     update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
     update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
@@ -83,14 +83,14 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     std::unique_ptr<vkt::PipelineLayout> pipeline_layout = nullptr;
     VkDescriptorUpdateTemplate push_template = VK_NULL_HANDLE;
 
-    push_dsl.reset(new vkt::DescriptorSetLayout(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR));
+    push_dsl.reset(new vkt::DescriptorSetLayout(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT));
     pipeline_layout.reset(new vkt::PipelineLayout(*m_device, {push_dsl.get()}));
     ASSERT_TRUE(push_dsl->initialized());
 
-    VkDescriptorUpdateTemplateCreateInfoKHR push_template_ci = vku::InitStructHelper();
+    VkDescriptorUpdateTemplateCreateInfo push_template_ci = vku::InitStructHelper();
     push_template_ci.descriptorUpdateEntryCount = 1;
     push_template_ci.pDescriptorUpdateEntries = &update_template_entry;
-    push_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    push_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
     push_template_ci.descriptorSetLayout = VK_NULL_HANDLE;
     push_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     push_template_ci.pipelineLayout = pipeline_layout->handle();
@@ -152,7 +152,7 @@ TEST_F(NegativePushDescriptor, DestroyDescriptorSetLayout) {
     VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
     VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper();
-    dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
     dsl_ci.bindingCount = 1;
     dsl_ci.pBindings = &ds_binding;
     vk::CreateDescriptorSetLayout(device(), &dsl_ci, nullptr, &ds_layout);
@@ -195,7 +195,7 @@ TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
     VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
     VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper();
-    dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
     dsl_ci.bindingCount = 1;
     dsl_ci.pBindings = &ds_binding;
     vk::CreateDescriptorSetLayout(device(), &dsl_ci, nullptr, &ds_layout);
@@ -219,10 +219,10 @@ TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
     update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
     update_template_entry.stride = sizeof(SimpleTemplateData);
 
-    VkDescriptorUpdateTemplateCreateInfoKHR update_template_ci = vku::InitStructHelper();
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
     update_template_ci.descriptorUpdateEntryCount = 1;
     update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
-    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
     update_template_ci.descriptorSetLayout = ds_layout;
     update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     update_template_ci.pipelineLayout = pipeline_layout;
@@ -251,7 +251,7 @@ TEST_F(NegativePushDescriptor, SetLayoutWithoutExtension) {
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
 
@@ -270,7 +270,7 @@ TEST_F(NegativePushDescriptor, AllocateSet) {
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
@@ -313,8 +313,7 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
 
     const vkt::DescriptorSetLayout ds_layout_ub(*m_device, {dsl_binding});
     const vkt::DescriptorSetLayout ds_layout_ub1(*m_device, {dsl_binding});
-    const vkt::DescriptorSetLayout ds_layout_ub_push(*m_device, {dsl_binding},
-                                                     VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout ds_layout_ub_push(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {{&ds_layout_ub, &ds_layout_ub1, &ds_layout_ub_push}});
 
     constexpr uint64_t badhandle = 0xcadecade;
@@ -348,7 +347,7 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
         }
     }
 
-    create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
     // Bad pipelineLayout handle
     do_test("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00352");
 
@@ -406,8 +405,7 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate14) {
 
     const vkt::DescriptorSetLayout ds_layout_ub(*m_device, {dsl_binding});
     const vkt::DescriptorSetLayout ds_layout_ub1(*m_device, {dsl_binding});
-    const vkt::DescriptorSetLayout ds_layout_ub_push(*m_device, {dsl_binding},
-                                                     VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout ds_layout_ub_push(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {{&ds_layout_ub, &ds_layout_ub1, &ds_layout_ub_push}});
 
     constexpr uint64_t badhandle = 0xcadecade;
@@ -441,7 +439,7 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate14) {
         }
     }
 
-    create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
     // Bad pipelineLayout handle
     do_test("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00352");
 
@@ -487,7 +485,7 @@ TEST_F(NegativePushDescriptor, SetLayout) {
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
 
@@ -515,7 +513,7 @@ TEST_F(NegativePushDescriptor, SetLayoutMaxPushDescriptors) {
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
 
@@ -539,7 +537,7 @@ TEST_F(NegativePushDescriptor, GetSupportSetLayout) {
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
 
@@ -588,7 +586,7 @@ TEST_F(NegativePushDescriptor, SetLayoutMutableDescriptor) {
     list.descriptorTypeCount = 0;
     binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     ds_layout_ci.flags =
-        VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR | VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT;
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT | VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04590");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
@@ -601,14 +599,14 @@ TEST_F(NegativePushDescriptor, SetLayoutMutableDescriptor) {
 
     list.descriptorTypeCount = 2;
     binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-flags-04591");
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativePushDescriptor, DescriptorUpdateTemplateEntryWithInlineUniformBlock) {
-    TEST_DESCRIPTION("Test VkDescriptorUpdateTemplateEntry with descriptor type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT");
+    TEST_DESCRIPTION("Test VkDescriptorUpdateTemplateEntry with descriptor type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK");
 
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
@@ -629,11 +627,11 @@ TEST_F(NegativePushDescriptor, DescriptorUpdateTemplateEntryWithInlineUniformBlo
     update_template_entry.dstBinding = 0;
     update_template_entry.dstArrayElement = 2;
     update_template_entry.descriptorCount = 1;
-    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
     update_template_entry.stride = sizeof(SimpleTemplateData);
 
-    VkDescriptorUpdateTemplateCreateInfoKHR update_template_ci = vku::InitStructHelper();
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
     update_template_ci.descriptorUpdateEntryCount = 1;
     update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
     update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
@@ -656,7 +654,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush) {
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const vkt::DescriptorSetLayout ds_layout(*m_device, {binding});
     ASSERT_TRUE(ds_layout.initialized());
-    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     ASSERT_TRUE(push_ds_layout.initialized());
 
     // Now use the descriptor set layouts to create a pipeline layout
@@ -862,7 +860,7 @@ TEST_F(NegativePushDescriptor, SetCmdBufferOffsetUnaligned) {
     }
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     ASSERT_TRUE(push_ds_layout.initialized());
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&push_ds_layout});
@@ -933,7 +931,7 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
 
-    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
     vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
 
@@ -949,10 +947,10 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
     update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
     update_template_entry.stride = sizeof(SimpleTemplateData);
 
-    VkDescriptorUpdateTemplateCreateInfoKHR update_template_ci = vku::InitStructHelper();
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
     update_template_ci.descriptorUpdateEntryCount = 1;
     update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
-    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
     update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
     update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     update_template_ci.pipelineLayout = pipeline_layout.handle();
@@ -986,7 +984,7 @@ TEST_F(NegativePushDescriptor, InvalidDescriptorUpdateTemplateType) {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
 
-    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
     vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
 
@@ -1002,7 +1000,7 @@ TEST_F(NegativePushDescriptor, InvalidDescriptorUpdateTemplateType) {
     update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
     update_template_entry.stride = sizeof(SimpleTemplateData);
 
-    VkDescriptorUpdateTemplateCreateInfoKHR update_template_ci = vku::InitStructHelper();
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
     update_template_ci.descriptorUpdateEntryCount = 1;
     update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
     update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
@@ -1039,9 +1037,9 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
 
-    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     vkt::DescriptorSetLayout push_dsl2(*m_device, {{1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}},
-                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     vkt::DescriptorSetLayout push_dsl3(*m_device, ds_bindings);
 
     vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
@@ -1060,10 +1058,10 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
     update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
     update_template_entry.stride = sizeof(SimpleTemplateData);
 
-    VkDescriptorUpdateTemplateCreateInfoKHR update_template_ci = vku::InitStructHelper();
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
     update_template_ci.descriptorUpdateEntryCount = 1;
     update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
-    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
     update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
     update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     update_template_ci.pipelineLayout = pipeline_layout.handle();

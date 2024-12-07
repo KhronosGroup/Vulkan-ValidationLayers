@@ -833,7 +833,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     m_command_buffer.EndRenderPass();
 
     // Duplicate barriers that change layout
-    VkImageMemoryBarrier2KHR img_barrier = vku::InitStructHelper();
+    VkImageMemoryBarrier2 img_barrier = vku::InitStructHelper();
     img_barrier.image = image.handle();
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -848,9 +848,9 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    VkImageMemoryBarrier2KHR img_barriers[2] = {img_barrier, img_barrier};
+    VkImageMemoryBarrier2 img_barriers[2] = {img_barrier, img_barrier};
 
-    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 2;
     dep_info.pImageMemoryBarriers = img_barriers;
     dep_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
@@ -1402,7 +1402,7 @@ TEST_F(NegativeSyncObject, ImageOwnershipTransferQueueMismatch) {
     VkImageMemoryBarrier2 acquire_barrier = vku::InitStructHelper();
     acquire_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
     acquire_barrier.srcAccessMask = VK_ACCESS_2_NONE;
-    acquire_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
+    acquire_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     acquire_barrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
     acquire_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     acquire_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -2362,7 +2362,7 @@ TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
 
-    VkDependencyInfoKHR dep_info = vku::InitStructHelper();
+    VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &img_barrier;
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-synchronization2-03848");
@@ -2469,7 +2469,7 @@ TEST_F(NegativeSyncObject, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
 
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
 
-    VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
+    VkSubmitInfo2 submit_info = vku::InitStructHelper();
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit2-synchronization2-03866");
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
@@ -2541,7 +2541,7 @@ TEST_F(NegativeSyncObject, SemaphoreTypeCreateInfoCore) {
 
     VkSemaphore semaphore;
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     semaphore_type_create_info.initialValue = 1;
 
@@ -2571,7 +2571,7 @@ TEST_F(NegativeSyncObject, SemaphoreTypeCreateInfoExtension) {
 
     VkSemaphore semaphore;
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     semaphore_type_create_info.initialValue = 1;
 
@@ -2600,8 +2600,8 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     VkPhysicalDeviceTimelineSemaphorePropertiesKHR timelineproperties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(timelineproperties);
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
-    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     semaphore_type_create_info.initialValue = 5;
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
@@ -2620,7 +2620,7 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
     semaphore_signal_info.value = 10;
     vk::SignalSemaphoreKHR(device(), &semaphore_signal_info);
 
-    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
+    VkTimelineSemaphoreSubmitInfo timeline_semaphore_submit_info = vku::InitStructHelper();
     uint64_t signalValue = 20;
     timeline_semaphore_submit_info.waitSemaphoreValueCount = 0;
     timeline_semaphore_submit_info.pWaitSemaphoreValues = nullptr;
@@ -2677,14 +2677,14 @@ TEST_F(NegativeSyncObject, MixedTimelineAndBinarySemaphores) {
 }
 
 TEST_F(NegativeSyncObject, QueueSubmitNoTimelineSemaphoreInfo) {
-    TEST_DESCRIPTION("Submit a queue with a timeline semaphore but not a VkTimelineSemaphoreSubmitInfoKHR.");
+    TEST_DESCRIPTION("Submit a queue with a timeline semaphore but not a VkTimelineSemaphoreSubmitInfo.");
 
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
-    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
 
@@ -2703,7 +2703,7 @@ TEST_F(NegativeSyncObject, QueueSubmitNoTimelineSemaphoreInfo) {
     vk::QueueSubmit(m_default_queue->handle(), 1, submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
+    VkTimelineSemaphoreSubmitInfo timeline_semaphore_submit_info = vku::InitStructHelper();
     uint64_t signalValue = 1;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
     timeline_semaphore_submit_info.pSignalSemaphoreValues = &signalValue;
@@ -2732,14 +2732,14 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
     VkPhysicalDeviceTimelineSemaphorePropertiesKHR timelineproperties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(timelineproperties);
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
-    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
 
     vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
-    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
+    VkTimelineSemaphoreSubmitInfo timeline_semaphore_submit_info = vku::InitStructHelper();
     uint64_t signalValue = 1;
     uint64_t waitValue = 3;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
@@ -2797,7 +2797,7 @@ TEST_F(NegativeSyncObject, QueueSubmitTimelineSemaphoreValue) {
         uint64_t signal_values[2] = {signalValue, signalValue};
         VkSemaphore signal_sems[2] = {semaphore.handle(), semaphore.handle()};
 
-        VkTimelineSemaphoreSubmitInfoKHR tl_info_2 = vku::InitStructHelper();
+        VkTimelineSemaphoreSubmitInfo tl_info_2 = vku::InitStructHelper();
         tl_info_2.signalSemaphoreValueCount = 2;
         tl_info_2.pSignalSemaphoreValues = signal_values;
 
@@ -2852,14 +2852,14 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
     VkPhysicalDeviceTimelineSemaphorePropertiesKHR timelineproperties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(timelineproperties);
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
-    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
 
     vkt::Semaphore semaphore(*m_device, semaphore_create_info);
 
-    VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
+    VkTimelineSemaphoreSubmitInfo timeline_semaphore_submit_info = vku::InitStructHelper();
     uint64_t signalValue = 1;
     uint64_t waitValue = 3;
     timeline_semaphore_submit_info.signalSemaphoreValueCount = 1;
@@ -2926,7 +2926,7 @@ TEST_F(NegativeSyncObject, QueueBindSparseTimelineSemaphoreValue) {
         uint64_t signal_values[2] = {signalValue, signalValue};
         VkSemaphore signal_sems[2] = {semaphore.handle(), semaphore.handle()};
 
-        VkTimelineSemaphoreSubmitInfoKHR tl_info_2 = vku::InitStructHelper();
+        VkTimelineSemaphoreSubmitInfo tl_info_2 = vku::InitStructHelper();
         tl_info_2.signalSemaphoreValueCount = 2;
         tl_info_2.pSignalSemaphoreValues = signal_values;
 
@@ -3181,8 +3181,8 @@ TEST_F(NegativeSyncObject, WaitSemaphoresType) {
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
-    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
 
@@ -3270,7 +3270,7 @@ TEST_F(NegativeSyncObject, SignalSemaphoreValue) {
         uint64_t signalValue = 1;
         uint64_t offendingValue = timelineproperties.maxTimelineSemaphoreValueDifference + 1;
 
-        VkTimelineSemaphoreSubmitInfoKHR timeline_semaphore_submit_info = vku::InitStructHelper();
+        VkTimelineSemaphoreSubmitInfo timeline_semaphore_submit_info = vku::InitStructHelper();
         timeline_semaphore_submit_info.waitSemaphoreValueCount = 1;
         timeline_semaphore_submit_info.pWaitSemaphoreValues = &signalValue;
         // These two assignments are not required by the spec, but would segfault on older versions of validation layers
@@ -3303,8 +3303,8 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
     VkPhysicalDeviceTimelineSemaphorePropertiesKHR timelineproperties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(timelineproperties);
 
-    VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = vku::InitStructHelper();
-    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+    VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
+    semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     semaphore_type_create_info.initialValue = 5;
 
     VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper(&semaphore_type_create_info);
@@ -3318,14 +3318,14 @@ TEST_F(NegativeSyncObject, Sync2SignalSemaphoreValue) {
     semaphore_signal_info.value = 10;
     ASSERT_EQ(VK_SUCCESS, vk::SignalSemaphore(device(), &semaphore_signal_info));
 
-    VkSemaphoreSubmitInfoKHR signal_info = vku::InitStructHelper();
+    VkSemaphoreSubmitInfo signal_info = vku::InitStructHelper();
     signal_info.semaphore = semaphore[0].handle();
 
-    VkSemaphoreSubmitInfoKHR wait_info = vku::InitStructHelper();
+    VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
     wait_info.semaphore = semaphore[0].handle();
     wait_info.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-    VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
+    VkSubmitInfo2 submit_info = vku::InitStructHelper();
     submit_info.signalSemaphoreInfoCount = 1;
     submit_info.pSignalSemaphoreInfos = &signal_info;
     submit_info.waitSemaphoreInfoCount = 1;
@@ -3668,7 +3668,7 @@ TEST_F(NegativeSyncObject, SetEvent2DependencyFlags) {
 
     m_command_buffer.Begin();
 
-    VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
     dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
     vkt::Event event(*m_device);
@@ -3690,7 +3690,7 @@ TEST_F(NegativeSyncObject, SetEvent2HostStage) {
     barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
-    VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
     dependency_info.memoryBarrierCount = 1;
     dependency_info.pMemoryBarriers = &barrier;
 

@@ -218,7 +218,7 @@ bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkImageCreat
 
 bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     constexpr auto export_import_flags =
-        VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR;
+        VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT;
 
     VkPhysicalDeviceExternalSemaphoreInfo info = vku::InitStructHelper();
     info.handleType = handle_type;

@@ -120,7 +120,7 @@ TEST_F(NegativePipelineAdvancedBlend, MaxBlendAttachmentDynamicRendering) {
     }
 
     VkFormat color_formats[3] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM};
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 3;
     pipeline_rendering_info.pColorAttachmentFormats = color_formats;
 

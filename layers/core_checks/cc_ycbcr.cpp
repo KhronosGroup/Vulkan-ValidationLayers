@@ -73,14 +73,14 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
 
     // Check all VUID that are based off of VkFormatFeatureFlags
     // These can't be in StatelessValidation due to needing possible External AHB state for feature support
-    if (((format_features & VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT_KHR) == 0) &&
-        ((format_features & VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT_KHR) == 0)) {
+    if (((format_features & VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT) == 0) &&
+        ((format_features & VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT) == 0)) {
         skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01650", device, create_info_loc.dot(Field::format),
                          "(%s) does not support either VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT or "
                          "VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT",
                          string_VkFormat(conversion_format));
     }
-    if ((format_features & VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT_KHR) == 0) {
+    if ((format_features & VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT) == 0) {
         if (vkuFormatIsXChromaSubsampled(conversion_format) && pCreateInfo->xChromaOffset == VK_CHROMA_LOCATION_COSITED_EVEN) {
             skip |=
                 LogError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651", device, create_info_loc.dot(Field::format),
@@ -96,7 +96,7 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
                          string_VkFormat(conversion_format));
         }
     }
-    if ((format_features & VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT_KHR) == 0) {
+    if ((format_features & VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT) == 0) {
         if (vkuFormatIsXChromaSubsampled(conversion_format) && pCreateInfo->xChromaOffset == VK_CHROMA_LOCATION_MIDPOINT) {
             skip |=
                 LogError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652", device, create_info_loc.dot(Field::format),
@@ -112,7 +112,7 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
                          string_VkFormat(conversion_format));
         }
     }
-    if (((format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT_KHR) ==
+    if (((format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT) ==
          0) &&
         (pCreateInfo->forceExplicitReconstruction == VK_TRUE)) {
         skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656", device,
@@ -122,7 +122,7 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
                          "forceExplicitReconstruction must be VK_FALSE",
                          string_VkFormat(conversion_format));
     }
-    if (((format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT_KHR) == 0) &&
+    if (((format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT) == 0) &&
         (pCreateInfo->chromaFilter == VK_FILTER_LINEAR)) {
         skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657", device, create_info_loc.dot(Field::format),
                          "(%s) does not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT so "

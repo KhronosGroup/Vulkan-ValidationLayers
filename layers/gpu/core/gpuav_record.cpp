@@ -207,7 +207,7 @@ void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffe
 }
 
 void Validator::PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
-                                                     const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                     const VkBindDescriptorSetsInfo *pBindDescriptorSetsInfo,
                                                      const RecordObject &record_obj) {
     BaseClass::PostCallRecordCmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo, record_obj);
 
@@ -257,7 +257,7 @@ void Validator::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuff
 }
 
 void Validator::PreCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
-                                                   const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                   const VkPushDescriptorSetInfo *pPushDescriptorSetInfo,
                                                    const RecordObject &record_obj) {
     BaseClass::PreCallRecordCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, record_obj);
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);

@@ -326,7 +326,7 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    VkFramebufferAttachmentImageInfoKHR fb_attachment_image_info = vku::InitStructHelper();
+    VkFramebufferAttachmentImageInfo fb_attachment_image_info = vku::InitStructHelper();
     fb_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     fb_attachment_image_info.width = width;
     fb_attachment_image_info.height = height;
@@ -336,12 +336,12 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     fb_attachment_image_info.height = 1;
     fb_attachment_image_info.width = width >> base_mip;
 
-    VkFramebufferAttachmentsCreateInfoKHR fb_attachments_ci = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo fb_attachments_ci = vku::InitStructHelper();
     fb_attachments_ci.attachmentImageInfoCount = 1;
     fb_attachments_ci.pAttachmentImageInfos = &fb_attachment_image_info;
 
     VkFramebufferCreateInfo fb_ci = vku::InitStructHelper(&fb_attachments_ci);
-    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     fb_ci.width = width >> base_mip;
     fb_ci.height = height;
     fb_ci.layers = 1;
@@ -365,7 +365,7 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     vkt::ImageView image_view_obj = image.CreateView(VK_IMAGE_VIEW_TYPE_1D_ARRAY, base_mip, 1, 0, 1);
     VkImageView image_view = image_view_obj.handle();
 
-    VkRenderPassAttachmentBeginInfoKHR rp_attachment_begin_info = vku::InitStructHelper();
+    VkRenderPassAttachmentBeginInfo rp_attachment_begin_info = vku::InitStructHelper();
     rp_attachment_begin_info.attachmentCount = 1;
     rp_attachment_begin_info.pAttachments = &image_view;
     VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper(&rp_attachment_begin_info);
@@ -609,8 +609,7 @@ TEST_F(PositiveRenderPass, BeginWithViewMasks) {
 
     const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
     // Create push descriptor set layout
-    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding},
-                                                  VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
     // Use helper to create graphics pipeline
     CreatePipelineHelper helper(*this);
@@ -1308,7 +1307,7 @@ TEST_F(PositiveRenderPass, BeginRenderPassWithRenderPassStriped) {
     VkCommandBufferSubmitInfo cb_submit_info = vku::InitStructHelper(&rp_stripe_submit_info);
     cb_submit_info.commandBuffer = cmd_buffer.handle();
 
-    VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
+    VkSubmitInfo2 submit_info = vku::InitStructHelper();
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_submit_info;
     vk::QueueSubmit2KHR(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);

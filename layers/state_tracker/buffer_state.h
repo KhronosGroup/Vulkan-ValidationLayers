@@ -35,7 +35,7 @@ class Buffer : public Bindable {
 
     const VkMemoryRequirements requirements;
     VkDeviceAddress deviceAddress = 0;
-    // VkBufferUsageFlags2CreateInfoKHR can be used instead over the VkBufferCreateInfo::usage
+    // VkBufferUsageFlags2CreateInfo can be used instead over the VkBufferCreateInfo::usage
     const VkBufferUsageFlags2KHR usage;
 
     unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;

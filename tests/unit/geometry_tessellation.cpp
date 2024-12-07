@@ -1612,7 +1612,7 @@ TEST_F(NegativeGeometryTessellation, DrawDynamicPrimitiveTopology) {
 
     CreatePipelineHelper pipe(*this);
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
 

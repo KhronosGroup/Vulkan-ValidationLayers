@@ -327,10 +327,10 @@ TEST_F(PositiveGraphicsLibrary, VertexAttributeDivisorInstanceRateZero) {
 
     InitRenderTarget();
 
-    VkVertexInputBindingDivisorDescriptionEXT divisor_description = {};
+    VkVertexInputBindingDivisorDescription divisor_description = {};
     divisor_description.binding = 0;
     divisor_description.divisor = 0;
-    VkPipelineVertexInputDivisorStateCreateInfoEXT divisor_state_create_info = vku::InitStructHelper();
+    VkPipelineVertexInputDivisorStateCreateInfo divisor_state_create_info = vku::InitStructHelper();
     divisor_state_create_info.vertexBindingDivisorCount = 1;
     divisor_state_create_info.pVertexBindingDivisors = &divisor_description;
     VkVertexInputBindingDescription vertex_input_binding_description = {divisor_description.binding, 12,
@@ -1024,7 +1024,7 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     depth_attachment.imageView = depth_stencil_view.handle();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.layerCount = 1;
@@ -1121,7 +1121,7 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
 
         pr_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pr_lib.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;  // This should get ignored due to its state being set as dynamic
-        pr_lib.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT);
+        pr_lib.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
         pr_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
         pr_lib.CreateGraphicsPipeline(false);
     }

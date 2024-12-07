@@ -1160,8 +1160,8 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     InitRenderTarget();
 
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
-        {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT}};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flags_create_info = vku::InitStructHelper();
+        {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT}};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
     flags_create_info.bindingCount = (uint32_t)flags.size();
     flags_create_info.pBindingFlags = flags.data();
 
@@ -1170,8 +1170,8 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
                                                   {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                               },
-                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
-                                              VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
+                                              VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
@@ -1827,7 +1827,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
                            nullptr, 0, nullptr, 1, &img_barrier);
 
     {
-        VkImageMemoryBarrier2KHR img_barrier2 = vku::InitStructHelper();
+        VkImageMemoryBarrier2 img_barrier2 = vku::InitStructHelper();
         img_barrier2.srcAccessMask = 0;
         img_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         img_barrier2.image = image.handle();
@@ -1837,7 +1837,7 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
         img_barrier2.subresourceRange.layerCount = 1;
         img_barrier2.subresourceRange.levelCount = 1;
 
-        VkDependencyInfoKHR dependency_info = vku::InitStructHelper();
+        VkDependencyInfo dependency_info = vku::InitStructHelper();
         dependency_info.imageMemoryBarrierCount = 1;
         dependency_info.pImageMemoryBarriers = &img_barrier2;
 
@@ -2115,14 +2115,14 @@ TEST_F(VkBestPracticesLayerTest, IgnoreResolveImageView) {
     vkt::Image resolve_image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView resolve_image_view = resolve_image.CreateView();
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     color_attachment.resolveImageView = resolve_image_view;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.layerCount = 1;

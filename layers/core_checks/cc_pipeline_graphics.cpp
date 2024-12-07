@@ -160,7 +160,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
         skip |= ValidatePipelineAttachmentSampleCountInfo(pipeline, *attachment_sample_count_info, create_info_loc);
     }
 
-    if (const auto *pipeline_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(pipeline_pnext)) {
+    if (const auto *pipeline_robustness_info = vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pipeline_pnext)) {
         skip |= ValidatePipelineRobustnessCreateInfo(pipeline, *pipeline_robustness_info, create_info_loc);
     }
 
@@ -357,7 +357,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
             }
         }
 
-        if ((lib->uses_shader_module_id) && !(pipeline_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)) {
+        if ((lib->uses_shader_module_id) && !(pipeline_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
             const LogObjectList objlist(device);
             skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855", objlist, library_loc,
                              "(%s) was created with %s but VkPipelineShaderStageModuleIdentifierCreateInfoEXT::identifierSize was "
@@ -366,14 +366,14 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
                              string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str());
         }
         struct check_struct {
-            VkPipelineCreateFlagBits2KHR bit;
+            VkPipelineCreateFlagBits2 bit;
             std::string first_vuid;
             std::string second_vuid;
         };
         static const std::array<check_struct, 2> check_infos = {
-            {{VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07404",
+            {{VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07404",
               "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405"},
-             {VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406",
+             {VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406",
               "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407"}}};
         for (const auto &check_info : check_infos) {
             if ((pipeline_flags & check_info.bit)) {
@@ -1182,7 +1182,7 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeli
         VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(attachment_desc.format);
 
         if (!pipeline.RasterizationDisabled() && pipeline.AttachmentStates()[i].blendEnable &&
-            !(format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR)) {
+            !(format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06041", device,
                              color_loc.dot(Field::pAttachments, i).dot(Field::blendEnable),
                              "is VK_TRUE but format %s of the corresponding attachment description (subpass %" PRIu32
@@ -3051,10 +3051,9 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
             }
         }
         if (pipeline.fragment_shader_state && pipeline.fragment_output_state) {
-            const auto input_attachment_index =
-                vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(pipeline_ci.pNext);
+            const auto input_attachment_index = vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(pipeline_ci.pNext);
             if (input_attachment_index) {
-                skip |= ValidateRenderingInputAttachmentIndicesKHR(
+                skip |= ValidateRenderingInputAttachmentIndices(
                     *input_attachment_index, device, create_info_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfo));
                 if (input_attachment_index->colorAttachmentCount != rendering_struct->colorAttachmentCount) {
                     const Location loc =
@@ -3066,9 +3065,9 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
                 }
             }
 
-            const auto attachment_location = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(pipeline_ci.pNext);
+            const auto attachment_location = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(pipeline_ci.pNext);
             if (attachment_location) {
-                skip |= ValidateRenderingAttachmentLocationsKHR(*attachment_location, device,
+                skip |= ValidateRenderingAttachmentLocations(*attachment_location, device,
                                                                 create_info_loc.pNext(Struct::VkRenderingAttachmentLocationInfo));
                 if (attachment_location->colorAttachmentCount != rendering_struct->colorAttachmentCount) {
                     const Location loc =
@@ -3361,7 +3360,8 @@ bool CoreChecks::ValidateDrawPipelineRenderpass(const LastBound &last_bound_stat
             if (!all_keep_op && write_mask_enabled) {
                 const bool is_stencil_layout_read_only = [&]() {
                     // Look for potential dedicated stencil layout
-                    if (const auto *stencil_layout = vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayoutKHR>(ds_attachment->pNext);
+                    if (const auto *stencil_layout =
+                            vku::FindStructInPNextChain<VkAttachmentReferenceStencilLayout>(ds_attachment->pNext);
                         stencil_layout)
                         return IsImageLayoutStencilReadOnly(stencil_layout->stencilLayout);
                     // Else depth and stencil share same layout
@@ -3917,7 +3917,7 @@ bool CoreChecks::ValidatePipelineVertexDivisors(const vvl::Pipeline &pipeline, c
     if (!input_state) {
         return skip;
     }
-    const auto divisor_state_info = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfoKHR>(input_state->pNext);
+    const auto divisor_state_info = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(input_state->pNext);
     if (!divisor_state_info) {
         return skip;
     }
@@ -4028,7 +4028,7 @@ bool CoreChecks::ValidateGraphicsPipelineDerivatives(PipelineStates &pipeline_st
     // If create derivative bit is set, check that we've specified a base
     // pipeline correctly, and that the base pipeline was created to allow
     // derivatives.
-    if (pipeline.create_flags & VK_PIPELINE_CREATE_2_DERIVATIVE_BIT_KHR) {
+    if (pipeline.create_flags & VK_PIPELINE_CREATE_2_DERIVATIVE_BIT) {
         std::shared_ptr<const vvl::Pipeline> base_pipeline;
         const auto &pipeline_ci = pipeline.GraphicsCreateInfo();
         const VkPipeline base_handle = pipeline_ci.basePipelineHandle;
@@ -4046,7 +4046,7 @@ bool CoreChecks::ValidateGraphicsPipelineDerivatives(PipelineStates &pipeline_st
             base_pipeline = Get<vvl::Pipeline>(base_handle);
         }
 
-        if (base_pipeline && !(base_pipeline->create_flags & VK_PIPELINE_CREATE_2_ALLOW_DERIVATIVES_BIT_KHR)) {
+        if (base_pipeline && !(base_pipeline->create_flags & VK_PIPELINE_CREATE_2_ALLOW_DERIVATIVES_BIT)) {
             skip |= LogError("VUID-vkCreateGraphicsPipelines-flags-00721", base_pipeline->Handle(), loc,
                              "base pipeline does not allow derivatives.");
         }
@@ -4285,7 +4285,7 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
             const auto *imageview_state = cb_state.GetActiveAttachmentImageViewState(attachment);
             const auto *color_blend_state = pipeline.ColorBlendState();
             if (imageview_state && color_blend_state && (attachment < color_blend_state->attachmentCount)) {
-                if ((imageview_state->format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR) == 0 &&
+                if ((imageview_state->format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT) == 0 &&
                     color_blend_state->pAttachments[i].blendEnable != VK_FALSE) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), cb_state.activeRenderPass->Handle());
                     skip |= LogError(vuid.blend_enable_04727, objlist, vuid.loc(),
@@ -4319,48 +4319,47 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
         const bool dynamic_line_stipple_enable = pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
         if (dynamic_line_stipple_enable || dynamic_line_raster_mode) {
             const auto raster_line_state =
-                vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfoKHR>(pipeline.RasterizationStatePNext());
+                vku::FindStructInPNextChain<VkPipelineRasterizationLineStateCreateInfo>(pipeline.RasterizationStatePNext());
 
-            const VkLineRasterizationModeKHR line_rasterization_mode = (dynamic_line_raster_mode)
-                                                                           ? cb_state.dynamic_state_value.line_rasterization_mode
-                                                                           : raster_line_state->lineRasterizationMode;
+            const VkLineRasterizationMode line_rasterization_mode = (dynamic_line_raster_mode)
+                                                                        ? cb_state.dynamic_state_value.line_rasterization_mode
+                                                                        : raster_line_state->lineRasterizationMode;
             const bool stippled_line_enable = (dynamic_line_stipple_enable) ? cb_state.dynamic_state_value.stippled_line_enable
                                                                             : raster_line_state->stippledLineEnable;
 
             if (stippled_line_enable) {
-                if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR &&
+                if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR &&
                     (!enabled_features.stippledRectangularLines)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), cb_state.activeRenderPass->Handle());
                     skip |= LogError(vuid.stippled_rectangular_lines_07495, objlist, vuid.loc(),
-                                     "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_KHR (set %s) with "
+                                     "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR (set %s) with "
                                      "stippledLineEnable (set %s) but the stippledRectangularLines feature is not enabled.",
                                      dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                      dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
                 }
-                if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR &&
-                    (!enabled_features.stippledBresenhamLines)) {
+                if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM && (!enabled_features.stippledBresenhamLines)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), cb_state.activeRenderPass->Handle());
                     skip |= LogError(vuid.stippled_bresenham_lines_07496, objlist, vuid.loc(),
-                                     "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_KHR (set %s) with "
+                                     "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM (set %s) with "
                                      "stippledLineEnable (set %s) but the stippledBresenhamLines feature is not enabled.",
                                      dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                      dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
                 }
-                if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR &&
+                if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH &&
                     (!enabled_features.stippledSmoothLines)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), cb_state.activeRenderPass->Handle());
                     skip |= LogError(vuid.stippled_smooth_lines_07497, objlist, vuid.loc(),
-                                     "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_KHR (set %s) with "
+                                     "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH (set %s) with "
                                      "stippledLineEnable (set %s) but the stippledSmoothLines feature is not enabled.",
                                      dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                      dynamic_line_stipple_enable ? "dynamically" : "in pipeline");
                 }
-                if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR &&
+                if (line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_DEFAULT &&
                     (!enabled_features.stippledRectangularLines || !phys_dev_props.limits.strictLines)) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), cb_state.activeRenderPass->Handle());
                     skip |=
                         LogError(vuid.stippled_default_strict_07498, objlist, vuid.loc(),
-                                 "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_KHR (set %s) with "
+                                 "lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT (set %s) with "
                                  "stippledLineEnable (set %s), the stippledRectangularLines features is %s and strictLines is %s.",
                                  dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                  dynamic_line_stipple_enable ? "dynamically" : "in pipeline",

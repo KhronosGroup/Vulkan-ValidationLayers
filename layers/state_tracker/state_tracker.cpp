@@ -1922,10 +1922,10 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
         for (uint32_t i = 0; i < perf->counterIndexCount; i++) {
             const auto &counter = counters.counters[perf->pCounterIndices[i]];
             switch (counter.scope) {
-                case VK_QUERY_SCOPE_COMMAND_BUFFER_KHR:
+                case VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_BUFFER_KHR:
                     has_cb = true;
                     break;
-                case VK_QUERY_SCOPE_RENDER_PASS_KHR:
+                case VK_PERFORMANCE_COUNTER_SCOPE_RENDER_PASS_KHR:
                     has_rb = true;
                     break;
                 default:
@@ -2875,7 +2875,7 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
 }
 
 void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
-                                                                 const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo,
+                                                                 const VkBindDescriptorSetsInfo *pBindDescriptorSetsInfo,
                                                                  const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto pipeline_layout = Get<vvl::PipelineLayout>(pBindDescriptorSetsInfo->layout);
@@ -2933,7 +2933,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffe
 }
 
 void ValidationStateTracker::PreCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
-                                                                const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
+                                                                const VkPushDescriptorSetInfo *pPushDescriptorSetInfo,
                                                                 const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto pipeline_layout = Get<vvl::PipelineLayout>(pPushDescriptorSetInfo->layout);
@@ -3048,7 +3048,7 @@ void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer comm
 }
 
 void ValidationStateTracker::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer,
-                                                             const VkPushConstantsInfoKHR *pPushConstantsInfo,
+                                                             const VkPushConstantsInfo *pPushConstantsInfo,
                                                              const RecordObject &record_obj) {
     PostCallRecordCmdPushConstants(commandBuffer, pPushConstantsInfo->layout, pPushConstantsInfo->stageFlags,
                                    pPushConstantsInfo->offset, pPushConstantsInfo->size, pPushConstantsInfo->pValues, record_obj);
@@ -3625,7 +3625,7 @@ void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceM
     }
 }
 
-void ValidationStateTracker::PreCallRecordUnmapMemory2(VkDevice device, const VkMemoryUnmapInfoKHR *pMemoryUnmapInfo,
+void ValidationStateTracker::PreCallRecordUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo *pMemoryUnmapInfo,
                                                        const RecordObject &record_obj) {
     if (auto mem_info = Get<vvl::DeviceMemory>(pMemoryUnmapInfo->memory)) {
         mem_info->mapped_range = vvl::MemRange();
@@ -4516,7 +4516,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(Vk
 }
 
 void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplate2(
-    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo *pPushDescriptorSetWithTemplateInfo,
     const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto template_state = Get<vvl::DescriptorUpdateTemplate>(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
@@ -5389,7 +5389,7 @@ void ValidationStateTracker::PostCallRecordCmdSetFragmentShadingRateKHR(VkComman
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetRenderingAttachmentLocations(
-    VkCommandBuffer commandBuffer, const VkRenderingAttachmentLocationInfoKHR *pLocationInfo, const RecordObject &record_obj) {
+    VkCommandBuffer commandBuffer, const VkRenderingAttachmentLocationInfo *pLocationInfo, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     cb_state->rendering_attachments.set_color_locations = true;
@@ -5405,7 +5405,7 @@ void ValidationStateTracker::PostCallRecordCmdSetRenderingAttachmentLocationsKHR
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetRenderingInputAttachmentIndices(
-    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfoKHR *pLocationInfo, const RecordObject &record_obj) {
+    VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo *pLocationInfo, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     cb_state->rendering_attachments.set_color_indexes = true;

@@ -158,7 +158,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         const VkFormat attachment_format = p_inherited_rendering_info->pColorAttachmentFormats[i];
                         if (attachment_format != VK_FORMAT_UNDEFINED) {
                             const VkFormatFeatureFlags2 potential_format_features = GetPotentialFormatFeatures(attachment_format);
-                            if ((potential_format_features & (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR |
+                            if ((potential_format_features & (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
                                                               VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
                                 skip |= LogError("VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06492",
                                                  commandBuffer,
@@ -171,7 +171,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     }
                 }
 
-                const VkFormatFeatureFlags2 valid_depth_stencil_format = VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR;
+                const VkFormatFeatureFlags2 valid_depth_stencil_format = VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT;
                 const VkFormat depth_format = p_inherited_rendering_info->depthAttachmentFormat;
                 if (depth_format != VK_FORMAT_UNDEFINED) {
                     const VkFormatFeatureFlags2 potential_format_features = GetPotentialFormatFeatures(depth_format);
@@ -859,14 +859,14 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         if (cb_state.hasRenderPassInstance && cb_state.activeRenderPass->UsesDynamicRendering() &&
             !((cb_state.activeRenderPass->use_dynamic_rendering &&
                (cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.flags &
-                VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) ||
+                VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT)) ||
               (cb_state.activeRenderPass->use_dynamic_rendering_inherited &&
                (cb_state.activeRenderPass->inheritance_rendering_info.flags &
-                VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)))) {
+                VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT)))) {
             const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
             skip |= LogError("VUID-vkCmdExecuteCommands-flags-06024", objlist, error_obj.location,
                              "VkRenderingInfo::flags must include "
-                             "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR when calling vkCmdExecuteCommands() within a "
+                             "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT when calling vkCmdExecuteCommands() within a "
                              "render pass instance begun with vkCmdBeginRendering().");
         }
     }
@@ -887,13 +887,13 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             if (cb_state.activeRenderPass) {
                 if (cb_state.hasRenderPassInstance && cb_state.activeRenderPass->UsesDynamicRendering() &&
                     sub_cb_state.activeRenderPass->UsesDynamicRendering()) {
-                    const auto *location_info = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfoKHR>(
+                    const auto *location_info = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(
                         sub_cb_state.activeRenderPass->inheritance_rendering_info.pNext);
 
                     if (location_info) {
                         const std::string vuid_090504 = "VUID-vkCmdExecuteCommands-pCommandBuffers-09504";
                         const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                        skip |= ValidateRenderingAttachmentLocationsKHR(*location_info, objlist, cb_loc.dot(Field::pNext));
+                        skip |= ValidateRenderingAttachmentLocations(*location_info, objlist, cb_loc.dot(Field::pNext));
 
                         if (location_info->colorAttachmentCount != cb_state.rendering_attachments.color_indexes.size()) {
                             skip |= LogError(vuid_090504, objlist,
@@ -922,13 +922,13 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                         }
                     }
 
-                    const auto *index_info = vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfoKHR>(
+                    const auto *index_info = vku::FindStructInPNextChain<VkRenderingInputAttachmentIndexInfo>(
                         sub_cb_state.activeRenderPass->inheritance_rendering_info.pNext);
 
                     if (index_info) {
                         const std::string vuid_090505 = "VUID-vkCmdExecuteCommands-pCommandBuffers-09505";
                         const LogObjectList objlist(commandBuffer, pCommandBuffers[i]);
-                        skip |= ValidateRenderingInputAttachmentIndicesKHR(*index_info, objlist, cb_loc.dot(Field::pNext));
+                        skip |= ValidateRenderingInputAttachmentIndices(*index_info, objlist, cb_loc.dot(Field::pNext));
 
                         if (index_info->colorAttachmentCount != cb_state.rendering_attachments.color_indexes.size()) {
                             skip |= LogError(vuid_090505, objlist,
@@ -1057,17 +1057,17 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                         const auto rendering_info = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
                         const auto inheritance_rendering_info = sub_cb_state.activeRenderPass->inheritance_rendering_info;
                         if ((inheritance_rendering_info.flags &
-                             ~(VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR | VK_RENDERING_CONTENTS_INLINE_BIT_EXT)) !=
+                             ~(VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT | VK_RENDERING_CONTENTS_INLINE_BIT_KHR)) !=
                             (rendering_info.flags &
-                             ~(VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR | VK_RENDERING_CONTENTS_INLINE_BIT_EXT))) {
+                             ~(VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT | VK_RENDERING_CONTENTS_INLINE_BIT_KHR))) {
                             const LogObjectList objlist(commandBuffer, pCommandBuffers[i], cb_state.activeRenderPass->Handle());
                             skip |=
                                 LogError("VUID-vkCmdExecuteCommands-flags-06026", objlist, cb_loc,
                                          "(%s) is executed within a dynamic renderpass instance scope begun "
                                          "by vkCmdBeginRendering(), but VkCommandBufferInheritanceRenderingInfo::flags (%s) does "
                                          "not match VkRenderingInfo::flags (%s) (excluding "
-                                         "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR or "
-                                         "VK_RENDERING_CONTENTS_INLINE_BIT_EXT).",
+                                         "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT or "
+                                         "VK_RENDERING_CONTENTS_INLINE_BIT_KHR).",
                                          FormatHandle(pCommandBuffers[i]).c_str(),
                                          string_VkRenderingFlags(inheritance_rendering_info.flags).c_str(),
                                          string_VkRenderingFlags(rendering_info.flags).c_str());
@@ -1222,7 +1222,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         "VkAttachmentSampleCountInfo(AMD/NV)::pColorAttachmentSamples at index (%" PRIu32
                                         ") "
                                         "does "
-                                        "not match the sample count of the imageView in VkRenderingInfoKHR::pColorAttachments.",
+                                        "not match the sample count of the imageView in VkRenderingInfo::pColorAttachments.",
                                         FormatHandle(pCommandBuffers[i]).c_str(), index);
                                 }
                             }
@@ -1241,7 +1241,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         "scope begun "
                                         "by vkCmdBeginRenderingKHR(), but "
                                         "VkAttachmentSampleCountInfo(AMD/NV)::depthStencilAttachmentSamples does "
-                                        "not match the sample count of the imageView in VkRenderingInfoKHR::pDepthAttachment.",
+                                        "not match the sample count of the imageView in VkRenderingInfo::pDepthAttachment.",
                                         FormatHandle(pCommandBuffers[i]).c_str());
                                 }
                             }
@@ -1260,7 +1260,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         "scope begun "
                                         "by vkCmdBeginRenderingKHR(), but "
                                         "VkAttachmentSampleCountInfo(AMD/NV)::depthStencilAttachmentSamples does "
-                                        "not match the sample count of the imageView in VkRenderingInfoKHR::pStencilAttachment.",
+                                        "not match the sample count of the imageView in VkRenderingInfo::pStencilAttachment.",
                                         FormatHandle(pCommandBuffers[i]).c_str());
                                 }
                             }
@@ -1281,7 +1281,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                         "scope begun "
                                         "by vkCmdBeginRenderingKHR(), but the sample count of the image view at index (%" PRIu32
                                         ") of "
-                                        "VkRenderingInfoKHR::pColorAttachments does not match "
+                                        "VkRenderingInfo::pColorAttachments does not match "
                                         "VkCommandBufferInheritanceRenderingInfo::rasterizationSamples.",
                                         FormatHandle(pCommandBuffers[i]).c_str(), index);
                                 }
@@ -1299,7 +1299,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                      "(%s) is executed within a dynamic renderpass "
                                                      "instance scope begun "
                                                      "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
-                                                     "VkRenderingInfoKHR::pDepthAttachment does not match "
+                                                     "VkRenderingInfo::pDepthAttachment does not match "
                                                      "VkCommandBufferInheritanceRenderingInfo::rasterizationSamples.",
                                                      FormatHandle(pCommandBuffers[i]).c_str());
                                 }
@@ -1317,7 +1317,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                      "(%s) is executed within a dynamic renderpass "
                                                      "instance scope begun "
                                                      "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
-                                                     "VkRenderingInfoKHR::pStencilAttachment does not match "
+                                                     "VkRenderingInfo::pStencilAttachment does not match "
                                                      "VkCommandBufferInheritanceRenderingInfo::rasterizationSamples.",
                                                      FormatHandle(pCommandBuffers[i]).c_str());
                                 }

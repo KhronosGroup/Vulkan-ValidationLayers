@@ -46,7 +46,7 @@ bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags2KHR fla
     bool skip = false;
     if (enabled_features.pipelineCreationCacheControl == VK_FALSE) {
         const VkPipelineCreateFlags invalid_flags =
-            VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR | VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT_KHR;
+            VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT | VK_PIPELINE_CREATE_2_EARLY_RETURN_ON_FAILURE_BIT;
         if ((flags & invalid_flags) != 0) {
             skip |= LogError(vuid, device, loc, "is %s but pipelineCreationCacheControl feature was not enabled.",
                              string_VkPipelineCreateFlags2(flags).c_str());
@@ -71,14 +71,14 @@ bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags2KHR 
     bool skip = false;
     if (enabled_features.pipelineProtectedAccess == VK_FALSE) {
         const VkPipelineCreateFlags invalid_flags =
-            VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT | VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT;
+            VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT | VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT;
         if ((flags & invalid_flags) != 0) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pipelineProtectedAccess-07368", device, loc,
                              "is %s, but pipelineProtectedAccess feature was not enabled.",
                              string_VkPipelineCreateFlags2(flags).c_str());
         }
     }
-    if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT_EXT) && (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT_EXT)) {
+    if ((flags & VK_PIPELINE_CREATE_2_NO_PROTECTED_ACCESS_BIT) && (flags & VK_PIPELINE_CREATE_2_PROTECTED_ACCESS_ONLY_BIT)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-07369", device, loc,
                          "is %s (contains both NO_PROTECTED_ACCESS_BIT and PROTECTED_ACCESS_ONLY_BIT).",
                          string_VkPipelineCreateFlags2(flags).c_str());
@@ -88,30 +88,30 @@ bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags2KHR 
 
 // This can be chained in the vkCreate*Pipelines() function or the VkPipelineShaderStageCreateInfo
 bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipeline,
-                                                      const VkPipelineRobustnessCreateInfoEXT &pipeline_robustness_info,
+                                                      const VkPipelineRobustnessCreateInfo &pipeline_robustness_info,
                                                       const Location &loc) const {
     bool skip = false;
 
     if (!enabled_features.pipelineRobustness) {
-        if (pipeline_robustness_info.storageBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+        if (pipeline_robustness_info.storageBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT) {
             skip |= LogError("VUID-VkPipelineRobustnessCreateInfo-pipelineRobustness-06926", device,
                              loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::storageBuffers),
                              "is %s but the pipelineRobustness feature was not enabled.",
                              string_VkPipelineRobustnessBufferBehavior(pipeline_robustness_info.storageBuffers));
         }
-        if (pipeline_robustness_info.uniformBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+        if (pipeline_robustness_info.uniformBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT) {
             skip |= LogError("VUID-VkPipelineRobustnessCreateInfo-pipelineRobustness-06927", device,
                              loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::uniformBuffers),
                              "is %s but the pipelineRobustness feature was not enabled.",
                              string_VkPipelineRobustnessBufferBehavior(pipeline_robustness_info.uniformBuffers));
         }
-        if (pipeline_robustness_info.vertexInputs != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+        if (pipeline_robustness_info.vertexInputs != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT) {
             skip |= LogError("VUID-VkPipelineRobustnessCreateInfo-pipelineRobustness-06928", device,
                              loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::vertexInputs),
                              "is %s but the pipelineRobustness feature was not enabled.",
                              string_VkPipelineRobustnessBufferBehavior(pipeline_robustness_info.vertexInputs));
         }
-        if (pipeline_robustness_info.images != VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+        if (pipeline_robustness_info.images != VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT) {
             skip |= LogError("VUID-VkPipelineRobustnessCreateInfo-pipelineRobustness-06929", device,
                              loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::images),
                              "is %s but the pipelineRobustness feature was not enabled.",
@@ -120,11 +120,10 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipel
     }
 
     // These validation depend if the features are exposed (not just enabled)
-    if (!has_robust_image_access &&
-        pipeline_robustness_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT) {
+    if (!has_robust_image_access && pipeline_robustness_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS) {
         skip |= LogError("VUID-VkPipelineRobustnessCreateInfo-robustImageAccess-06930", device,
                          loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::images),
-                         "is VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT "
+                         "is VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS "
                          "but robustImageAccess2 is not supported.");
     }
     return skip;
@@ -390,17 +389,17 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
         if (enabled_features.pipelineProtectedAccess) {
             if (cb_state->unprotected) {
                 const LogObjectList objlist(cb_state->Handle(), pipeline);
-                if (pipeline_state.create_flags & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT) {
+                if (pipeline_state.create_flags & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT) {
                     skip |= LogError("VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409", objlist, error_obj.location,
                                      "Binding pipeline created with "
-                                     "VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT in an unprotected command buffer.");
+                                     "VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT in an unprotected command buffer.");
                 }
             } else {
                 const LogObjectList objlist(cb_state->Handle(), pipeline);
-                if (pipeline_state.create_flags & VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT) {
+                if (pipeline_state.create_flags & VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT) {
                     skip |= LogError("VUID-vkCmdBindPipeline-pipelineProtectedAccess-07408", objlist, error_obj.location,
                                      "Binding pipeline created with "
-                                     "VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT in a protected command buffer.");
+                                     "VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT in a protected command buffer.");
                 }
             }
         }
@@ -491,25 +490,24 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(VkShaderStageFlagBits stage, 
     if (stage_state.HasPipeline()) {
         const auto flags = stage_state.pipeline_create_info->flags;
 
-        if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) != 0 &&
+        if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT) != 0 &&
             !enabled_features.subgroupSizeControl) {
             skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-flags-02784", device, loc.dot(Field::flags),
                              "includes "
-                             "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT, "
+                             "VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT, "
                              "but the subgroupSizeControl feature was not enabled.");
         }
 
-        if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0) {
+        if ((flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) != 0) {
             if (!enabled_features.computeFullSubgroups) {
-                skip |=
-                    LogError("VUID-VkPipelineShaderStageCreateInfo-flags-02785", device, loc.dot(Field::flags),
-                             "includes "
-                             "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the computeFullSubgroups feature "
-                             "was not enabled");
+                skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-flags-02785", device, loc.dot(Field::flags),
+                                 "includes "
+                                 "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT, but the computeFullSubgroups feature "
+                                 "was not enabled");
             } else if ((stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT)) == 0) {
                 skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-flags-08988", device, loc.dot(Field::flags),
                                  "includes "
-                                 "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the stage is %s.",
+                                 "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT, but the stage is %s.",
                                  string_VkShaderStageFlagBits(stage));
             }
         }
@@ -518,7 +516,7 @@ bool CoreChecks::ValidateShaderSubgroupSizeControl(VkShaderStageFlagBits stage, 
         if ((flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) != 0) {
             if ((stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT)) == 0) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08992", device, loc.dot(Field::flags),
-                                 "includes VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT, but the stage is %s.",
+                                 "includes VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT, but the stage is %s.",
                                  string_VkShaderStageFlagBits(stage));
             }
         }
@@ -655,7 +653,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
                              "struct in the pNext chain but the shaderModuleIdentifier feature was not enabled. (stage %s)",
                              string_VkShaderStageFlagBits(stage_ci.stage));
             }
-            if (!(pipeline.create_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_KHR)) {
+            if (!(pipeline.create_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
                 skip |= LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851", pipeline.Handle(),
                                  loc.pNext(Struct::VkPipelineShaderStageModuleIdentifierCreateInfoEXT, Field::identifierSize),
                                  "(%" PRIu32 "), but the pipeline was created with %s. (stage %s)",
@@ -743,9 +741,11 @@ bool CoreChecks::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, 
     ASSERT_AND_RETURN_SKIP(pipeline_state);
 
     if (!(pipeline_state->create_flags & VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR)) {
-        skip |= LogError("VUID-VkReleaseCapturedPipelineDataInfoKHR-pipeline-09613", pInfo->pipeline, error_obj.location.dot(Field::pInfo).dot(Field::pipeline),
-                         "called on a pipeline created without the "
-                         "VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR flag set. (Make sure you set it with VkPipelineCreateFlags2CreateInfoKHR)");
+        skip |= LogError(
+            "VUID-VkReleaseCapturedPipelineDataInfoKHR-pipeline-09613", pInfo->pipeline,
+            error_obj.location.dot(Field::pInfo).dot(Field::pipeline),
+            "called on a pipeline created without the "
+            "VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR flag set. (Make sure you set it with VkPipelineCreateFlags2CreateInfo)");
     }
 
     if (pipeline_state->binary_data_released) {

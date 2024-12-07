@@ -510,7 +510,7 @@ TEST_F(NegativeBuffer, IndexBufferOffset) {
 
     // Test for missing pNext struct for index buffer UINT8 type
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer-indexType-08787");
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 1, VK_INDEX_TYPE_UINT8_KHR);
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 1, VK_INDEX_TYPE_UINT8);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -543,7 +543,7 @@ TEST_F(NegativeBuffer, IndexBuffer2Offset) {
 
     // Test for missing pNext struct for index buffer UINT8 type
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer2-indexType-08787");
-    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 1, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT8_KHR);
+    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 1, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT8);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -612,7 +612,7 @@ TEST_F(NegativeBuffer, BufferUsageFlags2) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
-    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR | VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT_KHR;
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT;
 
     VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -644,7 +644,7 @@ TEST_F(NegativeBuffer, BufferUsageFlags2Subset) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
 
     VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
-    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR;
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT;
 
     VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;

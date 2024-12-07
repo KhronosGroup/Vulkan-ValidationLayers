@@ -201,7 +201,7 @@ static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t 
                         } else {
                             descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
                             descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
-                            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT);
+                            descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK);
                         }
                     } else if (insn->Word(2) == spv::DecorationBufferBlock) {
                         descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -2351,7 +2351,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
     if (pipeline) {
         skip |= ValidateShaderStageMaxResources(stage, *pipeline, loc);
         if (const auto *pipeline_robustness_info =
-                vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfoEXT>(stage_state.GetPNext())) {
+                vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(stage_state.GetPNext())) {
             skip |= ValidatePipelineRobustnessCreateInfo(*pipeline, *pipeline_robustness_info, loc);
         }
     }
@@ -2885,8 +2885,8 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state
     }
 
     if (stage_state.pipeline_create_info) {
-        const auto subgroup_flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT |
-                                    VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT;
+        const auto subgroup_flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT |
+                                    VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT;
         if ((stage_state.pipeline_create_info->flags & subgroup_flags) == subgroup_flags) {
             if (SafeModulo(local_size_x, phys_dev_props_core13.maxSubgroupSize) != 0) {
                 skip |= LogError(
@@ -2896,9 +2896,9 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const spirv::Module &module_state
                     string_VkPipelineShaderStageCreateFlags(stage_state.pipeline_create_info->flags).c_str(), local_size_x,
                     phys_dev_props_core13.maxSubgroupSize);
             }
-        } else if ((stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT) &&
-                   (stage_state.pipeline_create_info->flags &
-                    VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT) == 0) {
+        } else if ((stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) &&
+                   (stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT) ==
+                       0) {
             if (!vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo>(stage_state.GetPNext())) {
                 if (SafeModulo(local_size_x, phys_dev_props_core11.subgroupSize) != 0) {
                     skip |=

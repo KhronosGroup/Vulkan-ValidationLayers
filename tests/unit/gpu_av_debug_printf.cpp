@@ -350,7 +350,7 @@ TEST_F(NegativeGpuAVDebugPrintf, DynamicRendering) {
     descriptor_set_0.UpdateDescriptorSets();
 
     VkFormat color_formats = {GetRenderTargetFormat()};
-    VkPipelineRenderingCreateInfoKHR pipeline_rendering_info = vku::InitStructHelper();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 

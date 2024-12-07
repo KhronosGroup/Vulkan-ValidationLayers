@@ -110,8 +110,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSL) {
     buffer_ptr[0] = 1;
     buffer.Memory().Unmap();
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {0, 0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {0, 0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo ds_layout_binding_flags = vku::InitStructHelper();
     ds_layout_binding_flags.bindingCount = 3;
     ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
 
@@ -1012,8 +1012,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, PartialBoundDescriptorSSBO) {
     flags_create_info.pBindingFlags = &binding_flags;
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}},
-                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
-                                       VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
+                                       VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     CreateComputePipelineHelper pipe(*this);
@@ -1913,8 +1913,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBind)
                                              {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                              {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
                                          },
-                                         VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
-                                         VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+                                         VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
+                                         VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     const vkt::PipelineLayout pipeline_layout_1(*m_device, {&descriptor_set_1.layout_});
 
     CreateComputePipelineHelper pipe_1(*this);
@@ -1937,8 +1937,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBind)
                                              {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                              {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
                                          },
-                                         VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
-                                         VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+                                         VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
+                                         VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     const vkt::PipelineLayout pipeline_layout_2(*m_device, {&descriptor_set_2.layout_});
 
     CreateComputePipelineHelper pipe_2(*this);
@@ -2014,8 +2014,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleUnusedBoundDescriptorsUpdateAfte
                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
                                        },
-                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
-                                       VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
+                                       VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     CreateComputePipelineHelper pipe(*this);
@@ -2029,8 +2029,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleUnusedBoundDescriptorsUpdateAfte
                                                   {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
                                               },
-                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
-                                              VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
+                                              VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     const vkt::PipelineLayout pipeline_layout_bad_1(*m_device, {&descriptor_set_unused.layout_});
     // use vaild set, but put at set == 1 so doesn't match shader
     const vkt::PipelineLayout pipeline_layout_bad_2(*m_device, {&descriptor_set_unused.layout_, &descriptor_set.layout_});
@@ -2175,15 +2175,15 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleSetSomeUninitializedUpdateAfterB
                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                     {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
                                 },
-                                VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
-                                VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+                                VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
+                                VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     OneOffDescriptorSet ds_bad(m_device,
                                {
                                    {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                    {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
                                },
-                               VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT, &flags_create_info,
-                               VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT);
+                               VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
+                               VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_good.layout_});
 
     char const *cs_source = R"glsl(
@@ -2339,7 +2339,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipe
         {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&flags_create_info);
-    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
     ds_layout_ci.bindingCount = 3;
     ds_layout_ci.pBindings = &binding[0];
     vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
@@ -2372,7 +2372,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipe
         {binding[2].descriptorType, binding[2].descriptorCount},
     };
     VkDescriptorPoolCreateInfo dspci = vku::InitStructHelper();
-    dspci.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+    dspci.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
     dspci.poolSizeCount = 3;
     dspci.pPoolSizes = &pool_sizes[0];
     dspci.maxSets = 1;

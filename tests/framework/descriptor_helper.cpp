@@ -25,7 +25,7 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const Bindings &bi
     err = vk::CreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
     if (err != VK_SUCCESS) return;
 
-    if ((layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) == 0) {
+    if ((layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) == 0) {
         VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, allocate_pnext, pool_, 1,
                                                   &layout_.handle()};
         err = vk::AllocateDescriptorSets(device_->handle(), &alloc_info, &set_);

@@ -240,10 +240,10 @@ TEST_F(NegativeCommand, Sync2CommandBufferTwoSubmits) {
     m_command_buffer.End();
 
     // Bypass framework since it does the waits automatically
-    VkCommandBufferSubmitInfoKHR cb_info = vku::InitStructHelper();
+    VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = m_command_buffer.handle();
 
-    VkSubmitInfo2KHR submit_info = vku::InitStructHelper();
+    VkSubmitInfo2 submit_info = vku::InitStructHelper();
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
@@ -423,7 +423,7 @@ TEST_F(NegativeCommand, PushConstant2PipelineLayoutCreateInfo) {
     InitRenderTarget();
 
     const float data[16] = {};
-    VkPushConstantsInfoKHR pc_info = vku::InitStructHelper();
+    VkPushConstantsInfo pc_info = vku::InitStructHelper();
     pc_info.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     pc_info.offset = 32;
     pc_info.size = 16;
@@ -1241,21 +1241,21 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
 
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
-                                                   NULL,
-                                                   resolveRegion.srcSubresource,
-                                                   resolveRegion.srcOffset,
-                                                   resolveRegion.dstSubresource,
-                                                   resolveRegion.dstOffset,
-                                                   resolveRegion.extent};
-        const VkResolveImageInfo2KHR resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR,
-                                                            NULL,
-                                                            srcImage.handle(),
-                                                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                                            dstImage.handle(),
-                                                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                                            1,
-                                                            &resolveRegion2};
+        const VkImageResolve2 resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2,
+                                                NULL,
+                                                resolveRegion.srcSubresource,
+                                                resolveRegion.srcOffset,
+                                                resolveRegion.dstSubresource,
+                                                resolveRegion.dstOffset,
+                                                resolveRegion.extent};
+        const VkResolveImageInfo2 resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2,
+                                                         NULL,
+                                                         srcImage.handle(),
+                                                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                         dstImage.handle(),
+                                                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                         1,
+                                                         &resolveRegion2};
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcSubresource-01709");
         vk::CmdResolveImage2KHR(m_command_buffer.handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
@@ -1271,21 +1271,21 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
 
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
-                                                   NULL,
-                                                   resolveRegion.srcSubresource,
-                                                   resolveRegion.srcOffset,
-                                                   resolveRegion.dstSubresource,
-                                                   resolveRegion.dstOffset,
-                                                   resolveRegion.extent};
-        const VkResolveImageInfo2KHR resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR,
-                                                            NULL,
-                                                            srcImage.handle(),
-                                                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                                            dstImage.handle(),
-                                                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                                            1,
-                                                            &resolveRegion2};
+        const VkImageResolve2 resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2,
+                                                NULL,
+                                                resolveRegion.srcSubresource,
+                                                resolveRegion.srcOffset,
+                                                resolveRegion.dstSubresource,
+                                                resolveRegion.dstOffset,
+                                                resolveRegion.extent};
+        const VkResolveImageInfo2 resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2,
+                                                         NULL,
+                                                         srcImage.handle(),
+                                                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                         dstImage.handle(),
+                                                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                         1,
+                                                         &resolveRegion2};
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-dstSubresource-01710");
         vk::CmdResolveImage2KHR(m_command_buffer.handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
@@ -1301,21 +1301,21 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
 
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
-                                                   NULL,
-                                                   resolveRegion.srcSubresource,
-                                                   resolveRegion.srcOffset,
-                                                   resolveRegion.dstSubresource,
-                                                   resolveRegion.dstOffset,
-                                                   resolveRegion.extent};
-        const VkResolveImageInfo2KHR resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR,
-                                                            NULL,
-                                                            srcImage.handle(),
-                                                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                                            dstImage.handle(),
-                                                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                                            1,
-                                                            &resolveRegion2};
+        const VkImageResolve2 resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2,
+                                                NULL,
+                                                resolveRegion.srcSubresource,
+                                                resolveRegion.srcOffset,
+                                                resolveRegion.dstSubresource,
+                                                resolveRegion.dstOffset,
+                                                resolveRegion.extent};
+        const VkResolveImageInfo2 resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2,
+                                                         NULL,
+                                                         srcImage.handle(),
+                                                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                         dstImage.handle(),
+                                                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                         1,
+                                                         &resolveRegion2};
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-srcSubresource-01711");
         vk::CmdResolveImage2KHR(m_command_buffer.handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
@@ -1331,21 +1331,21 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
 
     // Equivalent test using KHR_copy_commands2
     if (copy_commands2) {
-        const VkImageResolve2KHR resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2_KHR,
-                                                   NULL,
-                                                   resolveRegion.srcSubresource,
-                                                   resolveRegion.srcOffset,
-                                                   resolveRegion.dstSubresource,
-                                                   resolveRegion.dstOffset,
-                                                   resolveRegion.extent};
-        const VkResolveImageInfo2KHR resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2_KHR,
-                                                            NULL,
-                                                            srcImage.handle(),
-                                                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                                            dstImage.handle(),
-                                                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                                            1,
-                                                            &resolveRegion2};
+        const VkImageResolve2 resolveRegion2 = {VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2,
+                                                NULL,
+                                                resolveRegion.srcSubresource,
+                                                resolveRegion.srcOffset,
+                                                resolveRegion.dstSubresource,
+                                                resolveRegion.dstOffset,
+                                                resolveRegion.extent};
+        const VkResolveImageInfo2 resolve_image_info2 = {VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2,
+                                                         NULL,
+                                                         srcImage.handle(),
+                                                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                         dstImage.handle(),
+                                                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                         1,
+                                                         &resolveRegion2};
         m_errorMonitor->SetDesiredError("VUID-VkResolveImageInfo2-dstSubresource-01712");
         vk::CmdResolveImage2KHR(m_command_buffer.handle(), &resolve_image_info2);
         m_errorMonitor->VerifyFound();
@@ -2666,7 +2666,7 @@ TEST_F(NegativeCommand, DescriptorSetPipelineBindPointMaintenance6) {
     vkt::CommandBuffer command_buffer(*m_device, command_pool);
     command_buffer.Begin();
 
-    VkBindDescriptorSetsInfoKHR bind_ds_info = vku::InitStructHelper();
+    VkBindDescriptorSetsInfo bind_ds_info = vku::InitStructHelper();
     bind_ds_info.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     bind_ds_info.layout = pipeline_layout.handle();
     bind_ds_info.firstSet = 0;
@@ -3212,7 +3212,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspectSeparate) {
 
     m_command_buffer.Begin();
 
-    VkImageStencilUsageCreateInfoEXT image_stencil_create_info = vku::InitStructHelper();
+    VkImageStencilUsageCreateInfo image_stencil_create_info = vku::InitStructHelper();
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;  // not VK_IMAGE_USAGE_TRANSFER_DST_BIT
 
     image_create_info.pNext = &image_stencil_create_info;

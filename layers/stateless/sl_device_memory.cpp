@@ -70,9 +70,9 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
     }
 
     if (vkuFormatIsMultiplane(create_info.format) && (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
-        if (memory_requirements.planeAspect == VK_IMAGE_ASPECT_NONE_KHR) {
+        if (memory_requirements.planeAspect == VK_IMAGE_ASPECT_NONE) {
             skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06417", device, loc.dot(Field::planeAspect),
-                             "is VK_IMAGE_ASPECT_NONE_KHR with a multi-planar format and disjoint flag.");
+                             "is VK_IMAGE_ASPECT_NONE with a multi-planar format and disjoint flag.");
         } else if ((create_info.tiling == VK_IMAGE_TILING_LINEAR || create_info.tiling == VK_IMAGE_TILING_OPTIMAL) &&
                    !IsOnlyOneValidPlaneAspect(create_info.format, memory_requirements.planeAspect)) {
             skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06419", device, loc.dot(Field::planeAspect),

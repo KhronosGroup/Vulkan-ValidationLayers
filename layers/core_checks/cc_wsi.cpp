@@ -593,14 +593,14 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
                      string_VkFormat(create_info.imageFormat))) {
             return true;
         }
-    } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(tiling_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT_KHR)) {
+    } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && !(tiling_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
                      "VK_IMAGE_USAGE_SAMPLED_BIT.",
                      string_VkFormat(create_info.imageFormat))) {
             return true;
         }
-    } else if ((image_usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(tiling_features & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR)) {
+    } else if ((image_usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(tiling_features & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
                      "VK_IMAGE_USAGE_STORAGE_BIT.",
@@ -608,7 +608,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
             return true;
         }
     } else if ((image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
-               !(tiling_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR)) {
+               !(tiling_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
                      "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT.",
@@ -616,7 +616,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
             return true;
         }
     } else if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
-               !(tiling_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR)) {
+               !(tiling_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
                      "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
@@ -624,8 +624,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
             return true;
         }
     } else if ((image_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
-               !(tiling_features &
-                 (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR))) {
+               !(tiling_features & (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT))) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageFormat),
                      "%s with tiling VK_IMAGE_TILING_OPTIMAL does not support usage that includes "
                      "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",

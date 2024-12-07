@@ -38,19 +38,19 @@ bool BestPractices::CheckPipelineStageFlags(const LogObjectList& objlist, const 
                                             VkPipelineStageFlags2KHR flags) const {
     bool skip = false;
 
-    if (flags & VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR) {
-        skip |= LogWarning("BestPractices-pipeline-stage-flags2-graphics", objlist, loc,
-                           "using VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR");
-    } else if (flags & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR) {
-        skip |= LogWarning("BestPractices-pipeline-stage-flags2-compute", objlist, loc,
-                           "using VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR");
+    if (flags & VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT) {
+        skip |=
+            LogWarning("BestPractices-pipeline-stage-flags2-graphics", objlist, loc, "using VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT");
+    } else if (flags & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
+        skip |=
+            LogWarning("BestPractices-pipeline-stage-flags2-compute", objlist, loc, "using VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT");
     }
 
     return skip;
 }
 
 bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Location& dep_loc,
-                                        const VkDependencyInfoKHR& dep_info) const {
+                                        const VkDependencyInfo& dep_info) const {
     bool skip = false;
     auto stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
 

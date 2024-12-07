@@ -269,14 +269,14 @@ TEST_F(NegativeRayTracing, DescriptorBindingUpdateAfterBindWithAccelerationStruc
     binding.stageFlags = VK_SHADER_STAGE_ALL;
     binding.pImmutableSamplers = nullptr;
 
-    VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+    VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT flags_create_info = vku::InitStructHelper();
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
     flags_create_info.bindingCount = 1;
     flags_create_info.pBindingFlags = &flags;
 
     VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&flags_create_info);
-    create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+    create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
     create_info.bindingCount = 1;
     create_info.pBindings = &binding;
 
@@ -610,7 +610,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureOverlappingMemory) {
     RETURN_IF_SKIP(InitState());
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 8192;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
@@ -663,12 +663,12 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     // Init a non host visible buffer
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
-    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR |
+    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
     VkMemoryRequirements memory_requirements = buffer.MemoryRequirements();
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo memory_alloc = vku::InitStructHelper(&alloc_flags);
     memory_alloc.allocationSize = memory_requirements.size;
     const bool memory_found =
@@ -780,7 +780,7 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructure) {
     RETURN_IF_SKIP(InitState());
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer src_buffer(*m_device, 4096, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
 
@@ -989,7 +989,7 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
     VkAccelerationStructureKHR as;
     VkAccelerationStructureCreateInfoKHR as_create_info = vku::InitStructHelper();
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer buffer(*m_device, 4096,
                        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
@@ -1092,7 +1092,7 @@ TEST_F(NegativeRayTracing, CreateAccelerationStructureKHRReplayFeature) {
     RETURN_IF_SKIP(InitState());
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer buffer(*m_device, 4096,
                        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
@@ -1202,7 +1202,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
     vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 4096;
     vkt::DeviceMemory mem(*m_device, alloc_info);
@@ -1745,7 +1745,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     // Invalid index type
     if (index_type_uint8) {
         auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-        blas.GetGeometries()[0].SetTrianglesIndexType(VK_INDEX_TYPE_UINT8_KHR);
+        blas.GetGeometries()[0].SetTrianglesIndexType(VK_INDEX_TYPE_UINT8);
         blas.SetUpdateDstAccelStructSizeBeforeBuild(false);
         m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798");
         m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798");
@@ -1770,7 +1770,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     // Buffer is missing VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR usage flag
     {
         VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
         vkt::Buffer bad_usage_buffer(*m_device, 1024,
                                      VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                      kHostVisibleMemProps, &alloc_flags);
@@ -1786,7 +1786,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
         const VkDeviceSize scratch_size =
             blas.GetSizeInfo().buildScratchSize + acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
         VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
         auto bad_scratch = std::make_shared<vkt::Buffer>(*m_device, scratch_size, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
         blas.SetScratchBuffer(std::move(bad_scratch));
@@ -1797,7 +1797,7 @@ TEST_F(NegativeRayTracing, CmdBuildAccelerationStructuresKHR) {
     // Scratch data buffer is 0
     {
         VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
         // no VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT => scratch address will be set to 0
         auto bad_scratch = std::make_shared<vkt::Buffer>(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
@@ -1826,7 +1826,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
 
     // All buffers used to back source/destination acceleration structures will be bound to this memory chunk
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 8192;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
@@ -1929,7 +1929,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory2) {
 
     // All scratch buffers will be bound to this memory chunk
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 1u << 17;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
@@ -1997,7 +1997,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory3) {
 
     // All buffers used to back destination acceleration struct and scratch will be bound to this memory chunk
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 1u << 17;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
@@ -2071,7 +2071,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory4) {
 
     // All buffers used to back source/destination acceleration struct and scratch will be bound to this memory chunk
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 1u << 17;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
@@ -2317,7 +2317,7 @@ TEST_F(NegativeRayTracing, BuffersAndBufferDeviceAddressesMapping) {
 
     // Allocate common buffer memory
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 4096;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
@@ -3115,9 +3115,9 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometry) 
 
     // Invalid update to triangles transform data
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer transform_buffer(*m_device, 4096,
-                                 VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                 VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                      VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
 
@@ -3196,9 +3196,9 @@ TEST_F(NegativeRayTracing, TransformBufferInvalid) {
     RETURN_IF_SKIP(InitState());
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     vkt::Buffer transform_buffer(*m_device, 4096,
-                                 VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                 VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                      VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
 
@@ -3390,7 +3390,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadAddressSpaceOpBuild) {
 
     // Allocate buffer memory separately so that it can be large enough. Scratch buffer size will be smaller.
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = 4096;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
@@ -3430,7 +3430,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadAddressSpaceOpUpdate) {
 
     // Allocate buffer memory separately so that it can be large enough. Scratch buffer size will be smaller.
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
     auto scratch_buffer =
         std::make_shared<vkt::Buffer>(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -3476,7 +3476,7 @@ TEST_F(NegativeRayTracing, ScratchBufferBadMemory) {
     auto scratch_buffer = std::make_shared<vkt::Buffer>(*m_device, scratch_buffer_ci, vkt::no_mem);
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
     alloc_info.allocationSize = scratch_buffer->MemoryRequirements().size;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);

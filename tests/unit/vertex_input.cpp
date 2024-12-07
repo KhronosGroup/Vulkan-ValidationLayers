@@ -58,8 +58,8 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
     VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pdvad_props);
 
-    VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
-    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = vku::InitStructHelper();
+    VkVertexInputBindingDivisorDescription vibdd = {};
+    VkPipelineVertexInputDivisorStateCreateInfo pvids_ci = vku::InitStructHelper();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -131,10 +131,10 @@ TEST_F(NegativeVertexInput, DivisorDisabled) {
     VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pdvad_props);
 
-    VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
+    VkVertexInputBindingDivisorDescription vibdd = {};
     vibdd.binding = 0;
     vibdd.divisor = 2;
-    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = vku::InitStructHelper();
+    VkPipelineVertexInputDivisorStateCreateInfo pvids_ci = vku::InitStructHelper();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -163,10 +163,10 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZero) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
+    VkVertexInputBindingDivisorDescription vibdd = {};
     vibdd.binding = 0;
     vibdd.divisor = 0;
-    VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = vku::InitStructHelper();
+    VkPipelineVertexInputDivisorStateCreateInfo pvids_ci = vku::InitStructHelper();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -196,8 +196,8 @@ TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
     VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR pdvad_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pdvad_props);
 
-    VkVertexInputBindingDivisorDescriptionKHR vibdd = {};
-    VkPipelineVertexInputDivisorStateCreateInfoKHR pvids_ci = vku::InitStructHelper();
+    VkVertexInputBindingDivisorDescription vibdd = {};
+    VkPipelineVertexInputDivisorStateCreateInfo pvids_ci = vku::InitStructHelper();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -270,10 +270,10 @@ TEST_F(NegativeVertexInput, DivisorDisabledKHR) {
     VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR pdvad_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pdvad_props);
 
-    VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
+    VkVertexInputBindingDivisorDescription vibdd = {};
     vibdd.binding = 0;
     vibdd.divisor = 2;
-    VkPipelineVertexInputDivisorStateCreateInfoKHR pvids_ci = vku::InitStructHelper();
+    VkPipelineVertexInputDivisorStateCreateInfo pvids_ci = vku::InitStructHelper();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -303,10 +303,10 @@ TEST_F(NegativeVertexInput, DivisorInstanceRateZeroKHR) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkVertexInputBindingDivisorDescriptionKHR vibdd = {};
+    VkVertexInputBindingDivisorDescription vibdd = {};
     vibdd.binding = 0;
     vibdd.divisor = 0;
-    VkPipelineVertexInputDivisorStateCreateInfoKHR pvids_ci = vku::InitStructHelper();
+    VkPipelineVertexInputDivisorStateCreateInfo pvids_ci = vku::InitStructHelper();
     pvids_ci.vertexBindingDivisorCount = 1;
     pvids_ci.pVertexBindingDivisors = &vibdd;
     VkVertexInputBindingDescription vibd = {};
@@ -1598,11 +1598,11 @@ TEST_F(NegativeVertexInput, UnsupportedDivisor) {
         GTEST_SKIP() << "Test requires supportsNonZeroFirstInstance to be VK_FALSE";
     }
 
-    VkVertexInputBindingDivisorDescriptionKHR vertex_binding_divisor;
+    VkVertexInputBindingDivisorDescription vertex_binding_divisor;
     vertex_binding_divisor.binding = 0u;
     vertex_binding_divisor.divisor = 2u;
 
-    VkPipelineVertexInputDivisorStateCreateInfoKHR vertex_input_divisor_state = vku::InitStructHelper();
+    VkPipelineVertexInputDivisorStateCreateInfo vertex_input_divisor_state = vku::InitStructHelper();
     vertex_input_divisor_state.vertexBindingDivisorCount = 1u;
     vertex_input_divisor_state.pVertexBindingDivisors = &vertex_binding_divisor;
 

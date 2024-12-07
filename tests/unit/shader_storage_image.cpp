@@ -161,7 +161,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
 
         vk::GetPhysicalDeviceFormatProperties2(Gpu(), (VkFormat)fmt, &fmt_props);
 
-        const bool has_storage = (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR) != 0;
+        const bool has_storage = (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT) != 0;
         const bool has_read_without_format =
             (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR) != 0;
 
@@ -311,9 +311,9 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
 
         vk::GetPhysicalDeviceFormatProperties2(Gpu(), (VkFormat)fmt, &fmt_props);
 
-        const bool has_storage = (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR) != 0;
+        const bool has_storage = (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT) != 0;
         const bool has_write_without_format =
-            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) != 0;
+            (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) != 0;
 
         if (!has_storage) continue;
 
@@ -424,13 +424,13 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(),
                                   0, 1, &ds.set_, 0, nullptr);
 
-        if ((tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) == 0) {
+        if ((tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
             m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeImage-07027");
         }
         vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
         m_command_buffer.End();
 
-        if ((tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) == 0) {
+        if ((tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
             m_errorMonitor->VerifyFound();
         }
     }
@@ -767,7 +767,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
     VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
     vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &fmt_props);
-    if ((fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR) == 0) {
+    if ((fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
 

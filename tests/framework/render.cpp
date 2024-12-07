@@ -1134,7 +1134,7 @@ void VkRenderFramework::SetDefaultDynamicStatesExclude(const std::vector<VkDynam
     if (!excluded(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) vk::CmdSetStencilTestEnableEXT(cmdBuffer, VK_FALSE);
     if (!excluded(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) vk::CmdSetDepthBiasEnableEXT(cmdBuffer, VK_FALSE);
     if (!excluded(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) vk::CmdSetPrimitiveRestartEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)) vk::CmdSetRasterizerDiscardEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) vk::CmdSetRasterizerDiscardEnableEXT(cmdBuffer, VK_FALSE);
     if (!excluded(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) vk::CmdSetVertexInputEXT(cmdBuffer, 0u, nullptr, 0u, nullptr);
     if (!excluded(VK_DYNAMIC_STATE_LOGIC_OP_EXT)) vk::CmdSetLogicOpEXT(cmdBuffer, VK_LOGIC_OP_COPY);
     if (!excluded(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) vk::CmdSetPatchControlPointsEXT(cmdBuffer, 4u);

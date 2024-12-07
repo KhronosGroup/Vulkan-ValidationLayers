@@ -41,7 +41,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfo = vku::InitStructHelper();
     framebufferAttachmentImageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     framebufferAttachmentImageInfo.width = attachmentWidth;
@@ -49,11 +49,11 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     framebufferAttachmentImageInfo.layerCount = 1;
     framebufferAttachmentImageInfo.viewFormatCount = 2;
     framebufferAttachmentImageInfo.pViewFormats = framebufferAttachmentFormats;
-    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo framebufferAttachmentsCreateInfo = vku::InitStructHelper();
     framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
     VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper(&framebufferAttachmentsCreateInfo);
-    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
@@ -61,7 +61,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     framebufferCreateInfo.pAttachments = nullptr;
     framebufferCreateInfo.renderPass = rp.Handle();
 
-    VkImageFormatListCreateInfoKHR imageFormatListCreateInfo = vku::InitStructHelper();
+    VkImageFormatListCreateInfo imageFormatListCreateInfo = vku::InitStructHelper();
     imageFormatListCreateInfo.viewFormatCount = 2;
     imageFormatListCreateInfo.pViewFormats = attachmentFormats;
     VkImageCreateInfo imageCreateInfo = vku::InitStructHelper(&imageFormatListCreateInfo);
@@ -96,7 +96,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     vkt::ImageView imageView(*m_device, imageViewCreateInfo);
 
     VkImageView image_views[2] = {imageView.handle(), imageView.handle()};
-    VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = vku::InitStructHelper();
+    VkRenderPassAttachmentBeginInfo renderPassAttachmentBeginInfo = vku::InitStructHelper();
     renderPassAttachmentBeginInfo.attachmentCount = 1;
     renderPassAttachmentBeginInfo.pAttachments = image_views;
     VkRenderPassBeginInfo renderPassBeginInfo = vku::InitStructHelper(&renderPassAttachmentBeginInfo);
@@ -110,7 +110,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     // Positive test first
     {
         framebufferCreateInfo.pAttachments = nullptr;
-        framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+        framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         renderPassBeginInfo.framebuffer = framebuffer.handle();
         m_command_buffer.Begin(&cmd_begin_info);
@@ -129,7 +129,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     }
     {
         framebufferCreateInfo.pAttachments = nullptr;
-        framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+        framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         renderPassAttachmentBeginInfo.attachmentCount = 2;
         renderPassBeginInfo.framebuffer = framebuffer.handle();
@@ -327,18 +327,18 @@ TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfo = vku::InitStructHelper();
     framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     framebufferAttachmentImageInfo.width = attachmentWidth;
     framebufferAttachmentImageInfo.height = attachmentHeight;
     framebufferAttachmentImageInfo.layerCount = 1;
     framebufferAttachmentImageInfo.viewFormatCount = 1;
     framebufferAttachmentImageInfo.pViewFormats = &attachmentFormat;
-    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo framebufferAttachmentsCreateInfo = vku::InitStructHelper();
     framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
     VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper(&framebufferAttachmentsCreateInfo);
-    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
@@ -373,18 +373,18 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfo = vku::InitStructHelper();
     framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     framebufferAttachmentImageInfo.width = attachmentWidth;
     framebufferAttachmentImageInfo.height = attachmentHeight;
     framebufferAttachmentImageInfo.layerCount = 1;
     framebufferAttachmentImageInfo.viewFormatCount = 1;
     framebufferAttachmentImageInfo.pViewFormats = &attachmentFormat;
-    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo framebufferAttachmentsCreateInfo = vku::InitStructHelper();
     framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
     VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper(&framebufferAttachmentsCreateInfo);
-    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
@@ -401,8 +401,8 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
 
     // Mismatched attachment counts
     framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 2;
-    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfos[2] = {framebufferAttachmentImageInfo,
-                                                                              framebufferAttachmentImageInfo};
+    VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfos[2] = {framebufferAttachmentImageInfo,
+                                                                           framebufferAttachmentImageInfo};
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = framebufferAttachmentImageInfos;
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-03191");
     vk::CreateFramebuffer(device(), &framebufferCreateInfo, nullptr, &framebuffer);
@@ -474,7 +474,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
     rp.AddInputAttachment(3);
     rp.CreateRenderPass();
 
-    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfos[4] = {};
+    VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfos[4] = {};
     // Color attachment
     framebufferAttachmentImageInfos[0] = vku::InitStructHelper();
     framebufferAttachmentImageInfos[0].width = attachmentWidth;
@@ -507,11 +507,11 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
     framebufferAttachmentImageInfos[3].layerCount = 1;
     framebufferAttachmentImageInfos[3].viewFormatCount = 1;
     framebufferAttachmentImageInfos[3].pViewFormats = &colorAndInputAttachmentFormat;
-    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo framebufferAttachmentsCreateInfo = vku::InitStructHelper();
     framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 4;
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = framebufferAttachmentImageInfos;
     VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper(&framebufferAttachmentsCreateInfo);
-    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
@@ -583,7 +583,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
     rp.AddInputAttachment(3);
     rp.CreateRenderPass(&renderPassMultiviewCreateInfo);
 
-    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfos[4] = {};
+    VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfos[4] = {};
     // Color attachment
     framebufferAttachmentImageInfos[0] = vku::InitStructHelper();
     framebufferAttachmentImageInfos[0].width = attachmentWidth;
@@ -616,11 +616,11 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
     framebufferAttachmentImageInfos[3].layerCount = 2;
     framebufferAttachmentImageInfos[3].viewFormatCount = 1;
     framebufferAttachmentImageInfos[3].pViewFormats = &colorAndInputAttachmentFormat;
-    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo framebufferAttachmentsCreateInfo = vku::InitStructHelper();
     framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 4;
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = framebufferAttachmentImageInfos;
     VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper(&framebufferAttachmentsCreateInfo);
-    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
@@ -683,7 +683,7 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     rp.SetViewMask(0x3u);
     rp.CreateRenderPass();
 
-    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfos[2] = {};
+    VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfos[2] = {};
     // Depth/stencil attachment
     framebufferAttachmentImageInfos[0] = vku::InitStructHelper();
     framebufferAttachmentImageInfos[0].width = attachmentWidth;
@@ -700,11 +700,11 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     framebufferAttachmentImageInfos[1].layerCount = 2;
     framebufferAttachmentImageInfos[1].viewFormatCount = 1;
     framebufferAttachmentImageInfos[1].pViewFormats = &attachmentFormat;
-    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo framebufferAttachmentsCreateInfo = vku::InitStructHelper();
     framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 2;
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = framebufferAttachmentImageInfos;
     VkFramebufferCreateInfo framebufferCreateInfo = vku::InitStructHelper(&framebufferAttachmentsCreateInfo);
-    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
@@ -930,7 +930,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     vkt::Image image3D(*m_device, imageCreateInfo, vkt::set_layout);
     vkt::ImageView imageView3D = image3D.CreateView(VK_IMAGE_VIEW_TYPE_3D);
 
-    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentImageInfo framebufferAttachmentImageInfo = vku::InitStructHelper();
     framebufferAttachmentImageInfo.flags = 0;
     framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     framebufferAttachmentImageInfo.width = attachmentWidth;
@@ -938,7 +938,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     framebufferAttachmentImageInfo.layerCount = 1;
     framebufferAttachmentImageInfo.viewFormatCount = 1;
     framebufferAttachmentImageInfo.pViewFormats = framebufferAttachmentFormats;
-    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo framebufferAttachmentsCreateInfo = vku::InitStructHelper();
     framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
     framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
 
@@ -960,12 +960,12 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     }
 
     framebufferCreateInfo.pNext = &framebufferAttachmentsCreateInfo;
-    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     framebufferCreateInfo.pAttachments = nullptr;
     vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
     ASSERT_TRUE(framebuffer.initialized());
 
-    VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = vku::InitStructHelper();
+    VkRenderPassAttachmentBeginInfo renderPassAttachmentBeginInfo = vku::InitStructHelper();
     renderPassAttachmentBeginInfo.attachmentCount = 1;
     renderPassAttachmentBeginInfo.pAttachments = &imageView3D.handle();
     VkRenderPassBeginInfo renderPassBeginInfo = vku::InitStructHelper(&renderPassAttachmentBeginInfo);
@@ -1098,7 +1098,7 @@ TEST_F(NegativeImagelessFramebuffer, MissingInheritanceRenderingInfo) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    VkFramebufferAttachmentImageInfoKHR fb_attachment_image_info = vku::InitStructHelper();
+    VkFramebufferAttachmentImageInfo fb_attachment_image_info = vku::InitStructHelper();
     fb_attachment_image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     fb_attachment_image_info.width = attachment_width;
     fb_attachment_image_info.height = attachment_height;
@@ -1106,12 +1106,12 @@ TEST_F(NegativeImagelessFramebuffer, MissingInheritanceRenderingInfo) {
     fb_attachment_image_info.viewFormatCount = 1;
     fb_attachment_image_info.pViewFormats = &format;
 
-    VkFramebufferAttachmentsCreateInfoKHR fb_attachment_ci = vku::InitStructHelper();
+    VkFramebufferAttachmentsCreateInfo fb_attachment_ci = vku::InitStructHelper();
     fb_attachment_ci.attachmentImageInfoCount = 1;
     fb_attachment_ci.pAttachmentImageInfos = &fb_attachment_image_info;
 
     VkFramebufferCreateInfo fb_ci = vku::InitStructHelper(&fb_attachment_ci);
-    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    fb_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
     fb_ci.width = attachment_width;
     fb_ci.height = attachment_height;
     fb_ci.layers = 1;

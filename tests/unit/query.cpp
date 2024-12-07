@@ -103,7 +103,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
 
-    // Find a single counter with VK_QUERY_SCOPE_COMMAND_BUFFER_KHR scope.
+    // Find a single counter with VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_BUFFER_KHR scope.
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
@@ -118,7 +118,7 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         queueFamilyIndex = idx;
 
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
-            if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_BUFFER_KHR) {
+            if (counters[counterIdx].scope == VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_BUFFER_KHR) {
                 counterIndices.push_back(counterIdx);
                 break;
             }
@@ -216,7 +216,7 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
 
-    // Find a single counter with VK_QUERY_SCOPE_RENDER_PASS_KHR scope.
+    // Find a single counter with VK_PERFORMANCE_COUNTER_SCOPE_RENDER_PASS_KHR scope.
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
@@ -231,7 +231,7 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
         queueFamilyIndex = idx;
 
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
-            if (counters[counterIdx].scope == VK_QUERY_SCOPE_RENDER_PASS_KHR) {
+            if (counters[counterIdx].scope == VK_PERFORMANCE_COUNTER_SCOPE_RENDER_PASS_KHR) {
                 counterIndices.push_back(counterIdx);
                 break;
             }
@@ -307,7 +307,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
 
-    // Find a single counter with VK_QUERY_SCOPE_COMMAND_KHR scope.
+    // Find a single counter with VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR scope.
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
@@ -322,7 +322,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         queueFamilyIndex = idx;
 
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
-            if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_KHR) {
+            if (counters[counterIdx].scope == VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR) {
                 counterIndices.push_back(counterIdx);
                 break;
             }
@@ -443,7 +443,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
     std::vector<uint32_t> counterIndices;
     uint32_t nPasses = 0;
 
-    // Find all counters with VK_QUERY_SCOPE_COMMAND_KHR scope.
+    // Find all counters with VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR scope.
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
@@ -458,7 +458,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         queueFamilyIndex = idx;
 
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
-            if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_KHR) counterIndices.push_back(counterIdx);
+            if (counters[counterIdx].scope == VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR) counterIndices.push_back(counterIdx);
         }
         if (counterIndices.empty()) continue;  // might not be a scope command
 
@@ -666,7 +666,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
     std::vector<VkPerformanceCounterKHR> counters;
     std::vector<uint32_t> counterIndices;
 
-    // Find a single counter with VK_QUERY_SCOPE_COMMAND_KHR scope.
+    // Find a single counter with VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR scope.
     for (uint32_t idx = 0; idx < queueFamilyProperties.size(); idx++) {
         uint32_t nCounters;
 
@@ -681,7 +681,7 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
         queueFamilyIndex = idx;
 
         for (uint32_t counterIdx = 0; counterIdx < counters.size(); counterIdx++) {
-            if (counters[counterIdx].scope == VK_QUERY_SCOPE_COMMAND_KHR) {
+            if (counters[counterIdx].scope == VK_PERFORMANCE_COUNTER_SCOPE_COMMAND_KHR) {
                 counterIndices.push_back(counterIdx);
                 break;
             }
@@ -923,10 +923,10 @@ TEST_F(NegativeQuery, InsideRenderPassDynamicRendering) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {64, 64}};
     begin_rendering_info.colorAttachmentCount = 1;
@@ -954,10 +954,10 @@ TEST_F(NegativeQuery, OutsideRenderPassDynamicRendering) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
-    VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.renderArea = {{0, 0}, {64, 64}};
     begin_rendering_info.colorAttachmentCount = 1;
@@ -1907,7 +1907,7 @@ TEST_F(NegativeQuery, WriteTimestampWithoutQueryPool) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp2-queryPool-parameter");
-    vk::CmdWriteTimestamp2KHR(m_command_buffer.handle(), VK_PIPELINE_STAGE_2_NONE_KHR, bad_query_pool, 0);
+    vk::CmdWriteTimestamp2KHR(m_command_buffer.handle(), VK_PIPELINE_STAGE_2_NONE, bad_query_pool, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

@@ -25,11 +25,10 @@ bool StatelessValidation::ValidateSubpassGraphicsFlags(VkDevice device, const Vk
                                                        const Location &loc) const {
     bool skip = false;
     // make sure we consider all of the expanded and un-expanded graphics bits to be valid
-    const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR | VK_PIPELINE_STAGE_2_COPY_BIT_KHR |
-                                VK_PIPELINE_STAGE_2_RESOLVE_BIT_KHR | VK_PIPELINE_STAGE_2_BLIT_BIT_KHR |
-                                VK_PIPELINE_STAGE_2_CLEAR_BIT_KHR;
-    const auto kMetaGraphicsStages = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR |
-                                     VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR;
+    const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT |
+                                VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    const auto kMetaGraphicsStages = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT |
+                                     VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT;
     const auto kGraphicsStages =
         (sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT) | kMetaGraphicsStages) &
         ~kExcludeStages;
@@ -125,14 +124,13 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
             }
         }
         if (!enabled_features.synchronization2) {
-            if (initial_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR ||
-                initial_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+            if (initial_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || initial_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-synchronization2-06908"
                                : "VUID-VkAttachmentDescription-synchronization2-06908";
                 skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout),
                                  "is %s but the synchronization2 feature is not enabled.", string_VkImageLayout(initial_layout));
             }
-            if (final_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR || final_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+            if (final_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || final_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-synchronization2-06909"
                                : "VUID-VkAttachmentDescription-synchronization2-06909";
                 skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout),
@@ -140,18 +138,18 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
             }
         }
         if (!enabled_features.dynamicRenderingLocalRead) {
-            if (initial_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR) {
+            if (initial_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-dynamicRenderingLocalRead-09544"
                                : "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09544";
                 skip |= LogError(vuid, device, attachment_loc.dot(Field::initialLayout),
-                                 "is VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR but the "
+                                 "is VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ but the "
                                  "dynamicRenderingLocalRead feature is not enabled.");
             }
-            if (final_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR) {
+            if (final_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-dynamicRenderingLocalRead-09545"
                                : "VUID-VkAttachmentDescription-dynamicRenderingLocalRead-09545";
                 skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout),
-                                 "is VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ_KHR but the "
+                                 "is VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ but the "
                                  "dynamicRenderingLocalRead feature is not enabled.");
             }
         }
@@ -348,7 +346,7 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
 
         VkPipelineStageFlags2 srcStageMask = dependency.srcStageMask;
         VkPipelineStageFlags2 dstStageMask = dependency.dstStageMask;
-        if (const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2KHR>(pCreateInfo->pDependencies[i].pNext); barrier) {
+        if (const auto barrier = vku::FindStructInPNextChain<VkMemoryBarrier2>(pCreateInfo->pDependencies[i].pNext); barrier) {
             srcStageMask = barrier->srcStageMask;
             dstStageMask = barrier->dstStageMask;
         }
@@ -602,7 +600,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
                          pRenderingInfo->colorAttachmentCount, device_limits.maxColorAttachments);
     }
 
-    if ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_INLINE_BIT_EXT) != 0 && !enabled_features.nestedCommandBuffer &&
+    if ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_INLINE_BIT_KHR) != 0 && !enabled_features.nestedCommandBuffer &&
         !enabled_features.maintenance7) {
         skip |= LogError("VUID-VkRenderingInfo-flags-10012", commandBuffer, rendering_info_loc.dot(Field::flags),
                          "are %s, but nestedCommandBuffer and maintenance7 feature were not enabled.",

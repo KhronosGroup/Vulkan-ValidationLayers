@@ -885,8 +885,8 @@ TEST_F(NegativeGpuAV, NonMultisampleMismatchWithPipelinePartiallyBound) {
     buffer_ptr[0] = 1;
     buffer.Memory().Unmap();
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, 0};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo ds_layout_binding_flags = vku::InitStructHelper();
     ds_layout_binding_flags.bindingCount = 2;
     ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
 
@@ -1283,8 +1283,8 @@ TEST_F(NegativeGpuAV, AliasImageMultisample) {
         }
     )glsl";
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, 0, 0};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0, 0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo ds_layout_binding_flags = vku::InitStructHelper();
     ds_layout_binding_flags.bindingCount = 3;
     ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
 
@@ -1363,8 +1363,8 @@ TEST_F(NegativeGpuAV, AliasImageMultisampleDescriptorSetsPartiallyBound) {
     vkt::Image ms_image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView ms_image_view = ms_image.CreateView();
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT, 0, 0};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT ds_layout_binding_flags = vku::InitStructHelper();
+    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0, 0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo ds_layout_binding_flags = vku::InitStructHelper();
     ds_layout_binding_flags.bindingCount = 3;
     ds_layout_binding_flags.pBindingFlags = ds_binding_flags;
 
