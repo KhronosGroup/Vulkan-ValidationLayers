@@ -52,7 +52,7 @@ struct InitialLayoutState {
 };
 
 // Contains all info around an image, its subresources and layout map
-class ImageSubresourceLayoutInfo {
+class ImageLayoutRegistry {
   public:
     typedef std::function<bool(const VkImageSubresource&, VkImageLayout, VkImageLayout)> Callback;
 
@@ -117,11 +117,11 @@ class ImageSubresourceLayoutInfo {
                                           VkImageLayout layout);
     void SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
                                           const vvl::ImageView& view_state);
-    bool UpdateFrom(const ImageSubresourceLayoutInfo& from);
+    bool UpdateFrom(const ImageLayoutRegistry& from);
     uintptr_t CompatibilityKey() const;
     const LayoutMap& GetLayoutMap() const { return layout_map_; }
-    ImageSubresourceLayoutInfo(const vvl::Image& image_state);
-    ~ImageSubresourceLayoutInfo() {}
+    ImageLayoutRegistry(const vvl::Image& image_state);
+    ~ImageLayoutRegistry() {}
     uint32_t GetImageId() const;
 
     // This looks a bit ponderous but kAspectCount is a compile time constant

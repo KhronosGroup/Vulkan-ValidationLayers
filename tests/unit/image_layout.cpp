@@ -243,8 +243,9 @@ TEST_F(NegativeImageLayout, Compute11) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImageLayout, TrackingCommand) {
-    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5846");
+// inspired by https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5846
+TEST_F(NegativeImageLayout, MultipleCommandDispatches) {
+    TEST_DESCRIPTION("Make sure we can detect the exact dispatch command that caused the error later");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 

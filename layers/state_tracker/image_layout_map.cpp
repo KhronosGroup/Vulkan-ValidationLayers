@@ -23,8 +23,8 @@
 #include "state_tracker/cmd_buffer_state.h"
 
 namespace image_layout_map {
-using InitialLayoutStates = ImageSubresourceLayoutInfo::InitialLayoutStates;
-using LayoutEntry = ImageSubresourceLayoutInfo::LayoutEntry;
+using InitialLayoutStates = ImageLayoutRegistry::InitialLayoutStates;
+using LayoutEntry = ImageLayoutRegistry::LayoutEntry;
 
 template <typename LayoutsMap>
 static bool UpdateLayoutStateImpl(LayoutsMap& layouts, InitialLayoutStates& initial_layout_states, const IndexRange& range,
@@ -81,12 +81,12 @@ InitialLayoutState::InitialLayoutState(const vvl::CommandBuffer& cb_state_, cons
         aspect_mask = view_state_->normalized_subresource_range.aspectMask;
     }
 }
-bool ImageSubresourceLayoutInfo::SubresourceLayout::operator==(const ImageSubresourceLayoutInfo::SubresourceLayout& rhs) const {
+bool ImageLayoutRegistry::SubresourceLayout::operator==(const ImageLayoutRegistry::SubresourceLayout& rhs) const {
     bool is_equal =
         (current_layout == rhs.current_layout) && (initial_layout == rhs.initial_layout) && (subresource == rhs.subresource);
     return is_equal;
 }
-ImageSubresourceLayoutInfo::ImageSubresourceLayoutInfo(const vvl::Image& image_state)
+ImageLayoutRegistry::ImageLayoutRegistry(const vvl::Image& image_state)
     : image_state_(image_state),
       encoder_(image_state.subresource_encoder),
       layout_map_(encoder_.SubresourceCount()),
@@ -104,8 +104,8 @@ static bool SetSubresourceRangeLayoutImpl(LayoutMap& layouts, InitialLayoutState
     return updated;
 }
 
-bool ImageSubresourceLayoutInfo::SetSubresourceRangeLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
-                                                           VkImageLayout layout, VkImageLayout expected_layout) {
+bool ImageLayoutRegistry::SetSubresourceRangeLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
+                                                    VkImageLayout layout, VkImageLayout expected_layout) {
     if (expected_layout == kInvalidLayout) {
         // Set the initial layout to the set layout as we had no other layout to reference
         expected_layout = layout;
@@ -135,8 +135,8 @@ static void SetSubresourceRangeInitialLayoutImpl(LayoutMap& layouts, InitialLayo
 }
 
 // Unwrap the BothMaps entry here as this is a performance hotspot.
-void ImageSubresourceLayoutInfo::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state,
-                                                                  const VkImageSubresourceRange& range, VkImageLayout layout) {
+void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
+                                                           VkImageLayout layout) {
     if (!InRange(range)) return;  // Don't even try to track bogus subreources
 
     RangeGenerator range_gen(encoder_, range);
@@ -150,8 +150,8 @@ void ImageSubresourceLayoutInfo::SetSubresourceRangeInitialLayout(const vvl::Com
 }
 
 // Unwrap the BothMaps entry here as this is a performance hotspot.
-void ImageSubresourceLayoutInfo::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
-                                                                  const vvl::ImageView& view_state) {
+void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
+                                                           const vvl::ImageView& view_state) {
     RangeGenerator range_gen(view_state.range_generator);
     if (layout_map_.SmallMode()) {
         SetSubresourceRangeInitialLayoutImpl(layout_map_.GetSmallMap(), initial_layout_states_, range_gen, cb_state, layout,
@@ -164,13 +164,13 @@ void ImageSubresourceLayoutInfo::SetSubresourceRangeInitialLayout(const vvl::Com
 }
 
 // TODO: make sure this paranoia check is sufficient and not too much.
-uintptr_t ImageSubresourceLayoutInfo::CompatibilityKey() const {
+uintptr_t ImageLayoutRegistry::CompatibilityKey() const {
     return (reinterpret_cast<uintptr_t>(&image_state_) ^ encoder_.AspectMask());
 }
 
-uint32_t ImageSubresourceLayoutInfo::GetImageId() const { return image_state_.GetId(); }
+uint32_t ImageLayoutRegistry::GetImageId() const { return image_state_.GetId(); }
 
-bool ImageSubresourceLayoutInfo::UpdateFrom(const ImageSubresourceLayoutInfo& other) {
+bool ImageLayoutRegistry::UpdateFrom(const ImageLayoutRegistry& other) {
     // Must be from matching images for the reinterpret cast to be valid
     assert(CompatibilityKey() == other.CompatibilityKey());
     if (CompatibilityKey() != other.CompatibilityKey()) return false;
