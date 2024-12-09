@@ -76,11 +76,10 @@ jobs:
   linux:
     needs: check_vvl
     runs-on: ubuntu-22.04
-    name: "linux (${{matrix.sanitize}} sanitizer, ${{matrix.config}}, robinhood ${{matrix.robin_hood}} )"
+    name: "linux (address sanitizer, ${{matrix.config}}, robinhood ${{matrix.robin_hood}} )"
     strategy:
       fail-fast: false
       matrix:
-        sanitize: [ address, thread ]
         config: [debug, release]
         robin_hood: [ "ON" ]
         include:
@@ -88,54 +87,72 @@ jobs:
           # Chromium build, and some package managers don't use it.
           - config: release
             robin_hood: "OFF"
-            sanitize: address
-        exclude:
-          # Have found over time this finds nothing extra, while taking the longest and using the most CI minutes.
-          - config: debug
-            robin_hood: "ON"
-            sanitize: thread
+
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.config }}-${{ matrix.sanitize }}-${{matrix.robin_hood}}
+          key: ${{ matrix.config }}-address-${{matrix.robin_hood}}
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
       # This is to combat a bug when using 6.6 linux kernels with thread/address sanitizer
       # https://github.com/google/sanitizers/issues/1716
       - run: sudo sysctl vm.mmap_rnd_bits=28
       - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
         env:
-          CFLAGS: -fsanitize=${{ matrix.sanitize }}
-          CXXFLAGS: -fsanitize=${{ matrix.sanitize }}
-          LDFLAGS: -fsanitize=${{ matrix.sanitize }}
+          CFLAGS: -fsanitize=address
+          CXXFLAGS: -fsanitize=address
+          LDFLAGS: -fsanitize=address
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
       - name: Test Max Profile
-        if: ${{ matrix.sanitize != 'thread' }}
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
-      - name: Test Max Profile - Skip Video
-        # Currently Thread Sanitizer causes each video framework tests to slowly increase the time each test runs
-        # This then persists for the following tests as well, really slowing down runs by factor of an hour or more
-        if: ${{ matrix.sanitize == 'thread' }}
-        run: python scripts/tests.py --test --skipVideo
-        env:
-          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
       - name: Test Max Core
-        # Thread Sanitize will take about 9x longer to run than Address Sanitize.
-        # The main reason we have Max Core and Min Core is to catch issues with Vulkan 1.x vs Vulkan 1.y version issues.
-        # In effort to reduce the bottle neck time in testing, skipping these for Thread Sanitize.
-        if: ${{ matrix.sanitize != 'thread' }}
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_core.json
       - name: Test Min Core
-        if: ${{ matrix.sanitize != 'thread' }}
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/min_core.json
+
+  linux-tsan:
+    needs: check_vvl
+    runs-on: ubuntu-22.04
+    name: "linux (thread sanitizer, ${{matrix.config}}, robinhood ${{matrix.robin_hood}} )"
+    strategy:
+      fail-fast: false
+      matrix:
+        # Have found over time debug finds nothing extra, while taking the longest and using the most CI minutes.
+        config: [ release ]
+        robin_hood: [ "ON" ]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lukka/get-cmake@latest
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.config }}-thread-${{matrix.robin_hood}}
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      # This is to combat a bug when using 6.6 linux kernels with thread/address sanitizer
+      # https://github.com/google/sanitizers/issues/1716
+      - run: sudo sysctl vm.mmap_rnd_bits=28
+      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
+        env:
+          CFLAGS: -fsanitize=thread
+          CXXFLAGS: -fsanitize=thread
+          LDFLAGS: -fsanitize=thread
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      # Thread Sanitize will take about 9x longer to run than Address Sanitize.
+      # The main reason we have Max Core and Min Core is to catch issues with Vulkan 1.x vs Vulkan 1.y version issues.
+      # In effort to reduce the bottle neck time in testing, skipping these for Thread Sanitize.
+      - name: Test Max Profile
+        run: python scripts/tests.py --test --tsan
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
 
   linuxUpload:
     needs: linux
