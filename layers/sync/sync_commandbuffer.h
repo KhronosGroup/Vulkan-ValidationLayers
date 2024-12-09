@@ -19,6 +19,7 @@
 #include "sync/sync_renderpass.h"
 #include "state_tracker/cmd_buffer_state.h"
 
+struct ReportKeyValues;
 class SyncValidator;
 
 namespace syncval {
@@ -210,6 +211,7 @@ class CommandExecutionContext {
     virtual QueueId GetQueueId() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual std::string FormatUsage(ResourceUsageTagEx tag_ex) const = 0;
+    virtual void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const = 0;
 
     std::string FormatHazard(const HazardResult &hazard) const;
     bool ValidForSyncOps() const;
@@ -261,6 +263,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     void Reset();
 
     std::string FormatUsage(ResourceUsageTagEx tag_ex) const override;
+    void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const override;
     std::string FormatUsage(const char *usage_string,
                             const ResourceFirstAccess &access) const;  //  Only command buffers have "first usage"
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
