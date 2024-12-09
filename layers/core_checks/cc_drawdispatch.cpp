@@ -1372,9 +1372,8 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
                          last_bound_state.DescribeNonCompatibleSet(pipeline.max_active_slot, *pipeline_layout).c_str());
     } else {
         // if the bound set is not compatible, the rest will just be extra redundant errors
-        for (const auto &set_binding_pair : pipeline.active_slots) {
+        for (const auto &[set_index, binding_req_map] : pipeline.active_slots) {
             std::string error_string;
-            uint32_t set_index = set_binding_pair.first;
             const auto ds_slot = last_bound_state.ds_slots[set_index];
             if (!ds_slot.ds_state) {
                 skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
@@ -1400,7 +1399,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
                 const bool need_validate =
                     NeedDrawStateValidated(cb_state, descriptor_set, ds_slot, disabled[image_layout_validation]);
                 if (need_validate) {
-                    skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, cb_state, vuid.loc(), vuid);
+                    skip |= ValidateDrawState(*descriptor_set, set_index, binding_req_map, cb_state, vuid.loc(), vuid);
                 }
             }
         }
@@ -1427,9 +1426,8 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                              last_bound_state.DescribeNonCompatibleSet(shader_state->max_active_slot, *shader_state).c_str());
         } else {
             // if the bound set is not copmatible, the rest will just be extra redundant errors
-            for (const auto &set_binding_pair : shader_state->active_slots) {
+            for (const auto &[set_index, binding_req_map] : shader_state->active_slots) {
                 std::string error_string;
-                uint32_t set_index = set_binding_pair.first;
                 const auto ds_slot = last_bound_state.ds_slots[set_index];
                 if (!ds_slot.ds_state) {
                     const LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
@@ -1453,7 +1451,7 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                     const bool need_validate =
                         NeedDrawStateValidated(cb_state, descriptor_set, ds_slot, disabled[image_layout_validation]);
                     if (need_validate) {
-                        skip |= ValidateDrawState(*descriptor_set, set_index, set_binding_pair.second, cb_state, vuid.loc(), vuid);
+                        skip |= ValidateDrawState(*descriptor_set, set_index, binding_req_map, cb_state, vuid.loc(), vuid);
                     }
                 }
             }

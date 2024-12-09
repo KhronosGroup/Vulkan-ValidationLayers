@@ -503,8 +503,8 @@ bool DebugPrintfPass::Run() {
     CreateDescriptorSet();
 
     // Here we "link" the functions, but since it is all generated, no need to go through the LinkInfo flow
-    for (const auto& entry : function_id_map_) {
-        CreateBufferWriteFunction(entry.first, entry.second);
+    for (const auto& [number_of_args, function_id] : function_id_map_) {
+        CreateBufferWriteFunction(number_of_args, function_id);
     }
 
     // remove the everything else possible incase they don't support VK_KHR_non_semantic_info
