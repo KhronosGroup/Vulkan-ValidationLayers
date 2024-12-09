@@ -159,11 +159,7 @@ struct LabelCommand {
 class CommandBuffer : public RefcountedStateObject {
     using Func = vvl::Func;
   public:
-    struct LayoutState {
-        StateObject::IdType id;
-        std::shared_ptr<ImageSubresourceLayoutInfo> info;
-    };
-    using ImageLayoutMap = vvl::unordered_map<VkImage, LayoutState>;
+    using ImageLayoutMap = vvl::unordered_map<VkImage, std::shared_ptr<ImageSubresourceLayoutInfo>>;
     using AliasedLayoutMap = vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutInfo>>;
 
     VkCommandBufferAllocateInfo allocate_info;

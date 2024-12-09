@@ -256,14 +256,10 @@ static void RecordCmdWaitEvents2(Validator &gpuav, VkCommandBuffer commandBuffer
 }
 
 void UpdateCmdBufImageLayouts(Validator &gpuav, const vvl::CommandBuffer &cb_state) {
-    for (const auto &layout_map_entry : cb_state.image_layout_map) {
-        const auto image = layout_map_entry.first;
-        const auto subresource_layout_info = layout_map_entry.second.info;
-        if (!subresource_layout_info) {
-            continue;
-        }
+    for (const auto &[image, subresource_layout_info] : cb_state.image_layout_map) {
+        if (!subresource_layout_info) continue;
         auto image_state = gpuav.Get<vvl::Image>(image);
-        if (image_state && image_state->GetId() == layout_map_entry.second.id) {
+        if (image_state && image_state->GetId() == subresource_layout_info->GetImageId()) {
             auto guard = image_state->layout_range_map->WriteLock();
             sparse_container::splice(*image_state->layout_range_map, subresource_layout_info->GetLayoutMap(),
                                      GlobalLayoutUpdater());

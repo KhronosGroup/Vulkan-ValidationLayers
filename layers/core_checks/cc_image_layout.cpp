@@ -197,8 +197,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
     bool skip = false;
     // Iterate over the layout maps for each referenced image
     GlobalImageLayoutRangeMap empty_map(1);
-    for (const auto &layout_map_entry : cb_state.image_layout_map) {
-        const VkImage image = layout_map_entry.first;
+    for (const auto &[image, subresource_layout_info] : cb_state.image_layout_map) {
+        if (!subresource_layout_info) continue;
         const auto image_state = Get<vvl::Image>(image);
         if (!image_state) continue;
 
@@ -208,7 +208,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
             continue;
         }
 
-        const auto &layout_map = layout_map_entry.second.info->GetLayoutMap();
+        const auto &layout_map = subresource_layout_info->GetLayoutMap();
         // Validate the initial_uses for each subresource referenced
         if (layout_map.empty()) continue;
 
@@ -278,12 +278,11 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
 }
 
 void CoreChecks::UpdateCmdBufImageLayouts(const vvl::CommandBuffer &cb_state) {
-    for (const auto &layout_map_entry : cb_state.image_layout_map) {
-        const VkImage image = layout_map_entry.first;
+    for (const auto &[image, subresource_layout_info] : cb_state.image_layout_map) {
         const auto image_state = Get<vvl::Image>(image);
-        if (image_state && image_state->GetId() == layout_map_entry.second.id && layout_map_entry.second.info) {
+        if (image_state && subresource_layout_info && image_state->GetId() == subresource_layout_info->GetImageId()) {
             auto guard = image_state->layout_range_map->WriteLock();
-            sparse_container::splice(*image_state->layout_range_map, layout_map_entry.second.info->GetLayoutMap(),
+            sparse_container::splice(*image_state->layout_range_map, subresource_layout_info->GetLayoutMap(),
                                      GlobalLayoutUpdater());
         }
     }
@@ -844,19 +843,17 @@ bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer &cb_
     if (iter == layout_updates.end()) {
         subresource_layout_info = std::make_shared<ImageSubresourceLayoutInfo>(*image_state);
         new_write = true;
-        layout_updates.emplace(image_state->VkHandle(),
-                               vvl::CommandBuffer::LayoutState{image_state->GetId(), subresource_layout_info});
-    } else if (iter->second.id != image_state->GetId()) {
+        layout_updates.emplace(image_state->VkHandle(), subresource_layout_info);
+    } else if (iter->second->GetImageId() != image_state->GetId()) {
         subresource_layout_info = std::make_shared<ImageSubresourceLayoutInfo>(*image_state);
-        iter->second.info = subresource_layout_info;
+        iter->second = subresource_layout_info;
         new_write = true;
     } else {
-        subresource_layout_info = iter->second.info;
+        subresource_layout_info = iter->second;
     }
     const auto &current_subresource_map = current_map.find(image_state->VkHandle());
-    const auto read_subresource_map = (new_write && current_subresource_map != current_map.end())
-                                          ? current_subresource_map->second.info
-                                          : subresource_layout_info;
+    const auto read_subresource_map =
+        (new_write && current_subresource_map != current_map.end()) ? current_subresource_map->second : subresource_layout_info;
     // Validate aspects in isolation.
     // This is required when handling separate depth-stencil layouts.
     for (uint32_t aspect_index = 0; aspect_index < 32; aspect_index++) {
