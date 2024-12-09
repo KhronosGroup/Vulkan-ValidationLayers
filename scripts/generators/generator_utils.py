@@ -48,17 +48,6 @@ def buildListVUID(valid_usage_file: str) -> set:
     for json_vuid_string in ExtractVUIDs(vuid_dict):
         valid_vuids.add(json_vuid_string)
 
-    # List of VUs that should exists, but have a spec bug
-    for vuid in [
-        # https://gitlab.khronos.org/vulkan/vulkan/-/issues/3582
-        "VUID-VkCopyImageToImageInfoEXT-commonparent",
-        "VUID-vkUpdateDescriptorSetWithTemplate-descriptorSet-parent",
-        "VUID-vkUpdateVideoSessionParametersKHR-videoSessionParameters-parent",
-        "VUID-vkDestroyVideoSessionParametersKHR-videoSessionParameters-parent",
-        "VUID-vkGetDescriptorSetHostMappingVALVE-descriptorSet-parent",
-        ]:
-        valid_vuids.add(vuid)
-
     return valid_vuids
 
 # Will do a sanity check the VUID exists

@@ -774,6 +774,8 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             return '"UNASSIGNED-VkWriteIndirectExecutionSetShaderEXT-shader-parent"'
         if structName == 'VkDescriptorDataEXT' and memberName == 'pSampler':
             return '"UNASSIGNED-VkDescriptorDataEXT-pSampler-parent"'
+        if structName == 'VkVideoEncodeQuantizationMapInfoKHR' and memberName == 'quantizationMap':
+            return '"UNASSIGNED-VkVideoEncodeQuantizationMapInfoKHR-quantizationMap-parent"'
 
         # Common parents because the structs have more then one handle that needs to be check
         if (structName == 'VkBufferMemoryBarrier' and memberName == 'buffer') or (structName == 'VkImageMemoryBarrier' and memberName == 'image'):
