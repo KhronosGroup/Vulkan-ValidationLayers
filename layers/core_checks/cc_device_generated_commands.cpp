@@ -175,14 +175,14 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
 
             const VkIndirectCommandsPushConstantTokenEXT* push_constant_token = token.data.pPushConstant;
             const VkPushConstantRange& token_range = push_constant_token->updateRange;
-            for (auto past_range : token_ranges) {
-                if (RangesIntersect(past_range.second.offset, past_range.second.size, token_range.offset, token_range.size)) {
+            for (const auto& [past_index, past_range] : token_ranges) {
+                if (RangesIntersect(past_range.offset, past_range.size, token_range.offset, token_range.size)) {
                     skip |=
                         LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11099", device,
                                  data_loc.dot(Field::pPushConstant).dot(Field::updateRange),
                                  "is in the range %s which overlaps with pTokens[%" PRIu32 "].data.pPushConstant->updateRange %s.",
-                                 string_VkPushConstantRange(token_range).c_str(), past_range.first,
-                                 string_VkPushConstantRange(past_range.second).c_str());
+                                 string_VkPushConstantRange(token_range).c_str(), past_index,
+                                 string_VkPushConstantRange(past_range).c_str());
                     break;
                 }
             }

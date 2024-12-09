@@ -1215,8 +1215,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
     }
 
     if (last_bound.desc_set_pipeline_layout != VK_NULL_HANDLE) {
-        for (const auto &set_binding_pair : pipe->active_slots) {
-            uint32_t set_index = set_binding_pair.first;
+        for (const auto &[set_index, binding_req_map] : pipe->active_slots) {
             if (set_index >= last_bound.ds_slots.size()) {
                 continue;
             }
@@ -1242,7 +1241,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
                 }
 
                 // Bind this set and its active descriptor resources to the command buffer
-                descriptor_set->UpdateDrawStates(&dev_data, *this, set_binding_pair.second);
+                descriptor_set->UpdateDrawStates(&dev_data, *this, binding_req_map);
 
                 ds_slot.validated_set = descriptor_set.get();
                 ds_slot.validated_set_change_count = descriptor_set->GetChangeCount();
@@ -1617,10 +1616,10 @@ void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Locat
         for (auto &function : query_updates) {
             function(*this, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
         }
-        for (const auto &query_state_pair : local_query_to_state_map) {
-            auto query_pool_state = dev_data.Get<vvl::QueryPool>(query_state_pair.first.pool);
+        for (const auto &[query_object, query_state] : local_query_to_state_map) {
+            auto query_pool_state = dev_data.Get<vvl::QueryPool>(query_object.pool);
             if (!query_pool_state) continue;
-            query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass, query_state_pair.second);
+            query_pool_state->SetQueryState(query_object.slot, query_object.perf_pass, query_state);
         }
     }
 
@@ -1663,11 +1662,11 @@ void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(c
         function(*this, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
     }
 
-    for (const auto &query_state_pair : local_query_to_state_map) {
-        if (query_state_pair.second == QUERYSTATE_ENDED && !is_query_updated_after(query_state_pair.first)) {
-            auto query_pool_state = dev_data.Get<vvl::QueryPool>(query_state_pair.first.pool);
+    for (const auto &[query_object, query_state] : local_query_to_state_map) {
+        if (query_state == QUERYSTATE_ENDED && !is_query_updated_after(query_object)) {
+            auto query_pool_state = dev_data.Get<vvl::QueryPool>(query_object.pool);
             if (!query_pool_state) continue;
-            query_pool_state->SetQueryState(query_state_pair.first.slot, query_state_pair.first.perf_pass, QUERYSTATE_AVAILABLE);
+            query_pool_state->SetQueryState(query_object.slot, query_object.perf_pass, QUERYSTATE_AVAILABLE);
         }
     }
 }

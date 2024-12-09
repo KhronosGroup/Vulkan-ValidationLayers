@@ -2211,10 +2211,9 @@ bool CoreChecks::ValidateShaderClock(const spirv::Module &module_state, const sp
 
 bool CoreChecks::ValidateImageWrite(const spirv::Module &module_state, const Location &loc) const {
     bool skip = false;
-    for (const auto &image_write : module_state.static_data_.image_write_load_id_map) {
-        const spirv::Instruction &insn = *image_write.first;
+    for (const auto &[insn, load_id] : module_state.static_data_.image_write_load_id_map) {
         // guaranteed by spirv-val to be an OpTypeImage
-        const uint32_t image = module_state.GetTypeId(image_write.second);
+        const uint32_t image = module_state.GetTypeId(load_id);
         const spirv::Instruction *image_def = module_state.FindDef(image);
         const uint32_t image_format = image_def->Word(8);
         // If format is 'Unknown' then need to wait until a descriptor is bound to it
@@ -2222,13 +2221,13 @@ bool CoreChecks::ValidateImageWrite(const spirv::Module &module_state, const Loc
             const VkFormat compatible_format = CompatibleSpirvImageFormat(image_format);
             if (compatible_format != VK_FORMAT_UNDEFINED) {
                 const uint32_t format_component_count = vkuFormatComponentCount(compatible_format);
-                const uint32_t texel_component_count = module_state.GetTexelComponentCount(insn);
+                const uint32_t texel_component_count = module_state.GetTexelComponentCount(*insn);
                 if (texel_component_count < format_component_count) {
                     skip |= LogError("VUID-RuntimeSpirv-OpImageWrite-07112", module_state.handle(), loc,
                                      "SPIR-V OpImageWrite Texel operand only contains %" PRIu32
                                      " components, but the OpImage format mapping to %s has %" PRIu32 " components.\n%s\n%s\n",
                                      texel_component_count, string_VkFormat(compatible_format), format_component_count,
-                                     module_state.DescribeInstruction(insn).c_str(),
+                                     module_state.DescribeInstruction(*insn).c_str(),
                                      module_state.DescribeInstruction(*image_def).c_str());
                 }
             }
@@ -2401,8 +2400,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
             id_value_map.reserve(specialization_info->mapEntryCount);
 
             // spirv-val makes sure every OpSpecConstant has a OpDecoration.
-            for (const auto &itr : module_state.static_data_.id_to_spec_id) {
-                const uint32_t spec_id = itr.second;
+            for (const auto &[result_id, spec_id] : module_state.static_data_.id_to_spec_id) {
                 VkSpecializationMapEntry map_entry = {spirv::kInvalidValue, 0, 0};
                 for (uint32_t i = 0; i < specialization_info->mapEntryCount; i++) {
                     if (specialization_info->pMapEntries[i].constantID == spec_id) {
@@ -2418,7 +2416,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
                 }
 
                 uint32_t spec_const_size = spirv::kInvalidValue;
-                const spirv::Instruction *def_insn = module_state.FindDef(itr.first);
+                const spirv::Instruction *def_insn = module_state.FindDef(result_id);
                 const spirv::Instruction *type_insn = module_state.FindDef(def_insn->Word(1));
 
                 // Specialization constants can only be of type bool, scalar integer, or scalar floating point

@@ -2399,8 +2399,8 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
 
         if (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
             !pipe_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) && pipe_state->vertex_input_state) {
-            for (const auto &binding_state : pipe_state->vertex_input_state->bindings) {
-                cb_state->current_vertex_buffer_binding_info[binding_state.first].stride = binding_state.second.desc.stride;
+            for (const auto &[binding_index, binding_state] : pipe_state->vertex_input_state->bindings) {
+                cb_state->current_vertex_buffer_binding_info[binding_index].stride = binding_state.desc.stride;
             }
         }
 

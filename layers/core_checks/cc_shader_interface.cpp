@@ -99,10 +99,9 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
         }
     }
 
-    for (const auto &location_it : location_map) {
-        const uint32_t location = location_it.first;
-        const auto attribute_input = location_it.second.attribute_input;
-        const auto shader_input = location_it.second.shader_input;
+    for (const auto &[location, attribute_info] : location_map) {
+        const auto attribute_input = attribute_info.attribute_input;
+        const auto shader_input = attribute_info.shader_input;
 
         if (attribute_input && !shader_input) {
             skip |= LogPerformanceWarning("WARNING-Shader-OutputNotConsumed", module_state.handle(), vi_loc,
@@ -127,21 +126,20 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
 
             // Type checking
             if ((attribute_type & var_numeric_type) == 0) {
-                skip |=
-                    LogError("VUID-VkGraphicsPipelineCreateInfo-Input-08733", module_state.handle(),
-                             vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
-                             "(%s) at Location %" PRIu32 " does not match vertex shader input type (%s).",
-                             string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Input-08733", module_state.handle(),
+                                 vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
+                                 "(%s) at Location %" PRIu32 " does not match vertex shader input type (%s).",
+                                 string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
             } else if (attribute64 && !shader64) {
                 skip |=
                     LogError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08929", module_state.handle(),
-                             vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
+                             vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
                              "(%s) is a 64-bit format, but at Location %" PRIu32 " the vertex shader input is 32-bit type (%s).",
                              string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
             } else if (!attribute64 && shader64) {
                 skip |=
                     LogError("VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-08930", module_state.handle(),
-                             vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
+                             vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
                              "(%s) is a 64-bit format, but at Location %" PRIu32 " the vertex shader input is 64-bit type (%s).",
                              string_VkFormat(attribute_format), location, module_state.DescribeType(var_base_type_id).c_str());
             } else if (attribute64 && shader64) {
@@ -150,7 +148,7 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
                 if (attribute_components < input_components) {
                     skip |= LogError(
                         "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-09198", module_state.handle(),
-                        vi_loc.dot(Field::pVertexAttributeDescriptions, location_it.second.attribute_index).dot(Field::format),
+                        vi_loc.dot(Field::pVertexAttributeDescriptions, attribute_info.attribute_index).dot(Field::format),
                         "(%s) is a %" PRIu32 "-wide 64-bit format, but at location %" PRIu32 " the vertex shader input is %" PRIu32
                         "-wide 64-bit type (%s). (64-bit vertex input don't have default values and require "
                         "components to match what is used in the shader)",
@@ -513,32 +511,31 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
     // <Location, Components[4]> (only 4 components in a Location)
     vvl::unordered_map<uint32_t, std::array<ComponentInfo, 4>> slot_map;
 
-    for (const auto &interface_slot : producer_entrypoint.output_interface_slots) {
-        auto &slot = slot_map[interface_slot.first.Location()][interface_slot.first.Component()];
-        if (interface_slot.second->nested_struct || interface_slot.second->physical_storage_buffer) {
+    for (const auto &[interface_slot, stage_variable] : producer_entrypoint.output_interface_slots) {
+        auto &slot = slot_map[interface_slot.Location()][interface_slot.Component()];
+        if (stage_variable->nested_struct || stage_variable->physical_storage_buffer) {
             return skip;  // TODO workaround
         }
-        slot.output = interface_slot.second;
-        slot.output_type = interface_slot.first.type;
-        slot.output_width = interface_slot.first.bit_width;
+        slot.output = stage_variable;
+        slot.output_type = interface_slot.type;
+        slot.output_width = interface_slot.bit_width;
     }
-    for (const auto &interface_slot : consumer_entrypoint.input_interface_slots) {
-        auto &slot = slot_map[interface_slot.first.Location()][interface_slot.first.Component()];
-        if (interface_slot.second->nested_struct || interface_slot.second->physical_storage_buffer) {
+    for (const auto &[interface_slot, stage_variable] : consumer_entrypoint.input_interface_slots) {
+        auto &slot = slot_map[interface_slot.Location()][interface_slot.Component()];
+        if (stage_variable->nested_struct || stage_variable->physical_storage_buffer) {
             return skip;  // TODO workaround
         }
-        slot.input = interface_slot.second;
-        slot.input_type = interface_slot.first.type;
-        slot.input_width = interface_slot.first.bit_width;
+        slot.input = stage_variable;
+        slot.input_type = interface_slot.type;
+        slot.input_width = interface_slot.bit_width;
     }
 
-    for (const auto &slot : slot_map) {
+    for (const auto &[location, components] : slot_map) {
         // Found that sometimes there is a big mismatch and printing out EVERY slot adds a lot of noise
         if (skip) break;
 
-        const uint32_t location = slot.first;
         for (uint32_t component = 0; component < 4; component++) {
-            const auto &component_info = slot.second[component];
+            const auto &component_info = components[component];
             const auto *input_var = component_info.input;
             const auto *output_var = component_info.output;
 
@@ -734,15 +731,14 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
     const auto *ms_state = pipeline.MultisampleState();
     const bool alpha_to_coverage_enabled = ms_state && (ms_state->alphaToCoverageEnable == VK_TRUE);
 
-    for (const auto &location_it : location_map) {
-        const auto reference = location_it.second.reference;
+    for (const auto &[location, attachment_info] : location_map) {
+        const auto reference = attachment_info.reference;
         if (reference != nullptr && reference->attachment == VK_ATTACHMENT_UNUSED) {
             continue;
         }
 
-        const uint32_t location = location_it.first;
-        const auto attachment = location_it.second.attachment;
-        const auto output = location_it.second.output;
+        const auto attachment = attachment_info.attachment;
+        const auto output = attachment_info.output;
         if (attachment && !output) {
             const auto &attachment_states = pipeline.AttachmentStates();
             if (location < attachment_states.size() && attachment_states[location].colorWriteMask != 0) {
