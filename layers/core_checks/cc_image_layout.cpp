@@ -254,7 +254,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
                         // TODO - We need a way to map the action command to which caused this error
                         const vvl::DrawDispatchVuid &vuid = GetDrawDispatchVuid(vvl::Func::vkCmdDraw);
                         skip |= LogError(vuid.image_layout_09600, objlist, loc,
-                                         "command buffer %s expects %s (subresource: aspectMask %s array layer %" PRIu32
+                                         "command buffer %s expects %s (subresource: aspectMask %s, array layer %" PRIu32
                                          ", mip level %" PRIu32 ") to be in layout %s--instead, current layout is %s.",
                                          FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(),
                                          string_VkImageAspectFlags(subresource.aspectMask).c_str(), subresource.arrayLayer,
