@@ -41,7 +41,7 @@ class VideoSessionParameters;
 
 // Only CoreChecks uses this, but the state tracker stores it.
 constexpr static auto kInvalidLayout = image_layout_map::kInvalidLayout;
-using ImageSubresourceLayoutMap = image_layout_map::ImageSubresourceLayoutMap;
+using ImageSubresourceLayoutInfo = image_layout_map::ImageSubresourceLayoutInfo;
 
 struct EventInfo {
     VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
@@ -161,10 +161,10 @@ class CommandBuffer : public RefcountedStateObject {
   public:
     struct LayoutState {
         StateObject::IdType id;
-        std::shared_ptr<ImageSubresourceLayoutMap> map;
+        std::shared_ptr<ImageSubresourceLayoutInfo> info;
     };
     using ImageLayoutMap = vvl::unordered_map<VkImage, LayoutState>;
-    using AliasedLayoutMap = vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutMap>>;
+    using AliasedLayoutMap = vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageSubresourceLayoutInfo>>;
 
     VkCommandBufferAllocateInfo allocate_info;
     VkCommandBufferBeginInfo beginInfo;
@@ -579,9 +579,9 @@ class CommandBuffer : public RefcountedStateObject {
 
     void ResetPushConstantRangesLayoutIfIncompatible(const vvl::PipelineLayout &pipeline_layout_state);
 
-    std::shared_ptr<const ImageSubresourceLayoutMap> GetImageSubresourceLayoutMap(VkImage image) const;
-    std::shared_ptr<ImageSubresourceLayoutMap> GetImageSubresourceLayoutMap(const vvl::Image &image_state);
-    const ImageLayoutMap &GetImageSubresourceLayoutMap() const;
+    std::shared_ptr<const ImageSubresourceLayoutInfo> GetImageSubresourceLayoutInfo(VkImage image) const;
+    std::shared_ptr<ImageSubresourceLayoutInfo> GetOrCreateImageSubresourceLayoutInfo(const vvl::Image &image_state);
+    const ImageLayoutMap &GetImageLayoutMap() const;
 
     const QFOTransferBarrierSets<QFOImageTransferBarrier> &GetQFOBarrierSets(const QFOImageTransferBarrier &type_tag) const {
         return qfo_transfer_image_barriers;

@@ -26,8 +26,8 @@
 
 #include "state_tracker/render_pass_state.h"
 
-using LayoutRange = image_layout_map::ImageSubresourceLayoutMap::RangeType;
-using LayoutEntry = image_layout_map::ImageSubresourceLayoutMap::LayoutEntry;
+using LayoutRange = image_layout_map::ImageSubresourceLayoutInfo::RangeType;
+using LayoutEntry = image_layout_map::ImageSubresourceLayoutInfo::LayoutEntry;
 
 // Utility type for checking Image layouts
 struct LayoutUseCheckAndMessage {
@@ -64,7 +64,7 @@ struct LayoutUseCheckAndMessage {
 
 // Helper to update the Global or Overlay layout map
 struct GlobalLayoutUpdater {
-    bool update(VkImageLayout &dst, const image_layout_map::ImageSubresourceLayoutMap::LayoutEntry &src) const {
+    bool update(VkImageLayout &dst, const image_layout_map::ImageSubresourceLayoutInfo::LayoutEntry &src) const {
         if (src.current_layout != image_layout_map::kInvalidLayout && dst != src.current_layout) {
             dst = src.current_layout;
             return true;
@@ -72,7 +72,7 @@ struct GlobalLayoutUpdater {
         return false;
     }
 
-    std::optional<VkImageLayout> insert(const image_layout_map::ImageSubresourceLayoutMap::LayoutEntry &src) const {
+    std::optional<VkImageLayout> insert(const image_layout_map::ImageSubresourceLayoutInfo::LayoutEntry &src) const {
         std::optional<VkImageLayout> result;
         if (src.current_layout != image_layout_map::kInvalidLayout) {
             result.emplace(src.current_layout);
@@ -157,8 +157,8 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
                                    VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout, const RangeFactory &range_factory,
                                    const Location &loc, const char *mismatch_layout_vuid, bool *error) {
     bool skip = false;
-    const auto subresource_map = cb_state.GetImageSubresourceLayoutMap(image_state.VkHandle());
-    if (!subresource_map) {
+    const auto subresource_layout_info = cb_state.GetImageSubresourceLayoutInfo(image_state.VkHandle());
+    if (!subresource_layout_info) {
         return skip;
     }
 
@@ -168,7 +168,7 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
         return skip;
     }
 
-    const auto &layout_map = subresource_map->GetLayoutMap();
+    const auto &layout_map = subresource_layout_info->GetLayoutMap();
     const auto *global_range_map = image_state.layout_range_map.get();
     GlobalImageLayoutRangeMap empty_map(1);
     assert(global_range_map);
@@ -258,14 +258,15 @@ static void RecordCmdWaitEvents2(Validator &gpuav, VkCommandBuffer commandBuffer
 void UpdateCmdBufImageLayouts(Validator &gpuav, const vvl::CommandBuffer &cb_state) {
     for (const auto &layout_map_entry : cb_state.image_layout_map) {
         const auto image = layout_map_entry.first;
-        const auto subres_map = layout_map_entry.second.map;
-        if (!subres_map) {
+        const auto subresource_layout_info = layout_map_entry.second.info;
+        if (!subresource_layout_info) {
             continue;
         }
         auto image_state = gpuav.Get<vvl::Image>(image);
         if (image_state && image_state->GetId() == layout_map_entry.second.id) {
             auto guard = image_state->layout_range_map->WriteLock();
-            sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
+            sparse_container::splice(*image_state->layout_range_map, subresource_layout_info->GetLayoutMap(),
+                                     GlobalLayoutUpdater());
         }
     }
 }
@@ -340,7 +341,7 @@ bool Validator::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl:
     if (disabled[image_layout_validation]) return false;
     // Possible the image state was destroyed and we didn't see it waiting for the queue submit callback
     if (!image_view_state.image_state) return false;
-    auto range_factory = [&image_view_state](const ImageSubresourceLayoutMap &map) {
+    auto range_factory = [&image_view_state](const ImageSubresourceLayoutInfo &info) {
         return image_layout_map::RangeGenerator(image_view_state.range_generator);
     };
 

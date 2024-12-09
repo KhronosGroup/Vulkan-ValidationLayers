@@ -1666,7 +1666,7 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
 
-    const auto &current_map = cb_state.GetImageSubresourceLayoutMap();
+    const auto &current_map = cb_state.GetImageLayoutMap();
 
     {
         auto image_state = Get<vvl::Image>(img_barrier.image);
