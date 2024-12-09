@@ -632,10 +632,10 @@ Each `vvl::CommandBuffer` maintains its own copy of the image layout state, in a
 
 ```
    typedef vvl::unordered_map<const vvl::Image *,
-                                    std::shared_ptr<ImageSubresourceLayoutMap>>  CommandBufferImageLayoutMap;
+                                    std::shared_ptr<ImageSubresourceLayoutInfo>>  CommandBufferImageLayoutMap;
    CommandBufferImageLayoutMap image_layout_map;
    typedef vvl::unordered_map<const GlobalImageLayoutRangeMap *,
-                                     std::shared_ptr<ImageSubresourceLayoutMap>>
+                                     std::shared_ptr<ImageSubresourceLayoutInfo>>
                                                                                CommandBufferAliasedLayoutMap;
    CommandBufferAliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 

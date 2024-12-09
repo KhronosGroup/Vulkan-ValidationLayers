@@ -23,8 +23,8 @@
 #include "state_tracker/cmd_buffer_state.h"
 
 namespace image_layout_map {
-using InitialLayoutStates = ImageSubresourceLayoutMap::InitialLayoutStates;
-using LayoutEntry = ImageSubresourceLayoutMap::LayoutEntry;
+using InitialLayoutStates = ImageSubresourceLayoutInfo::InitialLayoutStates;
+using LayoutEntry = ImageSubresourceLayoutInfo::LayoutEntry;
 
 template <typename LayoutsMap>
 static bool UpdateLayoutStateImpl(LayoutsMap& layouts, InitialLayoutStates& initial_layout_states, const IndexRange& range,
@@ -81,15 +81,15 @@ InitialLayoutState::InitialLayoutState(const vvl::CommandBuffer& cb_state_, cons
         aspect_mask = view_state_->normalized_subresource_range.aspectMask;
     }
 }
-bool ImageSubresourceLayoutMap::SubresourceLayout::operator==(const ImageSubresourceLayoutMap::SubresourceLayout& rhs) const {
+bool ImageSubresourceLayoutInfo::SubresourceLayout::operator==(const ImageSubresourceLayoutInfo::SubresourceLayout& rhs) const {
     bool is_equal =
         (current_layout == rhs.current_layout) && (initial_layout == rhs.initial_layout) && (subresource == rhs.subresource);
     return is_equal;
 }
-ImageSubresourceLayoutMap::ImageSubresourceLayoutMap(const vvl::Image& image_state)
+ImageSubresourceLayoutInfo::ImageSubresourceLayoutInfo(const vvl::Image& image_state)
     : image_state_(image_state),
       encoder_(image_state.subresource_encoder),
-      layouts_(encoder_.SubresourceCount()),
+      layout_map_(encoder_.SubresourceCount()),
       initial_layout_states_() {}
 
 // Use the unwrapped maps from the BothMap in the actual implementation
@@ -104,8 +104,8 @@ static bool SetSubresourceRangeLayoutImpl(LayoutMap& layouts, InitialLayoutState
     return updated;
 }
 
-bool ImageSubresourceLayoutMap::SetSubresourceRangeLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
-                                                          VkImageLayout layout, VkImageLayout expected_layout) {
+bool ImageSubresourceLayoutInfo::SetSubresourceRangeLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
+                                                           VkImageLayout layout, VkImageLayout expected_layout) {
     if (expected_layout == kInvalidLayout) {
         // Set the initial layout to the set layout as we had no other layout to reference
         expected_layout = layout;
@@ -113,12 +113,12 @@ bool ImageSubresourceLayoutMap::SetSubresourceRangeLayout(const vvl::CommandBuff
     if (!InRange(range)) return false;  // Don't even try to track bogus subreources
 
     RangeGenerator range_gen(encoder_, range);
-    if (layouts_.SmallMode()) {
-        return SetSubresourceRangeLayoutImpl(layouts_.GetSmallMap(), initial_layout_states_, range_gen, cb_state, layout,
+    if (layout_map_.SmallMode()) {
+        return SetSubresourceRangeLayoutImpl(layout_map_.GetSmallMap(), initial_layout_states_, range_gen, cb_state, layout,
                                              expected_layout);
     } else {
-        assert(!layouts_.Tristate());
-        return SetSubresourceRangeLayoutImpl(layouts_.GetBigMap(), initial_layout_states_, range_gen, cb_state, layout,
+        assert(!layout_map_.Tristate());
+        return SetSubresourceRangeLayoutImpl(layout_map_.GetBigMap(), initial_layout_states_, range_gen, cb_state, layout,
                                              expected_layout);
     }
 }
@@ -135,39 +135,40 @@ static void SetSubresourceRangeInitialLayoutImpl(LayoutMap& layouts, InitialLayo
 }
 
 // Unwrap the BothMaps entry here as this is a performance hotspot.
-void ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state,
-                                                                 const VkImageSubresourceRange& range, VkImageLayout layout) {
+void ImageSubresourceLayoutInfo::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state,
+                                                                  const VkImageSubresourceRange& range, VkImageLayout layout) {
     if (!InRange(range)) return;  // Don't even try to track bogus subreources
 
     RangeGenerator range_gen(encoder_, range);
-    if (layouts_.SmallMode()) {
-        SetSubresourceRangeInitialLayoutImpl(layouts_.GetSmallMap(), initial_layout_states_, range_gen, cb_state, layout, nullptr);
+    if (layout_map_.SmallMode()) {
+        SetSubresourceRangeInitialLayoutImpl(layout_map_.GetSmallMap(), initial_layout_states_, range_gen, cb_state, layout,
+                                             nullptr);
     } else {
-        assert(!layouts_.Tristate());
-        SetSubresourceRangeInitialLayoutImpl(layouts_.GetBigMap(), initial_layout_states_, range_gen, cb_state, layout, nullptr);
+        assert(!layout_map_.Tristate());
+        SetSubresourceRangeInitialLayoutImpl(layout_map_.GetBigMap(), initial_layout_states_, range_gen, cb_state, layout, nullptr);
     }
 }
 
 // Unwrap the BothMaps entry here as this is a performance hotspot.
-void ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
-                                                                 const vvl::ImageView& view_state) {
+void ImageSubresourceLayoutInfo::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
+                                                                  const vvl::ImageView& view_state) {
     RangeGenerator range_gen(view_state.range_generator);
-    if (layouts_.SmallMode()) {
-        SetSubresourceRangeInitialLayoutImpl(layouts_.GetSmallMap(), initial_layout_states_, range_gen, cb_state, layout,
+    if (layout_map_.SmallMode()) {
+        SetSubresourceRangeInitialLayoutImpl(layout_map_.GetSmallMap(), initial_layout_states_, range_gen, cb_state, layout,
                                              &view_state);
     } else {
-        assert(!layouts_.Tristate());
-        SetSubresourceRangeInitialLayoutImpl(layouts_.GetBigMap(), initial_layout_states_, range_gen, cb_state, layout,
+        assert(!layout_map_.Tristate());
+        SetSubresourceRangeInitialLayoutImpl(layout_map_.GetBigMap(), initial_layout_states_, range_gen, cb_state, layout,
                                              &view_state);
     }
 }
 
 // TODO: make sure this paranoia check is sufficient and not too much.
-uintptr_t ImageSubresourceLayoutMap::CompatibilityKey() const {
+uintptr_t ImageSubresourceLayoutInfo::CompatibilityKey() const {
     return (reinterpret_cast<uintptr_t>(&image_state_) ^ encoder_.AspectMask());
 }
 
-bool ImageSubresourceLayoutMap::UpdateFrom(const ImageSubresourceLayoutMap& other) {
+bool ImageSubresourceLayoutInfo::UpdateFrom(const ImageSubresourceLayoutInfo& other) {
     // Must be from matching images for the reinterpret cast to be valid
     assert(CompatibilityKey() == other.CompatibilityKey());
     if (CompatibilityKey() != other.CompatibilityKey()) return false;
@@ -176,7 +177,7 @@ bool ImageSubresourceLayoutMap::UpdateFrom(const ImageSubresourceLayoutMap& othe
     //         currently this function is only used to import from secondary command buffers, destruction of which
     //         invalidate the referencing primary command buffer, meaning that the dangling pointer will either be
     //         cleaned up in invalidation, on not referenced by validation code.
-    return sparse_container::splice(layouts_, other.layouts_, LayoutEntry::Updater());
+    return sparse_container::splice(layout_map_, other.layout_map_, LayoutEntry::Updater());
 }
 
 }  // namespace image_layout_map

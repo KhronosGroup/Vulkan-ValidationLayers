@@ -51,7 +51,8 @@ struct InitialLayoutState {
     InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0), label() {}
 };
 
-class ImageSubresourceLayoutMap {
+// Contains all info around an image, its subresources and layout map
+class ImageSubresourceLayoutInfo {
   public:
     typedef std::function<bool(const VkImageSubresource&, VkImageLayout, VkImageLayout)> Callback;
 
@@ -116,12 +117,11 @@ class ImageSubresourceLayoutMap {
                                           VkImageLayout layout);
     void SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
                                           const vvl::ImageView& view_state);
-    bool UpdateFrom(const ImageSubresourceLayoutMap& from);
+    bool UpdateFrom(const ImageSubresourceLayoutInfo& from);
     uintptr_t CompatibilityKey() const;
-    const LayoutMap& GetLayoutMap() const { return layouts_; }
-    ImageSubresourceLayoutMap(const vvl::Image& image_state);
-    ~ImageSubresourceLayoutMap() {}
-    const vvl::Image* GetImageView() const { return &image_state_; };
+    const LayoutMap& GetLayoutMap() const { return layout_map_; }
+    ImageSubresourceLayoutInfo(const vvl::Image& image_state);
+    ~ImageSubresourceLayoutInfo() {}
 
     // This looks a bit ponderous but kAspectCount is a compile time constant
     VkImageSubresource Decode(IndexType index) const {
@@ -148,7 +148,7 @@ class ImageSubresourceLayoutMap {
 
     bool AnyInRange(RangeGenerator&& gen, std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
         for (; gen->non_empty(); ++gen) {
-            for (auto pos = layouts_.lower_bound(*gen); (pos != layouts_.end()) && (gen->intersects(pos->first)); ++pos) {
+            for (auto pos = layout_map_.lower_bound(*gen); (pos != layout_map_.end()) && (gen->intersects(pos->first)); ++pos) {
                 if (func(pos->first, pos->second)) {
                     return true;
                 }
@@ -164,7 +164,7 @@ class ImageSubresourceLayoutMap {
   private:
     const vvl::Image& image_state_;
     const Encoder& encoder_;
-    LayoutMap layouts_;
+    LayoutMap layout_map_;
     InitialLayoutStates initial_layout_states_;
 };
 }  // namespace image_layout_map
