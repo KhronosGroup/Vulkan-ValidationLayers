@@ -408,7 +408,7 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
 const CommandBuffer::ImageLayoutMap &CommandBuffer::GetImageLayoutMap() const { return image_layout_map; }
 
 // The const variant only need the image as it is the key for the map
-std::shared_ptr<const ImageSubresourceLayoutInfo> CommandBuffer::GetImageSubresourceLayoutInfo(VkImage image) const {
+std::shared_ptr<const ImageLayoutRegistry> CommandBuffer::GetImageLayoutRegistry(VkImage image) const {
     auto it = image_layout_map.find(image);
     if (it == image_layout_map.cend()) {
         return nullptr;
@@ -417,7 +417,7 @@ std::shared_ptr<const ImageSubresourceLayoutInfo> CommandBuffer::GetImageSubreso
 }
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
-std::shared_ptr<ImageSubresourceLayoutInfo> CommandBuffer::GetOrCreateImageSubresourceLayoutInfo(const vvl::Image &image_state) {
+std::shared_ptr<ImageLayoutRegistry> CommandBuffer::GetOrCreateImageLayoutRegistry(const vvl::Image &image_state) {
     // Make sure we don't create a nullptr keyed entry for a zombie Image
     if (image_state.Destroyed() || !image_state.layout_range_map) {
         return nullptr;
@@ -426,7 +426,7 @@ std::shared_ptr<ImageSubresourceLayoutInfo> CommandBuffer::GetOrCreateImageSubre
     if (iter != image_layout_map.end() && iter->second && image_state.GetId() == iter->second->GetImageId()) {
         return iter->second;
     }
-    std::shared_ptr<ImageSubresourceLayoutInfo> subresource_layout_info;
+    std::shared_ptr<ImageLayoutRegistry> image_layout_registry;
     if (image_state.CanAlias()) {
         // Aliasing images need to share the same local layout map.
         // Since they use the same global layout state, use it as a key
@@ -435,26 +435,26 @@ std::shared_ptr<ImageSubresourceLayoutInfo> CommandBuffer::GetOrCreateImageSubre
         const auto *global_layout_map = image_state.layout_range_map.get();
         auto alias_iter = aliased_image_layout_map.find(global_layout_map);
         if (alias_iter != aliased_image_layout_map.end()) {
-            subresource_layout_info = alias_iter->second;
+            image_layout_registry = alias_iter->second;
         } else {
-            subresource_layout_info = std::make_shared<ImageSubresourceLayoutInfo>(image_state);
+            image_layout_registry = std::make_shared<ImageLayoutRegistry>(image_state);
             // Save the local layout map for the next aliased image.
             // The global layout map pointer is only used as a key into the local lookup
             // table so it doesn't need to be locked.
-            aliased_image_layout_map.emplace(global_layout_map, subresource_layout_info);
+            aliased_image_layout_map.emplace(global_layout_map, image_layout_registry);
         }
 
     } else {
-        subresource_layout_info = std::make_shared<ImageSubresourceLayoutInfo>(image_state);
+        image_layout_registry = std::make_shared<ImageLayoutRegistry>(image_state);
     }
     if (iter != image_layout_map.end()) {
         // overwrite the stale entry
-        iter->second = subresource_layout_info;
+        iter->second = image_layout_registry;
     } else {
         // add a new entry
-        image_layout_map.insert({image_state.VkHandle(), subresource_layout_info});
+        image_layout_map.insert({image_state.VkHandle(), image_layout_registry});
     }
-    return subresource_layout_info;
+    return image_layout_registry;
 }
 
 static bool SetQueryState(const QueryObject &object, QueryState value, QueryMap *localQueryToStateMap) {
@@ -1077,15 +1077,15 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         // NOTE: The update/population of the image_layout_map is done in CoreChecks, but for other classes derived from
         // ValidationStateTracker these maps will be empty, so leaving the propagation in the the state tracker should be a no-op
         // for those other classes.
-        for (const auto &[image, subresource_layout_info] : sub_cb_state->image_layout_map) {
+        for (const auto &[image, image_layout_registry] : sub_cb_state->image_layout_map) {
             const auto image_state = dev_data.Get<vvl::Image>(image);
-            if (!image_state || image_state->Destroyed() || !subresource_layout_info ||
-                image_state->GetId() != subresource_layout_info->GetImageId()) {
+            if (!image_state || image_state->Destroyed() || !image_layout_registry ||
+                image_state->GetId() != image_layout_registry->GetImageId()) {
                 continue;
             }
-            auto cb_subresource_layout_info = GetOrCreateImageSubresourceLayoutInfo(*image_state);
-            if (cb_subresource_layout_info) {
-                cb_subresource_layout_info->UpdateFrom(*subresource_layout_info);
+            auto cb_image_layout_registry = GetOrCreateImageLayoutRegistry(*image_state);
+            if (cb_image_layout_registry) {
+                cb_image_layout_registry->UpdateFrom(*image_layout_registry);
             }
         }
 
@@ -1414,8 +1414,9 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
 // Set image layout for given VkImageSubresourceRange struct
 void CommandBuffer::SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &image_subresource_range,
                                    VkImageLayout layout, VkImageLayout expected_layout) {
-    auto subresource_map = GetOrCreateImageSubresourceLayoutInfo(image_state);
-    if (subresource_map && subresource_map->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout)) {
+    auto image_layout_registry = GetOrCreateImageLayoutRegistry(image_state);
+    if (image_layout_registry &&
+        image_layout_registry->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout)) {
         image_layout_change_count++;  // Change the version of this data to force revalidation
     }
 }
@@ -1426,19 +1427,19 @@ void CommandBuffer::SetImageViewInitialLayout(const vvl::ImageView &view_state, 
         return;
     }
     vvl::Image *image_state = view_state.image_state.get();
-    auto subresource_map =
-        (image_state && !image_state->Destroyed()) ? GetOrCreateImageSubresourceLayoutInfo(*image_state) : nullptr;
-    if (subresource_map) {
-        subresource_map->SetSubresourceRangeInitialLayout(*this, layout, view_state);
+    auto image_layout_registry =
+        (image_state && !image_state->Destroyed()) ? GetOrCreateImageLayoutRegistry(*image_state) : nullptr;
+    if (image_layout_registry) {
+        image_layout_registry->SetSubresourceRangeInitialLayout(*this, layout, view_state);
     }
 }
 
 // Set the initial image layout for a passed non-normalized subresource range
 void CommandBuffer::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
                                           VkImageLayout layout) {
-    auto subresource_map = GetOrCreateImageSubresourceLayoutInfo(image_state);
-    if (subresource_map) {
-        subresource_map->SetSubresourceRangeInitialLayout(*this, image_state.NormalizeSubresourceRange(range), layout);
+    auto image_layout_registry = GetOrCreateImageLayoutRegistry(image_state);
+    if (image_layout_registry) {
+        image_layout_registry->SetSubresourceRangeInitialLayout(*this, image_state.NormalizeSubresourceRange(range), layout);
     }
 }
 

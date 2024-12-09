@@ -254,7 +254,7 @@ Image::Image(const ValidationStateTracker &dev_data, VkImage img, const VkImageC
 
 void Image::Destroy() {
     // NOTE: due to corner cases in aliased images, the layout_range_map MUST not be cleaned up here.
-    // If it is, bad local entries could be created by vvl::CommandBuffer::GetOrCreateImageSubresourceLayoutInfo()
+    // If it is, bad local entries could be created by vvl::CommandBuffer::GetOrCreateImageLayoutRegistry()
     // If an aliasing image was being destroyed (and layout_range_map was reset()), a nullptr keyed
     // entry could get put into vvl::CommandBuffer::aliased_image_layout_map.
     //
