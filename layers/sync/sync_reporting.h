@@ -30,3 +30,20 @@ struct SyncNodeFormatter {
     SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_ = nullptr);
 };
 std::string FormatStateObject(const SyncNodeFormatter &formatter);
+
+struct ReportKeyValues {
+    struct KeyValue {
+        std::string key;
+        std::string value;
+    };
+    std::vector<KeyValue> key_values;
+
+    void Add(std::string_view key, std::string_view value);
+
+    template <typename ValueType>
+    void Add(std::string_view key, const ValueType &value) {
+        key_values.emplace_back(KeyValue{std::string(key), std::to_string(value)});
+    }
+
+    std::string GetExtraPropertiesSection() const;
+};

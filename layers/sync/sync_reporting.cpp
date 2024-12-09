@@ -47,6 +47,27 @@ std::string FormatStateObject(const SyncNodeFormatter &formatter) {
     return out.str();
 }
 
+void ReportKeyValues::Add(std::string_view key, std::string_view value) {
+    key_values.emplace_back(KeyValue{std::string(key), std::string(value)});
+}
+
+std::string ReportKeyValues::GetExtraPropertiesSection() const {
+    if (key_values.empty()) {
+        return {};
+    }
+    std::stringstream ss;
+    ss << "\nExtra properties:\n";
+    bool first = true;
+    for (const auto &kv : key_values) {
+        if (!first) {
+            ss << "\n";
+        }
+        first = false;
+        ss << kv.key << " : " << kv.value;
+    }
+    return ss.str();
+}
+
 static std::string FormatHandleRecord(const HandleRecord::FormatterState &formatter) {
     std::stringstream out;
     const HandleRecord &handle = formatter.that;
@@ -86,13 +107,6 @@ std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState 
         // Note: ex_cb_state set to null forces output of record.cb_state
         if (!formatter.ex_cb_state || (formatter.ex_cb_state != record.cb_state)) {
             out << ", " << FormatStateObject(SyncNodeFormatter(formatter.sync_state, record.cb_state));
-        }
-        if (formatter.sync_state.syncval_settings.message_include_debug_information) {
-            out << ", seq_no: " << record.seq_num;
-            if (record.sub_command != 0) {
-                out << ", subcmd: " << record.sub_command;
-            }
-            out << ", reset_no: " << std::to_string(record.reset_count);
         }
 
         // Associated resource
@@ -244,6 +258,16 @@ std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex) c
     return out.str();
 }
 
+void CommandBufferAccessContext::AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const {
+    if (tag >= access_log_->size()) return;
+    const ResourceUsageRecord &record = (*access_log_)[tag];
+    extra_properties.Add("seq_no", record.seq_num);
+    if (record.sub_command != 0) {
+        extra_properties.Add("subcmd", record.sub_command);
+    }
+    extra_properties.Add("reset_no", record.reset_count);
+}
+
 std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
     std::stringstream out;
     BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag_ex.tag);
@@ -255,13 +279,17 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
             out << FormatStateObject(SyncNodeFormatter(sync_state_, batch.queue->GetQueueState()));
             out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index;
         }
-        if (sync_state_.syncval_settings.message_include_debug_information) {
-            out << ", batch_tag: " << batch.base_tag;
-        }
 
         // Commandbuffer Usages Information
         out << ", "
             << FormatResourceUsageRecord(record.Formatter(sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index));
     }
     return out.str();
+}
+
+void QueueBatchContext::AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const {
+    BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag);
+    if (access.IsValid()) {
+        extra_properties.Add("batch_tag", access.batch->base_tag);
+    }
 }

@@ -24,6 +24,7 @@
 
 class CommandBufferAccessContext;
 class HazardResult;
+struct ReportKeyValues;
 class QueueBatchContext;
 class ValidationObject;
 
@@ -144,6 +145,10 @@ class ErrorMessages {
 
     std::string VideoReferencePictureError(const HazardResult& hazard, uint32_t reference_picture_index,
                                            const CommandBufferAccessContext& cb_context) const;
+
+  private:
+    void AddCbContextExtraProperties(const CommandBufferAccessContext& cb_context, ResourceUsageTag tag,
+                                     std::string& message) const;
 
   private:
     ValidationObject& validator_;

@@ -427,9 +427,9 @@
                                     "expanded": false,
                                     "settings": [
                                         {
-                                            "key": "syncval_message_include_debug_information",
-                                            "label": "Include debug information",
-                                            "description": "Includes debug information for additional diagnostics. This can be useful for reporting issues or for users familiar with the validation codebase.",
+                                            "key": "syncval_message_extra_properties",
+                                            "label": "Add extra key-value properties",
+                                            "description": "Appends a section of key-value properties to the error message. This structured information is useful for filtering error messages and may include optional or debug properties that are not found in the main error message.",
                                             "type": "BOOL",
                                             "default": false,
                                             "dependence": {
