@@ -168,6 +168,8 @@ uintptr_t ImageSubresourceLayoutInfo::CompatibilityKey() const {
     return (reinterpret_cast<uintptr_t>(&image_state_) ^ encoder_.AspectMask());
 }
 
+uint32_t ImageSubresourceLayoutInfo::GetImageId() const { return image_state_.GetId(); }
+
 bool ImageSubresourceLayoutInfo::UpdateFrom(const ImageSubresourceLayoutInfo& other) {
     // Must be from matching images for the reinterpret cast to be valid
     assert(CompatibilityKey() == other.CompatibilityKey());

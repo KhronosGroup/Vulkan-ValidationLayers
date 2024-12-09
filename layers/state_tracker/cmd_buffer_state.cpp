@@ -413,7 +413,7 @@ std::shared_ptr<const ImageSubresourceLayoutInfo> CommandBuffer::GetImageSubreso
     if (it == image_layout_map.cend()) {
         return nullptr;
     }
-    return it->second.info;
+    return it->second;
 }
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
@@ -423,8 +423,8 @@ std::shared_ptr<ImageSubresourceLayoutInfo> CommandBuffer::GetOrCreateImageSubre
         return nullptr;
     }
     auto iter = image_layout_map.find(image_state.VkHandle());
-    if (iter != image_layout_map.end() && image_state.GetId() == iter->second.id) {
-        return iter->second.info;
+    if (iter != image_layout_map.end() && iter->second && image_state.GetId() == iter->second->GetImageId()) {
+        return iter->second;
     }
     std::shared_ptr<ImageSubresourceLayoutInfo> subresource_layout_info;
     if (image_state.CanAlias()) {
@@ -449,12 +449,10 @@ std::shared_ptr<ImageSubresourceLayoutInfo> CommandBuffer::GetOrCreateImageSubre
     }
     if (iter != image_layout_map.end()) {
         // overwrite the stale entry
-        iter->second.id = image_state.GetId();
-        iter->second.info = subresource_layout_info;
+        iter->second = subresource_layout_info;
     } else {
         // add a new entry
-        image_layout_map.insert(
-            {image_state.VkHandle(), vvl::CommandBuffer::LayoutState{image_state.GetId(), subresource_layout_info}});
+        image_layout_map.insert({image_state.VkHandle(), subresource_layout_info});
     }
     return subresource_layout_info;
 }
@@ -1079,14 +1077,15 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         // NOTE: The update/population of the image_layout_map is done in CoreChecks, but for other classes derived from
         // ValidationStateTracker these maps will be empty, so leaving the propagation in the the state tracker should be a no-op
         // for those other classes.
-        for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
-            const auto image_state = dev_data.Get<vvl::Image>(sub_layout_map_entry.first);
-            if (!image_state || image_state->Destroyed() || image_state->GetId() != sub_layout_map_entry.second.id) {
+        for (const auto &[image, subresource_layout_info] : sub_cb_state->image_layout_map) {
+            const auto image_state = dev_data.Get<vvl::Image>(image);
+            if (!image_state || image_state->Destroyed() || !subresource_layout_info ||
+                image_state->GetId() != subresource_layout_info->GetImageId()) {
                 continue;
             }
             auto cb_subresource_layout_info = GetOrCreateImageSubresourceLayoutInfo(*image_state);
             if (cb_subresource_layout_info) {
-                cb_subresource_layout_info->UpdateFrom(*sub_layout_map_entry.second.info);
+                cb_subresource_layout_info->UpdateFrom(*subresource_layout_info);
             }
         }
 

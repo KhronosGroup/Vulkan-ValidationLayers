@@ -122,6 +122,7 @@ class ImageSubresourceLayoutInfo {
     const LayoutMap& GetLayoutMap() const { return layout_map_; }
     ImageSubresourceLayoutInfo(const vvl::Image& image_state);
     ~ImageSubresourceLayoutInfo() {}
+    uint32_t GetImageId() const;
 
     // This looks a bit ponderous but kAspectCount is a compile time constant
     VkImageSubresource Decode(IndexType index) const {

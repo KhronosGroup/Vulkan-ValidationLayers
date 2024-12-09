@@ -1383,8 +1383,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             const auto cb_subresource_layout_info = cb_state.GetImageSubresourceLayoutInfo(image);
             // Const getter can be null in which case we have nothing to check against for this image...
             if (!cb_subresource_layout_info) continue;
+            if (!sub_layout_map_entry.second) continue;
 
-            const auto &sub_layout_map = sub_layout_map_entry.second.info->GetLayoutMap();
+            const auto &sub_layout_map = sub_layout_map_entry.second->GetLayoutMap();
             const auto &cb_layout_map = cb_subresource_layout_info->GetLayoutMap();
             for (sparse_container::parallel_iterator<const ImageSubresourceLayoutInfo::LayoutMap> iter(sub_layout_map,
                                                                                                        cb_layout_map, 0);
