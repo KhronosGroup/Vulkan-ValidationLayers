@@ -219,8 +219,11 @@ def RunVVLTests(args):
         # a manual vkCreateDevice call and need to investigate more why
         common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=*AndroidHardwareBuffer.*:*AndroidExternalResolve.*", env=lvt_env)
         return
-    if args.skipVideo:
-        common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=-*Video.*", env=lvt_env)
+    if args.tsan:
+        # These are tests we have decided are worth using Thread Sanitize as it will take about 9x longer to run a test
+        # We have also seen TSAN turn bug out and make each test incrementally take longer
+        # (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8931)
+        common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=*SyncVal.*:*Threading.*:*SyncObject.*:*Wsi.*:-*Video*", env=lvt_env)
         return
 
     common_ci.RunShellCmd(lvt_cmd, env=lvt_env)
@@ -270,8 +273,8 @@ if __name__ == '__main__':
         '--mockAndroid', dest='mockAndroid',
         action='store_true', help='Use Mock Android')
     parser.add_argument(
-        '--skipVideo', dest='skipVideo',
-        action='store_true', help='Filter out video tests')
+        '--tsan', dest='tsan',
+        action='store_true', help='Filter out tests for TSAN')
 
     args = parser.parse_args()
 
