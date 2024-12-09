@@ -206,14 +206,13 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
                     const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
                     // TODO - We need a way to map the action command to which caused this error
                     const vvl::DrawDispatchVuid &vuid = GetDrawDispatchVuid(vvl::Func::vkCmdDraw);
-                    skip |= gpuav.LogError(
-                        vuid.image_layout_09600, objlist, loc,
-                        "command buffer %s expects %s (subresource: aspectMask %s array layer %" PRIu32 ", mip level %" PRIu32
-                        ") "
-                        "to be in layout %s--instead, current layout is %s.",
-                        gpuav.FormatHandle(cb_state).c_str(), gpuav.FormatHandle(image_state).c_str(),
-                        string_VkImageAspectFlags(subresource.aspectMask).c_str(), subresource.arrayLayer, subresource.mipLevel,
-                        string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
+                    skip |= gpuav.LogError(vuid.image_layout_09600, objlist, loc,
+                                           "command buffer %s expects %s (subresource: aspectMask %s, array layer %" PRIu32
+                                           ", mip level %" PRIu32 ") to be in layout %s--instead, current layout is %s.",
+                                           gpuav.FormatHandle(cb_state).c_str(), gpuav.FormatHandle(image_state).c_str(),
+                                           string_VkImageAspectFlags(subresource.aspectMask).c_str(), subresource.arrayLayer,
+                                           subresource.mipLevel, string_VkImageLayout(initial_layout),
+                                           string_VkImageLayout(image_layout));
                 }
             }
         }
