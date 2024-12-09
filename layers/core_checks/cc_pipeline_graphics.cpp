@@ -3695,7 +3695,9 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassLegacyDithering(const Last
     if (!enabled_features.legacyDithering) return skip;
 
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
-    const bool has_legacy_dithering_pipeline = (pipeline.create_flags & VK_PIPELINE_CREATE_2_ENABLE_LEGACY_DITHERING_BIT_EXT) != 0;
+    const bool has_legacy_dithering_pipeline =
+        ((pipeline.create_flags & VK_PIPELINE_CREATE_2_ENABLE_LEGACY_DITHERING_BIT_EXT) != 0) ||
+        pipeline.fragment_output_state->legacy_dithering_enabled;
     const bool has_legacy_dithering_rendering = (rendering_info.flags & VK_RENDERING_ENABLE_LEGACY_DITHERING_BIT_EXT) != 0;
     if (has_legacy_dithering_pipeline && !has_legacy_dithering_rendering) {
         const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());

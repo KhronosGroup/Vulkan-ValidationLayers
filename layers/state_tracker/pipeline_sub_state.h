@@ -223,6 +223,11 @@ struct FragmentOutputState : public PipelineSubState {
             sample_location_enabled = IsSampleLocationEnabled(create_info);
         }
 
+        const auto flags2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfoKHR>(create_info.pNext);
+        if (flags2) {
+            legacy_dithering_enabled = (flags2->flags & VK_PIPELINE_CREATE_2_ENABLE_LEGACY_DITHERING_BIT_EXT) != 0;
+        }
+
         // TODO
         // auto format_ci = vku::FindStructInPNextChain<VkPipelineRenderingFormatCreateInfoKHR>(gpci->pNext);
     }
@@ -237,6 +242,7 @@ struct FragmentOutputState : public PipelineSubState {
 
     AttachmentStateVector attachment_states;
 
+    bool legacy_dithering_enabled = false;
     bool blend_constants_enabled = false;  // Blend constants enabled for any attachments
     bool sample_location_enabled = false;
 };
