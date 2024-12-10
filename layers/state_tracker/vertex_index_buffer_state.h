@@ -26,11 +26,13 @@ class Buffer;
 
 struct VertexBufferBinding {
     VkBuffer buffer;  // VK_NULL_HANDLE is valid if using nullDescriptor
-    VkDeviceSize size;
+    // Binding valid size: 0 if buffer is not tracked, actual size if VK_WHOLE_SIZE was specified,
+    // clamped up to 0 if specified size is greater than the size actually left in the buffer
+    VkDeviceSize effective_size;
     VkDeviceSize offset;
     VkDeviceSize stride;
 
-    VertexBufferBinding() : buffer(VK_NULL_HANDLE), size(0), offset(0), stride(0) {}
+    VertexBufferBinding() : buffer(VK_NULL_HANDLE), effective_size(0), offset(0), stride(0) {}
 
     void reset() { *this = VertexBufferBinding(); }
 };

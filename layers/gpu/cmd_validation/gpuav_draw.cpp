@@ -811,7 +811,8 @@ static std::optional<SmallestVertexBufferBinding> SmallestVertexAttributesCount(
             const VkDeviceSize stride =
                 vbb.stride != 0 ? vbb.stride : attribute_size;  // Tracked stride should already handle all possible value origin
 
-            VkDeviceSize vertex_buffer_remaining_size = vbb.size > attrib.desc.offset ? vbb.size - attrib.desc.offset : 0;
+            VkDeviceSize vertex_buffer_remaining_size =
+                vbb.effective_size > attrib.desc.offset ? vbb.effective_size - attrib.desc.offset : 0;
 
             VkDeviceSize vertex_attributes_count = vertex_buffer_remaining_size / stride;
             if (vertex_buffer_remaining_size > vertex_attributes_count * stride) {
@@ -1030,7 +1031,7 @@ void DrawIndexed(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
 
                         // Vertex buffer binding info
                         gpuav.FormatHandle(smallest_vertex_buffer_binding.binding_info.buffer).c_str(),
-                        smallest_vertex_buffer_binding.binding, smallest_vertex_buffer_binding.binding_info.size,
+                        smallest_vertex_buffer_binding.binding, smallest_vertex_buffer_binding.binding_info.effective_size,
                         smallest_vertex_buffer_binding.binding_info.offset, smallest_vertex_buffer_binding.binding_info.stride,
                         smallest_vertex_buffer_binding.smallest_vertex_attributes_count,
 
@@ -1493,7 +1494,7 @@ void DrawIndexedIndirectVertexBuffer(Validator &gpuav, CommandBuffer &cb_state, 
 
                         // Vertex buffer binding info
                         gpuav.FormatHandle(smallest_vertex_buffer_binding.binding_info.buffer).c_str(),
-                        smallest_vertex_buffer_binding.binding, smallest_vertex_buffer_binding.binding_info.size,
+                        smallest_vertex_buffer_binding.binding, smallest_vertex_buffer_binding.binding_info.effective_size,
                         smallest_vertex_buffer_binding.binding_info.offset, smallest_vertex_buffer_binding.binding_info.stride,
                         smallest_vertex_buffer_binding.smallest_vertex_attributes_count,
 

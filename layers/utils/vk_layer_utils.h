@@ -404,18 +404,6 @@ static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divi
     return result;
 }
 
-inline std::optional<VkDeviceSize> ComputeValidSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
-    std::optional<VkDeviceSize> valid_size;
-    if (offset < whole_size) {
-        if (size == VK_WHOLE_SIZE) {
-            valid_size.emplace(whole_size - offset);
-        } else if ((offset + size) <= whole_size) {
-            valid_size.emplace(size);
-        }
-    }
-    return valid_size;
-}
-
 // Only 32 bit fields should need a bit count
 static inline uint32_t GetBitSetCount(uint32_t field) {
     std::bitset<32> view_bits(field);
