@@ -116,7 +116,7 @@ void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, uint64_
         // Timeline can be empty for the binary wait operation if the semaphore was imported.
         // Otherwise timeline should contain a binary signal.
         if (timeline_.empty()) {
-            assert(payload == 0);
+            assert(scope_ != vvl::Semaphore::kInternal);
             completed_ = SemOp(kWait, wait_submit, 0);
             return;
         }
