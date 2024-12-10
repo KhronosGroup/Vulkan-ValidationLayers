@@ -61,6 +61,24 @@ VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
     return VK_FORMAT_UNDEFINED;
 }
 
+VkFormat FindSupportedCompressedFormat(VkPhysicalDevice phy) {
+    VkPhysicalDeviceFeatures device_features = {};
+    vk::GetPhysicalDeviceFeatures(phy, &device_features);
+
+    VkFormat compressed_format = VK_FORMAT_UNDEFINED;
+    if (device_features.textureCompressionBC) {
+        compressed_format = VK_FORMAT_BC3_SRGB_BLOCK;
+    } else if (device_features.textureCompressionETC2) {
+        compressed_format = VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
+    } else if (device_features.textureCompressionASTC_LDR) {
+        compressed_format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
+    } else {
+        assert(false);
+    }
+
+    return compressed_format;
+}
+
 bool FormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(phy, format, &format_props);

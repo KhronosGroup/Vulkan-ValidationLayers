@@ -94,6 +94,7 @@ uint32_t size32(const Container &c) {
 VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy);
 VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice phy);
 VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy);
+VkFormat FindSupportedCompressedFormat(VkPhysicalDevice phy);
 
 // Returns true if *any* requested features are available.
 // Assumption is that the framework can successfully create an image as
