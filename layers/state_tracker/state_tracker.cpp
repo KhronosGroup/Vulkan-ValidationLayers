@@ -1291,23 +1291,24 @@ void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t su
         Location submit_loc = record_obj.location.dot(vvl::Struct::VkSubmitInfo, vvl::Field::pSubmits, submit_i);
         vvl::QueueSubmission submission(submit_loc);
         const VkSubmitInfo *submit = &pSubmits[submit_i];
-        auto *timeline_semaphore_submit = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
+        auto *timeline_info = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
+            auto wait_semaphore = Get<vvl::Semaphore>(submit->pWaitSemaphores[i]);
             uint64_t value{0};
-            if (timeline_semaphore_submit && timeline_semaphore_submit->pWaitSemaphoreValues != nullptr &&
-                (i < timeline_semaphore_submit->waitSemaphoreValueCount)) {
-                value = timeline_semaphore_submit->pWaitSemaphoreValues[i];
+            if (wait_semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_info && timeline_info->pWaitSemaphoreValues &&
+                i < timeline_info->waitSemaphoreValueCount) {
+                value = timeline_info->pWaitSemaphoreValues[i];
             }
-            submission.AddWaitSemaphore(Get<vvl::Semaphore>(submit->pWaitSemaphores[i]), value);
+            submission.AddWaitSemaphore(std::move(wait_semaphore), value);
         }
-
         for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
+            auto signal_semaphore = Get<vvl::Semaphore>(submit->pSignalSemaphores[i]);
             uint64_t value{0};
-            if (timeline_semaphore_submit && timeline_semaphore_submit->pSignalSemaphoreValues != nullptr &&
-                (i < timeline_semaphore_submit->signalSemaphoreValueCount)) {
-                value = timeline_semaphore_submit->pSignalSemaphoreValues[i];
+            if (signal_semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_info && timeline_info->pSignalSemaphoreValues &&
+                i < timeline_info->signalSemaphoreValueCount) {
+                value = timeline_info->pSignalSemaphoreValues[i];
             }
-            submission.AddSignalSemaphore(Get<vvl::Semaphore>(submit->pSignalSemaphores[i]), value);
+            submission.AddSignalSemaphore(std::move(signal_semaphore), value);
         }
 
         const auto perf_submit = vku::FindStructInPNextChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
@@ -1499,22 +1500,26 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
                 }
             }
         }
-        auto timeline_info = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(bind_info.pNext);
+        auto* timeline_info = vku::FindStructInPNextChain<VkTimelineSemaphoreSubmitInfo>(bind_info.pNext);
         Location submit_loc = record_obj.location.dot(vvl::Struct::VkBindSparseInfo, vvl::Field::pBindInfo, bind_idx);
         vvl::QueueSubmission submission(submit_loc);
         for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
-            uint64_t payload = 0;
-            if (timeline_info && i < timeline_info->waitSemaphoreValueCount) {
-                payload = timeline_info->pWaitSemaphoreValues[i];
+            auto wait_semaphore = Get<vvl::Semaphore>(bind_info.pWaitSemaphores[i]);
+            uint64_t value{0};
+            if (wait_semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_info && timeline_info->pWaitSemaphoreValues &&
+                i < timeline_info->waitSemaphoreValueCount) {
+                value = timeline_info->pWaitSemaphoreValues[i];
             }
-            submission.AddWaitSemaphore(Get<vvl::Semaphore>(bind_info.pWaitSemaphores[i]), payload);
+            submission.AddWaitSemaphore(std::move(wait_semaphore), value);
         }
         for (uint32_t i = 0; i < bind_info.signalSemaphoreCount; ++i) {
-            uint64_t payload = 0;
-            if (timeline_info && i < timeline_info->signalSemaphoreValueCount) {
-                payload = timeline_info->pSignalSemaphoreValues[i];
+            auto signal_semaphore = Get<vvl::Semaphore>(bind_info.pSignalSemaphores[i]);
+            uint64_t value{0};
+            if (signal_semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_info && timeline_info->pSignalSemaphoreValues &&
+                i < timeline_info->signalSemaphoreValueCount) {
+                value = timeline_info->pSignalSemaphoreValues[i];
             }
-            submission.AddSignalSemaphore(Get<vvl::Semaphore>(bind_info.pSignalSemaphores[i]), payload);
+            submission.AddSignalSemaphore(std::move(signal_semaphore), value);
         }
         if (bind_idx == (bindInfoCount - 1)) {
             submission.AddFence(Get<vvl::Fence>(fence));

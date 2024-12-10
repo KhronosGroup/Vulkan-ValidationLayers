@@ -113,16 +113,22 @@ void vvl::Semaphore::EnqueueSignal(const SubmissionReference &signal_submit, uin
 void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, uint64_t &payload) {
     auto guard = WriteLock();
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
-        // Timeline can be empty for the binary wait operation if the semaphore was imported.
-        // Otherwise timeline should contain a binary signal.
         if (timeline_.empty()) {
-            assert(payload == 0);
-            completed_ = SemOp(kWait, wait_submit, 0);
-            return;
+            if (scope_ != vvl::Semaphore::kInternal) {
+                // for external semaphore mark wait as completed, no guarantee of signal visibility
+                completed_ = SemOp(kWait, wait_submit, 0);
+                return;
+            } else {
+                // generate binary payload value from the last completed signals
+                assert(completed_.op_type == kSignal);
+                payload = completed_.payload;
+            }
+        } else {
+            // generate binary payload value from the most recent pending binary signal
+            assert(timeline_.rbegin()->second.HasSignaler());
+            payload = timeline_.rbegin()->first;
         }
-        assert(timeline_.rbegin()->second.HasSignaler());
-        payload = timeline_.rbegin()->first;
-    } else {
+    } else {  // timeline semaphore
         if (payload <= completed_.payload) {
             return;
         }
