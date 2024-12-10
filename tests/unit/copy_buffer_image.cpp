@@ -652,18 +652,7 @@ TEST_F(NegativeCopyBufferImage, CompressedImageMip) {
     RETURN_IF_SKIP(Init());
     bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
-    VkPhysicalDeviceFeatures device_features = {};
-    GetPhysicalDeviceFeatures(&device_features);
-    VkFormat compressed_format = VK_FORMAT_UNDEFINED;
-    if (device_features.textureCompressionBC) {
-        compressed_format = VK_FORMAT_BC3_SRGB_BLOCK;
-    } else if (device_features.textureCompressionETC2) {
-        compressed_format = VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
-    } else if (device_features.textureCompressionASTC_LDR) {
-        compressed_format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
-    } else {
-        GTEST_SKIP() << "No compressed formats supported - CompressedImageMipCopyTests skipped";
-    }
+    const VkFormat compressed_format = FindSupportedCompressedFormat(Gpu());
 
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
@@ -1401,17 +1390,7 @@ TEST_F(NegativeCopyBufferImage, ImageCompressedBlockAlignment) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
-    // Select a compressed format and verify support
-    VkPhysicalDeviceFeatures device_features = {};
-    GetPhysicalDeviceFeatures(&device_features);
-    VkFormat compressed_format = VK_FORMAT_UNDEFINED;
-    if (device_features.textureCompressionBC) {
-        compressed_format = VK_FORMAT_BC3_SRGB_BLOCK;
-    } else if (device_features.textureCompressionETC2) {
-        compressed_format = VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
-    } else if (device_features.textureCompressionASTC_LDR) {
-        compressed_format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
-    }
+    const VkFormat compressed_format = FindSupportedCompressedFormat(Gpu());
 
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
@@ -1427,7 +1406,7 @@ TEST_F(NegativeCopyBufferImage, ImageCompressedBlockAlignment) {
     VkImageFormatProperties img_prop = {};
     if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), ci.format, ci.imageType, ci.tiling,
                                                                  ci.usage, ci.flags, &img_prop)) {
-        GTEST_SKIP() << "No compressed formats supported - CopyImageCompressedBlockAlignment skipped";
+        GTEST_SKIP() << "No compressed formats supported";
     }
 
     vkt::Image image_1(*m_device, ci, vkt::set_layout);
