@@ -342,3 +342,35 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
 
     vk::CopyImageToMemoryEXT(*m_device, &copy_to_image_memory);
 }
+
+TEST_F(PositiveHostImageCopy, CompressedFormat) {
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    const VkFormat compressed_format = FindSupportedCompressedFormat(Gpu());
+
+    VkImageFormatProperties img_prop = {};
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), compressed_format,
+                                                                 image_ci.imageType, image_ci.tiling, image_ci.usage,
+                                                                 image_ci.flags, &img_prop)) {
+        GTEST_SKIP() << "Image format properties not supported";
+    }
+    image_ci.format = compressed_format;
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    std::vector<uint8_t> pixels(width * height * 4);
+
+    VkMemoryToImageCopyEXT region_to_image = vku::InitStructHelper();
+    region_to_image.pHostPointer = pixels.data();
+    region_to_image.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region_to_image.imageExtent = {width, height, 1};
+
+    VkCopyMemoryToImageInfoEXT copy_to_image = vku::InitStructHelper();
+    copy_to_image.dstImage = image;
+    copy_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_to_image.regionCount = 1;
+    copy_to_image.pRegions = &region_to_image;
+
+    VkResult result = vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
+    ASSERT_EQ(VK_SUCCESS, result);
+}

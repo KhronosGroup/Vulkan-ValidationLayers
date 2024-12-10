@@ -179,11 +179,8 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
     sparse_container::parallel_iterator<const GlobalImageLayoutRangeMap> current_layout(empty_map, *global_range_map,
                                                                                         pos->first.begin);
     while (pos != end) {
-        VkImageLayout initial_layout = pos->second.initial_layout;
-        assert(initial_layout != image_layout_map::kInvalidLayout);
-        if (initial_layout == image_layout_map::kInvalidLayout) {
-            continue;
-        }
+        const VkImageLayout initial_layout = pos->second.initial_layout;
+        ASSERT_AND_CONTINUE(initial_layout != image_layout_map::kInvalidLayout);
 
         VkImageLayout image_layout = kInvalidLayout;
 
