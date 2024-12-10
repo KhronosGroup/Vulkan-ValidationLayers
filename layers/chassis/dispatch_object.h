@@ -30,7 +30,7 @@
 #include "error_message/logging.h"
 #include "utils/vk_layer_utils.h"
 #include "layer_options.h"
-#include "gpu/core/gpuav_settings.h"
+#include "gpuav/core/gpuav_settings.h"
 #include "sync/sync_settings.h"
 #include "generated/dispatch_vector.h"
 #include "generated/vk_api_version.h"

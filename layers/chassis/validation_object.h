@@ -47,7 +47,7 @@
 #include "generated/vk_dispatch_table_helper.h"
 #include "chassis/dispatch_object.h"
 #include "generated/vk_extension_helper.h"
-#include "gpu/core/gpuav_settings.h"
+#include "gpuav/core/gpuav_settings.h"
 #include "sync/sync_settings.h"
 
 namespace chassis {
