@@ -837,11 +837,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemcpyExtents(const VkImageCopy2& region, const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
                                const Location& region_loc) const;
     bool ValidateHostCopyCurrentLayout(VkImageLayout expected_layout, const VkImageSubresourceLayers& subres_layers,
-                                       uint32_t region, const vvl::Image& image_state, const Location& loc, const char* image_label,
-                                       const char* vuid) const;
-    bool ValidateHostCopyCurrentLayout(VkImageLayout expected_layout, const VkImageSubresourceRange& subres_range, uint32_t region,
-                                       const vvl::Image& image_state, const Location& loc, const char* image_label,
-                                       const char* vuid) const;
+                                       const vvl::Image& image_state, const Location& loc) const;
+    bool ValidateHostCopyCurrentLayout(VkImageLayout expected_layout, const VkImageSubresourceRange& subres_range,
+                                       const vvl::Image& image_state, const Location& loc) const;
     bool ValidateHostCopyMultiplane(const VkImageCopy2& region, const vvl::Image& src_image_state,
                                     const vvl::Image& dst_image_state, const Location& region_loc) const;
     bool ValidateBufferViewRange(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
@@ -1037,7 +1035,7 @@ class CoreChecks : public ValidationStateTracker {
                                      const RecordObject& record_obj) override;
 
     bool ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBuffer& cb_state,
-                                    GlobalImageLayoutMap& overlayLayoutMap) const;
+                                    GlobalImageLayoutMap& global_image_layout_map) const;
 
     void UpdateCmdBufImageLayouts(const vvl::CommandBuffer& cb_state);
 

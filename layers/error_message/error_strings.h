@@ -86,3 +86,10 @@
     ss << "[" << range.offset << ", " << (range.offset + range.size) << "]";
     return ss.str();
 }
+
+[[maybe_unused]] static std::string string_VkImageSubresource(VkImageSubresource subresource) {
+    std::stringstream ss;
+    ss << "aspectMask = " << subresource.aspectMask << ", mipLevel = " << subresource.mipLevel
+       << ", arrayLayer = " << subresource.arrayLayer;
+    return ss.str();
+}
