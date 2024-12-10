@@ -38,10 +38,10 @@ struct ImageRegionIntersection {
     bool has_instersection = false;
     std::string String() const noexcept {
         std::stringstream ss;
-        ss << "{ subresource { aspectMask: " << string_VkImageAspectFlags(subresource.aspectMask)
+        ss << "\nsubresource : { aspectMask: " << string_VkImageAspectFlags(subresource.aspectMask)
            << ", mipLevel: " << subresource.mipLevel << ", baseArrayLayer: " << subresource.baseArrayLayer
-           << ", layerCount: " << subresource.layerCount << " }, offset {" << string_VkOffset3D(offset) << "}, extent {"
-           << string_VkExtent3D(extent) << "} }";
+           << ", layerCount: " << subresource.layerCount << " },\noffset : {" << string_VkOffset3D(offset) << "},\nextent : {"
+           << string_VkExtent3D(extent) << "}\n";
         return ss.str();
     }
 };
@@ -1675,7 +1675,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-00124" : "VUID-vkCmdCopyImage-pRegions-00124";
                     skip |= LogError(vuid, all_objlist, loc,
                                      "pRegion[%" PRIu32 "] copy source overlaps with pRegions[%" PRIu32
-                                     "] copy destination. Overlap info, with respect to image (%s): %s.",
+                                     "] copy destination. Overlap info, with respect to image (%s):%s",
                                      i, j, FormatHandle(srcImage).c_str(), intersection.String().c_str());
                 }
             }
@@ -2635,7 +2635,8 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
         const uint64_t mapped_size = (state->mapped_range.size == VK_WHOLE_SIZE)
                                          ? state->allocate_info.allocationSize
                                          : (state->mapped_range.offset + state->mapped_range.size);
-        const void *mapped_end = static_cast<char *>(state->p_driver_data) + mapped_size;
+        const void *mapped_start = state->p_driver_data;
+        const void *mapped_end = static_cast<const char *>(mapped_start) + mapped_size;
         for (uint32_t i = 0; i < regionCount; i++) {
             const auto region = info_ptr->pRegions[i];
             auto element_size = vkuFormatElementSize(image_state->create_info.format);
@@ -2645,17 +2646,18 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
             } else {
                 copy_size = ((region.imageExtent.width * region.imageExtent.height * region.imageExtent.depth) * element_size);
             }
-            const void *copy_end = static_cast<const char *>(region.pHostPointer) + copy_size;
+            const void *copy_start = region.pHostPointer;
+            const void *copy_end = static_cast<const char *>(copy_start) + copy_size;
 
-            if ((region.pHostPointer >= state->p_driver_data && region.pHostPointer < mapped_end) ||
-                (copy_end >= state->p_driver_data && copy_end < mapped_end) ||
-                (region.pHostPointer <= state->p_driver_data && copy_end > mapped_end)) {
+            if ((copy_start >= mapped_start && copy_start < mapped_end) || (copy_end >= mapped_start && copy_end < mapped_end) ||
+                (copy_start <= mapped_start && copy_end > mapped_end)) {
                 const char *vuid =
                     from_image ? "VUID-VkImageToMemoryCopy-pRegions-09067" : "VUID-VkMemoryToImageCopy-pRegions-09062";
                 skip |= LogError(vuid, image_state->Handle(), loc.dot(Field::pRegions, i).dot(Field::pHostPointer),
-                                 "points to memory spanning %p through %p, which overlaps with image memory"
-                                 "mapped %p through %p",
-                                 region.pHostPointer, copy_end, state->p_driver_data, mapped_end);
+                                 "points to %" PRIu64 " bytes in host memory spanning\n[%p : %p]\nwhich overlaps with %" PRIu64
+                                 " bytes of the image memory "
+                                 "mapped at\n[%p : %p]\n",
+                                 copy_size, copy_start, copy_end, mapped_size, mapped_start, mapped_end);
             }
         }
     }
