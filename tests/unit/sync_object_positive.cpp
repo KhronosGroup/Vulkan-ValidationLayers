@@ -2370,3 +2370,43 @@ TEST_F(PositiveSyncObject, BinarySyncAfterResolvedTimelineWait) {
     m_default_queue->Submit(vkt::no_cmd, vkt::Wait(binary_semaphore));
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveSyncObject, WaitCompletedBinarySignal) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8989
+    TEST_DESCRIPTION("Wait for binary signal that was followed by queue wait command");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore timeline_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE, 1);
+    vkt::Semaphore binary_semaphore(*m_device);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(binary_semaphore));
+    // this removes timepoint with signal op from timeline, but it should not be a problem to wait for this signal
+    m_default_queue->Wait();
+
+    // Values that corresponds to binary semaphore should not affect internal logic.
+    // Use non-zero value for binary semaphore to increase probability of the issues in case of regression.
+    const uint64_t values[2] = {
+        1,  // timeline value
+        42  // arbitrary value that should be ignored (binary semaphore slot)
+    };
+    VkTimelineSemaphoreSubmitInfo timeline_info = vku::InitStructHelper();
+    timeline_info.waitSemaphoreValueCount = 2;
+    timeline_info.pWaitSemaphoreValues = values;
+
+    const VkPipelineStageFlags wait_dst_stages[2] = {VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};
+    const VkSemaphore wait_semaphores[2] = {timeline_semaphore, binary_semaphore};
+
+    VkSubmitInfo submit = vku::InitStructHelper(&timeline_info);
+    submit.waitSemaphoreCount = 2;
+    submit.pWaitSemaphores = wait_semaphores;
+    submit.pWaitDstStageMask = wait_dst_stages;
+
+    // Wait on the binary signal that was followed by Wait().
+    // This also waits on the timeline initial value, so effectiely no-wait.
+    // The only reason timeline semaphore is used in this test, is to have a
+    // slot in VkTimelineSemaphoreSubmitInfo that corresponds to binary semaphore.
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+    m_default_queue->Wait();
+}
