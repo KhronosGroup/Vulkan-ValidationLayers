@@ -992,7 +992,6 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layo
 
 bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layout, const VkImageSubresourceRange &validate_range,
                                                const vvl::Image &image_state, const Location &loc) const {
-    using Map = GlobalImageLayoutRangeMap;
     bool skip = false;
     if (disabled[image_layout_validation]) return false;
     if (!(image_state.layout_range_map)) return false;
@@ -1000,12 +999,12 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layo
     // RangeGenerator doesn't tolerate degenerate or invalid ranges. The error will be found and logged elsewhere
     if (!IsCompliantSubresourceRange(subres_range, image_state)) return false;
 
-    Map::RangeGenerator range_gen(image_state.subresource_encoder, subres_range);
+    GlobalImageLayoutRangeMap::RangeGenerator range_gen(image_state.subresource_encoder, subres_range);
 
     struct CheckState {
         const VkImageLayout expected_layout;
         VkImageAspectFlags aspect_mask;
-        Map::key_type found_range;
+        GlobalImageLayoutRangeMap::key_type found_range;
         VkImageLayout found_layout;
         CheckState(VkImageLayout expected_layout_, VkImageAspectFlags aspect_mask_)
             : expected_layout(expected_layout_),
@@ -1017,15 +1016,16 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layo
     CheckState check_state(expected_layout, subres_range.aspectMask);
 
     auto guard = image_state.layout_range_map->ReadLock();
-    image_state.layout_range_map->AnyInRange(range_gen, [&check_state](const Map::key_type &range, const VkImageLayout &layout) {
-        bool mismatch = false;
-        if (!ImageLayoutMatches(check_state.aspect_mask, layout, check_state.expected_layout)) {
-            check_state.found_range = range;
-            check_state.found_layout = layout;
-            mismatch = true;
-        }
-        return mismatch;
-    });
+    image_state.layout_range_map->AnyInRange(
+        range_gen, [&check_state](const GlobalImageLayoutRangeMap::key_type &range, const VkImageLayout &layout) {
+            bool mismatch = false;
+            if (!ImageLayoutMatches(check_state.aspect_mask, layout, check_state.expected_layout)) {
+                check_state.found_range = range;
+                check_state.found_layout = layout;
+                mismatch = true;
+            }
+            return mismatch;
+        });
 
     if (check_state.found_range.non_empty()) {
         const VkImageSubresource subres = image_state.subresource_encoder.IndexToVkSubresource(check_state.found_range.begin);

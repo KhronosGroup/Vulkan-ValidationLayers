@@ -25,6 +25,7 @@
 #include "cc_vuid_maps.h"
 #include "error_message/error_location.h"
 #include "error_message/error_strings.h"
+#include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vk_enum_string_helper.h>
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
@@ -2108,50 +2109,55 @@ bool CoreChecks::ValidateImageSampleCount(const HandleT handle, const vvl::Image
 }
 
 template <typename RegionType>
-bool CoreChecks::ValidateImageBufferCopyMemoryOverlap(const vvl::CommandBuffer &cb_state, uint32_t regionCount,
-                                                      const RegionType *pRegions, const vvl::Image &image_state,
-                                                      const vvl::Buffer &buffer_state, const Location &loc, bool image_to_buffer,
-                                                      bool is_2) const {
+bool CoreChecks::ValidateImageBufferCopyMemoryOverlap(const vvl::CommandBuffer &cb_state, const RegionType &region,
+                                                      const vvl::Image &image_state, const vvl::Buffer &buffer_state,
+                                                      const Location &region_loc) const {
     bool skip = false;
 
-    for (uint32_t i = 0; i < regionCount; ++i) {
-        const RegionType &region = pRegions[i];
-        auto texel_size = vkuFormatTexelSizeWithAspect(image_state.create_info.format,
-                                                       static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask));
-        VkDeviceSize image_offset;
-        if (image_state.create_info.tiling == VK_IMAGE_TILING_LINEAR) {
-            // Can only know actual offset for linearly tiled images
-            VkImageSubresource isr = {};
-            isr.arrayLayer = region.imageSubresource.baseArrayLayer;
-            isr.aspectMask = region.imageSubresource.aspectMask;
-            isr.mipLevel = region.imageSubresource.mipLevel;
-            VkSubresourceLayout srl = {};
-            DispatchGetImageSubresourceLayout(device, image_state.VkHandle(), &isr, &srl);
-            if (image_state.create_info.arrayLayers == 1) srl.arrayPitch = 0;
-            if (image_state.create_info.imageType != VK_IMAGE_TYPE_3D) srl.depthPitch = 0;
-            image_offset = (region.imageSubresource.baseArrayLayer * srl.arrayPitch) +
-                           static_cast<VkDeviceSize>((region.imageOffset.x * texel_size)) + (region.imageOffset.y * srl.rowPitch) +
-                           (region.imageOffset.z * srl.depthPitch) + srl.offset;
-        } else {
-            image_offset =
-                static_cast<VkDeviceSize>(region.imageOffset.x * region.imageOffset.y * region.imageOffset.z * texel_size);
-        }
-        VkDeviceSize copy_size;
-        if (region.bufferRowLength != 0 && region.bufferImageHeight != 0) {
-            copy_size = static_cast<VkDeviceSize>(((region.bufferRowLength * region.bufferImageHeight) * texel_size));
-        } else {
-            copy_size = static_cast<VkDeviceSize>(
-                ((region.imageExtent.width * region.imageExtent.height * region.imageExtent.depth) * texel_size));
-        }
-        auto image_region = sparse_container::range<VkDeviceSize>{image_offset, image_offset + copy_size};
-        auto buffer_region = sparse_container::range<VkDeviceSize>{region.bufferOffset, region.bufferOffset + copy_size};
-        if (image_state.DoesResourceMemoryOverlap(image_region, &buffer_state, buffer_region)) {
-            const Location region_loc = loc.dot(Field::pRegions, i);
-            const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-            skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::MemoryOverlap_00173), objlist, region_loc,
-                             "Detected overlap between source and dest regions in memory.");
-        }
+    if (vkuFormatIsCompressed(image_state.create_info.format)) {
+        // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6898
+        return skip;
     }
+
+    if (buffer_state.sparse || image_state.sparse) {
+        // TODO - Will require a lot more logic to detect sparse copies
+        return skip;
+    }
+
+    auto texel_size = vkuFormatTexelSizeWithAspect(image_state.create_info.format,
+                                                   static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask));
+    VkDeviceSize image_offset;
+    if (image_state.create_info.tiling == VK_IMAGE_TILING_LINEAR) {
+        // Can only know actual offset for linearly tiled images
+        VkImageSubresource isr = {};
+        isr.arrayLayer = region.imageSubresource.baseArrayLayer;
+        isr.aspectMask = region.imageSubresource.aspectMask;
+        isr.mipLevel = region.imageSubresource.mipLevel;
+        VkSubresourceLayout srl = {};
+        DispatchGetImageSubresourceLayout(device, image_state.VkHandle(), &isr, &srl);
+        if (image_state.create_info.arrayLayers == 1) srl.arrayPitch = 0;
+        if (image_state.create_info.imageType != VK_IMAGE_TYPE_3D) srl.depthPitch = 0;
+        image_offset = (region.imageSubresource.baseArrayLayer * srl.arrayPitch) +
+                       static_cast<VkDeviceSize>((region.imageOffset.x * texel_size)) + (region.imageOffset.y * srl.rowPitch) +
+                       (region.imageOffset.z * srl.depthPitch) + srl.offset;
+    } else {
+        image_offset = static_cast<VkDeviceSize>(region.imageOffset.x * region.imageOffset.y * region.imageOffset.z * texel_size);
+    }
+    VkDeviceSize copy_size;
+    if (region.bufferRowLength != 0 && region.bufferImageHeight != 0) {
+        copy_size = static_cast<VkDeviceSize>(((region.bufferRowLength * region.bufferImageHeight) * texel_size));
+    } else {
+        copy_size = static_cast<VkDeviceSize>(
+            ((region.imageExtent.width * region.imageExtent.height * region.imageExtent.depth) * texel_size));
+    }
+    auto image_region = sparse_container::range<VkDeviceSize>{image_offset, image_offset + copy_size};
+    auto buffer_region = sparse_container::range<VkDeviceSize>{region.bufferOffset, region.bufferOffset + copy_size};
+    if (image_state.DoesResourceMemoryOverlap(image_region, &buffer_state, buffer_region)) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::MemoryOverlap_00173), objlist, region_loc,
+                         "Detected overlap between source and dest regions in memory.");
+    }
+
     return skip;
 }
 
@@ -2245,13 +2251,10 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-pRegions-04566" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-07970";
         skip |= ValidateImageBounds(commandBuffer, *src_image_state, region, region_loc, vuid, true);
         skip |= ValidateBufferBounds(commandBuffer, *src_image_state, *dst_buffer_state, region, region_loc);
+
+        skip |= ValidateImageBufferCopyMemoryOverlap(cb_state, region, *src_image_state, *dst_buffer_state, region_loc);
     }
 
-    // TODO 6898 - ValidateImageBufferCopyMemoryOverlap logic has issues
-    // if (!skip && !dst_buffer_state->sparse && !src_image_state->sparse) {
-    //     skip |= ValidateImageBufferCopyMemoryOverlap(*cb_state_ptr, regionCount, pRegions, *src_image_state, *dst_buffer_state,
-    //     loc, true, is_2);
-    // }
     return skip;
 }
 
@@ -2415,13 +2418,9 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
                                  DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
             }
         }
-    }
 
-    // TODO 6898 - ValidateImageBufferCopyMemoryOverlap logic has issues
-    // if (!skip && !src_buffer_state->sparse && !dst_image_state->sparse){
-    //     skip |= ValidateImageBufferCopyMemoryOverlap(*cb_state_ptr, regionCount, pRegions, *dst_image_state, *src_buffer_state,
-    //     loc, false, is_2);
-    // }
+        skip |= ValidateImageBufferCopyMemoryOverlap(cb_state, region, *dst_image_state, *src_buffer_state, region_loc);
+    }
 
     return skip;
 }
@@ -2626,6 +2625,12 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
             ValidateHostCopyCurrentLayout(image_layout, region.imageSubresource, *image_state, region_loc.dot(image_layout_field));
     }
 
+    if (vkuFormatIsCompressed(image_state->create_info.format)) {
+        // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8946
+        // Discussion at https://gitlab.khronos.org/vulkan/vulkan/-/issues/4109
+        return skip;
+    }
+
     const auto &memory_states = image_state->GetBoundMemoryStates();
     for (const auto &state : memory_states) {
         // Image and host memory can't overlap unless the image memory is mapped
@@ -2639,7 +2644,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
         const void *mapped_end = static_cast<const char *>(mapped_start) + mapped_size;
         for (uint32_t i = 0; i < regionCount; i++) {
             const auto region = info_ptr->pRegions[i];
-            auto element_size = vkuFormatElementSize(image_state->create_info.format);
+            const uint32_t element_size = vkuFormatElementSize(image_state->create_info.format);
             uint64_t copy_size;
             if (region.memoryRowLength != 0 && region.memoryImageHeight != 0) {
                 copy_size = ((region.memoryRowLength * region.memoryImageHeight) * element_size);
@@ -2655,8 +2660,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
                     from_image ? "VUID-VkImageToMemoryCopy-pRegions-09067" : "VUID-VkMemoryToImageCopy-pRegions-09062";
                 skip |= LogError(vuid, image_state->Handle(), loc.dot(Field::pRegions, i).dot(Field::pHostPointer),
                                  "points to %" PRIu64 " bytes in host memory spanning\n[%p : %p]\nwhich overlaps with %" PRIu64
-                                 " bytes of the image memory "
-                                 "mapped at\n[%p : %p]\n",
+                                 " bytes of the image mapped memory at\n[%p : %p]\n",
                                  copy_size, copy_start, copy_end, mapped_size, mapped_start, mapped_end);
             }
         }

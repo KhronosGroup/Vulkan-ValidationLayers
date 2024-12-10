@@ -28,15 +28,15 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
          {{
              {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-dstImage-07975"},
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-07975"},
-             {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07975"},
-             {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07975"},
+             {Key(Func::vkCmdCopyBufferToImage2), "VUID-VkCopyBufferToImageInfo2-dstImage-07975"},
+             {Key(Func::vkCmdCopyImageToBuffer2), "VUID-VkCopyImageToBufferInfo2-srcImage-07975"},
          }}},
         {CopyError::MultiPlaneCompatible_07976,
          {{
              {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-dstImage-07976"},
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-07976"},
-             {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07976"},
-             {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07976"},
+             {Key(Func::vkCmdCopyBufferToImage2), "VUID-VkCopyBufferToImageInfo2-dstImage-07976"},
+             {Key(Func::vkCmdCopyImageToBuffer2), "VUID-VkCopyImageToBufferInfo2-srcImage-07976"},
          }}},
         {CopyError::TransferGranularity_07747,
          {{
@@ -57,15 +57,15 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
          {{
              {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-dstImage-07978"},
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-srcImage-07978"},
-             {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-dstImage-07978"},
-             {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-srcImage-07978"},
+             {Key(Func::vkCmdCopyBufferToImage2), "VUID-VkCopyBufferToImageInfo2-dstImage-07978"},
+             {Key(Func::vkCmdCopyImageToBuffer2), "VUID-VkCopyImageToBufferInfo2-srcImage-07978"},
          }}},
         {CopyError::MemoryOverlap_00173,
          {{
              {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-pRegions-00173"},
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-pRegions-00184"},
-             {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-pRegions-00173"},
-             {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-pRegions-00184"},
+             {Key(Func::vkCmdCopyBufferToImage2), "VUID-VkCopyBufferToImageInfo2-pRegions-00173"},
+             {Key(Func::vkCmdCopyImageToBuffer2), "VUID-VkCopyImageToBufferInfo2-pRegions-00184"},
          }}},
         {CopyError::ImageExtentWidthZero_06659,
          {{
@@ -113,8 +113,8 @@ const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError e
          {{
              {Key(Func::vkCmdCopyBufferToImage), "VUID-vkCmdCopyBufferToImage-pRegions-00171"},
              {Key(Func::vkCmdCopyImageToBuffer), "VUID-vkCmdCopyImageToBuffer-pRegions-00183"},
-             {Key(Struct::VkCopyBufferToImageInfo2), "VUID-VkCopyBufferToImageInfo2-pRegions-00171"},
-             {Key(Struct::VkCopyImageToBufferInfo2), "VUID-VkCopyImageToBufferInfo2-pRegions-00183"},
+             {Key(Func::vkCmdCopyBufferToImage2), "VUID-VkCopyBufferToImageInfo2-pRegions-00171"},
+             {Key(Func::vkCmdCopyImageToBuffer2), "VUID-VkCopyImageToBufferInfo2-pRegions-00183"},
          }}},
     };
 

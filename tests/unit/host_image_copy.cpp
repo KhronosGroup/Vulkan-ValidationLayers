@@ -2191,6 +2191,47 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     image.Memory().Unmap();
 }
 
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8946
+TEST_F(NegativeHostImageCopy, DISABLED_ImageMemoryOverlapCompressed) {
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    const VkFormat compressed_format = VK_FORMAT_BC3_SRGB_BLOCK;
+    VkImageFormatProperties img_prop = {};
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), compressed_format,
+                                                                 image_ci.imageType, image_ci.tiling, image_ci.usage,
+                                                                 image_ci.flags, &img_prop)) {
+        GTEST_SKIP() << "Image format properties not supported";
+    }
+
+    image_ci.format = compressed_format;
+    image_ci.extent = {4, 4, 1};
+    VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
+    vkt::Image image(*m_device, image_ci, kHostVisibleMemProps);
+    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
+
+    VkDeviceAddress *data = (VkDeviceAddress *)image.Memory().Map();
+
+    VkMemoryToImageCopy region2 = vku::InitStructHelper();
+    region2.pHostPointer = data;
+    region2.memoryRowLength = 0;
+    region2.memoryImageHeight = 0;
+    region2.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region2.imageOffset = {0, 0, 0};
+    region2.imageExtent = {4, 4, 1};
+
+    VkCopyMemoryToImageInfo copy_memory_to_image = vku::InitStructHelper();
+    copy_memory_to_image.dstImage = image.handle();
+    copy_memory_to_image.dstImageLayout = layout;
+    copy_memory_to_image.regionCount = 1;
+    copy_memory_to_image.pRegions = &region2;
+
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopy-pRegions-09062");
+    vk::CopyMemoryToImageEXT(*m_device, &copy_memory_to_image);
+    m_errorMonitor->VerifyFound();
+
+    image.Memory().Unmap();
+}
+
 TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     TEST_DESCRIPTION("Copy with host memory and image memory overlapping");
     AddRequiredFeature(vkt::Feature::sparseBinding);
