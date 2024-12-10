@@ -2543,9 +2543,7 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
     const bool from_image = loc.function == Func::vkCopyImageToMemory || loc.function == Func::vkCopyImageToMemoryEXT;
     const Location image_loc = loc.dot(from_image ? Field::srcImage : Field::dstImage);
     const Field info_type = from_image ? Field::pCopyImageToMemoryInfo : Field::pCopyMemoryToImageInfo;
-    const char *source_or_destination = from_image ? "source" : "destination";
-    const char *image_layout_vuid =
-        from_image ? "VUID-VkCopyImageToMemoryInfo-srcImageLayout-09064" : "VUID-VkCopyMemoryToImageInfo-dstImageLayout-09059";
+    const Field image_layout_field = from_image ? Field::srcImageLayout : Field::dstImageLayout;
 
     skip |= ValidateMemoryIsBoundToImage(
         image, *image_state, image_loc,
@@ -2624,9 +2622,8 @@ bool CoreChecks::ValidateMemoryImageCopyCommon(InfoPointer info_ptr, const Locat
                                                : "VUID-VkCopyMemoryToImageInfo-imageSubresource-07970",
                                     from_image);
 
-        Field field = from_image ? Field::srcImageLayout : Field::dstImageLayout;
-        skip |= ValidateHostCopyCurrentLayout(image_layout, region.imageSubresource, i, *image_state, region_loc.dot(field),
-                                              source_or_destination, image_layout_vuid);
+        skip |=
+            ValidateHostCopyCurrentLayout(image_layout, region.imageSubresource, *image_state, region_loc.dot(image_layout_field));
     }
 
     const auto &memory_states = image_state->GetBoundMemoryStates();
@@ -2901,12 +2898,10 @@ bool CoreChecks::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyIm
                                        "VUID-VkCopyImageToImageInfo-dstImage-09111", "VUID-VkCopyImageToImageInfo-dstImage-09112",
                                        "VUID-VkCopyImageToImageInfo-dstImage-09113", region_loc.dot(Field::dstSubresource));
 
-        skip |= ValidateHostCopyCurrentLayout(info_ptr->srcImageLayout, region.srcSubresource, i, *src_image_state,
-                                              region_loc.dot(Field::srcImageLayout), "source",
-                                              "VUID-VkCopyImageToImageInfo-srcImageLayout-09070");
-        skip |= ValidateHostCopyCurrentLayout(info_ptr->dstImageLayout, region.dstSubresource, i, *dst_image_state,
-                                              region_loc.dot(Field::dstImageLayout), "destination",
-                                              "VUID-VkCopyImageToImageInfo-dstImageLayout-09071");
+        skip |= ValidateHostCopyCurrentLayout(info_ptr->srcImageLayout, region.srcSubresource, *src_image_state,
+                                              region_loc.dot(Field::srcImageLayout));
+        skip |= ValidateHostCopyCurrentLayout(info_ptr->dstImageLayout, region.dstSubresource, *dst_image_state,
+                                              region_loc.dot(Field::dstImageLayout));
 
         skip |= ValidateImageBounds(device, *src_image_state, region, region_loc,
                                     "VUID-VkCopyImageToImageInfo-srcSubresource-07970", true);

@@ -583,6 +583,24 @@ const std::string &GetImageArrayLayerRangeVUID(const Location &loc) {
     return result;
 }
 
+const std::string &GetImageImageLayoutVUID(const Location &loc) {
+    static const std::array<Entry, 5> errors{{
+        {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-oldLayout-09229"},
+        {Key(Func::vkCopyImageToMemory, Field::srcImageLayout), "VUID-VkCopyImageToMemoryInfo-srcImageLayout-09064"},
+        {Key(Func::vkCopyMemoryToImage, Field::dstImageLayout), "VUID-VkCopyMemoryToImageInfo-dstImageLayout-09059"},
+        {Key(Func::vkCopyImageToImage, Field::srcImageLayout), "VUID-VkCopyImageToImageInfo-srcImageLayout-09070"},
+        {Key(Func::vkCopyImageToImage, Field::dstImageLayout), "VUID-VkCopyImageToImageInfo-dstImageLayout-09071"},
+    }};
+
+    const auto &result = FindVUID(loc, errors);
+    assert(!result.empty());
+    if (result.empty()) {
+        static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-image-layout");
+        return unhandled;
+    }
+    return result;
+}
+
 const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRangeError error) {
     static const std::map<SubresourceRangeError, std::array<Entry, 6>> errors{
         {SubresourceRangeError::BaseMip_01486,

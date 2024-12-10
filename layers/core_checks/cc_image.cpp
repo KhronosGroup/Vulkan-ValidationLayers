@@ -2828,9 +2828,8 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
             transition.image, phys_dev_props_core14.copyDstLayoutCount, phys_dev_props_core14.pCopyDstLayouts, transition.newLayout,
             transition_loc.dot(Field::newLayout), Field::pCopyDstLayouts, "VUID-VkHostImageLayoutTransitionInfo-newLayout-09057");
         if (transition.oldLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
-            skip |= ValidateHostCopyCurrentLayout(transition.oldLayout, transition.subresourceRange, i, *image_state,
-                                                  transition_loc.dot(Field::oldLayout), "transition",
-                                                  "VUID-VkHostImageLayoutTransitionInfo-oldLayout-09229");
+            skip |= ValidateHostCopyCurrentLayout(transition.oldLayout, transition.subresourceRange, *image_state,
+                                                  transition_loc.dot(Field::oldLayout));
         }
     }
     return skip;

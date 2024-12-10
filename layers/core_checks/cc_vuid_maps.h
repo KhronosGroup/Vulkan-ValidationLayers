@@ -96,6 +96,7 @@ const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error);
 const std::string &GetCopyImageVUID(const Location &loc, CopyError error);
 const std::string &GetImageMipLevelVUID(const Location &loc);
 const std::string &GetImageArrayLayerRangeVUID(const Location &loc);
+const std::string &GetImageImageLayoutVUID(const Location &loc);
 
 enum class SubresourceRangeError {
     BaseMip_01486,

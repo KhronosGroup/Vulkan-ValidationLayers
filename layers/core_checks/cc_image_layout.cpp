@@ -22,6 +22,8 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
+#include "cc_vuid_maps.h"
+#include "error_message/error_strings.h"
 #include "generated/error_location_helper.h"
 #include "sync/sync_vuid_maps.h"
 #include "utils/image_layout_utils.h"
@@ -984,15 +986,12 @@ bool CoreChecks::IsCompliantSubresourceRange(const VkImageSubresourceRange &subr
 }
 
 bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layout, const VkImageSubresourceLayers &subres_layers,
-                                               uint32_t region_index, const vvl::Image &image_state, const Location &loc,
-                                               const char *image_label, const char *vuid) const {
-    return ValidateHostCopyCurrentLayout(expected_layout, RangeFromLayers(subres_layers), region_index, image_state, loc,
-                                         image_label, vuid);
+                                               const vvl::Image &image_state, const Location &loc) const {
+    return ValidateHostCopyCurrentLayout(expected_layout, RangeFromLayers(subres_layers), image_state, loc);
 }
 
 bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layout, const VkImageSubresourceRange &validate_range,
-                                               uint32_t region_index, const vvl::Image &image_state, const Location &loc,
-                                               const char *image_label, const char *vuid) const {
+                                               const vvl::Image &image_state, const Location &loc) const {
     using Map = GlobalImageLayoutRangeMap;
     bool skip = false;
     if (disabled[image_layout_validation]) return false;
@@ -1030,13 +1029,10 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layo
 
     if (check_state.found_range.non_empty()) {
         const VkImageSubresource subres = image_state.subresource_encoder.IndexToVkSubresource(check_state.found_range.begin);
-        skip |=
-            LogError(vuid, image_state.Handle(), loc,
-                     "expected to be %s. Incorrect image layout for %s %s. Current layout is %s for subresource in region %" PRIu32
-                     " (aspectMask=%s, mipLevel=%" PRIu32 ", arrayLayer=%" PRIu32 ")",
-                     string_VkImageLayout(expected_layout), image_label, debug_report->FormatHandle(image_state.Handle()).c_str(),
-                     string_VkImageLayout(check_state.found_layout), region_index,
-                     string_VkImageAspectFlags(subres.aspectMask).c_str(), subres.mipLevel, subres.arrayLayer);
+        skip |= LogError(vvl::GetImageImageLayoutVUID(loc), image_state.Handle(), loc,
+                         "is currently %s but expected to be %s for %s (subresource is %s)",
+                         string_VkImageLayout(check_state.found_layout), string_VkImageLayout(expected_layout),
+                         debug_report->FormatHandle(image_state.Handle()).c_str(), string_VkImageSubresource(subres).c_str());
     }
     return skip;
 }

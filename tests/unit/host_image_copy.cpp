@@ -1910,10 +1910,18 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayout) {
     m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-09241");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
-    transition_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+}
 
-    // Bad oldLayout
-    transition_info.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+TEST_F(NegativeHostImageCopy, TransitionImageLayout2) {
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+
+    VkHostImageLayoutTransitionInfo transition_info = vku::InitStructHelper();
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_GENERAL;  // wrong
+    transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    transition_info.image = image;
+
     m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-oldLayout-09229");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
