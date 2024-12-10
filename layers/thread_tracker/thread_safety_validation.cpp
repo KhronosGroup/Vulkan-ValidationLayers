@@ -61,10 +61,13 @@ void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(VkDevice device, cons
         // Check whether any binding uses read_only
         bool read_only = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) != 0;
         if (!read_only) {
-            const auto* flags_create_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
-            if (flags_create_info) {
+            if (const auto* flags_create_info =
+                    vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext)) {
                 for (uint32_t i = 0; i < flags_create_info->bindingCount; ++i) {
-                    if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) {
+                    // "Descriptor bindings created with this flag are also partially exempt from the external synchronization
+                    // requirement in vkUpdateDescriptorSetWithTemplateKHR and vkUpdateDescriptorSets"
+                    if (flags_create_info->pBindingFlags[i] &
+                        (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT)) {
                         read_only = true;
                         break;
                     }
