@@ -30,7 +30,7 @@
 #include <vector>
 #include <vulkan/layer/vk_layer_settings.hpp>
 
-#include "gpu/core/gpuav_settings.h"
+#include "gpuav/core/gpuav_settings.h"
 
 #include "sync/sync_settings.h"
 #include "vk_layer_config.h"

@@ -49,7 +49,7 @@ class APISpecific:
 #include "object_tracker/object_lifetime_validation.h"
 #include "core_checks/core_validation.h"
 #include "best_practices/best_practices_validation.h"
-#include "gpu/core/gpuav.h"
+#include "gpuav/core/gpuav.h"
 #include "sync/sync_validation.h"
 
 namespace vvl {

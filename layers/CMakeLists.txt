@@ -113,7 +113,7 @@ elseif(MSVC)
     )
 endif()
 
-add_subdirectory(gpu/spirv)
+add_subdirectory(gpuav/spirv)
 
 if(IOS)
     add_library(vvl SHARED)
@@ -218,61 +218,61 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/thread_safety_counter_bodies.h
     ${API_TYPE}/generated/thread_safety_counter_definitions.h
     ${API_TYPE}/generated/thread_safety_counter_instances.h
-    ${API_TYPE}/generated/cmd_validation_copy_buffer_to_image_comp.h
-    ${API_TYPE}/generated/cmd_validation_copy_buffer_to_image_comp.cpp
-    ${API_TYPE}/generated/cmd_validation_dispatch_comp.h
-    ${API_TYPE}/generated/cmd_validation_dispatch_comp.cpp
-    ${API_TYPE}/generated/cmd_validation_count_buffer_comp.h
-    ${API_TYPE}/generated/cmd_validation_count_buffer_comp.cpp
-    ${API_TYPE}/generated/cmd_validation_first_instance_comp.h
-    ${API_TYPE}/generated/cmd_validation_first_instance_comp.cpp
-    ${API_TYPE}/generated/cmd_validation_draw_indexed_comp.h
-    ${API_TYPE}/generated/cmd_validation_draw_indexed_comp.cpp
-    ${API_TYPE}/generated/cmd_validation_draw_indexed_indirect_index_buffer_comp.h
-    ${API_TYPE}/generated/cmd_validation_draw_indexed_indirect_index_buffer_comp.cpp
-    ${API_TYPE}/generated/cmd_validation_draw_indexed_indirect_vertex_buffer_comp.h
-    ${API_TYPE}/generated/cmd_validation_draw_indexed_indirect_vertex_buffer_comp.cpp
-    ${API_TYPE}/generated/cmd_validation_draw_mesh_indirect_comp.h
-    ${API_TYPE}/generated/cmd_validation_draw_mesh_indirect_comp.cpp
-    ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.h
-    ${API_TYPE}/generated/cmd_validation_trace_rays_rgen.cpp
-    gpu/core/gpuav_settings.h
-    gpu/core/gpuav_constants.h
-    gpu/cmd_validation/gpuav_cmd_validation_common.h
-    gpu/cmd_validation/gpuav_cmd_validation_common.cpp
-    gpu/cmd_validation/gpuav_draw.h
-    gpu/cmd_validation/gpuav_draw.cpp
-    gpu/cmd_validation/gpuav_dispatch.h
-    gpu/cmd_validation/gpuav_dispatch.cpp
-    gpu/cmd_validation/gpuav_trace_rays.h
-    gpu/cmd_validation/gpuav_trace_rays.cpp
-    gpu/cmd_validation/gpuav_copy_buffer_to_image.h
-    gpu/cmd_validation/gpuav_copy_buffer_to_image.cpp
-    gpu/descriptor_validation/gpuav_descriptor_validation.h
-    gpu/descriptor_validation/gpuav_descriptor_validation.cpp
-    gpu/descriptor_validation/gpuav_descriptor_set.cpp
-    gpu/descriptor_validation/gpuav_descriptor_set.h
-    gpu/descriptor_validation/gpuav_image_layout.h
-    gpu/descriptor_validation/gpuav_image_layout.cpp
-    gpu/core/gpuav.h
-    gpu/core/gpuav_record.cpp
-    gpu/core/gpuav_setup.cpp
-    gpu/debug_printf/debug_printf.cpp
-    gpu/debug_printf/debug_printf.h
-    gpu/error_message/gpuav_vuids.cpp
-    gpu/error_message/gpuav_vuids.h
-    gpu/instrumentation/gpuav_shader_instrumentor.cpp
-    gpu/instrumentation/gpuav_shader_instrumentor.h
-    gpu/instrumentation/gpuav_instrumentation.h
-    gpu/instrumentation/gpuav_instrumentation.cpp
-    gpu/resources/gpuav_state_trackers.cpp
-    gpu/resources/gpuav_state_trackers.h
-    gpu/resources/gpuav_shader_resources.h
-    gpu/resources/gpuav_vulkan_objects.h
-    gpu/resources/gpuav_vulkan_objects.cpp
-    gpu/shaders/gpuav_error_codes.h
-    gpu/shaders/gpuav_error_header.h
-    gpu/shaders/gpuav_shaders_constants.h
+    ${API_TYPE}/generated/validation_cmd_copy_buffer_to_image_comp.h
+    ${API_TYPE}/generated/validation_cmd_copy_buffer_to_image_comp.cpp
+    ${API_TYPE}/generated/validation_cmd_dispatch_comp.h
+    ${API_TYPE}/generated/validation_cmd_dispatch_comp.cpp
+    ${API_TYPE}/generated/validation_cmd_count_buffer_comp.h
+    ${API_TYPE}/generated/validation_cmd_count_buffer_comp.cpp
+    ${API_TYPE}/generated/validation_cmd_first_instance_comp.h
+    ${API_TYPE}/generated/validation_cmd_first_instance_comp.cpp
+    ${API_TYPE}/generated/validation_cmd_draw_indexed_comp.h
+    ${API_TYPE}/generated/validation_cmd_draw_indexed_comp.cpp
+    ${API_TYPE}/generated/validation_cmd_draw_indexed_indirect_index_buffer_comp.h
+    ${API_TYPE}/generated/validation_cmd_draw_indexed_indirect_index_buffer_comp.cpp
+    ${API_TYPE}/generated/validation_cmd_draw_indexed_indirect_vertex_buffer_comp.h
+    ${API_TYPE}/generated/validation_cmd_draw_indexed_indirect_vertex_buffer_comp.cpp
+    ${API_TYPE}/generated/validation_cmd_draw_mesh_indirect_comp.h
+    ${API_TYPE}/generated/validation_cmd_draw_mesh_indirect_comp.cpp
+    ${API_TYPE}/generated/validation_cmd_trace_rays_rgen.h
+    ${API_TYPE}/generated/validation_cmd_trace_rays_rgen.cpp
+    gpuav/core/gpuav_settings.h
+    gpuav/core/gpuav_constants.h
+    gpuav/validation_cmd/gpuav_validation_cmd_common.h
+    gpuav/validation_cmd/gpuav_validation_cmd_common.cpp
+    gpuav/validation_cmd/gpuav_draw.h
+    gpuav/validation_cmd/gpuav_draw.cpp
+    gpuav/validation_cmd/gpuav_dispatch.h
+    gpuav/validation_cmd/gpuav_dispatch.cpp
+    gpuav/validation_cmd/gpuav_trace_rays.h
+    gpuav/validation_cmd/gpuav_trace_rays.cpp
+    gpuav/validation_cmd/gpuav_copy_buffer_to_image.h
+    gpuav/validation_cmd/gpuav_copy_buffer_to_image.cpp
+    gpuav/descriptor_validation/gpuav_descriptor_validation.h
+    gpuav/descriptor_validation/gpuav_descriptor_validation.cpp
+    gpuav/descriptor_validation/gpuav_descriptor_set.cpp
+    gpuav/descriptor_validation/gpuav_descriptor_set.h
+    gpuav/descriptor_validation/gpuav_image_layout.h
+    gpuav/descriptor_validation/gpuav_image_layout.cpp
+    gpuav/core/gpuav.h
+    gpuav/core/gpuav_record.cpp
+    gpuav/core/gpuav_setup.cpp
+    gpuav/debug_printf/debug_printf.cpp
+    gpuav/debug_printf/debug_printf.h
+    gpuav/error_message/gpuav_vuids.cpp
+    gpuav/error_message/gpuav_vuids.h
+    gpuav/instrumentation/gpuav_shader_instrumentor.cpp
+    gpuav/instrumentation/gpuav_shader_instrumentor.h
+    gpuav/instrumentation/gpuav_instrumentation.h
+    gpuav/instrumentation/gpuav_instrumentation.cpp
+    gpuav/resources/gpuav_state_trackers.cpp
+    gpuav/resources/gpuav_state_trackers.h
+    gpuav/resources/gpuav_shader_resources.h
+    gpuav/resources/gpuav_vulkan_objects.h
+    gpuav/resources/gpuav_vulkan_objects.cpp
+    gpuav/shaders/gpuav_error_codes.h
+    gpuav/shaders/gpuav_error_header.h
+    gpuav/shaders/gpuav_shaders_constants.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp
     state_tracker/buffer_state.cpp

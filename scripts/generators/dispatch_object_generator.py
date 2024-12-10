@@ -69,7 +69,7 @@ class APISpecific:
                         'type': 'LayerObjectTypeBestPractices',
                     },
                     {
-                        'include': 'gpu/core/gpuav.h',
+                        'include': 'gpuav/core/gpuav.h',
                         'class': 'gpuav::Validator',
                         'enabled': 'settings.enabled[gpu_validation] || settings.enabled[debug_printf_validation]',
                         'type': 'LayerObjectTypeGpuAssisted',
