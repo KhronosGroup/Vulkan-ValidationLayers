@@ -52,7 +52,7 @@ SyncAccessFlags SyncStageAccess::AccessScope(VkPipelineStageFlags2 stages, VkAcc
 ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size) { return ResourceAccessRange(start, (start + size)); }
 
 ResourceAccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, VkDeviceSize size) {
-    return MakeRange(offset, buffer.ComputeSize(offset, size));
+    return MakeRange(offset, buffer.GetRegionSize(offset, size));
 }
 
 ResourceAccessRange MakeRange(const vvl::BufferView& buf_view_state) {

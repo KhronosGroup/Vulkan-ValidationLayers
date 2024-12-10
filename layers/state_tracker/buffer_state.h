@@ -53,16 +53,20 @@ class Buffer : public Bindable {
     }
 
     VkBuffer VkHandle() const { return handle_.Cast<VkBuffer>(); }
-    std::optional<VkDeviceSize> ComputeValidSize(VkDeviceSize offset, VkDeviceSize size) const {
-        return ::ComputeValidSize(offset, size, create_info.size);
+
+    VkDeviceSize GetRegionSize(VkDeviceSize offset, VkDeviceSize size) const {
+        if (offset < create_info.size) {
+            if (size == VK_WHOLE_SIZE) {
+                return create_info.size - offset;
+            } else if ((offset + size) <= create_info.size) {
+                return size;
+            }
+        }
+        return 0;
     }
-    VkDeviceSize ComputeSize(VkDeviceSize offset, VkDeviceSize size) const {
-        std::optional<VkDeviceSize> valid_size = ComputeValidSize(offset, size);
-        return valid_size.has_value() ? *valid_size : VkDeviceSize(0);
-    }
-    static VkDeviceSize ComputeSize(const std::shared_ptr<const Buffer> &buffer_state, VkDeviceSize offset,
-                                    VkDeviceSize size) {
-        return buffer_state ? buffer_state->ComputeSize(offset, size) : VkDeviceSize(0);
+
+    static VkDeviceSize GetRegionSize(const std::shared_ptr<const Buffer> &buffer_state, VkDeviceSize offset, VkDeviceSize size) {
+        return buffer_state ? buffer_state->GetRegionSize(offset, size) : 0;
     }
 
     sparse_container::range<VkDeviceAddress> DeviceAddressRange() const {

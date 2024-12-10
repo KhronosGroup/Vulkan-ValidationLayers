@@ -3067,7 +3067,7 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer com
     auto buffer_state = Get<vvl::Buffer>(buffer);
     // Being able to set the size was added in VK_KHR_maintenance5 via vkCmdBindIndexBuffer2KHR
     // Using this function is the same as passing in VK_WHOLE_SIZE
-    VkDeviceSize buffer_size = vvl::Buffer::ComputeSize(buffer_state, offset, VK_WHOLE_SIZE);
+    VkDeviceSize buffer_size = vvl::Buffer::GetRegionSize(buffer_state, offset, VK_WHOLE_SIZE);
     cb_state->index_buffer_binding = vvl::IndexBufferBinding(buffer, buffer_size, offset, indexType);
 
     // Add binding for this index buffer to this commandbuffer
@@ -3085,7 +3085,7 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer2(VkCommandBuffer co
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    VkDeviceSize buffer_size = vvl::Buffer::ComputeSize(buffer_state, offset, size);
+    VkDeviceSize buffer_size = vvl::Buffer::GetRegionSize(buffer_state, offset, size);
     cb_state->index_buffer_binding = vvl::IndexBufferBinding(buffer, buffer_size, offset, indexType);
 
     // Add binding for this index buffer to this commandbuffer
@@ -3112,7 +3112,8 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer c
         vvl::VertexBufferBinding &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info[i + firstBinding];
         vertex_buffer_binding.buffer = pBuffers[i];
         vertex_buffer_binding.offset = pOffsets[i];
-        vertex_buffer_binding.size = vvl::Buffer::ComputeSize(buffer_state, vertex_buffer_binding.offset, VK_WHOLE_SIZE);
+        vertex_buffer_binding.effective_size =
+            vvl::Buffer::GetRegionSize(buffer_state, vertex_buffer_binding.offset, VK_WHOLE_SIZE);
 
         // Add binding for this vertex buffer to this commandbuffer
         if (pBuffers[i] && !disabled[command_buffer_state]) {
@@ -5185,9 +5186,9 @@ void ValidationStateTracker::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer
         vvl::VertexBufferBinding &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info[i + firstBinding];
         vertex_buffer_binding.buffer = pBuffers[i];
         vertex_buffer_binding.offset = pOffsets[i];
-        vertex_buffer_binding.size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
-        if (vertex_buffer_binding.size == VK_WHOLE_SIZE) {
-            vertex_buffer_binding.size = vvl::Buffer::ComputeSize(buffer_state, pOffsets[i], VK_WHOLE_SIZE);
+        vertex_buffer_binding.effective_size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
+        if (vertex_buffer_binding.effective_size == VK_WHOLE_SIZE) {
+            vertex_buffer_binding.effective_size = vvl::Buffer::GetRegionSize(buffer_state, pOffsets[i], VK_WHOLE_SIZE);
         }
 
         if (pStrides) {
