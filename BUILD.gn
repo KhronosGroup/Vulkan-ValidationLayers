@@ -192,6 +192,7 @@ vvl_sources = [
   "layers/gpu/resources/gpuav_shader_resources.h",
   "layers/gpu/resources/gpuav_state_trackers.cpp",
   "layers/gpu/resources/gpuav_state_trackers.h",
+  "layers/gpu/shaders/cmd_validation/draw_push_data.h",
   "layers/gpu/shaders/gpuav_error_codes.h",
   "layers/gpu/shaders/gpuav_error_header.h",
   "layers/gpu/shaders/gpuav_shaders_constants.h",
