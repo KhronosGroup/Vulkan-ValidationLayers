@@ -128,11 +128,19 @@ void vvl::Semaphore::EnqueueWait(const SubmissionReference &wait_submit, uint64_
             assert(timeline_.rbegin()->second.HasSignaler());
             payload = timeline_.rbegin()->first;
         }
-    } else {  // timeline semaphore
-        if (payload <= completed_.payload) {
-            return;
-        }
     }
+
+    if (payload <= completed_.payload) {
+        // Signal is already retired and its timepoint removed. Mark wait as completed.
+        // NOTE: wait's submission can still be pending, but timepoint lifetime logic
+        // is determined by the signal. completed_ is updated when signal is retired.
+        // The matching waits should be resolved against completed_ in this case.
+        assert(!vvl::Contains(timeline_, payload));
+        completed_.op_type = kWait;
+        completed_.submit = wait_submit;
+        return;
+    }
+
     timeline_[payload].wait_submits.emplace_back(wait_submit);
 }
 
