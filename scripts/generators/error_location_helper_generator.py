@@ -163,6 +163,9 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
             std::string String(const Requirements& requirements);
 
             bool IsFieldPointer(Field field);
+
+            // Used for VUID maps were we only want the new function name
+            Func FindAlias(Func func);
             }  // namespace vvl
             ''')
         self.write("".join(out))
@@ -254,6 +257,19 @@ bool IsFieldPointer(Field field) {
     default:
         return false;
     }
+}
+
+Func FindAlias(Func func) {
+    switch (func) {
+''')
+        for command in [x for x in self.vk.commands.values() if x.alias]:
+            out.append(f'    case Func::{command.name}:\n')
+            out.append(f'       return Func::{command.alias};\n')
+        out.append('''
+    default:
+        break;
+    }
+    return func;
 }
 // clang-format on
 ''')

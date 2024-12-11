@@ -5376,6 +5376,9 @@ std::string String(const Requirement& requirement);
 std::string String(const Requirements& requirements);
 
 bool IsFieldPointer(Field field);
+
+// Used for VUID maps were we only want the new function name
+Func FindAlias(Func func);
 }  // namespace vvl
 
 // NOLINTEND
