@@ -542,12 +542,11 @@ TEST_F(NegativeHostImageCopy, Image1DMultiSampled) {
 
 TEST_F(NegativeHostImageCopy, CompressedFormat) {
     TEST_DESCRIPTION("Use VK_EXT_host_image_copy to copy from images to memory and vice versa");
+    AddRequiredFeature(vkt::Feature::textureCompressionBC);
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
-    const VkFormat compressed_format = FindSupportedCompressedFormat(Gpu());
-
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), compressed_format,
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_BC3_SRGB_BLOCK,
                                                                  image_ci.imageType, image_ci.tiling, image_ci.usage,
                                                                  image_ci.flags, &img_prop)) {
         GTEST_SKIP() << "Image format properties not supported";
@@ -581,7 +580,7 @@ TEST_F(NegativeHostImageCopy, CompressedFormat) {
     copy_from_image.regionCount = 1;
     copy_from_image.pRegions = &region_from_image;
 
-    image_ci.format = compressed_format;
+    image_ci.format = VK_FORMAT_BC3_SRGB_BLOCK;
     image_ci.mipLevels = 6;
     vkt::Image image_compressed(*m_device, image_ci, vkt::set_layout);
     image_compressed.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -1708,18 +1707,17 @@ TEST_F(NegativeHostImageCopy, CopyImageToImageZeroLayer) {
 }
 
 TEST_F(NegativeHostImageCopy, CopyImageToImageCompressed) {
+    AddRequiredFeature(vkt::Feature::textureCompressionBC);
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
-    const VkFormat compressed_format = FindSupportedCompressedFormat(Gpu());
-
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), compressed_format,
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_BC3_SRGB_BLOCK,
                                                                  image_ci.imageType, image_ci.tiling, image_ci.usage,
                                                                  image_ci.flags, &img_prop)) {
         GTEST_SKIP() << "Image format properties not supported";
     }
 
-    image_ci.format = compressed_format;
+    image_ci.format = VK_FORMAT_BC3_SRGB_BLOCK;
     image_ci.mipLevels = 6;
     vkt::Image image_compressed1(*m_device, image_ci, vkt::set_layout);
     vkt::Image image_compressed2(*m_device, image_ci, vkt::set_layout);
@@ -2195,15 +2193,14 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
 TEST_F(NegativeHostImageCopy, DISABLED_ImageMemoryOverlapCompressed) {
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
-    const VkFormat compressed_format = VK_FORMAT_BC3_SRGB_BLOCK;
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), compressed_format,
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_BC3_SRGB_BLOCK,
                                                                  image_ci.imageType, image_ci.tiling, image_ci.usage,
                                                                  image_ci.flags, &img_prop)) {
         GTEST_SKIP() << "Image format properties not supported";
     }
 
-    image_ci.format = compressed_format;
+    image_ci.format = VK_FORMAT_BC3_SRGB_BLOCK;
     image_ci.extent = {4, 4, 1};
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
     vkt::Image image(*m_device, image_ci, kHostVisibleMemProps);
