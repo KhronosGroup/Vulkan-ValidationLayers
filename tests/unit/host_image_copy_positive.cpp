@@ -344,17 +344,16 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
 }
 
 TEST_F(PositiveHostImageCopy, CompressedFormat) {
+    AddRequiredFeature(vkt::Feature::textureCompressionBC);
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
-    const VkFormat compressed_format = FindSupportedCompressedFormat(Gpu());
-
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), compressed_format,
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_BC3_SRGB_BLOCK,
                                                                  image_ci.imageType, image_ci.tiling, image_ci.usage,
                                                                  image_ci.flags, &img_prop)) {
         GTEST_SKIP() << "Image format properties not supported";
     }
-    image_ci.format = compressed_format;
+    image_ci.format = VK_FORMAT_BC3_SRGB_BLOCK;
     vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 

@@ -736,15 +736,14 @@ TEST_F(NegativeCopyBufferImage, CompressedImageMip) {
     TEST_DESCRIPTION("Image/Buffer copies for higher mip levels");
 
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::textureCompressionBC);
     RETURN_IF_SKIP(Init());
     bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-
-    const VkFormat compressed_format = FindSupportedCompressedFormat(Gpu());
 
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = compressed_format;
+    ci.format = VK_FORMAT_BC3_SRGB_BLOCK;
     ci.extent = {32, 32, 1};
     ci.mipLevels = 6;
     ci.arrayLayers = 1;
@@ -1475,14 +1474,13 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatchMaintenance1) {
 TEST_F(NegativeCopyBufferImage, ImageCompressedBlockAlignment) {
     // Image copy tests on compressed images with block alignment errors
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::textureCompressionBC);
     RETURN_IF_SKIP(Init());
-
-    const VkFormat compressed_format = FindSupportedCompressedFormat(Gpu());
 
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = compressed_format;
+    ci.format = VK_FORMAT_BC3_SRGB_BLOCK;
     ci.extent = {64, 64, 1};
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
