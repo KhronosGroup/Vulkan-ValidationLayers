@@ -2371,9 +2371,9 @@ TEST_F(PositiveSyncObject, BinarySyncAfterResolvedTimelineWait) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveSyncObject, WaitCompletedBinarySignal) {
+TEST_F(PositiveSyncObject, QueueWaitAfterBinarySignal) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8989
-    TEST_DESCRIPTION("Wait for binary signal that was followed by queue wait command");
+    TEST_DESCRIPTION("Wait for binary signal after queue wait");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
@@ -2408,5 +2408,31 @@ TEST_F(PositiveSyncObject, WaitCompletedBinarySignal) {
     // The only reason timeline semaphore is used in this test, is to have a
     // slot in VkTimelineSemaphoreSubmitInfo that corresponds to binary semaphore.
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit, VK_NULL_HANDLE);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncObject, QueueWaitAfterBinarySignal2) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8989
+    TEST_DESCRIPTION("Binary signal followed by queue wait");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+    m_default_queue->Wait();  // this removes timepoint with signal op from timeline
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore));
+    // Test for regression that triggers assert in Semaphore::CanBinaryBeSignaled
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveSyncObject, QueueWaitAfterBinarySignal3) {
+    TEST_DESCRIPTION("Binary signal followed by queue wait");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+    m_default_queue->Wait();  // this removes timepoint with signal op from timeline
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(semaphore), vkt::Signal(semaphore));
     m_default_queue->Wait();
 }
