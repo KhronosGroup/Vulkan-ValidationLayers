@@ -568,7 +568,8 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateDuplicate) {
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFramework(&kDisableMessageLimit));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     const VkDynamicState dyn_states[] = {
@@ -1514,7 +1515,8 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState3DuplicateStatePipeline) {
     TEST_DESCRIPTION("VK_EXT_extended_dynamic_state3 Duplicate state in pipeline");
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFramework(&kDisableMessageLimit));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     VkDynamicState const dyn_states[] = {VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT,
@@ -3925,9 +3927,7 @@ TEST_F(NegativeDynamicState, ViewportStateIgnored) {
 
 TEST_F(NegativeDynamicState, Viewport) {
     TEST_DESCRIPTION("Test VkPipelineViewportStateCreateInfo viewport and scissor count validation for non-multiViewport");
-
-    VkPhysicalDeviceFeatures features{};
-    RETURN_IF_SKIP(Init(&features));
+    RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     if (m_device->Physical().limits_.maxViewports < 3) {
@@ -3949,63 +3949,6 @@ TEST_F(NegativeDynamicState, Viewport) {
 
         vector<std::string> vuids;
     };
-
-    vector<TestCase> test_cases = {
-        {2,
-         viewports,
-         1,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {2,
-         viewports,
-         1,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {1,
-         viewports,
-         2,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134"}},
-        {2,
-         viewports,
-         2,
-         scissors,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}},
-        {1, nullptr, 1, scissors, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130"}},
-        {1, viewports, 1, nullptr, {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
-        {1,
-         nullptr,
-         1,
-         nullptr,
-         {"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
-        {2,
-         nullptr,
-         3,
-         nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130",
-          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
-        {2,
-         nullptr,
-         2,
-         nullptr,
-         {"VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216", "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
-          "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04131"}},
-    };
-
-    for (const auto &test_case : test_cases) {
-        const auto break_vp = [&test_case](CreatePipelineHelper &helper) {
-            helper.vp_state_ci_.viewportCount = test_case.viewport_count;
-            helper.vp_state_ci_.pViewports = test_case.viewports;
-            helper.vp_state_ci_.scissorCount = test_case.scissor_count;
-            helper.vp_state_ci_.pScissors = test_case.scissors;
-        };
-        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
-    }
 
     vector<TestCase> dyn_test_cases = {
         {0,

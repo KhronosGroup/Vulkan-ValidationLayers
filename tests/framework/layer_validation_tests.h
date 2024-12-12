@@ -70,6 +70,14 @@
 
 #define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
+// This is only for tests where you have a good reason to have more than the default (10) duplicate message limit.
+// It is highly suggested you first try to breakup your test up into smaller tests if you are trying to use this.
+static VkBool32 kVkFalse = VK_FALSE;
+static const VkLayerSettingEXT kDisableMessageLimitSetting = {OBJECT_LAYER_NAME, "enable_message_limit",
+                                                              VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
+[[maybe_unused]] static VkLayerSettingsCreateInfoEXT kDisableMessageLimit = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT,
+                                                                             nullptr, 1, &kDisableMessageLimitSetting};
+
 //--------------------------------------------------------------------------------------
 // Mesh and VertexFormat Data
 //--------------------------------------------------------------------------------------
