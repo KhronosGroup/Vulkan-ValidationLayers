@@ -99,12 +99,6 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsSampler) {
 
     RETURN_IF_SKIP(Init());
 
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
-
     char const *csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
@@ -116,8 +110,11 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsSampler) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
@@ -127,12 +124,6 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsImage) {
         "Test that pipeline validation accepts a shader consuming only the image portion of a combined image + sampler");
 
     RETURN_IF_SKIP(Init());
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
 
     char const *csSource = R"glsl(
         #version 450
@@ -145,8 +136,11 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsImage) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
@@ -157,11 +151,6 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
         "via separate variables");
 
     RETURN_IF_SKIP(Init());
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
 
     char const *csSource = R"glsl(
         #version 450
@@ -174,8 +163,10 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }

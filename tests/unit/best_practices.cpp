@@ -1159,25 +1159,17 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
-        {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT}};
-    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
-    flags_create_info.bindingCount = (uint32_t)flags.size();
-    flags_create_info.pBindingFlags = flags.data();
-
-    OneOffDescriptorSet normal_descriptor_set(m_device,
-                                              {
-                                                  {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                              },
-                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
-                                              VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
-
+    OneOffDescriptorIndexingSet descriptor_set(m_device, {
+                                                             {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+                                                              nullptr, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT},
+                                                             {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+                                                              nullptr, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT},
+                                                         });
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     ThreadTestData data;
     data.device = device();
-    data.descriptorSet = normal_descriptor_set.set_;
+    data.descriptorSet = descriptor_set.set_;
     data.binding = 0;
     data.buffer = buffer.handle();
     std::atomic<bool> bailout{false};
@@ -1190,7 +1182,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
 
     ThreadTestData data2;
     data2.device = device();
-    data2.descriptorSet = normal_descriptor_set.set_;
+    data2.descriptorSet = descriptor_set.set_;
     data2.binding = 1;
     data2.buffer = buffer.handle();
     data2.bailout = &bailout;

@@ -512,10 +512,9 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
         views[i] = images[i].CreateView();
     }
 
-    const OneOffDescriptorSet::Bindings bindings = {
-        {0, descriptor_type, 4, VK_SHADER_STAGE_ALL, nullptr},
-    };
-    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, descriptor_type, 4, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
     descriptor_set.WriteDescriptorImageInfo(0, views[0], VK_NULL_HANDLE, descriptor_type, image_layout, 0);
     descriptor_set.WriteDescriptorImageInfo(0, views[1], VK_NULL_HANDLE, descriptor_type, image_layout, 1);
     descriptor_set.WriteDescriptorImageInfo(0, views[2], VK_NULL_HANDLE, descriptor_type, image_layout, 2);
@@ -547,7 +546,6 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.dsl_bindings_ = bindings;
     cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
@@ -583,10 +581,9 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     const vkt::ImageView view = image.CreateView();
 
-    const OneOffDescriptorSet::Bindings bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
-    };
-    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 0);
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 1);
     descriptor_set.UpdateDescriptorSets();
@@ -614,7 +611,6 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.dsl_bindings_ = bindings;
     cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
@@ -651,10 +647,9 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     const vkt::BufferView buffer_view0(*m_device, vkt::BufferView::CreateInfo(buffer0, VK_FORMAT_R8G8B8A8_UINT));
     const vkt::BufferView buffer_view1(*m_device, vkt::BufferView::CreateInfo(buffer1, VK_FORMAT_R8G8B8A8_UINT));
 
-    const OneOffDescriptorSet::Bindings bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
-    };
-    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
     descriptor_set.WriteDescriptorBufferView(0, buffer_view0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 0);
     descriptor_set.WriteDescriptorBufferView(0, buffer_view1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1);
     descriptor_set.UpdateDescriptorSets();
@@ -682,7 +677,6 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.dsl_bindings_ = bindings;
     cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
@@ -748,8 +742,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     vkt::Semaphore semaphore(*m_device);
 
     // Submit 0: shader reads image data (read access)
-    const OneOffDescriptorSet::Bindings bindings = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
@@ -761,7 +754,6 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.dsl_bindings_ = bindings;
     cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
@@ -879,8 +871,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     m_default_queue->Submit2(cb, vkt::Signal(semaphore));
 
     // Submit1: wait for the semaphore and read image in the shader
-    const OneOffDescriptorSet::Bindings bindings = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
     descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
@@ -892,7 +883,6 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.dsl_bindings_ = bindings;
     cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();

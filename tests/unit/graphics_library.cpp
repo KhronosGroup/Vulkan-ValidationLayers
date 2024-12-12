@@ -2354,21 +2354,13 @@ TEST_F(NegativeGraphicsLibrary, DescriptorSetLayoutCreateFlags) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
-    VkDescriptorBindingFlagsEXT flags[1] = {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT};
-    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
-    flags_create_info.bindingCount = 1;
-    flags_create_info.pBindingFlags = flags;
-
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_GEOMETRY_BIT, nullptr},
                                      });
-    OneOffDescriptorSet ds2(m_device,
-                            {
-                                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_GEOMETRY_BIT, nullptr},
-                            },
-                            VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
-                            VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
-
+    OneOffDescriptorIndexingSet ds2(m_device, {
+                                                  {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_GEOMETRY_BIT, nullptr,
+                                                   VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT},
+                                              });
     vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_});
     vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds2.layout_});
 

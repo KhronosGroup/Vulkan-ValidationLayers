@@ -37,7 +37,7 @@ TEST_F(PositiveDescriptorIndexing, BindingPartiallyBound) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
+    VkDescriptorBindingFlags ds_binding_flags[2] = {};
     VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags = vku::InitStructHelper();
     ds_binding_flags[0] = 0;
     // No Error
@@ -109,16 +109,10 @@ TEST_F(PositiveDescriptorIndexing, UpdateAfterBind) {
     vkt::Buffer buffer2(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     vkt::Buffer buffer3(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    OneOffDescriptorSet::Bindings binding_defs = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-    };
-    VkDescriptorBindingFlagsEXT flags[2] = {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, 0};
-    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
-    flags_create_info.bindingCount = 2;
-    flags_create_info.pBindingFlags = flags;
-    OneOffDescriptorSet descriptor_set(m_device, binding_defs, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
-                                       &flags_create_info, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    OneOffDescriptorIndexingSet descriptor_set(
+        m_device,
+        {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT},
+         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     descriptor_set.WriteDescriptorBufferInfo(0, buffer1, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -185,16 +179,10 @@ TEST_F(PositiveDescriptorIndexing, PartiallyBoundDescriptors) {
     vkt::Buffer buffer1(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     vkt::Buffer buffer3(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    OneOffDescriptorSet::Bindings binding_defs = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-    };
-    VkDescriptorBindingFlagsEXT flags[2] = {VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT, 0};
-    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
-    flags_create_info.bindingCount = 2;
-    flags_create_info.pBindingFlags = flags;
-    OneOffDescriptorSet descriptor_set(m_device, binding_defs, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
-                                       &flags_create_info, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    OneOffDescriptorIndexingSet descriptor_set(
+        m_device,
+        {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
+         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     descriptor_set.WriteDescriptorBufferInfo(0, buffer1, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);

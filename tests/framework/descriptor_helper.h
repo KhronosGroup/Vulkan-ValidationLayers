@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2024 The Khronos Group Inc.
+ * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2024 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
 
 #include "layer_validation_tests.h"
 
-struct OneOffDescriptorSet {
+class OneOffDescriptorSet {
+  public:
     vkt::Device *device_;
-    VkDescriptorPool pool_;
+    VkDescriptorPool pool_{};
     vkt::DescriptorSetLayout layout_;
-    VkDescriptorSet set_;
-    typedef std::vector<VkDescriptorSetLayoutBinding> Bindings;
+    VkDescriptorSet set_{VK_NULL_HANDLE};
 
     // Only one member of ResourceInfo object contains a value.
     // The pointers to Image/Buffer/BufferView info structures can't be stored in 'descriptor_writes'
@@ -34,9 +34,11 @@ struct OneOffDescriptorSet {
     std::vector<ResourceInfo> resource_infos;
     std::vector<VkWriteDescriptorSet> descriptor_writes;
 
-    OneOffDescriptorSet(vkt::Device *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
-                        void *layout_pnext = nullptr, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = nullptr,
+    OneOffDescriptorSet(vkt::Device *device, const std::vector<VkDescriptorSetLayoutBinding> &bindings,
+                        VkDescriptorSetLayoutCreateFlags layout_flags = 0, void *layout_pnext = nullptr,
+                        VkDescriptorPoolCreateFlags pool_flags = 0, void *allocate_pnext = nullptr,
                         void *create_pool_pnext = nullptr);
+    OneOffDescriptorSet(){};
     ~OneOffDescriptorSet();
     bool Initialized();
     void Clear();
@@ -55,4 +57,22 @@ struct OneOffDescriptorSet {
   private:
     void AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type,
                             uint32_t descriptor_count = 1);
+};
+
+// Descriptor Indexing focused variation
+class OneOffDescriptorIndexingSet : public OneOffDescriptorSet {
+  public:
+    // Same as VkDescriptorSetLayoutBinding but ties the flags into it
+    struct Binding {
+        uint32_t binding;
+        VkDescriptorType descriptorType;
+        uint32_t descriptorCount;
+        VkShaderStageFlags stageFlags;
+        const VkSampler *pImmutableSamplers;
+        VkDescriptorBindingFlags flag;
+    };
+    typedef std::vector<Binding> Bindings;
+
+    OneOffDescriptorIndexingSet(vkt::Device *device, const Bindings &bindings, void *allocate_pnext = nullptr,
+                                void *create_pool_pnext = nullptr);
 };

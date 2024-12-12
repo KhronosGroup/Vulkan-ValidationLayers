@@ -587,20 +587,12 @@ TEST_F(PositiveImageLayout, DescriptorArray) {
     VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorBindingFlags ds_binding_flags[2] = {
-        0,
-        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT,
-    };
-    VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags = vku::InitStructHelper();
-    layout_createinfo_binding_flags.bindingCount = 2;
-    layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags;
-
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
-                                       },
-                                       0, &layout_createinfo_binding_flags);
+    OneOffDescriptorIndexingSet descriptor_set(m_device,
+                                               {
+                                                   {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
+                                                   {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr,
+                                                    VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
+                                               });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     CreatePipelineHelper pipe(*this);

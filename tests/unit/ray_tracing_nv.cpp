@@ -223,7 +223,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     void *allocate_pnext = nullptr;
     VkDescriptorPoolCreateFlags pool_create_flags = 0;
     VkDescriptorSetLayoutCreateFlags layout_create_flags = 0;
-    VkDescriptorBindingFlagsEXT ds_binding_flags[3] = {};
+    VkDescriptorBindingFlags ds_binding_flags[3] = {};
     VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags[1] = {};
     if (descriptor_indexing) {
         ds_binding_flags[0] = 0;

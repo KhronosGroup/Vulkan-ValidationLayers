@@ -28,8 +28,8 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDescriptorBindingFlagsEXT flags[3] = {0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
-                                            VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT};
+    VkDescriptorBindingFlags flags[3] = {0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT,
+                                         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT};
     VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
     flags_create_info.bindingCount = 3;
     flags_create_info.pBindingFlags = &flags[0];
@@ -207,7 +207,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
 
     RETURN_IF_SKIP(Init());
 
-    std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
+    std::array<VkDescriptorBindingFlags, 2> flags = {
         {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT}};
     VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
     flags_create_info.bindingCount = size32(flags);

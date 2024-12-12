@@ -33,17 +33,8 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
     }
     RETURN_IF_SKIP(InitState());
 
-    // Create ray tracing pipeline
-    std::vector<VkDescriptorSetLayoutBinding> bindings(1);
-    bindings[0].binding = 0;
-    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    bindings[0].descriptorCount = 1;
-    bindings[0].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-
-    const vkt::DescriptorSetLayout desc_set_layout(*m_device, bindings);
-    OneOffDescriptorSet desc_set(m_device, bindings);
-
-    const vkt::PipelineLayout rt_pipeline_layout(*m_device, {&desc_set_layout});
+    OneOffDescriptorSet desc_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}});
+    const vkt::PipelineLayout rt_pipeline_layout(*m_device, {&desc_set.layout_});
 
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);

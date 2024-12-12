@@ -497,7 +497,8 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     // Create descriptor set and friends.
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    OneOffDescriptorSet::Bindings binding_defs = {{2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    std::vector<VkDescriptorSetLayoutBinding> binding_defs = {
+        {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, binding_defs);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
     OneOffDescriptorSet descriptor_set(m_device, binding_defs);
