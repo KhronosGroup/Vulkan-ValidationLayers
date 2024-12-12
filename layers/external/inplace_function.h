@@ -29,9 +29,11 @@
 
 #pragma once
 
+#include <cstddef>
+#include <functional>
+#include <memory>
 #include <type_traits>
 #include <utility>
-#include <functional>
 
 #ifndef SG14_INPLACE_FUNCTION_THROW
 #define SG14_INPLACE_FUNCTION_THROW(x) throw(x)

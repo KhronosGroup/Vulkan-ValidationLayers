@@ -18,18 +18,19 @@
 
 #pragma once
 
+#include <algorithm>
+#include <atomic>
+#include <bitset>
 #include <cassert>
 #include <cctype>
-#include <cstring>
-#include <string>
-#include <vector>
-#include <bitset>
-#include <shared_mutex>
-#include <optional>
 #include <cmath>
-#include <atomic>
+#include <cstring>
 #include <memory>
-#include <algorithm>
+#include <optional>
+#include <shared_mutex>
+#include <string>
+#include <type_traits>
+#include <vector>
 
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_concurrent_unordered_map.hpp>
