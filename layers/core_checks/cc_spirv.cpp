@@ -1956,6 +1956,12 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
                          ", but requires at least %" PRIu32 " in the SPIR-V.",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          binding->descriptorCount, variable.array_length);
+    } else if (binding->descriptorCount == 0 && variable.array_length == spirv::kRuntimeArray) {
+        skip |= LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::DescriptorCount_07991),
+                         objlist, loc,
+                         "SPIR-V (%s) uses a runtime descriptor array %s with a VkDescriptorSetLayoutBinding::descriptorCount of 0 "
+                         "but requires at least 1 descriptor.",
+                         string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str());
     }
 
     if (variable.decorations.Has(spirv::DecorationSet::input_attachment_bit)) {
