@@ -15,7 +15,7 @@ def RepoRelative(path):
 
 def BuildGn():
     if not os.path.exists(RepoRelative("depot_tools")):
-        clone_cmd = 'git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools'.split(" ")
+        clone_cmd = 'git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools'.split()
         subprocess.check_call(clone_cmd)
 
     os.environ['PATH'] = os.environ.get('PATH') + ":" + RepoRelative("depot_tools")
@@ -25,13 +25,17 @@ def BuildGn():
     subprocess.check_call(update_cmd)
 
     # Generating Ninja Files with Checking
-    gn_gen_cmd= 'gn gen --check out'.split(" ")
+    gn_gen_cmd = 'gn gen --check out'.split()
     # Forward extra build args from command line
     gn_gen_cmd.extend(sys.argv[1:])
     subprocess.check_call(gn_gen_cmd)
 
+    # Check all source files for validation are in the BUILD.gn file
+    gn_export_targets_cmd = f'{sys.executable} ./scripts/gn/export_targets.py out //:VkLayer_khronos_validation'.split()
+    subprocess.check_call(gn_export_targets_cmd)
+
     # Running Ninja Build
-    ninja_build_cmd = 'ninja -C out'.split(" ")
+    ninja_build_cmd = 'ninja -C out'.split()
     subprocess.check_call(ninja_build_cmd)
 
 #
@@ -40,10 +44,10 @@ def main():
     try:
         BuildGn()
     except subprocess.CalledProcessError as proc_error:
-        print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
+        print(f'Command {proc_error.cmd} failed with return code {proc_error.returncode}')
         sys.exit(proc_error.returncode)
     except Exception as unknown_error:
-        print('An unkown error occured: %s', unknown_error)
+        print(f'An unkown error occured: {unknown_error}')
         sys.exit(1)
 
     sys.exit(0)
