@@ -288,6 +288,10 @@ def main():
         target_files = target_files_data.decode('utf-8')
         target_files = target_files.split("\n")
 
+        # Exceptions of files we don't want to check (TODO - need better way to do this)
+        if 'layers/external/vma/vk_mem_alloc.h' in target_files:
+            target_files.remove('layers/external/vma/vk_mem_alloc.h')
+
         # Skip checking dependabot commits
         authors = subprocess.check_output(['git', 'log', '-n' , '1', '--format=%ae', commit]).decode('utf-8')
         if "dependabot" in authors:

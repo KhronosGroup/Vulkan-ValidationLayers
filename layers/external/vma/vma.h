@@ -1,6 +1,6 @@
-/* Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+/* Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,11 @@
 #include <vulkan/vulkan.h>
 
 #define VMA_STATIC_VULKAN_FUNCTIONS 0  // We will supply Vulkan function pointers at initialization
+// TODO - Currently using 1.4 (or VK_KHR_maintenance4) will blow up in vmaFindMemoryTypeIndexForBufferInfo
 #define VMA_VULKAN_VERSION 1001000  // Vulkan 1.1
+#define VMA_KHR_MAINTENANCE4 0
+// Currently fails compiler errors if on (and not currently using it for GPU-AV)
+#define VMA_EXTERNAL_MEMORY_WIN32 0
 
 #ifdef _MSVC_LANG
 
