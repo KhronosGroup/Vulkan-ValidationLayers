@@ -565,65 +565,6 @@ TEST_F(PositiveImageLayout, ArrayLayers) {
     m_default_queue->Wait();
 }
 
-// Waiting to hear from https://gitlab.khronos.org/vulkan/vulkan/-/issues/4110
-TEST_F(PositiveImageLayout, DISABLED_MultiArrayLayers) {
-    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1998");
-    RETURN_IF_SKIP(Init());
-    RETURN_IF_SKIP(InitRenderTarget());
-
-    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    vkt::Image image(*m_device, image_ci);
-
-    // layer 0 now VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    // layer 1 is still VK_IMAGE_LAYOUT_UNDEFINED.
-    m_command_buffer.Begin();
-    VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
-    img_barrier.srcAccessMask = 0;
-    img_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    img_barrier.image = image;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &img_barrier);
-    m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-
-    // Bind view to both layers
-    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
-
-    const char *fs_source = R"glsl(
-        #version 460
-        layout(set=0, binding=0) uniform sampler2DArray s;
-        layout(location=0) out vec4 x;
-        void main(){
-            x = texture(s, vec3(1, 1, 0)); // accesses valid layer
-        }
-    )glsl";
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
-    CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-    pipe.CreateGraphicsPipeline();
-
-    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-}
-
 TEST_F(PositiveImageLayout, DescriptorArray) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1998");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
