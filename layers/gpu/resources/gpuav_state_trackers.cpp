@@ -393,7 +393,7 @@ void CommandBuffer::ResetCBState() {
     descriptor_command_bindings.clear();
     action_command_snapshots.clear();
     descriptor_indexing_buffer = VK_NULL_HANDLE;
-    post_process_buffer = VK_NULL_HANDLE;
+    post_process_buffer_lut = VK_NULL_HANDLE;
 
     error_output_buffer_.Destroy();
     cmd_errors_counts_buffer_.Destroy();

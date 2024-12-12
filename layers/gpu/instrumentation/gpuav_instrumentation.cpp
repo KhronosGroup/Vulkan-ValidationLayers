@@ -213,9 +213,9 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
 
     // Post Processing Output buffer
     VkDescriptorBufferInfo post_process_buffer_info = {};
-    if (cb_state.post_process_buffer != VK_NULL_HANDLE) {
+    if (cb_state.post_process_buffer_lut != VK_NULL_HANDLE) {
         post_process_buffer_info.range = VK_WHOLE_SIZE;
-        post_process_buffer_info.buffer = cb_state.post_process_buffer;
+        post_process_buffer_info.buffer = cb_state.post_process_buffer_lut;
         post_process_buffer_info.offset = 0;
 
         VkWriteDescriptorSet wds = vku::InitStructHelper();

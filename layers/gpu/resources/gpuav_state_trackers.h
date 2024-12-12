@@ -64,7 +64,7 @@ class CommandBuffer : public vvl::CommandBuffer {
 
     // Buffer to be bound every draw/dispatch/action
     VkBuffer descriptor_indexing_buffer = VK_NULL_HANDLE;
-    VkBuffer post_process_buffer = VK_NULL_HANDLE;
+    VkBuffer post_process_buffer_lut = VK_NULL_HANDLE;
 
     // Used to track which spot in the command buffer the error came from
     uint32_t draw_index = 0;
