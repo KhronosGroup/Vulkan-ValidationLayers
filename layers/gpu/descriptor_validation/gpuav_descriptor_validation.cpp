@@ -91,7 +91,7 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBuffer &cb_state
     auto ssbo_buffer_ptr = (glsl::PostProcessSSBO *)descriptor_command_binding.post_process_ssbo_buffer.MapMemory(loc);
     memset(ssbo_buffer_ptr, 0, sizeof(glsl::PostProcessSSBO));
 
-    cb_state.post_process_buffer = descriptor_command_binding.post_process_ssbo_buffer.VkHandle();
+    cb_state.post_process_buffer_lut = descriptor_command_binding.post_process_ssbo_buffer.VkHandle();
 
     const size_t number_of_sets = last_bound.ds_slots.size();
     for (uint32_t i = 0; i < number_of_sets; i++) {
@@ -262,7 +262,9 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                         break;
                     }
                 }
-                ASSERT_AND_CONTINUE(resource_variable);
+
+                // This can occur if 2 shaders have different OpVariable, but the pipelines are sharing the same descriptor set
+                if (!resource_variable) continue;
 
                 // If we already validated/updated the descriptor on the CPU, don't redo it now in GPU-AV Post Processing
                 if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding,

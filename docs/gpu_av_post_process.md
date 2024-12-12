@@ -36,33 +36,10 @@ The goal is that the `ValidateDescriptor()` function can be called the same from
 
 When tracking data for Post Process, we need both information from `vkCmdBindDescriptorSets` and `vkCmdBindPipeline` (or shader objects), but not all are present at the same time.
 
-At action command time we need to bind a `VkBuffer` that contains the Buffer Device Address to each descriptor set. If we have 4 descriptor set and the following command buffer stream:
+The `VkDescriptorSet` object contains a buffer with a `PostProcessDescriptorIndexSlot` for each descriptor in it. This "descriptor index slot" holds information that can only be known at GPU execution time (which index, OpVariable, etc... are used). For each action command, we create a LUT mapping 32 (current max limit) addresses to the `VkDescriptorSet` buffer.
 
-```c++
-vkCmdBindDescriptorSets(firstSet = 0, setCount = 2, [set_a, set_b]);
-vkCmdDraw()
-vkCmdBindDescriptorSets(firstSet = 3, setCount = 1, [set_a]);
-vkCmdDraw()
-```
+The pipelines contain the `OpVariable` SPIR-V information, such as which type of image is used. This is wrapped up in a `BindingVariableMap` pointer. Using this we can map the accessed descriptor on the GPU back to all the state tracking on the CPU.
 
-the first draw the `VkBuffer` contents would look like
+The following diagram aims to illustrate the flow of data:
 
-```
-[&set_a, &set_b, null, null]
-   |        |
-   |      [descriptor_0, descriptor_1, etc]
-   |
- [descriptor_0, descriptor_1, etc]
-```
-
-and the second draw would look like
-
-```
-[&set_a, &set_b, null, &set_a]
-   |        |            |
-   |        -------------|------[descriptor_0, descriptor_1, etc]
-   |                     |
- [descriptor_0, descriptor_1, etc]
-```
-
-With this information, we now need to pair that up with the SPIR-V information. This information is saved in a `BindingVariableMap` pointer. This contains a mapping between each binding in the descriptor set, and what each `OpVariable` tied to it looks like.
+![alt_text](images/post_processing.svg "Post Processing")

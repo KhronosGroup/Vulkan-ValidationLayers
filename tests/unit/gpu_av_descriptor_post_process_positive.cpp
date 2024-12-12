@@ -627,3 +627,121 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, NonMultisampleMismatchWithPipeline) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVDescriptorPostProcess, SharedDescriptorDifferentOpVariableId) {
+    TEST_DESCRIPTION("Same descriptor set is accessed by 2 different shaders, so the Variable IDs will not match other pipeline");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Buffer buffer(*m_device, 60, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    buffer_ptr[0] = 0;
+    buffer.Memory().Unmap();
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    char const *cs_source0 = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set=0, binding=0) uniform sampler2D sample_array[];
+        layout(set=0, binding=1) buffer SSBO {
+            uint index;
+            vec4 out_value;
+        };
+        void main() {
+           out_value = texture(sample_array[index], vec2(0));
+        }
+    )glsl";
+    CreateComputePipelineHelper pipe0(*this);
+    pipe0.cs_ = std::make_unique<VkShaderObj>(this, cs_source0, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe0.cp_ci_.layout = pipeline_layout.handle();
+    pipe0.CreateComputePipeline();
+
+    // This is the same shader as above, but the goal is to make sure the OpVariable ID are different as the descriptor is being
+    // aliased
+    char const *cs_source1 = R"(
+               OpCapability Shader
+               OpCapability RuntimeDescriptorArray
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %_ %sample_array
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpMemberDecorate %SSBO 1 Offset 16
+               OpDecorate %_ Binding 1
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %sample_array Binding 0
+               OpDecorate %sample_array DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %SSBO = OpTypeStruct %uint %v4float
+        %int = OpTypeInt 32 1
+      %int_1 = OpConstant %int 1
+         %15 = OpTypeImage %float 2D 0 0 0 1 Unknown
+         %16 = OpTypeSampledImage %15
+%runtimearr = OpTypeRuntimeArray %16
+      %int_0 = OpConstant %int 0
+%_ptr_uint = OpTypePointer StorageBuffer %uint
+%_ptr_UniformConstant_16 = OpTypePointer UniformConstant %16
+    %v2float = OpTypeVector %float 2
+    %float_0 = OpConstant %float 0
+         %29 = OpConstantComposite %v2float %float_0 %float_0
+%_ptr_v4float = OpTypePointer StorageBuffer %v4float
+            ;; Variables moved here
+  %_ptr_SSBO = OpTypePointer StorageBuffer %SSBO
+          %_ = OpVariable %_ptr_SSBO StorageBuffer
+%_ptr_runtimearr = OpTypePointer UniformConstant %runtimearr
+%sample_array = OpVariable %_ptr_runtimearr UniformConstant
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %22 = OpAccessChain %_ptr_uint %_ %int_0
+         %23 = OpLoad %uint %22
+         %25 = OpAccessChain %_ptr_UniformConstant_16 %sample_array %23
+         %26 = OpLoad %16 %25
+         %30 = OpImageSampleExplicitLod %v4float %26 %29 Lod %float_0
+         %32 = OpAccessChain %_ptr_v4float %_ %int_1
+               OpStore %32 %30
+               OpReturn
+               OpFunctionEnd
+    )";
+    CreateComputePipelineHelper pipe1(*this);
+    pipe1.cs_ = std::make_unique<VkShaderObj>(this, cs_source1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe1.cp_ci_.layout = pipeline_layout.handle();
+    pipe1.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe0.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe1.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
