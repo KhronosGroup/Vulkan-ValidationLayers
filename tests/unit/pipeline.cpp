@@ -1660,7 +1660,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     vkt::Buffer storage_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     vkt::Buffer uniform_buffer(*m_device, 20, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-    OneOffDescriptorSet::Bindings binding_defs = {
+    std::vector<VkDescriptorSetLayoutBinding> binding_defs = {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
     };
@@ -1918,13 +1918,11 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     pipeline_unused.shader_stages_[1] = fs_unused.GetStageCreateInfo();
     pipeline_function.shader_stages_[1] = fs_function.GetStageCreateInfo();
 
-    OneOffDescriptorSet::Bindings combined_bindings = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-    OneOffDescriptorSet::Bindings seperate_bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-    OneOffDescriptorSet combined_descriptor_set(m_device, combined_bindings);
-    OneOffDescriptorSet seperate_descriptor_set(m_device, seperate_bindings);
+    OneOffDescriptorSet combined_descriptor_set(
+        m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    OneOffDescriptorSet seperate_descriptor_set(m_device,
+                                                {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                                 {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
     const vkt::PipelineLayout combined_pipeline_layout(*m_device, {&combined_descriptor_set.layout_});
     const vkt::PipelineLayout seperate_pipeline_layout(*m_device, {&seperate_descriptor_set.layout_});
 

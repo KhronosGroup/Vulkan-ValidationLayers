@@ -20,10 +20,6 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariable) {
 
     RETURN_IF_SKIP(Init());
 
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
-
     char const *csSource = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : enable
@@ -40,8 +36,9 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariable) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
@@ -50,10 +47,6 @@ TEST_F(PositiveShaderImageAccess, MultipleFunctionParameterToVariable) {
     TEST_DESCRIPTION("Test getting a ImageAccess from a chain of OpFunctionParameter to a OpVariable");
 
     RETURN_IF_SKIP(Init());
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
 
     char const *csSource = R"glsl(
         #version 460
@@ -76,8 +69,9 @@ TEST_F(PositiveShaderImageAccess, MultipleFunctionParameterToVariable) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
@@ -86,11 +80,6 @@ TEST_F(PositiveShaderImageAccess, DifferentFunctionParameterToVariable) {
     TEST_DESCRIPTION("Test getting a different ImageAccess from the same OpFunctionParameter to a OpVariable");
 
     RETURN_IF_SKIP(Init());
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
 
     char const *csSource = R"glsl(
         #version 460
@@ -109,8 +98,10 @@ TEST_F(PositiveShaderImageAccess, DifferentFunctionParameterToVariable) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
@@ -119,10 +110,6 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoad) {
     TEST_DESCRIPTION("Test getting a ImageAccess from a OpFunctionParameter to a OpLoad");
 
     RETURN_IF_SKIP(Init());
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
 
     // This is
     //    int foo(texture2D func_texture) { return textureSize(func_texture, 0).x; }
@@ -169,8 +156,9 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoad) {
     )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
@@ -179,11 +167,6 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariableSampledImage) {
     TEST_DESCRIPTION("Test getting a OpSampledImage ImageAccess from a OpFunctionParameter to a OpVariable");
 
     RETURN_IF_SKIP(Init());
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
 
     char const *csSource = R"glsl(
         #version 460
@@ -202,8 +185,10 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariableSampledImage) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
@@ -212,11 +197,6 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoadSampledImage) {
     TEST_DESCRIPTION("Test getting a OpSampledImage ImageAccess from a OpFunctionParameter to a OpLoad");
 
     RETURN_IF_SKIP(Init());
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
 
     // This is
     //    int foo(texture2D func_texture) { return texture(sampler2D(func_texture,  func_sampler), vec2(0.0)); }
@@ -269,8 +249,10 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoadSampledImage) {
     )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
@@ -279,10 +261,6 @@ TEST_F(PositiveShaderImageAccess, CopyObjectFromLoad) {
     TEST_DESCRIPTION("Use a OpCopyObject from a OpLoad");
 
     RETURN_IF_SKIP(Init());
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
 
     // This is simple
     //    int x = textureSize(texture_image, 0).x;
@@ -321,8 +299,9 @@ TEST_F(PositiveShaderImageAccess, CopyObjectFromLoad) {
     )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
@@ -331,11 +310,6 @@ TEST_F(PositiveShaderImageAccess, UndefImage) {
     TEST_DESCRIPTION("A OpSampledImage has the Image ID pointing to a OpUndef");
 
     RETURN_IF_SKIP(Init());
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-    };
 
     char const *csSource = R"(
                OpCapability Shader
@@ -374,8 +348,10 @@ TEST_F(PositiveShaderImageAccess, UndefImage) {
     )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_.resize(bindings.size());
-    memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }

@@ -92,7 +92,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
 
     vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
+    VkDescriptorBindingFlags ds_binding_flags[2] = {};
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
     VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags[1] = {};
     layout_createinfo_binding_flags[0] = vku::InitStructHelper();
@@ -182,7 +182,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
 
     vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
-    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
+    VkDescriptorBindingFlags ds_binding_flags[2] = {};
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
     VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags[1] = {};
     layout_createinfo_binding_flags[0] = vku::InitStructHelper();

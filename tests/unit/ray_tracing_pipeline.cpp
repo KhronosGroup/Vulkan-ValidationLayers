@@ -850,11 +850,9 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj chit_shader(this, chit_src, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-    std::vector<VkDescriptorSetLayoutBinding> layout_bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr}};
-
-    const vkt::DescriptorSetLayout ds_layout(*m_device, layout_bindings);
+    const vkt::DescriptorSetLayout ds_layout(
+        *m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr},
+                    {1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
@@ -963,12 +961,10 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
 
     RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
 
-    std::vector<VkDescriptorSetLayoutBinding> layout_bindings = {
-        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_device->Physical().limits_.maxPerStageResources, VK_SHADER_STAGE_RAYGEN_BIT_KHR,
-         nullptr},
-        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}};
-
-    const vkt::DescriptorSetLayout ds_layout(*m_device, layout_bindings);
+    const vkt::DescriptorSetLayout ds_layout(
+        *m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_device->Physical().limits_.maxPerStageResources,
+                     VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr},
+                    {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
 

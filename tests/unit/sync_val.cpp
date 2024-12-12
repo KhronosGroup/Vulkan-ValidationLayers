@@ -3942,7 +3942,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     VkDescriptorSetLayoutBindingFlagsCreateInfo layout_createinfo_binding_flags = vku::InitStructHelper();
     constexpr size_t kNumDescriptors = 6;
 
-    std::array<VkDescriptorBindingFlagsEXT, kNumDescriptors> ds_binding_flags;
+    std::array<VkDescriptorBindingFlags, kNumDescriptors> ds_binding_flags;
     for (auto &elem : ds_binding_flags) {
         elem = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
     }
