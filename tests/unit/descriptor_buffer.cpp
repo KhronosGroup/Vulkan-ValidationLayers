@@ -555,9 +555,14 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptorsOff) {
 }
 
 TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptors) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBuffer);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::descriptorBufferPushDescriptors);
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    RETURN_IF_SKIP(InitFramework(&kDisableMessageLimit));
+    RETURN_IF_SKIP(InitState());
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);

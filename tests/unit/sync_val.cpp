@@ -1643,14 +1643,7 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
 
 TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    // Enable VK_KHR_draw_indirect_count for KHR variants
-    AddOptionalExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
-    const bool has_khr_indirect = IsExtensionsEnabled(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
-        AddRequiredFeature(vkt::Feature::drawIndirectCount);
-    }
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
@@ -1672,26 +1665,22 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
 
     vkt::ImageView imageview_s = image_s_a.CreateView();
 
-    vkt::Sampler sampler_s, sampler_c;
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    sampler_s.init(*m_device, sampler_ci);
-    sampler_c.init(*m_device, sampler_ci);
+    vkt::Sampler sampler_s(*m_device, sampler_ci);
+    vkt::Sampler sampler_c(*m_device, sampler_ci);
 
-    vkt::Buffer buffer_a, buffer_b;
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_a.init(*m_device, buffer_a.CreateInfo(2048, buffer_usage), mem_prop);
-    buffer_b.init(*m_device, buffer_b.CreateInfo(2048, buffer_usage), mem_prop);
+    vkt::Buffer buffer_a(*m_device, vkt::Buffer::CreateInfo(2048, buffer_usage), mem_prop);
+    vkt::Buffer buffer_b(*m_device, vkt::Buffer::CreateInfo(2048, buffer_usage), mem_prop);
 
-    vkt::BufferView bufferview;
     VkBufferViewCreateInfo bvci = vku::InitStructHelper();
     bvci.buffer = buffer_a.handle();
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.offset = 0;
     bvci.range = VK_WHOLE_SIZE;
-
-    bufferview.init(*m_device, bvci);
+    vkt::BufferView bufferview(*m_device, bvci);
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -1724,8 +1713,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
         }
     )glsl";
 
-    vkt::Event event;
-    event.init(*m_device, vkt::Event::CreateInfo(0));
+    vkt::Event event(*m_device, vkt::Event::CreateInfo(0));
     VkEvent event_handle = event.handle();
 
     CreateComputePipelineHelper pipe(*this);
@@ -1808,12 +1796,10 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     const float vbo_data[3] = {1.f, 0.f, 1.f};
     VkVertexInputAttributeDescription VertexInputAttributeDescription = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(vbo_data)};
     VkVertexInputBindingDescription VertexInputBindingDescription = {0, sizeof(vbo_data), VK_VERTEX_INPUT_RATE_VERTEX};
-    vkt::Buffer vbo, vbo2;
     buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    vbo.init(*m_device, vbo.CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
-    vbo2.init(*m_device, vbo2.CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
+    vkt::Buffer vbo(*m_device, vkt::Buffer::CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
+    vkt::Buffer vbo2(*m_device, vkt::Buffer::CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, csSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper g_pipe(*this);
@@ -1821,7 +1807,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     g_pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     g_pipe.vi_ci_.pVertexAttributeDescriptions = &VertexInputAttributeDescription;
     g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
@@ -1889,10 +1875,9 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
 
     // DrawIndexed
     const float ibo_data[3] = {0.f, 0.f, 0.f};
-    vkt::Buffer ibo, ibo2;
     buffer_usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    ibo.init(*m_device, ibo.CreateInfo(sizeof(ibo_data), buffer_usage), mem_prop);
-    ibo2.init(*m_device, ibo2.CreateInfo(sizeof(ibo_data), buffer_usage), mem_prop);
+    vkt::Buffer ibo(*m_device, vkt::Buffer::CreateInfo(sizeof(ibo_data), buffer_usage), mem_prop);
+    vkt::Buffer ibo2(*m_device, vkt::Buffer::CreateInfo(sizeof(ibo_data), buffer_usage), mem_prop);
 
     m_command_buffer.Reset();
     m_command_buffer.Begin();
@@ -2002,93 +1987,182 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
 
-    if (has_khr_indirect) {
-        // DrawIndirectCount
-        {
-            buffer_usage =
-                VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-            vkt::Buffer buffer_count(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
-            vkt::Buffer buffer_count2(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
+TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::drawIndirectCount);
+    RETURN_IF_SKIP(InitSyncValFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
 
-            m_command_buffer.Reset();
-            m_command_buffer.Begin();
-            m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-            vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
+    VkImageUsageFlags image_usage_combine = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+                                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    const auto image_c_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_combine);
+    vkt::Image image_c_a(*m_device, image_c_ci, vkt::set_layout);
+    vkt::ImageView imageview_c = image_c_a.CreateView();
 
-            vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-            vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(),
-                                      0, 1, &descriptor_set.set_, 0, nullptr);
-            vk::CmdDrawIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndirect.handle(), 0, buffer_count.handle(), 0, 1,
-                                        sizeof(VkDrawIndirectCommand));
-            m_command_buffer.EndRenderPass();
-            m_command_buffer.End();
+    VkImageUsageFlags image_usage_storage =
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    const auto image_s_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage);
+    vkt::Image image_s_a(*m_device, image_s_ci, vkt::set_layout);
+    image_s_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView imageview_s = image_s_a.CreateView();
 
-            m_command_buffer.Reset();
-            m_command_buffer.Begin();
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    vkt::Sampler sampler_s(*m_device, sampler_ci);
+    vkt::Sampler sampler_c(*m_device, sampler_ci);
 
-            buffer_region = {0, 0, sizeof(uint32_t)};
-            vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_count2.handle(), buffer_count.handle(), 1, &buffer_region);
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
+                                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, vkt::Buffer::CreateInfo(2048, buffer_usage), mem_prop);
 
-            m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-            vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
-            vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-            vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(),
-                                      0, 1, &descriptor_set.set_, 0, nullptr);
+    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
+    bvci.buffer = buffer_a.handle();
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.offset = 0;
+    bvci.range = VK_WHOLE_SIZE;
+    vkt::BufferView bufferview(*m_device, bvci);
 
-            m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-            vk::CmdDrawIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndirect.handle(), 0, buffer_count.handle(), 0, 1,
-                                        sizeof(VkDrawIndirectCommand));
-            m_errorMonitor->VerifyFound();
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
 
-            m_command_buffer.EndRenderPass();
-            m_command_buffer.End();
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, 2048);
+    descriptor_set.WriteDescriptorImageInfo(1, imageview_c, sampler_c.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(2, imageview_s, sampler_s.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorBufferView(3, bufferview.handle());
+    descriptor_set.UpdateDescriptorSets();
+
+    const float vbo_data[3] = {1.f, 0.f, 1.f};
+    VkVertexInputAttributeDescription VertexInputAttributeDescription = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(vbo_data)};
+    VkVertexInputBindingDescription VertexInputBindingDescription = {0, sizeof(vbo_data), VK_VERTEX_INPUT_RATE_VERTEX};
+    buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer vbo(*m_device, vkt::Buffer::CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
+    vkt::Buffer vbo2(*m_device, vkt::Buffer::CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
+
+    const char* fs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform foo { float x; } ub0;
+        layout(set=0, binding=1) uniform sampler2D cis1;
+        layout(set=0, binding=2, rgba8) uniform readonly image2D si2;
+        layout(set=0, binding=3, r32f) uniform readonly imageBuffer stb3;
+        void main(){
+            vec4 vColor4;
+            vColor4.x = ub0.x;
+            vColor4 = texture(cis1, vec2(0));
+            vColor4 = imageLoad(si2, ivec2(0));
+            vColor4 = imageLoad(stb3, 0);
         }
+    )glsl";
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        // DrawIndexedIndirectCount
-        {
-            buffer_usage =
-                VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-            vkt::Buffer buffer_count(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
-            vkt::Buffer buffer_count2(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.vi_ci_.pVertexBindingDescriptions = &VertexInputBindingDescription;
+    g_pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    g_pipe.vi_ci_.pVertexAttributeDescriptions = &VertexInputAttributeDescription;
+    g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
-            m_command_buffer.Reset();
-            m_command_buffer.Begin();
-            m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-            vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
-            vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT16);
+    buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_count(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
+    vkt::Buffer buffer_count2(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
 
-            vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-            vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(),
-                                      0, 1, &descriptor_set.set_, 0, nullptr);
-            vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndexedIndirect.handle(), 0,
-                                               buffer_count.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
-            m_command_buffer.EndRenderPass();
-            m_command_buffer.End();
+    VkDeviceSize offset = 0;
+    // DrawIndirectCount
+    {
+        buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        vkt::Buffer buffer_drawIndirect(*m_device, sizeof(VkDrawIndexedIndirectCommand), buffer_usage, mem_prop);
 
-            m_command_buffer.Reset();
-            m_command_buffer.Begin();
+        m_command_buffer.Reset();
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
 
-            buffer_region = {0, 0, sizeof(uint32_t)};
-            vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_count2.handle(), buffer_count.handle(), 1, &buffer_region);
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
+                                  1, &descriptor_set.set_, 0, nullptr);
+        vk::CmdDrawIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndirect.handle(), 0, buffer_count.handle(), 0, 1,
+                                    sizeof(VkDrawIndirectCommand));
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
 
-            m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-            vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
-            vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT16);
-            vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-            vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(),
-                                      0, 1, &descriptor_set.set_, 0, nullptr);
+        m_command_buffer.Reset();
+        m_command_buffer.Begin();
 
-            m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-            vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndexedIndirect.handle(), 0,
-                                               buffer_count.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
-            m_errorMonitor->VerifyFound();
+        VkBufferCopy buffer_region = {0, 0, sizeof(uint32_t)};
+        vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_count2.handle(), buffer_count.handle(), 1, &buffer_region);
 
-            m_command_buffer.EndRenderPass();
-            m_command_buffer.End();
-        }
-    } else {
-        printf("Test requires unsupported vkCmdDrawIndirectCountKHR & vkDrawIndexedIndirectCountKHR feature. Skipped.\n");
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
+                                  1, &descriptor_set.set_, 0, nullptr);
+
+        m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+        vk::CmdDrawIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndirect.handle(), 0, buffer_count.handle(), 0, 1,
+                                    sizeof(VkDrawIndirectCommand));
+        m_errorMonitor->VerifyFound();
+
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+    }
+
+    // DrawIndexedIndirectCount
+    {
+        buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        vkt::Buffer buffer_drawIndexedIndirect(*m_device, sizeof(VkDrawIndexedIndirectCommand), buffer_usage, mem_prop);
+
+        const float ibo_data[3] = {0.f, 0.f, 0.f};
+        buffer_usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        vkt::Buffer ibo(*m_device, vkt::Buffer::CreateInfo(sizeof(ibo_data), buffer_usage), mem_prop);
+        vkt::Buffer ibo2(*m_device, vkt::Buffer::CreateInfo(sizeof(ibo_data), buffer_usage), mem_prop);
+
+        m_command_buffer.Reset();
+        m_command_buffer.Begin();
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
+        vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT16);
+
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
+                                  1, &descriptor_set.set_, 0, nullptr);
+        vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndexedIndirect.handle(), 0, buffer_count.handle(),
+                                           0, 1, sizeof(VkDrawIndexedIndirectCommand));
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
+
+        m_command_buffer.Reset();
+        m_command_buffer.Begin();
+
+        VkBufferCopy buffer_region = {0, 0, sizeof(uint32_t)};
+        vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_count2.handle(), buffer_count.handle(), 1, &buffer_region);
+
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
+        vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT16);
+        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
+                                  1, &descriptor_set.set_, 0, nullptr);
+
+        m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+        vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndexedIndirect.handle(), 0, buffer_count.handle(),
+                                           0, 1, sizeof(VkDrawIndexedIndirectCommand));
+        m_errorMonitor->VerifyFound();
+
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.End();
     }
 }
 

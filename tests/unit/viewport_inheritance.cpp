@@ -675,7 +675,8 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
     AddRequiredFeature(vkt::Feature::inheritedViewportScissor2D);
     AddRequiredFeature(vkt::Feature::nestedCommandBuffer);
     AddRequiredFeature(vkt::Feature::nestedCommandBufferSimultaneousUse);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFramework(&kDisableMessageLimit));
+    RETURN_IF_SKIP(InitState());
 
     ViewportInheritanceTestData test_data(m_device, Gpu());
     if (test_data.FailureReason()) {

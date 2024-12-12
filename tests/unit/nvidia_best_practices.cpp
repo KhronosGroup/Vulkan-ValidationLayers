@@ -628,7 +628,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh) {
 }
 
 // TODO - This test needs to move the positive checks to new test because currently they will trigger many other errors
-TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
+TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirection) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::synchronization2);
@@ -668,8 +668,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
     VkClearRect clear_rect{};
     clear_rect.baseArrayLayer = 0;
     clear_rect.layerCount = 1;
-    clear_rect.rect.extent.width = 32;
-    clear_rect.rect.extent.height = 32;
+    clear_rect.rect.extent = {32, 32};
 
     VkClearAttachment attachment{};
     attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -691,10 +690,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
     discard_barrier2.image = image.handle();
     discard_barrier2.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1,
                                          VK_REMAINING_ARRAY_LAYERS};
-
-    VkDependencyInfo discard_dependency_info = vku::InitStructHelper();
-    discard_dependency_info.imageMemoryBarrierCount = 1;
-    discard_dependency_info.pImageMemoryBarriers = &discard_barrier2;
 
     auto set_desired_failure_msg = [this] {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-Zcull-LessGreaterRatio");
@@ -804,8 +799,85 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
         vk::CmdEndRendering(cmd);  // need to actually end rendering
     }
 
-    // The tests below use LOAD_OP for depth
+    m_command_buffer.End();
+}
+
+TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionDepth) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
+    RETURN_IF_SKIP(InitState());
+
+    VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+    pipeline_rendering_info.stencilAttachmentFormat = depth_format;
+
+    // 3 array layers
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 3, depth_format,
+                                                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci);
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = image.handle();
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = depth_format;
+    // rendering to layer index 1
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1, 1};
+
+    vkt::ImageView depth_image_view(*m_device, image_view_ci);
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_attachment.imageView = depth_image_view.handle();
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.renderArea.extent = {32, 32};
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+    begin_rendering_info.pStencilAttachment = &depth_attachment;
+
+    VkImageMemoryBarrier discard_barrier = vku::InitStructHelper();
+    discard_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    discard_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    discard_barrier.image = image.handle();
+    discard_barrier.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1,
+                                        VK_REMAINING_ARRAY_LAYERS};
+
+    VkImageMemoryBarrier2 discard_barrier2 = vku::InitStructHelper();
+    discard_barrier2.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+    discard_barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    discard_barrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    discard_barrier2.image = image.handle();
+    discard_barrier2.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1,
+                                         VK_REMAINING_ARRAY_LAYERS};
+
+    VkDependencyInfo discard_dependency_info = vku::InitStructHelper();
+    discard_dependency_info.imageMemoryBarrierCount = 1;
+    discard_dependency_info.pImageMemoryBarriers = &discard_barrier2;
+
+    auto set_desired_failure_msg = [this] {
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-Zcull-LessGreaterRatio");
+    };
+
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_state_ci = vku::InitStructHelper();
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.ds_ci_ = depth_stencil_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+    pipe.CreateGraphicsPipeline();
+
+    auto cmd = m_command_buffer.handle();
+    m_command_buffer.Begin();
+
+    vk::CmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdSetDepthTestEnable(cmd, VK_TRUE);
 
     {
         SCOPED_TRACE("Load previous scope");
@@ -914,6 +986,82 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection) {
         vk::CmdEndRendering(cmd);
         m_errorMonitor->Finish();
     }
+
+    m_command_buffer.End();
+}
+
+TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionSubresource) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableNVIDIAValidation));
+    RETURN_IF_SKIP(InitState());
+
+    VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.depthAttachmentFormat = depth_format;
+    pipeline_rendering_info.stencilAttachmentFormat = depth_format;
+
+    // 3 array layers
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 3, depth_format,
+                                                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci);
+
+    VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
+    image_view_ci.image = image.handle();
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.format = depth_format;
+    // rendering to layer index 1
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1, 1};
+
+    vkt::ImageView depth_image_view(*m_device, image_view_ci);
+
+    VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    depth_attachment.imageView = depth_image_view.handle();
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.renderArea.extent = {32, 32};
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+    begin_rendering_info.pStencilAttachment = &depth_attachment;
+
+    VkImageMemoryBarrier discard_barrier = vku::InitStructHelper();
+    discard_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    discard_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    discard_barrier.image = image.handle();
+    discard_barrier.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1,
+                                        VK_REMAINING_ARRAY_LAYERS};
+
+    VkImageMemoryBarrier2 discard_barrier2 = vku::InitStructHelper();
+    discard_barrier2.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+    discard_barrier2.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT;
+    discard_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    discard_barrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    discard_barrier2.image = image.handle();
+    discard_barrier2.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1,
+                                         VK_REMAINING_ARRAY_LAYERS};
+
+    auto set_desired_failure_msg = [this] {
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-Zcull-LessGreaterRatio");
+    };
+
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_state_ci = vku::InitStructHelper();
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.ds_ci_ = depth_stencil_state_ci;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+    pipe.CreateGraphicsPipeline();
+
+    auto cmd = m_command_buffer.handle();
+    m_command_buffer.Begin();
+
+    vk::CmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdSetDepthTestEnable(cmd, VK_TRUE);
 
     {
         SCOPED_TRACE("Transfer clear to validate");

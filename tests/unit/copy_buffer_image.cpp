@@ -1109,44 +1109,23 @@ TEST_F(NegativeCopyBufferImage, MiscImageLayer) {
 
 TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
     TEST_DESCRIPTION("Image copy tests where format type and extents don't match");
-    AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
     // Tests are designed to run without Maintenance1 which was promoted in 1.1
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         GTEST_SKIP() << "Tests for 1.0 only";
     }
 
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.flags = 0;
-    ci.imageType = VK_IMAGE_TYPE_1D;
-    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ci.extent = {32, 1, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 1;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
     // Create 1D image
+    VkImageCreateInfo ci = vkt::Image::ImageCreateInfo2D(32, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    ci.imageType = VK_IMAGE_TYPE_1D;
     vkt::Image image_1D(*m_device, ci, vkt::set_layout);
 
     // 2D image
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.extent = {32, 32, 1};
     vkt::Image image_2D(*m_device, ci, vkt::set_layout);
-
-    // 3D image
-    ci.imageType = VK_IMAGE_TYPE_3D;
-    ci.extent = {32, 32, 8};
-    vkt::Image image_3D(*m_device, ci, vkt::set_layout);
-
-    // 2D image array
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.extent = {32, 32, 1};
-    ci.arrayLayers = 8;
-    vkt::Image image_2D_array(*m_device, ci, vkt::set_layout);
 
     m_command_buffer.Begin();
 
@@ -1166,31 +1145,6 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
-    // Equivalent test using
-
-    if (copy_commands2) {
-        const VkImageCopy2 region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2,
-                                      NULL,
-                                      copy_region.srcSubresource,
-                                      copy_region.srcOffset,
-                                      copy_region.dstSubresource,
-                                      copy_region.dstOffset,
-                                      copy_region.extent};
-        const VkCopyImageInfo2 copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
-                                                   NULL,
-                                                   image_1D.handle(),
-                                                   VK_IMAGE_LAYOUT_GENERAL,
-                                                   image_2D.handle(),
-                                                   VK_IMAGE_LAYOUT_GENERAL,
-                                                   1,
-                                                   &region2};
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcImage-00146");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcOffset-00145");   // also y-dim overrun
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
-        vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
-        m_errorMonitor->VerifyFound();
-    }
-
     copy_region.srcOffset.y = 0;
     copy_region.dstOffset.y = 1;
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-00152");
@@ -1199,30 +1153,6 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
     vk::CmdCopyImage(m_command_buffer.handle(), image_2D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_1D.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
-
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2) {
-        const VkImageCopy2 region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2,
-                                      NULL,
-                                      copy_region.srcSubresource,
-                                      copy_region.srcOffset,
-                                      copy_region.dstSubresource,
-                                      copy_region.dstOffset,
-                                      copy_region.extent};
-        const VkCopyImageInfo2 copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
-                                                   NULL,
-                                                   image_2D.handle(),
-                                                   VK_IMAGE_LAYOUT_GENERAL,
-                                                   image_1D.handle(),
-                                                   VK_IMAGE_LAYOUT_GENERAL,
-                                                   1,
-                                                   &region2};
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstImage-00152");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstOffset-00151");   // also y-dim overrun
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
-        vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
-        m_errorMonitor->VerifyFound();
-    }
 
     copy_region.dstOffset.y = 0;
 
@@ -1235,60 +1165,12 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2) {
-        const VkImageCopy2 region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2,
-                                      NULL,
-                                      copy_region.srcSubresource,
-                                      copy_region.srcOffset,
-                                      copy_region.dstSubresource,
-                                      copy_region.dstOffset,
-                                      copy_region.extent};
-        const VkCopyImageInfo2 copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
-                                                   NULL,
-                                                   image_1D.handle(),
-                                                   VK_IMAGE_LAYOUT_GENERAL,
-                                                   image_2D.handle(),
-                                                   VK_IMAGE_LAYOUT_GENERAL,
-                                                   1,
-                                                   &region2};
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcImage-00146");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcOffset-00145");   // also y-dim overrun
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
-        vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
-        m_errorMonitor->VerifyFound();
-    }
-
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-00152");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00151");   // also y-dim overrun
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-apiVersion-07933");  // not same image type
     vk::CmdCopyImage(m_command_buffer.handle(), image_2D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_1D.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
-
-    // Equivalent test using KHR_copy_commands2
-    if (copy_commands2) {
-        const VkImageCopy2 region2 = {VK_STRUCTURE_TYPE_IMAGE_COPY_2,
-                                      NULL,
-                                      copy_region.srcSubresource,
-                                      copy_region.srcOffset,
-                                      copy_region.dstSubresource,
-                                      copy_region.dstOffset,
-                                      copy_region.extent};
-        const VkCopyImageInfo2 copy_image_info2 = {VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
-                                                   NULL,
-                                                   image_2D.handle(),
-                                                   VK_IMAGE_LAYOUT_GENERAL,
-                                                   image_1D.handle(),
-                                                   VK_IMAGE_LAYOUT_GENERAL,
-                                                   1,
-                                                   &region2};
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstImage-00152");
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstOffset-00151");   // also y-dim overrun
-        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
-        vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
-        m_errorMonitor->VerifyFound();
-    }
 
     copy_region.extent.height = 1;
 
@@ -1328,7 +1210,36 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
     vk::CmdCopyImage(m_command_buffer.handle(), image_2D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_1D.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
-    copy_region.extent.depth = 1;
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch3D) {
+    TEST_DESCRIPTION("Image copy tests where format type and extents don't match");
+    RETURN_IF_SKIP(Init());
+
+    // Tests are designed to run without Maintenance1 which was promoted in 1.1
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Tests for 1.0 only";
+    }
+
+    // Create 1D image
+    VkImageCreateInfo ci = vkt::Image::ImageCreateInfo2D(32, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    ci.extent = {32, 32, 1};
+    vkt::Image image_2D(*m_device, ci, vkt::set_layout);
+
+    ci.imageType = VK_IMAGE_TYPE_3D;
+    ci.extent.depth = 8;
+    vkt::Image image_3D(*m_device, ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+
+    VkImageCopy copy_region;
+    copy_region.extent = {32, 1, 1};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
 
     // 2D texture w/ offset.z > 0. Source = VU 09c00df6, dest = 09c00df8
     copy_region.extent = {16, 16, 1};
@@ -1361,6 +1272,92 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
     copy_region.srcSubresource.baseArrayLayer = 0;
 
     m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatchCopyCommands2) {
+    TEST_DESCRIPTION("Image copy tests where format type and extents don't match");
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    // Tests are designed to run without Maintenance1 which was promoted in 1.1
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Tests for 1.0 only";
+    }
+
+    VkImageCreateInfo ci = vkt::Image::ImageCreateInfo2D(32, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    ci.imageType = VK_IMAGE_TYPE_1D;
+    vkt::Image image_1D(*m_device, ci, vkt::set_layout);
+
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.extent = {32, 32, 1};
+    vkt::Image image_2D(*m_device, ci, vkt::set_layout);
+
+    ci.imageType = VK_IMAGE_TYPE_3D;
+    ci.extent = {32, 32, 8};
+    vkt::Image image_3D(*m_device, ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+
+    VkImageCopy2 region2 = vku::InitStructHelper();
+    region2.extent = {32, 1, 1};
+    region2.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region2.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region2.srcOffset = {0, 0, 0};
+    region2.dstOffset = {0, 0, 0};
+
+    VkCopyImageInfo2 copy_image_info2 = vku::InitStructHelper();
+    copy_image_info2.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_image_info2.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copy_image_info2.regionCount = 1;
+    copy_image_info2.pRegions = &region2;
+
+    // 1D texture w/ offset.y > 0. Source = VU 09c00124, dest = 09c00130
+    {
+        region2.srcOffset.y = 1;
+        copy_image_info2.srcImage = image_1D;
+        copy_image_info2.dstImage = image_2D;
+
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcImage-00146");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcOffset-00145");   // also y-dim overrun
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
+        vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
+        m_errorMonitor->VerifyFound();
+        region2.srcOffset.y = 0;
+    }
+
+    {
+        region2.dstOffset.y = 1;
+        copy_image_info2.srcImage = image_2D;
+        copy_image_info2.dstImage = image_1D;
+
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstImage-00152");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstOffset-00151");   // also y-dim overrun
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
+        vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
+        m_errorMonitor->VerifyFound();
+        region2.dstOffset.y = 0;
+    }
+
+    // 1D texture w/ extent.height > 1. Source = VU 09c00124, dest = 09c00130
+    {
+        region2.extent.height = 2;
+        copy_image_info2.srcImage = image_1D;
+        copy_image_info2.dstImage = image_2D;
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcImage-00146");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcOffset-00145");   // also y-dim overrun
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
+        vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
+        m_errorMonitor->VerifyFound();
+
+        copy_image_info2.srcImage = image_2D;
+        copy_image_info2.dstImage = image_1D;
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstImage-00152");
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstOffset-00151");   // also y-dim overrun
+        m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-apiVersion-07933");  // not same image type
+        vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatchMaintenance1) {

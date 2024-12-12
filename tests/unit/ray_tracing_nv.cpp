@@ -45,13 +45,12 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     VkValidationFeatureDisableEXT validation_feature_disables[] = {
         VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
         VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
-    VkValidationFeaturesEXT validation_features = {};
-    validation_features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    VkValidationFeaturesEXT validation_features = vku::InitStructHelper(&kDisableMessageLimit);
     validation_features.enabledValidationFeatureCount = 1;
     validation_features.pEnabledValidationFeatures = validation_feature_enables;
     validation_features.disabledValidationFeatureCount = 4;
     validation_features.pDisabledValidationFeatures = validation_feature_disables;
-    RETURN_IF_SKIP(InitFramework(gpu_assisted ? &validation_features : nullptr));
+    RETURN_IF_SKIP(InitFramework(gpu_assisted ? (void *)&validation_features : (void *)&kDisableMessageLimit));
     bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     if (gpu_assisted && IsPlatformMockICD()) {

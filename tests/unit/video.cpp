@@ -16400,8 +16400,8 @@ TEST_F(NegativeVideo, BeginQueryInlineQueries) {
 
 TEST_F(NegativeVideo, GetQueryPoolResultsVideoQueryDataSize) {
     TEST_DESCRIPTION("vkGetQueryPoolResults - test expected data size for video query results");
-
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFramework(&kDisableMessageLimit));
+    RETURN_IF_SKIP(InitState());
 
     auto config = GetConfigEncode();
     if (!config) {

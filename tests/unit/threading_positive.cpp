@@ -190,7 +190,8 @@ TEST_F(PositiveThreading, NullFenceCollision) {
 
 TEST_F(PositiveThreading, DebugObjectNames) {
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitFramework(&kDisableMessageLimit));
+    RETURN_IF_SKIP(InitState());
 
     constexpr uint32_t count = 10000u;
 
