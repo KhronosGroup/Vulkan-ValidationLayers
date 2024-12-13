@@ -205,6 +205,13 @@ void ErrorMonitor::SetDesiredErrorRegex(const char *vuid, std::string regex_str,
     }
 }
 
+void ErrorMonitor::SetDesiredWarningRegex(const char *vuid, std::string regex_str, uint32_t count /*= 1*/) {
+    const std::regex regex(regex_str);
+    for (uint32_t i = 0; i < count; i++) {
+        SetDesiredFailureMsgRegex(kWarningBit, vuid, regex_str, regex);
+    }
+}
+
 void ErrorMonitor::SetDesiredWarning(const char *msg, uint32_t count) {
     for (uint32_t i = 0; i < count; ++i) {
         SetDesiredFailureMsg(kWarningBit, msg);

@@ -581,7 +581,7 @@ void Validator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer,
 
     valcmd::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawIndirectCommand),
                         vvl::Struct::VkDrawIndirectCommand, stride, countBuffer, countBufferOffset,
-                        "VUID-vkCmdDrawIndirectCount-countBuffer-03122", "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
+                        "VUID-vkCmdDrawIndirectCount-countBuffer-02717");
     valcmd::FirstInstance<VkDrawIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, maxDrawCount, countBuffer,
                                                  countBufferOffset, "VUID-VkDrawIndirectCommand-firstInstance-00501");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -664,7 +664,6 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
     }
     valcmd::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawIndexedIndirectCommand),
                         vvl::Struct::VkDrawIndexedIndirectCommand, stride, countBuffer, countBufferOffset,
-                        "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154",
                         "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717");
     valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, maxDrawCount,
                                                         countBuffer, countBufferOffset,
@@ -673,7 +672,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
     valcmd::DrawIndexedIndirectIndexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, maxDrawCount, countBuffer,
                                            countBufferOffset, "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
     valcmd::DrawIndexedIndirectVertexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, maxDrawCount,
-                                            countBuffer, countBufferOffset, "VUID-VkDrawIndexedIndirectCommand-None-00552");
+                                            countBuffer, countBufferOffset, "VUID-vkCmdDrawIndexedIndirectCount-None-02721");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -728,7 +727,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandB
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    
+
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -767,7 +766,6 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer com
 
     valcmd::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawMeshTasksIndirectCommandNV),
                         vvl::Struct::VkDrawMeshTasksIndirectCommandNV, stride, countBuffer, countBufferOffset,
-                        "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02192",
                         "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02717");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -866,7 +864,6 @@ void Validator::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer co
 
     valcmd::CountBuffer(*this, *cb_state, record_obj.location, buffer, offset, sizeof(VkDrawMeshTasksIndirectCommandEXT),
                         vvl::Struct::VkDrawMeshTasksIndirectCommandEXT, stride, countBuffer, countBufferOffset,
-                        "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-07099",
                         "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02717");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);

@@ -53,7 +53,7 @@ void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &lo
 void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
                  VkDeviceSize draw_buffer_offset, uint32_t draw_indirect_struct_byte_size, vvl::Struct draw_indirect_struct_name,
                  uint32_t draw_cmds_byte_stride, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
-                 const char *vuid_draw_buffer_size, const char *vuid_max_draw_count);
+                 const char *vuid_max_draw_count);
 
 void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
                       VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, VkBuffer count_buffer,
