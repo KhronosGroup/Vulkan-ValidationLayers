@@ -63,7 +63,8 @@ class ErrorMonitor {
     void SetDesiredError(const char *msg, uint32_t count = 1);
     // Regex uses modified ECMAScript regular expression grammar https://eel.is/c++draft/re.grammar
     void SetDesiredErrorRegex(const char *vuid, std::string regex_str, uint32_t count = 1);
-    // And use this for warnings
+    // And use this for
+    void SetDesiredWarningRegex(const char *vuid, std::string regex_str, uint32_t count = 1);
     void SetDesiredWarning(const char *msg, uint32_t count = 1);
     void SetDesiredInfo(const char *msg, uint32_t count = 1);
 

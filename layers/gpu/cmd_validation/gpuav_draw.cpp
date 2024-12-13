@@ -416,7 +416,7 @@ struct CountBufferValidationShader {
 void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
                  VkDeviceSize draw_buffer_offset, uint32_t draw_indirect_struct_byte_size, vvl::Struct draw_indirect_struct_name,
                  uint32_t draw_cmds_byte_stride, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
-                 const char *vuid_draw_buffer_size, const char *vuid_max_draw_count) {
+                 const char *vuid_max_draw_count) {
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
         return;
     }
@@ -488,7 +488,7 @@ void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
         !cb_state.GetLabelCommands().empty() ? uint32_t(cb_state.GetLabelCommands().size() - 1) : vvl::kU32Max;
     CommandBuffer::ErrorLoggerFunc error_logger = [loc, draw_buffer, draw_buffer_size = draw_buffer_state->create_info.size,
                                                    draw_buffer_offset, draw_indirect_struct_byte_size, draw_cmds_byte_stride,
-                                                   draw_indirect_struct_name, vuid_draw_buffer_size, vuid_max_draw_count,
+                                                   draw_indirect_struct_name, vuid_max_draw_count,
                                                    label_command_i](Validator &gpuav, const CommandBuffer &cb_state,
                                                                     const uint32_t *error_record, const LogObjectList &objlist,
                                                                     const std::vector<std::string> &initial_label_stack) {
@@ -506,13 +506,16 @@ void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
                 const VkDeviceSize draw_size =
                     (draw_cmds_byte_stride * (count - 1) + draw_buffer_offset + draw_indirect_struct_byte_size);
 
-                skip |= gpuav.LogError(vuid_draw_buffer_size, objlist, loc_with_debug_region,
-                                       "Indirect draw count of %" PRIu32 " would exceed size (%" PRIu64
-                                       ") of buffer (%s). "
-                                       "stride = %" PRIu32 " offset = %" PRIu64
-                                       " (stride * (drawCount - 1) + offset + sizeof(%s)) = %" PRIu64 ".",
-                                       count, draw_buffer_size, gpuav.FormatHandle(draw_buffer).c_str(), draw_cmds_byte_stride,
-                                       draw_buffer_offset, vvl::String(draw_indirect_struct_name), draw_size);
+                // Discussed that if drawCount is largeer than the buffer, it is still capped by the maxDrawCount on the CPU (which
+                // we would have checked is in the buffer range). We decided that we still want to give a warning, but the nothing
+                // is invalid here. https://gitlab.khronos.org/vulkan/vulkan/-/issues/3991
+                skip |= gpuav.LogWarning("WARNING-GPU-AV-drawCount", objlist, loc_with_debug_region,
+                                         "Indirect draw count of %" PRIu32 " would exceed size (%" PRIu64
+                                         ") of buffer (%s). "
+                                         "stride = %" PRIu32 " offset = %" PRIu64
+                                         " (stride * (drawCount - 1) + offset + sizeof(%s)) = %" PRIu64 ".",
+                                         count, draw_buffer_size, gpuav.FormatHandle(draw_buffer).c_str(), draw_cmds_byte_stride,
+                                         draw_buffer_offset, vvl::String(draw_indirect_struct_name), draw_size);
                 break;
             }
             case kErrorSubCodePreDraw_DrawCountLimit: {
