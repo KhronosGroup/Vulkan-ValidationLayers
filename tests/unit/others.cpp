@@ -173,72 +173,52 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, SpecLinks) {
+TEST_F(VkLayerTest, SpecLinksImplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
-    AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
 #ifdef ANNOTATED_SPEC_LINK
-    bool test_annotated_spec_link = true;
+    std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
+    std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
+    std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
+    std::string spec_version = "doc/view/" + major_version + "." + minor_version + "." + patch_version + ".0/windows";
 #else   // ANNOTATED_SPEC_LINK
-    bool test_annotated_spec_link = false;
+    // keep VUID seperate otherwise vk_validation_stats.py will get confused
+    std::string spec_version = "https://docs.vulkan.org/spec/latest/chapters/features.html#" +
+                               std::string("VUID-vkGetPhysicalDeviceFeatures-pFeatures-parameter");
 #endif  // ANNOTATED_SPEC_LINK
 
-    std::string spec_version;
-    if (test_annotated_spec_link) {
-        std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
-        std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
-        std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
-        spec_version = "doc/view/" + major_version + "." + minor_version + "." + patch_version + ".0/windows";
-    } else {
-        spec_version = "registry/vulkan/specs";
-    }
-
     m_errorMonitor->SetDesiredError(spec_version.c_str());
-    vk::GetPhysicalDeviceFeatures(Gpu(), NULL);
+    vk::GetPhysicalDeviceFeatures(Gpu(), nullptr);
     m_errorMonitor->VerifyFound();
+}
 
-    // Now generate a 'default' message and check the link
-    bool ycbcr_support =
-        (IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
-    bool maintenance2_support =
-        (IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
+TEST_F(VkLayerTest, SpecLinksExplicit) {
+    TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
+    RETURN_IF_SKIP(Init());
 
-    if (!((m_device->FormatFeaturesOptimal(VK_FORMAT_R8_UINT) & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) &&
-          (ycbcr_support ^ maintenance2_support))) {
-        GTEST_SKIP() << "Device does not support format and extensions required";
-    }
+#ifdef ANNOTATED_SPEC_LINK
+    std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
+    std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
+    std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
+    std::string spec_version = "doc/view/" + major_version + "." + minor_version + "." + patch_version + ".0/windows";
+#else   // ANNOTATED_SPEC_LINK
+    // keep VUID seperate otherwise vk_validation_stats.py will get confused
+    std::string spec_version =
+        "https://docs.vulkan.org/spec/latest/chapters/memory.html#" + std::string("VUID-vkAllocateMemory-pAllocateInfo-01714");
+#endif  // ANNOTATED_SPEC_LINK
 
-    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                   nullptr,
-                                   0,
-                                   VK_IMAGE_TYPE_2D,
-                                   VK_FORMAT_R8_UINT,
-                                   {128, 128, 1},
-                                   1,
-                                   1,
-                                   VK_SAMPLE_COUNT_1_BIT,
-                                   VK_IMAGE_TILING_OPTIMAL,
-                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                   VK_SHARING_MODE_EXCLUSIVE,
-                                   0,
-                                   nullptr,
-                                   VK_IMAGE_LAYOUT_UNDEFINED};
-    imageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-    vkt::Image mutImage(*m_device, imageInfo, vkt::set_layout);
+    VkPhysicalDeviceMemoryProperties memory_info;
+    vk::GetPhysicalDeviceMemoryProperties(Gpu(), &memory_info);
 
-    VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
-    imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;  // different than createImage
-    imgViewInfo.subresourceRange.layerCount = 1;
-    imgViewInfo.subresourceRange.baseMipLevel = 0;
-    imgViewInfo.subresourceRange.levelCount = 1;
-    imgViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imgViewInfo.image = mutImage.handle();
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
+    mem_alloc.memoryTypeIndex = memory_info.memoryTypeCount;
+    mem_alloc.allocationSize = 4;
 
-    // VUIDs 01759 and 01760 should generate 'default' spec URLs, to search the registry
-    CreateImageViewTest(*this, &imgViewInfo, "Vulkan-Docs/search");
+    VkDeviceMemory mem;
+    m_errorMonitor->SetDesiredError(spec_version.c_str());
+    vk::AllocateMemory(device(), &mem_alloc, nullptr, &mem);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, DeviceIDPropertiesUnsupported) {
