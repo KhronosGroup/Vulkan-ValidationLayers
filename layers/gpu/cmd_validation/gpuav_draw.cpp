@@ -600,7 +600,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
     const bool is_task_shader = (stages & VK_SHADER_STAGE_TASK_BIT_EXT) == VK_SHADER_STAGE_TASK_BIT_EXT;
 
     CommandBuffer::ValidationCommandFunc validation_cmd =
-        [draw_buffer, draw_buffer_size = draw_buffer_state->create_info.size, draw_buffer_offset, draw_cmds_byte_stride,
+        [draw_buffer, draw_buffer_full_size = draw_buffer_state->create_info.size, draw_buffer_offset, draw_cmds_byte_stride,
          count_buffer, count_buffer_offset, draw_count, is_task_shader, draw_i = cb_state.draw_index,
          error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()), loc](Validator &gpuav, CommandBuffer &cb_state) {
             SharedDrawValidationResources &shared_draw_validation_resources =
@@ -656,8 +656,14 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
                 DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
 
                 uint32_t max_held_draw_cmds = 0;
-                if (draw_buffer_size > draw_buffer_offset) {
-                    max_held_draw_cmds = static_cast<uint32_t>((draw_buffer_size - draw_buffer_offset) / draw_cmds_byte_stride);
+                if (draw_buffer_full_size > draw_buffer_offset) {
+                    // If drawCount is less than or equal to one, stride is ignored
+                    if (draw_cmds_byte_stride > 0) {
+                        max_held_draw_cmds =
+                            static_cast<uint32_t>((draw_buffer_full_size - draw_buffer_offset) / draw_cmds_byte_stride);
+                    } else {
+                        max_held_draw_cmds = 1;
+                    }
                 }
                 const uint32_t work_group_count = std::min(draw_count, max_held_draw_cmds);
                 VVL_TracyPlot("gpuav::valcmd::DrawMeshIndirect Dispatch size", int64_t(work_group_count));
