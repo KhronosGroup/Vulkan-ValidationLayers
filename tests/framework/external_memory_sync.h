@@ -44,4 +44,5 @@ bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkBufferCrea
 bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkImageCreateInfo &image_create_info,
                                         VkExternalMemoryHandleTypeFlagBits handle_type);
 
-bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type);
+bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type,
+                                    void *p_next = nullptr);

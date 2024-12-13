@@ -1482,15 +1482,16 @@ TEST_F(PositiveSyncObject, WaitTimelineSemaphoreWithWin32HandleRetrieved) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
     constexpr auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-    if (!SemaphoreExportImportSupported(Gpu(), handle_type)) {
-        GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";
-    }
 
-    // Create exportable timeline semaphore
     VkSemaphoreTypeCreateInfo semaphore_type_create_info = vku::InitStructHelper();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
     semaphore_type_create_info.initialValue = 0;
 
+    if (!SemaphoreExportImportSupported(Gpu(), handle_type, &semaphore_type_create_info)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through Win32 handle";
+    }
+
+    // Create exportable timeline semaphore
     VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper(&semaphore_type_create_info);
     export_info.handleTypes = handle_type;
 
