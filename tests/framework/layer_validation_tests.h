@@ -29,6 +29,12 @@
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
+// Remove Windows macro that prevents usage of its name in any scope of the program.
+// For example, BitstreamBuffer::MemoryBarrier() won't compile on ARM64.
+#if defined(VK_USE_PLATFORM_WIN32_KHR) && defined(MemoryBarrier)
+#undef MemoryBarrier
+#endif
+
 #include "binding.h"
 #include "containers/custom_containers.h"
 #include "generated/vk_extension_helper.h"
