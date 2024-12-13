@@ -131,6 +131,7 @@ class ValidationJSON:
 
             for ventry in api_dict["core"]:
                 vuid_string = ventry['vuid']
+                html_page = ventry['page']
                 if (self.isExplicitVUID(vuid_string)):
                     self.explicit_vuids.add(vuid_string)
                     vtype = 'explicit'
@@ -143,7 +144,8 @@ class ValidationJSON:
                 self.vuid_db[vuid_string].append({
                     'api' : api_name,
                     'type': vtype,
-                    'text': vuid_text
+                    'text': vuid_text,
+                    'page': html_page
                 })
 
         self.all_vuids = self.explicit_vuids | self.implicit_vuids
@@ -202,11 +204,11 @@ typedef struct _vuid_spec_text_pair {{
 
     vuid_list = list(val_json.all_vuids)
     vuid_list.sort()
-    minor_version = int(val_json.api_version.split('.')[1])
 
     out.append('static const vuid_spec_text_pair vuid_spec_text[] = {\n')
     for vuid in vuid_list:
         db_entry = val_json.vuid_db[vuid][0]
+        html_page = db_entry['page']
 
         # Escape quotes and backslashes when generating C strings for source code
         db_text = db_entry['text'].replace('\\', '\\\\').replace('"', '\\"').strip()
@@ -220,7 +222,7 @@ typedef struct _vuid_spec_text_pair {{
         if vuid in oversized_vus:
             db_text = oversized_vus[vuid]
 
-        out.append(f'    {{"{vuid}", "{db_text}", "1.{minor_version}-extensions"}},\n')
+        out.append(f'    {{"{vuid}", "{db_text}", "{html_page}"}},\n')
         # For multiply-defined VUIDs, include versions with extension appended
         if len(val_json.vuid_db[vuid]) > 1:
             print(f'Warning: Found a duplicate VUID: {vuid}')
