@@ -642,6 +642,14 @@ def CreateHelper(args, repos, filename):
                                       dir=escape(repo.install_dir)))
 
 
+def GetDefaultArch():
+    machine = platform.machine().lower()
+    if  machine == "arm64" or machine == "aarch64":
+        return 'arm64'
+    else:
+        return '64'
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Get and build dependent repos at known-good commits')
@@ -702,7 +710,7 @@ def main():
         choices=['32', '64', 'x86', 'x64', 'win32', 'win64', 'arm64'],
         type=str.lower,
         help="Set build files architecture (Visual Studio Generator Only)",
-        default='64')
+        default=GetDefaultArch())
     parser.add_argument(
         '--config',
         dest='config',
