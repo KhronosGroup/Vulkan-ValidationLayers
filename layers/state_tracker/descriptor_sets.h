@@ -252,6 +252,11 @@ class DescriptorSetLayoutDef {
 using DescriptorSetLayoutDict = hash_util::Dictionary<DescriptorSetLayoutDef, hash_util::HasHashMember<DescriptorSetLayoutDef>>;
 using DescriptorSetLayoutId = DescriptorSetLayoutDict::Id;
 
+// Compare is in header and static because hash_util KeyValueEqual need the symbol at compile time
+//
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497
+// This just checks pointers, but two different VkSampler handles could be created with same createInfo.
+// Since this is rare enough, mark as "not the same" and check later when checking for compatibility.
 static inline bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs) {
     // trivial types
     if ((lhs.GetCreateFlags() != rhs.GetCreateFlags()) || (lhs.GetBindingFlags() != rhs.GetBindingFlags())) {
@@ -270,20 +275,17 @@ static inline bool operator==(const DescriptorSetLayoutDef &lhs, const Descripto
     for (size_t i = 0; i < lhs_bindings.size(); i++) {
         const auto &l = lhs_bindings[i];
         const auto &r = rhs_bindings[i];
+        // For things where we are comparing with the bound pipeline, the binding will always be right, but when comparing two
+        // arbitrary layouts (ex. templates, Device Generated Commands, etc) the bindings might be different
+        if (l.binding != r.binding) {
+            return false;
+        }
         if (l.descriptorType != r.descriptorType || l.descriptorCount != r.descriptorCount || l.stageFlags != r.stageFlags) {
             return false;
         }
-        if (l.pImmutableSamplers != r.pImmutableSamplers) {
-            return false;
-        }
-        if (l.pImmutableSamplers) {
-            for (uint32_t s = 0; s < l.descriptorCount; s++) {
-                if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
-                    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497
-                    // This just checks pointers, but two different VkSampler handles could be created with same createInfo.
-                    // Since this is rare enough, mark as "not the same" and check later when checking for compatibility.
-                    return false;
-                }
+        for (uint32_t s = 0; s < l.descriptorCount; s++) {
+            if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
+                return false;  // only checking pointers
             }
         }
     }
