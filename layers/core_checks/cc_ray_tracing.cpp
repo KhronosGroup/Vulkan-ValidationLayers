@@ -26,6 +26,7 @@
 #include "cc_buffer_address.h"
 #include "utils/ray_tracing_utils.h"
 #include "state_tracker/ray_tracing_state.h"
+#include "error_message/error_strings.h"
 
 bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const vvl::DeviceMemory &mem_info,
                                                                 VkDeviceSize mem_offset, const Location &loc) const {
@@ -1063,7 +1064,7 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
                                 .dot(Field::hostAddress, instance_i),
                             "(0x%p) does not reference a valid VkAccelerationStructureKHR object. %s is %s.", instance,
                             geometry_loc.dot(Field::geometry).dot(Field::instances).dot(Field::arrayOfPointers).Fields().c_str(),
-                            geom.geometry.instances.arrayOfPointers ? "VK_TRUE" : "VK_FALSE");
+                            string_VkBool32(geom.geometry.instances.arrayOfPointers).c_str());
 
                         // Following checks rely on instance not being null
                         continue;
@@ -1084,7 +1085,7 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
                             "(%" PRIu64 ") does not reference a valid VkAccelerationStructureKHR object. %s is %s.",
                             instance->accelerationStructureReference,
                             geometry_loc.dot(Field::geometry).dot(Field::instances).dot(Field::arrayOfPointers).Fields().c_str(),
-                            geom.geometry.instances.arrayOfPointers ? "VK_TRUE" : "VK_FALSE");
+                            string_VkBool32(geom.geometry.instances.arrayOfPointers).c_str());
                     }
                 }
             }

@@ -18,6 +18,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
+#include "error_message/error_strings.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 
@@ -66,45 +67,44 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                          "is %s, but must be UNDEFINED or PREINITIALIZED.", string_VkImageLayout(pCreateInfo->initialLayout));
     }
 
-    // If imageType is VK_IMAGE_TYPE_1D, both extent.height and extent.depth must be 1
     if ((pCreateInfo->imageType == VK_IMAGE_TYPE_1D) && ((pCreateInfo->extent.height != 1) || (pCreateInfo->extent.depth != 1))) {
-        skip |= LogError("VUID-VkImageCreateInfo-imageType-00956", device, create_info_loc,
-                         "if pCreateInfo->imageType is VK_IMAGE_TYPE_1D, both pCreateInfo->extent.height and "
-                         "pCreateInfo->extent.depth must be 1.");
+        skip |= LogError("VUID-VkImageCreateInfo-imageType-00956", device, create_info_loc.dot(Field::imageType),
+                         "is VK_IMAGE_TYPE_1D but extent.height (%" PRIu32 ") and extent.depth (%" PRIu32 ") must both be 1.",
+                         pCreateInfo->extent.height, pCreateInfo->extent.depth);
     }
 
     if (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
-        const VkImageType type = pCreateInfo->imageType;
-        const auto width = pCreateInfo->extent.width;
-        const auto height = pCreateInfo->extent.height;
-        if (type != VK_IMAGE_TYPE_2D) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-00949", device, create_info_loc,
-                             "Image type %s is incompatible with VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT.", string_VkImageType(type));
+        if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-00949", device, create_info_loc.dot(Field::flags),
+                             "includes VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT but imageType (%s) is not VK_IMAGE_TYPE_2D.",
+                             string_VkImageType(pCreateInfo->imageType));
         }
 
-        if (width != height) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-08865", device, create_info_loc,
-                             "extent.width (=%" PRIu32 ") not equal to extent.height (=%" PRIu32 ").", pCreateInfo->extent.width,
-                             pCreateInfo->extent.height);
+        if (pCreateInfo->extent.width != pCreateInfo->extent.height) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-08865", device, create_info_loc.dot(Field::flags),
+                             "includes VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT but extent.width (%" PRIu32
+                             ") is not equal to extent.height (%" PRIu32 ").",
+                             pCreateInfo->extent.width, pCreateInfo->extent.height);
         }
 
         if (pCreateInfo->arrayLayers < 6) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-08866", device, create_info_loc,
-                             "arrayLayers (=%" PRIu32 ") is less than 6.", pCreateInfo->arrayLayers);
+            skip |= LogError("VUID-VkImageCreateInfo-flags-08866", device, create_info_loc.dot(Field::flags),
+                             "includes VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT but arrayLayers (%" PRIu32 ") is less than 6.",
+                             pCreateInfo->arrayLayers);
         }
     }
 
     if (pCreateInfo->imageType == VK_IMAGE_TYPE_2D) {
         if (pCreateInfo->extent.depth != 1) {
-            skip |= LogError("VUID-VkImageCreateInfo-imageType-00957", device, create_info_loc,
-                             "if pCreateInfo->imageType is VK_IMAGE_TYPE_2D, pCreateInfo->extent.depth must be 1.");
+            skip |= LogError("VUID-VkImageCreateInfo-imageType-00957", device, create_info_loc.dot(Field::imageType),
+                             "is VK_IMAGE_TYPE_2D but extent.depth (%" PRIu32 ") must be 1.", pCreateInfo->extent.depth);
         }
     }
 
     // 3D image may have only 1 layer
     if ((pCreateInfo->imageType == VK_IMAGE_TYPE_3D) && (pCreateInfo->arrayLayers != 1)) {
-        skip |= LogError("VUID-VkImageCreateInfo-imageType-00961", device, create_info_loc,
-                         "if pCreateInfo->imageType is VK_IMAGE_TYPE_3D, pCreateInfo->arrayLayers must be 1.");
+        skip |= LogError("VUID-VkImageCreateInfo-imageType-00961", device, create_info_loc.dot(Field::imageType),
+                         "is VK_IMAGE_TYPE_3D but arrayLayers (%" PRIu32 ") must be 1.", pCreateInfo->arrayLayers);
     }
 
     if (0 != (pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
@@ -112,14 +112,17 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                          VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
         // At least one of the legal attachment bits must be set
         if (0 == (pCreateInfo->usage & legal_flags)) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-00966", device, create_info_loc,
-                             "Transient attachment image without a compatible attachment flag set.");
+            skip |= LogError("VUID-VkImageCreateInfo-usage-00966", device, create_info_loc.dot(Field::usage),
+                             "(%s) includes VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT but is missing one of %s.",
+                             string_VkImageUsageFlags(pCreateInfo->usage).c_str(), string_VkImageUsageFlags(legal_flags).c_str());
         }
         // No flags other than the legal attachment bits may be set
         legal_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
         if (0 != (pCreateInfo->usage & ~legal_flags)) {
             skip |= LogError("VUID-VkImageCreateInfo-usage-00963", device, create_info_loc,
-                             "Transient attachment image with incompatible usage flags set.");
+                             "(%s) includes VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT so it can't include %s.",
+                             string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
+                             string_VkImageUsageFlags(pCreateInfo->usage & ~legal_flags).c_str());
         }
     }
 
@@ -131,9 +134,9 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                   ? static_cast<uint32_t>(ceil(log2(max_dim)))
                                   : static_cast<uint32_t>(floor(log2(max_dim)) + 1);
     if (max_dim > 0 && pCreateInfo->mipLevels > max_mip_levels) {
-        skip |= LogError("VUID-VkImageCreateInfo-mipLevels-00958", device, create_info_loc,
-                         "pCreateInfo->mipLevels must be less than or equal to "
-                         "floor(log2(max(pCreateInfo->extent.width, pCreateInfo->extent.height, pCreateInfo->extent.depth)))+1.");
+        skip |= LogError("VUID-VkImageCreateInfo-mipLevels-00958", device, create_info_loc.dot(Field::mipLevels),
+                         "(%" PRIu32 ") must be less than or equal to %" PRIu32 " (based on extent of %s)", pCreateInfo->mipLevels,
+                         max_mip_levels, string_VkExtent3D(pCreateInfo->extent).c_str());
     }
 
     if ((image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) && (pCreateInfo->imageType != VK_IMAGE_TYPE_3D)) {
@@ -166,7 +169,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     if (((image_flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) != 0) &&
         (vkuFormatHasDepth(image_format) == false)) {
         skip |= LogError("VUID-VkImageCreateInfo-flags-01533", device, create_info_loc.dot(Field::flags),
-                         "includes VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT the "
+                         "includes VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT but the "
                          "format (%s) must be a depth or depth/stencil format.",
                          string_VkFormat(image_format));
     }
@@ -252,7 +255,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
         if (image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
             skip |= LogError("VUID-VkImageCreateInfo-flags-02567", device, create_info_loc.dot(Field::flags),
-                             "is %s, which contains SUBSAMPLED_BIT and CUBE_COMPATIBLE.",
+                             "(%s) contains both VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT and VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT.",
                              string_VkImageCreateFlags(image_flags).c_str());
         }
         if (pCreateInfo->mipLevels != 1) {
@@ -554,33 +557,32 @@ bool StatelessValidation::ValidateCreateImageSwapchain(const VkImageCreateInfo &
     if (create_info.imageType != VK_IMAGE_TYPE_2D) {
         // also implicitly forces the check above that extent.depth is 1
         skip |= LogError(vuid, swapchain_create_info->swapchain, swapchain_loc,
-                         "must have a imageType value VK_IMAGE_TYPE_2D instead of %s.", string_VkImageType(create_info.imageType));
+                         "is not NULL, but imageType (%s) is not VK_IMAGE_TYPE_2D.", string_VkImageType(create_info.imageType));
     }
     if (create_info.mipLevels != 1) {
         skip |= LogError(vuid, swapchain_create_info->swapchain, swapchain_loc,
-                         "must have a mipLevels value of 1 instead of %" PRIu32 ".", create_info.mipLevels);
+                         "is not NULL, but mipLevels (%" PRIu32 ") is not 1.", create_info.mipLevels);
     }
     if (create_info.samples != VK_SAMPLE_COUNT_1_BIT) {
         skip |= LogError(vuid, swapchain_create_info->swapchain, swapchain_loc,
-                         "must have a samples value of VK_SAMPLE_COUNT_1_BIT instead of %s.",
+                         "is not NULL, but samples (%s) is not VK_SAMPLE_COUNT_1_BIT.",
                          string_VkSampleCountFlagBits(create_info.samples));
     }
     if (create_info.tiling != VK_IMAGE_TILING_OPTIMAL) {
         skip |= LogError(vuid, swapchain_create_info->swapchain, swapchain_loc,
-                         "must have a tiling value of VK_IMAGE_TILING_OPTIMAL instead of %s.",
-                         string_VkImageTiling(create_info.tiling));
+                         "is not NULL, but tiling (%s) is not VK_IMAGE_TILING_OPTIMAL.", string_VkImageTiling(create_info.tiling));
     }
     if (create_info.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
         skip |= LogError(vuid, swapchain_create_info->swapchain, swapchain_loc,
-                         "must have a initialLayout value of VK_IMAGE_LAYOUT_UNDEFINED instead of %s.",
+                         "is not NULL, but initialLayout (%s) is not VK_IMAGE_LAYOUT_UNDEFINED.",
                          string_VkImageLayout(create_info.initialLayout));
     }
     const VkImageCreateFlags valid_flags = (VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT | VK_IMAGE_CREATE_PROTECTED_BIT |
                                             VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
     if ((create_info.flags & ~valid_flags) != 0) {
-        skip |=
-            LogError(vuid, swapchain_create_info->swapchain, swapchain_loc, "flags are %s and must only have valid flags set (%s).",
-                     string_VkImageCreateFlags(create_info.flags).c_str(), string_VkImageCreateFlags(valid_flags).c_str());
+        skip |= LogError(vuid, swapchain_create_info->swapchain, swapchain_loc,
+                         "is not NULL, but flags %s must only have valid flags (%s).",
+                         string_VkImageCreateFlags(create_info.flags).c_str(), string_VkImageCreateFlags(valid_flags).c_str());
     }
 
     return skip;
@@ -771,7 +773,7 @@ bool StatelessValidation::ValidateCreateImageDrmFormatModifiers(const VkImageCre
                 create_info_loc.pNext(Struct::VkImageDrmFormatModifierExplicitCreateInfoEXT, Field::pPlaneLayouts, i);
             if (drm_format_mod_explict->pPlaneLayouts[i].size != 0) {
                 skip |= LogError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267", device, drm_loc.dot(Field::size),
-                                 "is %" PRIu64 ".", drm_format_mod_explict->pPlaneLayouts[i].size);
+                                 "is not zero (%" PRIu64 ").", drm_format_mod_explict->pPlaneLayouts[i].size);
             }
             if (create_info.arrayLayers == 1 && drm_format_mod_explict->pPlaneLayouts[i].arrayPitch != 0) {
                 skip |= LogError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-arrayPitch-02268", device,
@@ -814,7 +816,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
         if (pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE && pCreateInfo->subresourceRange.layerCount != 6) {
             skip |= LogError("VUID-VkImageViewCreateInfo-viewType-02960", pCreateInfo->image,
                              create_info_loc.dot(Field::subresourceRange).dot(Field::layerCount),
-                             " (%" PRIu32 ") must be 6 or VK_REMAINING_ARRAY_LAYERS.", pCreateInfo->subresourceRange.layerCount);
+                             "(%" PRIu32 ") must be 6 or VK_REMAINING_ARRAY_LAYERS.", pCreateInfo->subresourceRange.layerCount);
         }
         if (pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY && (pCreateInfo->subresourceRange.layerCount % 6) != 0) {
             skip |= LogError("VUID-VkImageViewCreateInfo-viewType-02961", pCreateInfo->image,
@@ -846,16 +848,10 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
     if (ycbcr_conversion != nullptr) {
         if (ycbcr_conversion->conversion != VK_NULL_HANDLE) {
             if (IsIdentitySwizzle(pCreateInfo->components) == false) {
-                skip |= LogError(
-                    "VUID-VkImageViewCreateInfo-pNext-01970", pCreateInfo->image, create_info_loc,
-                    "If there is a VkSamplerYcbcrConversion, the imageView must "
-                    "be created with the identity swizzle. Here are the actual swizzle values:\n"
-                    "r swizzle = %s\n"
-                    "g swizzle = %s\n"
-                    "b swizzle = %s\n"
-                    "a swizzle = %s\n",
-                    string_VkComponentSwizzle(pCreateInfo->components.r), string_VkComponentSwizzle(pCreateInfo->components.g),
-                    string_VkComponentSwizzle(pCreateInfo->components.b), string_VkComponentSwizzle(pCreateInfo->components.a));
+                skip |= LogError("VUID-VkImageViewCreateInfo-pNext-01970", pCreateInfo->image, create_info_loc,
+                                 "If there is a VkSamplerYcbcrConversion, the imageView must "
+                                 "be created with the identity swizzle. Here are the actual swizzle values:\n%s",
+                                 string_VkComponentMapping(pCreateInfo->components).c_str());
             }
         }
     }

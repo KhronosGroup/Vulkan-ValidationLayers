@@ -32,6 +32,7 @@
 #include "chassis/chassis_modification_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/render_pass_state.h"
+#include "error_message/error_strings.h"
 
 bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
@@ -1790,8 +1791,9 @@ bool CoreChecks::ValidatePipelineRasterizationStateStreamCreateInfo(
     const Location &raster_loc) const {
     bool skip = false;
     if (!enabled_features.geometryStreams) {
-        skip |= LogError("VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324", device, raster_loc,
-                         "pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT, but "
+        skip |= LogError("VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324", device,
+                         raster_loc.dot(Field::pNext),
+                         "chain includes VkPipelineRasterizationStateStreamCreateInfoEXT, but "
                          "geometryStreams feature was not enabled.");
     } else if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT)) {
         const auto &props = phys_dev_ext_props.transform_feedback_props;
@@ -3060,7 +3062,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
                         create_info_loc.pNext(Struct::VkRenderingInputAttachmentIndexInfo, Field::colorAttachmentCount);
                     skip |=
                         LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09531", device, loc,
-                                 "= %" PRIu32 " does not match VkPipelineRenderingCreateInfo.colorAttachmentCount = %" PRIu32 ".",
+                                 "(%" PRIu32 ") does not match VkPipelineRenderingCreateInfo.colorAttachmentCount (%" PRIu32 ").",
                                  input_attachment_index->colorAttachmentCount, rendering_struct->colorAttachmentCount);
                 }
             }
@@ -3074,7 +3076,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
                         create_info_loc.pNext(Struct::VkRenderingAttachmentLocationInfo, Field::colorAttachmentCount);
                     skip |=
                         LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09532", device, loc,
-                                 "= %" PRIu32 " does not match VkPipelineRenderingCreateInfo.colorAttachmentCount = %" PRIu32 ".",
+                                 "(%" PRIu32 ") does not match VkPipelineRenderingCreateInfo.colorAttachmentCount (%" PRIu32 ").",
                                  attachment_location->colorAttachmentCount, rendering_struct->colorAttachmentCount);
                 }
             }
@@ -4366,7 +4368,7 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
                                  dynamic_line_raster_mode ? "dynamically" : "in pipeline",
                                  dynamic_line_stipple_enable ? "dynamically" : "in pipeline",
                                  enabled_features.stippledRectangularLines ? "enabled" : "not enabled",
-                                 phys_dev_props.limits.strictLines ? "VK_TRUE" : "VK_FALSE");
+                                 string_VkBool32(phys_dev_props.limits.strictLines).c_str());
                 }
             }
         }

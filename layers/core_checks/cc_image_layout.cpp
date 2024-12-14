@@ -253,13 +253,12 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
                         const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
                         // TODO - We need a way to map the action command to which caused this error
                         const vvl::DrawDispatchVuid &vuid = GetDrawDispatchVuid(vvl::Func::vkCmdDraw);
-                        skip |= LogError(vuid.image_layout_09600, objlist, loc,
-                                         "command buffer %s expects %s (subresource: aspectMask %s, array layer %" PRIu32
-                                         ", mip level %" PRIu32 ") to be in layout %s--instead, current layout is %s.",
-                                         FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(),
-                                         string_VkImageAspectFlags(subresource.aspectMask).c_str(), subresource.arrayLayer,
-                                         subresource.mipLevel, string_VkImageLayout(initial_layout),
-                                         string_VkImageLayout(image_layout));
+                        skip |= LogError(
+                            vuid.image_layout_09600, objlist, loc,
+                            "command buffer %s expects %s (subresource: %s) to be in layout %s--instead, current layout is %s.",
+                            FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(),
+                            string_VkImageSubresource(subresource).c_str(), string_VkImageLayout(initial_layout),
+                            string_VkImageLayout(image_layout));
                     }
                 }
             }
@@ -1030,7 +1029,7 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layo
     if (check_state.found_range.non_empty()) {
         const VkImageSubresource subres = image_state.subresource_encoder.IndexToVkSubresource(check_state.found_range.begin);
         skip |= LogError(vvl::GetImageImageLayoutVUID(loc), image_state.Handle(), loc,
-                         "is currently %s but expected to be %s for %s (subresource is %s)",
+                         "is currently %s but expected to be %s for %s (subresource: %s)",
                          string_VkImageLayout(check_state.found_layout), string_VkImageLayout(expected_layout),
                          debug_report->FormatHandle(image_state.Handle()).c_str(), string_VkImageSubresource(subres).c_str());
     }

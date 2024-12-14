@@ -467,12 +467,14 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         // Only need to check for VK_KHR_MAINTENANCE_1_EXTENSION_NAME if api version is 1.0, otherwise it's deprecated due to
         // integration into api version 1.1
         if (api_version >= VK_API_VERSION_1_1) {
-            skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840", physicalDevice, error_obj.location,
-                             "ppEnabledExtensionNames must not include "
+            skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840", physicalDevice,
+                             create_info_loc.dot(Field::ppEnabledExtensionNames),
+                             "must not include "
                              "VK_AMD_negative_viewport_height if api version is greater than or equal to 1.1.");
         } else if (maint1) {
-            skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374", physicalDevice, error_obj.location,
-                             "ppEnabledExtensionNames must not simultaneously include "
+            skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374", physicalDevice,
+                             create_info_loc.dot(Field::ppEnabledExtensionNames),
+                             "must not simultaneously include "
                              "VK_KHR_maintenance1 and VK_AMD_negative_viewport_height.");
         }
     }
@@ -480,9 +482,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     if (fragmentmask_requested) {
         const auto *descriptor_buffer_features = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(pCreateInfo->pNext);
         if (descriptor_buffer_features && descriptor_buffer_features->descriptorBuffer) {
-            skip |= LogError("VUID-VkDeviceCreateInfo-None-08095", physicalDevice, error_obj.location,
-                             "If the descriptorBuffer feature is enabled, ppEnabledExtensionNames must not "
-                             "contain VK_AMD_shader_fragment_mask.");
+            skip |=
+                LogError("VUID-VkDeviceCreateInfo-None-08095", physicalDevice, create_info_loc.dot(Field::ppEnabledExtensionNames),
+                         "must not contain VK_AMD_shader_fragment_mask if the descriptorBuffer feature is enabled.");
         }
     }
 
@@ -492,8 +494,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         const bool ext_bda =
             IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_EXT_buffer_device_address));
         if (khr_bda && ext_bda) {
-            skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-03328", physicalDevice, error_obj.location,
-                             "ppEnabledExtensionNames must not contain both VK_KHR_buffer_device_address and "
+            skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-03328", physicalDevice,
+                             create_info_loc.dot(Field::ppEnabledExtensionNames),
+                             "must not contain both VK_KHR_buffer_device_address and "
                              "VK_EXT_buffer_device_address.");
         }
     }
@@ -501,9 +504,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     const auto features2 = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
     if (pCreateInfo->pNext != nullptr && pCreateInfo->pEnabledFeatures && features2) {
         // Cannot include VkPhysicalDeviceFeatures2 and have non-null pEnabledFeatures
-        skip |= LogError("VUID-VkDeviceCreateInfo-pNext-00373", physicalDevice, error_obj.location,
-                         "pNext includes a VkPhysicalDeviceFeatures2 struct when "
-                         "pCreateInfo->pEnabledFeatures is non-NULL.");
+        skip |= LogError("VUID-VkDeviceCreateInfo-pNext-00373", physicalDevice, create_info_loc.dot(Field::pNext),
+                         "includes a VkPhysicalDeviceFeatures2 struct when pCreateInfo->pEnabledFeatures is not NULL.");
     }
 
     const VkPhysicalDeviceFeatures *features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
@@ -583,8 +585,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES ||
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES ||
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-02830", physicalDevice, error_obj.location,
-                                 "If the pNext chain includes a VkPhysicalDeviceVulkan12Features structure, then it must not "
+                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-02830", physicalDevice, create_info_loc.dot(Field::pNext),
+                                 "chain includes a VkPhysicalDeviceVulkan12Features structure, then it must not "
                                  "include a %s structure",
                                  string_VkStructureType(current->sType));
                 break;
@@ -628,8 +630,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
         if (vulkan_12_features->bufferDeviceAddress == VK_TRUE) {
             if (IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_EXT_buffer_device_address))) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-04748", physicalDevice, error_obj.location,
-                                 "pNext chain includes VkPhysicalDeviceVulkan12Features with bufferDeviceAddress "
+                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-04748", physicalDevice, create_info_loc.dot(Field::pNext),
+                                 "chain includes VkPhysicalDeviceVulkan12Features with bufferDeviceAddress "
                                  "set to VK_TRUE and ppEnabledExtensionNames contains VK_EXT_buffer_device_address");
             }
         }
@@ -657,8 +659,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES ||
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES ||
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-06532", physicalDevice, error_obj.location,
-                                 "If the pNext chain includes a VkPhysicalDeviceVulkan13Features structure, then it must not "
+                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-06532", physicalDevice, create_info_loc.dot(Field::pNext),
+                                 "chain includes a VkPhysicalDeviceVulkan13Features structure, then it must not "
                                  "include a %s structure",
                                  string_VkStructureType(current->sType));
                 break;
@@ -686,8 +688,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
              VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES}};
         while (current) {
             if (IsValueIn(current->sType, illegal_feature_structs_with_14)) {
-                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-10360", physicalDevice, error_obj.location,
-                                 "If the pNext chain includes a VkPhysicalDeviceVulkan14Features structure, then it must not "
+                skip |= LogError("VUID-VkDeviceCreateInfo-pNext-10360", physicalDevice, create_info_loc.dot(Field::pNext),
+                                 "chain includes a VkPhysicalDeviceVulkan14Features structure, then it must not "
                                  "include a %s structure",
                                  string_VkStructureType(current->sType));
                 break;
@@ -702,22 +704,18 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
             const uint32_t requested_queue_family = queue_create_info.queueFamilyIndex;
             if (requested_queue_family == VK_QUEUE_FAMILY_IGNORED) {
-                skip |=
-                    LogError("VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381", physicalDevice, error_obj.location,
-                             "pCreateInfo->pQueueCreateInfos[%" PRIu32
-                             "].queueFamilyIndex is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family "
-                             "index value.",
-                             i);
+                skip |= LogError("VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381", physicalDevice,
+                                 create_info_loc.dot(Field::pQueueCreateInfos, i).dot(Field::queueFamilyIndex),
+                                 "is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family index value.");
             }
 
             if (queue_create_info.pQueuePriorities != nullptr) {
                 for (uint32_t j = 0; j < queue_create_info.queueCount; ++j) {
                     const float queue_priority = queue_create_info.pQueuePriorities[j];
                     if (!(queue_priority >= 0.f) || !(queue_priority <= 1.f)) {
-                        skip |= LogError("VUID-VkDeviceQueueCreateInfo-pQueuePriorities-00383", physicalDevice, error_obj.location,
-                                         "pCreateInfo->pQueueCreateInfos[%" PRIu32 "].pQueuePriorities[%" PRIu32
-                                         "] (=%f) is not between 0 and 1 (inclusive).",
-                                         i, j, queue_priority);
+                        skip |= LogError("VUID-VkDeviceQueueCreateInfo-pQueuePriorities-00383", physicalDevice,
+                                         create_info_loc.dot(Field::pQueueCreateInfos, i).dot(Field::pQueuePriorities, j),
+                                         "(%f) is not between 0 and 1 (inclusive).", queue_priority);
                     }
                 }
             }
@@ -732,9 +730,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                 protected_memory = vulkan_11_features->protectedMemory;
             }
             if (((queue_create_info.flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) != 0) && (protected_memory == VK_FALSE)) {
-                skip |= LogError("VUID-VkDeviceQueueCreateInfo-flags-02861", physicalDevice, error_obj.location,
-                                 "pCreateInfo->flags contains VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT without the "
-                                 "protectedMemory feature being enabled as well.");
+                skip |= LogError(
+                    "VUID-VkDeviceQueueCreateInfo-flags-02861", physicalDevice, create_info_loc.dot(Field::flags),
+                    "includes VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT, but the protectedMemory feature is not being enabled.");
             }
         }
     }
@@ -1049,8 +1047,8 @@ bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevi
                                                                           const ErrorObject &error_obj) const {
     bool skip = false;
     if (pTagInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
-        skip |= LogError("VUID-VkDebugUtilsObjectTagInfoEXT-objectType-01908", device, error_obj.location,
-                         "pTagInfo->objectType cannot be VK_OBJECT_TYPE_UNKNOWN.");
+        skip |= LogError("VUID-VkDebugUtilsObjectTagInfoEXT-objectType-01908", device,
+                         error_obj.location.dot(Field::pTagInfo).dot(Field::objectType), "cannot be VK_OBJECT_TYPE_UNKNOWN.");
     }
     return skip;
 }

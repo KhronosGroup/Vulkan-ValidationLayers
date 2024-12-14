@@ -1165,15 +1165,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
             skip |= LogError("VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03219", objlist, attachment_loc,
                              "was created with non-identity swizzle. All "
                              "framebuffer attachments must have been created with the identity swizzle. Here are the actual "
-                             "swizzle values:\n"
-                             "r swizzle = %s\n"
-                             "g swizzle = %s\n"
-                             "b swizzle = %s\n"
-                             "a swizzle = %s\n",
-                             string_VkComponentSwizzle(image_view_create_info->components.r),
-                             string_VkComponentSwizzle(image_view_create_info->components.g),
-                             string_VkComponentSwizzle(image_view_create_info->components.b),
-                             string_VkComponentSwizzle(image_view_create_info->components.a));
+                             "swizzle values:\n%s",
+                             string_VkComponentMapping(image_view_create_info->components).c_str());
         }
 
         if (image_view_create_info->viewType == VK_IMAGE_VIEW_TYPE_3D) {
@@ -3149,13 +3142,8 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
         if (!IsIdentitySwizzle(components)) {
             const LogObjectList objlist(commandBuffer, fragment_density_map_view_state->Handle());
             skip |= LogError("VUID-VkRenderingInfo-imageView-09486", objlist, view_loc,
-                             "has a non-identiy swizzle component, here are the actual swizzle values:\n"
-                             "r swizzle = %s\n"
-                             "g swizzle = %s\n"
-                             "b swizzle = %s\n"
-                             "a swizzle = %s\n",
-                             string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                             string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                             "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                             string_VkComponentMapping(components).c_str());
         }
     }
 
@@ -3252,13 +3240,8 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer comma
     if (!IsIdentitySwizzle(components)) {
         skip |= LogError("VUID-VkRenderingInfo-imageView-09485", objlist,
                          rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
-                         "has a non-identiy swizzle component, here are the actual swizzle values:\n"
-                         "r swizzle = %s\n"
-                         "g swizzle = %s\n"
-                         "b swizzle = %s\n"
-                         "a swizzle = %s\n",
-                         string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                         string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                         "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                         string_VkComponentMapping(components).c_str());
     }
 
     skip |= ValidateBeginRenderingFragmentShadingRateRenderArea(
@@ -3733,13 +3716,8 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
             if (!IsIdentitySwizzle(components)) {
                 const LogObjectList objlist(commandBuffer, image_view_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-09479", objlist, color_loc.dot(Field::imageView),
-                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n"
-                                 "r swizzle = %s\n"
-                                 "g swizzle = %s\n"
-                                 "b swizzle = %s\n"
-                                 "a swizzle = %s\n",
-                                 string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                                 string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                                 string_VkComponentMapping(components).c_str());
             }
         }
 
@@ -3827,13 +3805,8 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                     const LogObjectList objlist(commandBuffer, resolve_view_state->Handle());
                     skip |=
                         LogError("VUID-VkRenderingInfo-colorAttachmentCount-09480", objlist, color_loc.dot(Field::resolveImageView),
-                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n"
-                                 "r swizzle = %s\n"
-                                 "g swizzle = %s\n"
-                                 "b swizzle = %s\n"
-                                 "a swizzle = %s\n",
-                                 string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                                 string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                                 string_VkComponentMapping(components).c_str());
                 }
 
                 const VkImageUsageFlags image_usage = resolve_view_state->image_state->create_info.usage;
@@ -3877,13 +3850,8 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                 const LogObjectList objlist(commandBuffer, depth_view_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09481", objlist,
                                  rendering_info_loc.dot(Field::pDepthAttachment).dot(Field::imageView),
-                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n"
-                                 "r swizzle = %s\n"
-                                 "g swizzle = %s\n"
-                                 "b swizzle = %s\n"
-                                 "a swizzle = %s\n",
-                                 string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                                 string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                                 string_VkComponentMapping(components).c_str());
             }
         }
 
@@ -3899,13 +3867,8 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                     const LogObjectList objlist(commandBuffer, depth_resolve_view_state->Handle());
                     skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09482", objlist,
                                      rendering_info_loc.dot(Field::pDepthAttachment).dot(Field::resolveImageView),
-                                     "has a non-identiy swizzle component, here are the actual swizzle values:\n"
-                                     "r swizzle = %s\n"
-                                     "g swizzle = %s\n"
-                                     "b swizzle = %s\n"
-                                     "a swizzle = %s\n",
-                                     string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                                     string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                                     "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                                     string_VkComponentMapping(components).c_str());
                 }
                 const VkImageUsageFlags image_usage = depth_resolve_view_state->image_state->create_info.usage;
                 if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
@@ -3948,13 +3911,8 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                 const LogObjectList objlist(commandBuffer, stencil_view_state->Handle());
                 skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09483", objlist,
                                  rendering_info_loc.dot(Field::pStencilAttachment).dot(Field::imageView),
-                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n"
-                                 "r swizzle = %s\n"
-                                 "g swizzle = %s\n"
-                                 "b swizzle = %s\n"
-                                 "a swizzle = %s\n",
-                                 string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                                 string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                                 "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                                 string_VkComponentMapping(components).c_str());
             }
         }
         if (stencil_attachment_info.resolveMode != VK_RESOLVE_MODE_NONE) {
@@ -3970,13 +3928,8 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                     const LogObjectList objlist(commandBuffer, stencil_resolve_view_state->Handle());
                     skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09484", objlist,
                                      rendering_info_loc.dot(Field::pStencilAttachment).dot(Field::resolveImageView),
-                                     "has a non-identiy swizzle component, here are the actual swizzle values:\n"
-                                     "r swizzle = %s\n"
-                                     "g swizzle = %s\n"
-                                     "b swizzle = %s\n"
-                                     "a swizzle = %s\n",
-                                     string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                                     string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                                     "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                                     string_VkComponentMapping(components).c_str());
                 }
                 const VkImageUsageFlags image_usage = stencil_resolve_view_state->image_state->create_info.usage;
                 if ((image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
@@ -4630,13 +4583,8 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
             skip |= LogError("VUID-VkFramebufferCreateInfo-pAttachments-00884", objlist, attachment_loc,
                              "has non-identy swizzle. All "
                              "framebuffer attachments must have been created with the identity swizzle. Here are the actual "
-                             "swizzle values:\n"
-                             "r swizzle = %s\n"
-                             "g swizzle = %s\n"
-                             "b swizzle = %s\n"
-                             "a swizzle = %s\n",
-                             string_VkComponentSwizzle(ivci.components.r), string_VkComponentSwizzle(ivci.components.g),
-                             string_VkComponentSwizzle(ivci.components.b), string_VkComponentSwizzle(ivci.components.a));
+                             "swizzle values:\n%s",
+                             string_VkComponentMapping(ivci.components).c_str());
         }
         if ((ivci.viewType == VK_IMAGE_VIEW_TYPE_2D) || (ivci.viewType == VK_IMAGE_VIEW_TYPE_2D)) {
             auto image_state = Get<vvl::Image>(ivci.image);
@@ -5051,7 +4999,9 @@ bool CoreChecks::ValidateRenderingAttachmentLocations(const VkRenderingAttachmen
 
             if (!enabled_features.dynamicRenderingLocalRead && location != i) {
                 skip |= LogError("VUID-VkRenderingAttachmentLocationInfo-dynamicRenderingLocalRead-09512", objlist, loc,
-                                 "= %" PRIu32 " while expected to be %" PRIu32, location, i);
+                                 "is %" PRIu32 " while expected to be %" PRIu32
+                                 " because the dynamicRenderingLocalRead feature is not enabled",
+                                 location, i);
             }
 
             if (location == VK_ATTACHMENT_UNUSED) {
@@ -5060,24 +5010,24 @@ bool CoreChecks::ValidateRenderingAttachmentLocations(const VkRenderingAttachmen
 
             if (unique.find(location) != unique.end()) {
                 skip |= LogError("VUID-VkRenderingAttachmentLocationInfo-pColorAttachmentLocations-09513", objlist, loc,
-                                 "= %" PRIu32 " has same value as pColorAttachmentLocations[%" PRIu32 "] = %" PRIu32, location,
+                                 "(%" PRIu32 ") has same value as pColorAttachmentLocations[%" PRIu32 "] (%" PRIu32 ").", location,
                                  unique[location], location);
             } else
                 unique[location] = i;
 
             if (location >= phys_dev_props.limits.maxColorAttachments) {
                 skip |= LogError("VUID-VkRenderingAttachmentLocationInfo-pColorAttachmentLocations-09515", objlist, loc,
-                                 "= %" PRIu32 " that is greater than the maxColorAttachments limit (%" PRIu32 ")", location,
+                                 "(%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ")", location,
                                  phys_dev_props.limits.maxColorAttachments);
             }
         }
     }
 
     if (location_info.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
-        skip |= LogError("VUID-VkRenderingAttachmentLocationInfo-colorAttachmentCount-09514", objlist,
-                         loc_info.dot(Field::colorAttachmentCount),
-                         "(%" PRIu32 ") is greater than the maxColorAttachments limit (%" PRIu32 ").",
-                         location_info.colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
+        skip |=
+            LogError("VUID-VkRenderingAttachmentLocationInfo-colorAttachmentCount-09514", objlist,
+                     loc_info.dot(Field::colorAttachmentCount), "(%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").",
+                     location_info.colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
     }
 
     return skip;
@@ -5114,7 +5064,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuff
         const LogObjectList objlist(commandBuffer, rp_state.VkHandle());
         skip |= LogError("VUID-vkCmdSetRenderingAttachmentLocations-pLocationInfo-09510", objlist,
                          error_obj.location.dot(Field::pLocationInfo).dot(Field::colorAttachmentCount),
-                         "= %" PRIu32 " is not equal to count specified in VkRenderingInfo (%" PRIu32 ").",
+                         "(%" PRIu32 ") is not equal to count specified in VkRenderingInfo (%" PRIu32 ").",
                          pLocationInfo->colorAttachmentCount, rp_state.dynamic_rendering_begin_rendering_info.colorAttachmentCount);
     }
 
@@ -5138,14 +5088,14 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputA
             if (*index_info.pDepthInputAttachmentIndex != VK_ATTACHMENT_UNUSED) {
                 skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09520", objlist,
                                  loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pDepthInputAttachmentIndex, 0),
-                                 "= %" PRIu32 " while must be VK_ATTACHMENT_UNUSED", *index_info.pDepthInputAttachmentIndex);
+                                 "is %" PRIu32 " but must be VK_ATTACHMENT_UNUSED", *index_info.pDepthInputAttachmentIndex);
             }
         }
         if (index_info.pStencilInputAttachmentIndex) {
             if (*index_info.pStencilInputAttachmentIndex != VK_ATTACHMENT_UNUSED) {
                 skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09521", objlist,
                                  loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pStencilInputAttachmentIndex, 0),
-                                 "= %" PRIu32 " while must be VK_ATTACHMENT_UNUSED", *index_info.pStencilInputAttachmentIndex);
+                                 "is %" PRIu32 " but must be VK_ATTACHMENT_UNUSED", *index_info.pStencilInputAttachmentIndex);
             }
         }
     }
@@ -5161,14 +5111,14 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputA
             } else if (!enabled_features.dynamicRenderingLocalRead) {
                 skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-dynamicRenderingLocalRead-09519", objlist,
                                  loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pColorAttachmentInputIndices, i),
-                                 "= %" PRIu32 " must be VK_ATTACHMENT_UNUSED", index);
+                                 "is %" PRIu32 " but must be VK_ATTACHMENT_UNUSED", index);
             }
 
             if (unique.find(index) != unique.end()) {
                 skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09522", objlist,
                                  loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pColorAttachmentInputIndices, i),
-                                 "= %" PRIu32 " has same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32, index,
-                                 unique[index], index_info.pColorAttachmentInputIndices[unique[index]]);
+                                 "(%" PRIu32 ") has same value as in pColorAttachmentInputIndices[%" PRIu32 "] (%" PRIu32 ").",
+                                 index, unique[index], index_info.pColorAttachmentInputIndices[unique[index]]);
             } else
                 unique[index] = i;
         }
@@ -5176,7 +5126,7 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputA
             unique.find(*index_info.pDepthInputAttachmentIndex) != unique.end()) {
             const Location loc = loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pDepthInputAttachmentIndex, 0);
             skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09523", objlist, loc,
-                             "= %" PRIu32 " has same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32,
+                             "(%" PRIu32 ") has same value as in pColorAttachmentInputIndices[%" PRIu32 "] (%" PRIu32 ").",
                              *index_info.pDepthInputAttachmentIndex, unique[*index_info.pDepthInputAttachmentIndex],
                              index_info.pColorAttachmentInputIndices[unique[*index_info.pDepthInputAttachmentIndex]]);
         }
@@ -5184,7 +5134,7 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputA
             unique.find(*index_info.pStencilInputAttachmentIndex) != unique.end()) {
             const Location loc = loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::pStencilInputAttachmentIndex, 0);
             skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-pColorAttachmentInputIndices-09524", objlist, loc,
-                             "= %" PRIu32 " has same value as in pColorAttachmentInputIndices[%" PRIu32 "] = %" PRIu32,
+                             "(%" PRIu32 ") has same value as in pColorAttachmentInputIndices[%" PRIu32 "] (%" PRIu32 ").",
                              *index_info.pStencilInputAttachmentIndex, unique[*index_info.pStencilInputAttachmentIndex],
                              index_info.pColorAttachmentInputIndices[unique[*index_info.pStencilInputAttachmentIndex]]);
         }
@@ -5193,8 +5143,8 @@ bool CoreChecks::ValidateRenderingInputAttachmentIndices(const VkRenderingInputA
     if (index_info.colorAttachmentCount > phys_dev_props.limits.maxColorAttachments) {
         const Location loc = loc_info.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::colorAttachmentCount);
         skip |= LogError("VUID-VkRenderingInputAttachmentIndexInfo-colorAttachmentCount-09525", objlist, loc,
-                         "= %" PRIu32 " must be less than or equal to maxColorAttachments = %" PRIu32 ".",
-                         index_info.colorAttachmentCount, phys_dev_props.limits.maxColorAttachments);
+                         "(%" PRIu32 ") is greater than maxColorAttachments (%" PRIu32 ").", index_info.colorAttachmentCount,
+                         phys_dev_props.limits.maxColorAttachments);
     }
 
     return skip;
@@ -5230,7 +5180,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndices(VkCommandB
         const Location loc = error_obj.location.dot(Struct::VkRenderingInputAttachmentIndexInfo, Field::colorAttachmentCount);
 
         skip |= LogError("VUID-vkCmdSetRenderingInputAttachmentIndices-pInputAttachmentIndexInfo-09517", objlist, loc,
-                         "= %" PRIu32 " is not equal to the attachment count the render pass being begun (%" PRIu32 ")",
+                         "(%" PRIu32 ") is not equal to the attachment count the render pass being begun (%" PRIu32 ")",
                          pLocationInfo->colorAttachmentCount, rp_state.create_info.attachmentCount);
     }
 

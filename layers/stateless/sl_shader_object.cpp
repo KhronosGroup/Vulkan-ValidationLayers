@@ -49,31 +49,31 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
                                                 VK_SHADER_STAGE_FRAGMENT_BIT;
         if ((createInfo.stage & linkedStages) == 0 && (createInfo.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08412", device, create_info_loc.dot(Field::flags),
-                             "is %s and stage is %s.", string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(),
+                             "includes VK_SHADER_CREATE_LINK_STAGE_BIT_EXT but the stage is %s.",
                              string_VkShaderStageFlagBits(createInfo.stage));
         }
         if ((createInfo.stage != VK_SHADER_STAGE_COMPUTE_BIT) &&
             ((createInfo.flags & VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT) != 0)) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08485", device, create_info_loc.dot(Field::flags),
-                             "is %s and stage is %s.", string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(),
+                             "includes VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT but the stage is %s.",
                              string_VkShaderStageFlagBits(createInfo.stage));
         }
         if (createInfo.stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
             if ((createInfo.flags & VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT) != 0) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08486", device, create_info_loc.dot(Field::flags),
-                                 "is %s and stage is %s.", string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(),
+                                 "includes VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT but the stage is %s.",
                                  string_VkShaderStageFlagBits(createInfo.stage));
             }
             if ((createInfo.flags & VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT) != 0) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08488", device, create_info_loc.dot(Field::flags),
-                                 "is %s and stage is %s.", string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(),
+                                 "includes VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT but the stage is %s.",
                                  string_VkShaderStageFlagBits(createInfo.stage));
             }
         }
 
         if (createInfo.stage != VK_SHADER_STAGE_MESH_BIT_EXT && (createInfo.flags & VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT) != 0) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08414", device, create_info_loc.dot(Field::flags),
-                             "is %s and stage is %s.", string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(),
+                             "includes VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT but the stage is %s.",
                              string_VkShaderStageFlagBits(createInfo.stage));
         }
 
@@ -140,7 +140,7 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
             ((createInfo.stage & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_COMPUTE_BIT)) ==
              0)) {
             skip |= LogError("VUID-VkShaderCreateInfoEXT-flags-08992", device, create_info_loc.dot(Field::flags),
-                             "is %s, but stage is %s.", string_VkShaderCreateFlagsEXT(createInfo.flags).c_str(),
+                             "includes VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT but the stage is %s.",
                              string_VkShaderStageFlagBits(createInfo.stage));
         }
 

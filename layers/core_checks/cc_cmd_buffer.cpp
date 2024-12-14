@@ -116,9 +116,9 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     }
                 } else {
                     if (!p_inherited_rendering_info) {
-                        skip |= LogError("VUID-VkCommandBufferBeginInfo-flags-06002", commandBuffer, inheritance_loc,
-                                         "pNext chain of pInheritanceInfo must include a "
-                                         "VkCommandBufferInheritanceRenderingInfo structure.");
+                        skip |=
+                            LogError("VUID-VkCommandBufferBeginInfo-flags-06002", commandBuffer, inheritance_loc.dot(Field::pNext),
+                                     "chain must include a VkCommandBufferInheritanceRenderingInfo structure.");
                     }
                 }
             }
@@ -1724,7 +1724,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuf
                 if (!enabled_features.maintenance5) {
                     skip |= LogError("VUID-vkCmdBindVertexBuffers2-pSizes-03358", objlist, error_obj.location.dot(Field::pSizes, i),
                                      "is VK_WHOLE_SIZE, which is not valid in this context. This can be fixed by enabling the "
-                                     "VkPhysicalDeviceMaintenance5FeaturesKHR::maintenance5 feature.");
+                                     "maintenance5 feature.");
                 }
             } else if (offset + size > buffer_state->create_info.size) {
                 skip |= LogError("VUID-vkCmdBindVertexBuffers2-pSizes-03358", objlist, error_obj.location.dot(Field::pOffsets, i),
