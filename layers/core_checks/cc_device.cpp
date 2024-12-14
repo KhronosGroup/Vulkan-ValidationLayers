@@ -297,7 +297,7 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_st
 
                 skip |= LogError(
                     "VUID-VkDeviceQueueCreateInfo-queueCount-00382", pd_state.Handle(), info_loc.dot(Field::queueCount),
-                    " (%" PRIu32
+                    "(%" PRIu32
                     ") is not less than or equal to available queue count for this pCreateInfo->pQueueCreateInfos[%" PRIu32
                     "].queueFamilyIndex} (%" PRIu32 ") obtained previously from vkGetPhysicalDeviceQueueFamilyProperties%s (%s).",
                     requested_queue_count, i, requested_queue_family, conditional_ext_cmd, count_note.c_str());
@@ -441,7 +441,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
 
         if (device_queue_info.queue_count <= queueIndex) {
             skip |= LogError("VUID-vkGetDeviceQueue-queueIndex-00385", device, error_obj.location.dot(Field::queueIndex),
-                             "(%" PRIu32 ") is not less than the number of queues requested from queueFamilyIndex (=%" PRIu32
+                             "(%" PRIu32 ") is not less than the number of queues requested from queueFamilyIndex (%" PRIu32
                              ") when the device was created vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
                              "] (i.e. is not less than %" PRIu32 ").",
                              queueIndex, queueFamilyIndex, device_queue_info.index, device_queue_info.queue_count);

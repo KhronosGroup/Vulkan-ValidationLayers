@@ -887,8 +887,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
                 ((cb_state.dynamic_state_value.write_mask_front != 0) || (cb_state.dynamic_state_value.write_mask_back != 0))) {
                 skip |= LogError(vuid.dynamic_stencil_write_mask_08716, objlist, vuid.loc(),
                                  "Fragment shader contains OpStencilAttachmentReadEXT, but writeMask parameter in the last "
-                                 "call to vkCmdSetStencilWriteMask is not equal to 0 for both front (=%" PRIu32
-                                 ") and back (=%" PRIu32 ").",
+                                 "call to vkCmdSetStencilWriteMask is not equal to 0 for both front (%" PRIu32
+                                 ") and back (%" PRIu32 ").",
                                  cb_state.dynamic_state_value.write_mask_front, cb_state.dynamic_state_value.write_mask_back);
             }
         }
@@ -1811,7 +1811,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, f
     if ((depthBiasClamp != 0.0) && !enabled_features.depthBiasClamp) {
         skip |=
             LogError("VUID-vkCmdSetDepthBias-depthBiasClamp-00790", commandBuffer, error_obj.location.dot(Field::depthBiasClamp),
-                     "is %f, but the depthBiasClamp device feature was not enabled.", depthBiasClamp);
+                     "is %f (not 0.0f), but the depthBiasClamp feature was not enabled.", depthBiasClamp);
     }
     return skip;
 }
@@ -1853,7 +1853,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffe
     if ((pDepthBiasInfo->depthBiasClamp != 0.0) && !enabled_features.depthBiasClamp) {
         skip |= LogError("VUID-VkDepthBiasInfoEXT-depthBiasClamp-08950", commandBuffer,
                          error_obj.location.dot(Field::pDepthBiasInfo).dot(Field::depthBiasClamp),
-                         "is %f, but the depthBiasClamp device feature was not enabled.", pDepthBiasInfo->depthBiasClamp);
+                         "is %f (not 0.0f), but the depthBiasClamp feature was not enabled.", pDepthBiasInfo->depthBiasClamp);
     }
 
     if (const auto *depth_bias_representation = vku::FindStructInPNextChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
@@ -2438,14 +2438,14 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
                 equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
                 skip |= LogError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362", commandBuffer,
                                  equation_loc.dot(Field::srcColorBlendFactor),
-                                 "is %s but the constantAlphaColorBlendFactors feature was not supported.",
+                                 "is %s but the constantAlphaColorBlendFactors feature was not enabled.",
                                  string_VkBlendFactor(equation.srcColorBlendFactor));
             }
             if (equation.dstColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
                 equation.dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
                 skip |= LogError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363", commandBuffer,
                                  equation_loc.dot(Field::dstColorBlendFactor),
-                                 "is %s but the constantAlphaColorBlendFactors feature was not supported.",
+                                 "is %s but the constantAlphaColorBlendFactors feature was not enabled.",
                                  string_VkBlendFactor(equation.dstColorBlendFactor));
             }
         }
@@ -2492,7 +2492,7 @@ bool CoreChecks::PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer com
                          error_obj.location.dot(Field::rasterizationStream),
                          "(%" PRIu32
                          ") is non-zero but "
-                         "the transformFeedbackRasterizationStreamSelect feature was not supported.",
+                         "the transformFeedbackRasterizationStreamSelect feature was not enabled.",
                          rasterizationStream);
     }
     return skip;
@@ -2593,7 +2593,7 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
             skip |= LogError("VUID-VkColorBlendAdvancedEXT-blendOverlap-07507", commandBuffer,
                              error_obj.location.dot(Field::pColorBlendAdvanced, attachment).dot(Field::blendOverlap),
-                             "is %s, but the advancedBlendCorrelatedOverlap feature was not supported.",
+                             "is %s, but the advancedBlendCorrelatedOverlap feature was not enabled.",
                              string_VkBlendOverlapEXT(advanced.blendOverlap));
         }
     }

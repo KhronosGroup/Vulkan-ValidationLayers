@@ -23,6 +23,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/sampler_state.h"
 #include "generated/dispatch_functions.h"
+#include "error_message/error_strings.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 // Android-specific validation that uses types defined only on Android and only for NDK versions
@@ -394,9 +395,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
                                      "is %s but allocationSize is 0.", FormatHandle(mem_ded_alloc_info->buffer).c_str());
                 }
             } else if (0 == allocate_info.allocationSize) {
-                skip |=
-                    LogError("VUID-VkMemoryAllocateInfo-pNext-07900", device, allocate_info_loc,
-                             "pNext chain does not contain an instance of VkMemoryDedicatedAllocateInfo, but allocationSize is 0.");
+                skip |= LogError("VUID-VkMemoryAllocateInfo-pNext-07900", device, allocate_info_loc.dot(Field::pNext),
+                                 "chain does not contain an instance of VkMemoryDedicatedAllocateInfo, but allocationSize is 0.");
             }
         }
     }
@@ -596,13 +596,10 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &cre
 
         // Errors in create_info swizzles
         if (IsIdentitySwizzle(create_info.components) == false) {
-            skip |= LogError(
-                "VUID-VkImageViewCreateInfo-image-02401", create_info.image, create_info_loc.dot(Field::image),
-                "was chained with a VkExternalFormatANDROID struct, but "
-                "includes one or more non-identity component swizzles, r swizzle = %s, g swizzle = %s, b swizzle = %s, a swizzle "
-                "= %s.",
-                string_VkComponentSwizzle(create_info.components.r), string_VkComponentSwizzle(create_info.components.g),
-                string_VkComponentSwizzle(create_info.components.b), string_VkComponentSwizzle(create_info.components.a));
+            skip |= LogError("VUID-VkImageViewCreateInfo-image-02401", create_info.image, create_info_loc.dot(Field::image),
+                             "was chained with a VkExternalFormatANDROID struct, but "
+                             "includes one or more non-identity component swizzles\n%s.",
+                             string_VkComponentMapping(create_info.components).c_str());
         }
     }
 

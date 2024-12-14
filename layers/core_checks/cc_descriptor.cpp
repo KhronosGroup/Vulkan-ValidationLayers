@@ -32,6 +32,7 @@
 #include "drawdispatch/descriptor_validator.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "utils/vk_struct_compare.h"
+#include "error_message/error_strings.h"
 
 using DescriptorSet = vvl::DescriptorSet;
 using DescriptorSetLayout = vvl::DescriptorSetLayout;
@@ -1369,13 +1370,8 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
         const VkComponentMapping components = view_state.create_info.components;
         if (IsIdentitySwizzle(components) == false) {
             skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00336", objlist, image_info_loc.dot(Field::imageView),
-                             "has a non-identiy swizzle component, here are the actual swizzle values:\n"
-                             "r swizzle = %s\n"
-                             "g swizzle = %s\n"
-                             "b swizzle = %s\n"
-                             "a swizzle = %s\n",
-                             string_VkComponentSwizzle(components.r), string_VkComponentSwizzle(components.g),
-                             string_VkComponentSwizzle(components.b), string_VkComponentSwizzle(components.a));
+                             "has a non-identiy swizzle component, here are the actual swizzle values:\n%s",
+                             string_VkComponentMapping(components).c_str());
         }
     }
 
@@ -4543,12 +4539,11 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
             if (matching_stages != range.stageFlags) {
                 const char *vuid = is_2 ? "VUID-VkPushConstantsInfo-offset-01796" : "VUID-vkCmdPushConstants-offset-01796";
                 skip |= LogError(vuid, commandBuffer, loc,
-                                 "stageFlags (%s, offset (%" PRIu32 "), and size (%" PRIu32
-                                 "),  must contain all stages in overlapping VkPushConstantRange stageFlags (%s), offset (%" PRIu32
-                                 "), and size (%" PRIu32 ") in %s.",
-                                 string_VkShaderStageFlags(stageFlags).c_str(), offset, size,
-                                 string_VkShaderStageFlags(range.stageFlags).c_str(), range.offset, range.size,
-                                 FormatHandle(layout).c_str());
+                                 "is called with\nstageFlags (%s), offset (%" PRIu32 "), size (%" PRIu32
+                                 ")\nwhich is missing stageFlags from the overlapping VkPushConstantRange in %s\nstageFlags (%s), "
+                                 "offset (%" PRIu32 "), size (%" PRIu32 ")",
+                                 string_VkShaderStageFlags(stageFlags).c_str(), offset, size, FormatHandle(layout).c_str(),
+                                 string_VkShaderStageFlags(range.stageFlags).c_str(), range.offset, range.size);
             }
 
             // Accumulate all stages we've found
@@ -4556,13 +4551,13 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
         }
     }
     if (found_stages != stageFlags) {
-        uint32_t missing_stages = ~found_stages & stageFlags;
+        const uint32_t missing_stages = ~found_stages & stageFlags;
         const char *vuid = is_2 ? "VUID-VkPushConstantsInfo-offset-01795" : "VUID-vkCmdPushConstants-offset-01795";
-        skip |=
-            LogError(vuid, commandBuffer, loc,
-                     "%s, VkPushConstantRange in %s overlapping offset = %" PRIu32 " and size = %" PRIu32 ", do not contain %s.",
-                     string_VkShaderStageFlags(stageFlags).c_str(), FormatHandle(layout).c_str(), offset, size,
-                     string_VkShaderStageFlags(missing_stages).c_str());
+        skip |= LogError(vuid, commandBuffer, loc,
+                         "is called with\nstageFlags (%s), offset (%" PRIu32 "), size (%" PRIu32
+                         ")\nbut the %s doesn't have a VkPushConstantRange with %s",
+                         string_VkShaderStageFlags(stageFlags).c_str(), offset, size, FormatHandle(layout).c_str(),
+                         string_VkShaderStageFlags(missing_stages).c_str());
     }
     return skip;
 }

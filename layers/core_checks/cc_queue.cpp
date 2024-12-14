@@ -272,7 +272,7 @@ bool CoreChecks::ValidateRenderPassStripeSubmitInfo(VkQueue queue, const vvl::Co
     if (rp_submit_info->stripeSemaphoreInfoCount != cb_state.striped_count && !cb_state.resumesRenderPassInstance) {
         skip |= LogError("VUID-VkCommandBufferSubmitInfo-pNext-09446", objlist,
                          loc.pNext(Struct::VkRenderPassStripeSubmitInfoARM, Field::stripeSemaphoreInfoCount),
-                         "= %" PRIu32 " must be equal to  VkRenderPassStripeBeginInfoARM::stripeInfoCount = %" PRIu32 ".",
+                         "(%" PRIu32 ") must be equal to VkRenderPassStripeBeginInfoARM::stripeInfoCount (%" PRIu32 ").",
                          rp_submit_info->stripeSemaphoreInfoCount, cb_state.striped_count);
     }
 

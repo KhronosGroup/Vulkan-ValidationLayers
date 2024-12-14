@@ -36,7 +36,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkComman
                              error_obj.location.dot(Field::viewportCount),
                              "(%" PRIu32
                              ") must "
-                             "not be greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                             "not be greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
                              viewportCount, device_limits.maxViewports);
         }
     }
@@ -283,7 +283,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkComm
             static_cast<int64_t>(pDiscardRectangles[i].offset.x) + static_cast<int64_t>(pDiscardRectangles[i].extent.width);
         if (x_sum > std::numeric_limits<int32_t>::max()) {
             skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-offset-00588", commandBuffer, loc,
-                             "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 ") which will overflow int32_t.",
+                             "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                              pDiscardRectangles[i].offset.x, pDiscardRectangles[i].extent.width, x_sum);
         }
 
@@ -291,7 +291,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkComm
             static_cast<int64_t>(pDiscardRectangles[i].offset.y) + static_cast<int64_t>(pDiscardRectangles[i].extent.height);
         if (y_sum > std::numeric_limits<int32_t>::max()) {
             skip |= LogError("VUID-vkCmdSetDiscardRectangleEXT-offset-00589", commandBuffer, loc,
-                             "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 ") which will overflow int32_t.",
+                             "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is %" PRIi64 " which will overflow int32_t.",
                              pDiscardRectangles[i].offset.y, pDiscardRectangles[i].extent.height, y_sum);
         }
     }
@@ -356,8 +356,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
         const uint64_t sum = static_cast<uint64_t>(firstExclusiveScissor) + static_cast<uint64_t>(exclusiveScissorCount);
         if (sum > device_limits.maxViewports) {
             skip |= LogError("VUID-vkCmdSetExclusiveScissorNV-firstExclusiveScissor-02034", commandBuffer, error_obj.location,
-                             "firstExclusiveScissor + exclusiveScissorCount (=%" PRIu32 " + %" PRIu32 " = %" PRIu64
-                             ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                             "firstExclusiveScissor (%" PRIu32 ") + exclusiveScissorCount (%" PRIu32 ") is %" PRIu64
+                             " which is greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
                              firstExclusiveScissor, exclusiveScissorCount, sum, device_limits.maxViewports);
         }
     }
@@ -404,8 +404,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkComma
     const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
     if ((sum < 1) || (sum > device_limits.maxViewports)) {
         skip |= LogError("VUID-vkCmdSetViewportWScalingNV-firstViewport-01324", commandBuffer, error_obj.location,
-                         "firstViewport + viewportCount (=%" PRIu32 " + %" PRIu32 " = %" PRIu64
-                         ") must be between 1 and VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 "), inculsive.",
+                         "firstViewport (%" PRIu32 ") + viewportCount (%" PRIu32 ") is %" PRIu64
+                         ", which must be between 1 and VkPhysicalDeviceLimits::maxViewports (%" PRIu32 "), inculsive.",
                          firstViewport, viewportCount, sum, device_limits.maxViewports);
     }
 
@@ -433,8 +433,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportShadingRatePalette
     const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
     if (sum > device_limits.maxViewports) {
         skip |= LogError("VUID-vkCmdSetViewportShadingRatePaletteNV-firstViewport-02067", commandBuffer, error_obj.location,
-                         "firstViewport + viewportCount (=%" PRIu32 " + %" PRIu32 " = %" PRIu64
-                         ") is greater than VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 ").",
+                         "firstViewport (%" PRIu32 ") + viewportCount (%" PRIu32 ") is %" PRIu64
+                         ") which is greater than VkPhysicalDeviceLimits::maxViewports (%" PRIu32 ").",
                          firstViewport, viewportCount, sum, device_limits.maxViewports);
     }
 

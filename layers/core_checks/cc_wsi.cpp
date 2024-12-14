@@ -353,8 +353,8 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
                 vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(create_info.pNext);
             if (!win32_full_screen_info) {
                 const LogObjectList objlist(device, create_info.surface);
-                if (LogError("VUID-VkSwapchainCreateInfoKHR-pNext-02679", objlist, create_info_loc,
-                             "pNext chain contains "
+                if (LogError("VUID-VkSwapchainCreateInfoKHR-pNext-02679", objlist, create_info_loc.dot(Field::pNext),
+                             "chain contains "
                              "VkSurfaceFullScreenExclusiveInfoEXT, but does not contain "
                              "VkSurfaceFullScreenExclusiveWin32InfoEXT.")) {
                     return true;

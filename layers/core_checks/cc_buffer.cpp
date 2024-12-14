@@ -391,20 +391,19 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                 alignment_requirement = std::min(alignment_requirement, element_size);
             }
             if (SafeModulo(pCreateInfo->offset, alignment_requirement) != 0) {
-                skip |= LogError(
-                    "VUID-VkBufferViewCreateInfo-buffer-02750", objlist, create_info_loc,
-                    "If buffer was created with usage containing "
-                    "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, "
-                    "VkBufferViewCreateInfo offset (%" PRIuLEAST64
-                    ") must be a multiple of the lesser of "
-                    "VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::storageTexelBufferOffsetAlignmentBytes (%" PRIuLEAST64
-                    ") or, if VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::storageTexelBufferOffsetSingleTexelAlignment "
-                    "(%" PRId32
-                    ") is VK_TRUE, the size of a texel of the requested format. "
-                    "If the size of a texel is a multiple of three bytes, then the size of a "
-                    "single component of format is used instead",
-                    pCreateInfo->offset, phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes,
-                    phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment);
+                skip |= LogError("VUID-VkBufferViewCreateInfo-buffer-02750", objlist, create_info_loc,
+                                 "If buffer was created with usage containing "
+                                 "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, "
+                                 "VkBufferViewCreateInfo offset (%" PRIuLEAST64
+                                 ") must be a multiple of the lesser of "
+                                 "storageTexelBufferOffsetAlignmentBytes (%" PRIuLEAST64
+                                 ") or, if storageTexelBufferOffsetSingleTexelAlignment "
+                                 "(%" PRId32
+                                 ") is VK_TRUE, the size of a texel of the requested format. "
+                                 "If the size of a texel is a multiple of three bytes, then the size of a "
+                                 "single component of format is used instead",
+                                 pCreateInfo->offset, phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes,
+                                 phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment);
             }
         }
         if (buffer_state.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) {
@@ -413,20 +412,19 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                 alignment_requirement = std::min(alignment_requirement, element_size);
             }
             if (SafeModulo(pCreateInfo->offset, alignment_requirement) != 0) {
-                skip |= LogError(
-                    "VUID-VkBufferViewCreateInfo-buffer-02751", objlist, create_info_loc,
-                    "If buffer was created with usage containing "
-                    "VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, "
-                    "VkBufferViewCreateInfo offset (%" PRIuLEAST64
-                    ") must be a multiple of the lesser of "
-                    "VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::uniformTexelBufferOffsetAlignmentBytes (%" PRIuLEAST64
-                    ") or, if VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::uniformTexelBufferOffsetSingleTexelAlignment "
-                    "(%" PRId32
-                    ") is VK_TRUE, the size of a texel of the requested format. "
-                    "If the size of a texel is a multiple of three bytes, then the size of a "
-                    "single component of format is used instead",
-                    pCreateInfo->offset, phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes,
-                    phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment);
+                skip |= LogError("VUID-VkBufferViewCreateInfo-buffer-02751", objlist, create_info_loc,
+                                 "If buffer was created with usage containing "
+                                 "VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, "
+                                 "VkBufferViewCreateInfo offset (%" PRIuLEAST64
+                                 ") must be a multiple of the lesser of "
+                                 "uniformTexelBufferOffsetAlignmentBytes (%" PRIuLEAST64
+                                 ") or, if uniformTexelBufferOffsetSingleTexelAlignment "
+                                 "(%" PRId32
+                                 ") is VK_TRUE, the size of a texel of the requested format. "
+                                 "If the size of a texel is a multiple of three bytes, then the size of a "
+                                 "single component of format is used instead",
+                                 pCreateInfo->offset, phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes,
+                                 phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment);
             }
         }
     }

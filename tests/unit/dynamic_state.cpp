@@ -2140,17 +2140,8 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    // VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442
-    CreatePipelineHelper pipe(*this);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-
     m_command_buffer.Begin();
 
-    // VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
@@ -2163,7 +2154,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
@@ -2178,7 +2168,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-vkCmdSetVertexInputEXT-binding-04793
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
@@ -2189,7 +2178,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-vkCmdSetVertexInputEXT-pVertexBindingDescriptions-04794
     {
         VkVertexInputBindingDescription2EXT bindings[2] = {
             {VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1},
@@ -2199,7 +2187,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-vkCmdSetVertexInputEXT-pVertexAttributeDescriptions-04795
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
@@ -2211,7 +2198,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputBindingDescription2EXT-binding-04796
     {
         VkVertexInputBindingDescription2EXT binding = {VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,
                                                        nullptr,
@@ -2224,7 +2210,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputBindingDescription2EXT-stride-04797
     {
         VkVertexInputBindingDescription2EXT binding = {VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,
                                                        nullptr,
@@ -2237,7 +2222,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputBindingDescription2EXT-divisor-04798
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_INSTANCE, 0};
@@ -2246,7 +2230,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputBindingDescription2EXT-divisor-04799
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_INSTANCE, 2};
@@ -2254,8 +2237,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1, &binding, 0, nullptr);
         m_errorMonitor->VerifyFound();
     }
-
-    // VUID-VkVertexInputAttributeDescription2EXT-location-06228
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
@@ -2270,7 +2251,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputAttributeDescription2EXT-binding-06229
     {
         VkVertexInputBindingDescription2EXT binding = {
             VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr, 0, 0, VK_VERTEX_INPUT_RATE_VERTEX, 1};
@@ -2286,7 +2266,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputAttributeDescription2EXT-offset-06230
     if (m_device->Physical().limits_.maxVertexInputAttributeOffset <
         std::numeric_limits<decltype(m_device->Physical().limits_.maxVertexInputAttributeOffset)>::max()) {
         VkVertexInputBindingDescription2EXT binding = {
@@ -2299,7 +2278,6 @@ TEST_F(NegativeDynamicState, VertexInputDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // VUID-VkVertexInputAttributeDescription2EXT-format-04805
     {
         const VkFormat format = VK_FORMAT_D16_UNORM;
         VkFormatProperties format_props;

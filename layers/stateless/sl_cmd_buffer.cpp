@@ -121,17 +121,18 @@ bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersE
     }
 
     if (firstBinding >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
-        skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-firstBinding-02356", commandBuffer, error_obj.location,
-                         "The firstBinding(%" PRIu32
-                         ") index is greater than or equal to "
-                         "maxTransformFeedbackBuffers(%" PRIu32 ").",
+        skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-firstBinding-02356", commandBuffer,
+                         error_obj.location.dot(Field::firstBinding),
+                         "(%" PRIu32
+                         ") is greater than or equal to "
+                         "maxTransformFeedbackBuffers (%" PRIu32 ").",
                          firstBinding, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
     }
 
     if (firstBinding + bindingCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
-        skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-firstBinding-02357", commandBuffer, error_obj.location,
-                         "The sum of firstBinding(%" PRIu32 ") and bindCount(%" PRIu32
-                         ") is greater than maxTransformFeedbackBuffers(%" PRIu32 ").",
+        skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-firstBinding-02357", commandBuffer,
+                         error_obj.location.dot(Field::firstBinding),
+                         "(%" PRIu32 ") plus bindCount (%" PRIu32 ") is greater than maxTransformFeedbackBuffers (%" PRIu32 ").",
                          firstBinding, bindingCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
     }
 
@@ -144,8 +145,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersE
                                  error_obj.location.dot(Field::pSizes, i),
                                  "(%" PRIu64
                                  ") is not VK_WHOLE_SIZE and is greater than "
-                                 "maxTransformFeedbackBufferSize.",
-                                 pSizes[i]);
+                                 "maxTransformFeedbackBufferSize (%" PRIu64 ").",
+                                 pSizes[i], phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferSize);
             }
         }
     }
@@ -163,19 +164,18 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(
     }
 
     if (firstCounterBuffer >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
-        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02368", commandBuffer, error_obj.location,
-                         "The firstCounterBuffer(%" PRIu32
-                         ") index is greater than or equal to "
-                         "maxTransformFeedbackBuffers(%" PRIu32 ").",
-                         firstCounterBuffer, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02368", commandBuffer,
+                         error_obj.location.dot(Field::firstCounterBuffer),
+                         "(%" PRIu32 ") is not less than maxTransformFeedbackBuffers (%" PRIu32 ").", firstCounterBuffer,
+                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
     }
 
     if (firstCounterBuffer + counterBufferCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
-        skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02369", commandBuffer, error_obj.location,
-                         "The sum of firstCounterBuffer(%" PRIu32 ") and counterBufferCount(%" PRIu32
-                         ") is greater than maxTransformFeedbackBuffers(%" PRIu32 ").",
-                         firstCounterBuffer, counterBufferCount,
-                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+        skip |= LogError(
+            "VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02369", commandBuffer,
+            error_obj.location.dot(Field::firstCounterBuffer),
+            "(%" PRIu32 ") plus counterBufferCount (%" PRIu32 ") is greater than maxTransformFeedbackBuffers (%" PRIu32 ").",
+            firstCounterBuffer, counterBufferCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
     }
 
     return skip;
@@ -195,24 +195,23 @@ bool StatelessValidation::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCom
     // pCounterBuffers and pCounterBufferOffsets are optional and may be nullptr.
     //  Additionaly, pCounterBufferOffsets must be nullptr if pCounterBuffers is nullptr.
     if (pCounterBuffers == nullptr && pCounterBufferOffsets != nullptr) {
-        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffer-02379", commandBuffer, error_obj.location,
-                         "pCounterBuffers is NULL and pCounterBufferOffsets is not NULL.");
+        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffer-02379", commandBuffer,
+                         error_obj.location.dot(Field::pCounterBuffers), "is NULL but pCounterBufferOffsets is not NULL.");
     }
 
     if (firstCounterBuffer >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
-        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02376", commandBuffer, error_obj.location,
-                         "The firstCounterBuffer(%" PRIu32
-                         ") index is greater than or equal to "
-                         "maxTransformFeedbackBuffers(%" PRIu32 ").",
-                         firstCounterBuffer, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02376", commandBuffer,
+                         error_obj.location.dot(Field::firstCounterBuffer),
+                         "(%" PRIu32 ") is not less than maxTransformFeedbackBuffers (%" PRIu32 ").", firstCounterBuffer,
+                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
     }
 
     if (firstCounterBuffer + counterBufferCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
-        skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02377", commandBuffer, error_obj.location,
-                         "The sum of firstCounterBuffer(%" PRIu32 ") and counterBufferCount(%" PRIu32
-                         ") is greater than maxTransformFeedbackBuffers(%" PRIu32 ").",
-                         firstCounterBuffer, counterBufferCount,
-                         phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+        skip |= LogError(
+            "VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02377", commandBuffer,
+            error_obj.location.dot(Field::firstCounterBuffer),
+            "(%" PRIu32 ") plus counterBufferCount (%" PRIu32 ") is greater than maxTransformFeedbackBuffers (%" PRIu32 ").",
+            firstCounterBuffer, counterBufferCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
     }
 
     return skip;
@@ -303,14 +302,13 @@ bool StatelessValidation::ValidateCmdPushConstants(VkCommandBuffer commandBuffer
     if (offset >= max_push_constants_size) {
         const char *vuid = is_2 ? "VUID-VkPushConstantsInfo-offset-00370" : "VUID-vkCmdPushConstants-offset-00370";
         skip |= LogError(vuid, commandBuffer, loc.dot(Field::offset),
-                         "(%" PRIu32 ") that exceeds this device's maxPushConstantSize of %" PRIu32 ".", offset,
-                         max_push_constants_size);
+                         "(%" PRIu32 ") is greater than maxPushConstantSize (%" PRIu32 ").", offset, max_push_constants_size);
     }
     if (size > max_push_constants_size - offset) {
         const char *vuid = is_2 ? "VUID-VkPushConstantsInfo-size-00371" : "VUID-vkCmdPushConstants-size-00371";
         skip |= LogError(vuid, commandBuffer, loc.dot(Field::offset),
-                         "(%" PRIu32 ") and size (%" PRIu32 ") that exceeds this device's maxPushConstantSize of %" PRIu32 ".",
-                         offset, size, max_push_constants_size);
+                         "(%" PRIu32 ") plus size (%" PRIu32 ") is greater than maxPushConstantSize (%" PRIu32 ").", offset, size,
+                         max_push_constants_size);
     }
 
     if (SafeModulo(size, 4) != 0) {
@@ -381,9 +379,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
     bool skip = false;
 
     if ((pConditionalRenderingBegin->offset & 3) != 0) {
-        skip |= LogError("VUID-VkConditionalRenderingBeginInfoEXT-offset-01984", commandBuffer, error_obj.location,
-                         " pConditionalRenderingBegin->offset (%" PRIu64 ") is not a multiple of 4.",
-                         pConditionalRenderingBegin->offset);
+        skip |= LogError("VUID-VkConditionalRenderingBeginInfoEXT-offset-01984", commandBuffer,
+                         error_obj.location.dot(Field::pConditionalRenderingBegin).dot(Field::offset),
+                         "(%" PRIu64 ") is not a multiple of 4.", pConditionalRenderingBegin->offset);
     }
 
     return skip;
@@ -594,8 +592,8 @@ bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommand
 
     if (!(viewport.width > 0.0f)) {
         width_healthy = false;
-        skip |=
-            LogError("VUID-VkViewport-width-01770", object, loc.dot(Field::width), "(%f) is not greater than 0.0.", viewport.width);
+        skip |= LogError("VUID-VkViewport-width-01770", object, loc.dot(Field::width), "(%f) is not greater than zero.",
+                         viewport.width);
     } else if (!(f_lte_u32_exact(viewport.width, max_w) || f_lte_u32_direct(viewport.width, max_w))) {
         width_healthy = false;
         skip |= LogError("VUID-VkViewport-width-01771", object, loc.dot(Field::width),
@@ -610,7 +608,7 @@ bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommand
 
     if (!negative_height_enabled && !(viewport.height > 0.0f)) {
         height_healthy = false;
-        skip |= LogError("VUID-VkViewport-apiVersion-07917", object, loc.dot(Field::height), "(%f) is not greater 0.0.",
+        skip |= LogError("VUID-VkViewport-apiVersion-07917", object, loc.dot(Field::height), "(%f) is not greater zero.",
                          viewport.height);
     } else if (!(f_lte_u32_exact(fabsf(viewport.height), max_h) || f_lte_u32_direct(fabsf(viewport.height), max_h))) {
         height_healthy = false;
@@ -658,12 +656,12 @@ bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommand
         const float boundary = viewport.y + viewport.height;
 
         if (boundary > device_limits.viewportBoundsRange[1]) {
-            skip |= LogError("VUID-VkViewport-y-01233", object, loc,
-                             "y (%f) + height (%f) is %f which exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (%f).",
+            skip |= LogError("VUID-VkViewport-y-01233", object, loc.dot(Field::y),
+                             "(%f) + height (%f) is %f which exceeds VkPhysicalDeviceLimits::viewportBoundsRange[1] (%f).",
                              viewport.y, viewport.height, boundary, device_limits.viewportBoundsRange[1]);
         } else if (negative_height_enabled && boundary < device_limits.viewportBoundsRange[0]) {
-            skip |= LogError("VUID-VkViewport-y-01777", object, loc,
-                             "y (%f) + height (%f) is %f which is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (%f).",
+            skip |= LogError("VUID-VkViewport-y-01777", object, loc.dot(Field::y),
+                             "(%f) + height (%f) is %f which is less than VkPhysicalDeviceLimits::viewportBoundsRange[0] (%f).",
                              viewport.y, viewport.height, boundary, device_limits.viewportBoundsRange[0]);
         }
     }
