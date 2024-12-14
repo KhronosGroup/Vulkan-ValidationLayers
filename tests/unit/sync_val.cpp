@@ -3962,12 +3962,13 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
                                        },
                                        0, &layout_createinfo_binding_flags, 0);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    const uint32_t zeroit_value = 0;
+    vkt::Buffer doit_buffer(*m_device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &zeroit_value, sizeof(uint32_t));
+
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-
-    vkt::Buffer doit_buffer(*m_device, buffer_create_info);
-
     auto buffer = std::make_unique<vkt::Buffer>();
     buffer->init(*m_device, buffer_create_info);
 
@@ -4115,8 +4116,6 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     vk::CmdDrawIndexed(m_command_buffer.handle(), 1, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
