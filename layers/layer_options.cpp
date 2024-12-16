@@ -17,13 +17,16 @@
  */
 
 #include "layer_options.h"
+#include <vulkan/vulkan_core.h>
 #include "chassis/validation_object.h"
 #include "error_message/log_message_type.h"
 #include "error_message/logging.h"
 #include "error_message/error_location.h"
 #include "generated/error_location_helper.h"
 #include "utils/hash_util.h"
+#include <cstring>
 #include <string>
+#include <unordered_set>
 #include <vector>
 #include <vulkan/layer/vk_layer_settings.hpp>
 
@@ -466,7 +469,7 @@ void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delim
 // very unlikely things to hit validation layers messages (as everything after will likely crumble) so should be ok.
 //
 // Returns if valid
-static bool ValidateLayerSettings(const VkLayerSettingsCreateInfoEXT *layer_settings) {
+static bool ValidateLayerSettingsCreateInfo(const VkLayerSettingsCreateInfoEXT *layer_settings) {
     bool valid = true;
     if (!layer_settings) return valid;
     const Location loc(vvl::Func::vkCreateInstance, vvl::Field::pCreateInfo);
@@ -502,6 +505,138 @@ static bool ValidateLayerSettings(const VkLayerSettingsCreateInfoEXT *layer_sett
         valid = false;
     }
     return valid;
+}
+
+// TODO - This should be in https://github.com/KhronosGroup/Vulkan-Utility-Libraries/issues/254
+// Doing here in VVL until added in VUL
+// If it will not be don in VUL for a while, we should at least generate this from the JSON
+static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *layer_setting_create_info,
+                                          VkuLayerSettingSet layer_setting_set, std::vector<std::string> &setting_warnings) {
+    if (!layer_setting_create_info) return;
+    // set of const char* is not cross platform and Windows doesn't detect duplicates
+    vvl::unordered_set<std::string> used_settings;
+
+    for (uint32_t i = 0; i < layer_setting_create_info->settingCount; i++) {
+        const VkLayerSettingEXT &setting = layer_setting_create_info->pSettings[i];
+        if (strcmp(OBJECT_LAYER_NAME, setting.pLayerName) != 0) continue;
+
+        VkLayerSettingTypeEXT required_type = VK_LAYER_SETTING_TYPE_MAX_ENUM_EXT;
+        if (strcmp(VK_LAYER_VALIDATE_BEST_PRACTICES, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_VALIDATE_BEST_PRACTICES_ARM, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_VALIDATE_BEST_PRACTICES_AMD, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_VALIDATE_BEST_PRACTICES_IMG, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_VALIDATE_SYNC, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_CHECK_SHADERS, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_THREAD_SAFETY, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_STATELESS_PARAM, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_OBJECT_LIFETIME, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_VALIDATE_CORE, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_UNIQUE_HANDLES, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_CHECK_SHADERS_CACHING, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_CHECK_COMMAND_BUFFER, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_CHECK_OBJECT_IN_USE, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_CHECK_QUERY, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_CHECK_IMAGE_LAYOUT, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_FINE_GRAINED_LOCKING, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_MESSAGE_ID_FILTER, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_STRING_EXT;
+        } else if (strcmp(VK_LAYER_ENABLE_MESSAGE_LIMIT, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_DUPLICATE_MESSAGE_LIMIT, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_UINT32_EXT;
+        } else if (strcmp(VK_LAYER_PRINTF_ONLY_PRESET, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_PRINTF_ENABLE, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_PRINTF_TO_STDOUT, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_PRINTF_VERBOSE, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_PRINTF_BUFFER_SIZE, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_UINT32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_ENABLE, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_SHADER_INSTRUMENTATION, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_DESCRIPTOR_CHECKS, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_UINT32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_VALIDATE_RAY_QUERY, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_BUFFERS_VALIDATION, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_INDIRECT_DISPATCHES_BUFFERS, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_INDIRECT_TRACE_RAYS_BUFFERS, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_BUFFER_COPIES, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_INDEX_BUFFERS, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_RESERVE_BINDING_SLOT, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_SYNCVAL_SUBMIT_TIME_VALIDATION, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_SYNCVAL_SHADER_ACCESSES_HEURISTIC, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_LOG_FILENAME, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_STRING_EXT;
+        } else if (strcmp(VK_LAYER_DEBUG_ACTION, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_STRING_EXT;
+        } else if (strcmp(VK_LAYER_REPORT_FLAGS, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_STRING_EXT;
+        }
+
+        if (required_type != VK_LAYER_SETTING_TYPE_MAX_ENUM_EXT && setting.type != required_type) {
+            setting_warnings.emplace_back(
+                "The setting " + std::string(setting.pSettingName) + " in VkLayerSettingsCreateInfoEXT was set to type " +
+                std::string(string_VkLayerSettingTypeEXT(setting.type)) + " but requires type " +
+                std::string(string_VkLayerSettingTypeEXT(required_type)) + " and the value may be parsed incorrectly.");
+        }
+
+        if (used_settings.count(setting.pSettingName)) {
+            setting_warnings.emplace_back(
+                "The setting " + std::string(setting.pSettingName) +
+                " in VkLayerSettingsCreateInfoEXT was listed twice and only the first one listed will be recognized.");
+        }
+        used_settings.insert(setting.pSettingName);
+    }
 }
 
 static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, CHECK_DISABLED &disable_data,
@@ -794,12 +929,14 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
 
     VkuLayerSettingSet layer_setting_set = VK_NULL_HANDLE;
     auto layer_setting_create_info = vkuFindLayerSettingsCreateInfo(settings_data->create_info);
-    if (!ValidateLayerSettings(layer_setting_create_info)) {
+    if (!ValidateLayerSettingsCreateInfo(layer_setting_create_info)) {
         return;  // nullptr will crash things
     }
     vkuCreateLayerSettingSet(OBJECT_LAYER_NAME, layer_setting_create_info, nullptr, nullptr, &layer_setting_set);
 
     vkuSetLayerSettingCompatibilityNamespace(layer_setting_set, GetDefaultPrefix());
+
+    ValidateLayerSettingsProvided(layer_setting_create_info, layer_setting_set, setting_warnings);
 
     // Read legacy "enables" flags for backward compatibility
     std::vector<std::string> enables;
