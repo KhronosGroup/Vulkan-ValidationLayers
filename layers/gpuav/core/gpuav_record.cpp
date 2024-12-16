@@ -455,8 +455,7 @@ void Validator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint3
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    valcmd::DrawIndexed(*this, *cb_state, record_obj.location, indexCount, firstIndex, vertexOffset,
-                        "VUID-vkCmdDrawIndexed-None-02721");
+
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
@@ -557,11 +556,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffe
 
     valcmd::DrawIndexedIndirectIndexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, count, VK_NULL_HANDLE, 0,
                                            "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
-#if 0
-    valcmd::DrawIndexedIndirectVertexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, count, VK_NULL_HANDLE, 0,
-                                            "VUID-vkCmdDrawIndexedIndirect-None-02721");
-#endif
+
     valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, count,
                                                         VK_NULL_HANDLE, 0, "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -705,11 +700,7 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
 
     valcmd::DrawIndexedIndirectIndexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, maxDrawCount, countBuffer,
                                            countBufferOffset, "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
-#if 0
-    valcmd::DrawIndexedIndirectVertexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, maxDrawCount,
-                                            countBuffer, countBufferOffset, "VUID-vkCmdDrawIndexedIndirectCount-None-02721");
-#endif
+
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }

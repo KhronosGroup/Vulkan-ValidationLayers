@@ -82,12 +82,14 @@ class Buffer {
     VkDeviceAddress device_address = 0;
 };
 
+// Register/Create and register GPU resources, all to be destroyed upon a call to DestroyResources
 class GpuResourcesManager {
   public:
     explicit GpuResourcesManager(DescriptorSetManager &descriptor_set_manager) : descriptor_set_manager_(descriptor_set_manager) {}
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
-    void ManageBuffer(Buffer mem_buffer);
+    vko::Buffer GetManagedBuffer(Validator &gpuav, const Location &loc, const VkBufferCreateInfo &ci,
+                                 const VmaAllocationCreateInfo &vma_ci);
 
     void DestroyResources();
 

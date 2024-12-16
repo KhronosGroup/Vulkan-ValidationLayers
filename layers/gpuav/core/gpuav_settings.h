@@ -48,11 +48,13 @@ struct GpuAVSettings {
         bool buffer_device_address = true;
         bool ray_query = true;
         bool post_process_descriptor_index = true;
+        bool vertex_attribute_fetch_oob = true;
     } shader_instrumentation;
 
     bool IsShaderInstrumentationEnabled() const {
         return shader_instrumentation.descriptor_checks || shader_instrumentation.buffer_device_address ||
-               shader_instrumentation.ray_query || shader_instrumentation.post_process_descriptor_index;
+               shader_instrumentation.ray_query || shader_instrumentation.post_process_descriptor_index ||
+               shader_instrumentation.vertex_attribute_fetch_oob;
     }
     bool IsSpirvModified() const { return IsShaderInstrumentationEnabled() || debug_printf_enabled; }
 
@@ -62,6 +64,7 @@ struct GpuAVSettings {
         shader_instrumentation.buffer_device_address = false;
         shader_instrumentation.ray_query = false;
         shader_instrumentation.post_process_descriptor_index = false;
+        shader_instrumentation.vertex_attribute_fetch_oob = false;
         // Because of this setting, cannot really have an "enabled" parameter to pass to this method
         select_instrumented_shaders = false;
     }

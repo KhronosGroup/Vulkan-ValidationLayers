@@ -27,6 +27,7 @@
 
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/shader_object_state.h"
+#include "state_tracker/shader_module.h"
 
 namespace gpuav {
 
@@ -165,8 +166,91 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, Vk
     }
 }
 
+// Computes vertex attributes fetching limits based on the set of bound vertex buffers.
+// Used to detect out of bounds indices in index buffers.
+static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexAttributeFetchLimit>> GetVertexAttributeFetchLimits(
+    const vvl::CommandBuffer &cb_state) {
+    const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const LastBound &last_bound = cb_state.lastBound[lv_bind_point];
+    const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
+    const bool use_shader_objects = pipeline_state == nullptr;
+
+    const bool dynamic_vertex_input = use_shader_objects || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+
+    const auto &vertex_binding_descriptions =
+        dynamic_vertex_input ? cb_state.dynamic_state_value.vertex_bindings : pipeline_state->vertex_input_state->bindings;
+
+    std::optional<VertexAttributeFetchLimit> vertex_attribute_fetch_limit_vertex_input_rate;
+    std::optional<VertexAttributeFetchLimit> vertex_attribute_fetch_limit_instance_input_rate;
+
+    vvl::unordered_set<uint32_t> vertex_shader_used_locations;
+    {
+        const ::spirv::EntryPoint *vertex_entry_point = last_bound.GetVertexEntryPoint();
+        if (!vertex_entry_point) {
+            return {vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate};
+        }
+        for (const ::spirv::StageInterfaceVariable &interface_var : vertex_entry_point->stage_interface_variables) {
+            for (const ::spirv::InterfaceSlot &interface_slot : interface_var.interface_slots) {
+                vertex_shader_used_locations.insert(interface_slot.Location());
+            }
+        }
+    }
+
+    for (const auto &[binding, vertex_binding_desc] : vertex_binding_descriptions) {
+        const vvl::VertexBufferBinding *vbb = vvl::Find(cb_state.current_vertex_buffer_binding_info, binding);
+        if (!vbb) {
+            // Validation error
+            continue;
+        }
+
+        for (const auto &[location, attrib] : vertex_binding_desc.locations) {
+            if (vertex_shader_used_locations.find(location) == vertex_shader_used_locations.end()) {
+                continue;
+            }
+            const VkDeviceSize attribute_size = GetVertexInputFormatSize(attrib.desc.format);
+
+            const VkDeviceSize stride =
+                vbb->stride != 0 ? vbb->stride : attribute_size;  // Tracked stride should already handle all possible value origin
+
+            VkDeviceSize vertex_buffer_remaining_size =
+                vbb->effective_size > attrib.desc.offset ? vbb->effective_size - attrib.desc.offset : 0;
+
+            VkDeviceSize vertex_attributes_count = vertex_buffer_remaining_size / stride;
+            if (vertex_buffer_remaining_size > vertex_attributes_count * stride) {
+                vertex_buffer_remaining_size -= vertex_attributes_count * stride;
+            } else {
+                vertex_buffer_remaining_size = 0;
+            }
+
+            // maybe room for one more attribute but not full stride - not having stride space does not matter for last element
+            if (vertex_buffer_remaining_size >= attribute_size) {
+                vertex_attributes_count += 1;
+            }
+
+            std::optional<VertexAttributeFetchLimit> *vertex_attribute_fetch_limit_ptr =
+                (vertex_binding_desc.desc.inputRate == VK_VERTEX_INPUT_RATE_VERTEX)
+                    ? &vertex_attribute_fetch_limit_vertex_input_rate
+                    : &vertex_attribute_fetch_limit_instance_input_rate;
+
+            if (!vertex_attribute_fetch_limit_ptr->has_value()) {
+                *vertex_attribute_fetch_limit_ptr = VertexAttributeFetchLimit{};
+            }
+            (*vertex_attribute_fetch_limit_ptr)->max_vertex_attributes_count =
+                std::min((*vertex_attribute_fetch_limit_ptr)->max_vertex_attributes_count, vertex_attributes_count);
+            if ((*vertex_attribute_fetch_limit_ptr)->max_vertex_attributes_count == vertex_attributes_count) {
+                (*vertex_attribute_fetch_limit_ptr)->binding_info = *vbb;
+                (*vertex_attribute_fetch_limit_ptr)->attribute.location = attrib.desc.location;
+                (*vertex_attribute_fetch_limit_ptr)->attribute.binding = attrib.desc.binding;
+                (*vertex_attribute_fetch_limit_ptr)->attribute.format = attrib.desc.format;
+                (*vertex_attribute_fetch_limit_ptr)->attribute.offset = attrib.desc.offset;
+            }
+        }
+    }
+    return {vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate};
+}
+
 void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkDescriptorSet instrumentation_desc_set,
-                                  const Location &loc) {
+                                  const Location &loc, InstrumentationErrorBlob &out_instrumentation_error_blob) {
     std::vector<VkWriteDescriptorSet> desc_writes = {};
 
     // Error output buffer
@@ -276,6 +360,61 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
         desc_writes.emplace_back(wds);
     }
 
+    // Vertex attribute fetching
+    VkDescriptorBufferInfo vertex_attribute_fetch_limits_buffer_bi = {};
+    if (gpuav.gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob) {
+        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+        buffer_info.size = 4 * sizeof(uint32_t);
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        VmaAllocationCreateInfo alloc_info = {};
+        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        vko::Buffer vertex_attribute_fetch_limits_buffer =
+            cb_state.gpu_resources_manager.GetManagedBuffer(gpuav, loc, buffer_info, alloc_info);
+        if (vertex_attribute_fetch_limits_buffer.IsDestroyed()) {
+            return;
+        }
+
+        const auto [vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate] =
+            GetVertexAttributeFetchLimits(cb_state);
+        auto vertex_attribute_fetch_limits_buffer_ptr = (uint32_t *)vertex_attribute_fetch_limits_buffer.MapMemory(loc);
+        if (vertex_attribute_fetch_limit_vertex_input_rate.has_value()) {
+            vertex_attribute_fetch_limits_buffer_ptr[0] = 1u;
+            vertex_attribute_fetch_limits_buffer_ptr[1] =
+                (uint32_t)vertex_attribute_fetch_limit_vertex_input_rate->max_vertex_attributes_count;
+        } else {
+            vertex_attribute_fetch_limits_buffer_ptr[0] = 0u;
+            vertex_attribute_fetch_limits_buffer_ptr[1] = std::numeric_limits<uint32_t>::max();
+        }
+        if (vertex_attribute_fetch_limit_instance_input_rate.has_value()) {
+            vertex_attribute_fetch_limits_buffer_ptr[2] = 1u;
+            vertex_attribute_fetch_limits_buffer_ptr[3] =
+                (uint32_t)vertex_attribute_fetch_limit_instance_input_rate->max_vertex_attributes_count;
+        } else {
+            vertex_attribute_fetch_limits_buffer_ptr[2] = 0u;
+            vertex_attribute_fetch_limits_buffer_ptr[3] = std::numeric_limits<uint32_t>::max();
+        }
+
+        vertex_attribute_fetch_limits_buffer.UnmapMemory();
+        out_instrumentation_error_blob.vertex_attribute_fetch_limit_vertex_input_rate =
+            vertex_attribute_fetch_limit_vertex_input_rate;
+        out_instrumentation_error_blob.vertex_attribute_fetch_limit_instance_input_rate =
+            vertex_attribute_fetch_limit_instance_input_rate;
+        out_instrumentation_error_blob.index_buffer_binding = cb_state.index_buffer_binding;
+
+        vertex_attribute_fetch_limits_buffer_bi.buffer = vertex_attribute_fetch_limits_buffer.VkHandle();
+        vertex_attribute_fetch_limits_buffer_bi.offset = 0;
+        vertex_attribute_fetch_limits_buffer_bi.range = VK_WHOLE_SIZE;
+
+        VkWriteDescriptorSet wds = vku::InitStructHelper();
+        wds.dstSet = instrumentation_desc_set;
+        wds.dstBinding = glsl::kBindingInstVertexAttributeFetchLimits;
+        wds.descriptorCount = 1;
+        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        wds.pBufferInfo = &vertex_attribute_fetch_limits_buffer_bi;
+        desc_writes.emplace_back(wds);
+    }
+
     DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
 }
 
@@ -306,7 +445,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
 
     // Pathetic way of trying to make sure we take care of updating all
     // bindings of the instrumentation descriptor set
-    assert(gpuav.instrumentation_bindings_.size() == 8);
+    assert(gpuav.instrumentation_bindings_.size() == 9);
 
     if (gpuav.gpuav_settings.debug_printf_enabled) {
         if (!debug_printf::UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, bind_point, loc)) {
@@ -315,8 +454,9 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
             return;
         }
     }
+    InstrumentationErrorBlob instrumentation_error_blob;
     if (gpuav.gpuav_settings.IsShaderInstrumentationEnabled()) {
-        UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, loc);
+        UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, loc, instrumentation_error_blob);
     }
 
     const uint32_t operation_index = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)          ? cb_state.draw_index
@@ -441,15 +581,15 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
 
     CommandBuffer::ErrorLoggerFunc error_logger =
         [loc, descriptor_binding_index, descriptor_binding_list = &cb_state.descriptor_command_bindings, bind_point,
-         last_label_command_i, operation_index, uses_shader_object,
-         uses_robustness](Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
-                          const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
+         last_label_command_i, operation_index, uses_shader_object, uses_robustness,
+         instrumentation_error_blob](Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
+                                     const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
             bool skip = false;
 
             const DescriptorCommandBinding *descriptor_command_binding =
                 descriptor_binding_index != vvl::kU32Max ? &(*descriptor_binding_list)[descriptor_binding_index] : nullptr;
-            skip |= LogInstrumentationError(gpuav, cb_state, objlist, initial_label_stack, last_label_command_i, operation_index,
-                                            error_record,
+            skip |= LogInstrumentationError(gpuav, cb_state, objlist, instrumentation_error_blob, initial_label_stack,
+                                            last_label_command_i, operation_index, error_record,
                                             descriptor_command_binding ? descriptor_command_binding->bound_descriptor_sets
                                                                        : std::vector<std::shared_ptr<DescriptorSet>>(),
                                             bind_point, uses_shader_object, uses_robustness, loc);
@@ -738,6 +878,128 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
     return error_found;
 }
 
+bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
+                               std::string &out_vuid_msg, const Location &loc, const InstrumentationErrorBlob &inst_error_blob) {
+    const uint32_t error_sub_code = error_record[glsl::kHeaderErrorSubCodeOffset];
+    if (error_sub_code != glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex &&
+        error_sub_code != glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
+        return false;
+    }
+
+    switch (loc.function) {
+        case vvl::Func::vkCmdDrawIndexed:
+            out_vuid_msg = "VUID-vkCmdDrawIndexed-None-02721";
+            break;
+        case vvl::Func::vkCmdDrawIndexedIndirectCount:
+            out_vuid_msg = "VUID-vkCmdDrawIndexedIndirectCount-None-02721";
+            break;
+        case vvl::Func::vkCmdDrawIndexedIndirect:
+            out_vuid_msg = "VUID-vkCmdDrawIndexedIndirect-None-02721";
+            break;
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9323
+#if 0
+        case vvl::Func::vkCmdDrawMultiIndexedEXT:
+            out_vuid_msg = "VUID-vkCmdDrawMultiIndexedEXT-None-02721";
+            break;
+#endif
+        default:
+            return false;
+    }
+
+    assert(inst_error_blob.vertex_attribute_fetch_limit_vertex_input_rate.has_value() ||
+           inst_error_blob.vertex_attribute_fetch_limit_instance_input_rate.has_value());
+    assert(inst_error_blob.index_buffer_binding.has_value());
+
+    auto add_vertex_buffer_binding_info = [&gpuav](const VertexAttributeFetchLimit &vertex_attribute_fetch_limit,
+                                                   std::string &out) {
+        out += "- Buffer: ";
+        out += gpuav.FormatHandle(vertex_attribute_fetch_limit.binding_info.buffer);
+        out += '\n';
+        out += "- Binding: ";
+        out += std::to_string(vertex_attribute_fetch_limit.attribute.binding);
+        out += '\n';
+        out += "- Binding size (effective): ";
+        out += std::to_string(vertex_attribute_fetch_limit.binding_info.effective_size);
+        out += " bytes\n";
+        out += "- Binding offset: ";
+        out += std::to_string(vertex_attribute_fetch_limit.binding_info.offset);
+        out += " bytes\n";
+        out += "- Binding stride: ";
+        out += std::to_string(vertex_attribute_fetch_limit.binding_info.stride);
+        out += " bytes\n";
+        out += "- Vertices count: ";
+        out += std::to_string(vertex_attribute_fetch_limit.max_vertex_attributes_count);
+        out += '\n';
+    };
+
+    auto add_vertex_attribute_info = [](const VertexAttributeFetchLimit &vertex_attribute_fetch_limit, std::string &out) {
+        out += "At least the following vertex attribute caused OOB access:\n";
+        out += "- Location: ";
+        out += std::to_string(vertex_attribute_fetch_limit.attribute.location);
+        out += '\n';
+        out += "- Binding: ";
+        out += std::to_string(vertex_attribute_fetch_limit.attribute.binding);
+        out += '\n';
+        out += "- Format: ";
+        out += string_VkFormat(vertex_attribute_fetch_limit.attribute.format);
+        out += '\n';
+        out += "- Offset: ";
+        out += std::to_string(vertex_attribute_fetch_limit.attribute.offset);
+        out += " bytes\n";
+    };
+
+    if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
+        out_error_msg += "Vertex index ";
+        const uint32_t oob_vertex_index = error_record[glsl::kHeaderStageInfoOffset_0];
+        out_error_msg += std::to_string(oob_vertex_index);
+    } else {
+        out_error_msg += "Instance index ";
+        const uint32_t oob_instance_index = error_record[glsl::kHeaderStageInfoOffset_1];
+        out_error_msg += std::to_string(oob_instance_index);
+    }
+
+    out_error_msg += " is not within the smallest bound vertex buffer.\n";
+
+    if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
+        out_error_msg += "Smallest vertex buffer binding info, causing OOB access with VK_VERTEX_INPUT_RATE_VERTEX:\n";
+        add_vertex_buffer_binding_info(*inst_error_blob.vertex_attribute_fetch_limit_vertex_input_rate, out_error_msg);
+        add_vertex_attribute_info(*inst_error_blob.vertex_attribute_fetch_limit_vertex_input_rate, out_error_msg);
+
+    } else {
+        out_error_msg += "Smallest vertex buffer binding info, causing OOB access with VK_VERTEX_INPUT_RATE_INSTANCE:\n";
+        add_vertex_buffer_binding_info(*inst_error_blob.vertex_attribute_fetch_limit_instance_input_rate, out_error_msg);
+        add_vertex_attribute_info(*inst_error_blob.vertex_attribute_fetch_limit_instance_input_rate, out_error_msg);
+    }
+
+    if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
+        const uint32_t index_bits_size = GetIndexBitsSize(inst_error_blob.index_buffer_binding->index_type);
+        const uint32_t max_indices_in_buffer =
+            static_cast<uint32_t>(inst_error_blob.index_buffer_binding->size / (index_bits_size / 8u));
+        out_error_msg += "Index buffer binding info:\n";
+        out_error_msg += "- Buffer: ";
+        out_error_msg += gpuav.FormatHandle(inst_error_blob.index_buffer_binding->buffer);
+        out_error_msg += '\n';
+        out_error_msg += "- Index type: ";
+        out_error_msg += string_VkIndexType(inst_error_blob.index_buffer_binding->index_type);
+        out_error_msg += '\n';
+        out_error_msg += "- Binding offset: ";
+        out_error_msg += std::to_string(inst_error_blob.index_buffer_binding->offset);
+        out_error_msg += " bytes\n";
+        out_error_msg += "- Binding size: ";
+        out_error_msg += std::to_string(inst_error_blob.index_buffer_binding->size);
+        out_error_msg += " bytes (or ";
+        out_error_msg += std::to_string(max_indices_in_buffer);
+        out_error_msg += ' ';
+        out_error_msg += string_VkIndexType(inst_error_blob.index_buffer_binding->index_type);
+        out_error_msg += ")\n";
+    }
+    out_error_msg +=
+        "Note: Vertex buffer binding size is the effective, valid one, based on how the VkBuffer was created and "
+        "vertex buffer binding parameters. So it can be clamped up to 0 if binding was invalid.";
+
+    return true;
+}
+
 // Pull together all the information from the debug record to build the error message strings,
 // and then assemble them into a single message string.
 // Retrieve the shader program referenced by the unique shader ID provided in the debug record.
@@ -746,6 +1008,7 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
 bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, const LogObjectList &objlist,
+                             const InstrumentationErrorBlob &instrumentation_error_blob,
                              const std::vector<std::string> &initial_label_stack, uint32_t label_command_i,
                              uint32_t operation_index, const uint32_t *error_record,
                              const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
@@ -779,6 +1042,9 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, co
             break;
         case glsl::kErrorGroupInstRayQuery:
             error_found = LogMessageInstRayQuery(error_record, error_msg, vuid_msg);
+            break;
+        case glsl::kErrorGroupInstIndexedDraw:
+            error_found = LogMessageInstIndexedDraw(gpuav, error_record, error_msg, vuid_msg, loc, instrumentation_error_blob);
             break;
         default:
             break;

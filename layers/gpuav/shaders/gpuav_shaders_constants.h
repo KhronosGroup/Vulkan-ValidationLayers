@@ -59,6 +59,7 @@ const int kBindingInstBufferDeviceAddress = 4;
 const int kBindingInstActionIndex = 5;
 const int kBindingInstCmdResourceIndex = 6;
 const int kBindingInstCmdErrorsCount = 7;
+const int kBindingInstVertexAttributeFetchLimits = 8;
 
 // Diagnostic calls
 // ---

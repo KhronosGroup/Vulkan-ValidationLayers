@@ -35,6 +35,7 @@ const int kErrorGroupGpuPreDispatch = 5;
 const int kErrorGroupGpuPreTraceRays = 6;
 const int kErrorGroupGpuCopyBufferToImage = 7;
 const int kErrorGroupInstDescriptorClass = 8;
+const int kErrorGroupInstIndexedDraw = 9;
 
 // Used for MultiEntry and there is no single stage set
 const int kHeaderStageIdMultiEntryPoint = 0x7fffffff;  // same as spv::ExecutionModelMax
@@ -71,6 +72,11 @@ const int kErrorSubCodeRayQueryOriginNaN = 9;
 const int kErrorSubCodeRayQueryDirectionNaN = 10;
 const int kErrorSubCodeRayQueryOriginFinite = 11;
 const int kErrorSubCodeRayQueryDirectionFinite = 12;
+
+// Indexed Draw
+//
+const int kErrorSubCode_IndexedDraw_OOBVertexIndex = 1;
+const int kErrorSubCode_IndexedDraw_OOBInstanceIndex = 2;
 
 // Pre Draw
 //

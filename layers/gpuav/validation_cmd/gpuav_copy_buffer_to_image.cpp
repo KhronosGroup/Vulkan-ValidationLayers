@@ -169,8 +169,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     uint32_t max_texels_count_in_regions = copy_buffer_to_img_info->pRegions[0].imageExtent.width *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.height *
                                            copy_buffer_to_img_info->pRegions[0].imageExtent.depth;
-    vko::Buffer copy_src_regions_mem_buffer(gpuav);
-    {
+
         // Needs to be kept in sync with copy_buffer_to_image.comp
         struct BufferImageCopy {
             uint32_t src_buffer_byte_offset;
@@ -192,20 +191,15 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
                                                                  ) *
                                                                 sizeof(uint32_t);
         buffer_info.size = uniform_buffer_constants_byte_size + sizeof(BufferImageCopy) * copy_buffer_to_img_info->regionCount;
-        buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-        uint32_t mem_type_index = 0;
-        vmaFindMemoryTypeIndexForBufferInfo(gpuav.vma_allocator_, &buffer_info, &alloc_info, &mem_type_index);
-
         alloc_info.pool = shared_copy_validation_resources.copy_regions_pool;
-        const bool success = copy_src_regions_mem_buffer.Create(loc, &buffer_info, &alloc_info);
-        if (!success) {
+        vko::Buffer copy_src_regions_mem_buffer =
+            cb_state.gpu_resources_manager.GetManagedBuffer(gpuav, loc, buffer_info, alloc_info);
+        if (copy_src_regions_mem_buffer.IsDestroyed()) {
             return;
         }
-
-        cb_state.gpu_resources_manager.ManageBuffer(copy_src_regions_mem_buffer);
 
         auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_buffer.MapMemory(loc);
 
@@ -248,7 +242,6 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
                          cpu_region.imageExtent.width * cpu_region.imageExtent.height * cpu_region.imageExtent.depth);
 
             ++gpu_regions_count;
-        }
 
         if (gpu_regions_count == 0) {
             // Nothing to validate

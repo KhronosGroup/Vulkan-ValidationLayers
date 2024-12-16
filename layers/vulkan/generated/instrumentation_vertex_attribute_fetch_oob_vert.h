@@ -26,5 +26,5 @@
 #include <cstdint>
 
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-extern const uint32_t validation_cmd_draw_indexed_indirect_vertex_buffer_comp_size;
-extern const uint32_t validation_cmd_draw_indexed_indirect_vertex_buffer_comp[];
+extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert_size;
+extern const uint32_t instrumentation_vertex_attribute_fetch_oob_vert[];
