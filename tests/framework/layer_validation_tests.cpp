@@ -320,6 +320,13 @@ VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
 }
 
 void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2, void *instance_pnext) {
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = kDisableMessageLimit;
+
+    if (!vku::FindStructInPNextChain<VkLayerSettingsCreateInfoEXT>(instance_pnext)) {
+        layer_settings_create_info.pNext = instance_pnext;
+        instance_pnext = &layer_settings_create_info;
+    }
+
     RETURN_IF_SKIP(InitFramework(instance_pnext));
     RETURN_IF_SKIP(InitState(features, features2));
 }

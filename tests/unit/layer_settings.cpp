@@ -216,7 +216,13 @@ TEST_F(NegativeLayerSettings, DuplicateMessageLimitZero) {
 TEST_F(NegativeLayerSettings, DuplicateMessageLimitNone) {
     TEST_DESCRIPTION("Don't use duplicate_message_limit setting it with zero implicitly");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
+
+    const VkBool32 enable_message_limit = true;
+    const VkLayerSettingEXT layer_setting = {"VK_LAYER_KHRONOS_validation", "enable_message_limit",
+                                             VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &enable_message_limit};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                               &layer_setting};
+    RETURN_IF_SKIP(Init(nullptr, nullptr, &layer_settings_create_info));
 
     // Create an invalid pNext structure to trigger the stateless validation warning
     VkBaseOutStructure bogus_struct{};
