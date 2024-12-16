@@ -229,8 +229,8 @@ struct FirstInstanceValidationShader {
 
 void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
                    VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, vvl::Struct draw_indirect_struct_name,
-                   uint32_t first_instance_member_pos, uint32_t draws_count, VkBuffer count_buffer,
-                   VkDeviceSize count_buffer_offset, const char *vuid) {
+                   uint32_t first_instance_member_pos, uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
+                   const char *vuid) {
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
         return;
     }
@@ -238,8 +238,8 @@ void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &lo
     if (gpuav.enabled_features.drawIndirectFirstInstance) return;
 
     CommandBuffer::ValidationCommandFunc validation_cmd = [draw_buffer, draw_buffer_offset, draw_cmds_byte_stride,
-                                                           first_instance_member_pos, draws_count, count_buffer,
-                                                           count_buffer_offset, draw_i = cb_state.draw_index,
+                                                           first_instance_member_pos, draw_count, count_buffer, count_buffer_offset,
+                                                           draw_i = cb_state.draw_index,
                                                            error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
                                                            loc](Validator &gpuav, CommandBuffer &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
@@ -285,13 +285,18 @@ void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &lo
 
             uint32_t max_held_draw_cmds = 0;
             if (draw_buffer_state->create_info.size > draw_buffer_offset) {
-                max_held_draw_cmds =
-                    static_cast<uint32_t>((draw_buffer_state->create_info.size - draw_buffer_offset) / draw_cmds_byte_stride);
+                // If drawCount is less than or equal to one, stride is ignored
+                if (draw_count > 1) {
+                    max_held_draw_cmds =
+                        static_cast<uint32_t>((draw_buffer_state->create_info.size - draw_buffer_offset) / draw_cmds_byte_stride);
+                } else {
+                    max_held_draw_cmds = 1;
+                }
             }
             // It is assumed that the number of draws to validate is fairly low.
             // Otherwise might reconsider having a warp dimension of (1, 1, 1)
             // Maybe another reason to add telemetry?
-            const uint32_t work_group_count = std::min(draws_count, max_held_draw_cmds);
+            const uint32_t work_group_count = std::min(draw_count, max_held_draw_cmds);
 
             if (work_group_count == 0) {
                 return;
@@ -658,7 +663,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
                 uint32_t max_held_draw_cmds = 0;
                 if (draw_buffer_full_size > draw_buffer_offset) {
                     // If drawCount is less than or equal to one, stride is ignored
-                    if (draw_cmds_byte_stride > 0) {
+                    if (draw_count > 1) {
                         max_held_draw_cmds =
                             static_cast<uint32_t>((draw_buffer_full_size - draw_buffer_offset) / draw_cmds_byte_stride);
                     } else {

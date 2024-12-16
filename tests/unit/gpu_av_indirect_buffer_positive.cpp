@@ -240,3 +240,37 @@ TEST_F(PositiveGpuAVIndirectBuffer, MeshSingleCommand) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVIndirectBuffer, FirstInstanceSingleDrawIndirectCommand) {
+    TEST_DESCRIPTION("Validate illegal firstInstance values");
+    AddRequiredFeature(vkt::Feature::multiDrawIndirect);
+    // silence MacOS issue
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.rs_state_ci_.lineWidth = 1.0f;
+    pipe.CreateGraphicsPipeline();
+
+    VkDrawIndirectCommand draw_params{};
+    draw_params.vertexCount = 3;
+    draw_params.instanceCount = 1;
+    draw_params.firstVertex = 0;
+    draw_params.firstInstance = 0;
+    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndirectCommand>(*m_device, {draw_params});
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vk::CmdDrawIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, 0);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
