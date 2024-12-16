@@ -1529,6 +1529,8 @@ TEST_F(NegativeDescriptorBuffer, NullCombinedImageSampler) {
 
 TEST_F(NegativeDescriptorBuffer, BufferUsage) {
     TEST_DESCRIPTION("Wrong Usage for buffer createion.");
+
+    AddRequiredFeature(vkt::Feature::descriptorBufferPushDescriptors);
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
