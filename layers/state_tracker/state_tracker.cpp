@@ -5452,6 +5452,11 @@ void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
         cb_state->RecordDynamicState(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }
     auto &vertex_bindings = cb_state->dynamic_state_value.vertex_bindings;
+
+    // When using Dynamic state, anything not set is invalid, so need to reset map
+    // "The vertex attribute description for any location not specified in the pVertexAttributeDescriptions array becomes undefined"
+    vertex_bindings.clear();
+
     for (const auto [i, bd] : vvl::enumerate(pVertexBindingDescriptions, vertexBindingDescriptionCount)) {
         vertex_bindings.insert_or_assign(bd->binding, VertexBindingState(i, bd));
 

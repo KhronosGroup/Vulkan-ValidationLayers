@@ -1038,3 +1038,66 @@ TEST_F(PositiveVertexInput, VertexAttributeRobustnessDynamic) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveVertexInput, VertexInputRebinding) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9027");
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location = 0) in float a;
+
+        void main(){
+            gl_Position = vec4(a);
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    VkVertexInputBindingDescription2EXT bindings[2];
+    bindings[0] = vku::InitStructHelper();
+    bindings[0].binding = 0u;
+    bindings[0].stride = sizeof(uint32_t);
+    bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    bindings[0].divisor = 1u;
+    bindings[1] = bindings[0];
+    bindings[1].binding = 1u;
+
+    VkVertexInputAttributeDescription2EXT attributes[2];
+    attributes[0] = vku::InitStructHelper();
+    attributes[0].location = 1u;
+    attributes[0].binding = 0u;
+    attributes[0].format = VK_FORMAT_R32_SFLOAT;
+    attributes[0].offset = 0;
+
+    attributes[1] = vku::InitStructHelper();
+    attributes[1].location = 0u;
+    attributes[1].binding = 1u;
+    attributes[1].format = VK_FORMAT_R32_SINT;
+    attributes[1].offset = 0;
+
+    vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offsets[2] = {0, 0};
+    VkBuffer buffers[2] = {vertex_buffer.handle(), vertex_buffer.handle()};
+
+    m_command_buffer.begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 2, bindings, 2, attributes);
+
+    attributes[0].location = 0;
+    attributes[0].format = VK_FORMAT_R32_SFLOAT;
+    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1, bindings, 1, attributes);
+
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 2, buffers, offsets);
+    vk::CmdDraw(m_command_buffer.handle(), 3u, 3u, 0u, 0u);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.end();
+}
