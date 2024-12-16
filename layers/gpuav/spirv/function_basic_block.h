@@ -49,8 +49,9 @@ struct BasicBlock {
     // Finds instruction before the Block Termination Instruction.
     InstructionIt GetLastInjectableInstrution();
 
-    // Creates instruction and inserts it before the Instruction, updates poistion after new instruciton.
-    // If no InstructionIt is provided, it will add it to the end of the block.
+    // Creates an instruction and inserts it before an optional target inst_it.
+    // If an InstructionIt is provided, inst_it will be updated to still point at the original target instruction.
+    // Otherwise, the new instruction will be created at block end.
     void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, InstructionIt* inst_it = nullptr);
 
     InstructionList instructions_;

@@ -197,3 +197,74 @@ TEST_F(PositiveGpuAVIndexBuffer, IndexedIndirectRobustness) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVIndexBuffer, NoShaderInputsVertexIndex16) {
+    TEST_DESCRIPTION("Vertex shader defines no vertex attributes - no OOB vertex fetch should be detected");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    struct Vertex {
+        std::array<float, 3> position;
+        std::array<float, 2> uv;
+        std::array<float, 3> normal;
+    };
+
+    char const *vsSource = R"glsl(
+        #version 450
+
+        void main() {
+            gl_Position = vec4(1.0);
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    // "Array of structs" style vertices
+    VkVertexInputBindingDescription input_binding = {0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX};
+    std::array<VkVertexInputAttributeDescription, 3> vertex_attributes = {};
+    // Position
+    vertex_attributes[0] = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    // UV
+    vertex_attributes[1] = {1, 0, VK_FORMAT_R32G32_SFLOAT, 3 * sizeof(float)};
+    // Normal
+    vertex_attributes[2] = {2, 0, VK_FORMAT_R32G32B32_SFLOAT, (3 + 2) * sizeof(float)};
+
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = vertex_attributes.data();
+    pipe.vi_ci_.vertexAttributeDescriptionCount = size32(vertex_attributes);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    std::vector<Vertex> vertices;
+    for (int i = 0; i < 3; ++i) {
+        const Vertex vertex = {{0.0f, 1.0f, 2.0f}, {3.0f, 4.0f}, {5.0f, 6.0f, 7.0f}};
+        vertices.emplace_back(vertex);
+    }
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer<Vertex>(*m_device, vertices);
+    // Offset vertex buffer so that only first Vertex can correctly be fetched
+    VkDeviceSize vertex_buffer_offset = 2 * sizeof(Vertex);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint16_t>(*m_device, {0, 1, 0});
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+
+    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

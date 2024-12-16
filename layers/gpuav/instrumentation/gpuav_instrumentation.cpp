@@ -27,6 +27,7 @@
 
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/shader_object_state.h"
+#include "state_tracker/shader_module.h"
 
 namespace gpuav {
 
@@ -165,8 +166,95 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, Vk
     }
 }
 
+// Computes the smallest vertex attributes count among the set of bound vertex buffers.
+// Used to detect out of bounds indices in index buffers.
+// If no vertex buffer is bound, smallest_vertex_attributes_count is std::numeric_limits<uint32_t>::max()
+// indicating that no index can be out of bound
+static std::pair<std::optional<SmallestVertexBufferBinding>, std::optional<SmallestVertexBufferBinding>>
+SmallestVertexAttributesCount(const vvl::CommandBuffer &cb_state) {
+    const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const LastBound &last_bound = cb_state.lastBound[lv_bind_point];
+    const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
+    const bool use_shader_objects = pipeline_state == nullptr;
+
+    const bool dynamic_vertex_input = use_shader_objects || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+
+    const auto &vertex_binding_descriptions =
+        dynamic_vertex_input ? cb_state.dynamic_state_value.vertex_bindings : pipeline_state->vertex_input_state->bindings;
+
+    std::optional<SmallestVertexBufferBinding> smallest_vbb_vertex_input_rate;
+    std::optional<SmallestVertexBufferBinding> smallest_vbb_instance_input_rate;
+
+    vvl::unordered_set<uint32_t> vertex_shader_used_locations;
+    {
+        const ::spirv::EntryPoint *vertex_entry_point = last_bound.GetVertexEntryPoint();
+        if (!vertex_entry_point) {
+            return {smallest_vbb_vertex_input_rate, smallest_vbb_instance_input_rate};
+        }
+        for (const ::spirv::StageInterfaceVariable &interface_var : vertex_entry_point->stage_interface_variables) {
+            for (const ::spirv::InterfaceSlot &interface_slot : interface_var.interface_slots) {
+                vertex_shader_used_locations.insert(interface_slot.Location());
+            }
+        }
+    }
+
+    for (const auto &[binding, vertex_binding_desc] : vertex_binding_descriptions) {
+        auto find_vbb = cb_state.current_vertex_buffer_binding_info.find(binding);
+        if (find_vbb == cb_state.current_vertex_buffer_binding_info.cend()) {
+            // This is a validation error
+            continue;
+        }
+
+        const vvl::VertexBufferBinding &vbb = find_vbb->second;
+
+        for (const auto &[location, attrib] : vertex_binding_desc.locations) {
+            if (vertex_shader_used_locations.find(location) == vertex_shader_used_locations.end()) {
+                continue;
+            }
+            const VkDeviceSize attribute_size = vkuFormatElementSize(attrib.desc.format);
+
+            const VkDeviceSize stride =
+                vbb.stride != 0 ? vbb.stride : attribute_size;  // Tracked stride should already handle all possible value origin
+
+            VkDeviceSize vertex_buffer_remaining_size =
+                vbb.effective_size > attrib.desc.offset ? vbb.effective_size - attrib.desc.offset : 0;
+
+            VkDeviceSize vertex_attributes_count = vertex_buffer_remaining_size / stride;
+            if (vertex_buffer_remaining_size > vertex_attributes_count * stride) {
+                vertex_buffer_remaining_size -= vertex_attributes_count * stride;
+            } else {
+                vertex_buffer_remaining_size = 0;
+            }
+
+            // maybe room for one more attribute but not full stride - not having stride space does not matter for last element
+            if (vertex_buffer_remaining_size >= attribute_size) {
+                vertex_attributes_count += 1;
+            }
+
+            std::optional<SmallestVertexBufferBinding> *smallest_vbb_to_update =
+                (vertex_binding_desc.desc.inputRate == VK_VERTEX_INPUT_RATE_VERTEX) ? &smallest_vbb_vertex_input_rate
+                                                                                    : &smallest_vbb_instance_input_rate;
+
+            if (!smallest_vbb_to_update->has_value()) {
+                *smallest_vbb_to_update = SmallestVertexBufferBinding{};
+            }
+            (*smallest_vbb_to_update)->smallest_vertex_attributes_count =
+                std::min((*smallest_vbb_to_update)->smallest_vertex_attributes_count, vertex_attributes_count);
+            if ((*smallest_vbb_to_update)->smallest_vertex_attributes_count == vertex_attributes_count) {
+                (*smallest_vbb_to_update)->binding = binding;
+                (*smallest_vbb_to_update)->binding_info = vbb;
+                (*smallest_vbb_to_update)->attribute.location = attrib.desc.location;
+                (*smallest_vbb_to_update)->attribute.binding = attrib.desc.binding;
+                (*smallest_vbb_to_update)->attribute.format = attrib.desc.format;
+                (*smallest_vbb_to_update)->attribute.offset = attrib.desc.offset;
+            }
+        }
+    }
+    return {smallest_vbb_vertex_input_rate, smallest_vbb_instance_input_rate};
+}
+
 void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkDescriptorSet instrumentation_desc_set,
-                                  const Location &loc) {
+                                  const Location &loc, InstrumentationErrorBlob &out_instrumentation_error_blob) {
     std::vector<VkWriteDescriptorSet> desc_writes = {};
 
     // Error output buffer
@@ -276,6 +364,56 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
         desc_writes.emplace_back(wds);
     }
 
+    vko::Buffer max_vertex_buffer(gpuav);
+    VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+    buffer_info.size = 4 * sizeof(uint32_t);
+    buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VmaAllocationCreateInfo alloc_info = {};
+    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    // #ARNO_TODO - optimize buffer allocation as much as possible,
+    // alloc_info.pool = shared_copy_validation_resources.copy_regions_pool;
+
+    const bool success = max_vertex_buffer.Create(loc, &buffer_info, &alloc_info);
+    if (!success) {
+        return;
+    }
+
+    const auto [smallest_vbb_vertex_input_rate, smallest_vbb_instance_input_rate] = SmallestVertexAttributesCount(cb_state);
+    auto max_vertex_buffer_ptr = (uint32_t *)max_vertex_buffer.MapMemory(loc);
+    if (smallest_vbb_vertex_input_rate.has_value()) {
+        max_vertex_buffer_ptr[0] = 1u;
+        max_vertex_buffer_ptr[1] = (uint32_t)smallest_vbb_vertex_input_rate->smallest_vertex_attributes_count;
+    } else {
+        max_vertex_buffer_ptr[0] = 0u;
+        max_vertex_buffer_ptr[1] = std::numeric_limits<uint32_t>::max();
+    }
+    if (smallest_vbb_instance_input_rate.has_value()) {
+        max_vertex_buffer_ptr[2] = 1u;
+        max_vertex_buffer_ptr[3] = (uint32_t)smallest_vbb_instance_input_rate->smallest_vertex_attributes_count;
+    } else {
+        max_vertex_buffer_ptr[2] = 0u;
+        max_vertex_buffer_ptr[3] = std::numeric_limits<uint32_t>::max();
+    }
+
+    max_vertex_buffer.UnmapMemory();
+    out_instrumentation_error_blob.smallest_vbb_vertex_input_rate = smallest_vbb_vertex_input_rate;
+    out_instrumentation_error_blob.smallest_vbb_instance_input_rate = smallest_vbb_instance_input_rate;
+    out_instrumentation_error_blob.index_buffer_binding = cb_state.index_buffer_binding;
+
+    cb_state.gpu_resources_manager.ManageBuffer(max_vertex_buffer);
+    VkDescriptorBufferInfo max_vertex_index_buffer_info = {};
+    max_vertex_index_buffer_info.buffer = max_vertex_buffer.VkHandle();
+    max_vertex_index_buffer_info.offset = 0;
+    max_vertex_index_buffer_info.range = VK_WHOLE_SIZE;
+
+    VkWriteDescriptorSet wds = vku::InitStructHelper();
+    wds.dstSet = instrumentation_desc_set;
+    wds.dstBinding = glsl::kBindingInstSmallestVertexBufferBinding;
+    wds.descriptorCount = 1;
+    wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    wds.pBufferInfo = &max_vertex_index_buffer_info;
+    desc_writes.emplace_back(wds);
+
     DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
 }
 
@@ -306,7 +444,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
 
     // Pathetic way of trying to make sure we take care of updating all
     // bindings of the instrumentation descriptor set
-    assert(gpuav.instrumentation_bindings_.size() == 8);
+    assert(gpuav.instrumentation_bindings_.size() == 9);
 
     if (gpuav.gpuav_settings.debug_printf_enabled) {
         if (!debug_printf::UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, bind_point, loc)) {
@@ -315,8 +453,9 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
             return;
         }
     }
+    InstrumentationErrorBlob instrumentation_error_blob;
     if (gpuav.gpuav_settings.IsShaderInstrumentationEnabled()) {
-        UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, loc);
+        UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, loc, instrumentation_error_blob);
     }
 
     const uint32_t operation_index = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)          ? cb_state.draw_index
@@ -441,15 +580,15 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
 
     CommandBuffer::ErrorLoggerFunc error_logger =
         [loc, descriptor_binding_index, descriptor_binding_list = &cb_state.descriptor_command_bindings, bind_point,
-         last_label_command_i, operation_index, uses_shader_object,
-         uses_robustness](Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
-                          const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
+         last_label_command_i, operation_index, uses_shader_object, uses_robustness,
+         instrumentation_error_blob](Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
+                                     const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
             bool skip = false;
 
             const DescriptorCommandBinding *descriptor_command_binding =
                 descriptor_binding_index != vvl::kU32Max ? &(*descriptor_binding_list)[descriptor_binding_index] : nullptr;
-            skip |= LogInstrumentationError(gpuav, cb_state, objlist, initial_label_stack, last_label_command_i, operation_index,
-                                            error_record,
+            skip |= LogInstrumentationError(gpuav, cb_state, objlist, instrumentation_error_blob, initial_label_stack,
+                                            last_label_command_i, operation_index, error_record,
                                             descriptor_command_binding ? descriptor_command_binding->bound_descriptor_sets
                                                                        : std::vector<std::shared_ptr<DescriptorSet>>(),
                                             bind_point, uses_shader_object, uses_robustness, loc);
@@ -738,6 +877,121 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
     return error_found;
 }
 
+bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
+                               std::string &out_vuid_msg, const Location &loc, const InstrumentationErrorBlob &inst_error_blob) {
+    const uint32_t error_sub_code = error_record[glsl::kHeaderErrorSubCodeOffset];
+    if (error_sub_code != glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex &&
+        error_sub_code != glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
+        return false;
+    }
+
+    switch (loc.function) {
+        case vvl::Func::vkCmdDrawIndexed:
+            out_vuid_msg = "VUID-vkCmdDrawIndexed-None-02721";
+            break;
+        case vvl::Func::vkCmdDrawIndexedIndirectCount:
+            out_vuid_msg = "VUID-vkCmdDrawIndexedIndirectCount-None-02721";
+            break;
+        case vvl::Func::vkCmdDrawIndexedIndirect:
+            out_vuid_msg = "VUID-vkCmdDrawIndexedIndirect-None-02721";
+            break;
+        default:
+            return false;
+    }
+
+    assert(inst_error_blob.smallest_vbb_vertex_input_rate.has_value() ||
+           inst_error_blob.smallest_vbb_instance_input_rate.has_value());
+    assert(inst_error_blob.index_buffer_binding.has_value());
+
+    auto add_vertex_buffer_binding_info = [&gpuav](const SmallestVertexBufferBinding &smallest_vbb, std::string &out) {
+        out += "- Buffer: ";
+        out += gpuav.FormatHandle(smallest_vbb.binding_info.buffer);
+        out += '\n';
+        out += "- Binding: ";
+        out += std::to_string(smallest_vbb.binding);
+        out += '\n';
+        out += "- Binding size (effective): ";
+        out += std::to_string(smallest_vbb.binding_info.effective_size);
+        out += " bytes\n";
+        out += "- Binding offset: ";
+        out += std::to_string(smallest_vbb.binding_info.offset);
+        out += " bytes\n";
+        out += "- Binding stride: ";
+        out += std::to_string(smallest_vbb.binding_info.stride);
+        out += " bytes\n";
+        out += "- Vertices count: ";
+        out += std::to_string(smallest_vbb.smallest_vertex_attributes_count);
+        out += '\n';
+    };
+
+    auto add_vertex_attribute_info = [](const SmallestVertexBufferBinding &smallest_vbb, std::string &out) {
+        out += "At least the following vertex attribute caused OOB access:\n";
+        out += "- Location: ";
+        out += std::to_string(smallest_vbb.attribute.location);
+        out += '\n';
+        out += "- Binding: ";
+        out += std::to_string(smallest_vbb.attribute.binding);
+        out += '\n';
+        out += "- Format: ";
+        out += string_VkFormat(smallest_vbb.attribute.format);
+        out += '\n';
+        out += "- Offset: ";
+        out += std::to_string(smallest_vbb.attribute.offset);
+        out += " bytes\n";
+    };
+
+    if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
+        out_error_msg += "Vertex index ";
+        const uint32_t oob_vertex_index = error_record[glsl::kHeaderStageInfoOffset_0];
+        out_error_msg += std::to_string(oob_vertex_index);
+    } else {
+        out_error_msg += "Instance index ";
+        const uint32_t oob_instance_index = error_record[glsl::kHeaderStageInfoOffset_1];
+        out_error_msg += std::to_string(oob_instance_index);
+    }
+
+    out_error_msg += " is not within the smallest bound vertex buffer.\n";
+
+    if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
+        out_error_msg += "Smallest vertex buffer binding info, causing OOB access with VK_VERTEX_INPUT_RATE_VERTEX:\n";
+        add_vertex_buffer_binding_info(*inst_error_blob.smallest_vbb_vertex_input_rate, out_error_msg);
+        add_vertex_attribute_info(*inst_error_blob.smallest_vbb_vertex_input_rate, out_error_msg);
+
+    } else {
+        out_error_msg += "Smallest vertex buffer binding info, causing OOB access with VK_VERTEX_INPUT_RATE_INSTANCE:\n";
+        add_vertex_buffer_binding_info(*inst_error_blob.smallest_vbb_instance_input_rate, out_error_msg);
+        add_vertex_attribute_info(*inst_error_blob.smallest_vbb_instance_input_rate, out_error_msg);
+    }
+
+    if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex) {
+        const uint32_t index_bits_size = GetIndexBitsSize(inst_error_blob.index_buffer_binding->index_type);
+        const uint32_t max_indices_in_buffer =
+            static_cast<uint32_t>(inst_error_blob.index_buffer_binding->size / (index_bits_size / 8u));
+        out_error_msg += "Index buffer binding info:\n";
+        out_error_msg += "- Buffer: ";
+        out_error_msg += gpuav.FormatHandle(inst_error_blob.index_buffer_binding->buffer);
+        out_error_msg += '\n';
+        out_error_msg += "- Index type: ";
+        out_error_msg += string_VkIndexType(inst_error_blob.index_buffer_binding->index_type);
+        out_error_msg += '\n';
+        out_error_msg += "- Binding offset: ";
+        out_error_msg += std::to_string(inst_error_blob.index_buffer_binding->offset);
+        out_error_msg += " bytes\n";
+        out_error_msg += "- Binding size: ";
+        out_error_msg += std::to_string(inst_error_blob.index_buffer_binding->size);
+        out_error_msg += " bytes (or ";
+        out_error_msg += std::to_string(max_indices_in_buffer);
+        out_error_msg += ' ';
+        out_error_msg += string_VkIndexType(inst_error_blob.index_buffer_binding->index_type);
+        out_error_msg += ")\n";
+    }
+    out_error_msg +=
+        "Note: Vertex buffer binding size is the effective, valid one, based on how the VkBuffer was created and "
+        "vertex buffer binding parameters. So it can be clamped up to 0 if binding was invalid.";
+
+    return true;
+}
+
 // Pull together all the information from the debug record to build the error message strings,
 // and then assemble them into a single message string.
 // Retrieve the shader program referenced by the unique shader ID provided in the debug record.
@@ -746,6 +1000,7 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
 // keeps a copy, but it can be destroyed after the pipeline is created and before it is submitted.)
 //
 bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, const LogObjectList &objlist,
+                             const InstrumentationErrorBlob &instrumentation_error_blob,
                              const std::vector<std::string> &initial_label_stack, uint32_t label_command_i,
                              uint32_t operation_index, const uint32_t *error_record,
                              const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
@@ -779,6 +1034,9 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, co
             break;
         case glsl::kErrorGroupInstRayQuery:
             error_found = LogMessageInstRayQuery(error_record, error_msg, vuid_msg);
+            break;
+        case glsl::kErrorGroupInstIndexedDraw:
+            error_found = LogMessageInstIndexedDraw(gpuav, error_record, error_msg, vuid_msg, loc, instrumentation_error_blob);
             break;
         default:
             break;

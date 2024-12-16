@@ -196,9 +196,6 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-        uint32_t mem_type_index = 0;
-        vmaFindMemoryTypeIndexForBufferInfo(gpuav.vma_allocator_, &buffer_info, &alloc_info, &mem_type_index);
-
         alloc_info.pool = shared_copy_validation_resources.copy_regions_pool;
         const bool success = copy_src_regions_mem_buffer.Create(loc, &buffer_info, &alloc_info);
         if (!success) {
