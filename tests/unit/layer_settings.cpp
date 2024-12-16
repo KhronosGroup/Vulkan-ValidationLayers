@@ -11,6 +11,7 @@
  */
 //stype-check off
 
+#include <cstdint>
 #include "../framework/layer_validation_tests.h"
 
 class NegativeLayerSettings : public VkLayerTest {};
@@ -390,3 +391,59 @@ TEST_F(NegativeLayerSettings, LogFilename) {
     Monitor().VerifyFound();
 }
 #endif
+
+// TODO - Need a system to know about all the settings as some are not listed in VkLayer_khronos_validation.json
+TEST_F(NegativeLayerSettings, DISABLED_NotRealSetting) {
+    int32_t enable = 1;
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "not_a_real_setting", VK_LAYER_SETTING_TYPE_INT32_EXT, 1, &enable};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    Monitor().ExpectSuccess(kErrorBit | kWarningBit);
+    Monitor().SetDesiredWarning("was not a valid option for VK_LAYER_REPORT_FLAGS");
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+    Monitor().VerifyFound();
+}
+
+TEST_F(NegativeLayerSettings, WrongSettingType) {
+    // Actually needs a VK_LAYER_SETTING_TYPE_BOOL32_EXT
+    int32_t enable = 1;
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "enable_message_limit", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &enable};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    Monitor().ExpectSuccess(kErrorBit | kWarningBit);
+    Monitor().SetDesiredWarning(
+        " The setting enable_message_limit in VkLayerSettingsCreateInfoEXT was set to type VK_LAYER_SETTING_TYPE_UINT32_EXT but "
+        "requires type VK_LAYER_SETTING_TYPE_BOOL32_EXT and the value may be parsed incorrectly.");
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+    Monitor().VerifyFound();
+}
+
+TEST_F(NegativeLayerSettings, WrongSettingType2) {
+    // Actually needs a VK_LAYER_SETTING_TYPE_BOOL32_EXT
+    int32_t enable = 1;
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "thread_safety", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &enable};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    Monitor().ExpectSuccess(kErrorBit | kWarningBit);
+    Monitor().SetDesiredWarning(
+        " The setting thread_safety in VkLayerSettingsCreateInfoEXT was set to type VK_LAYER_SETTING_TYPE_UINT32_EXT but requires "
+        "type VK_LAYER_SETTING_TYPE_BOOL32_EXT and the value may be parsed incorrectly.");
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+    Monitor().VerifyFound();
+}
+
+TEST_F(NegativeLayerSettings, DuplicateSettings) {
+    VkBool32 enable = VK_TRUE;
+    VkBool32 disable = VK_FALSE;
+    const VkLayerSettingEXT settings[2] = {
+        {OBJECT_LAYER_NAME, "enable_message_limit", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &enable},
+        {OBJECT_LAYER_NAME, "enable_message_limit", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable}};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 2, settings};
+    Monitor().ExpectSuccess(kErrorBit | kWarningBit);
+    Monitor().SetDesiredWarning(
+        "The setting enable_message_limit in VkLayerSettingsCreateInfoEXT was listed twice and only the first one listed will be "
+        "recognized");
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+    Monitor().VerifyFound();
+}
