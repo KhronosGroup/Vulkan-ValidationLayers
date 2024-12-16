@@ -1189,7 +1189,7 @@ static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamI
 // /!\ Note when copy pasting this:
 // Be mindful that the constant number specified as the end range parameter in ::testing::Range
 // is based on the number of settings in the settings list. If you have N settings, you want your range end to be uint32_t(1) << N
-INSTANTIATE_TEST_SUITE_P(ShaderInstrumentationMainSettings, PositiveGpuAVParameterized,
+INSTANTIATE_TEST_SUITE_P(GpuAvShaderInstrumentationMainSettings, PositiveGpuAVParameterized,
 
                          ::testing::Combine(::testing::Values(std::vector<const char *>(
                                                 {"gpuav_descriptor_checks", "gpuav_buffer_address_oob", "gpuav_vma_linear_output",
