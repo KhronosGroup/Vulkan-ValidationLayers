@@ -77,10 +77,17 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
 
     // We only care if there is an Aligned Memory Operands
     // VUID-StandaloneSpirv-PhysicalStorageBuffer64-04708 requires there to be an Aligned operand
+    const uint32_t memory_operand_index = opcode == spv::OpLoad ? 4 : 3;
     const uint32_t alignment_word_index = opcode == spv::OpLoad ? 5 : 4;  // OpStore is at [4]
     if (inst.Length() < alignment_word_index) {
         return false;
     }
+    const uint32_t memory_operands = inst.Word(memory_operand_index);
+    if ((memory_operands & spv::MemoryAccessAlignedMask) == 0) {
+        return false;
+    }
+    // Even if they are other Memory Operands the spec says it is ordered by smallest bit first,
+    // Luckily |Aligned| is the smallest bit that can have an operand so we know it is here
     alignment_literal_ = inst.Word(alignment_word_index);
 
     // TODO - Should have loop to walk Load/Store to the Pointer,

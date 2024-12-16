@@ -268,6 +268,29 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
             new_ts_features.timelineSemaphore = VK_TRUE;
             vku::AddToPnext(*modified_create_info, new_ts_features);
         }
+
+        // need vulkanMemoryModelDeviceScope feature to let us call atomicAdd to the output buffer
+        if (auto *mm_features = const_cast<VkPhysicalDeviceVulkanMemoryModelFeatures *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceVulkanMemoryModelFeatures>(modified_create_info))) {
+            if (mm_features->vulkanMemoryModel == VK_FALSE) {
+                InternalWarning(device, record_obj.location,
+                                "Forcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModel to VK_TRUE");
+                mm_features->vulkanMemoryModel = VK_TRUE;
+            }
+            if (mm_features->vulkanMemoryModelDeviceScope == VK_FALSE) {
+                InternalWarning(device, record_obj.location,
+                                "Forcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModelDeviceScope to VK_TRUE");
+                mm_features->vulkanMemoryModelDeviceScope = VK_TRUE;
+            }
+        } else {
+            InternalWarning(device, record_obj.location,
+                            "Adding a VkPhysicalDeviceVulkanMemoryModelFeatures to pNext with vulkanMemoryModel and "
+                            "vulkanMemoryModelDeviceScope set to VK_TRUE");
+            VkPhysicalDeviceVulkanMemoryModelFeatures new_mm_features = vku::InitStructHelper();
+            new_mm_features.vulkanMemoryModel = VK_TRUE;
+            new_mm_features.vulkanMemoryModelDeviceScope = VK_TRUE;
+            vku::AddToPnext(*modified_create_info, new_mm_features);
+        }
     };
 
     if (api_version > VK_API_VERSION_1_1) {
@@ -278,6 +301,17 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
                                 "Forcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE");
                 features12->timelineSemaphore = VK_TRUE;
             }
+
+            if (features12->vulkanMemoryModel == VK_FALSE) {
+                InternalWarning(device, record_obj.location,
+                                "Forcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModel to VK_TRUE");
+                features12->vulkanMemoryModel = VK_TRUE;
+            }
+            if (features12->vulkanMemoryModelDeviceScope == VK_FALSE) {
+                InternalWarning(device, record_obj.location,
+                                "Forcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModelDeviceScope to VK_TRUE");
+                features12->vulkanMemoryModelDeviceScope = VK_TRUE;
+            }
         } else {
             add_missing_features();
         }
@@ -285,6 +319,8 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         // Add our new extensions (will only add if found)
         const std::string_view ts_ext{"VK_KHR_timeline_semaphore"};
         vku::AddExtension(*modified_create_info, ts_ext.data());
+        const std::string_view mm_ext{"VK_KHR_vulkan_memory_model"};
+        vku::AddExtension(*modified_create_info, mm_ext.data());
         add_missing_features();
         timeline_khr_ = true;
     }
@@ -373,7 +409,7 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
             }
         }
     }
-    
+
     // shaderInt64
     // ---
     VkPhysicalDeviceFeatures physical_device_features{};
