@@ -31,6 +31,8 @@ target_sources(gpu_av_spirv PRIVATE
     debug_printf_pass.cpp
     post_process_descriptor_indexing_pass.h
     post_process_descriptor_indexing_pass.cpp
+    vertex_attribute_fetch_oob.h
+    vertex_attribute_fetch_oob.cpp
 
     # Framework
     instruction.h
@@ -65,7 +67,8 @@ target_sources(gpu_av_spirv PRIVATE
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_ray_query_comp.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_post_process_descriptor_index_comp.h
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_post_process_descriptor_index_comp.cpp
-
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_vertex_attribute_fetch_oob_vert.h
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_vertex_attribute_fetch_oob_vert.cpp
 )
 
 target_include_directories(gpu_av_spirv PRIVATE .
@@ -77,6 +80,10 @@ target_link_libraries(gpu_av_spirv PRIVATE
     SPIRV-Headers::SPIRV-Headers
     VkLayer_utils # To pull in compile_definitions
 )
+
+if (VVL_ENABLE_TRACY)
+    target_link_libraries(gpu_av_spirv PRIVATE TracyClient)
+endif()
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     target_compile_options(gpu_av_spirv PRIVATE

@@ -207,7 +207,16 @@ VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayo
     return descriptor.second;
 }
 
-void GpuResourcesManager::ManageBuffer(Buffer mem_buffer) { buffers_.emplace_back(mem_buffer); }
+vko::Buffer GpuResourcesManager::GetManagedBuffer(Validator &gpuav, const Location &loc, const VkBufferCreateInfo &ci,
+                                                  const VmaAllocationCreateInfo &vma_ci) {
+    vko::Buffer buffer(gpuav);
+    const bool success = buffer.Create(loc, &ci, &vma_ci);
+    if (success) {
+        buffers_.emplace_back(buffer);
+    }
+
+    return buffer;
+}
 
 void GpuResourcesManager::DestroyResources() {
     for (auto &[desc_pool, desc_set] : descriptors_) {

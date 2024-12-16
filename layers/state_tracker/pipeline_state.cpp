@@ -1422,6 +1422,21 @@ std::string DescribePipelineLayoutSetNonCompatible(uint32_t set, const vvl::Pipe
     return ss.str();
 }
 
+const spirv::EntryPoint *LastBound::GetVertexEntryPoint() const {
+    if (pipeline_state) {
+        for (const ShaderStageState &shader_stage_state : pipeline_state->stage_states) {
+            if (shader_stage_state.GetStage() != VK_SHADER_STAGE_VERTEX_BIT) {
+                continue;
+            }
+            return shader_stage_state.entrypoint.get();
+        }
+        return nullptr;
+    } else if (const auto *shader_object = GetShaderState(ShaderObjectStage::VERTEX)) {
+        return shader_object->entrypoint.get();
+    }
+    return nullptr;
+}
+
 const spirv::EntryPoint *LastBound::GetFragmentEntryPoint() const {
     if (pipeline_state && pipeline_state->fragment_shader_state) {
         return pipeline_state->fragment_shader_state->fragment_entry_point.get();

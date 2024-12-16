@@ -59,16 +59,9 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
                       VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, VkBuffer count_buffer,
                       VkDeviceSize count_buffer_offset, uint32_t draw_count);
 
-void DrawIndexed(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, uint32_t index_count, uint32_t first_index,
-                 uint32_t vertex_offset, const char *vuid_oob_vertex);
-
 void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
                                     VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, uint32_t draw_count,
                                     VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid_oob_index);
-
-void DrawIndexedIndirectVertexBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
-                                     VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, uint32_t draw_count,
-                                     VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid_oob_vertex);
 
 }  // namespace valcmd
 }  // namespace gpuav

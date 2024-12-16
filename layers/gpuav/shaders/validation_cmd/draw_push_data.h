@@ -36,15 +36,6 @@ const uint kPreDrawBinding_IndirectBuffer = 0;
 const uint kPreDrawBinding_CountBuffer = 1;
 const uint kPreDrawBinding_IndexBuffer = 2;
 
-struct IndexedDrawPushData {
-    uint smallest_vertex_attributes_count;
-    uint index_width;
-    uint vertex_offset;
-    uint first_index;
-    uint index_buffer_dwords_offset;
-    uint indices_to_check;
-};
-
 const uint kIndexedIndirectDrawFlags_DrawCountFromBuffer = uint(1) << 0;
 struct DrawIndexedIndirectIndexBufferPushData {
     uint flags;
@@ -53,18 +44,6 @@ struct DrawIndexedIndirectIndexBufferPushData {
     uint cpu_draw_count;
     uint draw_indexed_indirect_cmds_buffer_dwords_offset;
     uint count_buffer_dwords_offset;
-};
-
-struct DrawIndexedIndirectVertexBufferPushData {
-    uint flags;
-    uint index_width;
-    uint draw_cmds_stride_dwords;
-    uint bound_index_buffer_indices_count;  // Number of indices in the index buffer, taking index type in account. NOT a byte size.
-    uint cpu_draw_count;
-    uint smallest_vertex_attributes_count;
-    uint draw_indexed_indirect_cmds_buffer_dwords_offset;
-    uint count_buffer_dwords_offset;
-    uint index_buffer_dwords_offset;
 };
 
 const uint kDrawMeshFlags_DrawCountFromBuffer = uint(1) << 0;

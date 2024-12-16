@@ -684,6 +684,22 @@
                                             }
                                         },
                                         {
+                                            "key": "gpuav_vertex_attribute_fetch_oob",
+                                            "label": "Out of bounds vertex attribute fetching",
+                                            "description": "Validate that no vertex attribute fetching is out of bonds",
+                                            "type": "BOOL",
+                                            "default": true,
+                                            "platforms": [ "WINDOWS", "LINUX" ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
+                                                ]
+                                            }
+                                        },
+
+                                        {
                                             "key": "gpuav_select_instrumented_shaders",
                                             "label": "Enable instrumenting shaders selectively",
                                             "description": "Select which shaders to instrument passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext",
