@@ -146,6 +146,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/instanceless.cpp
     unit/layer_utils_positive.cpp
     unit/layer_settings.cpp
+    unit/layer_settings_positive.cpp
     unit/memory.cpp
     unit/memory_positive.cpp
     unit/mesh.cpp

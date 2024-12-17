@@ -509,18 +509,22 @@ static bool ValidateLayerSettingsCreateInfo(const VkLayerSettingsCreateInfoEXT *
 
 // TODO - This should be in https://github.com/KhronosGroup/Vulkan-Utility-Libraries/issues/254
 // Doing here in VVL until added in VUL
-// If it will not be don in VUL for a while, we should at least generate this from the JSON
+// If it will not be done in VUL for a while, we should at least generate this from the JSON
 static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *layer_setting_create_info,
                                           VkuLayerSettingSet layer_setting_set, std::vector<std::string> &setting_warnings) {
     if (!layer_setting_create_info) return;
-    // set of const char* is not cross platform and Windows doesn't detect duplicates
+    // Found that a set of <const char*> doesn't detect duplicates on all compilers
     vvl::unordered_set<std::string> used_settings;
 
     for (uint32_t i = 0; i < layer_setting_create_info->settingCount; i++) {
         const VkLayerSettingEXT &setting = layer_setting_create_info->pSettings[i];
         if (strcmp(OBJECT_LAYER_NAME, setting.pLayerName) != 0) continue;
 
+        // used as a backup for settings not listed below
         VkLayerSettingTypeEXT required_type = VK_LAYER_SETTING_TYPE_MAX_ENUM_EXT;
+
+        // Debugging settings are not added here, those are for internal development and not designed for an app to use via
+        // VkLayerSettings API
         if (strcmp(VK_LAYER_VALIDATE_BEST_PRACTICES, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_VALIDATE_BEST_PRACTICES_ARM, setting.pSettingName) == 0) {
@@ -559,6 +563,8 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *la
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_MESSAGE_ID_FILTER, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_STRING_EXT;
+        } else if (strcmp(VK_LAYER_CUSTOM_STYPE_LIST, setting.pSettingName) == 0) {
+            // TODO - Need to decide on a type for this
         } else if (strcmp(VK_LAYER_ENABLE_MESSAGE_LIMIT, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_DUPLICATE_MESSAGE_LIMIT, setting.pSettingName) == 0) {
@@ -574,6 +580,8 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *la
         } else if (strcmp(VK_LAYER_PRINTF_BUFFER_SIZE, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_UINT32_EXT;
         } else if (strcmp(VK_LAYER_GPUAV_ENABLE, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_GPUAV_SHADER_INSTRUMENTATION, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
@@ -621,6 +629,28 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *la
             required_type = VK_LAYER_SETTING_TYPE_STRING_EXT;
         } else if (strcmp(VK_LAYER_REPORT_FLAGS, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_STRING_EXT;
+        } else if (strcmp(VK_LAYER_ENABLES, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_STRING_EXT;
+        } else if (strcmp(VK_LAYER_DISABLES, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_STRING_EXT;
+        } else if (strcmp(DEPRECATED_VK_LAYER_GPUAV_VALIDATE_COPIES, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(DEPRECATED_VK_LAYER_GPUAV_VALIDATE_INDIRECT_BUFFER, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(DEPRECATED_VK_LAYER_RESERVE_BINDING_SLOT, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(DEPRECATED_GPUAV_WARN_ON_ROBUST_OOB, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(DEPRECATED_VK_LAYER_VALIDATE_SYNC_QUEUE_SUBMIT, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else {
+            setting_warnings.emplace_back("The setting " + std::string(setting.pSettingName) +
+                                          " in VkLayerSettingsCreateInfoEXT was not recognize by the Validation Layers. Please "
+                                          "view the VkLayer_khronos_validation.json for a list of all settings.");
         }
 
         if (required_type != VK_LAYER_SETTING_TYPE_MAX_ENUM_EXT && setting.type != required_type) {
@@ -761,7 +791,17 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
         if (enum_value != debug_actions_option.end()) {
             debug_action |= enum_value->second;
         } else {
-            setting_warnings.emplace_back("\"" + element + "\" was not a valid option for VK_LAYER_DEBUG_ACTION (ignoring).");
+            if (element.find(',') != std::string::npos) {
+                setting_warnings.emplace_back("\"" + element +
+                                              "\" was not a valid option for VK_LAYER_DEBUG_ACTION (ignoring).\nIf using "
+                                              "VkLayerSettings, each string needs to be its own VkLayerSettingEXT::pValues.");
+            } else {
+                setting_warnings.emplace_back(
+                    "\"" + element +
+                    "\" was not a valid option for VK_LAYER_DEBUG_ACTION (ignoring).\nValid options are "
+                    "[VK_DBG_LAYER_ACTION_IGNORE, VK_DBG_LAYER_ACTION_CALLBACK, VK_DBG_LAYER_ACTION_LOG_MSG, "
+                    "VK_DBG_LAYER_ACTION_BREAK, VK_DBG_LAYER_ACTION_DEBUG_OUTPUT, VK_DBG_LAYER_ACTION_DEFAULT]");
+            }
         }
     }
 
@@ -781,7 +821,15 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
         if (enum_value != report_flags_options.end()) {
             report_flags |= enum_value->second;
         } else {
-            setting_warnings.emplace_back("\"" + element + "\" was not a valid option for VK_LAYER_REPORT_FLAGS (ignoring).");
+            if (element.find(',') != std::string::npos) {
+                setting_warnings.emplace_back("\"" + element +
+                                              "\" was not a valid option for VK_LAYER_REPORT_FLAGS (ignoring)\nIf using "
+                                              "VkLayerSettings, each string needs to be its own VkLayerSettingEXT::pValues.");
+            } else {
+                setting_warnings.emplace_back("\"" + element +
+                                              "\" was not a valid option for VK_LAYER_REPORT_FLAGS (ignoring)\nValid options are "
+                                              "[error, warn, info, perf, verbose].");
+            }
         }
     }
 

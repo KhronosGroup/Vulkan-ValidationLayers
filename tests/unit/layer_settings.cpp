@@ -361,8 +361,28 @@ TEST_F(NegativeLayerSettings, VuidFilterInt) {
 }
 
 TEST_F(NegativeLayerSettings, DebugAction) {
-    const char *action[] = {"VK_DBG_LAYER_ACTION_NOT_A_REAL_THING"};
-    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "debug_action", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, action};
+    const char *action = "VK_DBG_LAYER_ACTION_NOT_A_REAL_THING";
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "debug_action", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &action};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    Monitor().SetDesiredWarning("was not a valid option for VK_LAYER_DEBUG_ACTION");
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+    Monitor().VerifyFound();
+}
+
+TEST_F(NegativeLayerSettings, DebugAction2) {
+    const char *actions[2] = {"VK_DBG_LAYER_ACTION_IGNORE,VK_DBG_LAYER_ACTION_CALLBACK"};
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "debug_action", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, actions};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    Monitor().SetDesiredWarning("was not a valid option for VK_LAYER_DEBUG_ACTION");
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+    Monitor().VerifyFound();
+}
+
+TEST_F(NegativeLayerSettings, DebugAction3) {
+    const char *actions[2] = {"VK_DBG_LAYER_ACTION_DEFAULT", "VK_DBG_LAYER_ACTION_NOT_A_REAL_THING"};
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "debug_action", VK_LAYER_SETTING_TYPE_STRING_EXT, 2, actions};
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     Monitor().SetDesiredWarning("was not a valid option for VK_LAYER_DEBUG_ACTION");
     RETURN_IF_SKIP(InitFramework(&create_info));
@@ -371,8 +391,28 @@ TEST_F(NegativeLayerSettings, DebugAction) {
 }
 
 TEST_F(NegativeLayerSettings, ReportFlags) {
-    const char *report_flag[] = {"warn,fake,info"};
-    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "report_flags", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, report_flag};
+    const char *report_flag = "fake";
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "report_flags", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &report_flag};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    Monitor().SetDesiredWarning("was not a valid option for VK_LAYER_REPORT_FLAGS");
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+    Monitor().VerifyFound();
+}
+
+TEST_F(NegativeLayerSettings, ReportFlags2) {
+    const char *report_flag = "warn,fake,info";
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "report_flags", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &report_flag};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
+    Monitor().SetDesiredWarning("was not a valid option for VK_LAYER_REPORT_FLAGS");
+    RETURN_IF_SKIP(InitFramework(&create_info));
+    RETURN_IF_SKIP(InitState());
+    Monitor().VerifyFound();
+}
+
+TEST_F(NegativeLayerSettings, ReportFlags3) {
+    const char *report_flag = "error,warn,info,verbose";
+    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "report_flags", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &report_flag};
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     Monitor().SetDesiredWarning("was not a valid option for VK_LAYER_REPORT_FLAGS");
     RETURN_IF_SKIP(InitFramework(&create_info));
@@ -392,13 +432,13 @@ TEST_F(NegativeLayerSettings, LogFilename) {
 }
 #endif
 
-// TODO - Need a system to know about all the settings as some are not listed in VkLayer_khronos_validation.json
-TEST_F(NegativeLayerSettings, DISABLED_NotRealSetting) {
+TEST_F(NegativeLayerSettings, NotRealSetting) {
     int32_t enable = 1;
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "not_a_real_setting", VK_LAYER_SETTING_TYPE_INT32_EXT, 1, &enable};
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     Monitor().ExpectSuccess(kErrorBit | kWarningBit);
-    Monitor().SetDesiredWarning("was not a valid option for VK_LAYER_REPORT_FLAGS");
+    Monitor().SetDesiredWarning(
+        "The setting not_a_real_setting in VkLayerSettingsCreateInfoEXT was not recognize by the Validation Layers.");
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());
     Monitor().VerifyFound();
