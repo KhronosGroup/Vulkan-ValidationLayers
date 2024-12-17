@@ -16,12 +16,11 @@
 #include "../framework/descriptor_helper.h"
 #include "../layers/gpu/shaders/gpuav_shaders_constants.h"
 
-class NegativeGpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
+class NegativeGpuAVDescriptorClassGeneralBuffer : public GpuAVDescriptorClassGeneralBuffer {
   public:
     void ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDeviceSize binding_offset, VkDeviceSize binding_range,
                               VkDescriptorType descriptor_type, const char *fragment_shader,
                               std::vector<const char *> expected_errors, bool shader_objects = false);
-    void ComputeStorageBufferTest(const char *expected_error, const char *shader, VkDeviceSize buffer_size);
 };
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
@@ -725,37 +724,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StorageBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-void NegativeGpuAVDescriptorClassGeneralBuffer::ComputeStorageBufferTest(const char *expected_error, const char *shader,
-                                                                         VkDeviceSize buffer_size) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    pipe.CreateComputePipeline();
-
-    // too small
-    vkt::Buffer in_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError(expected_error);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Vector) {
     TEST_DESCRIPTION("index into a vector OOB");
 
@@ -772,7 +740,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Vector) {
             in_buffer.b.y = 0.0;
         }
     )glsl";
-    ComputeStorageBufferTest("VUID-vkCmdDispatch-storageBuffers-06936", cs_source, 20);
+    ComputeStorageBufferTest(cs_source, true, 20, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Matrix) {
@@ -791,7 +759,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Matrix) {
             in_buffer.b[2][1] = 0.0;
         }
     )glsl";
-    ComputeStorageBufferTest("VUID-vkCmdDispatch-storageBuffers-06936", cs_source, 30);
+    ComputeStorageBufferTest(cs_source, true, 30, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Geometry) {
@@ -1351,4 +1319,458 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBO) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, VectorArray) {
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer foo {
+            uvec4 a[8]; // stride 16
+        };
+        void main() {
+            a[3].y = 44; // write at byte[52:56]
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 48, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
+// TODO - Handle tracking copy size of Arrays
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_ArrayCopyGLSL) {
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0, std430) buffer foo {
+            uvec4 a;
+            uint padding;
+            uint b[4]; // b[3] is OOB
+            uint c; // offset 36
+        };
+
+        void main() {
+            uint d[4] = {4, 5, 6, 7};
+            b = d;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 32, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
+// TODO - Handle tracking copy size of Arrays
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_ArrayCopyTwoBindingsGLSL) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0, std430) buffer foo1 {
+            uvec4 a;
+            uint padding;
+            uint b[4];
+            uint c;
+        };
+
+        layout(set = 0, binding = 1, std430) buffer foo2 {
+            uint d;
+            uint e[4];
+            uvec2 f;
+        };
+
+        void main() {
+            b = e;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    // not enough bound
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, in_buffer.handle(), 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+// TODO - Handle tracking copy size of Arrays
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_ArrayCopyTwoBindingsSlang) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // struct Bar1 {
+    //     uint4 a;
+    //     uint b[4];
+    //     uint c;
+    // };
+    //
+    // struct Bar2 {
+    //     uint4 d;
+    //     uint e[4];
+    //     uint f;
+    // };
+    //
+    // [[vk::binding(0, 0)]]
+    // RWStructuredBuffer<Bar1> foo1;
+    //
+    // [[vk::binding(0, 1)]]
+    // RWStructuredBuffer<Bar2> foo2;
+    //
+    // [shader("compute")]
+    // void main() {
+    //     foo1[0].b = foo2[0].e;
+    // }
+    char const *cs_source = R"(
+                 OpCapability Shader
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %foo1 %foo2
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_arr_uint_int_4 ArrayStride 4
+               OpMemberDecorate %_Array_std430_uint4 0 Offset 0
+               OpMemberDecorate %Bar1_std430 0 Offset 0
+               OpMemberDecorate %Bar1_std430 1 Offset 16
+               OpMemberDecorate %Bar1_std430 2 Offset 32
+               OpDecorate %_runtimearr_Bar1_std430 ArrayStride 48
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %foo1 Binding 0
+               OpDecorate %foo1 DescriptorSet 0
+               OpMemberDecorate %Bar2_std430 0 Offset 0
+               OpMemberDecorate %Bar2_std430 1 Offset 16
+               OpMemberDecorate %Bar2_std430 2 Offset 32
+               OpDecorate %_runtimearr_Bar2_std430 ArrayStride 48
+               OpDecorate %RWStructuredBuffer_0 Block
+               OpMemberDecorate %RWStructuredBuffer_0 0 Offset 0
+               OpDecorate %foo2 Binding 0
+               OpDecorate %foo2 DescriptorSet 1
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+      %int_4 = OpConstant %int 4
+      %int_0 = OpConstant %int 0
+     %v4uint = OpTypeVector %uint 4
+%_arr_uint_int_4 = OpTypeArray %uint %int_4
+%_Array_std430_uint4 = OpTypeStruct %_arr_uint_int_4
+%Bar1_std430 = OpTypeStruct %v4uint %_Array_std430_uint4 %uint
+%_ptr_StorageBuffer_Bar1_std430 = OpTypePointer StorageBuffer %Bar1_std430
+%_runtimearr_Bar1_std430 = OpTypeRuntimeArray %Bar1_std430
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_Bar1_std430
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+      %int_1 = OpConstant %int 1
+%_ptr_StorageBuffer__Array_std430_uint4 = OpTypePointer StorageBuffer %_Array_std430_uint4
+%Bar2_std430 = OpTypeStruct %v4uint %_Array_std430_uint4 %uint
+%_ptr_StorageBuffer_Bar2_std430 = OpTypePointer StorageBuffer %Bar2_std430
+%_runtimearr_Bar2_std430 = OpTypeRuntimeArray %Bar2_std430
+%RWStructuredBuffer_0 = OpTypeStruct %_runtimearr_Bar2_std430
+%_ptr_StorageBuffer_RWStructuredBuffer_0 = OpTypePointer StorageBuffer %RWStructuredBuffer_0
+       %foo1 = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
+       %foo2 = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer_0 StorageBuffer
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %17 = OpAccessChain %_ptr_StorageBuffer_Bar1_std430 %foo1 %int_0 %int_0
+         %24 = OpAccessChain %_ptr_StorageBuffer__Array_std430_uint4 %17 %int_1
+         %27 = OpAccessChain %_ptr_StorageBuffer_Bar2_std430 %foo2 %int_0 %int_0
+         %32 = OpAccessChain %_ptr_StorageBuffer__Array_std430_uint4 %27 %int_1
+         %33 = OpLoad %_Array_std430_uint4 %32
+         %64 = OpCompositeExtract %_arr_uint_int_4 %33 0
+         %65 = OpCompositeExtract %uint %64 0
+         %66 = OpCompositeExtract %uint %64 1
+         %67 = OpCompositeExtract %uint %64 2
+         %68 = OpCompositeExtract %uint %64 3
+        %110 = OpCompositeConstruct %_arr_uint_int_4 %65 %66 %67 %68
+         %83 = OpCompositeConstruct %_Array_std430_uint4 %110
+               OpStore %24 %83
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, 64, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, in_buffer.handle(), 64, 64, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+// TODO - Handle tracking copy size of Arrays
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_ArrayCopySlang) {
+    // struct Bar {
+    //   uint4 a;
+    //   uint pad;
+    //   uint b[4]; // b[3] is OOB
+    //   uint c; // offset 36
+    // };
+    //
+    // [[vk::binding(0, 0)]]
+    // RWStructuredBuffer<Bar> foo;
+    //
+    // [shader("compute")]
+    // void main() {
+    //   uint d[4] = {4, 5, 6, 7};
+    //   foo[0].b = d;
+    // }
+    char const *cs_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %foo
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_arr_uint_int_4 ArrayStride 4
+               OpMemberDecorate %_Array_std430_uint4 0 Offset 0
+               OpMemberDecorate %Bar_std430 0 Offset 0
+               OpMemberDecorate %Bar_std430 1 Offset 16
+               OpMemberDecorate %Bar_std430 2 Offset 20
+               OpMemberDecorate %Bar_std430 3 Offset 36
+               OpDecorate %_runtimearr_Bar_std430 ArrayStride 48
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %foo Binding 0
+               OpDecorate %foo DescriptorSet 0
+               OpDecorate %_arr_uint_int_4_0 ArrayStride 4
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+       %uint = OpTypeInt 32 0
+     %v4uint = OpTypeVector %uint 4
+      %int_4 = OpConstant %int 4
+%_arr_uint_int_4 = OpTypeArray %uint %int_4
+%_Array_std430_uint4 = OpTypeStruct %_arr_uint_int_4
+ %Bar_std430 = OpTypeStruct %v4uint %uint %_Array_std430_uint4 %uint
+%_ptr_StorageBuffer_Bar_std430 = OpTypePointer StorageBuffer %Bar_std430
+%_runtimearr_Bar_std430 = OpTypeRuntimeArray %Bar_std430
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_Bar_std430
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+      %int_2 = OpConstant %int 2
+%_ptr_StorageBuffer__Array_std430_uint4 = OpTypePointer StorageBuffer %_Array_std430_uint4
+%_arr_uint_int_4_0 = OpTypeArray %uint %int_4
+         %25 = OpTypeFunction %_Array_std430_uint4 %_arr_uint_int_4_0
+     %uint_4 = OpConstant %uint 4
+     %uint_5 = OpConstant %uint 5
+     %uint_6 = OpConstant %uint 6
+     %uint_7 = OpConstant %uint 7
+         %35 = OpConstantComposite %_arr_uint_int_4_0 %uint_4 %uint_5 %uint_6 %uint_7
+        %foo = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %14 = OpAccessChain %_ptr_StorageBuffer_Bar_std430 %foo %int_0 %int_0
+         %21 = OpAccessChain %_ptr_StorageBuffer__Array_std430_uint4 %14 %int_2
+         %22 = OpFunctionCall %_Array_std430_uint4 %packStorage %35
+               OpStore %21 %22
+               OpReturn
+               OpFunctionEnd
+%packStorage = OpFunction %_Array_std430_uint4 None %25
+         %26 = OpFunctionParameter %_arr_uint_int_4_0
+         %27 = OpLabel
+         %28 = OpCompositeExtract %uint %26 0
+         %29 = OpCompositeExtract %uint %26 1
+         %30 = OpCompositeExtract %uint %26 2
+         %31 = OpCompositeExtract %uint %26 3
+         %32 = OpCompositeConstruct %_arr_uint_int_4 %28 %29 %30 %31
+         %33 = OpCompositeConstruct %_Array_std430_uint4 %32
+               OpReturnValue %33
+               OpFunctionEnd
+    )";
+    ComputeStorageBufferTest(cs_source, false, 32, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
+// TODO - Handle tracking copy size of Structs
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_StructCopyGLSL) {
+    char const *cs_source = R"glsl(
+        #version 450
+
+        struct Bar {
+            uint x;
+            uint y;
+            uint z[2];
+        };
+
+        layout(set = 0, binding = 0, std430) buffer foo {
+            uvec4 a;
+            uint padding;
+            Bar b; // size 16 at offset 20
+            uint c;
+        };
+
+        void main() {
+            Bar new_bar;
+            b = new_bar;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 32, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
+// TODO - Handle tracking copy size of Structs
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_MStructopySlang) {
+    // struct Bar {
+    //   uint x;
+    //   uint y;
+    //   uint z[2];
+    // };
+    //
+    // struct FooBuffer {
+    //   float4 a;
+    //   Bar b;
+    //   uint c;
+    // };
+    //
+    // [[vk::binding(0, 0)]]
+    // RWStructuredBuffer<FooBuffer> foo;
+    //
+    // [shader("compute")]
+    // void main() {
+    //   foo[1].b = foo[0].b;
+    // }
+    char const *cs_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %foo
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_arr_uint_int_2 ArrayStride 4
+               OpMemberDecorate %_Array_std430_uint2 0 Offset 0
+               OpMemberDecorate %Bar_std430 0 Offset 0
+               OpMemberDecorate %Bar_std430 1 Offset 4
+               OpMemberDecorate %Bar_std430 2 Offset 8
+               OpMemberDecorate %FooBuffer_std430 0 Offset 0
+               OpMemberDecorate %FooBuffer_std430 1 Offset 16
+               OpMemberDecorate %FooBuffer_std430 2 Offset 32
+               OpDecorate %_runtimearr_FooBuffer_std430 ArrayStride 48
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %foo Binding 0
+               OpDecorate %foo DescriptorSet 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+      %int_2 = OpConstant %int 2
+%_arr_uint_int_2 = OpTypeArray %uint %int_2
+%_Array_std430_uint2 = OpTypeStruct %_arr_uint_int_2
+ %Bar_std430 = OpTypeStruct %uint %uint %_Array_std430_uint2
+%FooBuffer_std430 = OpTypeStruct %v4float %Bar_std430 %uint
+%_ptr_StorageBuffer_FooBuffer_std430 = OpTypePointer StorageBuffer %FooBuffer_std430
+%_runtimearr_FooBuffer_std430 = OpTypeRuntimeArray %FooBuffer_std430
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_FooBuffer_std430
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+%_ptr_StorageBuffer_Bar_std430 = OpTypePointer StorageBuffer %Bar_std430
+        %foo = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %17 = OpAccessChain %_ptr_StorageBuffer_FooBuffer_std430 %foo %int_0 %int_1
+         %23 = OpAccessChain %_ptr_StorageBuffer_Bar_std430 %17 %int_1
+         %24 = OpAccessChain %_ptr_StorageBuffer_FooBuffer_std430 %foo %int_0 %int_0
+         %25 = OpAccessChain %_ptr_StorageBuffer_Bar_std430 %24 %int_1
+         %26 = OpLoad %Bar_std430 %25
+         %80 = OpCompositeExtract %uint %26 0
+         %81 = OpCompositeExtract %uint %26 1
+         %82 = OpCompositeExtract %_Array_std430_uint2 %26 2
+         %87 = OpCompositeExtract %_arr_uint_int_2 %82 0
+         %88 = OpCompositeExtract %uint %87 0
+         %89 = OpCompositeExtract %uint %87 1
+        %163 = OpCompositeConstruct %_arr_uint_int_2 %88 %89
+        %149 = OpCompositeConstruct %_Array_std430_uint2 %163
+        %121 = OpCompositeConstruct %Bar_std430 %80 %81 %149
+               OpStore %23 %121
+               OpReturn
+               OpFunctionEnd
+    )";
+    ComputeStorageBufferTest(cs_source, false, 72, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ChainOfAccessChains) {
+    TEST_DESCRIPTION("Slang can sometimes generate a single OpAccessChain like GLSL/HLSL");
+
+    // struct Bar {
+    //     uint a;
+    //     uint d[4]; // this really ends up being a 1 element struct with the array in it
+    // };
+    //
+    // [[vk::binding(0, 0)]]
+    // RWStructuredBuffer<Bar> foo; // 20 byte stride
+    //
+    // [shader("compute")]
+    // void main() {
+    //     foo[1].d[3] = 44;
+    // }
+    char const *cs_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %foo
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_arr_uint_int_4 ArrayStride 4
+               OpMemberDecorate %_Array_std430_uint4 0 Offset 0
+               OpMemberDecorate %Bar_std430 0 Offset 0
+               OpMemberDecorate %Bar_std430 1 Offset 4
+               OpDecorate %_runtimearr_Bar_std430 ArrayStride 20
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %foo Binding 0
+               OpDecorate %foo DescriptorSet 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_1 = OpConstant %int 1
+       %uint = OpTypeInt 32 0
+      %int_4 = OpConstant %int 4
+%_arr_uint_int_4 = OpTypeArray %uint %int_4
+%_Array_std430_uint4 = OpTypeStruct %_arr_uint_int_4
+ %Bar_std430 = OpTypeStruct %uint %_Array_std430_uint4
+%_ptr_StorageBuffer_Bar_std430 = OpTypePointer StorageBuffer %Bar_std430
+%_runtimearr_Bar_std430 = OpTypeRuntimeArray %Bar_std430
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_Bar_std430
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+%_ptr_StorageBuffer__Array_std430_uint4 = OpTypePointer StorageBuffer %_Array_std430_uint4
+%_ptr_StorageBuffer__arr_uint_int_4 = OpTypePointer StorageBuffer %_arr_uint_int_4
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+      %int_3 = OpConstant %int 3
+    %uint_44 = OpConstant %uint 44
+        %foo = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %14 = OpAccessChain %_ptr_StorageBuffer_Bar_std430 %foo %int_0 %int_1
+         %20 = OpAccessChain %_ptr_StorageBuffer__Array_std430_uint4 %14 %int_1
+         %22 = OpAccessChain %_ptr_StorageBuffer__arr_uint_int_4 %20 %int_0
+         %24 = OpAccessChain %_ptr_StorageBuffer_uint %22 %int_3
+               OpStore %24 %uint_44
+               OpReturn
+               OpFunctionEnd
+    )";
+    ComputeStorageBufferTest(cs_source, false, 32, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
