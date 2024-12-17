@@ -173,6 +173,28 @@ class DispatchObject : public Logger {
         return (HandleType)unique_id;
     }
 
+    template <typename HandleType>
+    HandleType Find(HandleType wrapped_handle) const {
+        uint64_t id = CastToUint64(wrapped_handle);
+        auto iter = unique_id_mapping.find(id);
+        if (iter != unique_id_mapping.end()) {
+            return CastFromUint64<HandleType>(iter->second);
+        } else {
+            return CastFromUint<HandleType>(0ULL);
+        }
+    }
+
+    template <typename HandleType>
+    HandleType Erase(HandleType wrapped_handle) {
+        uint64_t id = CastToUint64(wrapped_handle);
+        auto iter = unique_id_mapping.pop(id);
+        if (iter != unique_id_mapping.end()) {
+            return CastFromUint64<HandleType>(iter->second);
+        } else {
+            return CastFromUint<HandleType>(0ULL);
+        }
+    }
+
     // VkDisplayKHR objects are statically created in the driver at VkCreateInstance.
     // They live with the PhyiscalDevice and apps never created/destroy them.
     // Apps needs will query for them and the first time we see it we wrap it

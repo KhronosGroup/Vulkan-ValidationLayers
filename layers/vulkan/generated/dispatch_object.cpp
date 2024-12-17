@@ -37,10 +37,6 @@
 
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
-std::atomic<uint64_t> DispatchObject::global_unique_id{1};
-vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> DispatchObject::unique_id_mapping;
-bool DispatchObject::wrap_handles{true};
-
 void DispatchObject::InitInstanceValidationObjects() {
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
 
@@ -659,14 +655,7 @@ VkResult DispatchObject::AllocateMemory(VkDevice device, const VkMemoryAllocateI
 
 void DispatchObject::FreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.FreeMemory(device, memory, pAllocator);
-
-    uint64_t memory_id = CastToUint64(memory);
-    auto iter = unique_id_mapping.pop(memory_id);
-    if (iter != unique_id_mapping.end()) {
-        memory = (VkDeviceMemory)iter->second;
-    } else {
-        memory = (VkDeviceMemory)0;
-    }
+    memory = Erase(memory);
     device_dispatch_table.FreeMemory(device, memory, pAllocator);
 }
 
@@ -883,14 +872,7 @@ VkResult DispatchObject::CreateFence(VkDevice device, const VkFenceCreateInfo* p
 
 void DispatchObject::DestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyFence(device, fence, pAllocator);
-
-    uint64_t fence_id = CastToUint64(fence);
-    auto iter = unique_id_mapping.pop(fence_id);
-    if (iter != unique_id_mapping.end()) {
-        fence = (VkFence)iter->second;
-    } else {
-        fence = (VkFence)0;
-    }
+    fence = Erase(fence);
     device_dispatch_table.DestroyFence(device, fence, pAllocator);
 }
 
@@ -952,14 +934,7 @@ VkResult DispatchObject::CreateSemaphore(VkDevice device, const VkSemaphoreCreat
 
 void DispatchObject::DestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroySemaphore(device, semaphore, pAllocator);
-
-    uint64_t semaphore_id = CastToUint64(semaphore);
-    auto iter = unique_id_mapping.pop(semaphore_id);
-    if (iter != unique_id_mapping.end()) {
-        semaphore = (VkSemaphore)iter->second;
-    } else {
-        semaphore = (VkSemaphore)0;
-    }
+    semaphore = Erase(semaphore);
     device_dispatch_table.DestroySemaphore(device, semaphore, pAllocator);
 }
 
@@ -976,14 +951,7 @@ VkResult DispatchObject::CreateEvent(VkDevice device, const VkEventCreateInfo* p
 
 void DispatchObject::DestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyEvent(device, event, pAllocator);
-
-    uint64_t event_id = CastToUint64(event);
-    auto iter = unique_id_mapping.pop(event_id);
-    if (iter != unique_id_mapping.end()) {
-        event = (VkEvent)iter->second;
-    } else {
-        event = (VkEvent)0;
-    }
+    event = Erase(event);
     device_dispatch_table.DestroyEvent(device, event, pAllocator);
 }
 
@@ -1024,14 +992,7 @@ VkResult DispatchObject::CreateQueryPool(VkDevice device, const VkQueryPoolCreat
 
 void DispatchObject::DestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyQueryPool(device, queryPool, pAllocator);
-
-    uint64_t queryPool_id = CastToUint64(queryPool);
-    auto iter = unique_id_mapping.pop(queryPool_id);
-    if (iter != unique_id_mapping.end()) {
-        queryPool = (VkQueryPool)iter->second;
-    } else {
-        queryPool = (VkQueryPool)0;
-    }
+    queryPool = Erase(queryPool);
     device_dispatch_table.DestroyQueryPool(device, queryPool, pAllocator);
 }
 
@@ -1067,14 +1028,7 @@ VkResult DispatchObject::CreateBuffer(VkDevice device, const VkBufferCreateInfo*
 
 void DispatchObject::DestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyBuffer(device, buffer, pAllocator);
-
-    uint64_t buffer_id = CastToUint64(buffer);
-    auto iter = unique_id_mapping.pop(buffer_id);
-    if (iter != unique_id_mapping.end()) {
-        buffer = (VkBuffer)iter->second;
-    } else {
-        buffer = (VkBuffer)0;
-    }
+    buffer = Erase(buffer);
     device_dispatch_table.DestroyBuffer(device, buffer, pAllocator);
 }
 
@@ -1103,14 +1057,7 @@ VkResult DispatchObject::CreateBufferView(VkDevice device, const VkBufferViewCre
 
 void DispatchObject::DestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
-
-    uint64_t bufferView_id = CastToUint64(bufferView);
-    auto iter = unique_id_mapping.pop(bufferView_id);
-    if (iter != unique_id_mapping.end()) {
-        bufferView = (VkBufferView)iter->second;
-    } else {
-        bufferView = (VkBufferView)0;
-    }
+    bufferView = Erase(bufferView);
     device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
 }
 
@@ -1135,14 +1082,7 @@ VkResult DispatchObject::CreateImage(VkDevice device, const VkImageCreateInfo* p
 
 void DispatchObject::DestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyImage(device, image, pAllocator);
-
-    uint64_t image_id = CastToUint64(image);
-    auto iter = unique_id_mapping.pop(image_id);
-    if (iter != unique_id_mapping.end()) {
-        image = (VkImage)iter->second;
-    } else {
-        image = (VkImage)0;
-    }
+    image = Erase(image);
     device_dispatch_table.DestroyImage(device, image, pAllocator);
 }
 
@@ -1179,14 +1119,7 @@ VkResult DispatchObject::CreateImageView(VkDevice device, const VkImageViewCreat
 
 void DispatchObject::DestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyImageView(device, imageView, pAllocator);
-
-    uint64_t imageView_id = CastToUint64(imageView);
-    auto iter = unique_id_mapping.pop(imageView_id);
-    if (iter != unique_id_mapping.end()) {
-        imageView = (VkImageView)iter->second;
-    } else {
-        imageView = (VkImageView)0;
-    }
+    imageView = Erase(imageView);
     device_dispatch_table.DestroyImageView(device, imageView, pAllocator);
 }
 
@@ -1212,14 +1145,7 @@ VkResult DispatchObject::CreateShaderModule(VkDevice device, const VkShaderModul
 
 void DispatchObject::DestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyShaderModule(device, shaderModule, pAllocator);
-
-    uint64_t shaderModule_id = CastToUint64(shaderModule);
-    auto iter = unique_id_mapping.pop(shaderModule_id);
-    if (iter != unique_id_mapping.end()) {
-        shaderModule = (VkShaderModule)iter->second;
-    } else {
-        shaderModule = (VkShaderModule)0;
-    }
+    shaderModule = Erase(shaderModule);
     device_dispatch_table.DestroyShaderModule(device, shaderModule, pAllocator);
 }
 
@@ -1236,14 +1162,7 @@ VkResult DispatchObject::CreatePipelineCache(VkDevice device, const VkPipelineCa
 
 void DispatchObject::DestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPipelineCache(device, pipelineCache, pAllocator);
-
-    uint64_t pipelineCache_id = CastToUint64(pipelineCache);
-    auto iter = unique_id_mapping.pop(pipelineCache_id);
-    if (iter != unique_id_mapping.end()) {
-        pipelineCache = (VkPipelineCache)iter->second;
-    } else {
-        pipelineCache = (VkPipelineCache)0;
-    }
+    pipelineCache = Erase(pipelineCache);
     device_dispatch_table.DestroyPipelineCache(device, pipelineCache, pAllocator);
 }
 
@@ -1278,14 +1197,7 @@ VkResult DispatchObject::MergePipelineCaches(VkDevice device, VkPipelineCache ds
 
 void DispatchObject::DestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPipeline(device, pipeline, pAllocator);
-
-    uint64_t pipeline_id = CastToUint64(pipeline);
-    auto iter = unique_id_mapping.pop(pipeline_id);
-    if (iter != unique_id_mapping.end()) {
-        pipeline = (VkPipeline)iter->second;
-    } else {
-        pipeline = (VkPipeline)0;
-    }
+    pipeline = Erase(pipeline);
     device_dispatch_table.DestroyPipeline(device, pipeline, pAllocator);
 }
 
@@ -1316,14 +1228,7 @@ VkResult DispatchObject::CreatePipelineLayout(VkDevice device, const VkPipelineL
 void DispatchObject::DestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
                                            const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPipelineLayout(device, pipelineLayout, pAllocator);
-
-    uint64_t pipelineLayout_id = CastToUint64(pipelineLayout);
-    auto iter = unique_id_mapping.pop(pipelineLayout_id);
-    if (iter != unique_id_mapping.end()) {
-        pipelineLayout = (VkPipelineLayout)iter->second;
-    } else {
-        pipelineLayout = (VkPipelineLayout)0;
-    }
+    pipelineLayout = Erase(pipelineLayout);
     device_dispatch_table.DestroyPipelineLayout(device, pipelineLayout, pAllocator);
 }
 
@@ -1349,14 +1254,7 @@ VkResult DispatchObject::CreateSampler(VkDevice device, const VkSamplerCreateInf
 
 void DispatchObject::DestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroySampler(device, sampler, pAllocator);
-
-    uint64_t sampler_id = CastToUint64(sampler);
-    auto iter = unique_id_mapping.pop(sampler_id);
-    if (iter != unique_id_mapping.end()) {
-        sampler = (VkSampler)iter->second;
-    } else {
-        sampler = (VkSampler)0;
-    }
+    sampler = Erase(sampler);
     device_dispatch_table.DestroySampler(device, sampler, pAllocator);
 }
 
@@ -1392,14 +1290,7 @@ VkResult DispatchObject::CreateDescriptorSetLayout(VkDevice device, const VkDesc
 void DispatchObject::DestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
                                                 const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
-
-    uint64_t descriptorSetLayout_id = CastToUint64(descriptorSetLayout);
-    auto iter = unique_id_mapping.pop(descriptorSetLayout_id);
-    if (iter != unique_id_mapping.end()) {
-        descriptorSetLayout = (VkDescriptorSetLayout)iter->second;
-    } else {
-        descriptorSetLayout = (VkDescriptorSetLayout)0;
-    }
+    descriptorSetLayout = Erase(descriptorSetLayout);
     device_dispatch_table.DestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
 }
 
@@ -1512,14 +1403,7 @@ VkResult DispatchObject::CreateFramebuffer(VkDevice device, const VkFramebufferC
 
 void DispatchObject::DestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
-
-    uint64_t framebuffer_id = CastToUint64(framebuffer);
-    auto iter = unique_id_mapping.pop(framebuffer_id);
-    if (iter != unique_id_mapping.end()) {
-        framebuffer = (VkFramebuffer)iter->second;
-    } else {
-        framebuffer = (VkFramebuffer)0;
-    }
+    framebuffer = Erase(framebuffer);
     device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
 }
 
@@ -2187,14 +2071,7 @@ VkResult DispatchObject::CreateSamplerYcbcrConversion(VkDevice device, const VkS
 void DispatchObject::DestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                    const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
-
-    uint64_t ycbcrConversion_id = CastToUint64(ycbcrConversion);
-    auto iter = unique_id_mapping.pop(ycbcrConversion_id);
-    if (iter != unique_id_mapping.end()) {
-        ycbcrConversion = (VkSamplerYcbcrConversion)iter->second;
-    } else {
-        ycbcrConversion = (VkSamplerYcbcrConversion)0;
-    }
+    ycbcrConversion = Erase(ycbcrConversion);
     device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
 }
 
@@ -2426,14 +2303,7 @@ VkResult DispatchObject::CreatePrivateDataSlot(VkDevice device, const VkPrivateD
 void DispatchObject::DestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot,
                                             const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
-
-    uint64_t privateDataSlot_id = CastToUint64(privateDataSlot);
-    auto iter = unique_id_mapping.pop(privateDataSlot_id);
-    if (iter != unique_id_mapping.end()) {
-        privateDataSlot = (VkPrivateDataSlot)iter->second;
-    } else {
-        privateDataSlot = (VkPrivateDataSlot)0;
-    }
+    privateDataSlot = Erase(privateDataSlot);
     device_dispatch_table.DestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
 }
 
@@ -3195,14 +3065,7 @@ VkResult DispatchObject::TransitionImageLayout(VkDevice device, uint32_t transit
 
 void DispatchObject::DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return instance_dispatch_table.DestroySurfaceKHR(instance, surface, pAllocator);
-
-    uint64_t surface_id = CastToUint64(surface);
-    auto iter = unique_id_mapping.pop(surface_id);
-    if (iter != unique_id_mapping.end()) {
-        surface = (VkSurfaceKHR)iter->second;
-    } else {
-        surface = (VkSurfaceKHR)0;
-    }
+    surface = Erase(surface);
     instance_dispatch_table.DestroySurfaceKHR(instance, surface, pAllocator);
 }
 
@@ -3549,14 +3412,7 @@ VkResult DispatchObject::CreateVideoSessionKHR(VkDevice device, const VkVideoSes
 void DispatchObject::DestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                             const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyVideoSessionKHR(device, videoSession, pAllocator);
-
-    uint64_t videoSession_id = CastToUint64(videoSession);
-    auto iter = unique_id_mapping.pop(videoSession_id);
-    if (iter != unique_id_mapping.end()) {
-        videoSession = (VkVideoSessionKHR)iter->second;
-    } else {
-        videoSession = (VkVideoSessionKHR)0;
-    }
+    videoSession = Erase(videoSession);
     device_dispatch_table.DestroyVideoSessionKHR(device, videoSession, pAllocator);
 }
 
@@ -3641,14 +3497,7 @@ VkResult DispatchObject::UpdateVideoSessionParametersKHR(VkDevice device, VkVide
 void DispatchObject::DestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
                                                       const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
-
-    uint64_t videoSessionParameters_id = CastToUint64(videoSessionParameters);
-    auto iter = unique_id_mapping.pop(videoSessionParameters_id);
-    if (iter != unique_id_mapping.end()) {
-        videoSessionParameters = (VkVideoSessionParametersKHR)iter->second;
-    } else {
-        videoSessionParameters = (VkVideoSessionParametersKHR)0;
-    }
+    videoSessionParameters = Erase(videoSessionParameters);
     device_dispatch_table.DestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
 }
 
@@ -4355,14 +4204,7 @@ VkResult DispatchObject::CreateSamplerYcbcrConversionKHR(VkDevice device, const 
 void DispatchObject::DestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                       const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
-
-    uint64_t ycbcrConversion_id = CastToUint64(ycbcrConversion);
-    auto iter = unique_id_mapping.pop(ycbcrConversion_id);
-    if (iter != unique_id_mapping.end()) {
-        ycbcrConversion = (VkSamplerYcbcrConversion)iter->second;
-    } else {
-        ycbcrConversion = (VkSamplerYcbcrConversion)0;
-    }
+    ycbcrConversion = Erase(ycbcrConversion);
     device_dispatch_table.DestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
 }
 
@@ -4624,14 +4466,7 @@ VkResult DispatchObject::CreateDeferredOperationKHR(VkDevice device, const VkAll
 void DispatchObject::DestroyDeferredOperationKHR(VkDevice device, VkDeferredOperationKHR operation,
                                                  const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyDeferredOperationKHR(device, operation, pAllocator);
-
-    uint64_t operation_id = CastToUint64(operation);
-    auto iter = unique_id_mapping.pop(operation_id);
-    if (iter != unique_id_mapping.end()) {
-        operation = (VkDeferredOperationKHR)iter->second;
-    } else {
-        operation = (VkDeferredOperationKHR)0;
-    }
+    operation = Erase(operation);
     device_dispatch_table.DestroyDeferredOperationKHR(device, operation, pAllocator);
 }
 
@@ -5151,14 +4986,7 @@ void DispatchObject::GetImageSubresourceLayout2KHR(VkDevice device, VkImage imag
 void DispatchObject::DestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
                                               const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator);
-
-    uint64_t pipelineBinary_id = CastToUint64(pipelineBinary);
-    auto iter = unique_id_mapping.pop(pipelineBinary_id);
-    if (iter != unique_id_mapping.end()) {
-        pipelineBinary = (VkPipelineBinaryKHR)iter->second;
-    } else {
-        pipelineBinary = (VkPipelineBinaryKHR)0;
-    }
+    pipelineBinary = Erase(pipelineBinary);
     device_dispatch_table.DestroyPipelineBinaryKHR(device, pipelineBinary, pAllocator);
 }
 
@@ -5395,14 +5223,7 @@ VkResult DispatchObject::CreateDebugReportCallbackEXT(VkInstance instance, const
 void DispatchObject::DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
                                                    const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return instance_dispatch_table.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
-
-    uint64_t callback_id = CastToUint64(callback);
-    auto iter = unique_id_mapping.pop(callback_id);
-    if (iter != unique_id_mapping.end()) {
-        callback = (VkDebugReportCallbackEXT)iter->second;
-    } else {
-        callback = (VkDebugReportCallbackEXT)0;
-    }
+    callback = Erase(callback);
     instance_dispatch_table.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
 }
 
@@ -5548,27 +5369,13 @@ VkResult DispatchObject::CreateCuFunctionNVX(VkDevice device, const VkCuFunction
 
 void DispatchObject::DestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyCuModuleNVX(device, module, pAllocator);
-
-    uint64_t module_id = CastToUint64(module);
-    auto iter = unique_id_mapping.pop(module_id);
-    if (iter != unique_id_mapping.end()) {
-        module = (VkCuModuleNVX)iter->second;
-    } else {
-        module = (VkCuModuleNVX)0;
-    }
+    module = Erase(module);
     device_dispatch_table.DestroyCuModuleNVX(device, module, pAllocator);
 }
 
 void DispatchObject::DestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyCuFunctionNVX(device, function, pAllocator);
-
-    uint64_t function_id = CastToUint64(function);
-    auto iter = unique_id_mapping.pop(function_id);
-    if (iter != unique_id_mapping.end()) {
-        function = (VkCuFunctionNVX)iter->second;
-    } else {
-        function = (VkCuFunctionNVX)0;
-    }
+    function = Erase(function);
     device_dispatch_table.DestroyCuFunctionNVX(device, function, pAllocator);
 }
 
@@ -5952,14 +5759,7 @@ VkResult DispatchObject::CreateDebugUtilsMessengerEXT(VkInstance instance, const
 void DispatchObject::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
                                                    const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return instance_dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
-
-    uint64_t messenger_id = CastToUint64(messenger);
-    auto iter = unique_id_mapping.pop(messenger_id);
-    if (iter != unique_id_mapping.end()) {
-        messenger = (VkDebugUtilsMessengerEXT)iter->second;
-    } else {
-        messenger = (VkDebugUtilsMessengerEXT)0;
-    }
+    messenger = Erase(messenger);
     instance_dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
 }
 
@@ -6130,14 +5930,7 @@ VkResult DispatchObject::CreateValidationCacheEXT(VkDevice device, const VkValid
 void DispatchObject::DestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
                                                const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyValidationCacheEXT(device, validationCache, pAllocator);
-
-    uint64_t validationCache_id = CastToUint64(validationCache);
-    auto iter = unique_id_mapping.pop(validationCache_id);
-    if (iter != unique_id_mapping.end()) {
-        validationCache = (VkValidationCacheEXT)iter->second;
-    } else {
-        validationCache = (VkValidationCacheEXT)0;
-    }
+    validationCache = Erase(validationCache);
     device_dispatch_table.DestroyValidationCacheEXT(device, validationCache, pAllocator);
 }
 
@@ -6233,14 +6026,7 @@ VkResult DispatchObject::CreateAccelerationStructureNV(VkDevice device, const Vk
 void DispatchObject::DestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                     const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
-
-    uint64_t accelerationStructure_id = CastToUint64(accelerationStructure);
-    auto iter = unique_id_mapping.pop(accelerationStructure_id);
-    if (iter != unique_id_mapping.end()) {
-        accelerationStructure = (VkAccelerationStructureNV)iter->second;
-    } else {
-        accelerationStructure = (VkAccelerationStructureNV)0;
-    }
+    accelerationStructure = Erase(accelerationStructure);
     device_dispatch_table.DestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
 }
 
@@ -7058,14 +6844,7 @@ VkResult DispatchObject::CreateIndirectCommandsLayoutNV(VkDevice device, const V
 void DispatchObject::DestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout,
                                                      const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
-
-    uint64_t indirectCommandsLayout_id = CastToUint64(indirectCommandsLayout);
-    auto iter = unique_id_mapping.pop(indirectCommandsLayout_id);
-    if (iter != unique_id_mapping.end()) {
-        indirectCommandsLayout = (VkIndirectCommandsLayoutNV)iter->second;
-    } else {
-        indirectCommandsLayout = (VkIndirectCommandsLayoutNV)0;
-    }
+    indirectCommandsLayout = Erase(indirectCommandsLayout);
     device_dispatch_table.DestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
 }
 
@@ -7106,14 +6885,7 @@ VkResult DispatchObject::CreatePrivateDataSlotEXT(VkDevice device, const VkPriva
 void DispatchObject::DestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot,
                                                const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
-
-    uint64_t privateDataSlot_id = CastToUint64(privateDataSlot);
-    auto iter = unique_id_mapping.pop(privateDataSlot_id);
-    if (iter != unique_id_mapping.end()) {
-        privateDataSlot = (VkPrivateDataSlot)iter->second;
-    } else {
-        privateDataSlot = (VkPrivateDataSlot)0;
-    }
+    privateDataSlot = Erase(privateDataSlot);
     device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
 }
 
@@ -7187,27 +6959,13 @@ VkResult DispatchObject::CreateCudaFunctionNV(VkDevice device, const VkCudaFunct
 
 void DispatchObject::DestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyCudaModuleNV(device, module, pAllocator);
-
-    uint64_t module_id = CastToUint64(module);
-    auto iter = unique_id_mapping.pop(module_id);
-    if (iter != unique_id_mapping.end()) {
-        module = (VkCudaModuleNV)iter->second;
-    } else {
-        module = (VkCudaModuleNV)0;
-    }
+    module = Erase(module);
     device_dispatch_table.DestroyCudaModuleNV(device, module, pAllocator);
 }
 
 void DispatchObject::DestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyCudaFunctionNV(device, function, pAllocator);
-
-    uint64_t function_id = CastToUint64(function);
-    auto iter = unique_id_mapping.pop(function_id);
-    if (iter != unique_id_mapping.end()) {
-        function = (VkCudaFunctionNV)iter->second;
-    } else {
-        function = (VkCudaFunctionNV)0;
-    }
+    function = Erase(function);
     device_dispatch_table.DestroyCudaFunctionNV(device, function, pAllocator);
 }
 
@@ -7561,14 +7319,7 @@ VkResult DispatchObject::SetBufferCollectionBufferConstraintsFUCHSIA(VkDevice de
 void DispatchObject::DestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                     const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
-
-    uint64_t collection_id = CastToUint64(collection);
-    auto iter = unique_id_mapping.pop(collection_id);
-    if (iter != unique_id_mapping.end()) {
-        collection = (VkBufferCollectionFUCHSIA)iter->second;
-    } else {
-        collection = (VkBufferCollectionFUCHSIA)0;
-    }
+    collection = Erase(collection);
     device_dispatch_table.DestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
 }
 
@@ -7714,14 +7465,7 @@ VkResult DispatchObject::CreateMicromapEXT(VkDevice device, const VkMicromapCrea
 
 void DispatchObject::DestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyMicromapEXT(device, micromap, pAllocator);
-
-    uint64_t micromap_id = CastToUint64(micromap);
-    auto iter = unique_id_mapping.pop(micromap_id);
-    if (iter != unique_id_mapping.end()) {
-        micromap = (VkMicromapEXT)iter->second;
-    } else {
-        micromap = (VkMicromapEXT)0;
-    }
+    micromap = Erase(micromap);
     device_dispatch_table.DestroyMicromapEXT(device, micromap, pAllocator);
 }
 
@@ -8305,14 +8049,7 @@ VkResult DispatchObject::CreateOpticalFlowSessionNV(VkDevice device, const VkOpt
 void DispatchObject::DestroyOpticalFlowSessionNV(VkDevice device, VkOpticalFlowSessionNV session,
                                                  const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyOpticalFlowSessionNV(device, session, pAllocator);
-
-    uint64_t session_id = CastToUint64(session);
-    auto iter = unique_id_mapping.pop(session_id);
-    if (iter != unique_id_mapping.end()) {
-        session = (VkOpticalFlowSessionNV)iter->second;
-    } else {
-        session = (VkOpticalFlowSessionNV)0;
-    }
+    session = Erase(session);
     device_dispatch_table.DestroyOpticalFlowSessionNV(device, session, pAllocator);
 }
 
@@ -8371,14 +8108,7 @@ VkResult DispatchObject::CreateShadersEXT(VkDevice device, uint32_t createInfoCo
 
 void DispatchObject::DestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyShaderEXT(device, shader, pAllocator);
-
-    uint64_t shader_id = CastToUint64(shader);
-    auto iter = unique_id_mapping.pop(shader_id);
-    if (iter != unique_id_mapping.end()) {
-        shader = (VkShaderEXT)iter->second;
-    } else {
-        shader = (VkShaderEXT)0;
-    }
+    shader = Erase(shader);
     device_dispatch_table.DestroyShaderEXT(device, shader, pAllocator);
 }
 
@@ -8631,28 +8361,14 @@ VkResult DispatchObject::CreateIndirectCommandsLayoutEXT(VkDevice device, const 
 void DispatchObject::DestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
                                                       const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyIndirectCommandsLayoutEXT(device, indirectCommandsLayout, pAllocator);
-
-    uint64_t indirectCommandsLayout_id = CastToUint64(indirectCommandsLayout);
-    auto iter = unique_id_mapping.pop(indirectCommandsLayout_id);
-    if (iter != unique_id_mapping.end()) {
-        indirectCommandsLayout = (VkIndirectCommandsLayoutEXT)iter->second;
-    } else {
-        indirectCommandsLayout = (VkIndirectCommandsLayoutEXT)0;
-    }
+    indirectCommandsLayout = Erase(indirectCommandsLayout);
     device_dispatch_table.DestroyIndirectCommandsLayoutEXT(device, indirectCommandsLayout, pAllocator);
 }
 
 void DispatchObject::DestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
                                                     const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyIndirectExecutionSetEXT(device, indirectExecutionSet, pAllocator);
-
-    uint64_t indirectExecutionSet_id = CastToUint64(indirectExecutionSet);
-    auto iter = unique_id_mapping.pop(indirectExecutionSet_id);
-    if (iter != unique_id_mapping.end()) {
-        indirectExecutionSet = (VkIndirectExecutionSetEXT)iter->second;
-    } else {
-        indirectExecutionSet = (VkIndirectExecutionSetEXT)0;
-    }
+    indirectExecutionSet = Erase(indirectExecutionSet);
     device_dispatch_table.DestroyIndirectExecutionSetEXT(device, indirectExecutionSet, pAllocator);
 }
 
@@ -8746,14 +8462,7 @@ VkResult DispatchObject::CreateAccelerationStructureKHR(VkDevice device, const V
 void DispatchObject::DestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
                                                      const VkAllocationCallbacks* pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
-
-    uint64_t accelerationStructure_id = CastToUint64(accelerationStructure);
-    auto iter = unique_id_mapping.pop(accelerationStructure_id);
-    if (iter != unique_id_mapping.end()) {
-        accelerationStructure = (VkAccelerationStructureKHR)iter->second;
-    } else {
-        accelerationStructure = (VkAccelerationStructureKHR)0;
-    }
+    accelerationStructure = Erase(accelerationStructure);
     device_dispatch_table.DestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
 
