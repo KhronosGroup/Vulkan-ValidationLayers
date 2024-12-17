@@ -29,12 +29,12 @@ namespace spirv {
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId() {
     // This pass has 2 variations of GLSL we can pull in. Non-Bindless is simpler and we want to use when possible
-    static LinkInfo link_info_bindless = {
-        instrumentation_descriptor_indexing_oob_bindless_comp, instrumentation_descriptor_indexing_oob_bindless_comp_size,
-        LinkFunctions::inst_descriptor_indexing_oob_bindless, 0, "inst_descriptor_indexing_oob_bindless"};
-    static LinkInfo link_info_non_bindless = {
-        instrumentation_descriptor_indexing_oob_non_bindless_comp, instrumentation_descriptor_indexing_oob_non_bindless_comp_size,
-        LinkFunctions::inst_descriptor_indexing_oob_non_bindless, 0, "inst_descriptor_indexing_oob_non_bindless"};
+    static LinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
+                                          instrumentation_descriptor_indexing_oob_bindless_comp_size, 0,
+                                          "inst_descriptor_indexing_oob_bindless"};
+    static LinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oob_non_bindless_comp,
+                                              instrumentation_descriptor_indexing_oob_non_bindless_comp_size, 0,
+                                              "inst_descriptor_indexing_oob_non_bindless"};
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
