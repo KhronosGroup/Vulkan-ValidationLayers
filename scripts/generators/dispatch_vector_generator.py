@@ -52,7 +52,10 @@ class APISpecific:
 #include "gpu/core/gpuav.h"
 #include "sync/sync_validation.h"
 
-void DispatchObject::InitObjectDispatchVectors() {
+namespace vvl {
+namespace dispatch {
+
+void Device::InitObjectDispatchVectors() {
 
 #define BUILD_DISPATCH_VECTOR(name) \\
     init_object_dispatch_vector(InterceptId ## name, \\
@@ -229,4 +232,6 @@ class DispatchVectorGenerator(BaseGenerator):
                 out.append(f'    BUILD_DISPATCH_VECTOR(PostCallRecord{command.name[2:]});\n')
         out.extend(guard_helper.add_guard(None))
         out.append('}\n')
+        out.append('} // namespace dispatch\n')
+        out.append('} // namespace vvl\n')
         self.write("".join(out))

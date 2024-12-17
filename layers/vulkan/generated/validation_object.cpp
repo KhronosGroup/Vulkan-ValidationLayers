@@ -35,27 +35,27 @@ thread_local WriteLockGuard* ValidationObject::record_guard{};
 void ValidationObject::DispatchGetPhysicalDeviceFeatures2Helper(VkPhysicalDevice physicalDevice,
                                                                 VkPhysicalDeviceFeatures2* pFeatures) const {
     if (api_version >= VK_API_VERSION_1_1) {
-        return dispatch_->GetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
+        return dispatch_instance_->GetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
     } else {
-        return dispatch_->GetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
+        return dispatch_instance_->GetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
     }
 }
 
 void ValidationObject::DispatchGetPhysicalDeviceProperties2Helper(VkPhysicalDevice physicalDevice,
                                                                   VkPhysicalDeviceProperties2* pProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
-        return dispatch_->GetPhysicalDeviceProperties2(physicalDevice, pProperties);
+        return dispatch_instance_->GetPhysicalDeviceProperties2(physicalDevice, pProperties);
     } else {
-        return dispatch_->GetPhysicalDeviceProperties2KHR(physicalDevice, pProperties);
+        return dispatch_instance_->GetPhysicalDeviceProperties2KHR(physicalDevice, pProperties);
     }
 }
 
 void ValidationObject::DispatchGetPhysicalDeviceFormatProperties2Helper(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                         VkFormatProperties2* pFormatProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
-        return dispatch_->GetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties);
+        return dispatch_instance_->GetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties);
     } else {
-        return dispatch_->GetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties);
+        return dispatch_instance_->GetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties);
     }
 }
 
@@ -63,29 +63,31 @@ VkResult ValidationObject::DispatchGetPhysicalDeviceImageFormatProperties2Helper
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
     VkImageFormatProperties2* pImageFormatProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
-        return dispatch_->GetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
+        return dispatch_instance_->GetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo,
+                                                                           pImageFormatProperties);
     } else {
-        return dispatch_->GetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
+        return dispatch_instance_->GetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo,
+                                                                              pImageFormatProperties);
     }
 }
 
 void ValidationObject::DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(
     VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties2* pQueueFamilyProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
-        return dispatch_->GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
-                                                                  pQueueFamilyProperties);
+        return dispatch_instance_->GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
+                                                                           pQueueFamilyProperties);
     } else {
-        return dispatch_->GetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
-                                                                     pQueueFamilyProperties);
+        return dispatch_instance_->GetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
+                                                                              pQueueFamilyProperties);
     }
 }
 
 void ValidationObject::DispatchGetPhysicalDeviceMemoryProperties2Helper(
     VkPhysicalDevice physicalDevice, VkPhysicalDeviceMemoryProperties2* pMemoryProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
-        return dispatch_->GetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties);
+        return dispatch_instance_->GetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties);
     } else {
-        return dispatch_->GetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties);
+        return dispatch_instance_->GetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties);
     }
 }
 
@@ -93,10 +95,11 @@ void ValidationObject::DispatchGetPhysicalDeviceSparseImageFormatProperties2Help
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
     VkSparseImageFormatProperties2* pProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
-        return dispatch_->GetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount, pProperties);
+        return dispatch_instance_->GetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount,
+                                                                                 pProperties);
     } else {
-        return dispatch_->GetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
-                                                                           pProperties);
+        return dispatch_instance_->GetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
+                                                                                    pProperties);
     }
 }
 
@@ -104,11 +107,11 @@ void ValidationObject::DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelpe
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
     VkExternalSemaphoreProperties* pExternalSemaphoreProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
-        return dispatch_->GetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
-                                                                       pExternalSemaphoreProperties);
+        return dispatch_instance_->GetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
+                                                                                pExternalSemaphoreProperties);
     } else {
-        return dispatch_->GetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
-                                                                          pExternalSemaphoreProperties);
+        return dispatch_instance_->GetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
+                                                                                   pExternalSemaphoreProperties);
     }
 }
 
@@ -116,9 +119,11 @@ void ValidationObject::DispatchGetPhysicalDeviceExternalFencePropertiesHelper(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
     VkExternalFenceProperties* pExternalFenceProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
-        return dispatch_->GetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
+        return dispatch_instance_->GetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo,
+                                                                            pExternalFenceProperties);
     } else {
-        return dispatch_->GetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo, pExternalFenceProperties);
+        return dispatch_instance_->GetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo,
+                                                                               pExternalFenceProperties);
     }
 }
 
@@ -126,10 +131,11 @@ void ValidationObject::DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
     VkExternalBufferProperties* pExternalBufferProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
-        return dispatch_->GetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
+        return dispatch_instance_->GetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo,
+                                                                             pExternalBufferProperties);
     } else {
-        return dispatch_->GetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo,
-                                                                       pExternalBufferProperties);
+        return dispatch_instance_->GetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo,
+                                                                                pExternalBufferProperties);
     }
 }
 

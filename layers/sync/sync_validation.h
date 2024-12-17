@@ -41,7 +41,9 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    SyncValidator() : error_messages_(*this) { container_type = LayerObjectTypeSyncValidation; }
+    SyncValidator(vvl::dispatch::Device *dev, SyncValidator *instance_vo)
+        : BaseClass(dev, instance_vo, LayerObjectTypeSyncValidation), error_messages_(*this) {}
+    SyncValidator(vvl::dispatch::Instance *inst) : BaseClass(inst, LayerObjectTypeSyncValidation), error_messages_(*this) {}
     ~SyncValidator();
 
     syncval::ErrorMessages error_messages_;

@@ -254,6 +254,8 @@ class counter {
 };
 
 class ThreadSafety : public ValidationObject {
+    using BaseClass = ValidationObject;
+
   public:
     std::shared_mutex thread_safety_lock;
 
@@ -310,8 +312,9 @@ class ThreadSafety : public ValidationObject {
     // for objects created with the instance as parent.
     ThreadSafety *parent_instance;
 
-    ThreadSafety(ThreadSafety *parent)
-        : c_VkCommandBuffer(kVulkanObjectTypeCommandBuffer, this),
+    ThreadSafety(vvl::dispatch::Instance *inst)
+        : BaseClass(inst, LayerObjectTypeThreading),
+          c_VkCommandBuffer(kVulkanObjectTypeCommandBuffer, this),
           c_VkDevice(kVulkanObjectTypeDevice, this),
           c_VkInstance(kVulkanObjectTypeInstance, this),
           c_VkQueue(kVulkanObjectTypeQueue, this),
@@ -321,9 +324,23 @@ class ThreadSafety : public ValidationObject {
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
           c_uint64_t(kVulkanObjectTypeUnknown, this),
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
-          parent_instance(parent) {
-        container_type = LayerObjectTypeThreading;
-    };
+          parent_instance(nullptr) {
+    }
+
+    ThreadSafety(vvl::dispatch::Device *dev, ThreadSafety *instance_vo)
+        : BaseClass(dev, LayerObjectTypeThreading),
+          c_VkCommandBuffer(kVulkanObjectTypeCommandBuffer, this),
+          c_VkDevice(kVulkanObjectTypeDevice, this),
+          c_VkInstance(kVulkanObjectTypeInstance, this),
+          c_VkQueue(kVulkanObjectTypeQueue, this),
+          c_VkCommandPoolContents(kVulkanObjectTypeCommandPool, this),
+#ifdef DISTINCT_NONDISPATCHABLE_HANDLES
+#include "generated/thread_safety_counter_instances.h"
+#else   // DISTINCT_NONDISPATCHABLE_HANDLES
+          c_uint64_t(kVulkanObjectTypeUnknown, this),
+#endif  // DISTINCT_NONDISPATCHABLE_HANDLES
+          parent_instance(instance_vo) {
+    }
 
 #define WRAPPER(type)                                                                                 \
     void StartWriteObject(type object, const Location& loc) { c_##type.StartWrite(object, loc); }   \

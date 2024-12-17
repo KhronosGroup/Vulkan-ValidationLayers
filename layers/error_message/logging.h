@@ -254,6 +254,7 @@ class DebugReport {
 
 class Logger {
   public:
+    Logger(DebugReport *dr) : debug_report(dr) {}
     template <typename T>
     std::string FormatHandle(T &&h) const {
         return debug_report->FormatHandle(std::forward<T>(h));

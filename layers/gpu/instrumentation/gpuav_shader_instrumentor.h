@@ -68,6 +68,9 @@ struct InstrumentedShader {
 class GpuShaderInstrumentor : public ValidationStateTracker {
     using BaseClass = ValidationStateTracker;
   public:
+    GpuShaderInstrumentor(vvl::dispatch::Device *dev, GpuShaderInstrumentor *instance, LayerObjectTypeId type)
+        : BaseClass(dev, instance, type) {}
+    GpuShaderInstrumentor(vvl::dispatch::Instance *inst, LayerObjectTypeId type) : BaseClass(inst, type) {}
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
