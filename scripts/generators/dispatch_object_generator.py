@@ -302,10 +302,6 @@ class DispatchObjectGenerator(BaseGenerator):
         out.append('''
             #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
-            std::atomic<uint64_t> DispatchObject::global_unique_id{1};
-            vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> DispatchObject::unique_id_mapping;
-            bool DispatchObject::wrap_handles{true};
-
             void DispatchObject::InitInstanceValidationObjects() {
                  // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
              ''')
@@ -424,14 +420,8 @@ class DispatchObjectGenerator(BaseGenerator):
                 param = command.params[-2] # Last param is always VkAllocationCallbacks
                 if self.isNonDispatchable(param.type):
                     # Remove a single handle from the map
-                    destroy_ndo_code += f'''
-                        uint64_t {param.name}_id = CastToUint64({param.name});
-                        auto iter = unique_id_mapping.pop({param.name}_id);
-                        if (iter != unique_id_mapping.end()) {{
-                            {param.name} = ({param.type})iter->second;
-                        }} else {{
-                            {param.name} = ({param.type})0;
-                        }}'''
+                    destroy_ndo_code += f'{param.name} = Erase({param.name});'
+
             (api_decls, api_pre, api_post) = self.uniquifyMembers(command.params, '', 0, isCreate, isDestroy, True)
             api_post += create_ndo_code
             if isDestroy:
