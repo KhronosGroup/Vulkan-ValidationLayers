@@ -161,7 +161,7 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
                 // TODO: there are no tests for this error
                 // TODO: investigate when we can get invalid tag
                 // Initially introduced: ee98402 - syncval: Cleanup of invalid tagging
-                const auto error = cb_context.GetSyncState().error_messages_.RenderPassLayoutTransitionVsStoreResolveError(
+                const auto error = cb_context.GetSyncState().error_messages_.RenderPassLayoutTransitionVsStoreOrResolveError(
                     hazard, subpass, transition.attachment, transition.old_layout, transition.new_layout, transition.prev_pass);
                 skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
             } else {
@@ -223,17 +223,17 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
             }
 
             if (hazard.IsHazard()) {
-                auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
+                const VkAttachmentLoadOp load_op = checked_stencil ? ci.stencilLoadOp : ci.loadOp;
                 const auto &sync_state = cb_context.GetSyncState();
                 const Location loc(command);
                 if (hazard.Tag() == kInvalidTag) {
                     // Hazard vs. ILT
-                    const auto error = sync_state.error_messages_.RenderPassLoadOpVsLayoutTransitionError(hazard, subpass, i,
-                                                                                                          aspect, load_op_string);
+                    const auto error =
+                        sync_state.error_messages_.RenderPassLoadOpVsLayoutTransitionError(hazard, subpass, i, aspect, load_op);
                     skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
                 } else {
                     const auto error =
-                        sync_state.error_messages_.RenderPassLoadOpError(hazard, cb_context, subpass, i, aspect, load_op_string);
+                        sync_state.error_messages_.RenderPassLoadOpError(hazard, cb_context, subpass, i, aspect, load_op);
                     skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
                 }
             }
@@ -291,10 +291,10 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
 
             if (hazard.IsHazard()) {
                 const char *const op_type_string = checked_stencil ? "stencilStoreOp" : "storeOp";
-                const char *const store_op_string = string_VkAttachmentStoreOp(checked_stencil ? ci.stencilStoreOp : ci.storeOp);
+                const VkAttachmentStoreOp store_op = checked_stencil ? ci.stencilStoreOp : ci.storeOp;
                 const Location loc(command);
                 const auto error = cb_context.GetSyncState().error_messages_.RenderPassStoreOpError(
-                    hazard, cb_context, current_subpass_, i, aspect, op_type_string, store_op_string);
+                    hazard, cb_context, current_subpass_, i, aspect, op_type_string, store_op);
                 skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             }
         }
@@ -784,7 +784,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
             const Location loc(command);
             if (hazard.Tag() == kInvalidTag) {
                 // Hazard vs. store/resolve
-                const auto error = cb_context.GetSyncState().error_messages_.RenderPassFinalLayoutTransitionVsStoreResolveError(
+                const auto error = cb_context.GetSyncState().error_messages_.RenderPassFinalLayoutTransitionVsStoreOrResolveError(
                     hazard, cb_context, transition.prev_pass, transition.attachment, transition.old_layout, transition.new_layout);
                 skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             } else {
