@@ -64,19 +64,23 @@ struct HashedUint64 {
     }
 };
 
-class DispatchObject;
-void SetLayerData(VkInstance instance, std::unique_ptr<DispatchObject>&&);
-DispatchObject* GetLayerData(VkInstance);
-DispatchObject* GetLayerData(VkPhysicalDevice);
-void FreeLayerData(void* key, VkInstance instance);
+namespace vvl {
+namespace dispatch {
 
-void SetLayerData(VkDevice dev, std::unique_ptr<DispatchObject>&&);
-DispatchObject* GetLayerData(VkDevice);
-DispatchObject* GetLayerData(VkQueue);
-DispatchObject* GetLayerData(VkCommandBuffer);
-void FreeLayerData(void* key, VkDevice device);
+class Instance;
+void SetData(VkInstance instance, std::unique_ptr<Instance>&&);
+Instance* GetData(VkInstance);
+Instance* GetData(VkPhysicalDevice);
+void FreeData(void* key, VkInstance instance);
 
-void FreeAllLayerData();
+class Device;
+void SetData(VkDevice dev, std::unique_ptr<Device>&&);
+Device* GetData(VkDevice);
+Device* GetData(VkQueue);
+Device* GetData(VkCommandBuffer);
+void FreeData(void* key, VkDevice device);
+
+void FreeAllData();
 
 struct TemplateState {
     VkDescriptorUpdateTemplate desc_update_template;
@@ -87,71 +91,19 @@ struct TemplateState {
         : desc_update_template(update_template), create_info(*pCreateInfo), destroyed(false) {}
 };
 
-class DispatchObject : public Logger {
-  public:
-    DispatchObject(const VkInstanceCreateInfo* pCreateInfo);
-    DispatchObject(DispatchObject* instance_interceptor, VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo);
-
-    ~DispatchObject();
-
-    // This class is used to represent both VkInstance and VkDevice state.
-    // However, the instance state owns resources that the device state must not destroy.
-    const bool is_instance;
-
-    APIVersion api_version;
-    VkInstance instance = VK_NULL_HANDLE;
-    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
-    VkDevice device = VK_NULL_HANDLE;
-
-    VkLayerInstanceDispatchTable instance_dispatch_table;
-    VkLayerDispatchTable device_dispatch_table;
-
-    InstanceExtensions instance_extensions;
-    DeviceExtensions device_extensions = {};
+struct Settings {
     GlobalSettings global_settings = {};
     GpuAVSettings gpuav_settings = {};
     SyncValSettings syncval_settings = {};
 
     CHECK_DISABLED disabled = {};
     CHECK_ENABLED enabled = {};
+};
 
-    mutable std::vector<std::unique_ptr<ValidationObject>> object_dispatch;
-    mutable std::vector<std::unique_ptr<ValidationObject>> aborted_object_dispatch;
-    mutable std::vector<std::vector<ValidationObject*>> intercept_vectors;
-
-    // Handle Wrapping Data
-    // Reverse map display handles
-    vvl::concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
-    // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
-    vvl::unordered_map<uint64_t, std::unique_ptr<TemplateState>> desc_template_createinfo_map;
-    struct SubpassesUsageStates {
-        vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
-        vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
-    };
-    // Uses unwrapped handles
-    vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
-    // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
-    // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
-    vvl::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
-    // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
-    vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
-
-    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
-    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
-        deferred_operation_post_check;
-    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
-
-    // State we track in order to populate HandleData for things such as ignored pointers
-    vvl::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
-    mutable std::shared_mutex secondary_cb_map_mutex;
-
-    void InitInstanceValidationObjects();
-    void InitDeviceValidationObjects(DispatchObject* instance_dispatch);
-    void InitObjectDispatchVectors();
-    void ReleaseDeviceValidationObject(LayerObjectTypeId type_id) const;
-    void ReleaseAllValidationObjects() const;
-
-    ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const;
+class HandleWrapper : public Logger {
+  public:
+    HandleWrapper(DebugReport* dr);
+    ~HandleWrapper();
 
     // Unwrap a handle.
     template <typename HandleType>
@@ -195,6 +147,20 @@ class DispatchObject : public Logger {
         }
     }
 
+    void UnwrapPnextChainHandles(const void* pNext);
+
+    static std::atomic<uint64_t> global_unique_id;
+    static vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
+    static bool wrap_handles;
+};
+
+class Instance : public HandleWrapper {
+  public:
+    Instance(const VkInstanceCreateInfo* pCreateInfo);
+    ~Instance();
+
+    void InitValidationObjects();
+
     // VkDisplayKHR objects are statically created in the driver at VkCreateInstance.
     // They live with the PhyiscalDevice and apps never created/destroy them.
     // Apps needs will query for them and the first time we see it we wrap it
@@ -208,14 +174,74 @@ class DispatchObject : public Logger {
         display_id_reverse_mapping.insert_or_assign(handle, unique_id);
         return (VkDisplayKHR)unique_id;
     }
+    ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const;
+
+    Settings settings;
+
+    APIVersion api_version;
+    InstanceExtensions instance_extensions;
+    DeviceExtensions device_extensions = {};
+
+    mutable std::vector<std::unique_ptr<ValidationObject>> object_dispatch;
+
+    VkInstance instance = VK_NULL_HANDLE;
+    VkLayerInstanceDispatchTable instance_dispatch_table;
+    // Reverse map display handles
+    vvl::concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
+
+#include "generated/dispatch_object_instance_methods.h"
+};
+
+class Device : public HandleWrapper {
+  public:
+    Device(Instance* instance, VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo);
+    ~Device();
+
+    void InitObjectDispatchVectors();
+    void InitValidationObjects();
+    void ReleaseValidationObject(LayerObjectTypeId type_id) const;
+    ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const;
 
     bool IsSecondary(VkCommandBuffer cb) const;
 
-    void UnwrapPnextChainHandles(const void* pNext);
+    Settings& settings;
+    Instance* dispatch_instance;
 
-    static std::atomic<uint64_t> global_unique_id;
-    static vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
-    static bool wrap_handles;
+    APIVersion api_version;
+    DeviceExtensions device_extensions = {};
 
-#include "generated/dispatch_object_methods.h"
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+    VkLayerDispatchTable device_dispatch_table;
+
+    mutable std::vector<std::unique_ptr<ValidationObject>> object_dispatch;
+    mutable std::vector<std::unique_ptr<ValidationObject>> aborted_object_dispatch;
+    mutable std::vector<std::vector<ValidationObject*>> intercept_vectors;
+    // Handle Wrapping Data
+    // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
+    vvl::unordered_map<uint64_t, std::unique_ptr<TemplateState>> desc_template_createinfo_map;
+    struct SubpassesUsageStates {
+        vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
+        vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+    };
+    // Uses unwrapped handles
+    vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
+    // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
+    // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
+    vvl::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+    // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
+    vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
+
+    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
+    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
+        deferred_operation_post_check;
+    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
+
+    // State we track in order to populate HandleData for things such as ignored pointers
+    vvl::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
+    mutable std::shared_mutex secondary_cb_map_mutex;
+
+#include "generated/dispatch_object_device_methods.h"
 };
+}  // namespace dispatch
+}  // namespace vvl

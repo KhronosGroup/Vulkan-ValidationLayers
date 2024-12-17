@@ -191,7 +191,9 @@ class BestPractices : public ValidationStateTracker {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    BestPractices() { container_type = LayerObjectTypeBestPractices; }
+    BestPractices(vvl::dispatch::Device* dev, BestPractices* instance_vo)
+        : BaseClass(dev, instance_vo, LayerObjectTypeBestPractices) {}
+    BestPractices(vvl::dispatch::Instance* inst) : BaseClass(inst, LayerObjectTypeBestPractices) {}
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;

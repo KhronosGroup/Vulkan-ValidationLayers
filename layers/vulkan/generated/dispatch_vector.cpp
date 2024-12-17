@@ -44,7 +44,10 @@
 #include "gpu/core/gpuav.h"
 #include "sync/sync_validation.h"
 
-void DispatchObject::InitObjectDispatchVectors() {
+namespace vvl {
+namespace dispatch {
+
+void Device::InitObjectDispatchVectors() {
 #define BUILD_DISPATCH_VECTOR(name)                                                                                            \
     init_object_dispatch_vector(InterceptId##name, typeid(&ValidationObject::name), typeid(&ThreadSafety::name),               \
                                 typeid(&StatelessValidation::name), typeid(&ObjectLifetimes::name), typeid(&CoreChecks::name), \
@@ -1889,5 +1892,7 @@ void DispatchObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMeshTasksIndirectCountEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMeshTasksIndirectCountEXT);
 }
+}  // namespace dispatch
+}  // namespace vvl
 
 // NOLINTEND

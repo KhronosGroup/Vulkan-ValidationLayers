@@ -721,28 +721,27 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, V
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
     const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR);
     if (is_operation_deferred) {
-        auto layer_data = GetLayerData(device);
-        if (dispatch_->wrap_handles) {
-            deferredOperation = layer_data->Unwrap(deferredOperation);
+        if (dispatch_device_->wrap_handles) {
+            deferredOperation = dispatch_device_->Unwrap(deferredOperation);
         }
 
         // Unlock objects once the deferred operation is complete
         std::vector<std::function<void()>> post_completion_fns;
-        auto completion_find = layer_data->deferred_operation_post_completion.pop(deferredOperation);
+        auto completion_find = dispatch_device_->deferred_operation_post_completion.pop(deferredOperation);
         if (completion_find->first) {
             post_completion_fns = std::move(completion_find->second);
         }
         post_completion_fns.emplace_back(unlock_objects);
-        layer_data->deferred_operation_post_completion.insert(deferredOperation, std::move(post_completion_fns));
+        dispatch_device_->deferred_operation_post_completion.insert(deferredOperation, std::move(post_completion_fns));
 
         // We will only register the object once we know it was created successfully
         std::vector<std::function<void(const std::vector<VkPipeline>&)>> post_check_fns;
-        auto check_find = layer_data->deferred_operation_post_check.pop(deferredOperation);
+        auto check_find = dispatch_device_->deferred_operation_post_check.pop(deferredOperation);
         if (check_find->first) {
             post_check_fns = std::move(check_find->second);
         }
         post_check_fns.emplace_back(register_objects);
-        layer_data->deferred_operation_post_check.insert(deferredOperation, std::move(post_check_fns));
+        dispatch_device_->deferred_operation_post_check.insert(deferredOperation, std::move(post_check_fns));
     } else {
         unlock_objects();
         if (pPipelines) {

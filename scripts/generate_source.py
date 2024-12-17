@@ -214,7 +214,11 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : LayerChassisOutputGenerator,
             'genCombined': True,
         },
-        'dispatch_object_methods.h' : {
+        'dispatch_object_device_methods.h' : {
+            'generator' : DispatchObjectGenerator,
+            'genCombined': True,
+        },
+        'dispatch_object_instance_methods.h' : {
             'generator' : DispatchObjectGenerator,
             'genCombined': True,
         },

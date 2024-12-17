@@ -27,11 +27,17 @@
 #include "generated/device_features.h"
 
 class StatelessValidation : public ValidationObject {
+    using BaseClass = ValidationObject;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
   public:
+    StatelessValidation(vvl::dispatch::Device *dev, StatelessValidation *instance_vo)
+        : BaseClass(dev, LayerObjectTypeParameterValidation) {}
+    StatelessValidation(vvl::dispatch::Instance *inst) : BaseClass(inst, LayerObjectTypeParameterValidation) {}
+    ~StatelessValidation() {}
+
     VkPhysicalDeviceLimits device_limits = {};
     vvl::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
     vvl::unordered_map<VkPhysicalDevice, vvl::unordered_set<vvl::Extension>> device_extensions_enumerated{};
@@ -77,10 +83,6 @@ class StatelessValidation : public ValidationObject {
     // parent object's to maintain that functionality.
     mutable std::mutex renderpass_map_mutex;
     vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
-
-    // Constructor for stateles validation tracking
-    StatelessValidation() { container_type = LayerObjectTypeParameterValidation; }
-    ~StatelessValidation() {}
 
     bool ValidateNotZero(bool is_zero, const char *vuid, const Location &loc) const;
 
@@ -375,8 +377,6 @@ class StatelessValidation : public ValidationObject {
     void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                     const RecordObject &record_obj) override;
-    void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                      VkInstance *pInstance, const RecordObject &record_obj) override;
 
     void CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice *phys_devices, const int count);
     void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,

@@ -54,7 +54,9 @@ class Validator : public GpuShaderInstrumentor {
     using Field = vvl::Field;
 
   public:
-    Validator() : indices_buffer_(*this) { container_type = LayerObjectTypeGpuAssisted; }
+    Validator(vvl::dispatch::Device* dev, Validator* instance_vo)
+        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted), indices_buffer_(*this) {}
+    Validator(vvl::dispatch::Instance* inst) : BaseClass(inst, LayerObjectTypeGpuAssisted), indices_buffer_(*this) {}
 
     // gpuav_setup.cpp
     // -------------

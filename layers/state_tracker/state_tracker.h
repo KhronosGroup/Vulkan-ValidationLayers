@@ -236,6 +236,7 @@ VALSTATETRACK_STATE_OBJECT(VkIndirectCommandsLayoutEXT, vvl::IndirectCommandsLay
 
 class ValidationStateTracker : public ValidationObject {
     using Func = vvl::Func;
+    using BaseClass = ValidationObject;
 
   private:
     // NOTE: The Dummy argument allows for *partial* specialization at class scope, as full specialization at class scope
@@ -262,6 +263,11 @@ class ValidationStateTracker : public ValidationObject {
     void DestroyObjectMaps();
 
   public:
+    ValidationStateTracker(vvl::dispatch::Device* dev, ValidationStateTracker* instance, LayerObjectTypeId type)
+        : BaseClass(dev, type), instance_state(instance) {
+        physical_device_state = instance_state->Get<vvl::PhysicalDevice>(physical_device).get();
+    }
+    ValidationStateTracker(vvl::dispatch::Instance* inst, LayerObjectTypeId type) : BaseClass(inst, type), instance_state(this) {}
     ~ValidationStateTracker();
 
     static VkBindImageMemoryInfo ConvertImageMemoryInfo(VkDevice device, VkImage image, VkDeviceMemory mem,

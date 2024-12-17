@@ -41,37 +41,44 @@ class APISpecific:
                     {
                         'include': 'thread_tracker/thread_safety_validation.h',
                         'class': 'ThreadSafety',
-                        'enabled': '!disabled[thread_safety]'
+                        'enabled': '!settings.disabled[thread_safety]',
+                        'type': 'LayerObjectTypeThreading',
                     },
                     {
                         'include': 'stateless/stateless_validation.h',
                         'class': 'StatelessValidation',
-                        'enabled': '!disabled[stateless_checks]'
+                        'enabled': '!settings.disabled[stateless_checks]',
+                        'type': 'LayerObjectTypeParameterValidation',
                     },
                     {
                         'include': 'object_tracker/object_lifetime_validation.h',
                         'class': 'ObjectLifetimes',
-                        'enabled': '!disabled[object_tracking]'
+                        'enabled': '!settings.disabled[object_tracking]',
+                        'type': 'LayerObjectTypeObjectTracker',
                     },
                     {
                         'include': 'core_checks/core_validation.h',
                         'class': 'CoreChecks',
-                        'enabled': '!disabled[core_checks]'
+                        'enabled': '!settings.disabled[core_checks]',
+                        'type': 'LayerObjectTypeCoreValidation',
                     },
                     {
                         'include': 'best_practices/best_practices_validation.h',
                         'class': 'BestPractices',
-                        'enabled': 'enabled[best_practices]'
+                        'enabled': 'settings.enabled[best_practices]',
+                        'type': 'LayerObjectTypeBestPractices',
                     },
                     {
                         'include': 'gpu/core/gpuav.h',
                         'class': 'gpuav::Validator',
-                        'enabled': 'enabled[gpu_validation] || enabled[debug_printf_validation]'
+                        'enabled': 'settings.enabled[gpu_validation] || settings.enabled[debug_printf_validation]',
+                        'type': 'LayerObjectTypeGpuAssisted',
                     },
                     {
                         'include': 'sync/sync_validation.h',
                         'class': 'SyncValidator',
-                        'enabled': 'enabled[sync_validation]'
+                        'enabled': 'settings.enabled[sync_validation]',
+                        'type': 'LayerObjectTypeSyncValidation',
                     }
                 ]
 
@@ -213,8 +220,10 @@ class DispatchObjectGenerator(BaseGenerator):
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.filename == 'dispatch_object_methods.h':
-            self.generateMethods()
+        if self.filename == 'dispatch_object_instance_methods.h':
+            self.generateInstanceMethods()
+        elif self.filename == 'dispatch_object_device_methods.h':
+            self.generateDeviceMethods()
         elif self.filename == 'dispatch_functions.h':
             self.generateFunctions()
         elif self.filename == 'dispatch_object.cpp':
@@ -224,15 +233,10 @@ class DispatchObjectGenerator(BaseGenerator):
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
-    def generateMethods(self):
+    def generateMethods(self, want_instance):
         out = []
-        out.append('''
-            // This file contains methods for class DispatchObject and it is designed to ONLY be
-            // included into dispatch_object.h.
-            ''')
-
         guard_helper = PlatformGuardHelper()
-        for command in self.vk.commands.values():
+        for command in [x for x in self.vk.commands.values() if x.instance == want_instance]:
             prototype = command.cPrototype
             prototype = prototype.replace('VKAPI_ATTR ', '')
             prototype = prototype.replace('VKAPI_CALL vk', '')
@@ -243,6 +247,24 @@ class DispatchObjectGenerator(BaseGenerator):
         out.extend(guard_helper.add_guard(None))
         self.write("".join(out))
 
+    def generateDeviceMethods(self):
+        out = []
+        out.append('''
+            // This file contains methods for class vvl::dispatch::Device and it is designed to ONLY be
+            // included into dispatch_object.h.
+            ''')
+        self.write("".join(out))
+        self.generateMethods(False)
+
+    def generateInstanceMethods(self):
+        out = []
+        out.append('''
+            // This file contains methods for class vvl::dispatch::Instance  and it is designed to ONLY be
+            // included into dispatch_object.h.
+            ''')
+        self.write("".join(out))
+        self.generateMethods(True)
+
     def generateFunctions(self):
         out = []
         out.append('''
@@ -250,7 +272,7 @@ class DispatchObjectGenerator(BaseGenerator):
             // make vulkan calls.
 
             #include "chassis/dispatch_object.h"
-
+    
             ''')
         dispatchable_handles = [handle.name for handle in self.vk.handles.values() if handle.dispatchable]
         guard_helper = PlatformGuardHelper()
@@ -270,7 +292,7 @@ class DispatchObjectGenerator(BaseGenerator):
             prototype = prototype.replace(');', f'{proto_extra}) {{')
             out.extend(guard_helper.add_guard(command.protect))
             out.append(f'\n{prototype}\n')
-            out.append(f'auto dispatch = GetLayerData({command.params[0].name});\n')
+            out.append(f'auto dispatch = vvl::dispatch::GetData({command.params[0].name});\n')
             returnResult = f'return ' if (command.returnType != 'void') else ''
             paramsList = ', '.join([param.name for param in command.params])
             out.append(f'{returnResult}{command.name.replace("vk", "dispatch->")}({paramsList}{call_extra});\n')
@@ -293,6 +315,7 @@ class DispatchObjectGenerator(BaseGenerator):
             #include <vulkan/utility/vk_safe_struct.hpp>
             #include "state_tracker/pipeline_state.h"
             #include "containers/custom_containers.h"
+
              ''')
         for layer in APISpecific.getValidationLayerList(self.targetApiName):
              include_file = layer['include']
@@ -302,38 +325,39 @@ class DispatchObjectGenerator(BaseGenerator):
         out.append('''
             #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
-            void DispatchObject::InitInstanceValidationObjects() {
+            namespace vvl {
+            namespace dispatch {
+
+            void Instance::InitValidationObjects() {
                  // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
              ''')
         for layer in APISpecific.getValidationLayerList(self.targetApiName):
-             constructor = layer['class']
-             if layer['class'] == 'ThreadSafety':
-                constructor += '(nullptr)'
+             classname = layer['class']
              out.append(f'''
                  if ({layer["enabled"]}) {{
-                     object_dispatch.emplace_back(new {constructor});
+                     object_dispatch.emplace_back(new {classname}(this));
                  }}''')
 
         out.append('\n')
         out.append('}\n')
         out.append('''
-            void DispatchObject::InitDeviceValidationObjects(DispatchObject* instance_dispatch) {
+            void Device::InitValidationObjects() {
                  // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
              ''')
         for layer in APISpecific.getValidationLayerList(self.targetApiName):
-             constructor = layer['class']
-             if layer['class'] == 'ThreadSafety':
-                 constructor += '(static_cast<ThreadSafety*>(instance_dispatch->GetValidationObject(LayerObjectTypeThreading)))'
+             classname = layer['class']
+             typeid= layer['type']
+             instance = f'static_cast<{classname}*>(dispatch_instance->GetValidationObject({typeid}))'
              out.append(f'''
                  if ({layer["enabled"]}) {{
-                     object_dispatch.emplace_back(new {constructor});
+                     object_dispatch.emplace_back(new {classname}(this, {instance}));
                  }}''')
         out.append('\n')
         out.append('}\n')
 
         out.append('''
             // Unique Objects pNext extension handling function
-            void DispatchObject::UnwrapPnextChainHandles(const void *pNext) {
+            void HandleWrapper::UnwrapPnextChainHandles(const void *pNext) {
                 void *cur_pnext = const_cast<void *>(pNext);
                 while (cur_pnext != nullptr) {
                     VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);
@@ -436,7 +460,7 @@ class DispatchObjectGenerator(BaseGenerator):
 
             prototype = command.cPrototype[:-1]
             prototype = prototype.replace('VKAPI_ATTR ', '')
-            prototype = prototype.replace('VKAPI_CALL vk', 'DispatchObject::')
+            prototype = prototype.replace('VKAPI_CALL vk', 'Instance::' if command.instance else 'Device::')
             out.append(f'\n{prototype} {{\n')\
 
             # Pull out the text for each of the parameters, separate them by commas in a list
@@ -482,6 +506,8 @@ class DispatchObjectGenerator(BaseGenerator):
                 out.append('return result;\n')
             out.append('}\n')
         out.extend(guard_helper.add_guard(None))
+        out.append('} // namespace dispatch\n')
+        out.append('} // namespace vvl\n')
 
         self.write("".join(out))
 

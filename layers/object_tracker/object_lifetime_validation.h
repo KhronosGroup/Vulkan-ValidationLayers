@@ -41,6 +41,7 @@ typedef vvl::concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 
 typedef vvl::concurrent_unordered_map<uint64_t, small_vector<std::shared_ptr<ObjTrackState>, 4>, 6> object_list_map_type;
 
 class ObjectLifetimes : public ValidationObject {
+    using BaseClass = ValidationObject;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
@@ -56,18 +57,19 @@ class ObjectLifetimes : public ValidationObject {
     WriteLockGuard WriteSharedLock() { return WriteLockGuard(object_lifetime_mutex); }
     ReadLockGuard ReadSharedLock() const { return ReadLockGuard(object_lifetime_mutex); }
 
-    std::atomic<uint64_t> num_objects[kVulkanObjectTypeMax + 1];
-    std::atomic<uint64_t> num_total_objects;
+    std::atomic<uint64_t> num_objects[kVulkanObjectTypeMax + 1]{};
+    std::atomic<uint64_t> num_total_objects{0};
     // Vector of unordered_maps per object type to hold ObjTrackState info
     object_map_type object_map[kVulkanObjectTypeMax + 1];
     // Special-case map for swapchain images
     object_map_type swapchain_image_map;
     object_list_map_type linked_graphics_pipeline_map;
 
-    bool null_descriptor_enabled;
+    bool null_descriptor_enabled{false};
 
     // Constructor for object lifetime tracking
-    ObjectLifetimes();
+    ObjectLifetimes(vvl::dispatch::Device *dev, ObjectLifetimes *instance);
+    ObjectLifetimes(vvl::dispatch::Instance *inst);
     ~ObjectLifetimes();
 
     template <typename T1>
