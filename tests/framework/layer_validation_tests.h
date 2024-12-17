@@ -286,7 +286,7 @@ class AndroidExternalResolveTest : public VkLayerTest {
 
 class DescriptorBufferTest : public VkLayerTest {
   public:
-    void InitBasicDescriptorBuffer();
+    void InitBasicDescriptorBuffer(void *instance_pnext = nullptr);
 };
 
 class DescriptorIndexingTest : public VkLayerTest {
