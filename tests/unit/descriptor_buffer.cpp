@@ -519,7 +519,7 @@ TEST_F(NegativeDescriptorBuffer, BufferlessPushDescriptorsOff) {
     TEST_DESCRIPTION("When bufferlessPushDescriptors is not supported.");
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::descriptorBufferPushDescriptors);
-    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer(&kDisableMessageLimit));
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);

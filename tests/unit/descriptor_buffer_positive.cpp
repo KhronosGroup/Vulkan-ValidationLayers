@@ -12,11 +12,11 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
-void DescriptorBufferTest::InitBasicDescriptorBuffer() {
+void DescriptorBufferTest::InitBasicDescriptorBuffer(void *instance_pnext) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBuffer);
-    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(Init(nullptr, nullptr, instance_pnext));
 }
 
 class PositiveDescriptorBuffer : public DescriptorBufferTest {};
