@@ -14,6 +14,7 @@
  */
 
 #include "descriptor_class_general_buffer_pass.h"
+#include "instruction.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -42,18 +43,20 @@ uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId() {
 
 uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
                                                               const InjectionData& injection_data) {
-    assert(access_chain_inst_ && var_inst_);
+    assert(!access_chain_insts_.empty() && var_inst_);
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
     const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
 
     // For now, only do bounds check for non-aggregate types
     // TODO - Do bounds check for aggregate loads and stores
-    const Type* pointer_type = module_.type_manager_.FindTypeById(access_chain_inst_->TypeId());
+    //
+    // Grab front() as it will be the "final" type we access
+    const Type* pointer_type = module_.type_manager_.FindTypeById(access_chain_insts_.front()->TypeId());
     const Type* pointee_type = module_.type_manager_.FindTypeById(pointer_type->inst_.Word(3));
     if (pointee_type && pointee_type->spv_type_ != SpvType::kArray && pointee_type->spv_type_ != SpvType::kRuntimeArray &&
         pointee_type->spv_type_ != SpvType::kStruct) {
-        descriptor_offset_id_ = GetLastByte(*var_inst_, *access_chain_inst_, block, inst_it);  // Get Last Byte Index
+        descriptor_offset_id_ = GetLastByte(*var_inst_, access_chain_insts_, block, inst_it);  // Get Last Byte Index
     } else {
         descriptor_offset_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
     }
@@ -75,7 +78,6 @@ uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block,
 }
 
 void DescriptorClassGeneralBufferPass::Reset() {
-    access_chain_inst_ = nullptr;
     var_inst_ = nullptr;
     target_instruction_ = nullptr;
     descriptor_set_ = 0;
@@ -91,15 +93,23 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
-    // TODO - Should have loop to walk Load/Store to the Pointer,
-    // this case will not cover things such as OpCopyObject or double OpAccessChains
-    access_chain_inst_ = function.FindInstruction(inst.Operand(0));
-    if (!access_chain_inst_ || access_chain_inst_->Opcode() != spv::OpAccessChain) {
+    const Instruction* next_access_chain = function.FindInstruction(inst.Operand(0));
+    if (!next_access_chain || next_access_chain->Opcode() != spv::OpAccessChain) {
         return false;
     }
+    access_chain_insts_.clear();  // only clear right before we know we will need again
 
-    const uint32_t variable_id = access_chain_inst_->Operand(0);
-    const Variable* variable = module_.type_manager_.FindVariableById(variable_id);
+    const Variable* variable = nullptr;
+    // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
+    while (next_access_chain && next_access_chain->Opcode() == spv::OpAccessChain) {
+        access_chain_insts_.push_back(next_access_chain);
+        const uint32_t access_chain_base_id = next_access_chain->Operand(0);
+        variable = module_.type_manager_.FindVariableById(access_chain_base_id);
+        if (variable) {
+            break;  // found
+        }
+        next_access_chain = function.FindInstruction(access_chain_base_id);
+    }
     if (!variable) {
         return false;
     }
@@ -134,15 +144,15 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     // A load through a descriptor array will have at least 3 operands. We
     // do not want to instrument loads of descriptors here which are part of
     // an image-based reference.
-    if (is_descriptor_array && access_chain_inst_->Length() >= 6) {
-        descriptor_index_id_ = access_chain_inst_->Operand(1);
+    if (is_descriptor_array && access_chain_insts_.back()->Length() >= 6) {
+        descriptor_index_id_ = access_chain_insts_.back()->Operand(1);
     } else {
         // There is no array of this descriptor, so we essentially have an array of 1
         descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
     }
 
     for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
+        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable->Id()) {
             if (annotation->Word(2) == spv::DecorationDescriptorSet) {
                 descriptor_set_ = annotation->Word(3);
             } else if (annotation->Word(2) == spv::DecorationBinding) {

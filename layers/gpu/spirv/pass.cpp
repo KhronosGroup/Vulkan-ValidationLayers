@@ -14,6 +14,7 @@
  */
 
 #include "pass.h"
+#include "instruction.h"
 #include "module.h"
 #include "gpu/shaders/gpuav_error_codes.h"
 
@@ -208,17 +209,17 @@ const Instruction* Pass::GetMemeberDecoration(uint32_t id, uint32_t member_index
 // Find outermost buffer type and its access chain index.
 // Because access chains indexes can be runtime values, we need to build arithmetic logic in the SPIR-V to get the runtime value of
 // the indexing
-uint32_t Pass::GetLastByte(const Instruction& var_inst, const Instruction& access_chain_inst, BasicBlock& block,
+uint32_t Pass::GetLastByte(const Instruction& var_inst, std::vector<const Instruction*>& access_chain_insts, BasicBlock& block,
                            InstructionIt* inst_it) {
     const Type* pointer_type = module_.type_manager_.FindTypeById(var_inst.TypeId());
     const Type* descriptor_type = module_.type_manager_.FindTypeById(pointer_type->inst_.Word(3));
 
     uint32_t current_type_id = 0;
-    uint32_t ac_word_index = 4;
+    uint32_t ac_word_index = 4;  // points to first "Index" operand of an OpAccessChain
 
     if (descriptor_type->spv_type_ == SpvType::kArray || descriptor_type->spv_type_ == SpvType::kRuntimeArray) {
         current_type_id = descriptor_type->inst_.Operand(0);
-        ac_word_index++;
+        ac_word_index++;  // this jumps over the array of descriptors so we first start on the descriptor itself
     } else if (descriptor_type->spv_type_ == SpvType::kStruct) {
         current_type_id = descriptor_type->Id();
     } else {
@@ -236,8 +237,9 @@ uint32_t Pass::GetLastByte(const Instruction& var_inst, const Instruction& acces
     uint32_t matrix_stride_id = 0;
     bool in_matrix = false;
 
-    while (ac_word_index < access_chain_inst.Length()) {
-        const uint32_t ac_index_id = access_chain_inst.Word(ac_word_index);
+    auto access_chain_iter = access_chain_insts.rbegin();
+    while (access_chain_iter != access_chain_insts.rend()) {
+        const uint32_t ac_index_id = (*access_chain_iter)->Word(ac_word_index);
         uint32_t current_offset_id = 0;
 
         const Type* current_type = module_.type_manager_.FindTypeById(current_type_id);
@@ -335,7 +337,12 @@ uint32_t Pass::GetLastByte(const Instruction& var_inst, const Instruction& acces
             block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, current_offset_id}, inst_it);
             sum_id = new_sum_id;
         }
+
         ac_word_index++;
+        if (ac_word_index >= (*access_chain_iter)->Length()) {
+            ++access_chain_iter;
+            ac_word_index = 4;  // reset
+        }
     }
 
     // Add in offset of last byte of referenced object
