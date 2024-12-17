@@ -213,6 +213,7 @@ class CommandExecutionContext {
     virtual std::string FormatUsage(ResourceUsageTagEx tag_ex) const = 0;
     virtual void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const = 0;
 
+    std::string FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const;
     std::string FormatHazard(const HazardResult &hazard) const;
     bool ValidForSyncOps() const;
     const SyncValidator &GetSyncState() const { return sync_state_; }

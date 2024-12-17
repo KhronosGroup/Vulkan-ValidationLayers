@@ -51,6 +51,10 @@ void ReportKeyValues::Add(std::string_view key, std::string_view value) {
     key_values.emplace_back(KeyValue{std::string(key), std::string(value)});
 }
 
+void ReportKeyValues::Add(std::string_view key, uint64_t value) {
+    key_values.emplace_back(KeyValue{std::string(key), std::to_string(value)});
+}
+
 std::string ReportKeyValues::GetExtraPropertiesSection() const {
     if (key_values.empty()) {
         return {};
@@ -217,7 +221,8 @@ static std::string string_SyncStageAccessFlags(const SyncAccessFlags &accesses, 
     return accesses_str;
 }
 
-static std::string FormatHazardState(const HazardResult::HazardState &hazard, VkQueueFlags queue_flags) {
+static std::string FormatHazardState(const HazardResult::HazardState &hazard, VkQueueFlags queue_flags,
+                                     ReportKeyValues &key_values) {
     std::stringstream out;
     assert(hazard.access_index < static_cast<SyncAccessIndex>(syncAccessInfoByAccessIndex().size()));
     assert(hazard.prior_access_index < static_cast<SyncAccessIndex>(syncAccessInfoByAccessIndex().size()));
@@ -227,24 +232,35 @@ static std::string FormatHazardState(const HazardResult::HazardState &hazard, Vk
     if (!hazard.recorded_access.get()) {
         // if we have a recorded usage the usage is reported from the recorded contexts point of view
         out << "usage: " << usage_info.name << ", ";
+        key_values.Add("usage", usage_info.name);
     }
     out << "prior_usage: " << prior_usage_info.name;
+    key_values.Add("prior_usage", prior_usage_info.name);
     if (IsHazardVsRead(hazard.hazard)) {
-        const auto barriers = hazard.access_state->GetReadBarriers(hazard.prior_access_index);
-        out << ", read_barriers: " << string_VkPipelineStageFlags2(barriers);
+        const VkPipelineStageFlags2 barriers = hazard.access_state->GetReadBarriers(hazard.prior_access_index);
+        const std::string barriers_str = string_VkPipelineStageFlags2(barriers);
+        out << ", read_barriers: " << barriers_str;
+        key_values.Add("read_barriers", barriers_str);
     } else {
-        SyncAccessFlags write_barrier = hazard.access_state->GetWriteBarriers();
-        out << ", write_barriers: " << string_SyncStageAccessFlags(write_barrier, queue_flags);
+        const SyncAccessFlags barriers = hazard.access_state->GetWriteBarriers();
+        const std::string barriers_str = string_SyncStageAccessFlags(barriers, queue_flags);
+        out << ", write_barriers: " << barriers_str;
+        key_values.Add("write_barriers", barriers_str);
     }
     return out.str();
 }
 
-std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard) const {
+std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const {
     std::stringstream out;
     assert(hazard.IsHazard());
-    out << FormatHazardState(hazard.State(), queue_flags_);
+    out << FormatHazardState(hazard.State(), queue_flags_, key_values);
     out << ", " << FormatUsage(hazard.TagEx()) << ")";
     return out.str();
+}
+
+std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard) const {
+    ReportKeyValues key_values;
+    return FormatHazard(hazard, key_values);
 }
 
 std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex) const {

@@ -39,11 +39,7 @@ struct ReportKeyValues {
     std::vector<KeyValue> key_values;
 
     void Add(std::string_view key, std::string_view value);
-
-    template <typename ValueType>
-    void Add(std::string_view key, const ValueType &value) {
-        key_values.emplace_back(KeyValue{std::string(key), std::to_string(value)});
-    }
+    void Add(std::string_view key, uint64_t value);
 
     std::string GetExtraPropertiesSection() const;
 };

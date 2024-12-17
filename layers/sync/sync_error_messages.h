@@ -37,7 +37,7 @@ namespace syncval {
 
 class ErrorMessages {
   public:
-    ErrorMessages(ValidationObject& validator) : validator_(validator) {}
+    explicit ErrorMessages(ValidationObject& validator);
 
     std::string Error(const HazardResult& hazard, const char* description, const CommandBufferAccessContext& cb_context) const;
 
@@ -106,23 +106,23 @@ class ErrorMessages {
                                        const char* aspect_name, const char* attachment_name, uint32_t src_attachment,
                                        uint32_t dst_attachment) const;
 
-    std::string RenderPassLayoutTransitionVsStoreResolveError(const HazardResult& hazard, uint32_t subpass, uint32_t attachment,
-                                                              VkImageLayout old_layout, VkImageLayout new_layout,
-                                                              uint32_t store_resolve_subpass) const;
+    std::string RenderPassLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard, uint32_t subpass, uint32_t attachment,
+                                                                VkImageLayout old_layout, VkImageLayout new_layout,
+                                                                uint32_t store_resolve_subpass) const;
 
     std::string RenderPassLayoutTransitionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                 uint32_t subpass, uint32_t attachment, VkImageLayout old_layout,
                                                 VkImageLayout new_layout) const;
 
     std::string RenderPassLoadOpVsLayoutTransitionError(const HazardResult& hazard, uint32_t subpass, uint32_t attachment,
-                                                        const char* aspect_name, const char* load_op_name) const;
+                                                        const char* aspect_name, VkAttachmentLoadOp load_op) const;
 
     std::string RenderPassLoadOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, uint32_t subpass,
-                                      uint32_t attachment, const char* aspect_name, const char* load_op_name) const;
+                                      uint32_t attachment, const char* aspect_name, VkAttachmentLoadOp load_op) const;
 
     std::string RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, uint32_t subpass,
                                        uint32_t attachment, const char* aspect_name, const char* store_op_type_name,
-                                       const char* store_op_name) const;
+                                       VkAttachmentStoreOp store_op) const;
 
     std::string RenderPassColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                const vvl::ImageView& view, uint32_t attachment) const;
@@ -130,7 +130,7 @@ class ErrorMessages {
     std::string RenderPassDepthStencilAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                       const vvl::ImageView& view, bool is_depth) const;
 
-    std::string RenderPassFinalLayoutTransitionVsStoreResolveError(const HazardResult& hazard,
+    std::string RenderPassFinalLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
                                                                    const CommandBufferAccessContext& cb_context, uint32_t subpass,
                                                                    uint32_t attachment, VkImageLayout old_layout,
                                                                    VkImageLayout new_layout) const;
@@ -148,10 +148,11 @@ class ErrorMessages {
 
   private:
     void AddCbContextExtraProperties(const CommandBufferAccessContext& cb_context, ResourceUsageTag tag,
-                                     std::string& message) const;
+                                     ReportKeyValues& key_values) const;
 
   private:
     ValidationObject& validator_;
+    const bool& extra_properties_;
 };
 
 }  // namespace syncval
