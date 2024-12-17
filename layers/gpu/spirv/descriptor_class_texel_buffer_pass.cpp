@@ -29,8 +29,7 @@ DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) :
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() {
     static LinkInfo link_info = {instrumentation_descriptor_class_texel_buffer_comp,
-                                 instrumentation_descriptor_class_texel_buffer_comp_size,
-                                 LinkFunctions::inst_descriptor_class_texel_buffer, 0, "inst_descriptor_class_texel_buffer"};
+                                 instrumentation_descriptor_class_texel_buffer_comp_size, 0, "inst_descriptor_class_texel_buffer"};
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();

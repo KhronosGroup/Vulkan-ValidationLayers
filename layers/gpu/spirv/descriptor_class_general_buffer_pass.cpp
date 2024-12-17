@@ -29,8 +29,8 @@ DescriptorClassGeneralBufferPass::DescriptorClassGeneralBufferPass(Module& modul
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId() {
     static LinkInfo link_info = {instrumentation_descriptor_class_general_buffer_comp,
-                                 instrumentation_descriptor_class_general_buffer_comp_size,
-                                 LinkFunctions::inst_descriptor_class_general_buffer, 0, "inst_descriptor_class_general_buffer"};
+                                 instrumentation_descriptor_class_general_buffer_comp_size, 0,
+                                 "inst_descriptor_class_general_buffer"};
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();

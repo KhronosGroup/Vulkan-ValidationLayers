@@ -25,8 +25,7 @@ namespace spirv {
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t RayQueryPass::GetLinkFunctionId() {
-    static LinkInfo link_info = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size, LinkFunctions::inst_ray_query,
-                                 0, "inst_ray_query"};
+    static LinkInfo link_info = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size, 0, "inst_ray_query"};
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
