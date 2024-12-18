@@ -93,21 +93,19 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
 - ExecuteCommands detection of hazard from or with secondary command buffers
 
 - QueueSubmit/QueueSubmit2 time hazard detection
-- Semaphore (binary only) and Fence synchronization operations/effects
+- Semaphore and Fence synchronization operations/effects
 - Device and Queue WaitIdle support
 - Dynamic Rendering support
 
 ### Known Limitations
-
-- Does not include implementation of multi-view renderpass support.
-- Host set event not supported.
--  Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK.
-- Does not include component granularity access tracking, or correctly support swizzling.
-- Indirectly accessed (indirect/indexed) buffers validated at *binding* granularity. (Every valid location assumed to be accessed.)
-- Host synchronization not supported, except Fences (above).
-- Timeline Semaphore not supported
-- Queue family ownership transfer not supported
+- Does not support precise tracking of descriptors accessed by the shader (requires integration with GPU-AV)
 - Hazards related to memory aliasing are not detected properly
+- Indirectly accessed (indirect/indexed) buffers validated at *binding* granularity. (Every valid location assumed to be accessed.)
+- Queue family ownership transfer not supported
+- Host set event not supported.
+- Does not include implementation of multi-view renderpass support.
+- Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK.
+- Does not include component granularity access tracking, or correctly support swizzling.
 
 ## Typical Synchronization Validation Usage
 
