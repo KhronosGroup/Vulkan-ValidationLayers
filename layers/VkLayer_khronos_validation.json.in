@@ -428,8 +428,8 @@
                                     "settings": [
                                         {
                                             "key": "syncval_message_extra_properties",
-                                            "label": "Add extra key-value properties",
-                                            "description": "Appends a section of key-value properties to the error message. This structured information is useful for filtering error messages and may include optional or debug properties that are not found in the main error message.",
+                                            "label": "Extra key-value properties",
+                                            "description": "Appends a section of key-value properties to the error message. This can be useful for filtering error messages and may include optional or debug properties not present in the main error message.",
                                             "type": "BOOL",
                                             "default": false,
                                             "dependence": {
