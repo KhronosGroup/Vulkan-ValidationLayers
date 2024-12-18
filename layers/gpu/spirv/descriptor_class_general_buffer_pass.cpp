@@ -15,6 +15,7 @@
 
 #include "descriptor_class_general_buffer_pass.h"
 #include "instruction.h"
+#include "utils/vk_layer_utils.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -89,7 +90,7 @@ void DescriptorClassGeneralBufferPass::Reset() {
 bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
-    if (opcode != spv::OpLoad && opcode != spv::OpStore) {
+    if (!IsValueIn(spv::Op(opcode), {spv::OpLoad, spv::OpStore, spv::OpAtomicStore, spv::OpAtomicLoad, spv::OpAtomicExchange})) {
         return false;
     }
 
