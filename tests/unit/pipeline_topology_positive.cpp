@@ -168,7 +168,7 @@ TEST_F(PositivePipelineTopology, LoosePointSizeWrite) {
     }
 }
 
-TEST_F(PositivePipelineTopology, PointSizeStructMemeberWritten) {
+TEST_F(PositivePipelineTopology, PointSizeStructMemberWritten) {
     TEST_DESCRIPTION("Write built-in PointSize within a struct");
 
     SetTargetApiVersion(VK_API_VERSION_1_1); // At least 1.1 is required for maintenance4

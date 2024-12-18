@@ -835,6 +835,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyGLSL) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopySlang) {
+    TEST_DESCRIPTION("Note that in slang and array copy is really a struct copy");
     // struct Bar {
     //     uint4 a;
     //     uint b[4];
@@ -960,6 +961,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsGLSL) {
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
+    TEST_DESCRIPTION("Note that in slang and array copy is really a struct copy");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -987,7 +989,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
     //     foo1[0].b = foo2[0].e;
     // }
     char const *cs_source = R"(
-                 OpCapability Shader
+               OpCapability Shader
                OpExtension "SPV_KHR_storage_buffer_storage_class"
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %foo1 %foo2
@@ -1096,6 +1098,55 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL) {
         }
     )glsl";
     ComputeStorageBufferTest(cs_source, true, 32);
+}
+TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL2) {
+    char const *cs_source = R"glsl(
+        #version 450
+
+        struct Bar {
+            vec4 x;
+        };
+
+        layout(set = 0, binding = 0, std430) buffer foo {
+            uvec4 a;
+            Bar b; // size 16 at offset 16
+            uint c;
+        };
+
+        void main() {
+            Bar new_bar;
+            b = new_bar;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 32);
+}
+
+TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL3) {
+    char const *cs_source = R"glsl(
+        #version 450
+
+        struct Bar2 {
+            vec4 x;
+        };
+
+        struct Bar {
+            uint x;
+            Bar2 y;
+        };
+
+        layout(set = 0, binding = 0, std430) buffer foo {
+            uvec4 a;
+            uvec4 padding;
+            Bar b; // size 32 at offset 32
+            uint c;
+        };
+
+        void main() {
+            Bar new_bar;
+            b = new_bar;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 64);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopySlang) {

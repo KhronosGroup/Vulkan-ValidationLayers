@@ -14,6 +14,7 @@
  */
 
 #include "type_manager.h"
+#include "generated/spirv_grammar_helper.h"
 #include "module.h"
 
 namespace gpuav {
@@ -111,6 +112,26 @@ const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType 
 const Type* TypeManager::FindTypeById(uint32_t id) const {
     auto type = id_to_type_.find(id);
     return (type == id_to_type_.end()) ? nullptr : type->second.get();
+}
+
+// It is common to have things like
+//
+// %uint = OpTypeInt 32 0
+// %ptr_uint = OpTypePointer StorageBuffer %uint
+// %ac = OpAccessChain %ptr_uint %var %int_1
+//
+// Where you have %ptr_uint and want to know it is OpTypeInt
+// This function is like FindTypeById() but it will bypass the OpTypePointer for you (if it is there)
+// There is also a matching Variable::PointerType()
+const Type* TypeManager::FindValueTypeById(uint32_t id) const {
+    const Type* pointer_type = FindTypeById(id);
+    if (!pointer_type) {
+        return nullptr;
+    } else if (pointer_type->spv_type_ != SpvType::kPointer && pointer_type->spv_type_ != SpvType::kForwardPointer) {
+        return pointer_type;
+    } else {
+        return FindTypeById(pointer_type->inst_.Word(3));
+    }
 }
 
 const Type* TypeManager::FindFunctionType(const Instruction& inst) const {
@@ -545,48 +566,6 @@ const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, 
 const Variable* TypeManager::FindVariableById(uint32_t id) const {
     auto variable = id_to_variable_.find(id);
     return (variable == id_to_variable_.end()) ? nullptr : variable->second.get();
-}
-
-uint32_t TypeManager::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool col_major, bool in_matrix) {
-    const Type& type = *FindTypeById(type_id);
-    switch (type.spv_type_) {
-        case SpvType::kPointer:
-            return 8;  // Assuming PhysicalStorageBuffer pointer
-            break;
-        case SpvType::kMatrix: {
-            if (matrix_stride == 0) {
-                module_.InternalError("FindTypeByteSize", "missing matrix stride");
-            }
-            if (col_major) {
-                return type.inst_.Word(3) * matrix_stride;
-            } else {
-                const Type* vector_type = FindTypeById(type.inst_.Word(2));
-                return vector_type->inst_.Word(3) * matrix_stride;
-            }
-        }
-        case SpvType::kVector: {
-            uint32_t size = type.inst_.Word(3);
-            const Type* component_type = FindTypeById(type.inst_.Word(2));
-            // if vector in row major matrix, the vector is strided so return the number of bytes spanned by the vector
-            if (in_matrix && !col_major && matrix_stride > 0) {
-                return (size - 1) * matrix_stride + FindTypeByteSize(component_type->Id());
-            } else if (component_type->spv_type_ == SpvType::kFloat || component_type->spv_type_ == SpvType::kInt) {
-                const uint32_t width = component_type->inst_.Word(2);
-                size *= width;
-            } else {
-                module_.InternalError("FindTypeByteSize", "unexpected vector type");
-            }
-            return size / 8;
-        }
-        case SpvType::kFloat:
-        case SpvType::kInt: {
-            const uint32_t width = type.inst_.Word(2);
-            return width / 8;
-        }
-        default:
-            break;
-    }
-    return 1;
 }
 
 }  // namespace spirv

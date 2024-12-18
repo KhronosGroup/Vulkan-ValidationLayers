@@ -24,6 +24,7 @@ namespace spirv {
 class Module;
 struct Variable;
 struct BasicBlock;
+struct Type;
 
 // Info we know is the same regardless what pass is consuming the CreateFunctionCall()
 struct InjectionData {
@@ -43,9 +44,10 @@ class Pass {
     uint32_t GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& target_inst_it);
 
     const Instruction* GetDecoration(uint32_t id, spv::Decoration decoration);
-    const Instruction* GetMemeberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration);
+    const Instruction* GetMemberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration);
 
-    uint32_t GetLastByte(const Instruction& var_inst, std::vector<const Instruction*>& access_chain_insts, BasicBlock& block,
+    uint32_t FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride = 0, bool col_major = false, bool in_matrix = false);
+    uint32_t GetLastByte(const Type& descriptor_type, std::vector<const Instruction*>& access_chain_insts, BasicBlock& block,
                          InstructionIt* inst_it);
     // Generate SPIR-V needed to help convert things to be uniformly uint32_t
     // If no inst_it is passed in, any new instructions will be added to end of the Block
