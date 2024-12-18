@@ -709,6 +709,9 @@ void Module::PostProcess() {
 
     // The instrumentation code has atomicAdd() to update the output buffer
     // If the incoming code only has VulkanMemoryModel it will need to support device scope
+    //
+    // Found that QueueFamily was added to mostly solve this, if a device doesn't support Device scope we could use QueueFamily, the
+    // issue is that the GLSL we have is static and if we use QueueFamily then we "need" the MemoryModel enabled
     if (HasCapability(spv::CapabilityVulkanMemoryModel)) {
         if (!support_memory_model_device_scope_) {
             InternalError(
