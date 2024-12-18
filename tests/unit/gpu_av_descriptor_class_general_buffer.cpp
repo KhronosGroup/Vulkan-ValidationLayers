@@ -1334,8 +1334,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, VectorArray) {
     ComputeStorageBufferTest(cs_source, true, 48, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
 
-// TODO - Handle tracking copy size of Arrays
-TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_ArrayCopyGLSL) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyGLSL) {
     char const *cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, std430) buffer foo {
@@ -1353,177 +1352,8 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_ArrayCopyGLSL) {
     ComputeStorageBufferTest(cs_source, true, 32, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
 
-// TODO - Handle tracking copy size of Arrays
-TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_ArrayCopyTwoBindingsGLSL) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-
-    char const *cs_source = R"glsl(
-        #version 450
-        layout(set = 0, binding = 0, std430) buffer foo1 {
-            uvec4 a;
-            uint padding;
-            uint b[4];
-            uint c;
-        };
-
-        layout(set = 0, binding = 1, std430) buffer foo2 {
-            uint d;
-            uint e[4];
-            uvec2 f;
-        };
-
-        void main() {
-            b = e;
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    pipe.CreateComputePipeline();
-
-    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    // not enough bound
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, in_buffer.handle(), 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-// TODO - Handle tracking copy size of Arrays
-TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_ArrayCopyTwoBindingsSlang) {
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-
-    // struct Bar1 {
-    //     uint4 a;
-    //     uint b[4];
-    //     uint c;
-    // };
-    //
-    // struct Bar2 {
-    //     uint4 d;
-    //     uint e[4];
-    //     uint f;
-    // };
-    //
-    // [[vk::binding(0, 0)]]
-    // RWStructuredBuffer<Bar1> foo1;
-    //
-    // [[vk::binding(0, 1)]]
-    // RWStructuredBuffer<Bar2> foo2;
-    //
-    // [shader("compute")]
-    // void main() {
-    //     foo1[0].b = foo2[0].e;
-    // }
-    char const *cs_source = R"(
-                 OpCapability Shader
-               OpExtension "SPV_KHR_storage_buffer_storage_class"
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint GLCompute %main "main" %foo1 %foo2
-               OpExecutionMode %main LocalSize 1 1 1
-               OpDecorate %_arr_uint_int_4 ArrayStride 4
-               OpMemberDecorate %_Array_std430_uint4 0 Offset 0
-               OpMemberDecorate %Bar1_std430 0 Offset 0
-               OpMemberDecorate %Bar1_std430 1 Offset 16
-               OpMemberDecorate %Bar1_std430 2 Offset 32
-               OpDecorate %_runtimearr_Bar1_std430 ArrayStride 48
-               OpDecorate %RWStructuredBuffer Block
-               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
-               OpDecorate %foo1 Binding 0
-               OpDecorate %foo1 DescriptorSet 0
-               OpMemberDecorate %Bar2_std430 0 Offset 0
-               OpMemberDecorate %Bar2_std430 1 Offset 16
-               OpMemberDecorate %Bar2_std430 2 Offset 32
-               OpDecorate %_runtimearr_Bar2_std430 ArrayStride 48
-               OpDecorate %RWStructuredBuffer_0 Block
-               OpMemberDecorate %RWStructuredBuffer_0 0 Offset 0
-               OpDecorate %foo2 Binding 0
-               OpDecorate %foo2 DescriptorSet 1
-       %void = OpTypeVoid
-          %3 = OpTypeFunction %void
-       %uint = OpTypeInt 32 0
-        %int = OpTypeInt 32 1
-      %int_4 = OpConstant %int 4
-      %int_0 = OpConstant %int 0
-     %v4uint = OpTypeVector %uint 4
-%_arr_uint_int_4 = OpTypeArray %uint %int_4
-%_Array_std430_uint4 = OpTypeStruct %_arr_uint_int_4
-%Bar1_std430 = OpTypeStruct %v4uint %_Array_std430_uint4 %uint
-%_ptr_StorageBuffer_Bar1_std430 = OpTypePointer StorageBuffer %Bar1_std430
-%_runtimearr_Bar1_std430 = OpTypeRuntimeArray %Bar1_std430
-%RWStructuredBuffer = OpTypeStruct %_runtimearr_Bar1_std430
-%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
-      %int_1 = OpConstant %int 1
-%_ptr_StorageBuffer__Array_std430_uint4 = OpTypePointer StorageBuffer %_Array_std430_uint4
-%Bar2_std430 = OpTypeStruct %v4uint %_Array_std430_uint4 %uint
-%_ptr_StorageBuffer_Bar2_std430 = OpTypePointer StorageBuffer %Bar2_std430
-%_runtimearr_Bar2_std430 = OpTypeRuntimeArray %Bar2_std430
-%RWStructuredBuffer_0 = OpTypeStruct %_runtimearr_Bar2_std430
-%_ptr_StorageBuffer_RWStructuredBuffer_0 = OpTypePointer StorageBuffer %RWStructuredBuffer_0
-       %foo1 = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
-       %foo2 = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer_0 StorageBuffer
-       %main = OpFunction %void None %3
-          %4 = OpLabel
-         %17 = OpAccessChain %_ptr_StorageBuffer_Bar1_std430 %foo1 %int_0 %int_0
-         %24 = OpAccessChain %_ptr_StorageBuffer__Array_std430_uint4 %17 %int_1
-         %27 = OpAccessChain %_ptr_StorageBuffer_Bar2_std430 %foo2 %int_0 %int_0
-         %32 = OpAccessChain %_ptr_StorageBuffer__Array_std430_uint4 %27 %int_1
-         %33 = OpLoad %_Array_std430_uint4 %32
-         %64 = OpCompositeExtract %_arr_uint_int_4 %33 0
-         %65 = OpCompositeExtract %uint %64 0
-         %66 = OpCompositeExtract %uint %64 1
-         %67 = OpCompositeExtract %uint %64 2
-         %68 = OpCompositeExtract %uint %64 3
-        %110 = OpCompositeConstruct %_arr_uint_int_4 %65 %66 %67 %68
-         %83 = OpCompositeConstruct %_Array_std430_uint4 %110
-               OpStore %24 %83
-               OpReturn
-               OpFunctionEnd
-    )";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
-    pipe.CreateComputePipeline();
-
-    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, 64, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, in_buffer.handle(), 64, 64, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-// TODO - Handle tracking copy size of Arrays
-TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_ArrayCopySlang) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopySlang) {
+    TEST_DESCRIPTION("Note that in slang and array copy is really a struct copy");
     // struct Bar {
     //   uint4 a;
     //   uint pad;
@@ -1604,8 +1434,175 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_ArrayCopySlang) {
     ComputeStorageBufferTest(cs_source, false, 32, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
 
-// TODO - Handle tracking copy size of Structs
-TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_StructCopyGLSL) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsGLSL) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0, std430) buffer foo1 {
+            uvec4 a;
+            uint padding;
+            uint b[4];
+            uint c;
+        };
+
+        layout(set = 0, binding = 1, std430) buffer foo2 {
+            uint d;
+            uint e[4];
+            uvec2 f;
+        };
+
+        void main() {
+            b = e;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    // not enough bound for either
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, in_buffer.handle(), 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936", 2);
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
+    TEST_DESCRIPTION("Note that in slang and array copy is really a struct copy");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // struct Bar1 {
+    //     uint4 a;
+    //     uint b[4];
+    //     uint c;
+    // };
+    //
+    // struct Bar2 {
+    //     uint4 d;
+    //     uint e[4];
+    //     uint f;
+    // };
+    //
+    // [[vk::binding(0, 0)]]
+    // RWStructuredBuffer<Bar1> foo1;
+    //
+    // [[vk::binding(1, 0)]]
+    // RWStructuredBuffer<Bar2> foo2;
+    //
+    // [shader("compute")]
+    // void main() {
+    //     foo1[0].b = foo2[0].e;
+    // }
+    char const *cs_source = R"(
+                 OpCapability Shader
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %foo1 %foo2
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_arr_uint_int_4 ArrayStride 4
+               OpMemberDecorate %_Array_std430_uint4 0 Offset 0
+               OpMemberDecorate %Bar1_std430 0 Offset 0
+               OpMemberDecorate %Bar1_std430 1 Offset 16
+               OpMemberDecorate %Bar1_std430 2 Offset 32
+               OpDecorate %_runtimearr_Bar1_std430 ArrayStride 48
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %foo1 Binding 0
+               OpDecorate %foo1 DescriptorSet 0
+               OpMemberDecorate %Bar2_std430 0 Offset 0
+               OpMemberDecorate %Bar2_std430 1 Offset 16
+               OpMemberDecorate %Bar2_std430 2 Offset 32
+               OpDecorate %_runtimearr_Bar2_std430 ArrayStride 48
+               OpDecorate %RWStructuredBuffer_0 Block
+               OpMemberDecorate %RWStructuredBuffer_0 0 Offset 0
+               OpDecorate %foo2 Binding 1
+               OpDecorate %foo2 DescriptorSet 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+      %int_4 = OpConstant %int 4
+      %int_0 = OpConstant %int 0
+     %v4uint = OpTypeVector %uint 4
+%_arr_uint_int_4 = OpTypeArray %uint %int_4
+%_Array_std430_uint4 = OpTypeStruct %_arr_uint_int_4
+%Bar1_std430 = OpTypeStruct %v4uint %_Array_std430_uint4 %uint
+%_ptr_StorageBuffer_Bar1_std430 = OpTypePointer StorageBuffer %Bar1_std430
+%_runtimearr_Bar1_std430 = OpTypeRuntimeArray %Bar1_std430
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_Bar1_std430
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+      %int_1 = OpConstant %int 1
+%_ptr_StorageBuffer__Array_std430_uint4 = OpTypePointer StorageBuffer %_Array_std430_uint4
+%Bar2_std430 = OpTypeStruct %v4uint %_Array_std430_uint4 %uint
+%_ptr_StorageBuffer_Bar2_std430 = OpTypePointer StorageBuffer %Bar2_std430
+%_runtimearr_Bar2_std430 = OpTypeRuntimeArray %Bar2_std430
+%RWStructuredBuffer_0 = OpTypeStruct %_runtimearr_Bar2_std430
+%_ptr_StorageBuffer_RWStructuredBuffer_0 = OpTypePointer StorageBuffer %RWStructuredBuffer_0
+       %foo1 = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
+       %foo2 = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer_0 StorageBuffer
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %17 = OpAccessChain %_ptr_StorageBuffer_Bar1_std430 %foo1 %int_0 %int_0
+         %24 = OpAccessChain %_ptr_StorageBuffer__Array_std430_uint4 %17 %int_1
+         %27 = OpAccessChain %_ptr_StorageBuffer_Bar2_std430 %foo2 %int_0 %int_0
+         %32 = OpAccessChain %_ptr_StorageBuffer__Array_std430_uint4 %27 %int_1
+         %33 = OpLoad %_Array_std430_uint4 %32
+         %64 = OpCompositeExtract %_arr_uint_int_4 %33 0
+         %65 = OpCompositeExtract %uint %64 0
+         %66 = OpCompositeExtract %uint %64 1
+         %67 = OpCompositeExtract %uint %64 2
+         %68 = OpCompositeExtract %uint %64 3
+        %110 = OpCompositeConstruct %_arr_uint_int_4 %65 %66 %67 %68
+         %83 = OpCompositeConstruct %_Array_std430_uint4 %110
+               OpStore %24 %83
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, 64, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, in_buffer.handle(), 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL) {
     char const *cs_source = R"glsl(
         #version 450
 
@@ -1630,8 +1627,57 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_StructCopyGLSL) {
     ComputeStorageBufferTest(cs_source, true, 32, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
 
-// TODO - Handle tracking copy size of Structs
-TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_MStructopySlang) {
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL2) {
+    char const *cs_source = R"glsl(
+        #version 450
+
+        struct Bar {
+            vec4 x;
+        };
+
+        layout(set = 0, binding = 0, std430) buffer foo {
+            uvec4 a;
+            uint padding;
+            Bar b; // size 16 at offset 20
+            uint c;
+        };
+
+        void main() {
+            Bar new_bar;
+            b = new_bar;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 32, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL3) {
+    char const *cs_source = R"glsl(
+        #version 450
+
+        struct Bar2 {
+            vec4 x;
+        };
+
+        struct Bar {
+            uint x;
+            Bar2 y;
+        };
+
+        layout(set = 0, binding = 0, std430) buffer foo {
+            uvec4 a;
+            Bar b; // size 32 at offset 16
+            uint c;
+        };
+
+        void main() {
+            Bar new_bar;
+            b = new_bar;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 32, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StructCopySlang) {
     // struct Bar {
     //   uint x;
     //   uint y;
@@ -1847,9 +1893,9 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndex) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    vkt::Buffer in_buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 32, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    vkt::Buffer in_buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, 64, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();

@@ -2150,11 +2150,11 @@ TypeStructSize TypeStructInfo::GetSize(const Module& module_state) const {
     for (uint32_t i = 0; i < members.size(); i++) {
         const auto& member = members[i];
         // all struct elements are required to have offset decorations in Block
-        const uint32_t memeber_offset = member.decorations->offset;
-        offset = std::min(offset, memeber_offset);
-        if (memeber_offset > highest_element_offset) {
+        const uint32_t member_offset = member.decorations->offset;
+        offset = std::min(offset, member_offset);
+        if (member_offset > highest_element_offset) {
             highest_element_index = i;
-            highest_element_offset = memeber_offset;
+            highest_element_offset = member_offset;
         }
     }
 

@@ -44,23 +44,12 @@ uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId() {
 
 uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
                                                               const InjectionData& injection_data) {
-    assert(!access_chain_insts_.empty() && var_inst_);
+    assert(!access_chain_insts_.empty());
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
     const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
 
-    // For now, only do bounds check for non-aggregate types
-    // TODO - Do bounds check for aggregate loads and stores
-    //
-    // Grab front() as it will be the "final" type we access
-    const Type* pointer_type = module_.type_manager_.FindTypeById(access_chain_insts_.front()->TypeId());
-    const Type* pointee_type = module_.type_manager_.FindTypeById(pointer_type->inst_.Word(3));
-    if (pointee_type && pointee_type->spv_type_ != SpvType::kArray && pointee_type->spv_type_ != SpvType::kRuntimeArray &&
-        pointee_type->spv_type_ != SpvType::kStruct) {
-        descriptor_offset_id_ = GetLastByte(*var_inst_, access_chain_insts_, block, inst_it);  // Get Last Byte Index
-    } else {
-        descriptor_offset_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
-    }
+    descriptor_offset_id_ = GetLastByte(*descriptor_type_, access_chain_insts_, block, inst_it);  // Get Last Byte Index
 
     BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
@@ -79,7 +68,7 @@ uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block,
 }
 
 void DescriptorClassGeneralBufferPass::Reset() {
-    var_inst_ = nullptr;
+    descriptor_type_ = nullptr;
     target_instruction_ = nullptr;
     descriptor_set_ = 0;
     descriptor_binding_ = 0;
@@ -114,7 +103,6 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     if (!variable) {
         return false;
     }
-    var_inst_ = &variable->inst_;
 
     uint32_t storage_class = variable->StorageClass();
     if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {
@@ -142,6 +130,10 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         }
     }
 
+    // Grab front() as it will be the "final" type we access
+    const Type* value_type = module_.type_manager_.FindValueTypeById(access_chain_insts_.front()->TypeId());
+    if (!value_type) return false;
+
     // A load through a descriptor array will have at least 3 operands. We
     // do not want to instrument loads of descriptors here which are part of
     // an image-based reference.
@@ -166,6 +158,9 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
+
+    descriptor_type_ = variable->PointerType(module_.type_manager_);
+    if (!descriptor_type_) return false;
 
     // Save information to be used to make the Function
     target_instruction_ = &inst;
