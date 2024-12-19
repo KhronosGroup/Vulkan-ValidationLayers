@@ -761,7 +761,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
 void CoreChecks::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                               const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
                                               const RecordObject &record_obj) {
-    StateTracker::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
+    BaseClass::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
 
     if (VK_SUCCESS != record_obj.result) {
         // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4119
@@ -2079,7 +2079,7 @@ void CoreChecks::PostCallRecordBindImageMemory(VkDevice device, VkImage image, V
                                                const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
 
-    StateTracker::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
+    BaseClass::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
     if (auto image_state = Get<vvl::Image>(image)) {
         image_state->SetInitialLayoutMap();
     }
@@ -2103,7 +2103,7 @@ void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindIn
         }
         return;
     }
-    StateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
+    BaseClass::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {

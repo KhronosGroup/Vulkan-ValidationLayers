@@ -42,8 +42,8 @@ struct DAGNode;
 struct SemaphoreSubmitState;
 
 class CoreChecks : public ValidationStateTracker {
+    using BaseClass = ValidationStateTracker;
   public:
-    using StateTracker = ValidationStateTracker;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;

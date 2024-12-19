@@ -761,7 +761,7 @@ void CoreChecks::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, c
                                                               const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
 
-    StateTracker::PostCallRecordReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator, record_obj);
+    BaseClass::PostCallRecordReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator, record_obj);
 
     auto pipeline_state = Get<vvl::Pipeline>(pInfo->pipeline);
     if (pipeline_state) {
