@@ -158,6 +158,8 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
                                    VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout, const RangeFactory &range_factory,
                                    const Location &loc, const char *mismatch_layout_vuid, bool *error) {
     bool skip = false;
+    if (!gpuav.gpuav_settings.validate_image_layout) return skip;
+
     const auto image_layout_registry = cb_state.GetImageLayoutRegistry(image_state.VkHandle());
     if (!image_layout_registry) {
         return skip;

@@ -25,7 +25,7 @@ TEST_F(PositiveLayerSettings, AllSettings) {
     const VkBool32 disable = VK_FALSE;
     const uint32_t one = 1;
     const uint32_t one_k = 1024;
-    std::array<VkLayerSettingEXT, 51> settings = {{
+    std::vector<VkLayerSettingEXT> settings = {{
         {OBJECT_LAYER_NAME, "enables", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &some_string},
         {OBJECT_LAYER_NAME, "validate_best_practices", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "validate_best_practices_arm", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
@@ -69,6 +69,7 @@ TEST_F(PositiveLayerSettings, AllSettings) {
         {OBJECT_LAYER_NAME, "gpuav_indirect_trace_rays_buffers", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "gpuav_buffer_copies", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "gpuav_index_buffers", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
+        {OBJECT_LAYER_NAME, "gpuav_image_layout", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "gpuav_reserve_binding_slot", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "gpuav_vma_linear_output", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
@@ -78,8 +79,8 @@ TEST_F(PositiveLayerSettings, AllSettings) {
         {OBJECT_LAYER_NAME, "debug_action", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &action_ignore},
         {OBJECT_LAYER_NAME, "report_flags", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &warning},
     }};
-    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, settings.size(),
-                                                settings.data()};
+    VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
+                                                (uint32_t)settings.size(), settings.data()};
     Monitor().ExpectSuccess(kErrorBit | kWarningBit);
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());

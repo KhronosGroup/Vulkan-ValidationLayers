@@ -16,7 +16,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
-class NegativeGpuAVImageLayout : public GpuAVTest {};
+class NegativeGpuAVImageLayout : public GpuAVImageLayout {};
 
 TEST_F(NegativeGpuAVImageLayout, ImageArrayDynamicIndexing) {
     TEST_DESCRIPTION("GPU validation: test that only dynamically used indices are validated");
@@ -24,8 +24,7 @@ TEST_F(NegativeGpuAVImageLayout, ImageArrayDynamicIndexing) {
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
     AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitGpuAVImageLayout());
     InitRenderTarget();
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
@@ -150,8 +149,7 @@ TEST_F(NegativeGpuAVImageLayout, DISABLED_Mutable) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::mutableDescriptorType);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitGpuAVImageLayout());
 
     const char *cs = R"glsl(
         #version 450
@@ -222,8 +220,7 @@ TEST_F(NegativeGpuAVImageLayout, DescriptorArrayLayout) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1998");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitGpuAVImageLayout());
     RETURN_IF_SKIP(InitRenderTarget());
 
     char const *fs_source = R"glsl(
@@ -291,8 +288,7 @@ TEST_F(NegativeGpuAVImageLayout, DescriptorArrayLayout) {
 
 TEST_F(NegativeGpuAVImageLayout, MultiArrayLayers) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1998");
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitGpuAVImageLayout());
     RETURN_IF_SKIP(InitRenderTarget());
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -371,8 +367,7 @@ TEST_F(NegativeGpuAVImageLayout, MultipleCommandBuffersSameDescriptorSet) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitGpuAVImageLayout());
 
     vkt::CommandBuffer cb_0(*m_device, m_command_pool);
     vkt::CommandBuffer cb_1(*m_device, m_command_pool);

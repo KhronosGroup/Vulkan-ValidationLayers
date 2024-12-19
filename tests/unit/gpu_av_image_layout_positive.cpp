@@ -15,14 +15,27 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
-class PositiveGpuAVImageLayout : public GpuAVTest {};
+class PositiveGpuAVImageLayout : public GpuAVImageLayout {};
+
+void GpuAVImageLayout::InitGpuAVImageLayout() {
+    // Turned off because things like https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8688 and
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8869 are still showing false positives Need to manually turn
+    // on settings while the default is "off"
+    const VkBool32 value_true = true;
+    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "gpuav_image_layout", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                             &value_true};
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                               &layer_setting};
+
+    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
+    RETURN_IF_SKIP(InitState());
+}
 
 TEST_F(PositiveGpuAVImageLayout, DescriptorArrayLayout) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1998");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitGpuAVImageLayout());
     RETURN_IF_SKIP(InitRenderTarget());
 
     char const *fs_source = R"glsl(
