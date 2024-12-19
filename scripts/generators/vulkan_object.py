@@ -58,7 +58,6 @@ class Version:
     name: str       # ex) VK_VERSION_1_1
     nameString: str # ex) "VK_VERSION_1_1" (no marco, so has quotes)
     nameApi: str    # ex) VK_API_VERSION_1_1
-    number: str     # ex) 1.1
 
 @dataclass
 class Handle:
