@@ -14,6 +14,7 @@
  */
 
 #include "descriptor_class_general_buffer_pass.h"
+#include "generated/spirv_grammar_helper.h"
 #include "instruction.h"
 #include "utils/vk_layer_utils.h"
 #include "module.h"
@@ -110,11 +111,11 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     }
 
     const Type* pointer_type = variable->PointerType(module_.type_manager_);
-    if (pointer_type->inst_.Opcode() == spv::OpTypeRuntimeArray) {
-        return false;  // Currently we mark these as "bindless"
+    if (pointer_type->spv_type_ == SpvType::kRuntimeArray) {
+        return false;  // TODO - Currently we mark these as "bindless"
     }
 
-    const bool is_descriptor_array = pointer_type->inst_.Opcode() == spv::OpTypeArray;
+    const bool is_descriptor_array = pointer_type->IsArray();
 
     // Check for deprecated storage block form
     if (storage_class == spv::StorageClassUniform) {
@@ -134,10 +135,8 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     const Type* value_type = module_.type_manager_.FindValueTypeById(access_chain_insts_.front()->TypeId());
     if (!value_type) return false;
 
-    // A load through a descriptor array will have at least 3 operands. We
-    // do not want to instrument loads of descriptors here which are part of
-    // an image-based reference.
-    if (is_descriptor_array && access_chain_insts_.back()->Length() >= 6) {
+    if (is_descriptor_array) {
+        // Because you can't have 2D array of descriptors, the first index of the last accessChain is the descriptor index
         descriptor_index_id_ = access_chain_insts_.back()->Operand(1);
     } else {
         // There is no array of this descriptor, so we essentially have an array of 1

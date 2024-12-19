@@ -305,10 +305,12 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
 // the indexing
 uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instruction*>& access_chain_insts, BasicBlock& block,
                            InstructionIt* inst_it) {
+    assert(!access_chain_insts.empty());
     uint32_t current_type_id = 0;
-    uint32_t ac_word_index = 4;  // points to first "Index" operand of an OpAccessChain
+    const uint32_t reset_ac_word = 4;  // points to first "Index" operand of an OpAccessChain
+    uint32_t ac_word_index = reset_ac_word;
 
-    if (descriptor_type.spv_type_ == SpvType::kArray || descriptor_type.spv_type_ == SpvType::kRuntimeArray) {
+    if (descriptor_type.IsArray()) {
         current_type_id = descriptor_type.inst_.Operand(0);
         ac_word_index++;  // this jumps over the array of descriptors so we first start on the descriptor itself
     } else if (descriptor_type.spv_type_ == SpvType::kStruct) {
@@ -338,6 +340,14 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instru
     //
     // it will get us to 20 bytes
     auto access_chain_iter = access_chain_insts.rbegin();
+
+    // This occurs in things like Slang where they have a single OpAccessChain for the descriptor
+    // (GLSL/HLSL will combine 2 indexes into the last OpAccessChain)
+    if (ac_word_index >= (*access_chain_iter)->Length()) {
+        ++access_chain_iter;
+        ac_word_index = reset_ac_word;
+    }
+
     while (access_chain_iter != access_chain_insts.rend()) {
         const uint32_t ac_index_id = (*access_chain_iter)->Word(ac_word_index);
         uint32_t current_offset_id = 0;
@@ -442,7 +452,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instru
         ac_word_index++;
         if (ac_word_index >= (*access_chain_iter)->Length()) {
             ++access_chain_iter;
-            ac_word_index = 4;  // reset
+            ac_word_index = reset_ac_word;
         }
     }
 

@@ -53,6 +53,7 @@ struct Type {
 
     bool operator==(Type const& other) const;
     uint32_t Id() const { return inst_.ResultId(); }
+    bool IsArray() const { return spv_type_ == SpvType::kArray || spv_type_ == SpvType::kRuntimeArray; }
 
     const SpvType spv_type_;
     const Instruction& inst_;
