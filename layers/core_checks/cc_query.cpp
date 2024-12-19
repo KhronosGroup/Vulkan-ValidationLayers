@@ -268,12 +268,14 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
     switch (pCreateInfo->queryType) {
         case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR: {
             if (auto perf_ci = vku::FindStructInPNextChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext)) {
+
+                skip |= ValidateQueueFamilyIndex(
+                    *physical_device_state, perf_ci->queueFamilyIndex,
+                    "VUID-VkQueryPoolPerformanceCreateInfoKHR-queueFamilyIndex-03236",
+                    create_info_loc.pNext(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::queueFamilyIndex));
+
                 const auto &perf_counter_iter = physical_device_state->perf_counters.find(perf_ci->queueFamilyIndex);
-                if (perf_counter_iter == physical_device_state->perf_counters.end()) {
-                    skip |= LogError("VUID-VkQueryPoolPerformanceCreateInfoKHR-queueFamilyIndex-03236", device,
-                                     create_info_loc.pNext(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::queueFamilyIndex),
-                                     "(%" PRIu32 ") is not a valid queue family index.", perf_ci->queueFamilyIndex);
-                } else {
+                if (perf_counter_iter != physical_device_state->perf_counters.end()) {
                     const QueueFamilyPerfCounters *perf_counters = perf_counter_iter->second.get();
                     for (uint32_t idx = 0; idx < perf_ci->counterIndexCount; idx++) {
                         if (perf_ci->pCounterIndices[idx] >= perf_counters->counters.size()) {

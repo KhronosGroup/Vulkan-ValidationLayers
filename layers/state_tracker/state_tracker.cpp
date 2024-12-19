@@ -1220,6 +1220,23 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
         DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(physical_device, &queue_family_count, props.data());
     }
 
+    if (IsExtEnabled(dev_ext.vk_khr_performance_query)) {
+        uint32_t queue_family_count = (uint32_t)physical_device_state->queue_family_properties.size();
+        for (uint32_t i = 0; i < queue_family_count; ++i) {
+            uint32_t counterCount;
+            DispatchEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(physical_device, i, &counterCount, nullptr,
+                                                                                  nullptr);
+
+            std::unique_ptr<QueueFamilyPerfCounters> queue_family_counters(new QueueFamilyPerfCounters());
+            queue_family_counters->counters.resize(counterCount);
+
+            DispatchEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(physical_device, i, &counterCount,
+                                                                                  queue_family_counters->counters.data(), nullptr);
+
+            physical_device_state->perf_counters[i] = std::move(queue_family_counters);
+        }
+    }
+
     // internal pipeline cache control
     const auto *cache_control = vku::FindStructInPNextChain<VkDevicePipelineBinaryInternalCacheControlKHR>(pCreateInfo->pNext);
     disable_internal_pipeline_cache = cache_control && cache_control->disableInternalCache;
@@ -4408,28 +4425,6 @@ void ValidationStateTracker::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandB
     cb_state->RecordCmd(record_obj.location.function);
     // Squirrel away an easily accessible copy.
     cb_state->debug_label = LoggingLabel(pLabelInfo);
-}
-
-void ValidationStateTracker::RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice,
-                                                                                              uint32_t queueFamilyIndex,
-                                                                                              uint32_t *pCounterCount,
-                                                                                              VkPerformanceCounterKHR *pCounters) {
-    if (NULL == pCounters) return;
-
-    auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-
-    std::unique_ptr<QueueFamilyPerfCounters> queue_family_counters(new QueueFamilyPerfCounters());
-    queue_family_counters->counters.resize(*pCounterCount);
-    for (uint32_t i = 0; i < *pCounterCount; i++) queue_family_counters->counters[i] = pCounters[i];
-
-    pd_state->perf_counters[queueFamilyIndex] = std::move(queue_family_counters);
-}
-
-void ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
-    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t *pCounterCount, VkPerformanceCounterKHR *pCounters,
-    VkPerformanceCounterDescriptionKHR *pCounterDescriptions, const RecordObject &record_obj) {
-    if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) return;
-    RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(physicalDevice, queueFamilyIndex, pCounterCount, pCounters);
 }
 
 void ValidationStateTracker::PostCallRecordAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR *pInfo,
