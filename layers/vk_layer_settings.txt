@@ -8,136 +8,147 @@
 
 # Debug Action
 # =====================
-# <LayerIdentifier>.debug_action
 # Specifies what action is to be taken when a layer reports information
 khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
 
 # Log Filename
 # =====================
-# <LayerIdentifier>.log_filename
 # Specifies the output filename
 khronos_validation.log_filename = stdout
 
 # Message Severity
 # =====================
-# <LayerIdentifier>.report_flags
 # Comma-delineated list of options specifying the types of messages to be
 # reported
 khronos_validation.report_flags = error
 
 # Limit Duplicated Messages
 # =====================
-# <LayerIdentifier>.enable_message_limit
 # Enable limiting of duplicate messages.
 khronos_validation.enable_message_limit = true
 
 # Max Duplicated Messages
 # =====================
-# <LayerIdentifier>.duplicate_message_limit
 # Maximum number of times any single validation message should be reported.
 khronos_validation.duplicate_message_limit = 10
 
 # Mute Message VUIDs
 # =====================
-# <LayerIdentifier>.message_id_filter
 # List of VUIDs and VUID identifers which are to be IGNORED by the validation
 # layer
 khronos_validation.message_id_filter =
 
 # Disables
 # =====================
-# <LayerIdentifier>.disables
 # Specify areas of validation to be disabled
 khronos_validation.disables = VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT
 
 # Enables
 # =====================
-# <LayerIdentifier>.enables
 # Setting an option here will enable specialized areas of validation
 khronos_validation.enables =
 
 # Redirect Printf messages to stdout
 # =====================
-# <LayerIdentifier>.printf_to_stdout
 # Enable redirection of Debug Printf messages from the debug callback to stdout
 #khronos_validation.printf_to_stdout = true
 
 # Printf verbose
 # =====================
-# <LayerIdentifier>.printf_verbose
 # Set the verbosity of debug printf messages
 #khronos_validation.printf_verbose = false
 
 # Printf buffer size
 # =====================
-# <LayerIdentifier>.printf_buffer_size
 # Set the size in bytes of the buffer used by debug printf
 #khronos_validation.printf_buffer_size = 1024
 
+# Shader instrumentation
+# =====================
+# Instrument shaders to validate descriptors, descriptor indexing, buffer device addresses and ray queries.
+# Warning: will considerably slow down shader executions
+#khronos_validation.gpuav_shader_instrumentation = true
+
 # Check descriptor indexing accesses
 # =====================
-# <LayerIdentifier>.gpuav_descriptor_checks
 # Enable descriptor indexing and buffer out of bounds checking
 #khronos_validation.gpuav_descriptor_checks = true
 
-# Check Draw/Dispatch/TraceRays Indirect Buffers
+# Generate warning on out of bounds accesses even if buffer robustness is enabled
 # =====================
-# <LayerIdentifier>.gpuav_validate_indirect_buffer
-# Enable draw/dispatch/traceRays indirect checking
-#khronos_validation.gpuav_validate_indirect_buffer = true
+# Warn on out of bounds accesses even if robustness is enabled
+#khronos_validation.gpuav_warn_on_robust_oob = true
 
-# Check copy commands
+# Out of bounds buffer device addresses
 # =====================
-# <LayerIdentifier>.gpuav_validate_copies
-# Enable copy commands checking
-#khronos_validation.gpuav_validate_copies = true
+# Check for invalid access using buffer device address
+#khronos_validation.gpuav_buffer_address_oob = true
+
+# Specify the maximum number of buffer device addresses in simultaneous use
+# =====================
+# Specify the maximum number of buffer device addresses to allow GPU-AV allocate resources
+#khronos_validation.gpuav_max_buffer_device_addresses = 10000
 
 # Validate RayQuery SPIR-V Instructions
 # =====================
-# <LayerIdentifier>.gpuav_validate_ray_query
 # Enable shader instrumentation on SPV_KHR_ray_query
 #khronos_validation.gpuav_validate_ray_query = true
 
 # Post Process Descriptor Indexing
 # =====================
-# <LayerIdentifier>.gpuav_post_process_descriptor_indexing
 # Track which descriptor indexes were used in shader to run normal validation afterwards
 #khronos_validation.gpuav_post_process_descriptor_indexing = true
 
 # Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext
 # =====================
-# <LayerIdentifier>.gpuav_select_instrumented_shaders
 # Enable selection of shaders to instrument
 #khronos_validation.gpuav_select_instrumented_shaders = false
 
+# Buffer content validation
+# =====================
+# Validate buffers containing parameters used in indirect Vulkan commands, or used in copy commands
+#khronos_validation.gpuav_buffers_validation = true
+
+# Indirect draws parameters
+# =====================
+# Validate buffers containing draw parameters used in indirect draw commands
+# Includes vkCmdDrawMeshTasks* calls as well
+#khronos_validation.gpuav_indirect_draws_buffers = true
+
+# Indirect dispatch parameters
+# =====================
+# Validate buffers containing dispatch parameters used in indirect dispatch commands
+#khronos_validation.gpuav_indirect_dispatches_buffers = true
+
+# Indirect trace rays parameters
+# =====================
+# Validate buffers containing ray tracing parameters used in indirect ray tracing commands
+#khronos_validation.gpuav_indirect_trace_rays_buffers = true
+
+# Buffer copies
+# =====================
+# Validate copies involving a VkBuffer. Right now only validates copy buffer to image
+#khronos_validation.gpuav_buffer_copies = true
+
+# Index copies
+# =====================
+# Validate that indexed draws do not fetch indices outside of the bounds of the index buffer
+# Also validates that those indices are not out of the bounds of the fetched vertex buffers
+#khronos_validation.gpuav_index_buffers = true
+
 # Use linear vma allocator for GPU-AV output buffers
 # =====================
-# <LayerIdentifier>.gpuav_vma_linear_output
 # Use VMA linear memory allocations for GPU-AV output buffers
 #khronos_validation.gpuav_vma_linear_output = true
 
-# Generate warning on out of bounds accesses even if buffer robustness is enabled
-# =====================
-# <LayerIdentifier>.gpuav_warn_on_robust_oob
-# Warn on out of bounds accesses even if robustness is enabled
-#khronos_validation.gpuav_warn_on_robust_oob = true
-
-# Specify the maximum number of buffer device addresses in simultaneous use
-# =====================
-# <LayerIdentifier>.gpuav_max_buffer_device_addresses
-# Specify the maximum number of buffer device addresses to allow GPU-AV allocate resources
-#khronos_validation.gpuav_max_buffer_device_addresses = 10000
-
 # Fine Grained Locking
 # =====================
-# <LayerIdentifier>.fine_grained_locking
 # Enable fine grained locking for Core Validation, which should improve
 # performance in multithreaded applications.
 khronos_validation.fine_grained_locking = true
 
 # Display Application Name
 # =====================
-# <LayerIdentifier>.message_format_display_application_name
 # Useful when running multiple instances to know which instance the message is from
 #khronos_validation.message_format_display_application_name = false
 
