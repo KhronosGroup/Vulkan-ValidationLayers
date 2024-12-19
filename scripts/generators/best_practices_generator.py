@@ -215,7 +215,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
                 params = ', '.join(paramList)
                 out.append(f'PostCallRecord{command.alias[2:]}({params});')
             else:
-                out.append(f'ValidationStateTracker::PostCallRecord{command.name[2:]}({params});\n')
+                out.append(f'BaseClass::PostCallRecord{command.name[2:]}({params});\n')
                 if command.name in self.manual_postcallrecord_list:
                     out.append(f'ManualPostCallRecord{command.name[2:]}({params});\n')
 

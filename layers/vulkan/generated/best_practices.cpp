@@ -210,7 +210,7 @@ std::string GetSpecialUse(vvl::Extension extension_name) {
 
 void BestPractices::PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                                  VkInstance* pInstance, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, record_obj);
+    BaseClass::PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -219,7 +219,7 @@ void BestPractices::PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCr
 
 void BestPractices::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                            VkPhysicalDevice* pPhysicalDevices, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, record_obj);
+    BaseClass::PostCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -235,8 +235,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceImageFormatProperties(VkPhysi
                                                                          VkImageUsageFlags usage, VkImageCreateFlags flags,
                                                                          VkImageFormatProperties* pImageFormatProperties,
                                                                          const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags,
-                                                                                 pImageFormatProperties, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags,
+                                                                    pImageFormatProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -246,7 +246,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceImageFormatProperties(VkPhysi
 void BestPractices::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj);
+    BaseClass::PostCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -256,7 +256,7 @@ void BestPractices::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, 
 void BestPractices::PostCallRecordEnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pPropertyCount,
                                                                        VkExtensionProperties* pProperties,
                                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordEnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties, record_obj);
+    BaseClass::PostCallRecordEnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -270,8 +270,8 @@ void BestPractices::PostCallRecordEnumerateInstanceExtensionProperties(const cha
 void BestPractices::PostCallRecordEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName,
                                                                      uint32_t* pPropertyCount, VkExtensionProperties* pProperties,
                                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordEnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pPropertyCount,
-                                                                             pProperties, record_obj);
+    BaseClass::PostCallRecordEnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pPropertyCount, pProperties,
+                                                                record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -284,7 +284,7 @@ void BestPractices::PostCallRecordEnumerateDeviceExtensionProperties(VkPhysicalD
 
 void BestPractices::PostCallRecordEnumerateInstanceLayerProperties(uint32_t* pPropertyCount, VkLayerProperties* pProperties,
                                                                    const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordEnumerateInstanceLayerProperties(pPropertyCount, pProperties, record_obj);
+    BaseClass::PostCallRecordEnumerateInstanceLayerProperties(pPropertyCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -297,7 +297,7 @@ void BestPractices::PostCallRecordEnumerateInstanceLayerProperties(uint32_t* pPr
 
 void BestPractices::PostCallRecordEnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                  VkLayerProperties* pProperties, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordEnumerateDeviceLayerProperties(physicalDevice, pPropertyCount, pProperties, record_obj);
+    BaseClass::PostCallRecordEnumerateDeviceLayerProperties(physicalDevice, pPropertyCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -310,7 +310,7 @@ void BestPractices::PostCallRecordEnumerateDeviceLayerProperties(VkPhysicalDevic
 
 void BestPractices::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                               const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
+    BaseClass::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
     ManualPostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
@@ -319,7 +319,7 @@ void BestPractices::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCoun
 }
 
 void BestPractices::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordQueueWaitIdle(queue, record_obj);
+    BaseClass::PostCallRecordQueueWaitIdle(queue, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -327,7 +327,7 @@ void BestPractices::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObjec
 }
 
 void BestPractices::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordDeviceWaitIdle(device, record_obj);
+    BaseClass::PostCallRecordDeviceWaitIdle(device, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -337,7 +337,7 @@ void BestPractices::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordOb
 void BestPractices::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
                                                  const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
+    BaseClass::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -346,7 +346,7 @@ void BestPractices::PostCallRecordAllocateMemory(VkDevice device, const VkMemory
 
 void BestPractices::PostCallRecordMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
                                             VkMemoryMapFlags flags, void** ppData, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordMapMemory(device, memory, offset, size, flags, ppData, record_obj);
+    BaseClass::PostCallRecordMapMemory(device, memory, offset, size, flags, ppData, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -356,7 +356,7 @@ void BestPractices::PostCallRecordMapMemory(VkDevice device, VkDeviceMemory memo
 void BestPractices::PostCallRecordFlushMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
                                                           const VkMappedMemoryRange* pMemoryRanges,
                                                           const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
+    BaseClass::PostCallRecordFlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -366,7 +366,7 @@ void BestPractices::PostCallRecordFlushMappedMemoryRanges(VkDevice device, uint3
 void BestPractices::PostCallRecordInvalidateMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
                                                                const VkMappedMemoryRange* pMemoryRanges,
                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
+    BaseClass::PostCallRecordInvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -375,7 +375,7 @@ void BestPractices::PostCallRecordInvalidateMappedMemoryRanges(VkDevice device, 
 
 void BestPractices::PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
                                                    VkDeviceSize memoryOffset, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordBindBufferMemory(device, buffer, memory, memoryOffset, record_obj);
+    BaseClass::PostCallRecordBindBufferMemory(device, buffer, memory, memoryOffset, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -384,7 +384,7 @@ void BestPractices::PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buf
 
 void BestPractices::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
+    BaseClass::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -393,7 +393,7 @@ void BestPractices::PostCallRecordBindImageMemory(VkDevice device, VkImage image
 
 void BestPractices::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                                   VkFence fence, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, record_obj);
+    BaseClass::PostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, record_obj);
     ManualPostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
@@ -404,7 +404,7 @@ void BestPractices::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindIn
 void BestPractices::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkFence* pFence,
                                               const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, record_obj);
+    BaseClass::PostCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -413,7 +413,7 @@ void BestPractices::PostCallRecordCreateFence(VkDevice device, const VkFenceCrea
 
 void BestPractices::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences,
                                               const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordResetFences(device, fenceCount, pFences, record_obj);
+    BaseClass::PostCallRecordResetFences(device, fenceCount, pFences, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -421,7 +421,7 @@ void BestPractices::PostCallRecordResetFences(VkDevice device, uint32_t fenceCou
 }
 
 void BestPractices::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetFenceStatus(device, fence, record_obj);
+    BaseClass::PostCallRecordGetFenceStatus(device, fence, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -434,7 +434,7 @@ void BestPractices::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence,
 
 void BestPractices::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                                 uint64_t timeout, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, record_obj);
+    BaseClass::PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -448,7 +448,7 @@ void BestPractices::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceC
 void BestPractices::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore,
                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, record_obj);
+    BaseClass::PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -458,7 +458,7 @@ void BestPractices::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
 void BestPractices::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkEvent* pEvent,
                                               const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, record_obj);
+    BaseClass::PostCallRecordCreateEvent(device, pCreateInfo, pAllocator, pEvent, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -466,7 +466,7 @@ void BestPractices::PostCallRecordCreateEvent(VkDevice device, const VkEventCrea
 }
 
 void BestPractices::PostCallRecordGetEventStatus(VkDevice device, VkEvent event, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetEventStatus(device, event, record_obj);
+    BaseClass::PostCallRecordGetEventStatus(device, event, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -478,7 +478,7 @@ void BestPractices::PostCallRecordGetEventStatus(VkDevice device, VkEvent event,
 }
 
 void BestPractices::PostCallRecordSetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordSetEvent(device, event, record_obj);
+    BaseClass::PostCallRecordSetEvent(device, event, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -486,7 +486,7 @@ void BestPractices::PostCallRecordSetEvent(VkDevice device, VkEvent event, const
 }
 
 void BestPractices::PostCallRecordResetEvent(VkDevice device, VkEvent event, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordResetEvent(device, event, record_obj);
+    BaseClass::PostCallRecordResetEvent(device, event, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -496,7 +496,7 @@ void BestPractices::PostCallRecordResetEvent(VkDevice device, VkEvent event, con
 void BestPractices::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool,
                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, record_obj);
+    BaseClass::PostCallRecordCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -506,8 +506,8 @@ void BestPractices::PostCallRecordCreateQueryPool(VkDevice device, const VkQuery
 void BestPractices::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                       uint32_t queryCount, size_t dataSize, void* pData, VkDeviceSize stride,
                                                       VkQueryResultFlags flags, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride,
-                                                              flags, record_obj);
+    BaseClass::PostCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags,
+                                                 record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -521,7 +521,7 @@ void BestPractices::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPo
 void BestPractices::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj);
+    BaseClass::PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -531,7 +531,7 @@ void BestPractices::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCr
 void BestPractices::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
                                                    const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateBufferView(device, pCreateInfo, pAllocator, pView, record_obj);
+    BaseClass::PostCallRecordCreateBufferView(device, pCreateInfo, pAllocator, pView, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -541,7 +541,7 @@ void BestPractices::PostCallRecordCreateBufferView(VkDevice device, const VkBuff
 void BestPractices::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkImage* pImage,
                                               const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
+    BaseClass::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -551,7 +551,7 @@ void BestPractices::PostCallRecordCreateImage(VkDevice device, const VkImageCrea
 void BestPractices::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkImageView* pView,
                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateImageView(device, pCreateInfo, pAllocator, pView, record_obj);
+    BaseClass::PostCallRecordCreateImageView(device, pCreateInfo, pAllocator, pView, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -561,8 +561,7 @@ void BestPractices::PostCallRecordCreateImageView(VkDevice device, const VkImage
 void BestPractices::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                                      const RecordObject& record_obj, chassis::CreateShaderModule& chassis_state) {
-    ValidationStateTracker::PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj,
-                                                             chassis_state);
+    BaseClass::PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -572,7 +571,7 @@ void BestPractices::PostCallRecordCreateShaderModule(VkDevice device, const VkSh
 void BestPractices::PostCallRecordCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache,
                                                       const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache, record_obj);
+    BaseClass::PostCallRecordCreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -581,7 +580,7 @@ void BestPractices::PostCallRecordCreatePipelineCache(VkDevice device, const VkP
 
 void BestPractices::PostCallRecordGetPipelineCacheData(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize,
                                                        void* pData, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPipelineCacheData(device, pipelineCache, pDataSize, pData, record_obj);
+    BaseClass::PostCallRecordGetPipelineCacheData(device, pipelineCache, pDataSize, pData, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -594,7 +593,7 @@ void BestPractices::PostCallRecordGetPipelineCacheData(VkDevice device, VkPipeli
 
 void BestPractices::PostCallRecordMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
                                                       const VkPipelineCache* pSrcCaches, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches, record_obj);
+    BaseClass::PostCallRecordMergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -606,8 +605,8 @@ void BestPractices::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPip
                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                           const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                           chassis::CreateGraphicsPipelines& chassis_state) {
-    ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                  pPipelines, record_obj, pipeline_states, chassis_state);
+    BaseClass::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
+                                                     record_obj, pipeline_states, chassis_state);
     ManualPostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                                 record_obj, pipeline_states, chassis_state);
 
@@ -625,8 +624,8 @@ void BestPractices::PostCallRecordCreateComputePipelines(VkDevice device, VkPipe
                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                          const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                          chassis::CreateComputePipelines& chassis_state) {
-    ValidationStateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                 pPipelines, record_obj, pipeline_states, chassis_state);
+    BaseClass::PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
+                                                    record_obj, pipeline_states, chassis_state);
     ManualPostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                                record_obj, pipeline_states, chassis_state);
 
@@ -642,7 +641,7 @@ void BestPractices::PostCallRecordCreateComputePipelines(VkDevice device, VkPipe
 void BestPractices::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
+    BaseClass::PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -652,7 +651,7 @@ void BestPractices::PostCallRecordCreatePipelineLayout(VkDevice device, const Vk
 void BestPractices::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateSampler(device, pCreateInfo, pAllocator, pSampler, record_obj);
+    BaseClass::PostCallRecordCreateSampler(device, pCreateInfo, pAllocator, pSampler, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -662,7 +661,7 @@ void BestPractices::PostCallRecordCreateSampler(VkDevice device, const VkSampler
 void BestPractices::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkDescriptorSetLayout* pSetLayout, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout, record_obj);
+    BaseClass::PostCallRecordCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -672,7 +671,7 @@ void BestPractices::PostCallRecordCreateDescriptorSetLayout(VkDevice device, con
 void BestPractices::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool, record_obj);
+    BaseClass::PostCallRecordCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -682,7 +681,7 @@ void BestPractices::PostCallRecordCreateDescriptorPool(VkDevice device, const Vk
 void BestPractices::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                          VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
                                                          vvl::AllocateDescriptorSetsData& chassis_state) {
-    ValidationStateTracker::PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj, chassis_state);
+    BaseClass::PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj, chassis_state);
     ManualPostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj, chassis_state);
 
     if (record_obj.result < VK_SUCCESS) {
@@ -693,7 +692,7 @@ void BestPractices::PostCallRecordAllocateDescriptorSets(VkDevice device, const 
 void BestPractices::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, record_obj);
+    BaseClass::PostCallRecordCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -703,7 +702,7 @@ void BestPractices::PostCallRecordCreateFramebuffer(VkDevice device, const VkFra
 void BestPractices::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                                    const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
+    BaseClass::PostCallRecordCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -713,7 +712,7 @@ void BestPractices::PostCallRecordCreateRenderPass(VkDevice device, const VkRend
 void BestPractices::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, record_obj);
+    BaseClass::PostCallRecordCreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -722,7 +721,7 @@ void BestPractices::PostCallRecordCreateCommandPool(VkDevice device, const VkCom
 
 void BestPractices::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
                                                    const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordResetCommandPool(device, commandPool, flags, record_obj);
+    BaseClass::PostCallRecordResetCommandPool(device, commandPool, flags, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -731,7 +730,7 @@ void BestPractices::PostCallRecordResetCommandPool(VkDevice device, VkCommandPoo
 
 void BestPractices::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                          VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers, record_obj);
+    BaseClass::PostCallRecordAllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -740,7 +739,7 @@ void BestPractices::PostCallRecordAllocateCommandBuffers(VkDevice device, const 
 
 void BestPractices::PostCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
+    BaseClass::PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -748,7 +747,7 @@ void BestPractices::PostCallRecordBeginCommandBuffer(VkCommandBuffer commandBuff
 }
 
 void BestPractices::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordEndCommandBuffer(commandBuffer, record_obj);
+    BaseClass::PostCallRecordEndCommandBuffer(commandBuffer, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -757,7 +756,7 @@ void BestPractices::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer
 
 void BestPractices::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordResetCommandBuffer(commandBuffer, flags, record_obj);
+    BaseClass::PostCallRecordResetCommandBuffer(commandBuffer, flags, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -766,7 +765,7 @@ void BestPractices::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuff
 
 void BestPractices::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
                                                     const VkBindBufferMemoryInfo* pBindInfos, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, record_obj);
+    BaseClass::PostCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, record_obj);
     ManualPostCallRecordBindBufferMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
@@ -776,7 +775,7 @@ void BestPractices::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bi
 
 void BestPractices::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                                    const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
+    BaseClass::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
     ManualPostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
@@ -787,8 +786,8 @@ void BestPractices::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bin
 void BestPractices::PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                                 VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
                                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount,
-                                                                        pPhysicalDeviceGroupProperties, record_obj);
+    BaseClass::PostCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
+                                                           record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -803,8 +802,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceImageFormatProperties2(VkPhys
                                                                           const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                           VkImageFormatProperties2* pImageFormatProperties,
                                                                           const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo,
-                                                                                  pImageFormatProperties, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
+                                                                     record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -816,8 +815,7 @@ void BestPractices::PostCallRecordCreateSamplerYcbcrConversion(VkDevice device,
                                                                const VkAllocationCallbacks* pAllocator,
                                                                VkSamplerYcbcrConversion* pYcbcrConversion,
                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion,
-                                                                       record_obj);
+    BaseClass::PostCallRecordCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -829,8 +827,7 @@ void BestPractices::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device
                                                                  const VkAllocationCallbacks* pAllocator,
                                                                  VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
                                                                  const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate,
-                                                                         record_obj);
+    BaseClass::PostCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -840,7 +837,7 @@ void BestPractices::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device
 void BestPractices::PostCallRecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
+    BaseClass::PostCallRecordCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -849,7 +846,7 @@ void BestPractices::PostCallRecordCreateRenderPass2(VkDevice device, const VkRen
 
 void BestPractices::PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue,
                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
+    BaseClass::PostCallRecordGetSemaphoreCounterValue(device, semaphore, pValue, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -858,7 +855,7 @@ void BestPractices::PostCallRecordGetSemaphoreCounterValue(VkDevice device, VkSe
 
 void BestPractices::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
                                                  const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordWaitSemaphores(device, pWaitInfo, timeout, record_obj);
+    BaseClass::PostCallRecordWaitSemaphores(device, pWaitInfo, timeout, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -871,7 +868,7 @@ void BestPractices::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaph
 
 void BestPractices::PostCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
+    BaseClass::PostCallRecordSignalSemaphore(device, pSignalInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -881,7 +878,7 @@ void BestPractices::PostCallRecordSignalSemaphore(VkDevice device, const VkSemap
 void BestPractices::PostCallRecordGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
                                                                   VkPhysicalDeviceToolProperties* pToolProperties,
                                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -895,7 +892,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceToolProperties(VkPhysicalDevi
 void BestPractices::PostCallRecordCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator,
                                                         VkPrivateDataSlot* pPrivateDataSlot, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, record_obj);
+    BaseClass::PostCallRecordCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -904,7 +901,7 @@ void BestPractices::PostCallRecordCreatePrivateDataSlot(VkDevice device, const V
 
 void BestPractices::PostCallRecordSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                                  VkPrivateDataSlot privateDataSlot, uint64_t data, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, record_obj);
+    BaseClass::PostCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -913,7 +910,7 @@ void BestPractices::PostCallRecordSetPrivateData(VkDevice device, VkObjectType o
 
 void BestPractices::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
+    BaseClass::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -922,7 +919,7 @@ void BestPractices::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCou
 
 void BestPractices::PostCallRecordMapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
                                              const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordMapMemory2(device, pMemoryMapInfo, ppData, record_obj);
+    BaseClass::PostCallRecordMapMemory2(device, pMemoryMapInfo, ppData, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -931,7 +928,7 @@ void BestPractices::PostCallRecordMapMemory2(VkDevice device, const VkMemoryMapI
 
 void BestPractices::PostCallRecordUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordUnmapMemory2(device, pMemoryUnmapInfo, record_obj);
+    BaseClass::PostCallRecordUnmapMemory2(device, pMemoryUnmapInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -940,7 +937,7 @@ void BestPractices::PostCallRecordUnmapMemory2(VkDevice device, const VkMemoryUn
 
 void BestPractices::PostCallRecordCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyMemoryToImage(device, pCopyMemoryToImageInfo, record_obj);
+    BaseClass::PostCallRecordCopyMemoryToImage(device, pCopyMemoryToImageInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -949,7 +946,7 @@ void BestPractices::PostCallRecordCopyMemoryToImage(VkDevice device, const VkCop
 
 void BestPractices::PostCallRecordCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyImageToMemory(device, pCopyImageToMemoryInfo, record_obj);
+    BaseClass::PostCallRecordCopyImageToMemory(device, pCopyImageToMemoryInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -958,7 +955,7 @@ void BestPractices::PostCallRecordCopyImageToMemory(VkDevice device, const VkCop
 
 void BestPractices::PostCallRecordCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
                                                    const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyImageToImage(device, pCopyImageToImageInfo, record_obj);
+    BaseClass::PostCallRecordCopyImageToImage(device, pCopyImageToImageInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -968,7 +965,7 @@ void BestPractices::PostCallRecordCopyImageToImage(VkDevice device, const VkCopy
 void BestPractices::PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
                                                         const VkHostImageLayoutTransitionInfo* pTransitions,
                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
+    BaseClass::PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -978,8 +975,7 @@ void BestPractices::PostCallRecordTransitionImageLayout(VkDevice device, uint32_
 void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                      VkSurfaceKHR surface, VkBool32* pSupported,
                                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported,
-                                                                             record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -989,8 +985,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalD
 void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                           VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
                                                                           const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities,
-                                                                                  record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, record_obj);
     ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
@@ -1002,8 +997,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalD
                                                                      uint32_t* pSurfaceFormatCount,
                                                                      VkSurfaceFormatKHR* pSurfaceFormats,
                                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount,
-                                                                             pSurfaceFormats, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats,
+                                                                record_obj);
     ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats,
                                                            record_obj);
 
@@ -1020,8 +1015,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhys
                                                                           uint32_t* pPresentModeCount,
                                                                           VkPresentModeKHR* pPresentModes,
                                                                           const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount,
-                                                                                  pPresentModes, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes,
+                                                                     record_obj);
     ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes,
                                                                 record_obj);
 
@@ -1037,7 +1032,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhys
 void BestPractices::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, record_obj);
+    BaseClass::PostCallRecordCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1046,8 +1041,7 @@ void BestPractices::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSw
 
 void BestPractices::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                                         VkImage* pSwapchainImages, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages,
-                                                                record_obj);
+    BaseClass::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
     ManualPostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
@@ -1062,8 +1056,7 @@ void BestPractices::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapc
 void BestPractices::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                       VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
                                                       const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex,
-                                                              record_obj);
+    BaseClass::PostCallRecordAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1076,7 +1069,7 @@ void BestPractices::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapcha
 
 void BestPractices::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
+    BaseClass::PostCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
     ManualPostCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
@@ -1090,7 +1083,7 @@ void BestPractices::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresent
 
 void BestPractices::PostCallRecordGetDeviceGroupPresentCapabilitiesKHR(
     VkDevice device, VkDeviceGroupPresentCapabilitiesKHR* pDeviceGroupPresentCapabilities, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities, record_obj);
+    BaseClass::PostCallRecordGetDeviceGroupPresentCapabilitiesKHR(device, pDeviceGroupPresentCapabilities, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1100,7 +1093,7 @@ void BestPractices::PostCallRecordGetDeviceGroupPresentCapabilitiesKHR(
 void BestPractices::PostCallRecordGetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
                                                                        VkDeviceGroupPresentModeFlagsKHR* pModes,
                                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDeviceGroupSurfacePresentModesKHR(device, surface, pModes, record_obj);
+    BaseClass::PostCallRecordGetDeviceGroupSurfacePresentModesKHR(device, surface, pModes, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1110,8 +1103,7 @@ void BestPractices::PostCallRecordGetDeviceGroupSurfacePresentModesKHR(VkDevice 
 void BestPractices::PostCallRecordGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                         uint32_t* pRectCount, VkRect2D* pRects,
                                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects,
-                                                                                record_obj);
+    BaseClass::PostCallRecordGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1124,7 +1116,7 @@ void BestPractices::PostCallRecordGetPhysicalDevicePresentRectanglesKHR(VkPhysic
 
 void BestPractices::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
                                                        uint32_t* pImageIndex, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, record_obj);
+    BaseClass::PostCallRecordAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1138,8 +1130,7 @@ void BestPractices::PostCallRecordAcquireNextImage2KHR(VkDevice device, const Vk
 void BestPractices::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                         VkDisplayPropertiesKHR* pProperties,
                                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties,
-                                                                                record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1154,8 +1145,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkP
                                                                              uint32_t* pPropertyCount,
                                                                              VkDisplayPlanePropertiesKHR* pProperties,
                                                                              const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties,
-                                                                                     record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
     ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
@@ -1170,8 +1160,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkP
 void BestPractices::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                       uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
                                                                       const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays,
-                                                                              record_obj);
+    BaseClass::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1185,8 +1174,7 @@ void BestPractices::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysical
 void BestPractices::PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                               uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties,
                                                               const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties,
-                                                                      record_obj);
+    BaseClass::PostCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1201,7 +1189,7 @@ void BestPractices::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physical
                                                        const VkDisplayModeCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode,
                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, record_obj);
+    BaseClass::PostCallRecordCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1211,8 +1199,7 @@ void BestPractices::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physical
 void BestPractices::PostCallRecordGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
                                                                  uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR* pCapabilities,
                                                                  const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities,
-                                                                         record_obj);
+    BaseClass::PostCallRecordGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1223,7 +1210,7 @@ void BestPractices::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instan
                                                                const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1234,8 +1221,7 @@ void BestPractices::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uin
                                                             const VkSwapchainCreateInfoKHR* pCreateInfos,
                                                             const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
                                                             const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains,
-                                                                    record_obj);
+    BaseClass::PostCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1246,7 +1232,7 @@ void BestPractices::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uin
 void BestPractices::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1258,7 +1244,7 @@ void BestPractices::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, cons
 void BestPractices::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                       const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1270,7 +1256,7 @@ void BestPractices::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const
 void BestPractices::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                           const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1282,7 +1268,7 @@ void BestPractices::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, c
 void BestPractices::PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                           const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1294,7 +1280,7 @@ void BestPractices::PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, c
 void BestPractices::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1306,8 +1292,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysic
                                                                         const VkVideoProfileInfoKHR* pVideoProfile,
                                                                         VkVideoCapabilitiesKHR* pCapabilities,
                                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities,
-                                                                                record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1317,8 +1302,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysic
 void BestPractices::PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoFormatInfoKHR* pVideoFormatInfo,
     uint32_t* pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR* pVideoFormatProperties, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
-        physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount,
+                                                                       pVideoFormatProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1332,7 +1317,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
 void BestPractices::PostCallRecordCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession,
                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession, record_obj);
+    BaseClass::PostCallRecordCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1343,8 +1328,8 @@ void BestPractices::PostCallRecordGetVideoSessionMemoryRequirementsKHR(VkDevice 
                                                                        uint32_t* pMemoryRequirementsCount,
                                                                        VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
                                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount,
-                                                                               pMemoryRequirements, record_obj);
+    BaseClass::PostCallRecordGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount,
+                                                                  pMemoryRequirements, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1356,8 +1341,8 @@ void BestPractices::PostCallRecordBindVideoSessionMemoryKHR(VkDevice device, VkV
                                                             uint32_t bindSessionMemoryInfoCount,
                                                             const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
                                                             const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount,
-                                                                    pBindSessionMemoryInfos, record_obj);
+    BaseClass::PostCallRecordBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, pBindSessionMemoryInfos,
+                                                       record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1369,8 +1354,7 @@ void BestPractices::PostCallRecordCreateVideoSessionParametersKHR(VkDevice devic
                                                                   const VkAllocationCallbacks* pAllocator,
                                                                   VkVideoSessionParametersKHR* pVideoSessionParameters,
                                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters,
-                                                                          record_obj);
+    BaseClass::PostCallRecordCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1381,7 +1365,7 @@ void BestPractices::PostCallRecordUpdateVideoSessionParametersKHR(VkDevice devic
                                                                   VkVideoSessionParametersKHR videoSessionParameters,
                                                                   const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo,
                                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo, record_obj);
+    BaseClass::PostCallRecordUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1403,7 +1387,7 @@ void BestPractices::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance in
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 void BestPractices::PostCallRecordGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                           HANDLE* pHandle, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
+    BaseClass::PostCallRecordGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1414,8 +1398,8 @@ void BestPractices::PostCallRecordGetMemoryWin32HandlePropertiesKHR(VkDevice dev
                                                                     HANDLE handle,
                                                                     VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties,
                                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetMemoryWin32HandlePropertiesKHR(device, handleType, handle,
-                                                                            pMemoryWin32HandleProperties, record_obj);
+    BaseClass::PostCallRecordGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties,
+                                                               record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1425,7 +1409,7 @@ void BestPractices::PostCallRecordGetMemoryWin32HandlePropertiesKHR(VkDevice dev
 
 void BestPractices::PostCallRecordGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd,
                                                  const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetMemoryFdKHR(device, pGetFdInfo, pFd, record_obj);
+    BaseClass::PostCallRecordGetMemoryFdKHR(device, pGetFdInfo, pFd, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1435,7 +1419,7 @@ void BestPractices::PostCallRecordGetMemoryFdKHR(VkDevice device, const VkMemory
 void BestPractices::PostCallRecordGetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
                                                            VkMemoryFdPropertiesKHR* pMemoryFdProperties,
                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties, record_obj);
+    BaseClass::PostCallRecordGetMemoryFdPropertiesKHR(device, handleType, fd, pMemoryFdProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1445,7 +1429,7 @@ void BestPractices::PostCallRecordGetMemoryFdPropertiesKHR(VkDevice device, VkEx
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 void BestPractices::PostCallRecordImportSemaphoreWin32HandleKHR(
     VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, record_obj);
+    BaseClass::PostCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1455,7 +1439,7 @@ void BestPractices::PostCallRecordImportSemaphoreWin32HandleKHR(
 void BestPractices::PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device,
                                                              const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                              HANDLE* pHandle, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
+    BaseClass::PostCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1465,7 +1449,7 @@ void BestPractices::PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device,
 
 void BestPractices::PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo,
                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo, record_obj);
+    BaseClass::PostCallRecordImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1474,7 +1458,7 @@ void BestPractices::PostCallRecordImportSemaphoreFdKHR(VkDevice device, const Vk
 
 void BestPractices::PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetSemaphoreFdKHR(device, pGetFdInfo, pFd, record_obj);
+    BaseClass::PostCallRecordGetSemaphoreFdKHR(device, pGetFdInfo, pFd, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1496,7 +1480,7 @@ void BestPractices::PostCallRecordCreateRenderPass2KHR(VkDevice device, const Vk
 }
 
 void BestPractices::PostCallRecordGetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetSwapchainStatusKHR(device, swapchain, record_obj);
+    BaseClass::PostCallRecordGetSwapchainStatusKHR(device, swapchain, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1511,7 +1495,7 @@ void BestPractices::PostCallRecordGetSwapchainStatusKHR(VkDevice device, VkSwapc
 void BestPractices::PostCallRecordImportFenceWin32HandleKHR(VkDevice device,
                                                             const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo,
                                                             const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, record_obj);
+    BaseClass::PostCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1520,7 +1504,7 @@ void BestPractices::PostCallRecordImportFenceWin32HandleKHR(VkDevice device,
 
 void BestPractices::PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                          HANDLE* pHandle, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
+    BaseClass::PostCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1530,7 +1514,7 @@ void BestPractices::PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const 
 
 void BestPractices::PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo,
                                                    const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordImportFenceFdKHR(device, pImportFenceFdInfo, record_obj);
+    BaseClass::PostCallRecordImportFenceFdKHR(device, pImportFenceFdInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1539,7 +1523,7 @@ void BestPractices::PostCallRecordImportFenceFdKHR(VkDevice device, const VkImpo
 
 void BestPractices::PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd,
                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetFenceFdKHR(device, pGetFdInfo, pFd, record_obj);
+    BaseClass::PostCallRecordGetFenceFdKHR(device, pGetFdInfo, pFd, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1549,7 +1533,7 @@ void BestPractices::PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGe
 void BestPractices::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterKHR* pCounters,
     VkPerformanceCounterDescriptionKHR* pCounterDescriptions, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
+    BaseClass::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
         physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
@@ -1563,7 +1547,7 @@ void BestPractices::PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQ
 
 void BestPractices::PostCallRecordAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo,
                                                           const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordAcquireProfilingLockKHR(device, pInfo, record_obj);
+    BaseClass::PostCallRecordAcquireProfilingLockKHR(device, pInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1574,8 +1558,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhy
                                                                            const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                            VkSurfaceCapabilities2KHR* pSurfaceCapabilities,
                                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo,
-                                                                                   pSurfaceCapabilities, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities,
+                                                                      record_obj);
     ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
@@ -1588,8 +1572,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysical
                                                                       uint32_t* pSurfaceFormatCount,
                                                                       VkSurfaceFormat2KHR* pSurfaceFormats,
                                                                       const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount,
-                                                                              pSurfaceFormats, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats,
+                                                                 record_obj);
     ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats,
                                                             record_obj);
 
@@ -1605,8 +1589,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysical
 void BestPractices::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                          VkDisplayProperties2KHR* pProperties,
                                                                          const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties,
-                                                                                 record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1621,8 +1604,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(Vk
                                                                               uint32_t* pPropertyCount,
                                                                               VkDisplayPlaneProperties2KHR* pProperties,
                                                                               const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties,
-                                                                                      record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1636,8 +1618,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(Vk
 void BestPractices::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                                uint32_t* pPropertyCount, VkDisplayModeProperties2KHR* pProperties,
                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties,
-                                                                       record_obj);
+    BaseClass::PostCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1652,8 +1633,7 @@ void BestPractices::PostCallRecordGetDisplayPlaneCapabilities2KHR(VkPhysicalDevi
                                                                   const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                                   VkDisplayPlaneCapabilities2KHR* pCapabilities,
                                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities,
-                                                                          record_obj);
+    BaseClass::PostCallRecordGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1696,8 +1676,8 @@ void BestPractices::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSe
 void BestPractices::PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(
     VkPhysicalDevice physicalDevice, uint32_t* pFragmentShadingRateCount,
     VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount,
-                                                                                   pFragmentShadingRates, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount,
+                                                                      pFragmentShadingRates, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1710,7 +1690,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(
 
 void BestPractices::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout, record_obj);
+    BaseClass::PostCallRecordWaitForPresentKHR(device, swapchain, presentId, timeout, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1724,7 +1704,7 @@ void BestPractices::PostCallRecordWaitForPresentKHR(VkDevice device, VkSwapchain
 void BestPractices::PostCallRecordCreateDeferredOperationKHR(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                                              VkDeferredOperationKHR* pDeferredOperation,
                                                              const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation, record_obj);
+    BaseClass::PostCallRecordCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1733,7 +1713,7 @@ void BestPractices::PostCallRecordCreateDeferredOperationKHR(VkDevice device, co
 
 void BestPractices::PostCallRecordGetDeferredOperationResultKHR(VkDevice device, VkDeferredOperationKHR operation,
                                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDeferredOperationResultKHR(device, operation, record_obj);
+    BaseClass::PostCallRecordGetDeferredOperationResultKHR(device, operation, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1743,7 +1723,7 @@ void BestPractices::PostCallRecordGetDeferredOperationResultKHR(VkDevice device,
 
 void BestPractices::PostCallRecordDeferredOperationJoinKHR(VkDevice device, VkDeferredOperationKHR operation,
                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordDeferredOperationJoinKHR(device, operation, record_obj);
+    BaseClass::PostCallRecordDeferredOperationJoinKHR(device, operation, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1758,8 +1738,7 @@ void BestPractices::PostCallRecordGetPipelineExecutablePropertiesKHR(VkDevice de
                                                                      uint32_t* pExecutableCount,
                                                                      VkPipelineExecutablePropertiesKHR* pProperties,
                                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties,
-                                                                             record_obj);
+    BaseClass::PostCallRecordGetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1775,8 +1754,7 @@ void BestPractices::PostCallRecordGetPipelineExecutableStatisticsKHR(VkDevice de
                                                                      uint32_t* pStatisticCount,
                                                                      VkPipelineExecutableStatisticKHR* pStatistics,
                                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics,
-                                                                             record_obj);
+    BaseClass::PostCallRecordGetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1790,8 +1768,8 @@ void BestPractices::PostCallRecordGetPipelineExecutableStatisticsKHR(VkDevice de
 void BestPractices::PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo, uint32_t* pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
-        device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations, record_obj);
+    BaseClass::PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(device, pExecutableInfo, pInternalRepresentationCount,
+                                                                             pInternalRepresentations, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1815,8 +1793,8 @@ void BestPractices::PostCallRecordUnmapMemory2KHR(VkDevice device, const VkMemor
 void BestPractices::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
-        physicalDevice, pQualityLevelInfo, pQualityLevelProperties, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo,
+                                                                                   pQualityLevelProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1826,8 +1804,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelProper
 void BestPractices::PostCallRecordGetEncodedVideoSessionParametersKHR(
     VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo,
-                                                                              pDataSize, pData, record_obj);
+    BaseClass::PostCallRecordGetEncodedVideoSessionParametersKHR(device, pVideoSessionParametersInfo, pFeedbackInfo, pDataSize,
+                                                                 pData, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1847,7 +1825,7 @@ void BestPractices::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, con
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkPipelineBinaryHandlesInfoKHR* pBinaries,
                                                             const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries, record_obj);
+    BaseClass::PostCallRecordCreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1860,7 +1838,7 @@ void BestPractices::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, con
 
 void BestPractices::PostCallRecordGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
                                                     VkPipelineBinaryKeyKHR* pPipelineKey, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey, record_obj);
+    BaseClass::PostCallRecordGetPipelineKeyKHR(device, pPipelineCreateInfo, pPipelineKey, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1871,8 +1849,8 @@ void BestPractices::PostCallRecordGetPipelineBinaryDataKHR(VkDevice device, cons
                                                            VkPipelineBinaryKeyKHR* pPipelineBinaryKey,
                                                            size_t* pPipelineBinaryDataSize, void* pPipelineBinaryData,
                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPipelineBinaryDataKHR(device, pInfo, pPipelineBinaryKey, pPipelineBinaryDataSize,
-                                                                   pPipelineBinaryData, record_obj);
+    BaseClass::PostCallRecordGetPipelineBinaryDataKHR(device, pInfo, pPipelineBinaryKey, pPipelineBinaryDataSize,
+                                                      pPipelineBinaryData, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1883,8 +1861,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKH
                                                                                   uint32_t* pPropertyCount,
                                                                                   VkCooperativeMatrixPropertiesKHR* pProperties,
                                                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount,
-                                                                                          pProperties, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties,
+                                                                             record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1899,8 +1877,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(V
                                                                                uint32_t* pTimeDomainCount,
                                                                                VkTimeDomainKHR* pTimeDomains,
                                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount,
-                                                                                       pTimeDomains, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains,
+                                                                          record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -1915,8 +1893,8 @@ void BestPractices::PostCallRecordGetCalibratedTimestampsKHR(VkDevice device, ui
                                                              const VkCalibratedTimestampInfoKHR* pTimestampInfos,
                                                              uint64_t* pTimestamps, uint64_t* pMaxDeviation,
                                                              const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps,
-                                                                     pMaxDeviation, record_obj);
+    BaseClass::PostCallRecordGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
+                                                        record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1928,7 +1906,7 @@ void BestPractices::PostCallRecordCreateDebugReportCallbackEXT(VkInstance instan
                                                                const VkAllocationCallbacks* pAllocator,
                                                                VkDebugReportCallbackEXT* pCallback,
                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, record_obj);
+    BaseClass::PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1937,7 +1915,7 @@ void BestPractices::PostCallRecordCreateDebugReportCallbackEXT(VkInstance instan
 
 void BestPractices::PostCallRecordDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo,
                                                              const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordDebugMarkerSetObjectTagEXT(device, pTagInfo, record_obj);
+    BaseClass::PostCallRecordDebugMarkerSetObjectTagEXT(device, pTagInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1946,7 +1924,7 @@ void BestPractices::PostCallRecordDebugMarkerSetObjectTagEXT(VkDevice device, co
 
 void BestPractices::PostCallRecordDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT* pNameInfo,
                                                               const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo, record_obj);
+    BaseClass::PostCallRecordDebugMarkerSetObjectNameEXT(device, pNameInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1956,7 +1934,7 @@ void BestPractices::PostCallRecordDebugMarkerSetObjectNameEXT(VkDevice device, c
 void BestPractices::PostCallRecordCreateCuModuleNVX(VkDevice device, const VkCuModuleCreateInfoNVX* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule, record_obj);
+    BaseClass::PostCallRecordCreateCuModuleNVX(device, pCreateInfo, pAllocator, pModule, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1966,7 +1944,7 @@ void BestPractices::PostCallRecordCreateCuModuleNVX(VkDevice device, const VkCuM
 void BestPractices::PostCallRecordCreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreateInfoNVX* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction,
                                                       const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction, record_obj);
+    BaseClass::PostCallRecordCreateCuFunctionNVX(device, pCreateInfo, pAllocator, pFunction, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1976,7 +1954,7 @@ void BestPractices::PostCallRecordCreateCuFunctionNVX(VkDevice device, const VkC
 void BestPractices::PostCallRecordGetImageViewAddressNVX(VkDevice device, VkImageView imageView,
                                                          VkImageViewAddressPropertiesNVX* pProperties,
                                                          const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetImageViewAddressNVX(device, imageView, pProperties, record_obj);
+    BaseClass::PostCallRecordGetImageViewAddressNVX(device, imageView, pProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -1986,7 +1964,7 @@ void BestPractices::PostCallRecordGetImageViewAddressNVX(VkDevice device, VkImag
 void BestPractices::PostCallRecordGetShaderInfoAMD(VkDevice device, VkPipeline pipeline, VkShaderStageFlagBits shaderStage,
                                                    VkShaderInfoTypeAMD infoType, size_t* pInfoSize, void* pInfo,
                                                    const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo, record_obj);
+    BaseClass::PostCallRecordGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2002,7 +1980,7 @@ void BestPractices::PostCallRecordCreateStreamDescriptorSurfaceGGP(VkInstance in
                                                                    const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
                                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                    const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2014,7 +1992,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceExternalImageFormatProperties
     VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
     VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType,
     VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
+    BaseClass::PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
         physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
@@ -2026,7 +2004,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceExternalImageFormatProperties
 void BestPractices::PostCallRecordGetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory,
                                                          VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle,
                                                          const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetMemoryWin32HandleNV(device, memory, handleType, pHandle, record_obj);
+    BaseClass::PostCallRecordGetMemoryWin32HandleNV(device, memory, handleType, pHandle, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2038,7 +2016,7 @@ void BestPractices::PostCallRecordGetMemoryWin32HandleNV(VkDevice device, VkDevi
 void BestPractices::PostCallRecordCreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2049,7 +2027,7 @@ void BestPractices::PostCallRecordCreateViSurfaceNN(VkInstance instance, const V
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 void BestPractices::PostCallRecordAcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display,
                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, record_obj);
+    BaseClass::PostCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2058,7 +2036,7 @@ void BestPractices::PostCallRecordAcquireXlibDisplayEXT(VkPhysicalDevice physica
 
 void BestPractices::PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
                                                            VkDisplayKHR* pDisplay, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, record_obj);
+    BaseClass::PostCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2069,8 +2047,7 @@ void BestPractices::PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice phys
 void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                            VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
                                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities,
-                                                                                   record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities, record_obj);
     ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
@@ -2081,7 +2058,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhy
 void BestPractices::PostCallRecordDisplayPowerControlEXT(VkDevice device, VkDisplayKHR display,
                                                          const VkDisplayPowerInfoEXT* pDisplayPowerInfo,
                                                          const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordDisplayPowerControlEXT(device, display, pDisplayPowerInfo, record_obj);
+    BaseClass::PostCallRecordDisplayPowerControlEXT(device, display, pDisplayPowerInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2091,7 +2068,7 @@ void BestPractices::PostCallRecordDisplayPowerControlEXT(VkDevice device, VkDisp
 void BestPractices::PostCallRecordRegisterDeviceEventEXT(VkDevice device, const VkDeviceEventInfoEXT* pDeviceEventInfo,
                                                          const VkAllocationCallbacks* pAllocator, VkFence* pFence,
                                                          const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence, record_obj);
+    BaseClass::PostCallRecordRegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2102,8 +2079,7 @@ void BestPractices::PostCallRecordRegisterDisplayEventEXT(VkDevice device, VkDis
                                                           const VkDisplayEventInfoEXT* pDisplayEventInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkFence* pFence,
                                                           const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence,
-                                                                  record_obj);
+    BaseClass::PostCallRecordRegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2113,7 +2089,7 @@ void BestPractices::PostCallRecordRegisterDisplayEventEXT(VkDevice device, VkDis
 void BestPractices::PostCallRecordGetSwapchainCounterEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                          VkSurfaceCounterFlagBitsEXT counter, uint64_t* pCounterValue,
                                                          const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue, record_obj);
+    BaseClass::PostCallRecordGetSwapchainCounterEXT(device, swapchain, counter, pCounterValue, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2123,7 +2099,7 @@ void BestPractices::PostCallRecordGetSwapchainCounterEXT(VkDevice device, VkSwap
 void BestPractices::PostCallRecordGetRefreshCycleDurationGOOGLE(VkDevice device, VkSwapchainKHR swapchain,
                                                                 VkRefreshCycleDurationGOOGLE* pDisplayTimingProperties,
                                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties, record_obj);
+    BaseClass::PostCallRecordGetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2134,8 +2110,8 @@ void BestPractices::PostCallRecordGetPastPresentationTimingGOOGLE(VkDevice devic
                                                                   uint32_t* pPresentationTimingCount,
                                                                   VkPastPresentationTimingGOOGLE* pPresentationTimings,
                                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount,
-                                                                          pPresentationTimings, record_obj);
+    BaseClass::PostCallRecordGetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings,
+                                                             record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2150,7 +2126,7 @@ void BestPractices::PostCallRecordGetPastPresentationTimingGOOGLE(VkDevice devic
 void BestPractices::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                       const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2162,7 +2138,7 @@ void BestPractices::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const
 void BestPractices::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2172,7 +2148,7 @@ void BestPractices::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, con
 
 void BestPractices::PostCallRecordSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo,
                                                              const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo, record_obj);
+    BaseClass::PostCallRecordSetDebugUtilsObjectNameEXT(device, pNameInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2181,7 +2157,7 @@ void BestPractices::PostCallRecordSetDebugUtilsObjectNameEXT(VkDevice device, co
 
 void BestPractices::PostCallRecordSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo,
                                                             const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordSetDebugUtilsObjectTagEXT(device, pTagInfo, record_obj);
+    BaseClass::PostCallRecordSetDebugUtilsObjectTagEXT(device, pTagInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2193,7 +2169,7 @@ void BestPractices::PostCallRecordCreateDebugUtilsMessengerEXT(VkInstance instan
                                                                const VkAllocationCallbacks* pAllocator,
                                                                VkDebugUtilsMessengerEXT* pMessenger,
                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, record_obj);
+    BaseClass::PostCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2204,7 +2180,7 @@ void BestPractices::PostCallRecordCreateDebugUtilsMessengerEXT(VkInstance instan
 void BestPractices::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                             VkAndroidHardwareBufferPropertiesANDROID* pProperties,
                                                                             const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties, record_obj);
+    BaseClass::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2215,7 +2191,7 @@ void BestPractices::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(VkDevice
                                                                         const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
                                                                         struct AHardwareBuffer** pBuffer,
                                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer, record_obj);
+    BaseClass::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2229,8 +2205,8 @@ void BestPractices::PostCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice dev
                                                                     const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
                                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos,
-                                                                            pAllocator, pPipelines, record_obj);
+    BaseClass::PostCallRecordCreateExecutionGraphPipelinesAMDX(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                               pPipelines, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2244,7 +2220,7 @@ void BestPractices::PostCallRecordCreateExecutionGraphPipelinesAMDX(VkDevice dev
 void BestPractices::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph,
                                                                            VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo,
                                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo, record_obj);
+    BaseClass::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(device, executionGraph, pSizeInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2254,8 +2230,7 @@ void BestPractices::PostCallRecordGetExecutionGraphPipelineScratchSizeAMDX(VkDev
 void BestPractices::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
                                                                          const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
                                                                          uint32_t* pNodeIndex, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex,
-                                                                                 record_obj);
+    BaseClass::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(device, executionGraph, pNodeInfo, pNodeIndex, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2266,7 +2241,7 @@ void BestPractices::PostCallRecordGetExecutionGraphPipelineNodeIndexAMDX(VkDevic
 void BestPractices::PostCallRecordGetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage image,
                                                                          VkImageDrmFormatModifierPropertiesEXT* pProperties,
                                                                          const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties, record_obj);
+    BaseClass::PostCallRecordGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2278,8 +2253,7 @@ void BestPractices::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkAccelerationStructureNV* pAccelerationStructure,
                                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure,
-                                                                        record_obj);
+    BaseClass::PostCallRecordCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2289,7 +2263,7 @@ void BestPractices::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
 void BestPractices::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                                     const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, record_obj);
+    BaseClass::PostCallRecordBindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2302,8 +2276,8 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, V
                                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                               const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                               chassis::CreateRayTracingPipelinesNV& chassis_state) {
-    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
-        device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj, pipeline_states, chassis_state);
+    BaseClass::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                         pPipelines, record_obj, pipeline_states, chassis_state);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2317,8 +2291,8 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, V
 void BestPractices::PostCallRecordGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                                      uint32_t groupCount, size_t dataSize, void* pData,
                                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize,
-                                                                             pData, record_obj);
+    BaseClass::PostCallRecordGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData,
+                                                                record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2333,8 +2307,7 @@ void BestPractices::PostCallRecordGetRayTracingShaderGroupHandlesNV(VkDevice dev
 
 void BestPractices::PostCallRecordGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                                    size_t dataSize, void* pData, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData,
-                                                                           record_obj);
+    BaseClass::PostCallRecordGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2343,7 +2316,7 @@ void BestPractices::PostCallRecordGetAccelerationStructureHandleNV(VkDevice devi
 
 void BestPractices::PostCallRecordCompileDeferredNV(VkDevice device, VkPipeline pipeline, uint32_t shader,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCompileDeferredNV(device, pipeline, shader, record_obj);
+    BaseClass::PostCallRecordCompileDeferredNV(device, pipeline, shader, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2354,8 +2327,8 @@ void BestPractices::PostCallRecordGetMemoryHostPointerPropertiesEXT(VkDevice dev
                                                                     const void* pHostPointer,
                                                                     VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties,
                                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer,
-                                                                            pMemoryHostPointerProperties, record_obj);
+    BaseClass::PostCallRecordGetMemoryHostPointerPropertiesEXT(device, handleType, pHostPointer, pMemoryHostPointerProperties,
+                                                               record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2379,7 +2352,7 @@ void BestPractices::PostCallRecordGetCalibratedTimestampsEXT(VkDevice device, ui
 void BestPractices::PostCallRecordInitializePerformanceApiINTEL(VkDevice device,
                                                                 const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
                                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordInitializePerformanceApiINTEL(device, pInitializeInfo, record_obj);
+    BaseClass::PostCallRecordInitializePerformanceApiINTEL(device, pInitializeInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2389,7 +2362,7 @@ void BestPractices::PostCallRecordInitializePerformanceApiINTEL(VkDevice device,
 void BestPractices::PostCallRecordCmdSetPerformanceMarkerINTEL(VkCommandBuffer commandBuffer,
                                                                const VkPerformanceMarkerInfoINTEL* pMarkerInfo,
                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
+    BaseClass::PostCallRecordCmdSetPerformanceMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2399,7 +2372,7 @@ void BestPractices::PostCallRecordCmdSetPerformanceMarkerINTEL(VkCommandBuffer c
 void BestPractices::PostCallRecordCmdSetPerformanceStreamMarkerINTEL(VkCommandBuffer commandBuffer,
                                                                      const VkPerformanceStreamMarkerInfoINTEL* pMarkerInfo,
                                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
+    BaseClass::PostCallRecordCmdSetPerformanceStreamMarkerINTEL(commandBuffer, pMarkerInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2409,7 +2382,7 @@ void BestPractices::PostCallRecordCmdSetPerformanceStreamMarkerINTEL(VkCommandBu
 void BestPractices::PostCallRecordCmdSetPerformanceOverrideINTEL(VkCommandBuffer commandBuffer,
                                                                  const VkPerformanceOverrideInfoINTEL* pOverrideInfo,
                                                                  const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo, record_obj);
+    BaseClass::PostCallRecordCmdSetPerformanceOverrideINTEL(commandBuffer, pOverrideInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2419,7 +2392,7 @@ void BestPractices::PostCallRecordCmdSetPerformanceOverrideINTEL(VkCommandBuffer
 void BestPractices::PostCallRecordAcquirePerformanceConfigurationINTEL(
     VkDevice device, const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
     VkPerformanceConfigurationINTEL* pConfiguration, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordAcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration, record_obj);
+    BaseClass::PostCallRecordAcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2429,7 +2402,7 @@ void BestPractices::PostCallRecordAcquirePerformanceConfigurationINTEL(
 void BestPractices::PostCallRecordReleasePerformanceConfigurationINTEL(VkDevice device,
                                                                        VkPerformanceConfigurationINTEL configuration,
                                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordReleasePerformanceConfigurationINTEL(device, configuration, record_obj);
+    BaseClass::PostCallRecordReleasePerformanceConfigurationINTEL(device, configuration, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2439,7 +2412,7 @@ void BestPractices::PostCallRecordReleasePerformanceConfigurationINTEL(VkDevice 
 void BestPractices::PostCallRecordQueueSetPerformanceConfigurationINTEL(VkQueue queue,
                                                                         VkPerformanceConfigurationINTEL configuration,
                                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordQueueSetPerformanceConfigurationINTEL(queue, configuration, record_obj);
+    BaseClass::PostCallRecordQueueSetPerformanceConfigurationINTEL(queue, configuration, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2448,7 +2421,7 @@ void BestPractices::PostCallRecordQueueSetPerformanceConfigurationINTEL(VkQueue 
 
 void BestPractices::PostCallRecordGetPerformanceParameterINTEL(VkDevice device, VkPerformanceParameterTypeINTEL parameter,
                                                                VkPerformanceValueINTEL* pValue, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPerformanceParameterINTEL(device, parameter, pValue, record_obj);
+    BaseClass::PostCallRecordGetPerformanceParameterINTEL(device, parameter, pValue, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2460,7 +2433,7 @@ void BestPractices::PostCallRecordCreateImagePipeSurfaceFUCHSIA(VkInstance insta
                                                                 const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo,
                                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2472,7 +2445,7 @@ void BestPractices::PostCallRecordCreateImagePipeSurfaceFUCHSIA(VkInstance insta
 void BestPractices::PostCallRecordCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2490,8 +2463,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV
                                                                                  uint32_t* pPropertyCount,
                                                                                  VkCooperativeMatrixPropertiesNV* pProperties,
                                                                                  const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount,
-                                                                                         pProperties, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties,
+                                                                            record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2505,8 +2478,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV
 void BestPractices::PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
     VkPhysicalDevice physicalDevice, uint32_t* pCombinationCount, VkFramebufferMixedSamplesCombinationNV* pCombinations,
     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
-        physicalDevice, pCombinationCount, pCombinations, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount,
+                                                                                             pCombinations, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2523,8 +2496,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(VkPhy
                                                                            uint32_t* pPresentModeCount,
                                                                            VkPresentModeKHR* pPresentModes,
                                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
-                                                                                   pPresentModes, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
+                                                                      pPresentModes, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2537,7 +2510,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(VkPhy
 
 void BestPractices::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordAcquireFullScreenExclusiveModeEXT(device, swapchain, record_obj);
+    BaseClass::PostCallRecordAcquireFullScreenExclusiveModeEXT(device, swapchain, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2546,7 +2519,7 @@ void BestPractices::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice dev
 
 void BestPractices::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain, record_obj);
+    BaseClass::PostCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2557,7 +2530,7 @@ void BestPractices::PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(VkDevice
                                                                         const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                         VkDeviceGroupPresentModeFlagsKHR* pModes,
                                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes, record_obj);
+    BaseClass::PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2568,7 +2541,7 @@ void BestPractices::PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(VkDevice
 void BestPractices::PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2598,7 +2571,7 @@ void BestPractices::PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint
 
 void BestPractices::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
                                                             const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo, record_obj);
+    BaseClass::PostCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2610,8 +2583,7 @@ void BestPractices::PostCallRecordCreateIndirectCommandsLayoutNV(VkDevice device
                                                                  const VkAllocationCallbacks* pAllocator,
                                                                  VkIndirectCommandsLayoutNV* pIndirectCommandsLayout,
                                                                  const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout,
-                                                                         record_obj);
+    BaseClass::PostCallRecordCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2620,7 +2592,7 @@ void BestPractices::PostCallRecordCreateIndirectCommandsLayoutNV(VkDevice device
 
 void BestPractices::PostCallRecordAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display,
                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display, record_obj);
+    BaseClass::PostCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2629,7 +2601,7 @@ void BestPractices::PostCallRecordAcquireDrmDisplayEXT(VkPhysicalDevice physical
 
 void BestPractices::PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId,
                                                    VkDisplayKHR* display, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, record_obj);
+    BaseClass::PostCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2651,7 +2623,7 @@ void BestPractices::PostCallRecordSetPrivateDataEXT(VkDevice device, VkObjectTyp
 void BestPractices::PostCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
                                                      const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule, record_obj);
+    BaseClass::PostCallRecordCreateCudaModuleNV(device, pCreateInfo, pAllocator, pModule, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2660,7 +2632,7 @@ void BestPractices::PostCallRecordCreateCudaModuleNV(VkDevice device, const VkCu
 
 void BestPractices::PostCallRecordGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData,
                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetCudaModuleCacheNV(device, module, pCacheSize, pCacheData, record_obj);
+    BaseClass::PostCallRecordGetCudaModuleCacheNV(device, module, pCacheSize, pCacheData, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2674,7 +2646,7 @@ void BestPractices::PostCallRecordGetCudaModuleCacheNV(VkDevice device, VkCudaMo
 void BestPractices::PostCallRecordCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction, record_obj);
+    BaseClass::PostCallRecordCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2684,7 +2656,7 @@ void BestPractices::PostCallRecordCreateCudaFunctionNV(VkDevice device, const Vk
 void BestPractices::PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                           const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
                                                                           void* pData, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
+    BaseClass::PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2694,7 +2666,7 @@ void BestPractices::PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(VkDevi
 void BestPractices::PostCallRecordGetImageOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                          const VkImageCaptureDescriptorDataInfoEXT* pInfo,
                                                                          void* pData, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
+    BaseClass::PostCallRecordGetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2704,7 +2676,7 @@ void BestPractices::PostCallRecordGetImageOpaqueCaptureDescriptorDataEXT(VkDevic
 void BestPractices::PostCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                              const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
                                                                              void* pData, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
+    BaseClass::PostCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2714,7 +2686,7 @@ void BestPractices::PostCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(VkD
 void BestPractices::PostCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                            const VkSamplerCaptureDescriptorDataInfoEXT* pInfo,
                                                                            void* pData, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
+    BaseClass::PostCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2724,7 +2696,7 @@ void BestPractices::PostCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(VkDev
 void BestPractices::PostCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
     VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData,
     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
+    BaseClass::PostCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2733,7 +2705,7 @@ void BestPractices::PostCallRecordGetAccelerationStructureOpaqueCaptureDescripto
 
 void BestPractices::PostCallRecordGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts,
                                                         VkDeviceFaultInfoEXT* pFaultInfo, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo, record_obj);
+    BaseClass::PostCallRecordGetDeviceFaultInfoEXT(device, pFaultCounts, pFaultInfo, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2747,7 +2719,7 @@ void BestPractices::PostCallRecordGetDeviceFaultInfoEXT(VkDevice device, VkDevic
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 void BestPractices::PostCallRecordAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordAcquireWinrtDisplayNV(physicalDevice, display, record_obj);
+    BaseClass::PostCallRecordAcquireWinrtDisplayNV(physicalDevice, display, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2756,7 +2728,7 @@ void BestPractices::PostCallRecordAcquireWinrtDisplayNV(VkPhysicalDevice physica
 
 void BestPractices::PostCallRecordGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId,
                                                     VkDisplayKHR* pDisplay, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, record_obj);
+    BaseClass::PostCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2768,7 +2740,7 @@ void BestPractices::PostCallRecordGetWinrtDisplayNV(VkPhysicalDevice physicalDev
 void BestPractices::PostCallRecordCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2780,7 +2752,7 @@ void BestPractices::PostCallRecordCreateDirectFBSurfaceEXT(VkInstance instance, 
 void BestPractices::PostCallRecordGetMemoryZirconHandleFUCHSIA(VkDevice device,
                                                                const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                                zx_handle_t* pZirconHandle, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
+    BaseClass::PostCallRecordGetMemoryZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2790,8 +2762,8 @@ void BestPractices::PostCallRecordGetMemoryZirconHandleFUCHSIA(VkDevice device,
 void BestPractices::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
     VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle,
-                                                                                 pMemoryZirconHandleProperties, record_obj);
+    BaseClass::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(device, handleType, zirconHandle, pMemoryZirconHandleProperties,
+                                                                    record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2801,7 +2773,7 @@ void BestPractices::PostCallRecordGetMemoryZirconHandlePropertiesFUCHSIA(
 void BestPractices::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo,
     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo, record_obj);
+    BaseClass::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(device, pImportSemaphoreZirconHandleInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2811,7 +2783,7 @@ void BestPractices::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
 void BestPractices::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                                   const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                                   zx_handle_t* pZirconHandle, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
+    BaseClass::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(device, pGetZirconHandleInfo, pZirconHandle, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2823,7 +2795,7 @@ void BestPractices::PostCallRecordCreateBufferCollectionFUCHSIA(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkBufferCollectionFUCHSIA* pCollection,
                                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection, record_obj);
+    BaseClass::PostCallRecordCreateBufferCollectionFUCHSIA(device, pCreateInfo, pAllocator, pCollection, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2833,8 +2805,7 @@ void BestPractices::PostCallRecordCreateBufferCollectionFUCHSIA(VkDevice device,
 void BestPractices::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo,
     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo,
-                                                                                     record_obj);
+    BaseClass::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(device, collection, pImageConstraintsInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2844,8 +2815,7 @@ void BestPractices::PostCallRecordSetBufferCollectionImageConstraintsFUCHSIA(
 void BestPractices::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo,
     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo,
-                                                                                      record_obj);
+    BaseClass::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(device, collection, pBufferConstraintsInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2855,7 +2825,7 @@ void BestPractices::PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA(
 void BestPractices::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                        VkBufferCollectionPropertiesFUCHSIA* pProperties,
                                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties, record_obj);
+    BaseClass::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(device, collection, pProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2866,8 +2836,7 @@ void BestPractices::PostCallRecordGetBufferCollectionPropertiesFUCHSIA(VkDevice 
 void BestPractices::PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass,
                                                                                 VkExtent2D* pMaxWorkgroupSize,
                                                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize,
-                                                                                        record_obj);
+    BaseClass::PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(device, renderpass, pMaxWorkgroupSize, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2877,7 +2846,7 @@ void BestPractices::PostCallRecordGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(
 void BestPractices::PostCallRecordGetMemoryRemoteAddressNV(VkDevice device,
                                                            const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
                                                            VkRemoteAddressNV* pAddress, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress, record_obj);
+    BaseClass::PostCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2887,7 +2856,7 @@ void BestPractices::PostCallRecordGetMemoryRemoteAddressNV(VkDevice device,
 void BestPractices::PostCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
                                                            VkBaseOutStructure* pPipelineProperties,
                                                            const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, record_obj);
+    BaseClass::PostCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2898,7 +2867,7 @@ void BestPractices::PostCallRecordGetPipelinePropertiesEXT(VkDevice device, cons
 void BestPractices::PostCallRecordCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                          const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+    BaseClass::PostCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2909,7 +2878,7 @@ void BestPractices::PostCallRecordCreateScreenSurfaceQNX(VkInstance instance, co
 void BestPractices::PostCallRecordCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap,
                                                     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap, record_obj);
+    BaseClass::PostCallRecordCreateMicromapEXT(device, pCreateInfo, pAllocator, pMicromap, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2918,7 +2887,7 @@ void BestPractices::PostCallRecordCreateMicromapEXT(VkDevice device, const VkMic
 
 void BestPractices::PostCallRecordBuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
                                                     const VkMicromapBuildInfoEXT* pInfos, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos, record_obj);
+    BaseClass::PostCallRecordBuildMicromapsEXT(device, deferredOperation, infoCount, pInfos, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2931,7 +2900,7 @@ void BestPractices::PostCallRecordBuildMicromapsEXT(VkDevice device, VkDeferredO
 
 void BestPractices::PostCallRecordCopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                   const VkCopyMicromapInfoEXT* pInfo, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyMicromapEXT(device, deferredOperation, pInfo, record_obj);
+    BaseClass::PostCallRecordCopyMicromapEXT(device, deferredOperation, pInfo, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2945,7 +2914,7 @@ void BestPractices::PostCallRecordCopyMicromapEXT(VkDevice device, VkDeferredOpe
 void BestPractices::PostCallRecordCopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                           const VkCopyMicromapToMemoryInfoEXT* pInfo,
                                                           const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyMicromapToMemoryEXT(device, deferredOperation, pInfo, record_obj);
+    BaseClass::PostCallRecordCopyMicromapToMemoryEXT(device, deferredOperation, pInfo, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2959,7 +2928,7 @@ void BestPractices::PostCallRecordCopyMicromapToMemoryEXT(VkDevice device, VkDef
 void BestPractices::PostCallRecordCopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                           const VkCopyMemoryToMicromapInfoEXT* pInfo,
                                                           const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyMemoryToMicromapEXT(device, deferredOperation, pInfo, record_obj);
+    BaseClass::PostCallRecordCopyMemoryToMicromapEXT(device, deferredOperation, pInfo, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -2974,8 +2943,8 @@ void BestPractices::PostCallRecordWriteMicromapsPropertiesEXT(VkDevice device, u
                                                               const VkMicromapEXT* pMicromaps, VkQueryType queryType,
                                                               size_t dataSize, void* pData, size_t stride,
                                                               const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData,
-                                                                      stride, record_obj);
+    BaseClass::PostCallRecordWriteMicromapsPropertiesEXT(device, micromapCount, pMicromaps, queryType, dataSize, pData, stride,
+                                                         record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -2985,8 +2954,8 @@ void BestPractices::PostCallRecordWriteMicromapsPropertiesEXT(VkDevice device, u
 void BestPractices::PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(
     VkPhysicalDevice physicalDevice, const VkOpticalFlowImageFormatInfoNV* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
     VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(
-        physicalDevice, pOpticalFlowImageFormatInfo, pFormatCount, pImageFormatProperties, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo, pFormatCount,
+                                                                        pImageFormatProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3000,7 +2969,7 @@ void BestPractices::PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(
 void BestPractices::PostCallRecordCreateOpticalFlowSessionNV(VkDevice device, const VkOpticalFlowSessionCreateInfoNV* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator,
                                                              VkOpticalFlowSessionNV* pSession, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession, record_obj);
+    BaseClass::PostCallRecordCreateOpticalFlowSessionNV(device, pCreateInfo, pAllocator, pSession, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -3010,7 +2979,7 @@ void BestPractices::PostCallRecordCreateOpticalFlowSessionNV(VkDevice device, co
 void BestPractices::PostCallRecordBindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlowSessionNV session,
                                                                 VkOpticalFlowSessionBindingPointNV bindingPoint, VkImageView view,
                                                                 VkImageLayout layout, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout, record_obj);
+    BaseClass::PostCallRecordBindOpticalFlowSessionImageNV(device, session, bindingPoint, view, layout, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -3021,8 +2990,8 @@ void BestPractices::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t cre
                                                    const VkShaderCreateInfoEXT* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                                    const RecordObject& record_obj, chassis::ShaderObject& chassis_state) {
-    ValidationStateTracker::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
-                                                           chassis_state);
+    BaseClass::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
+                                              chassis_state);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3035,7 +3004,7 @@ void BestPractices::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t cre
 
 void BestPractices::PostCallRecordGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData,
                                                          const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, record_obj);
+    BaseClass::PostCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3049,8 +3018,7 @@ void BestPractices::PostCallRecordGetShaderBinaryDataEXT(VkDevice device, VkShad
 void BestPractices::PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer,
                                                                    uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties,
                                                                    const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties,
-                                                                           record_obj);
+    BaseClass::PostCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3061,7 +3029,7 @@ void BestPractices::PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice devi
 void BestPractices::PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                         const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                                         const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordSetLatencySleepModeNV(device, swapchain, pSleepModeInfo, record_obj);
+    BaseClass::PostCallRecordSetLatencySleepModeNV(device, swapchain, pSleepModeInfo, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -3072,7 +3040,7 @@ void BestPractices::PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapc
 void BestPractices::PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                                                VkScreenBufferPropertiesQNX* pProperties,
                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties, record_obj);
+    BaseClass::PostCallRecordGetScreenBufferPropertiesQNX(device, buffer, pProperties, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -3085,8 +3053,7 @@ void BestPractices::PostCallRecordCreateIndirectCommandsLayoutEXT(VkDevice devic
                                                                   const VkAllocationCallbacks* pAllocator,
                                                                   VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
                                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateIndirectCommandsLayoutEXT(device, pCreateInfo, pAllocator, pIndirectCommandsLayout,
-                                                                          record_obj);
+    BaseClass::PostCallRecordCreateIndirectCommandsLayoutEXT(device, pCreateInfo, pAllocator, pIndirectCommandsLayout, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -3098,8 +3065,7 @@ void BestPractices::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkIndirectExecutionSetEXT* pIndirectExecutionSet,
                                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateIndirectExecutionSetEXT(device, pCreateInfo, pAllocator, pIndirectExecutionSet,
-                                                                        record_obj);
+    BaseClass::PostCallRecordCreateIndirectExecutionSetEXT(device, pCreateInfo, pAllocator, pIndirectExecutionSet, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -3109,8 +3075,8 @@ void BestPractices::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
 void BestPractices::PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
-        physicalDevice, pPropertyCount, pProperties, record_obj);
+    BaseClass::PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(physicalDevice, pPropertyCount,
+                                                                                              pProperties, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3126,8 +3092,7 @@ void BestPractices::PostCallRecordCreateAccelerationStructureKHR(VkDevice device
                                                                  const VkAllocationCallbacks* pAllocator,
                                                                  VkAccelerationStructureKHR* pAccelerationStructure,
                                                                  const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure,
-                                                                         record_obj);
+    BaseClass::PostCallRecordCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -3138,8 +3103,8 @@ void BestPractices::PostCallRecordBuildAccelerationStructuresKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos,
-                                                                         ppBuildRangeInfos, record_obj);
+    BaseClass::PostCallRecordBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos,
+                                                            record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3153,7 +3118,7 @@ void BestPractices::PostCallRecordBuildAccelerationStructuresKHR(
 void BestPractices::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
+    BaseClass::PostCallRecordCopyAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3167,7 +3132,7 @@ void BestPractices::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, 
 void BestPractices::PostCallRecordCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                        const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
                                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo, record_obj);
+    BaseClass::PostCallRecordCopyAccelerationStructureToMemoryKHR(device, deferredOperation, pInfo, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3181,7 +3146,7 @@ void BestPractices::PostCallRecordCopyAccelerationStructureToMemoryKHR(VkDevice 
 void BestPractices::PostCallRecordCopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                        const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
                                                                        const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
+    BaseClass::PostCallRecordCopyMemoryToAccelerationStructureKHR(device, deferredOperation, pInfo, record_obj);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3195,8 +3160,8 @@ void BestPractices::PostCallRecordCopyMemoryToAccelerationStructureKHR(VkDevice 
 void BestPractices::PostCallRecordWriteAccelerationStructuresPropertiesKHR(
     VkDevice device, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures,
     VkQueryType queryType, size_t dataSize, void* pData, size_t stride, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordWriteAccelerationStructuresPropertiesKHR(
-        device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride, record_obj);
+    BaseClass::PostCallRecordWriteAccelerationStructuresPropertiesKHR(device, accelerationStructureCount, pAccelerationStructures,
+                                                                      queryType, dataSize, pData, stride, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);
@@ -3208,9 +3173,8 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesKHR(
     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
     const RecordObject& record_obj, PipelineStates& pipeline_states,
     std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
-    ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
-                                                                       pCreateInfos, pAllocator, pPipelines, record_obj,
-                                                                       pipeline_states, chassis_state);
+    BaseClass::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
+                                                          pAllocator, pPipelines, record_obj, pipeline_states, chassis_state);
 
     if (record_obj.result > VK_SUCCESS) {
         LogPositiveSuccessCode(record_obj);
@@ -3225,8 +3189,8 @@ void BestPractices::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKH
                                                                                   uint32_t firstGroup, uint32_t groupCount,
                                                                                   size_t dataSize, void* pData,
                                                                                   const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount,
-                                                                                          dataSize, pData, record_obj);
+    BaseClass::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize,
+                                                                             pData, record_obj);
 
     if (record_obj.result < VK_SUCCESS) {
         LogErrorCode(record_obj);

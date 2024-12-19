@@ -132,7 +132,7 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
         }
     }
 
-    ValidationStateTracker::PreCallRecordFreeMemory(device, memory, pAllocator, record_obj);
+    BaseClass::PreCallRecordFreeMemory(device, memory, pAllocator, record_obj);
 }
 
 bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
