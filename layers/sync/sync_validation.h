@@ -33,10 +33,10 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, syncval_state::Swapchain, vvl::Swapchain)
 
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
+    using BaseClass = ValidationStateTracker;
   public:
     using ImageState = syncval_state::ImageState;
     using ImageViewState = syncval_state::ImageViewState;
-    using StateTracker = ValidationStateTracker;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
@@ -596,16 +596,10 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                     const ErrorObject &error_obj) const override;
     void RecordQueueSubmit(VkQueue queue, VkFence fence, QueueSubmitCmdState *cmd_state);
-    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                   const RecordObject &record_obj) override;
     bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                         const ErrorObject &error_obj) const override;
-    void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
-                                       const RecordObject &record_obj) override;
     bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
                                      const ErrorObject &error_obj) const override;
-    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                                    const RecordObject &record_obj) override;
     void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, const RecordObject &record_obj) override;
     void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
                                      uint64_t timeout, const RecordObject &record_obj) override;
