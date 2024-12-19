@@ -55,19 +55,54 @@ void ReportKeyValues::Add(std::string_view key, uint64_t value) {
     key_values.emplace_back(KeyValue{std::string(key), std::to_string(value)});
 }
 
+static auto SortKeyValues(const std::vector<ReportKeyValues::KeyValue> &key_values) {
+    auto get_sort_order = [](const std::string &key) -> uint32_t {
+        // message_type goes first
+        if (key == kPropertyMessageType) {
+            return 0;
+        }
+        // then some common properties
+        const char *common_properties[] = {kPropertyAccess, kPropertyPriorAccess, kPropertyReadBarriers, kPropertyWriteBarriers};
+        if (IsValueIn(key, common_properties)) {
+            return 1;
+        }
+        // debug properties are at the end
+        const char *debug_properties[] = {kPropertySeqNo, kPropertySubCmd, kPropertyResetNo, kPropertyBatchTag};
+        if (IsValueIn(key, debug_properties)) {
+            return 3;
+        }
+        // everything else
+        return 2;
+    };
+    auto sorted = key_values;
+    std::stable_sort(sorted.begin(), sorted.end(), [&get_sort_order](const auto &a, const auto &b) {
+        const uint32_t a_order = get_sort_order(a.key);
+        const uint32_t b_order = get_sort_order(b.key);
+        // Sort ordering groups
+        if (a_order != b_order) {
+            return a_order < b_order;
+        }
+        // Do not rearrange elements within a group. By returning false we indicate neither element
+        // in the group is less than the other one. Stable sort will keep the original order.
+        return false;
+    });
+    return sorted;
+}
+
 std::string ReportKeyValues::GetExtraPropertiesSection() const {
     if (key_values.empty()) {
         return {};
     }
+    const auto sorted = SortKeyValues(key_values);
     std::stringstream ss;
-    ss << "\nExtra properties:\n";
+    ss << "\n[Extra properties]\n";
     bool first = true;
-    for (const auto &kv : key_values) {
+    for (const auto &kv : sorted) {
         if (!first) {
             ss << "\n";
         }
         first = false;
-        ss << kv.key << " : " << kv.value;
+        ss << kv.key << " = " << kv.value;
     }
     return ss.str();
 }
@@ -232,20 +267,20 @@ static std::string FormatHazardState(const HazardResult::HazardState &hazard, Vk
     if (!hazard.recorded_access.get()) {
         // if we have a recorded usage the usage is reported from the recorded contexts point of view
         out << "usage: " << usage_info.name << ", ";
-        key_values.Add("usage", usage_info.name);
+        key_values.Add(kPropertyAccess, usage_info.name);
     }
     out << "prior_usage: " << prior_usage_info.name;
-    key_values.Add("prior_usage", prior_usage_info.name);
+    key_values.Add(kPropertyPriorAccess, prior_usage_info.name);
     if (IsHazardVsRead(hazard.hazard)) {
         const VkPipelineStageFlags2 barriers = hazard.access_state->GetReadBarriers(hazard.prior_access_index);
         const std::string barriers_str = string_VkPipelineStageFlags2(barriers);
         out << ", read_barriers: " << barriers_str;
-        key_values.Add("read_barriers", barriers_str);
+        key_values.Add(kPropertyReadBarriers, barriers_str);
     } else {
         const SyncAccessFlags barriers = hazard.access_state->GetWriteBarriers();
         const std::string barriers_str = string_SyncStageAccessFlags(barriers, queue_flags);
         out << ", write_barriers: " << barriers_str;
-        key_values.Add("write_barriers", barriers_str);
+        key_values.Add(kPropertyWriteBarriers, barriers_str);
     }
     return out.str();
 }
@@ -277,11 +312,11 @@ std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex) c
 void CommandBufferAccessContext::AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const {
     if (tag >= access_log_->size()) return;
     const ResourceUsageRecord &record = (*access_log_)[tag];
-    extra_properties.Add("seq_no", record.seq_num);
+    extra_properties.Add(kPropertySeqNo, record.seq_num);
     if (record.sub_command != 0) {
-        extra_properties.Add("subcmd", record.sub_command);
+        extra_properties.Add(kPropertySubCmd, record.sub_command);
     }
-    extra_properties.Add("reset_no", record.reset_count);
+    extra_properties.Add(kPropertyResetNo, record.reset_count);
 }
 
 std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
@@ -306,6 +341,6 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
 void QueueBatchContext::AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const {
     BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag);
     if (access.IsValid()) {
-        extra_properties.Add("batch_tag", access.batch->base_tag);
+        extra_properties.Add(kPropertyBatchTag, access.batch->base_tag);
     }
 }
