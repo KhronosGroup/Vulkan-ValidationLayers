@@ -47,6 +47,12 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
     return skip;
 }
 
+bool BestPractices::ValidateCmdDispatchType(VkCommandBuffer cmd_buffer, const Location& loc) const {
+    bool skip = false;
+    skip |= ValidatePushConstants(cmd_buffer, loc);
+    return skip;
+}
+
 bool BestPractices::ValidatePushConstants(VkCommandBuffer cmd_buffer, const Location& loc) const {
     using Range = sparse_container::range<uint32_t>;
 
@@ -674,8 +680,41 @@ bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, ui
                            ", groupCountZ = %" PRIu32 ").",
                            groupCountX, groupCountY, groupCountZ);
     }
+    skip |= ValidateCmdDispatchType(commandBuffer, error_obj.location);
 
     return skip;
+}
+
+bool BestPractices::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    skip |= ValidateCmdDispatchType(commandBuffer, error_obj.location);
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                                   uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                                   uint32_t groupCountZ, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    if ((groupCountX == 0) || (groupCountY == 0) || (groupCountZ == 0)) {
+        skip |= LogWarning("BestPractices-vkCmdDispatchBase-group-count-zero", device, error_obj.location,
+                           "one or more groupCounts are zero (groupCountX = %" PRIu32 ", groupCountY = %" PRIu32
+                           ", groupCountZ = %" PRIu32 ").",
+                           groupCountX, groupCountY, groupCountZ);
+    }
+    skip |= ValidateCmdDispatchType(commandBuffer, error_obj.location);
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                                      uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                                      uint32_t groupCountZ, const ErrorObject& error_obj) const {
+    return PreCallValidateCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
+                                          error_obj);
 }
 
 void BestPractices::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
