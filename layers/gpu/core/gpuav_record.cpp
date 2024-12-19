@@ -695,7 +695,7 @@ void Validator::PostCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer comman
 
 void Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
                                                 const RecordObject &record_obj) {
-    ValidationStateTracker::PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
+    BaseClass::PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     if (!cb_state) {
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
@@ -707,7 +707,7 @@ void Validator::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, u
 
 void Validator::PostCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
                                                  const RecordObject &record_obj) {
-    ValidationStateTracker::PostCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
+    BaseClass::PostCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask, record_obj);
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     if (!cb_state) {
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");

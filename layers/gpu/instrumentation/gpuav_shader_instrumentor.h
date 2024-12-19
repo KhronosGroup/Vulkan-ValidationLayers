@@ -66,8 +66,8 @@ struct InstrumentedShader {
 // Handles shader instrumentation (reserve a descriptor slot, create descriptor
 // sets, pipeline layout, hook into pipeline creation, etc...)
 class GpuShaderInstrumentor : public ValidationStateTracker {
-  public:
     using BaseClass = ValidationStateTracker;
+  public:
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
