@@ -427,9 +427,6 @@ class ValidationStateTracker : public ValidationObject {
     virtual std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkInstance* pInstance, const RecordObject& record_obj) override;
-    void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
-        VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterKHR* pCounters,
-        VkPerformanceCounterDescriptionKHR* pCounterDescriptions, const RecordObject& record_obj) override;
     void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
                                                                     VkMemoryRequirements2* pMemoryRequirements,
@@ -1458,9 +1455,6 @@ class ValidationStateTracker : public ValidationObject {
                                                                  VkSwapchainKHR handle);
     void RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR* pSwapchain,
                                     std::shared_ptr<vvl::Surface>&& surface_state, vvl::Swapchain* old_swapchain_state);
-    void RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t queueFamilyIndex, uint32_t* pCounterCount,
-                                                                          VkPerformanceCounterKHR* pCounters);
     void RecordGetDeviceQueueState(uint32_t queue_family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
                                    VkQueue queue);
     void RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type, const Location& loc);
