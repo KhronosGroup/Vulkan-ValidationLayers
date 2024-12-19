@@ -778,6 +778,20 @@
                                     ]
                                 },
                                 {
+                                    "key": "gpuav_image_layout",
+                                    "label": "Image Layout",
+                                    "description": "(Warning - still known to have false positives) Use GPU-AV to detect which descriptors where accessed. Then using post processing, check that the layout of each image subresource is correct whenever it is used by a command buffer.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "gpuav_enable", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
                                     "key": "gpuav_advanced_settings",
                                     "label": "Advanced Settings",
                                     "description": "GPU-AV advanced settings",
