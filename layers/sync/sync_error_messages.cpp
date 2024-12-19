@@ -27,17 +27,6 @@
 #include <cstdarg>
 #include <sstream>
 
-constexpr const char* kPropertyMessageType = "message_type";
-constexpr const char* kPropertyLoadOp = "load_op";
-constexpr const char* kPropertyStoreOp = "store_op";
-constexpr const char* kPropertyResolveMode = "resolve_mode";
-constexpr const char* kPropertyOldLayout = "old_layout";
-constexpr const char* kPropertyNewLayout = "new_layout";
-constexpr const char* kPropertyResourceParameter = "resource_parameter";
-constexpr const char* kPropertyDescriptorType = "descriptor_type";
-constexpr const char* kPropertyImageLayout = "image_layout";
-constexpr const char* kPropertyImageAspect = "image_aspect";
-
 // TODO: update algorith in logging.cpp to be similar to this version.
 // logging.cpp's vsnprintf usage in some places assumes that std::string
 // storage reserves space for null terminator but it is not guaranteed
