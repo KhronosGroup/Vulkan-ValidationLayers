@@ -16622,7 +16622,7 @@ TEST_F(NegativeVideo, ImageLayoutUsageMismatch) {
     cb.End();
 }
 
-TEST_F(NegativeVideoSyncVal, DecodeOutputPicture) {
+TEST_F(NegativeSyncValVideo, DecodeOutputPicture) {
     TEST_DESCRIPTION("Test video decode output picture sync hazard");
 
     RETURN_IF_SKIP(Init());
@@ -16652,7 +16652,7 @@ TEST_F(NegativeVideoSyncVal, DecodeOutputPicture) {
     cb.End();
 }
 
-TEST_F(NegativeVideoSyncVal, DecodeReconstructedPicture) {
+TEST_F(NegativeSyncValVideo, DecodeReconstructedPicture) {
     TEST_DESCRIPTION("Test video decode reconstructed picture sync hazard");
 
     RETURN_IF_SKIP(Init());
@@ -16707,7 +16707,7 @@ TEST_F(NegativeVideoSyncVal, DecodeReconstructedPicture) {
     cb.End();
 }
 
-TEST_F(NegativeVideoSyncVal, DecodeReferencePicture) {
+TEST_F(NegativeSyncValVideo, DecodeReferencePicture) {
     TEST_DESCRIPTION("Test video decode reference picture sync hazard");
 
     RETURN_IF_SKIP(Init());
@@ -16757,7 +16757,7 @@ TEST_F(NegativeVideoSyncVal, DecodeReferencePicture) {
     cb.End();
 }
 
-TEST_F(NegativeVideoSyncVal, EncodeBitstream) {
+TEST_F(NegativeSyncValVideo, EncodeBitstream) {
     TEST_DESCRIPTION("Test video encode bitstream sync hazard");
 
     RETURN_IF_SKIP(Init());
@@ -16787,7 +16787,7 @@ TEST_F(NegativeVideoSyncVal, EncodeBitstream) {
     cb.End();
 }
 
-TEST_F(NegativeVideoSyncVal, EncodeReconstructedPicture) {
+TEST_F(NegativeSyncValVideo, EncodeReconstructedPicture) {
     TEST_DESCRIPTION("Test video encode reconstructed picture sync hazard");
 
     RETURN_IF_SKIP(Init());
@@ -16841,7 +16841,7 @@ TEST_F(NegativeVideoSyncVal, EncodeReconstructedPicture) {
     cb.End();
 }
 
-TEST_F(NegativeVideoSyncVal, EncodeReferencePicture) {
+TEST_F(NegativeSyncValVideo, EncodeReferencePicture) {
     TEST_DESCRIPTION("Test video encode reference picture sync hazard");
 
     RETURN_IF_SKIP(Init());
@@ -16891,7 +16891,7 @@ TEST_F(NegativeVideoSyncVal, EncodeReferencePicture) {
     cb.End();
 }
 
-TEST_F(NegativeVideoSyncVal, EncodeQuantizationMap) {
+TEST_F(NegativeSyncValVideo, EncodeQuantizationMap) {
     TEST_DESCRIPTION("Test video encode quantization map sync hazard");
 
     AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);

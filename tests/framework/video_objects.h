@@ -3645,8 +3645,8 @@ class VkVideoSyncLayerTest : public VkVideoLayerTest {
     VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1u, enables_, 4, disables_};
 };
 
-class NegativeVideoSyncVal : public VkVideoSyncLayerTest {};
-class PositiveVideoSyncVal : public VkVideoSyncLayerTest {};
+class NegativeSyncValVideo : public VkVideoSyncLayerTest {};
+class PositiveSyncValVideo : public VkVideoSyncLayerTest {};
 
 class VkVideoBestPracticesLayerTest : public VkVideoLayerTest {
   public:
