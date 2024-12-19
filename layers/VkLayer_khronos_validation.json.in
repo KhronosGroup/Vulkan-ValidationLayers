@@ -163,8 +163,6 @@
                         { "key": "validate_sync", "value": true },
                         { "key": "printf_enable", "value": false },
                         { "key": "gpuav_enable", "value": false },
-                        { "key": "gpuav_shader_instrumentation", "value": false },
-                        { "key": "gpuav_buffers_validation", "value": false },
                         { "key": "validate_best_practices", "value": false },
                         { "key": "report_flags", "value": [ "error" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
@@ -707,7 +705,7 @@
                                             "label": "Indirect draws parameters",
                                             "type": "BOOL",
                                             "default": true,
-                                            "description": "(Warning - still experimental) Validate buffers containing draw parameters used in indirect draw commands",
+                                            "description": "Validate buffers containing draw parameters used in indirect draw commands. Includes vkCmdDrawMeshTasks* calls as well",
                                             "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
@@ -721,8 +719,8 @@
                                             "key": "gpuav_indirect_dispatches_buffers",
                                             "label": "Indirect dispatches parameters",
                                             "type": "BOOL",
-                                            "default": false,
-                                            "description": "(Warning - still experimental) Validate buffers containing dispatch parameters used in indirect dispatch commands",
+                                            "default": true,
+                                            "description": "Validate buffers containing dispatch parameters used in indirect dispatch commands",
                                             "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
@@ -736,8 +734,8 @@
                                             "key": "gpuav_indirect_trace_rays_buffers",
                                             "label": "Indirect trace rays parameters",
                                             "type": "BOOL",
-                                            "default": false,
-                                            "description": "(Warning - still experimental) Validate buffers containing ray tracing parameters used in indirect ray tracing commands",
+                                            "default": true,
+                                            "description": "Validate buffers containing ray tracing parameters used in indirect ray tracing commands",
                                             "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
@@ -752,7 +750,7 @@
                                             "label": "Buffer copies",
                                             "type": "BOOL",
                                             "default": true,
-                                            "description": "(Warning - still experimental) Validate copies involving a VkBuffer. Right now only validates copy buffer to image.",
+                                            "description": "Validate copies involving a VkBuffer. Right now only validates copy buffer to image.",
                                             "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
@@ -767,7 +765,7 @@
                                             "label": "Index buffers",
                                             "type": "BOOL",
                                             "default": true,
-                                            "description": "(Warning - still experimental) Validate that indexed draws do not fetch indices outside of the bounds of the index buffer. Also validates that those indices are not out of the bounds of the fetched vertex buffers.",
+                                            "description": "Validate that indexed draws do not fetch indices outside of the bounds of the index buffer. Also validates that those indices are not out of the bounds of the fetched vertex buffers.",
                                             "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
                                                 "mode": "ALL",
