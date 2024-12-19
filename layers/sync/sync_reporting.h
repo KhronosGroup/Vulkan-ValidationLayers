@@ -41,7 +41,7 @@ struct ReportKeyValues {
     void Add(std::string_view key, std::string_view value);
     void Add(std::string_view key, uint64_t value);
 
-    std::string GetExtraPropertiesSection() const;
+    std::string GetExtraPropertiesSection(bool pretty_print) const;
 };
 
 inline constexpr const char *kPropertyMessageType = "message_type";

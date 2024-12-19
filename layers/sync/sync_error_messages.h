@@ -153,6 +153,7 @@ class ErrorMessages {
   private:
     ValidationObject& validator_;
     const bool& extra_properties_;
+    const bool& pretty_print_extra_;
 };
 
 }  // namespace syncval

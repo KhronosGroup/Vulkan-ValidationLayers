@@ -105,7 +105,9 @@ static const char* string_SyncHazard(SyncHazard hazard) {
 namespace syncval {
 
 ErrorMessages::ErrorMessages(ValidationObject& validator)
-    : validator_(validator), extra_properties_(validator_.syncval_settings.message_extra_properties) {}
+    : validator_(validator),
+      extra_properties_(validator_.syncval_settings.message_extra_properties),
+      pretty_print_extra_(validator_.syncval_settings.message_extra_properties_pretty_print) {}
 
 void ErrorMessages::AddCbContextExtraProperties(const CommandBufferAccessContext& cb_context, ResourceUsageTag tag,
                                                 ReportKeyValues& key_values) const {
@@ -124,7 +126,7 @@ std::string ErrorMessages::Error(const HazardResult& hazard, const char* descrip
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "GeneralError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -140,7 +142,7 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, VkBuffer buff
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "BufferError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -158,7 +160,7 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
         key_values.Add(kPropertyMessageType, "BufferRegionError");
         key_values.Add(kPropertyResourceParameter, resource_parameter);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -176,7 +178,7 @@ std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, VkImage 
         key_values.Add(kPropertyMessageType, "ImageRegionError");
         key_values.Add(kPropertyResourceParameter, resource_parameter);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -192,7 +194,7 @@ std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "ImageSubresourceRangeError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -211,7 +213,7 @@ std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard,
         key_values.Add(kPropertyMessageType, "BeginRenderingError");
         key_values.Add(kPropertyLoadOp, load_op_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -229,7 +231,7 @@ std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, 
         key_values.Add(kPropertyMessageType, "EndRenderingResolveError");
         key_values.Add(kPropertyResolveMode, resolve_mode_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -247,7 +249,7 @@ std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, co
         key_values.Add(kPropertyMessageType, "EndRenderingStoreError");
         key_values.Add(kPropertyStoreOp, store_op_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -275,7 +277,7 @@ std::string ErrorMessages::DrawDispatchImageError(const HazardResult& hazard, co
         key_values.Add(kPropertyDescriptorType, descriptor_type_str);
         key_values.Add(kPropertyImageLayout, image_layout_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -299,7 +301,7 @@ std::string ErrorMessages::DrawDispatchTexelBufferError(const HazardResult& haza
         key_values.Add(kPropertyMessageType, "DrawDispatchTexelBufferError");
         key_values.Add(kPropertyDescriptorType, descriptor_type_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -323,7 +325,7 @@ std::string ErrorMessages::DrawDispatchBufferError(const HazardResult& hazard, c
         key_values.Add(kPropertyMessageType, "DrawDispatchBufferError");
         key_values.Add(kPropertyDescriptorType, descriptor_type_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -341,7 +343,7 @@ std::string ErrorMessages::DrawVertexBufferError(const HazardResult& hazard, con
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "DrawVertexBufferError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -358,7 +360,7 @@ std::string ErrorMessages::DrawIndexBufferError(const HazardResult& hazard, cons
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "DrawIndexBufferError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -374,7 +376,7 @@ std::string ErrorMessages::DrawAttachmentError(const HazardResult& hazard, const
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "DrawAttachmentError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -390,7 +392,7 @@ std::string ErrorMessages::ClearColorAttachmentError(const HazardResult& hazard,
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "ClearColorAttachmentError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -411,7 +413,7 @@ std::string ErrorMessages::ClearDepthStencilAttachmentError(const HazardResult& 
         key_values.Add(kPropertyMessageType, "ClearDepthStencilAttachmentError");
         key_values.Add(kPropertyImageAspect, image_aspect_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -428,7 +430,7 @@ std::string ErrorMessages::PipelineBarrierError(const HazardResult& hazard, cons
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "PipelineBarrierError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -445,7 +447,7 @@ std::string ErrorMessages::WaitEventsError(const HazardResult& hazard, const Com
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "WaitEventsError");
         exec_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -465,7 +467,7 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "SubmitTimeError");
         exec_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -484,7 +486,7 @@ std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, co
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassResolveError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -506,7 +508,7 @@ std::string ErrorMessages::RenderPassLayoutTransitionVsStoreOrResolveError(const
         key_values.Add(kPropertyMessageType, "RenderPassLayoutTransitionVsStoreOrResolveError");
         key_values.Add(kPropertyOldLayout, old_layout_str);
         key_values.Add(kPropertyNewLayout, new_layout_str);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -529,7 +531,7 @@ std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& h
         key_values.Add(kPropertyOldLayout, old_layout_str);
         key_values.Add(kPropertyNewLayout, new_layout_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -547,7 +549,7 @@ std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardR
         ReportKeyValues key_values;
         key_values.Add(kPropertyMessageType, "RenderPassLoadOpVsLayoutTransitionError");
         key_values.Add(kPropertyLoadOp, load_op_str);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -568,7 +570,7 @@ std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, con
         key_values.Add(kPropertyMessageType, "RenderPassLoadOpError");
         key_values.Add(kPropertyLoadOp, load_op_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -589,7 +591,7 @@ std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, co
         key_values.Add(kPropertyMessageType, "RenderPassStoreOpError");
         key_values.Add(kPropertyStoreOp, store_op_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -607,7 +609,7 @@ std::string ErrorMessages::RenderPassColorAttachmentError(const HazardResult& ha
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassColorAttachmentError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -626,7 +628,7 @@ std::string ErrorMessages::RenderPassDepthStencilAttachmentError(const HazardRes
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassDepthStencilAttachmentError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -649,7 +651,7 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
         key_values.Add(kPropertyOldLayout, old_layout_str);
         key_values.Add(kPropertyNewLayout, new_layout_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -673,7 +675,7 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResu
         key_values.Add(kPropertyOldLayout, old_layout_str);
         key_values.Add(kPropertyNewLayout, new_layout_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -693,7 +695,7 @@ std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueB
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "PresentError");
         batch_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
@@ -709,7 +711,7 @@ std::string ErrorMessages::VideoReferencePictureError(const HazardResult& hazard
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "VideoReferencePictureError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection();
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
