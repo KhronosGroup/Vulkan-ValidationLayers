@@ -96,14 +96,14 @@ def EnableCaching() -> None:
 class APISpecific:
     # Version object factory method
     @staticmethod
-    def createApiVersion(targetApiName: str, name: str, number: str) -> Version:
+    def createApiVersion(targetApiName: str, name: str) -> Version:
         match targetApiName:
 
             # Vulkan specific API version creation
             case 'vulkan':
                 nameApi = name.replace('VK_', 'VK_API_')
                 nameString = f'"{name}"'
-                return Version(name, nameString, nameApi, number)
+                return Version(name, nameString, nameApi)
 
 
 # This Generator Option is used across all generators.
@@ -315,7 +315,7 @@ class BaseGenerator(OutputGenerator):
                         if structName in self.vk.structs:
                             struct = self.vk.structs[structName]
                             struct.extensions.extend([extension] if extension not in struct.extensions else [])
-                                
+
     def endFile(self):
         # This is the point were reg.py has ran, everything is collected
         # We do some post processing now
@@ -407,7 +407,7 @@ class BaseGenerator(OutputGenerator):
         else: # version
             number = interface.get('number')
             if number != '1.0':
-                self.currentVersion = APISpecific.createApiVersion(self.targetApiName, name, number)
+                self.currentVersion = APISpecific.createApiVersion(self.targetApiName, name)
                 self.vk.versions[name] = self.currentVersion
 
     def endFeature(self):
