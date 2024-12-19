@@ -89,7 +89,7 @@ static auto SortKeyValues(const std::vector<ReportKeyValues::KeyValue> &key_valu
     return sorted;
 }
 
-std::string ReportKeyValues::GetExtraPropertiesSection() const {
+std::string ReportKeyValues::GetExtraPropertiesSection(bool pretty_print) const {
     if (key_values.empty()) {
         return {};
     }
@@ -102,7 +102,14 @@ std::string ReportKeyValues::GetExtraPropertiesSection() const {
             ss << "\n";
         }
         first = false;
-        ss << kv.key << " = " << kv.value;
+
+        const uint32_t pretty_print_alignment = 18;
+        uint32_t extra_space_count = 0;
+        if (pretty_print && kv.key.length() < pretty_print_alignment) {
+            extra_space_count = pretty_print_alignment - (uint32_t)kv.key.length();
+        }
+
+        ss << kv.key << std::string(extra_space_count, ' ') << " = " << kv.value;
     }
     return ss.str();
 }

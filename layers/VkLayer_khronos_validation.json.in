@@ -406,7 +406,7 @@
                                 {
                                     "key": "syncval_shader_accesses_heuristic",
                                     "label": "Shader accesses heuristic",
-                                    "description": "Takes into account memory accesses performed by the shader based on SPIR-V static analysis. Warning: can produce false-positives, can ignore certain types of accesses.",
+                                    "description": "Take into account memory accesses performed by the shader based on SPIR-V static analysis. Warning: can produce false-positives, can ignore certain types of accesses.",
                                     "type": "BOOL",
                                     "default": false,
                                     "status": "STABLE",
@@ -427,13 +427,27 @@
                                         {
                                             "key": "syncval_message_extra_properties",
                                             "label": "Extra key-value properties",
-                                            "description": "Appends a section of key-value properties to the error message. This can be useful for filtering error messages and may include optional or debug properties not present in the main error message.",
+                                            "description": "Append a section of key-value properties to the error message. Useful for filtering errors.",
                                             "type": "BOOL",
                                             "default": false,
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
                                                     { "key": "validate_sync", "value": true }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "syncval_message_extra_properties_pretty_print",
+                                            "label": "Pretty print extra properties",
+                                            "description": "Enable formatted output of key-value properties. Disabled by default to simplify pattern matching when filtering errors.",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "validate_sync", "value": true },
+                                                    { "key": "syncval_message_extra_properties", "value": true }
                                                 ]
                                             }
                                         }
