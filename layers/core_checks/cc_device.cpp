@@ -341,7 +341,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
 
 void CoreChecks::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // The state tracker sets up the device state (also if extension and/or features are enabled)
-    StateTracker::PostCreateDevice(pCreateInfo, loc);
+    BaseClass::PostCreateDevice(pCreateInfo, loc);
 
     AdjustValidatorOptions(device_extensions, enabled_features, spirv_val_options, &spirv_val_option_hash);
 
@@ -377,7 +377,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
                                             const RecordObject &record_obj) {
     if (!device) return;
 
-    StateTracker::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
+    BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 
     if (core_validation_cache) {
         Location loc(Func::vkDestroyDevice);

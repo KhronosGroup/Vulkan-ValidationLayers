@@ -1316,7 +1316,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
 
 void CoreChecks::RecordCmdWriteTimestamp2(vvl::CommandBuffer &cb_state, VkQueryPool queryPool, uint32_t slot, Func command) const {
     if (disabled[query_validation]) return;
-    // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
+    // Enqueue the submit time validation check here, before the submit time state update in BaseClass::PostCall...
     QueryObject query_obj = {queryPool, slot};
     cb_state.query_updates.emplace_back([query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,

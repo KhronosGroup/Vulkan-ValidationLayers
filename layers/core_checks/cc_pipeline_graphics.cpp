@@ -39,8 +39,8 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                         const ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                         chassis::CreateGraphicsPipelines &chassis_state) const {
-    bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                     pPipelines, error_obj, pipeline_states, chassis_state);
+    bool skip = BaseClass::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
+                                                                  pPipelines, error_obj, pipeline_states, chassis_state);
 
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     for (uint32_t i = 0; i < count; i++) {

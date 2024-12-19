@@ -1393,7 +1393,7 @@ void CoreChecks::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const RecordObject &record_obj) {
     if (disabled[query_validation]) return;
-    // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
+    // Enqueue the submit time validation check here, before the submit time state update in BaseClass::PostCall...
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     cb_state->query_updates.emplace_back([accelerationStructureCount, firstQuery, queryPool](
                                              vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
