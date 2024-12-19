@@ -203,6 +203,8 @@ class BestPractices : public ValidationStateTracker {
 
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Location& loc) const;
 
+    bool ValidateCmdDispatchType(VkCommandBuffer cmd_buffer, const Location& loc) const;
+
     bool ValidatePushConstants(VkCommandBuffer cmd_buffer, const Location& loc) const;
 
     void RecordCmdDrawType(bp_state::CommandBuffer& cb_state, uint32_t draw_count);
@@ -545,6 +547,14 @@ class BestPractices : public ValidationStateTracker {
 
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
                                     const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                            const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                        uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
+                                        const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                           uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
+                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                           const ErrorObject& error_obj) const override;
