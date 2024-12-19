@@ -1467,6 +1467,30 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
     if (auto mem_info = Get<vvl::DeviceMemory>(mem)) {
         fake_memory.Free(mem_info->fake_base_address);
     }
+    {
+        WriteLockGuard guard(fd_handle_map_lock_);
+        for (auto it = fd_handle_map_.begin(); it != fd_handle_map_.end();) {
+            if (it->second.device_memory == mem) {
+                it = fd_handle_map_.erase(it);
+                break;
+            } else {
+                ++it;
+            }
+        }
+    }
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    {
+        WriteLockGuard guard(win32_handle_map_lock_);
+        for (auto it = win32_handle_map_.begin(); it != win32_handle_map_.end();) {
+            if (it->second.device_memory == mem) {
+                it = win32_handle_map_.erase(it);
+                break;
+            } else {
+                ++it;
+            }
+        }
+    }
+#endif
     Destroy<vvl::DeviceMemory>(mem);
 }
 
@@ -3811,6 +3835,7 @@ void ValidationStateTracker::PostCallRecordGetMemoryWin32HandleKHR(VkDevice devi
         external_info.memory_type_index = memory_state->allocate_info.memoryTypeIndex;
         external_info.dedicated_buffer = memory_state->GetDedicatedBuffer();
         external_info.dedicated_image = memory_state->GetDedicatedImage();
+        external_info.device_memory = pGetWin32HandleInfo->memory;
 
         WriteLockGuard guard(win32_handle_map_lock_);
         // `insert_or_assign` ensures that information is updated when the system decides to re-use
@@ -3832,6 +3857,7 @@ void ValidationStateTracker::PostCallRecordGetMemoryFdKHR(VkDevice device, const
         external_info.memory_type_index = memory_state->allocate_info.memoryTypeIndex;
         external_info.dedicated_buffer = memory_state->GetDedicatedBuffer();
         external_info.dedicated_image = memory_state->GetDedicatedImage();
+        external_info.device_memory = memory_state->VkHandle();
 
         WriteLockGuard guard(fd_handle_map_lock_);
         // `insert_or_assign` ensures that information is updated when the system decides to re-use
