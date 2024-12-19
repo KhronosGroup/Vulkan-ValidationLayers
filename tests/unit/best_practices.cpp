@@ -2293,3 +2293,52 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEventSecondary3) {
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 }
+
+TEST_F(VkBestPracticesLayerTest, PartialPushConstantSetEndCompute) {
+    TEST_DESCRIPTION("Set only a part of push constants at end of a struct");
+
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *const csSource = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { uint x[2]; } constants;
+        layout(set = 0, binding = 0) buffer bar { vec4 r; } res;
+        void main(){
+           res.r = vec4(constants.x[0] * constants.x[1]);
+        }
+    )glsl";
+
+    uint32_t data[2] = {1u, 2u};
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(data)};
+
+    vkt::Buffer buffer(*m_device, 16u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0u, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_}, {push_constant_range});
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0u, 1u,
+                              &descriptor_set.set_, 0u, nullptr);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                         sizeof(uint32_t), data);
+
+    m_errorMonitor->SetDesiredWarning("BestPractices-PushConstants");
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_COMPUTE_BIT, sizeof(uint32_t),
+                         sizeof(uint32_t), &data[1]);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+
+    m_command_buffer.End();
+}
