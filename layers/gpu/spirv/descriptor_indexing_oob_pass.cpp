@@ -137,26 +137,31 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         }
 
         const bool non_empty_access_chain = access_chain_inst && access_chain_inst->Length() >= 5;
-        if (pointer_type->inst_.IsArray() && non_empty_access_chain) {
+        if (pointer_type->IsArray() && non_empty_access_chain) {
             array_found = true;
             descriptor_index_id_ = access_chain_inst->Operand(1);
         } else {
+            // There is no array of this descriptor, so we essentially have an array of 1
             descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
         }
     } else if (opcode == spv::OpLoad || opcode == spv::OpStore || AtomicOperation(opcode)) {
         // Buffer and Buffer Atomics and Storage Images
 
-        // TODO - Should have loop to walk Load/Store to the Pointer,
-        // this case will not cover things such as OpCopyObject or double OpAccessChains
+        const Variable* variable = nullptr;
         const Instruction* access_chain_inst = function.FindInstruction(inst.Operand(0));
-        if (!access_chain_inst || access_chain_inst->Opcode() != spv::OpAccessChain) {
-            return false;
+        // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
+        while (access_chain_inst && access_chain_inst->Opcode() == spv::OpAccessChain) {
+            const uint32_t access_chain_base_id = access_chain_inst->Operand(0);
+            variable = module_.type_manager_.FindVariableById(access_chain_base_id);
+            if (variable) {
+                break;  // found
+            }
+            access_chain_inst = function.FindInstruction(access_chain_base_id);
         }
-
-        const Variable* variable = module_.type_manager_.FindVariableById(access_chain_inst->Operand(0));
         if (!variable) {
             return false;
         }
+
         var_inst_ = &variable->inst_;
 
         const uint32_t storage_class = variable->StorageClass();
@@ -174,17 +179,11 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             return false;
         }
 
-        const bool non_empty_access_chain = access_chain_inst->Length() >= 5;
-        if (pointer_type->inst_.IsArray() && non_empty_access_chain) {
-            if (access_chain_inst->Length() == 5) {
-                // TODO - This assumes the access is going through the descriptor array into the buffer.
-                // Need to add support for chaining access chains together
-                return false;
-            }
-
+        if (pointer_type->IsArray()) {
             array_found = true;
             descriptor_index_id_ = access_chain_inst->Operand(1);
         } else {
+            // There is no array of this descriptor, so we essentially have an array of 1
             descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
         }
     } else {

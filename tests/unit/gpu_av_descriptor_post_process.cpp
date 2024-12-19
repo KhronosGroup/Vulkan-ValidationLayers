@@ -1209,3 +1209,141 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, MultipleCommandBuffersSameDescriptorS
     m_default_queue->Submit(cb_1);
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // [[vk::binding(0, 0)]]
+    // Texture2D texture[];
+    // [[vk::binding(1, 0)]]
+    // SamplerState sampler;
+    //
+    // struct StorageBuffer {
+    //     uint data; // Will be one
+    //     float4 color;
+    // };
+    //
+    // [[vk::binding(2, 0)]]
+    // RWStructuredBuffer<StorageBuffer> storageBuffer;
+    //
+    // [shader("compute")]
+    // void main() {
+    //     uint dataIndex = storageBuffer[0].data;
+    //     float4 sampledColor = texture[dataIndex].Sample(sampler, float2(0));
+    //     storageBuffer[0].color = sampledColor;
+    // }
+    char const *cs_source = R"(
+               OpCapability RuntimeDescriptorArray
+               OpCapability Shader
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %storageBuffer %texture %sampler
+               OpExecutionMode %main LocalSize 1 1 1
+               OpMemberDecorate %StorageBuffer_std430 0 Offset 0
+               OpMemberDecorate %StorageBuffer_std430 1 Offset 16
+               OpDecorate %_runtimearr_StorageBuffer_std430 ArrayStride 32
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %storageBuffer Binding 2
+               OpDecorate %storageBuffer DescriptorSet 0
+               OpDecorate %_runtimearr_21 ArrayStride 8
+               OpDecorate %texture Binding 0
+               OpDecorate %texture DescriptorSet 0
+               OpDecorate %sampler Binding 1
+               OpDecorate %sampler DescriptorSet 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+       %uint = OpTypeInt 32 0
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%StorageBuffer_std430 = OpTypeStruct %uint %v4float
+%_ptr_StorageBuffer_StorageBuffer_std430 = OpTypePointer StorageBuffer %StorageBuffer_std430
+%_runtimearr_StorageBuffer_std430 = OpTypeRuntimeArray %StorageBuffer_std430
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_StorageBuffer_std430
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+         %21 = OpTypeImage %float 2D 2 0 0 1 Unknown
+%_runtimearr_21 = OpTypeRuntimeArray %21
+%_ptr_UniformConstant__runtimearr_21 = OpTypePointer UniformConstant %_runtimearr_21
+%_ptr_UniformConstant_21 = OpTypePointer UniformConstant %21
+         %28 = OpTypeSampler
+%_ptr_UniformConstant_28 = OpTypePointer UniformConstant %28
+         %32 = OpTypeSampledImage %21
+    %v2float = OpTypeVector %float 2
+    %float_0 = OpConstant %float 0
+         %36 = OpConstantComposite %v2float %float_0 %float_0
+      %int_1 = OpConstant %int 1
+%_ptr_StorageBuffer_v4float = OpTypePointer StorageBuffer %v4float
+%storageBuffer = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
+    %texture = OpVariable %_ptr_UniformConstant__runtimearr_21 UniformConstant
+    %sampler = OpVariable %_ptr_UniformConstant_28 UniformConstant
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %12 = OpAccessChain %_ptr_StorageBuffer_StorageBuffer_std430 %storageBuffer %int_0 %int_0
+         %18 = OpAccessChain %_ptr_StorageBuffer_uint %12 %int_0
+  %dataIndex = OpLoad %uint %18
+         %25 = OpAccessChain %_ptr_UniformConstant_21 %texture %dataIndex
+         %27 = OpLoad %21 %25
+         %29 = OpLoad %28 %sampler
+%sampledImage = OpSampledImage %32 %27 %29
+    %sampled = OpImageSampleExplicitLod %v4float %sampledImage %36 None
+         %38 = OpCopyObject %v4float %sampled
+         %39 = OpAccessChain %_ptr_StorageBuffer_StorageBuffer_std430 %storageBuffer %int_0 %int_0
+         %42 = OpAccessChain %_ptr_StorageBuffer_v4float %39 %int_1
+               OpStore %42 %38
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    *buffer_ptr = 1;
+    buffer.Memory().Unmap();
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    vkt::Image image_3d(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view_3d = image_3d.CreateView(VK_IMAGE_VIEW_TYPE_3D);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorIndexingSet descriptor_set(
+        m_device,
+        {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
+         {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
+         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view_3d, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.WriteDescriptorBufferInfo(2, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

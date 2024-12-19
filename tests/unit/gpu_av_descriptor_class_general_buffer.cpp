@@ -1910,3 +1910,95 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndex) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DescriptorIndexSlang) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // struct Bar {
+    //   uint4 a;
+    //   uint b[4];
+    //   uint c;
+    //   uint d;
+    // };
+    //
+    // [[vk::binding(0, 0)]]
+    // RWStructuredBuffer<Bar> foo[2]; // stride of 48 bytes
+    //
+    // [shader("compute")]
+    // void main() {
+    //   foo[1][1].d = 0;
+    // }
+    char const *cs_source = R"(
+               OpCapability Shader
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %foo
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_arr_uint_int_4 ArrayStride 4
+               OpMemberDecorate %_Array_std430_uint4 0 Offset 0
+               OpMemberDecorate %Bar_std430 0 Offset 0
+               OpMemberDecorate %Bar_std430 1 Offset 16
+               OpMemberDecorate %Bar_std430 2 Offset 32
+               OpMemberDecorate %Bar_std430 3 Offset 36
+               OpDecorate %_runtimearr_Bar_std430 ArrayStride 48
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %_arr_RWStructuredBuffer_int_2 ArrayStride 0
+               OpDecorate %foo Binding 0
+               OpDecorate %foo DescriptorSet 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %v4uint = OpTypeVector %uint 4
+        %int = OpTypeInt 32 1
+      %int_4 = OpConstant %int 4
+%_arr_uint_int_4 = OpTypeArray %uint %int_4
+%_Array_std430_uint4 = OpTypeStruct %_arr_uint_int_4
+ %Bar_std430 = OpTypeStruct %v4uint %_Array_std430_uint4 %uint %uint
+%_runtimearr_Bar_std430 = OpTypeRuntimeArray %Bar_std430
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_Bar_std430
+      %int_2 = OpConstant %int 2
+%_arr_RWStructuredBuffer_int_2 = OpTypeArray %RWStructuredBuffer %int_2
+%_ptr_StorageBuffer__arr_RWStructuredBuffer_int_2 = OpTypePointer StorageBuffer %_arr_RWStructuredBuffer_int_2
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+%_ptr_StorageBuffer_Bar_std430 = OpTypePointer StorageBuffer %Bar_std430
+      %int_3 = OpConstant %int 3
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+     %uint_0 = OpConstant %uint 0
+        %foo = OpVariable %_ptr_StorageBuffer__arr_RWStructuredBuffer_int_2 StorageBuffer
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+         %19 = OpAccessChain %_ptr_StorageBuffer_RWStructuredBuffer %foo %int_1
+         %23 = OpAccessChain %_ptr_StorageBuffer_Bar_std430 %19 %int_0 %int_1
+         %26 = OpAccessChain %_ptr_StorageBuffer_uint %23 %int_3
+               OpStore %26 %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer in_buffer(*m_device, 96, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, 80, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

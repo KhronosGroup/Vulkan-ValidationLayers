@@ -64,14 +64,17 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
 
     const Instruction* var_inst = nullptr;
     if (opcode == spv::OpLoad || opcode == spv::OpStore) {
-        // TODO - Should have loop to walk Load/Store to the Pointer,
-        // this case will not cover things such as OpCopyObject or double OpAccessChains
+        const Variable* variable = nullptr;
         const Instruction* access_chain_inst = function.FindInstruction(inst.Operand(0));
-        if (!access_chain_inst || access_chain_inst->Opcode() != spv::OpAccessChain) {
-            return false;
+        // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
+        while (access_chain_inst && access_chain_inst->Opcode() == spv::OpAccessChain) {
+            const uint32_t access_chain_base_id = access_chain_inst->Operand(0);
+            variable = module_.type_manager_.FindVariableById(access_chain_base_id);
+            if (variable) {
+                break;  // found
+            }
+            access_chain_inst = function.FindInstruction(access_chain_base_id);
         }
-
-        const Variable* variable = module_.type_manager_.FindVariableById(access_chain_inst->Operand(0));
         if (!variable) {
             return false;
         }
@@ -83,13 +86,10 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
         }
 
         const Type* pointer_type = variable->PointerType(module_.type_manager_);
-
-        // A load through a descriptor array will have at least 3 operands. We
-        // do not want to instrument loads of descriptors here which are part of
-        // an image-based reference.
-        if (pointer_type->inst_.IsArray() && access_chain_inst->Length() >= 6) {
+        if (pointer_type->IsArray()) {
             descriptor_index_id_ = access_chain_inst->Operand(1);
         } else {
+            // There is no array of this descriptor, so we essentially have an array of 1
             descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
         }
 
