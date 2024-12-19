@@ -507,7 +507,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 for (uint32_t i = 0; i < pCreateInfo->queueFamilyIndexCount; ++i) {
                     bool found = false;
                     for (uint32_t j = 0; j < pCreateInfo->queueFamilyIndexCount; ++j) {
-                        if (i != j && pCreateInfo->pQueueFamilyIndices[j] == swapchain_state->create_info.pQueueFamilyIndices[i]) {
+                        if (pCreateInfo->pQueueFamilyIndices[j] == swapchain_state->create_info.pQueueFamilyIndices[i]) {
                             found = true;
                             break;
                         }
