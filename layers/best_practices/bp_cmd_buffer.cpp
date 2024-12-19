@@ -59,7 +59,7 @@ bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const
 
 void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                                     const RecordObject& record_obj) {
-    StateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
+    BaseClass::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
@@ -162,7 +162,7 @@ bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
 
 void BestPractices::PostCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
                                                        const RecordObject& record_obj) {
-    StateTracker::PostCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
+    BaseClass::PostCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
@@ -178,7 +178,7 @@ void BestPractices::PostCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer comman
 
 void BestPractices::PostCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
                                                         const RecordObject& record_obj) {
-    StateTracker::PostCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
+    BaseClass::PostCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
 
@@ -277,7 +277,7 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
 void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                     const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
-    ValidationStateTracker::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
+    BaseClass::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
 
     auto primary = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     if (!primary) {

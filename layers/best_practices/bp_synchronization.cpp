@@ -108,7 +108,7 @@ bool BestPractices::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, Vk
 
 void BestPractices::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                              const RecordObject& record_obj) {
-    ValidationStateTracker::PreCallRecordCmdSetEvent(commandBuffer, event, stageMask, record_obj);
+    BaseClass::PreCallRecordCmdSetEvent(commandBuffer, event, stageMask, record_obj);
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     RecordCmdSetEvent(*cb_state, event);
 }
@@ -134,7 +134,7 @@ void BestPractices::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, 
 
 void BestPractices::PreCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
                                               const RecordObject& record_obj) {
-    ValidationStateTracker::PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
+    BaseClass::PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     RecordCmdSetEvent(*cb_state, event);
 }
@@ -148,7 +148,7 @@ bool BestPractices::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, 
 
 void BestPractices::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                const RecordObject& record_obj) {
-    ValidationStateTracker::PreCallRecordCmdResetEvent(commandBuffer, event, stageMask, record_obj);
+    BaseClass::PreCallRecordCmdResetEvent(commandBuffer, event, stageMask, record_obj);
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     RecordCmdResetEvent(*cb_state, event);
 }
@@ -172,7 +172,7 @@ void BestPractices::PreCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer
 
 void BestPractices::PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
                                                 const RecordObject& record_obj) {
-    ValidationStateTracker::PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
+    BaseClass::PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     RecordCmdResetEvent(*cb_state, event);
 }
@@ -491,7 +491,7 @@ void BestPractices::PostCallRecordCmdPipelineBarrier(
     VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
     const VkImageMemoryBarrier* pImageMemoryBarriers, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCmdPipelineBarrier(
+    BaseClass::PostCallRecordCmdPipelineBarrier(
         commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
         pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
 
@@ -504,7 +504,7 @@ void BestPractices::PostCallRecordCmdPipelineBarrier(
 
 void BestPractices::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
                                                       const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
+    BaseClass::PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
 
     for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
         RecordCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i]);

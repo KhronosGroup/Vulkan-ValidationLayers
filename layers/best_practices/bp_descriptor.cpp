@@ -24,8 +24,7 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
                                                           VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj,
                                                           vvl::AllocateDescriptorSetsData& ads_state_data) const {
     bool skip = false;
-    skip |= ValidationStateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj,
-                                                                          ads_state_data);
+    skip |= BaseClass::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj, ads_state_data);
     if (skip) return skip;
 
     const auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
@@ -75,7 +74,7 @@ void BestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, 
 
 void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
                                                      const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets,
+    BaseClass::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets,
                                                              record_obj);
     if (record_obj.result == VK_SUCCESS) {
         // we want to track frees because we're interested in suggesting re-use

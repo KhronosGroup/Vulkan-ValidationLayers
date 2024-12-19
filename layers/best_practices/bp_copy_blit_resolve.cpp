@@ -24,7 +24,7 @@
 void BestPractices::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                       const VkClearAttachment* pClearAttachments, uint32_t rectCount,
                                                       const VkClearRect* pRects, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pClearAttachments, rectCount, pRects,
+    BaseClass::PostCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pClearAttachments, rectCount, pRects,
                                                               record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
@@ -433,7 +433,7 @@ void BestPractices::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer comm
                                                             const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                             const VkImageSubresourceRange* pRanges,
                                                             const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount,
+    BaseClass::PostCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount,
                                                                     pRanges, record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
@@ -453,7 +453,7 @@ void BestPractices::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer comm
 void BestPractices::PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                const VkImageCopy* pRegions, const RecordObject& record_obj) {
-    ValidationStateTracker::PostCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout,
+    BaseClass::PostCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout,
                                                        regionCount, pRegions, record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
