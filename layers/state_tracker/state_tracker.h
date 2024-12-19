@@ -1735,6 +1735,7 @@ class ValidationStateTracker : public ValidationObject {
         uint32_t memory_type_index;
         VkBuffer dedicated_buffer;
         VkImage dedicated_image;
+        VkDeviceMemory device_memory;
 
         // External Semaphore
         VkSemaphoreCreateFlags semaphore_flags = 0;
