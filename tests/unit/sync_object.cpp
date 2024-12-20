@@ -1385,7 +1385,7 @@ TEST_F(NegativeSyncObject, ImageOwnershipTransferQueueMismatch) {
     release_dep_info.imageMemoryBarrierCount = 1;
     release_dep_info.pImageMemoryBarriers = &release_barrier;
     release_cb.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkImageMemoryBarrier2-SharingModeExclusive-MatchingQueueFamilies");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-10387");
     vk::CmdPipelineBarrier2(release_cb, &release_dep_info);
     m_errorMonitor->VerifyFound();
     release_cb.End();
@@ -1407,7 +1407,7 @@ TEST_F(NegativeSyncObject, ImageOwnershipTransferQueueMismatch) {
     acquire_dep_info.imageMemoryBarrierCount = 1;
     acquire_dep_info.pImageMemoryBarriers = &acquire_barrier;
     acquire_cb.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkImageMemoryBarrier2-SharingModeExclusive-MatchingQueueFamilies");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-10387");
     vk::CmdPipelineBarrier2(acquire_cb, &acquire_dep_info);
     m_errorMonitor->VerifyFound();
     acquire_cb.End();
@@ -1438,7 +1438,7 @@ TEST_F(NegativeSyncObject, BufferOwnershipTransferQueueMismatch) {
     release_barrier.buffer = buffer;
     release_barrier.size = 256;
     release_cb.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkBufferMemoryBarrier-SharingModeExclusive-MatchingQueueFamilies");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-10388");
     vk::CmdPipelineBarrier(release_cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1,
                            &release_barrier, 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -1453,7 +1453,7 @@ TEST_F(NegativeSyncObject, BufferOwnershipTransferQueueMismatch) {
     acquire_barrier.buffer = buffer;
     acquire_barrier.size = 256;
     acquire_cb.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkBufferMemoryBarrier-SharingModeExclusive-MatchingQueueFamilies");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-10388");
     vk::CmdPipelineBarrier(acquire_cb, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1,
                            &acquire_barrier, 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -1993,8 +1993,8 @@ TEST_F(NegativeSyncObject, BufferBarrierQueuesExternalAndForeign) {
     bmb.size = VK_WHOLE_SIZE;
 
     // Because we set both src/dst to special queue family values
-    // TODO: should 04087 and this UNASSIGNED vuid be merged somehow?
-    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-VkBufferMemoryBarrier-SharingModeExclusive-MatchingQueueFamilies");
+    // TODO: should 04087 and this VUID vuid be merged somehow?
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-10388");
 
     m_command_buffer.Begin();
 
@@ -2026,8 +2026,8 @@ TEST_F(NegativeSyncObject, BufferBarrierQueuesExternalAndForeign2) {
     bmb.size = VK_WHOLE_SIZE;
 
     // Because we set both src/dst to special queue family values
-    // TODO: should 04087 and this UNASSIGNED vuid be merged somehow?
-    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-VkBufferMemoryBarrier2-SharingModeExclusive-MatchingQueueFamilies");
+    // TODO: should 04087 and this VUID vuid be merged somehow?
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-10387");
 
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.bufferMemoryBarrierCount = 1;
