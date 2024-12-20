@@ -2567,7 +2567,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksNV-None-06886";
         stencil_read_only_06887                  = "VUID-vkCmdDrawMeshTasksNV-None-06887";
         dynamic_sample_locations_06666           = "VUID-vkCmdDrawMeshTasksNV-None-06666";
-        dynamic_tessellation_domain_origin_07619 = "VUID-vkCmdDrawMeshTasksNV-None-07619";
         dynamic_depth_clamp_enable_07620         = "VUID-vkCmdDrawMeshTasksNV-None-07620";
         dynamic_polygon_mode_07621               = "VUID-vkCmdDrawMeshTasksNV-None-07621";
         dynamic_rasterization_samples_07622      = "VUID-vkCmdDrawMeshTasksNV-None-07622";
@@ -2664,10 +2663,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksNV-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksNV-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksNV-None-08671";
-        vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksNV-None-08684";
-        tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksNV-None-08685";
-        tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksNV-None-08686";
-        geometry_shader_08687                    = "VUID-vkCmdDrawMeshTasksNV-None-08687";
         fragment_shader_08688                    = "VUID-vkCmdDrawMeshTasksNV-None-08688";
         task_shader_08689                        = "VUID-vkCmdDrawMeshTasksNV-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawMeshTasksNV-None-08690";
@@ -2821,7 +2816,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06886";
         stencil_read_only_06887                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06887";
         dynamic_sample_locations_06666           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06666";
-        dynamic_tessellation_domain_origin_07619 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07619";
         dynamic_depth_clamp_enable_07620         = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07620";
         dynamic_polygon_mode_07621               = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07621";
         dynamic_rasterization_samples_07622      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07622";
@@ -2918,10 +2912,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08671";
-        vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08684";
-        tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08685";
-        tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08686";
-        geometry_shader_08687                    = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08687";
         fragment_shader_08688                    = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08688";
         task_shader_08689                        = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08690";
@@ -3078,7 +3068,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06886";
         stencil_read_only_06887                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06887";
         dynamic_sample_locations_06666           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06666";
-        dynamic_tessellation_domain_origin_07619 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07619";
         dynamic_depth_clamp_enable_07620         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07620";
         dynamic_polygon_mode_07621               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07621";
         dynamic_rasterization_samples_07622      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07622";
@@ -3175,10 +3164,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08671";
-        vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08684";
-        tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08685";
-        tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08686";
-        geometry_shader_08687                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08687";
         fragment_shader_08688                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08688";
         task_shader_08689                        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08690";
@@ -3329,7 +3314,6 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksEXT-None-06886";
         stencil_read_only_06887                  = "VUID-vkCmdDrawMeshTasksEXT-None-06887";
         dynamic_sample_locations_06666           = "VUID-vkCmdDrawMeshTasksEXT-None-06666";
-        dynamic_tessellation_domain_origin_07619 = "VUID-vkCmdDrawMeshTasksEXT-None-07619";
         dynamic_depth_clamp_enable_07620         = "VUID-vkCmdDrawMeshTasksEXT-None-07620";
         dynamic_polygon_mode_07621               = "VUID-vkCmdDrawMeshTasksEXT-None-07621";
         dynamic_rasterization_samples_07622      = "VUID-vkCmdDrawMeshTasksEXT-None-07622";
@@ -3426,10 +3410,6 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksEXT-None-08671";
-        vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksEXT-None-08684";
-        tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksEXT-None-08685";
-        tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksEXT-None-08686";
-        geometry_shader_08687                    = "VUID-vkCmdDrawMeshTasksEXT-None-08687";
         fragment_shader_08688                    = "VUID-vkCmdDrawMeshTasksEXT-None-08688";
         task_shader_08689                        = "VUID-vkCmdDrawMeshTasksEXT-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawMeshTasksEXT-None-08690";
@@ -3583,7 +3563,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-06886";
         stencil_read_only_06887                  = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-06887";
         dynamic_sample_locations_06666           = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-06666";
-        dynamic_tessellation_domain_origin_07619 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07619";
         dynamic_depth_clamp_enable_07620         = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07620";
         dynamic_polygon_mode_07621               = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07621";
         dynamic_rasterization_samples_07622      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07622";
@@ -3680,10 +3659,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08671";
-        vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08684";
-        tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08685";
-        tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08686";
-        geometry_shader_08687                    = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08687";
         fragment_shader_08688                    = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08688";
         task_shader_08689                        = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08690";
@@ -3840,7 +3815,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         depth_read_only_06886                    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-06886";
         stencil_read_only_06887                  = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-06887";
         dynamic_sample_locations_06666           = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-06666";
-        dynamic_tessellation_domain_origin_07619 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07619";
         dynamic_depth_clamp_enable_07620         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07620";
         dynamic_polygon_mode_07621               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07621";
         dynamic_rasterization_samples_07622      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07622";
@@ -3937,10 +3911,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08671";
-        vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08684";
-        tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08685";
-        tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08686";
-        geometry_shader_08687                    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08687";
         fragment_shader_08688                    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08688";
         task_shader_08689                        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08690";

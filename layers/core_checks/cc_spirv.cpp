@@ -1945,7 +1945,7 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
                          string_VkDescriptorType(binding->descriptorType), string_DescriptorTypeSet(descriptor_type_set).c_str());
     } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.array_length) {
         skip |=
-            LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::Inline), objlist, loc,
+            LogError(GetPipelineInterfaceVariableVUID(pipeline, vvl::PipelineInterfaceVariableError::Inline_10391), objlist, loc,
                      "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor.",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str());
 
@@ -1985,33 +1985,31 @@ bool CoreChecks::ValidateShaderInterfaceVariableShaderObject(const VkShaderCreat
         }
     }
 
-    // VUIDs being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7020
-
     if (!binding) {
-        skip |= LogError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-stage", device, loc,
+        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-10383", device, loc,
                          "SPIR-V (%s) uses descriptor %s (type %s) but was not declared in pSetLayouts[%" PRIu32 "].",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                          string_DescriptorTypeSet(descriptor_type_set).c_str(), set);
     } else if (~binding->stageFlags & variable.stage) {
         skip |=
-            LogError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-stage", device, loc,
+            LogError("VUID-VkShaderCreateInfoEXT-codeType-10383", device, loc,
                      "SPIR-V (%s) uses descriptor %s (type %s) but the VkDescriptorSetLayoutBinding::stageFlags was %s.",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
                      string_DescriptorTypeSet(descriptor_type_set).c_str(), string_VkShaderStageFlags(binding->stageFlags).c_str());
     } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                (descriptor_type_set.find(binding->descriptorType) == descriptor_type_set.end())) {
-        skip |= LogError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-mutable", device, loc,
+        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-10384", device, loc,
                          "SPIR-V (%s) uses descriptor %s of type %s but expected %s.", string_VkShaderStageFlagBits(variable.stage),
                          variable.DescribeDescriptor().c_str(), string_VkDescriptorType(binding->descriptorType),
                          string_DescriptorTypeSet(descriptor_type_set).c_str());
     } else if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK && variable.array_length) {
         skip |=
-            LogError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-inline", device, loc,
+            LogError("VUID-VkShaderCreateInfoEXT-codeType-10386", device, loc,
                      "SPIR-V (%s) uses descriptor %s as VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but it is an array of descriptor.",
                      string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str());
 
     } else if (binding->descriptorCount < variable.array_length && variable.array_length != spirv::kRuntimeArray) {
-        skip |= LogError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-descriptorCount", device, loc,
+        skip |= LogError("VUID-VkShaderCreateInfoEXT-codeType-10385", device, loc,
                          "SPIR-V (%s) uses descriptor %s with a VkDescriptorSetLayoutBinding::descriptorCount of %" PRIu32
                          ", but requires at least %" PRIu32 " in the SPIR-V.",
                          string_VkShaderStageFlagBits(variable.stage), variable.DescribeDescriptor().c_str(),
@@ -2324,22 +2322,6 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
                              "minSampleShading (%f) is not equal to 1.0.", ms_state->minSampleShading);
         }
     }
-
-    if (module_state.static_data_.has_shader_tile_image_depth_read && !enabled_features.shaderTileImageDepthReadAccess) {
-        skip |= LogError("VUID-RuntimeSpirv-shaderTileImageDepthReadAccess-08729", module_state.handle(), loc,
-                         "shaderTileImageDepthReadAccess was not enabled");
-    }
-
-    if (module_state.static_data_.has_shader_tile_image_stencil_read && !enabled_features.shaderTileImageStencilReadAccess) {
-        skip |= LogError("VUID-RuntimeSpirv-shaderTileImageStencilReadAccess-08730", module_state.handle(), loc,
-                         "shaderTileImageStencilReadAccess was not enabled");
-    }
-
-    if (module_state.static_data_.has_shader_tile_image_color_read && !enabled_features.shaderTileImageColorReadAccess) {
-        skip |= LogError("VUID-RuntimeSpirv-shaderTileImageColorReadAccess-08728", module_state.handle(), loc,
-                         "shaderTileImageColorReadAccess was not enabled");
-    }
-
     return skip;
 }
 

@@ -737,7 +737,7 @@ bool CoreChecks::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint
                              string_VkTimeDomainKHR(time_domain));
             break;  // no reason to check after finding 1 duplicate
         } else if (!IsValueIn(time_domain, valid_time_domains)) {
-            skip |= LogError("VUID-VkCalibratedTimestampInfoEXT-timeDomain-02354", device,
+            skip |= LogError("VUID-VkCalibratedTimestampInfoKHR-timeDomain-02354", device,
                              error_obj.location.dot(Field::pTimestampInfos, i).dot(Field::timeDomain), "is %s.",
                              string_VkTimeDomainKHR(time_domain));
         }
