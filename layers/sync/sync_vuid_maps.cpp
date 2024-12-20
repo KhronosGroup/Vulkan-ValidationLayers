@@ -980,10 +980,10 @@ static const vvl::unordered_map<QueueError, std::vector<Entry>> &GetBarrierQueue
          }},
         {QueueError::kSubmitQueueMustMatchSrcOrDst,
          {
-             {Key(Struct::VkBufferMemoryBarrier2), "UNASSIGNED-VkBufferMemoryBarrier2-SharingModeExclusive-MatchingQueueFamilies"},
-             {Key(Struct::VkBufferMemoryBarrier), "UNASSIGNED-VkBufferMemoryBarrier-SharingModeExclusive-MatchingQueueFamilies"},
-             {Key(Struct::VkImageMemoryBarrier2), "UNASSIGNED-VkImageMemoryBarrier2-SharingModeExclusive-MatchingQueueFamilies"},
-             {Key(Struct::VkImageMemoryBarrier), "UNASSIGNED-VkImageMemoryBarrier-SharingModeExclusive-MatchingQueueFamilies"},
+             {Key(Struct::VkBufferMemoryBarrier2), "VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-10387"},
+             {Key(Struct::VkBufferMemoryBarrier), "VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-10388"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-10387"},
+             {Key(Struct::VkImageMemoryBarrier), "VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-10388"},
          }},
     };
     return kBarrierQueueErrors;
