@@ -1992,13 +1992,8 @@ TEST_F(NegativeSyncObject, BufferBarrierQueuesExternalAndForeign) {
     bmb.offset = 0;
     bmb.size = VK_WHOLE_SIZE;
 
-    // Because we set both src/dst to special queue family values
-    // TODO: should 04087 and this VUID vuid be merged somehow?
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-10388");
-
     m_command_buffer.Begin();
-
-    m_errorMonitor->SetDesiredError("VUID-VkBufferMemoryBarrier-srcQueueFamilyIndex-04087");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-10388");
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 1, &bmb, 0, nullptr);
     m_errorMonitor->VerifyFound();
@@ -2025,16 +2020,12 @@ TEST_F(NegativeSyncObject, BufferBarrierQueuesExternalAndForeign2) {
     bmb.offset = 0;
     bmb.size = VK_WHOLE_SIZE;
 
-    // Because we set both src/dst to special queue family values
-    // TODO: should 04087 and this VUID vuid be merged somehow?
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-10387");
-
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &bmb;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-VkBufferMemoryBarrier2-srcQueueFamilyIndex-04087");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-10387");
     vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

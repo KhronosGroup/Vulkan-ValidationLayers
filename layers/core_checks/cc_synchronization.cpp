@@ -2337,18 +2337,6 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
             skip |= LogError(vuid, objects, barrier_loc, "%s has a size of 0.", FormatHandle(mem_barrier.buffer).c_str());
         }
     }
-
-    if ((mem_barrier.srcQueueFamilyIndex != mem_barrier.dstQueueFamilyIndex) &&
-        (mem_barrier.srcQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL ||
-         mem_barrier.srcQueueFamilyIndex == VK_QUEUE_FAMILY_FOREIGN_EXT) &&
-        (mem_barrier.dstQueueFamilyIndex == VK_QUEUE_FAMILY_EXTERNAL ||
-         mem_barrier.dstQueueFamilyIndex == VK_QUEUE_FAMILY_FOREIGN_EXT)) {
-        auto loc = barrier_loc.dot(Field::srcQueueFamilyIndex);
-        const auto &vuid = GetBufferBarrierVUID(loc, BufferError::kQueueFamilyExternal);
-        skip |=
-            LogError(vuid, objects, loc,
-                     "both srcQueueFamilyIndex and dstQueueFamilyIndex are VK_QUEUE_FAMILY_EXTERNAL/VK_QUEUE_FAMILY_FOREIGN_EXT.");
-    }
     return skip;
 }
 
