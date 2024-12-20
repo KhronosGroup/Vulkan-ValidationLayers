@@ -300,25 +300,29 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
-            for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
-                skip |= ValidateObject(desc->pImageInfo[i].imageView, kVulkanObjectTypeImageView, true,
-                                       "VUID-VkWriteDescriptorSet-descriptorType-02996",
-                                       "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239",
-                                       loc.dot(Field::pImageInfo, i).dot(Field::imageView));
-                if (!null_descriptor_enabled && desc->pImageInfo[i].imageView == VK_NULL_HANDLE) {
-                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02997", desc->dstSet,
-                                     loc.dot(Field::pImageInfo, i).dot(Field::imageView), "is VK_NULL_HANDLE.");
+            if (desc->pImageInfo) {
+                for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
+                    skip |= ValidateObject(desc->pImageInfo[i].imageView, kVulkanObjectTypeImageView, true,
+                                           "VUID-VkWriteDescriptorSet-descriptorType-02996",
+                                           "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239",
+                                           loc.dot(Field::pImageInfo, i).dot(Field::imageView));
+                    if (!null_descriptor_enabled && desc->pImageInfo[i].imageView == VK_NULL_HANDLE) {
+                        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02997", desc->dstSet,
+                                         loc.dot(Field::pImageInfo, i).dot(Field::imageView), "is VK_NULL_HANDLE.");
+                    }
                 }
             }
             break;
         }
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
             // Input attachments can never be null
-            for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
-                skip |= ValidateObject(desc->pImageInfo[i].imageView, kVulkanObjectTypeImageView, false,
-                                       "VUID-VkWriteDescriptorSet-descriptorType-07683",
-                                       "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239",
-                                       loc.dot(Field::pImageInfo, i).dot(Field::imageView));
+            if (desc->pImageInfo) {
+                for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
+                    skip |= ValidateObject(desc->pImageInfo[i].imageView, kVulkanObjectTypeImageView, false,
+                                           "VUID-VkWriteDescriptorSet-descriptorType-07683",
+                                           "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239",
+                                           loc.dot(Field::pImageInfo, i).dot(Field::imageView));
+                }
             }
             break;
         }
@@ -326,13 +330,15 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
-            for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
-                skip |= ValidateObject(
-                    desc->pBufferInfo[i].buffer, kVulkanObjectTypeBuffer, true, "VUID-VkDescriptorBufferInfo-buffer-parameter",
-                    "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06237", loc.dot(Field::pBufferInfo, i).dot(Field::buffer));
-                if (!null_descriptor_enabled && desc->pBufferInfo[i].buffer == VK_NULL_HANDLE) {
-                    skip |= LogError("VUID-VkDescriptorBufferInfo-buffer-02998", desc->dstSet,
-                                     loc.dot(Field::pBufferInfo, i).dot(Field::buffer), "is VK_NULL_HANDLE.");
+            if (desc->pBufferInfo) {
+                for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
+                    skip |= ValidateObject(
+                        desc->pBufferInfo[i].buffer, kVulkanObjectTypeBuffer, true, "VUID-VkDescriptorBufferInfo-buffer-parameter",
+                        "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06237", loc.dot(Field::pBufferInfo, i).dot(Field::buffer));
+                    if (!null_descriptor_enabled && desc->pBufferInfo[i].buffer == VK_NULL_HANDLE) {
+                        skip |= LogError("VUID-VkDescriptorBufferInfo-buffer-02998", desc->dstSet,
+                                         loc.dot(Field::pBufferInfo, i).dot(Field::buffer), "is VK_NULL_HANDLE.");
+                    }
                 }
             }
             break;
