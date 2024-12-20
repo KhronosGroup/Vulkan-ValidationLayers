@@ -813,6 +813,9 @@ bool vvl::SamplerDescriptor::Invalid() const { return !sampler_state_ || sampler
 void vvl::ImageSamplerDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                           const VkWriteDescriptorSet &update, const uint32_t index,
                                                           bool is_bindless) {
+    if (!update.pImageInfo) {
+        return;
+    }
     const auto &image_info = update.pImageInfo[index];
     if (!immutable_) {
         ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler), is_bindless);

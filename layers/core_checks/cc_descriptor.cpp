@@ -378,7 +378,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                             cur_dyn_offset++;
                             set_dyn_offset++;
                         }  // descriptorCount loop
-                    }      // bindingCount loop
+                    }  // bindingCount loop
                     // Keep running total of dynamic descriptor count to verify at the end
                     total_dynamic_descriptors += set_dynamic_descriptor_count;
                 }
@@ -1439,6 +1439,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
         const Location copy_loc = loc.dot(Field::pDescriptorCopies, i);
         skip |= ValidateCopyUpdate(pDescriptorCopies[i], copy_loc);
     }
+
     return skip;
 }
 
@@ -1934,6 +1935,157 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet &dst_set, const VkWrite
         }
     }
 
+    // descriptorCount must be greater than 0
+    if (update.descriptorCount == 0) {
+        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorCount-arraylength", device, write_loc.dot(Field::descriptorCount),
+                         "is zero.");
+    }
+
+    const VkDescriptorType descriptor_type = update.descriptorType;
+    if ((descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER) || (descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) ||
+        (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) || (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) ||
+        (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+        if (update.pImageInfo == nullptr) {
+            const char *vuid =
+                (write_loc.function == Func::vkCmdPushDescriptorSet || write_loc.function == Func::vkCmdPushDescriptorSetKHR)
+                    ? "VUID-vkCmdPushDescriptorSet-pDescriptorWrites-06494"
+                : (write_loc.function == Func::vkCmdPushDescriptorSet2 || write_loc.function == Func::vkCmdPushDescriptorSet2KHR)
+                    ? "VUID-VkPushDescriptorSetInfo-pDescriptorWrites-06494"
+                    : "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06493";
+            skip |= LogError(vuid, device, write_loc.dot(Field::descriptorType), "is %s but pImageInfo is NULL.",
+                             string_VkDescriptorType(descriptor_type));
+        }
+    } else if ((descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) || (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) ||
+               (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
+               (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
+        if (update.pBufferInfo == nullptr) {
+            skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00324", device, write_loc.dot(Field::descriptorType),
+                             "is %s but pBufferInfo is NULL.", string_VkDescriptorType(descriptor_type));
+        } else {
+            if (enabled_features.nullDescriptor) {
+                for (uint32_t descriptor_index = 0; descriptor_index < update.descriptorCount; ++descriptor_index) {
+                    if (update.pBufferInfo[descriptor_index].buffer == VK_NULL_HANDLE &&
+                        (update.pBufferInfo[descriptor_index].offset != 0 ||
+                         update.pBufferInfo[descriptor_index].range != VK_WHOLE_SIZE)) {
+                        skip |= LogError("VUID-VkDescriptorBufferInfo-buffer-02999", device,
+                                         write_loc.dot(Field::pBufferInfo, descriptor_index).dot(Field::buffer),
+                                         "is VK_NULL_HANDLE, but offset (%" PRIu64 ") is not zero and range (%" PRIu64
+                                         ") is not VK_WHOLE_SIZE when descriptor type is %s.",
+                                         update.pBufferInfo[descriptor_index].offset, update.pBufferInfo[descriptor_index].range,
+                                         string_VkDescriptorType(descriptor_type));
+                    }
+                }
+            }
+        }
+    } else if ((descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) ||
+               (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
+        // Valid bufferView handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
+    }
+
+    if ((descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) || (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC)) {
+        VkDeviceSize uniform_alignment = phys_dev_props.limits.minUniformBufferOffsetAlignment;
+        for (uint32_t j = 0; j < update.descriptorCount; j++) {
+            if (update.pBufferInfo != NULL) {
+                if (SafeModulo(update.pBufferInfo[j].offset, uniform_alignment) != 0) {
+                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00327", device,
+                                     write_loc.dot(Field::pBufferInfo, j).dot(Field::offset),
+                                     "(%" PRIu64 ") must be a multiple of device limit minUniformBufferOffsetAlignment %" PRIu64
+                                     " when descriptor type is %s.",
+                                     update.pBufferInfo[j].offset, uniform_alignment, string_VkDescriptorType(descriptor_type));
+                }
+            }
+        }
+    } else if ((descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) ||
+               (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
+        VkDeviceSize storage_alignment = phys_dev_props.limits.minStorageBufferOffsetAlignment;
+        for (uint32_t j = 0; j < update.descriptorCount; j++) {
+            if (update.pBufferInfo != NULL) {
+                if (SafeModulo(update.pBufferInfo[j].offset, storage_alignment) != 0) {
+                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00328", device,
+                                     write_loc.dot(Field::pBufferInfo, j).dot(Field::offset),
+                                     "(%" PRIu64 ") must be a multiple of device limit minStorageBufferOffsetAlignment %" PRIu64
+                                     " when descriptor type is %s.",
+                                     update.pBufferInfo[j].offset, storage_alignment, string_VkDescriptorType(descriptor_type));
+                }
+            }
+        }
+    }
+    // pNext chain must be either NULL or a pointer to a valid instance of VkWriteDescriptorSetAccelerationStructureKHR
+    // or VkWriteDescriptorSetInlineUniformBlockEX
+    if (descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+        const auto *pnext_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
+        if (!pnext_struct) {
+            skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02382", device, write_loc,
+                             "doesn't include a pNext chain to VkWriteDescriptorSetAccelerationStructureKHR.");
+        } else if (pnext_struct->accelerationStructureCount != update.descriptorCount) {
+            skip |=
+                LogError("VUID-VkWriteDescriptorSet-descriptorType-02382", device,
+                         write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::accelerationStructureCount),
+                         "(%" PRIu32 ") does not equal descriptorCount %" PRIu32 ".", pnext_struct->accelerationStructureCount,
+                         update.descriptorCount);
+        }
+        // further checks only if we have right structtype
+        if (pnext_struct) {
+            if (pnext_struct->accelerationStructureCount != update.descriptorCount) {
+                skip |= LogError(
+                    "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-02236", device,
+                    write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::accelerationStructureCount),
+                    "(%" PRIu32 ") does not equal descriptorCount %" PRIu32 ".", pnext_struct->accelerationStructureCount,
+                    update.descriptorCount);
+            }
+            if (pnext_struct->accelerationStructureCount == 0) {
+                skip |= LogError(
+                    "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength", device,
+                    write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::accelerationStructureCount),
+                    "is zero.");
+            }
+            if (!enabled_features.nullDescriptor) {
+                for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
+                    if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
+                        skip |= LogError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580", device,
+                                         write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR,
+                                                         Field::pAccelerationStructures, j),
+                                         "is VK_NULL_HANDLE but the nullDescriptor feature was not enabled.");
+                    }
+                }
+            }
+        }
+    } else if (descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
+        const auto *pnext_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
+        if (!pnext_struct || (pnext_struct->accelerationStructureCount != update.descriptorCount)) {
+            skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-03817", device, write_loc,
+                             "If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, the pNext"
+                             "chain must include a VkWriteDescriptorSetAccelerationStructureNV structure whose "
+                             "accelerationStructureCount %" PRIu32 " member equals descriptorCount %" PRIu32 ".",
+                             pnext_struct ? pnext_struct->accelerationStructureCount : -1, update.descriptorCount);
+        }
+        // further checks only if we have right structtype
+        if (pnext_struct) {
+            if (pnext_struct->accelerationStructureCount != update.descriptorCount) {
+                skip |=
+                    LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-03747", device, write_loc,
+                             "accelerationStructureCount %" PRIu32 " must be equal to descriptorCount %" PRIu32
+                             " in the extended structure "
+                             ".",
+                             pnext_struct->accelerationStructureCount, update.descriptorCount);
+            }
+            if (pnext_struct->accelerationStructureCount == 0) {
+                skip |= LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-accelerationStructureCount-arraylength", device,
+                                 write_loc, "accelerationStructureCount must be greater than 0 .");
+            }
+            if (!enabled_features.nullDescriptor) {
+                for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
+                    if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE) {
+                        skip |= LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03749", device,
+                                         write_loc,
+                                         "If the nullDescriptor feature is not enabled, each member of "
+                                         "pAccelerationStructures must not be VK_NULL_HANDLE.");
+                    }
+                }
+            }
+        }
+    }
+
     if (skip) {
         return skip;  // consistency will likley be wrong if already bad
     }
@@ -1977,73 +2129,77 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
 
     switch (update.descriptorType) {
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
-            auto iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
-            for (uint32_t di = 0; di < update.descriptorCount && !iter.AtEnd(); ++di, ++iter) {
-                const ImageSamplerDescriptor &desc = (const ImageSamplerDescriptor &)*iter;
-                // Validate image
-                const VkImageView image_view = update.pImageInfo[di].imageView;
-                if (image_view == VK_NULL_HANDLE) {
-                    if (desc.IsImmutableSampler()) {
-                        // Only hit if using nullDescriptor
-                        const LogObjectList objlist(update.dstSet, desc.GetSampler());
-                        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-09506", objlist,
-                                         write_loc.dot(Field::pImageInfo, di).dot(Field::imageView), "is VK_NULL_HANDLE.");
-                    }
-                    continue;
-                }
-                auto image_layout = update.pImageInfo[di].imageLayout;
-                auto sampler = update.pImageInfo[di].sampler;
-                auto iv_state = Get<vvl::ImageView>(image_view);
-                ASSERT_AND_CONTINUE(iv_state);
-
-                const auto *image_state = iv_state->image_state.get();
-                skip |= ValidateImageUpdate(*iv_state, image_layout, update.descriptorType, write_loc.dot(Field::pImageInfo, di));
-
-                if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
-                    if (desc.IsImmutableSampler()) {
-                        auto sampler_state = Get<vvl::Sampler>(desc.GetSampler());
-                        if (iv_state && sampler_state) {
-                            if (iv_state->samplerConversion != sampler_state->samplerConversion) {
-                                const LogObjectList objlist(update.dstSet, desc.GetSampler(), iv_state->Handle());
-                                skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-01948", objlist, write_loc,
-                                                 "Attempted write update to combined image sampler and image view and sampler "
-                                                 "YCbCr conversions are not identical.");
-                            }
+            if (update.pImageInfo) {
+                auto iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
+                for (uint32_t di = 0; di < update.descriptorCount && !iter.AtEnd(); ++di, ++iter) {
+                    const ImageSamplerDescriptor &desc = (const ImageSamplerDescriptor &)*iter;
+                    // Validate image
+                    const VkImageView image_view = update.pImageInfo[di].imageView;
+                    if (image_view == VK_NULL_HANDLE) {
+                        if (desc.IsImmutableSampler()) {
+                            // Only hit if using nullDescriptor
+                            const LogObjectList objlist(update.dstSet, desc.GetSampler());
+                            skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-09506", objlist,
+                                             write_loc.dot(Field::pImageInfo, di).dot(Field::imageView), "is VK_NULL_HANDLE.");
                         }
-                    } else if (iv_state && (iv_state->samplerConversion != VK_NULL_HANDLE)) {
-                        const LogObjectList objlist(update.dstSet, iv_state->Handle());
-                        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02738", objlist, write_loc.dot(Field::dstSet),
+                        continue;
+                    }
+                    auto image_layout = update.pImageInfo[di].imageLayout;
+                    auto sampler = update.pImageInfo[di].sampler;
+                    auto iv_state = Get<vvl::ImageView>(image_view);
+                    ASSERT_AND_CONTINUE(iv_state);
+
+                    const auto *image_state = iv_state->image_state.get();
+                    skip |=
+                        ValidateImageUpdate(*iv_state, image_layout, update.descriptorType, write_loc.dot(Field::pImageInfo, di));
+
+                    if (IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                        if (desc.IsImmutableSampler()) {
+                            auto sampler_state = Get<vvl::Sampler>(desc.GetSampler());
+                            if (iv_state && sampler_state) {
+                                if (iv_state->samplerConversion != sampler_state->samplerConversion) {
+                                    const LogObjectList objlist(update.dstSet, desc.GetSampler(), iv_state->Handle());
+                                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-01948", objlist, write_loc,
+                                                     "Attempted write update to combined image sampler and image view and sampler "
+                                                     "YCbCr conversions are not identical.");
+                                }
+                            }
+                        } else if (iv_state && (iv_state->samplerConversion != VK_NULL_HANDLE)) {
+                            const LogObjectList objlist(update.dstSet, iv_state->Handle());
+                            skip |=
+                                LogError("VUID-VkWriteDescriptorSet-descriptorType-02738", objlist, write_loc.dot(Field::dstSet),
                                          "is bound to image view that includes a YCbCr conversion, it must have been allocated "
                                          "with a layout that includes an immutable sampler.");
+                        }
                     }
-                }
-                // If there is an immutable sampler then |sampler| isn't used, so the following VU does not apply.
-                if (sampler && !desc.IsImmutableSampler() && vkuFormatIsMultiplane(image_state->create_info.format)) {
-                    // multiplane formats must be created with mutable format bit
-                    const VkFormat image_format = image_state->create_info.format;
-                    if (0 == (image_state->create_info.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
-                        const LogObjectList objlist(update.dstSet, image_state->Handle());
-                        skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
-                                         "combined image sampler is a multi-planar format %s and was created with %s.",
-                                         string_VkFormat(image_format),
-                                         string_VkImageCreateFlags(image_state->create_info.flags).c_str());
+                    // If there is an immutable sampler then |sampler| isn't used, so the following VU does not apply.
+                    if (sampler && !desc.IsImmutableSampler() && vkuFormatIsMultiplane(image_state->create_info.format)) {
+                        // multiplane formats must be created with mutable format bit
+                        const VkFormat image_format = image_state->create_info.format;
+                        if (0 == (image_state->create_info.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
+                            const LogObjectList objlist(update.dstSet, image_state->Handle());
+                            skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
+                                             "combined image sampler is a multi-planar format %s and was created with %s.",
+                                             string_VkFormat(image_format),
+                                             string_VkImageCreateFlags(image_state->create_info.flags).c_str());
+                        }
+                        const VkImageAspectFlags image_aspect = iv_state->create_info.subresourceRange.aspectMask;
+                        if (!IsValidPlaneAspect(image_format, image_aspect)) {
+                            const LogObjectList objlist(update.dstSet, image_state->Handle(), iv_state->Handle());
+                            skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
+                                             "combined image sampler is a multi-planar format %s and imageView aspectMask is %s.",
+                                             string_VkFormat(image_format), string_VkImageAspectFlags(image_aspect).c_str());
+                        }
                     }
-                    const VkImageAspectFlags image_aspect = iv_state->create_info.subresourceRange.aspectMask;
-                    if (!IsValidPlaneAspect(image_format, image_aspect)) {
-                        const LogObjectList objlist(update.dstSet, image_state->Handle(), iv_state->Handle());
-                        skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
-                                         "combined image sampler is a multi-planar format %s and imageView aspectMask is %s.",
-                                         string_VkFormat(image_format), string_VkImageAspectFlags(image_aspect).c_str());
-                    }
-                }
 
-                // Verify portability
-                if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
-                    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
-                        if ((VK_FALSE == enabled_features.mutableComparisonSamplers) &&
-                            (VK_FALSE != sampler_state->create_info.compareEnable)) {
-                            skip |= LogError("VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450", device, write_loc,
-                                             "(portability error): sampler comparison not available.");
+                    // Verify portability
+                    if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
+                        if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
+                            if ((VK_FALSE == enabled_features.mutableComparisonSamplers) &&
+                                (VK_FALSE != sampler_state->create_info.compareEnable)) {
+                                skip |= LogError("VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450", device, write_loc,
+                                                 "(portability error): sampler comparison not available.");
+                            }
                         }
                     }
                 }
@@ -2054,7 +2210,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
             auto iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
             for (uint32_t di = 0; di < update.descriptorCount && !iter.AtEnd(); ++di, ++iter) {
                 const auto &desc = *iter;
-                if (!desc.IsImmutableSampler()) {
+                if (update.pImageInfo && !desc.IsImmutableSampler()) {
                     if (!ValidateSampler(update.pImageInfo[di].sampler)) {
                         const LogObjectList objlist(update.dstSet, update.pImageInfo[di].sampler);
                         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00325", objlist, write_loc,
@@ -2115,10 +2271,12 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet &dst_set, const V
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
-            for (uint32_t di = 0; di < update.descriptorCount; ++di) {
-                if (update.pBufferInfo[di].buffer) {
-                    skip |=
-                        ValidateBufferUpdate(update.pBufferInfo[di], update.descriptorType, write_loc.dot(Field::pBufferInfo, di));
+            if (update.pBufferInfo) {
+                for (uint32_t di = 0; di < update.descriptorCount; ++di) {
+                    if (update.pBufferInfo[di].buffer) {
+                        skip |= ValidateBufferUpdate(update.pBufferInfo[di], update.descriptorType,
+                                                     write_loc.dot(Field::pBufferInfo, di));
+                    }
                 }
             }
             break;
