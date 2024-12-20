@@ -1114,6 +1114,19 @@ class DescriptorSet : public internal::NonDispHandle<VkDescriptorSet> {
     DescriptorPool *containing_pool_;
 };
 
+class DescriptorUpdateTemplate : public internal::NonDispHandle<VkDescriptorUpdateTemplate> {
+  public:
+    ~DescriptorUpdateTemplate() noexcept;
+    void destroy() noexcept;
+
+    explicit DescriptorUpdateTemplate() : NonDispHandle() {}
+    explicit DescriptorUpdateTemplate(const Device &dev, const VkDescriptorUpdateTemplateCreateInfo &info) { Init(dev, info); }
+    void Init(const Device &dev, const VkDescriptorUpdateTemplateCreateInfo &info);
+    void SetName(const char *name) {
+        NonDispHandle<VkDescriptorUpdateTemplate>::SetName(VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE, name);
+    }
+};
+
 class CommandPool : public internal::NonDispHandle<VkCommandPool> {
   public:
     ~CommandPool() noexcept;

@@ -888,9 +888,11 @@ TEST_F(NegativePushDescriptor, DescriptorWriteMissingImageInfo) {
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 

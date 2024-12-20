@@ -5239,3 +5239,53 @@ TEST_F(NegativeDescriptors, DuplicateLayoutDifferentSamplerArray) {
                               &ds_1.set_, 0, nullptr);
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDescriptors, DSBufferLimitWithTemplateUpdate) {
+    TEST_DESCRIPTION("");
+
+    AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const VkDeviceSize storage_buffer_offset_alignment = m_device->Physical().limits_.minStorageBufferOffsetAlignment;
+
+    vkt::Buffer buffer(*m_device, 16u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+
+    VkDescriptorBufferInfo buffer_info = {};
+    buffer_info.buffer = buffer;
+    buffer_info.offset = storage_buffer_offset_alignment / 2u;
+    buffer_info.range = VK_WHOLE_SIZE;
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.descriptorCount = 1u;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pBufferInfo = &buffer_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00328");
+    vk::UpdateDescriptorSets(device(), 1u, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    VkDescriptorUpdateTemplateEntry templateEntry;
+    templateEntry.dstBinding = 0u;
+    templateEntry.dstArrayElement = 0u;
+    templateEntry.descriptorCount = 1u;
+    templateEntry.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    templateEntry.offset = 0u;
+    templateEntry.stride = sizeof(VkDescriptorBufferInfo);
+
+    VkDescriptorUpdateTemplateCreateInfo template_create_info = vku::InitStructHelper();
+    template_create_info.descriptorUpdateEntryCount = 1u;
+    template_create_info.pDescriptorUpdateEntries = &templateEntry;
+    template_create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    template_create_info.descriptorSetLayout = descriptor_set.layout_;
+
+    vkt::DescriptorUpdateTemplate descriptorUpdateTemplate(*m_device, template_create_info);
+
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00328");
+    vk::UpdateDescriptorSetWithTemplateKHR(device(), descriptor_set.set_, descriptorUpdateTemplate, &buffer_info);
+    m_errorMonitor->VerifyFound();
+}
