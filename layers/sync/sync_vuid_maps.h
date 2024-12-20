@@ -60,7 +60,6 @@ enum class BufferError {
     kOffsetTooBig,
     kSizeOutOfRange,
     kSizeZero,
-    kQueueFamilyExternal,
 };
 
 const std::string &GetBufferBarrierVUID(const Location &loc, BufferError error);
