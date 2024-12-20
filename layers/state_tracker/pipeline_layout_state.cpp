@@ -18,6 +18,8 @@
  */
 
 #include "state_tracker/pipeline_layout_state.h"
+
+#include "error_message/error_strings.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/descriptor_sets.h"
 
@@ -68,14 +70,30 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
     if (set != other.set) {
         ss << "The set " << set << " is different from the non-compatible pipeline layout (" << other.set << ")\n";
     } else if (push_constant_ranges != other.push_constant_ranges) {
-        ss << "The set push constant ranges is different from the non-compatible pipeline layout push constant ranges\n";
+        ss << "Pipeline layout pipeline bound with last call to vkCmdBindDescriptorSets has following push constant ranges:\n";
+        if (push_constant_ranges->empty()) {
+            ss << "Empty\n";
+        } else {
+            for (const auto &[pcr_i, pcr] : vvl::enumerate(push_constant_ranges->data(), push_constant_ranges->size())) {
+                ss << "VkPushConstantRange[ " << pcr_i << " ]: " << string_VkPushConstantRange(*pcr) << '\n';
+            }
+        }
+        ss << "But pipeline layout of last bound pipeline or last bound shaders has following push constant ranges:\n";
+        if (push_constant_ranges->empty()) {
+            ss << "Empty\n";
+        } else {
+            for (const auto &[pcr_i, pcr] :
+                 vvl::enumerate(other.push_constant_ranges->data(), other.push_constant_ranges->size())) {
+                ss << "VkPushConstantRange[ " << pcr_i << " ]: " << string_VkPushConstantRange(*pcr) << '\n';
+            }
+        }
     } else {
         const auto &descriptor_set_layouts = *set_layouts_id.get();
         const auto &other_ds_layouts = *other.set_layouts_id.get();
         for (uint32_t i = 0; i <= set; i++) {
             if (descriptor_set_layouts[i] != other_ds_layouts[i]) {
                 if (!descriptor_set_layouts[i] || !other_ds_layouts[i]) {
-                    ss << "Set " << i << " contains a null set which is considered non-compatible\n";
+                    ss << "Set layout " << i << " contains a null set which is considered non-compatible\n";
                     break;
                 }
                 return descriptor_set_layouts[i]->DescribeDifference(i, *other_ds_layouts[i]);

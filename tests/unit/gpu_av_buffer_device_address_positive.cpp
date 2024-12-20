@@ -1643,3 +1643,215 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
     ASSERT_TRUE(out_buffer_ptr[0] == 33);
     out_buffer.Memory().Unmap();
 }
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushConstants) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitRenderTarget();
+
+    // Create 2 pipeline layouts. Pipeline layout 2 starts the same as pipeline layout 1, with one push constant range,
+    // but one more push constant range is added to it, for a total of 2.
+    // The descriptor set layout of both pipeline layout are empty, thus compatible
+    // GPU-AV should work as expected.
+
+    std::array<VkPushConstantRange, 2> push_constant_ranges;
+    push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_constant_ranges[0].offset = 0;
+    push_constant_ranges[0].size = sizeof(VkDeviceAddress) + 2 * sizeof(uint32_t);
+    push_constant_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    push_constant_ranges[1].offset = push_constant_ranges[0].size;
+    push_constant_ranges[1].size = sizeof(uint32_t);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.pushConstantRangeCount = 1;
+    pipeline_layout_ci.pPushConstantRanges = push_constant_ranges.data();
+    auto pipeline_layout_1 = std::make_unique<vkt::PipelineLayout>(*m_device, pipeline_layout_ci);
+
+    pipeline_layout_ci.pushConstantRangeCount = 2;
+    const vkt::PipelineLayout pipeline_layout_2(*m_device, pipeline_layout_ci);
+
+    char const *vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference, std430) buffer Ptr {
+            uint i;
+        };
+
+        layout(push_constant, std430) uniform foo_0 { 
+            Ptr ptr;
+            uint a; 
+            uint b; 
+        };
+        void main() {
+            ptr.i = a + b;
+        }
+    )glsl";
+
+    char const *fs_source = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo_1 { uint c; };
+        void main() {}
+        )glsl";
+
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe_1(*this);
+    pipe_1.shader_stages_ = {vs.GetStageCreateInfo(), pipe_1.fs_->GetStageCreateInfo()};
+    pipe_1.gp_ci_.layout = pipeline_layout_1->handle();
+    pipe_1.CreateGraphicsPipeline();
+    pipeline_layout_1 = nullptr;
+
+    CreatePipelineHelper pipe_2(*this);
+    pipe_2.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe_2.gp_ci_.layout = pipeline_layout_2.handle();
+    pipe_2.CreateGraphicsPipeline();
+
+    vkt::Buffer out_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    std::array<VkDeviceAddress, 3> push_constants_data = {{out_buffer.address(), VkDeviceAddress(2) << 32 | 1u, 3}};
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    const uint32_t pc_1_size = uint32_t(sizeof(VkDeviceAddress) + 2 * sizeof(uint32_t));
+    const auto pipeline_layout_2_handle = pipeline_layout_2.handle();
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout_2_handle, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_1_size,
+                         &push_constants_data[0]);
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout_2_handle, VK_SHADER_STAGE_FRAGMENT_BIT, pc_1_size,
+                         sizeof(uint32_t), &push_constants_data[2]);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_1.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushConstantsShaderObject) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitDynamicRenderTarget();
+
+    // Create 2 pipeline layouts. Pipeline layout 2 starts the same as pipeline layout 1, with one push constant range,
+    // but one more push constant range is added to it, for a total of 2.
+    // The descriptor set layout of both pipeline layout are empty, thus compatible
+    // GPU-AV should work as expected.
+
+    std::array<VkPushConstantRange, 2> push_constant_ranges;
+    push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_constant_ranges[0].offset = 0;
+    push_constant_ranges[0].size = sizeof(VkDeviceAddress) + 2 * sizeof(uint32_t);
+    push_constant_ranges[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    push_constant_ranges[1].offset = push_constant_ranges[0].size;
+    push_constant_ranges[1].size = sizeof(uint32_t);
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.pushConstantRangeCount = 2;
+    pipeline_layout_ci.pPushConstantRanges = push_constant_ranges.data();
+    const vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+
+    char const *vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference, std430) buffer Ptr {
+            uint i;
+        };
+
+        layout(push_constant, std430) uniform foo_0 { 
+            Ptr ptr;
+            uint a; 
+            uint b; 
+        };
+        void main() {
+            ptr.i = a + b;
+        }
+    )glsl";
+
+    char const *fs_source = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo_1 { uint c; };
+        void main() {}
+    )glsl";
+
+    const std::vector<uint32_t> vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
+    const std::vector<uint32_t> fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
+
+    VkShaderCreateInfoEXT shader_obj_ci = vku::InitStructHelper();
+    shader_obj_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    shader_obj_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    shader_obj_ci.codeSize = vs_spv.size() * sizeof(uint32_t);
+    shader_obj_ci.pCode = vs_spv.data();
+    shader_obj_ci.pName = "main";
+    shader_obj_ci.pushConstantRangeCount = 1;
+    shader_obj_ci.pPushConstantRanges = push_constant_ranges.data();
+    vkt::Shader vs_1(*m_device, shader_obj_ci);
+
+    shader_obj_ci.pushConstantRangeCount = 2;
+    vkt::Shader vs_2(*m_device, shader_obj_ci);
+
+    shader_obj_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    shader_obj_ci.codeSize = fs_spv.size() * sizeof(uint32_t);
+    shader_obj_ci.pCode = fs_spv.data();
+    shader_obj_ci.pushConstantRangeCount = 2;
+    vkt::Shader fs(*m_device, shader_obj_ci);
+
+    const std::array<VkShaderStageFlagBits, 5> stages = {{VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                                          VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
+                                                          VK_SHADER_STAGE_FRAGMENT_BIT}};
+    const std::array<VkShaderEXT, 5> shaders_1 = {{vs_1.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE}};
+    const std::array<VkShaderEXT, 5> shaders_2 = {{vs_2.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, fs.handle()}};
+
+    vkt::Buffer out_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+
+    std::array<VkDeviceAddress, 3> push_constants_data = {{out_buffer.address(), VkDeviceAddress(2) << 32 | 1u, 3}};
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+
+    const uint32_t pc_1_size = uint32_t(sizeof(VkDeviceAddress) + 2 * sizeof(uint32_t));
+    const auto pipeline_layout_2_handle = pipeline_layout.handle();
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout_2_handle, VK_SHADER_STAGE_VERTEX_BIT, 0, pc_1_size,
+                         &push_constants_data[0]);
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout_2_handle, VK_SHADER_STAGE_FRAGMENT_BIT, pc_1_size,
+                         sizeof(uint32_t), &push_constants_data[2]);
+    SetDefaultDynamicStatesAll(m_command_buffer.handle());
+
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), size32(stages), stages.data(), shaders_2.data());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), size32(stages), stages.data(), shaders_1.data());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), size32(stages), stages.data(), shaders_2.data());
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
