@@ -752,8 +752,7 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     }
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6808
-TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
+TEST_F(NegativeSparseImage, QueueBindSparseMemoryType4) {
     TEST_DESCRIPTION(
         "Test QueueBindSparse with memory having import external handle types that do not match those of the resource");
 
@@ -769,6 +768,7 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     AddRequiredExtensions(ext_mem_extension_name);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
@@ -778,10 +778,10 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
 
     // Check for import/export capability
     VkPhysicalDeviceExternalBufferInfoKHR external_buffer_info = {
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR, nullptr, 0,
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR, nullptr, VK_BUFFER_CREATE_SPARSE_BINDING_BIT,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, handle_type};
-    VkExternalBufferPropertiesKHR external_buffer_props = {VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES_KHR, nullptr, {0, 0, 0}};
-    vk::GetPhysicalDeviceExternalBufferPropertiesKHR(Gpu(), &external_buffer_info, &external_buffer_props);
+    VkExternalBufferProperties external_buffer_props = {VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES_KHR, nullptr, {0, 0, 0}};
+    vk::GetPhysicalDeviceExternalBufferProperties(Gpu(), &external_buffer_info, &external_buffer_props);
     if (!(external_buffer_props.externalMemoryProperties.compatibleHandleTypes & handle_type) ||
         !(external_buffer_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) ||
         !(external_buffer_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
@@ -795,57 +795,79 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     // Check if dedicated allocation is required
     const bool dedicated_allocation =
         external_buffer_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT;
+    if (dedicated_allocation) {
+        // VUID-VkMemoryDedicatedAllocateInfo-buffer-01436
+        GTEST_SKIP() << "Dedicated allocation is required, which cannot be used with VK_BUFFER_CREATE_SPARSE_BINDING_BIT";
+    }
 
     /// Allocate buffer and buffer memory with no supported external type
     VkExternalMemoryBufferCreateInfo external_memory_buffer_info = vku::InitStructHelper();
-    external_memory_buffer_info.handleTypes = handle_type;  // TODO ".handleTypes = 0;" used handle_type for debugging purposes
+    external_memory_buffer_info.handleTypes = 0;
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&external_memory_buffer_info);
     buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_create_info.size = 1024;
-    vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
+    vkt::Buffer buffer1(*m_device, buffer_create_info, vkt::no_mem);
+    buffer_create_info.size = 65536;
+    vkt::Buffer buffer2(*m_device, buffer_create_info, vkt::no_mem);
 
-    VkMemoryAllocateInfo buffer_mem_alloc = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0);
-    VkExportMemoryAllocateInfo export_info = vku::InitStructHelper();
-    export_info.handleTypes = handle_type;
-    buffer_mem_alloc.pNext = &export_info;
-
-    // Add dedicated allocation info to pNext chain if required
-    VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
-    dedicated_info.buffer = buffer;
-    if (dedicated_allocation) {
-        export_info.pNext = &dedicated_info;
-    }
+    VkMemoryAllocateInfo buffer_mem_alloc1 = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer1.MemoryRequirements(), 0);
+    VkMemoryAllocateInfo buffer_mem_alloc2 = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer2.MemoryRequirements(), 0);
+    VkExportMemoryAllocateInfo export_info1 = vku::InitStructHelper();
+    export_info1.handleTypes = handle_type;
+    buffer_mem_alloc1.pNext = &export_info1;
+    VkExportMemoryAllocateInfo export_info2 = vku::InitStructHelper();
+    export_info2.handleTypes = handle_type;
+    buffer_mem_alloc2.pNext = &export_info2;
 
     // Export memory
-    vkt::DeviceMemory buffer_memory_export(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_memory_export1(*m_device, buffer_mem_alloc1);
+    vkt::DeviceMemory buffer_memory_export2(*m_device, buffer_mem_alloc2);
 
 #ifdef _WIN32
     // Export memory to handle
     VkMemoryGetWin32HandleInfoKHR mghi = vku::InitStructHelper();
-    mghi.memory = buffer_memory_export;
+    mghi.memory = buffer_memory_export1;
     mghi.handleType = handle_type;
-    HANDLE handle;
-    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(device(), &mghi, &handle));
 
-    VkImportMemoryWin32HandleInfoKHR import_info = vku::InitStructHelper();
-    import_info.handleType = handle_type;
-    import_info.handle = handle;
+    HANDLE handle1;
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(device(), &mghi, &handle1));
+
+    VkImportMemoryWin32HandleInfoKHR import_info1 = vku::InitStructHelper();
+    import_info1.handleType = handle_type;
+    import_info1.handle = handle1;
+
+    mghi.memory = buffer_memory_export2;
+    HANDLE handle2;
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryWin32HandleKHR(device(), &mghi, &handle2));
+
+    VkImportMemoryWin32HandleInfoKHR import_info2 = vku::InitStructHelper();
+    import_info2.handleType = handle_type;
+    import_info2.handle = handle2;
 #else
     // Export memory to fd
-    VkMemoryGetFdInfoKHR mgfi = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, nullptr, buffer_memory_export.handle(), handle_type};
-    mgfi.memory = buffer_memory_export;
+    VkMemoryGetFdInfoKHR mgfi = vku::InitStructHelper();
+    mgfi.memory = buffer_memory_export1;
     mgfi.handleType = handle_type;
-    int fd = 0;
-    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(device(), &mgfi, &fd));
 
-    VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper();
-    import_info.handleType = handle_type;
-    import_info.fd = fd;
+    int fd1 = 0;
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(device(), &mgfi, &fd1));
+
+    VkImportMemoryFdInfoKHR import_info1 = vku::InitStructHelper();
+    import_info1.handleType = handle_type;
+    import_info1.fd = fd1;
+
+    mgfi.memory = buffer_memory_export2;
+    int fd2 = 0;
+    ASSERT_EQ(VK_SUCCESS, vk::GetMemoryFdKHR(device(), &mgfi, &fd2));
+
+    VkImportMemoryFdInfoKHR import_info2 = vku::InitStructHelper();
+    import_info2.handleType = handle_type;
+    import_info2.fd = fd2;
 #endif
 
-    buffer_mem_alloc.pNext = &import_info;
-    vkt::DeviceMemory buffer_memory_imported(*m_device, buffer_mem_alloc);
+    buffer_mem_alloc1.pNext = &import_info1;
+    vkt::DeviceMemory buffer_memory_imported(*m_device, buffer_mem_alloc1);
 
     /// Allocate image and image memory with an external handle type
     VkImageCreateInfo image_create_info = vku::InitStructHelper();  // Do not set any supported external handle type
@@ -863,21 +885,19 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
-    VkImportMemoryFdInfoKHR image_import_memory_fd_info = vku::InitStructHelper();
-    image_import_memory_fd_info.handleType = handle_type;
     VkMemoryRequirements image_mem_reqs;
     vk::GetImageMemoryRequirements(device(), image.handle(), &image_mem_reqs);
-    const VkMemoryAllocateInfo image_mem_alloc = vkt::DeviceMemory::GetResourceAllocInfo(
-        *m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &image_import_memory_fd_info);
+    const VkMemoryAllocateInfo image_mem_alloc =
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &import_info2);
     vkt::DeviceMemory image_mem(*m_device, image_mem_alloc);
 
     // Setup memory bindings
     VkSparseMemoryBind buffer_memory_bind = {};
-    buffer_memory_bind.size = buffer.MemoryRequirements().size;
+    buffer_memory_bind.size = buffer1.MemoryRequirements().size;
     buffer_memory_bind.memory = buffer_memory_imported.handle();
 
     VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
-    buffer_memory_bind_info.buffer = buffer.handle();
+    buffer_memory_bind_info.buffer = buffer1.handle();
     buffer_memory_bind_info.bindCount = 1;
     buffer_memory_bind_info.pBinds = &buffer_memory_bind;
 
@@ -909,9 +929,9 @@ TEST_F(NegativeSparseImage, DISABLED_QueueBindSparseMemoryType4) {
     {
         bind_info.bufferBindCount = 1;
         bind_info.imageOpaqueBindCount = 0;
-        // m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-02731");
+        m_errorMonitor->SetDesiredError("VUID-VkSparseMemoryBind-memory-02731");
         vk::QueueBindSparse(m_device->QueuesWithSparseCapability()[0]->handle(), 1, &bind_info, VK_NULL_HANDLE);
-        // m_errorMonitor->VerifyFound();
+        m_errorMonitor->VerifyFound();
     }
 
     // Validate only image opaque bind
