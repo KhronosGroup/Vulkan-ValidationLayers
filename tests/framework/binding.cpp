@@ -1802,6 +1802,29 @@ void DescriptorSet::destroy() noexcept {
 }
 DescriptorSet::~DescriptorSet() noexcept { destroy(); }
 
+void DescriptorUpdateTemplate::Init(const Device &dev, const VkDescriptorUpdateTemplateCreateInfo &info) {
+    if (vk::CreateDescriptorUpdateTemplateKHR) {
+        NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDescriptorUpdateTemplateKHR, dev, &info);
+    } else {
+        NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDescriptorUpdateTemplate, dev, &info);
+    }
+}
+
+void DescriptorUpdateTemplate::destroy() noexcept {
+    if (!initialized()) {
+        return;
+    }
+    if (vk::DestroyDescriptorUpdateTemplateKHR) {
+        vk::DestroyDescriptorUpdateTemplateKHR(device(), handle(), nullptr);
+    } else {
+        vk::DestroyDescriptorUpdateTemplate(device(), handle(), nullptr);
+    }
+    handle_ = VK_NULL_HANDLE;
+    internal::NonDispHandle<decltype(handle_)>::destroy();
+}
+
+DescriptorUpdateTemplate::~DescriptorUpdateTemplate() noexcept { destroy(); }
+
 NON_DISPATCHABLE_HANDLE_DTOR(CommandPool, vk::DestroyCommandPool)
 
 void CommandPool::Init(const Device &dev, const VkCommandPoolCreateInfo &info) {
