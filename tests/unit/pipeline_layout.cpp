@@ -1048,7 +1048,7 @@ TEST_F(NegativePipelineLayout, InlineUniformBlockArray) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout.handle();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkComputePipelineCreateInfo-layout-inline");
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-None-10391");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1085,7 +1085,7 @@ TEST_F(NegativePipelineLayout, InlineUniformBlockArrayOf1) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout.handle();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkComputePipelineCreateInfo-layout-inline");
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-None-10391");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }

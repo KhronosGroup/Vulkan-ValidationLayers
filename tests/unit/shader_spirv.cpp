@@ -2616,3 +2616,33 @@ TEST_F(NegativeShaderSpirv, VkShaderModuleCreateInfoPNext) {
                    &pd_features2);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderSpirv, ShaderTileImageDisabled) {
+    TEST_DESCRIPTION("Validate creating graphics pipeline without shader tile image features enabled.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_SHADER_TILE_IMAGE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    {
+        // shaderTileImageDepthReadAccess
+        m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
+        VkShaderObj::CreateFromASM(this, kShaderTileImageDepthReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        // shaderTileImageStencilReadAccess
+        m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
+        VkShaderObj::CreateFromASM(this, kShaderTileImageStencilReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        // shaderTileImageColorReadAccess
+        m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
+        VkShaderObj::CreateFromASM(this, kShaderTileImageColorReadSpv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_errorMonitor->VerifyFound();
+    }
+}

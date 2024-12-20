@@ -988,7 +988,7 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsQuery) {
 
     uint64_t timestamp;
     uint64_t max_deviation;
-    m_errorMonitor->SetDesiredError("VUID-VkCalibratedTimestampInfoEXT-timeDomain-02354");
+    m_errorMonitor->SetDesiredError("VUID-VkCalibratedTimestampInfoKHR-timeDomain-02354");
     vk::GetCalibratedTimestampsEXT(device(), 1, &timestamp_info, &timestamp, &max_deviation);
     m_errorMonitor->VerifyFound();
 }

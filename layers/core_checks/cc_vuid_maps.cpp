@@ -671,15 +671,12 @@ const char *GetPipelineInterfaceVariableVUID(const vvl::Pipeline &pipeline, Pipe
                    : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
                        ? "VUID-VkRayTracingPipelineCreateInfoKHR-layout-07991"
                        : "VUID-VkRayTracingPipelineCreateInfoNV-layout-07991";
-        case PipelineInterfaceVariableError::Inline:
-            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7020
-            return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
-                       ? "UNASSIGNED-VkGraphicsPipelineCreateInfo-layout-inline"
-                   : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO
-                       ? "UNASSIGNED-VkComputePipelineCreateInfo-layout-inline"
+        case PipelineInterfaceVariableError::Inline_10391:
+            return sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO  ? "VUID-VkGraphicsPipelineCreateInfo-None-10391"
+                   : sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO ? "VUID-VkComputePipelineCreateInfo-None-10391"
                    : sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR
-                       ? "UNASSIGNED-VkRayTracingPipelineCreateInfoKHR-layout-inline"
-                       : "UNASSIGNED-VkRayTracingPipelineCreateInfoNV-layout-inline";
+                       ? "VUID-VkRayTracingPipelineCreateInfoKHR-None-10391"
+                       : "VUID-VkRayTracingPipelineCreateInfoNV-None-10391";
     }
     return "UNASSIGNED-CoreChecks-unhandled-pipeline-interface-variable";
 }

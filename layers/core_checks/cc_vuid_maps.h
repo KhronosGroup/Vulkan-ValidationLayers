@@ -110,7 +110,7 @@ enum class PipelineInterfaceVariableError {
     ShaderStage_07988,
     Mutable_07990,
     DescriptorCount_07991,
-    Inline,
+    Inline_10391,
 };
 const char *GetPipelineInterfaceVariableVUID(const vvl::Pipeline &pipeline, PipelineInterfaceVariableError error);
 

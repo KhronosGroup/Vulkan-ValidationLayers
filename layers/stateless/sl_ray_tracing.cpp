@@ -1881,9 +1881,8 @@ bool StatelessValidation::manual_PreCallValidateDestroyMicromapEXT(
     bool skip = false;
 
     if (!enabled_features.micromap) {
-        // Adding in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7023
-        skip |= LogError("UNASSIGNED-vkDestroyMicromapEXT-micromapHostCommands-feature", device, error_obj.location,
-                         "micromap feature was not enabled.");
+        skip |=
+            LogError("VUID-vkDestroyMicromapEXT-micromap-10382", device, error_obj.location, "micromap feature was not enabled.");
     }
 
     return skip;
