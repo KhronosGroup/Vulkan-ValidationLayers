@@ -258,7 +258,12 @@ class ValidationStateTracker : public ValidationObject {
         return (MapTraits::kInstanceScope && (this->*map_member).empty()) ? instance_state->*map_member : this->*map_member;
     }
 
+    // Helper to clean up the state object maps in the correct order
+    void DestroyObjectMaps();
+
   public:
+    ~ValidationStateTracker();
+
     static VkBindImageMemoryInfo ConvertImageMemoryInfo(VkDevice device, VkImage image, VkDeviceMemory mem,
                                                         VkDeviceSize memoryOffset);
 
