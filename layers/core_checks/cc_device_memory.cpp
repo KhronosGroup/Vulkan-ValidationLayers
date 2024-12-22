@@ -2046,6 +2046,27 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     }
                 }
             }
+
+            if (IsExtEnabled(extensions.vk_khr_dedicated_allocation) && mem_info &&
+                mem_info->GetDedicatedImage() != VK_NULL_HANDLE) {
+                const auto *memory_dedicated_allocate_info =
+                    vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(mem_info->allocate_info.pNext);
+                const char *vuid =
+                    bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-01445" : "VUID-vkBindImageMemory-image-01445";
+                if (!memory_dedicated_allocate_info) {
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
+                    skip |= LogError(vuid, objlist, loc.dot(Field::memory),
+                                     "was created without a VkMemoryDedicatedAllocateInfo in the pNext chain, but "
+                                     "vkGetImageMemoryRequirements2() reports "
+                                     "VkImageMemoryRequirementsInfo2::requiresDedicatedAllocation = VK_TRUE.");
+                } else if (memory_dedicated_allocate_info->image != bind_info.image) {
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
+                    skip |= LogError(
+                        vuid, objlist, loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::pNext).dot(Field::image),
+                        "is %s, but VkBindImageMemoryInfo::image is %s.",
+                        FormatHandle(memory_dedicated_allocate_info->image).c_str(), FormatHandle(bind_info.image).c_str());
+                }
+            }
         }
 
         const auto bind_image_memory_device_group = vku::FindStructInPNextChain<VkBindImageMemoryDeviceGroupInfo>(bind_info.pNext);
