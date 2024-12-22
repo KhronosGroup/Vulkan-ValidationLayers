@@ -133,4 +133,34 @@ void ValidationObject::DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(
     }
 }
 
+void ValidationObject::DispatchGetImageMemoryRequirements2Helper(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                                                 VkMemoryRequirements2* pMemoryRequirements) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return dispatch_->GetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
+    } else {
+        return dispatch_->GetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
+    }
+}
+
+void ValidationObject::DispatchGetBufferMemoryRequirements2Helper(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
+                                                                  VkMemoryRequirements2* pMemoryRequirements) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return dispatch_->GetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
+    } else {
+        return dispatch_->GetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
+    }
+}
+
+void ValidationObject::DispatchGetImageSparseMemoryRequirements2Helper(
+    VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo, uint32_t* pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return dispatch_->GetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
+                                                            pSparseMemoryRequirements);
+    } else {
+        return dispatch_->GetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
+                                                               pSparseMemoryRequirements);
+    }
+}
+
 // NOLINTEND

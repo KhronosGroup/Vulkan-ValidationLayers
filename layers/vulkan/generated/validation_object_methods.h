@@ -48,6 +48,13 @@ void DispatchGetPhysicalDeviceExternalFencePropertiesHelper(VkPhysicalDevice phy
 void DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(VkPhysicalDevice physicalDevice,
                                                              const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
                                                              VkExternalBufferProperties* pExternalBufferProperties) const;
+void DispatchGetImageMemoryRequirements2Helper(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                               VkMemoryRequirements2* pMemoryRequirements) const;
+void DispatchGetBufferMemoryRequirements2Helper(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
+                                                VkMemoryRequirements2* pMemoryRequirements) const;
+void DispatchGetImageSparseMemoryRequirements2Helper(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
+                                                     uint32_t* pSparseMemoryRequirementCount,
+                                                     VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) const;
 // Pre/post hook point declarations
 virtual bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                            VkInstance* pInstance, const ErrorObject& error_obj) const {
