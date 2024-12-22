@@ -739,7 +739,7 @@ bool StatelessValidation::ValidateWriteDescriptorSet(const Location &loc, const 
         // If called from vkCmdPushDescriptorSetKHR, the dstSet member is ignored.
         if (!is_push_descriptor) {
             // dstSet must be a valid VkDescriptorSet handle
-            skip |= ValidateRequiredHandle(loc.dot(Field::pDescriptorWrites, i).dot(Field::dstSet), descriptor_writes.dstSet);
+            skip |= ValidateRequiredHandle(writes_loc.dot(Field::dstSet), descriptor_writes.dstSet);
         }
 
         const VkDescriptorType descriptor_type = descriptor_writes.descriptorType;

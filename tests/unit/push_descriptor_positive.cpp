@@ -396,8 +396,7 @@ TEST_F(PositivePushDescriptor, TemplateBasic) {
     update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     update_template_ci.pipelineLayout = pipeline_layout.handle();
 
-    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
-    vk::CreateDescriptorUpdateTemplateKHR(device(), &update_template_ci, nullptr, &update_template);
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
@@ -406,8 +405,6 @@ TEST_F(PositivePushDescriptor, TemplateBasic) {
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout.handle(), 0,
                                             &update_template_data);
     m_command_buffer.End();
-
-    vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
 }
 
 TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
@@ -498,8 +495,7 @@ TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
     update_template_ci.pipelineLayout = pipeline_layout.handle();
     update_template_ci.set = 1;
 
-    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
-    vk::CreateDescriptorUpdateTemplateKHR(device(), &update_template_ci, nullptr, &update_template);
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
@@ -508,6 +504,4 @@ TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout.handle(), 1,
                                             &update_template_data);
     m_command_buffer.End();
-
-    vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
 }
