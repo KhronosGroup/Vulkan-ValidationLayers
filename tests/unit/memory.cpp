@@ -2420,3 +2420,59 @@ TEST_F(NegativeMemory, MapMemoryWithMapPlacedFlag) {
     vk::MapMemory(device(), memory.handle(), 0u, 4u, VK_MEMORY_MAP_PLACED_BIT_EXT, &data);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeMemory, RequiredDedicatedAllocationImage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+
+    vkt::Image image2(*m_device, image_create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    VkImageMemoryRequirementsInfo2 image_memory_requirements_info = vku::InitStructHelper();
+    image_memory_requirements_info.image = image.handle();
+
+    VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
+
+    VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&memory_dedicated_requirements);
+    vk::GetImageMemoryRequirements2(device(), &image_memory_requirements_info, &memory_requirements);
+
+    if (!memory_dedicated_requirements.requiresDedicatedAllocation) {
+        GTEST_SKIP() << "requiresDedicatedAllocation is false";
+    }
+
+    {
+        VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
+        memory_info.allocationSize = memory_requirements.memoryRequirements.size;
+        bool pass = m_device->Physical().SetMemoryType(memory_requirements.memoryRequirements.memoryTypeBits, &memory_info,
+                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        ASSERT_TRUE(pass);
+        vkt::DeviceMemory device_memory(*m_device, memory_info);
+
+        VkBindImageMemoryInfo bind_image_memory_info = vku::InitStructHelper();
+        bind_image_memory_info.image = image.handle();
+        bind_image_memory_info.memory = device_memory.handle();
+        bind_image_memory_info.memoryOffset = 0u;
+        m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-image-01445");
+        vk::BindImageMemory2(device(), 1u, &bind_image_memory_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkMemoryDedicatedAllocateInfo memory_dedicated_allocate_info = vku::InitStructHelper();
+        memory_dedicated_allocate_info.image = image2.handle();
+        VkMemoryAllocateInfo memory_info = vku::InitStructHelper(&memory_dedicated_allocate_info);
+        memory_info.allocationSize = memory_requirements.memoryRequirements.size;
+        bool pass = m_device->Physical().SetMemoryType(memory_requirements.memoryRequirements.memoryTypeBits, &memory_info,
+                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        ASSERT_TRUE(pass);
+        vkt::DeviceMemory device_memory(*m_device, memory_info);
+
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02628");
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-01445");
+        vk::BindImageMemory(device(), image, device_memory, 0u);
+        m_errorMonitor->VerifyFound();
+    }
+}
