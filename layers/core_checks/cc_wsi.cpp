@@ -694,6 +694,29 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
                          "contains VkImageCompressionControlEXT, but imageCompressionControlSwapchain is not enabled");
     }
 
+    const auto *swapchain_counter = vku::FindStructInPNextChain<VkSwapchainCounterCreateInfoEXT>(create_info.pNext);
+    if (swapchain_counter) {
+        VkSurfaceCapabilities2EXT surface_capabilities = vku::InitStructHelper();
+        const VkResult result =
+            DispatchGetPhysicalDeviceSurfaceCapabilities2EXT(physical_device, create_info.surface, &surface_capabilities);
+        if (result != VK_SUCCESS) {
+            skip |= LogError(
+                "VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-01244", device,
+                create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoEXT, Field::surfaceCounters),
+                "is %s, but the counters are not supported because the vkGetPhysicalDeviceSurfaceCapabilities2EXT query failed",
+                string_VkSurfaceCounterFlagsEXT(swapchain_counter->surfaceCounters).c_str());
+        } else {
+            if ((swapchain_counter->surfaceCounters & surface_capabilities.supportedSurfaceCounters) !=
+                swapchain_counter->surfaceCounters) {
+                skip |= LogError("VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-01244", device,
+                                 create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoEXT, Field::surfaceCounters),
+                                 "is %s, but calling vkGetPhysicalDeviceSurfaceCapabilities2EXT shows only %s is supported",
+                                 string_VkSurfaceCounterFlagsEXT(swapchain_counter->surfaceCounters).c_str(),
+                                 string_VkSurfaceCounterFlagsEXT(surface_capabilities.supportedSurfaceCounters).c_str());
+            }
+        }
+    }
+
     return skip;
 }
 
