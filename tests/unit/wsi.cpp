@@ -3472,3 +3472,43 @@ TEST_F(NegativeWsi, SwapchainMaintenance1DeferredMemoryFlags) {
     m_swapchain.Init(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeWsi, SurfaceCounters) {
+    TEST_DESCRIPTION("Test surfaceCounters are supported");
+
+    AddRequiredExtensions(VK_EXT_DISPLAY_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfaceCapabilities2EXT surface_capabilities = vku::InitStructHelper();
+    vk::GetPhysicalDeviceSurfaceCapabilities2EXT(Gpu(), m_surface.Handle(), &surface_capabilities);
+
+    if (surface_capabilities.supportedSurfaceCounters & VK_SURFACE_COUNTER_VBLANK_BIT_EXT) {
+        GTEST_SKIP() << "Device supports VK_SURFACE_COUNTER_VBLANK_BIT_EXT";
+    }
+
+    VkSwapchainCounterCreateInfoEXT swapchain_counter_ci = vku::InitStructHelper();
+    swapchain_counter_ci.surfaceCounters = VK_SURFACE_COUNTER_VBLANK_BIT_EXT;
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper(&swapchain_counter_ci);
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCounterCreateInfoEXT-surfaceCounters-01244");
+    m_swapchain.Init(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+}
