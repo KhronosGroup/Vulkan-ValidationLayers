@@ -1748,6 +1748,31 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                 FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
                         }
                     }
+                } else if (IsExtEnabled(extensions.vk_khr_dedicated_allocation)) {
+                    VkImageMemoryRequirementsInfo2 image_memory_requirements_info_2 = vku::InitStructHelper();
+                    image_memory_requirements_info_2.image = bind_info.image;
+                    VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
+                    VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&memory_dedicated_requirements);
+                    DispatchGetImageMemoryRequirements2Helper(api_version, device, &image_memory_requirements_info_2,
+                                                              &memory_requirements);
+
+                    if (memory_dedicated_requirements.requiresDedicatedAllocation) {
+                        const char *vuid =
+                            bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-01445" : "VUID-vkBindImageMemory-image-01445";
+                        if (dedicated_image == VK_NULL_HANDLE) {
+                            const LogObjectList objlist(bind_info.image, bind_info.memory);
+                            skip |= LogError(vuid, objlist, loc.dot(Field::memory),
+                                             "was created without a VkMemoryDedicatedAllocateInfo in the pNext chain, but "
+                                             "vkGetImageMemoryRequirements2() reports "
+                                             "VkImageMemoryRequirementsInfo2::requiresDedicatedAllocation = VK_TRUE.");
+                        } else if (dedicated_image != bind_info.image) {
+                            const LogObjectList objlist(bind_info.image, bind_info.memory);
+                            skip |= LogError(vuid, objlist,
+                                             loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::pNext).dot(Field::image),
+                                             "is %s, but VkBindImageMemoryInfo::image is %s.",
+                                             FormatHandle(dedicated_image).c_str(), FormatHandle(bind_info.image).c_str());
+                        }
+                    }
                 }
 
                 auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->allocate_info.pNext);
