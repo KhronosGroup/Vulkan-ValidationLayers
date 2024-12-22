@@ -7155,3 +7155,57 @@ TEST_F(NegativeShaderObject, InlineUniformBlockArray) {
                                   &descriptor_set.layout_.handle());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderObject, PushConstantNotDeclared) {
+    TEST_DESCRIPTION("Test missing push constant declaration.");
+
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitRenderTarget();
+
+    char const* vsSource = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo { float x; } consts;
+        void main(){
+           gl_Position = vec4(consts.x);
+        }
+    )glsl";
+
+    // Set up a push constant range
+    VkPushConstantRange push_constant_range = {};
+    // Set to the wrong stage to challenge core_validation
+    push_constant_range.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    push_constant_range.size = 4u;
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
+
+    const auto vspv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vsSource);
+
+    VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
+    createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    createInfo.codeSize = vspv.size() * sizeof(vspv[0]);
+    createInfo.pCode = vspv.data();
+    createInfo.pName = "main";
+
+    VkShaderEXT shader;
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-10064");
+    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    m_errorMonitor->VerifyFound();
+
+    createInfo.pushConstantRangeCount = 1u;
+    createInfo.pPushConstantRanges = &push_constant_range;
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-10064");
+    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    m_errorMonitor->VerifyFound();
+
+    push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_constant_range.offset = 4u;
+
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-10065");
+    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    m_errorMonitor->VerifyFound();
+
+    push_constant_range.offset = 0u;
+    const vkt::Shader validShader(*m_device, createInfo);
+}
