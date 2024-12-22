@@ -24,6 +24,7 @@
 #include "sync/sync_image.h"
 #include "state_tracker/buffer_state.h"
 #include "utils/convert_utils.h"
+#include "utils/ray_tracing_utils.h"
 #include "vk_layer_config.h"
 
 SyncValidator::~SyncValidator() {
@@ -3569,6 +3570,85 @@ void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapc
                 sync_image->SetOpaqueBaseAddress(*this);
             }
         }
+    }
+}
+
+bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const {
+    bool skip = false;
+    auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN_SKIP(cb_state);
+    auto &cb_context = cb_state->access_context;
+    auto &context = *cb_context.GetCurrentAccessContext();
+
+    for (uint32_t i = 0; i < infoCount; i++) {
+        const auto &info = pInfos[i];
+        const auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress);
+        if (scratch_buffers.empty()) {
+            continue;
+        }
+        if (scratch_buffers.size() > 1) {
+            continue;  // postpone handling this case until syncval memory aliasing support is ready
+        }
+        const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
+        const vvl::Buffer &scratch_buffer = *scratch_buffers[0];
+
+        // Skip invalid configurations
+        {
+            const sparse_container::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
+                                                                      info.scratchData.deviceAddress + scratch_size);
+            if (!scratch_buffer.DeviceAddressRange().includes(scratch_range)) {
+                continue;  // [core validation check]: invalid scratch range
+            }
+        }
+
+        const ResourceAccessRange range = MakeRange(info.scratchData.deviceAddress - scratch_buffer.deviceAddress, scratch_size);
+        auto hazard = context.DetectHazard(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, range);
+        if (hazard.IsHazard()) {
+            const LogObjectList objlist(commandBuffer, scratch_buffer.Handle());
+            const auto error = error_messages_.BufferError(hazard, scratch_buffer.VkHandle(), "scratch buffer", cb_context);
+            skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
+        }
+    }
+    return skip;
+}
+
+void SyncValidator::PreCallRecordCmdBuildAccelerationStructuresKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const RecordObject &record_obj) {
+    auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN(cb_state);
+    auto &cb_context = cb_state->access_context;
+    auto &context = *cb_context.GetCurrentAccessContext();
+
+    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
+
+    for (uint32_t i = 0; i < infoCount; i++) {
+        const auto &info = pInfos[i];
+        const auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress);
+        if (scratch_buffers.empty()) {
+            continue;
+        }
+        if (scratch_buffers.size() > 1) {
+            continue;  // postpone handling this case until syncval memory aliasing support is ready
+        }
+        const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
+        const vvl::Buffer &scratch_buffer = *scratch_buffers[0];
+
+        // Skip invalid configurations
+        {
+            const sparse_container::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
+                                                                      info.scratchData.deviceAddress + scratch_size);
+            if (!scratch_buffer.DeviceAddressRange().includes(scratch_range)) {
+                continue;  // [core validation check]: invalid scratch range
+            }
+        }
+
+        const ResourceAccessRange range = MakeRange(info.scratchData.deviceAddress - scratch_buffer.deviceAddress, scratch_size);
+        auto tag_ex = cb_context.AddCommandHandle(tag, scratch_buffer.Handle());
+        context.UpdateAccessState(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
+                                  SyncOrdering::kNonAttachment, range, tag_ex);
     }
 }
 

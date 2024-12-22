@@ -623,5 +623,12 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                                    const RecordObject &record_obj) override;
     void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                              VkImage *pSwapchainImages, const RecordObject &record_obj) override;
+    bool PreCallValidateCmdBuildAccelerationStructuresKHR(
+        VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+        const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const override;
+    void PreCallRecordCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                        const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+                                                        const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos,
+                                                        const RecordObject &record_obj) override;
 };
 
