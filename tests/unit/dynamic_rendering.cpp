@@ -310,17 +310,9 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
 
     // Create color image
     const VkFormat color_format = VK_FORMAT_R32_SFLOAT;
-    VkImageCreateInfo imci = vku::InitStructHelper();
-    imci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-    imci.imageType = VK_IMAGE_TYPE_2D;
-    imci.format = color_format;
-    imci.extent = {32, 32, 1};
-    imci.mipLevels = 1;
-    imci.arrayLayers = 1;
-    imci.samples = VK_SAMPLE_COUNT_1_BIT;
-    imci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    vkt::Image color_image(*m_device, imci, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    vkt::Image color_image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView color_image_view = color_image.CreateView();
 
     // Create depth image
@@ -1584,30 +1576,21 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
         GTEST_SKIP() << "shading rate / fragment shading not supported";
     }
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = depthStencilFormat;
-    image_create_info.extent = {64, 64, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     if (shading_rate) {
-        image_create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+        image_ci.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
     }
     if (fragment_density) {
-        image_create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+        image_ci.usage |= VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
     }
 
     VkImageFormatProperties imageFormatProperties;
-    if (vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_create_info.format, image_create_info.imageType,
-                                                   image_create_info.tiling, image_create_info.usage, image_create_info.flags,
-                                                   &imageFormatProperties) == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+    if (vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling, image_ci.usage,
+                                                   image_ci.flags, &imageFormatProperties) == VK_ERROR_FORMAT_NOT_SUPPORTED) {
         GTEST_SKIP() << "Format not supported";
     }
-    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView depth_image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -1758,18 +1741,9 @@ TEST_F(NegativeDynamicRendering, BeginRenderingFragmentShadingRate) {
         GTEST_SKIP() << "format doesn't support FRAGMENT_SHADING_RATE_ATTACHMENT_BIT";
     }
 
-    VkImageCreateInfo image_ci = vku::InitStructHelper(nullptr);
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
-    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_ci.extent.width = 32;
-    image_ci.extent.height = 32;
-    image_ci.extent.depth = 1;
-    image_ci.mipLevels = 1;
-    image_ci.arrayLayers = 2;
-    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
-
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     VkImageFormatProperties imageFormatProperties;
     if (vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling, image_ci.usage,
                                                    image_ci.flags, &imageFormatProperties) == VK_ERROR_FORMAT_NOT_SUPPORTED) {
@@ -3108,20 +3082,14 @@ TEST_F(NegativeDynamicRendering, RenderingFragmentDensityMapAttachment) {
 
     rendering_fragment_density.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 2;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_create_info, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
         GTEST_SKIP() << "format doesn't support FRAGMENT_SHADING_RATE_ATTACHMENT_BIT";
     }
 
-    vkt::Image image2(*m_device, image_create_info, vkt::set_layout);
+    vkt::Image image2(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view2 = image2.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
     rendering_fragment_density.imageView = image_view2;
     m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-imageView-06109");
@@ -3166,18 +3134,10 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentCreateFlags) {
         GTEST_SKIP() << "VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT not supported";
     }
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
-
-    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView();
 
     VkRenderingFragmentDensityMapAttachmentInfoEXT rendering_fragment_density = vku::InitStructHelper();
@@ -3206,16 +3166,9 @@ TEST_F(NegativeDynamicRendering, FragmentDensityMapAttachmentLayerCount) {
 
     InitRenderTarget();
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 2;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
-    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
+        32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     VkRenderingFragmentDensityMapAttachmentInfoEXT rendering_fragment_density = vku::InitStructHelper();

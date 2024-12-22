@@ -559,22 +559,12 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                  NULL,
-                                  VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,  // need for multi-planar
-                                  VK_IMAGE_TYPE_2D,
-                                  VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
-                                  {128, 128, 1},
-                                  1,
-                                  1,
-                                  VK_SAMPLE_COUNT_1_BIT,
-                                  VK_IMAGE_TILING_LINEAR,
-                                  VK_IMAGE_USAGE_SAMPLED_BIT,
-                                  VK_SHARING_MODE_EXCLUSIVE,
-                                  VK_IMAGE_LAYOUT_UNDEFINED};
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;  // need for multi-planar
+    image_ci.tiling = VK_IMAGE_TILING_LINEAR;
 
     // Verify formats
-    bool supported = ImageFormatIsSupported(instance(), Gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
+    bool supported = ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
     if (!supported) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
@@ -637,7 +627,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     }
 
     // Create an image without a Ycbcr conversion
-    vkt::Image mpimage(*m_device, ci, vkt::set_layout);
+    vkt::Image mpimage(*m_device, image_ci, vkt::set_layout);
     ycbcr_info.conversion = conversions[0].handle();  // Need two samplers with different conversions
     vkt::ImageView view = mpimage.CreateView(VK_IMAGE_ASPECT_PLANE_0_BIT, &ycbcr_info);
 
@@ -694,20 +684,10 @@ TEST_F(NegativeSampler, ImageSamplerConversionNullImageView) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                  NULL,
-                                  VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,  // need for multi-planar
-                                  VK_IMAGE_TYPE_2D,
-                                  VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
-                                  {128, 128, 1},
-                                  1,
-                                  1,
-                                  VK_SAMPLE_COUNT_1_BIT,
-                                  VK_IMAGE_TILING_LINEAR,
-                                  VK_IMAGE_USAGE_SAMPLED_BIT,
-                                  VK_SHARING_MODE_EXCLUSIVE,
-                                  VK_IMAGE_LAYOUT_UNDEFINED};
-    if (!ImageFormatIsSupported(instance(), Gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;  // need for multi-planar
+    image_ci.tiling = VK_IMAGE_TILING_LINEAR;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
         GTEST_SKIP() << "Multiplane image format not supported";
     }
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,

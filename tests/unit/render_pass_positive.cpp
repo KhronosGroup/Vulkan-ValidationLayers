@@ -351,16 +351,9 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     vkt::Framebuffer fb(*m_device, fb_ci);
     ASSERT_TRUE(fb.initialized());
 
-    VkImageCreateInfo image_ci = vku::InitStructHelper();
-    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_ci.extent.width = width;
-    image_ci.extent.height = 1;
-    image_ci.extent.depth = 1;
-    image_ci.arrayLayers = 1;
-    image_ci.mipLevels = 2;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(width, 1, 2, 1, formats[0],
+                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image_ci.imageType = VK_IMAGE_TYPE_1D;
-    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_ci.format = formats[0];
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view_obj = image.CreateView(VK_IMAGE_VIEW_TYPE_1D_ARRAY, base_mip, 1, 0, 1);
     VkImageView image_view = image_view_obj.handle();
@@ -717,14 +710,7 @@ TEST_F(PositiveRenderPass, QueriesInMultiview) {
 
     rp.CreateRenderPass(&rpmvci);
 
-    VkImageCreateInfo image_ci = vku::InitStructHelper();
-    image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_ci.extent = {32, 32, 1};
-    image_ci.arrayLayers = 3;
-    image_ci.mipLevels = 2;
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
-    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 2, 3, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 3);
     VkImageView image_view_handle = view.handle();

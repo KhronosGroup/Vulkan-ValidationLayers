@@ -701,20 +701,11 @@ TEST_F(NegativeCopyBufferImage, ImageLayerCountMismatch) {
         GTEST_SKIP() << "Transfer for format is not supported";
     }
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = image_format;
-    image_create_info.extent = {32, 32, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 4;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_create_info.flags = 0;
-    vkt::Image src_image(*m_device, image_create_info, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 4, image_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
 
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image dst_image(*m_device, image_create_info, vkt::set_layout);
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
 
     m_command_buffer.Begin();
     VkImageCopy copy_region;
@@ -740,20 +731,12 @@ TEST_F(NegativeCopyBufferImage, CompressedImageMip) {
     RETURN_IF_SKIP(Init());
     bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.flags = 0;
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_BC3_SRGB_BLOCK;
-    ci.extent = {32, 32, 1};
-    ci.mipLevels = 6;
-    ci.arrayLayers = 1;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image(*m_device, ci, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 6, 1, VK_FORMAT_BC3_SRGB_BLOCK,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
-    ci.extent = {31, 32, 1};  // Mips are [31,32] [15,16] [7,8] [3,4], [1,2] [1,1]
-    vkt::Image odd_image(*m_device, ci, vkt::set_layout);
+    image_ci.extent = {31, 32, 1};  // Mips are [31,32] [15,16] [7,8] [3,4], [1,2] [1,1]
+    vkt::Image odd_image(*m_device, image_ci, vkt::set_layout);
 
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer buffer_1024(*m_device, 1024, transfer_usage);
@@ -1117,15 +1100,13 @@ TEST_F(NegativeCopyBufferImage, ImageTypeExtentMismatch) {
     }
 
     // Create 1D image
-    VkImageCreateInfo ci = vkt::Image::ImageCreateInfo2D(32, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    VkImageCreateInfo ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    ci.imageType = VK_IMAGE_TYPE_1D;
-    vkt::Image image_1D(*m_device, ci, vkt::set_layout);
-
-    // 2D image
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.extent = {32, 32, 1};
     vkt::Image image_2D(*m_device, ci, vkt::set_layout);
+
+    ci.imageType = VK_IMAGE_TYPE_1D;
+    ci.extent.height = 1;
+    vkt::Image image_1D(*m_device, ci, vkt::set_layout);
 
     m_command_buffer.Begin();
 
@@ -1474,27 +1455,18 @@ TEST_F(NegativeCopyBufferImage, ImageCompressedBlockAlignment) {
     AddRequiredFeature(vkt::Feature::textureCompressionBC);
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.flags = 0;
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_BC3_SRGB_BLOCK;
-    ci.extent = {64, 64, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 1;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_BC3_SRGB_BLOCK,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), ci.format, ci.imageType, ci.tiling,
-                                                                 ci.usage, ci.flags, &img_prop)) {
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), image_ci.format, image_ci.imageType,
+                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
         GTEST_SKIP() << "No compressed formats supported";
     }
 
-    vkt::Image image_1(*m_device, ci, vkt::set_layout);
+    vkt::Image image_1(*m_device, image_ci, vkt::set_layout);
 
-    ci.extent = {62, 62, 1};  // slightly smaller and not divisible by block size
-    vkt::Image image_2(*m_device, ci, vkt::set_layout);
+    image_ci.extent = {62, 62, 1};  // slightly smaller and not divisible by block size
+    vkt::Image image_2(*m_device, image_ci, vkt::set_layout);
 
     m_command_buffer.Begin();
 
@@ -1925,24 +1897,15 @@ TEST_F(NegativeCopyBufferImage, ImageFormatSizeMismatch) {
         GTEST_SKIP() << "Format not supported";
     }
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.extent = {32, 32, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    image_create_info.flags = 0;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_8b_unorm(*m_device, image_ci, vkt::set_layout);
 
-    image_create_info.format = VK_FORMAT_R8_UNORM;
-    vkt::Image image_8b_unorm(*m_device, image_create_info, vkt::set_layout);
+    image_ci.format = VK_FORMAT_R8_UINT;
+    vkt::Image image_8b_uint(*m_device, image_ci, vkt::set_layout);
 
-    image_create_info.format = VK_FORMAT_R8_UINT;
-    vkt::Image image_8b_uint(*m_device, image_create_info, vkt::set_layout);
-
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    vkt::Image image_32b_unorm(*m_device, image_create_info, vkt::set_layout);
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    vkt::Image image_32b_unorm(*m_device, image_ci, vkt::set_layout);
 
     m_command_buffer.Begin();
     VkImageCopy copy_region;
@@ -1987,24 +1950,15 @@ TEST_F(NegativeCopyBufferImage, ImageFormatSizeMismatch2) {
         GTEST_SKIP() << "Format not supported";
     }
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.extent = {32, 32, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    image_create_info.flags = 0;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_8b_unorm(*m_device, image_ci, vkt::set_layout);
 
-    image_create_info.format = VK_FORMAT_R8_UNORM;
-    vkt::Image image_8b_unorm(*m_device, image_create_info, vkt::set_layout);
+    image_ci.format = VK_FORMAT_R8_UINT;
+    vkt::Image image_8b_uint(*m_device, image_ci, vkt::set_layout);
 
-    image_create_info.format = VK_FORMAT_R8_UINT;
-    vkt::Image image_8b_uint(*m_device, image_create_info, vkt::set_layout);
-
-    image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    vkt::Image image_8b_16b_420_unorm(*m_device, image_create_info, vkt::set_layout);
+    image_ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    vkt::Image image_8b_16b_420_unorm(*m_device, image_ci, vkt::set_layout);
 
     m_command_buffer.Begin();
     VkImageCopy copy_region;
@@ -2111,24 +2065,15 @@ TEST_F(NegativeCopyBufferImage, ImageSampleCountMismatch) {
         GTEST_SKIP() << "Image multi-sample support not found";
     }
 
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.flags = 0;
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ci.extent = {128, 128, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 1;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image1(*m_device, image_ci, vkt::set_layout);
 
-    vkt::Image image1(*m_device, ci, vkt::set_layout);
+    image_ci.samples = VK_SAMPLE_COUNT_2_BIT;
+    vkt::Image image2(*m_device, image_ci, vkt::set_layout);
 
-    ci.samples = VK_SAMPLE_COUNT_2_BIT;
-    vkt::Image image2(*m_device, ci, vkt::set_layout);
-
-    ci.samples = VK_SAMPLE_COUNT_4_BIT;
-    vkt::Image image4(*m_device, ci, vkt::set_layout);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image image4(*m_device, image_ci, vkt::set_layout);
 
     m_command_buffer.Begin();
 
@@ -2166,20 +2111,11 @@ TEST_F(NegativeCopyBufferImage, ImageSampleCountMismatch) {
 
 TEST_F(NegativeCopyBufferImage, ImageLayerCount) {
     TEST_DESCRIPTION("Check layerCount in vkCmdCopyImage");
-
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ci.extent = {128, 128, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 1;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    vkt::Image image(*m_device, ci, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     m_command_buffer.Begin();
 
@@ -2618,24 +2554,15 @@ TEST_F(NegativeCopyBufferImage, ImageRemainingLayers) {
     TEST_DESCRIPTION("Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS");
     RETURN_IF_SKIP(Init());
 
-    VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
-
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.flags = 0;
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = image_format;
-    ci.extent = {32, 32, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 8;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     // Copy from a to b
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    vkt::Image image_a(*m_device, ci, vkt::set_layout);
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    vkt::Image image_a(*m_device, image_ci, vkt::set_layout);
 
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image_b(*m_device, ci, vkt::set_layout);
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image image_b(*m_device, image_ci, vkt::set_layout);
 
     ASSERT_TRUE(image_a.initialized());
     ASSERT_TRUE(image_b.initialized());
@@ -2646,7 +2573,7 @@ TEST_F(NegativeCopyBufferImage, ImageRemainingLayers) {
     image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageCopy copy_region{};
-    copy_region.extent = ci.extent;
+    copy_region.extent = image_ci.extent;
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.baseArrayLayer = 7;
     copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;  // This value is unsupported by VkImageSubresourceLayer
@@ -2663,9 +2590,9 @@ TEST_F(NegativeCopyBufferImage, ImageRemainingLayers) {
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     VkBufferImageCopy buffer_copy{};
-    buffer_copy.bufferImageHeight = ci.extent.height;
-    buffer_copy.bufferRowLength = ci.extent.width;
-    buffer_copy.imageExtent = ci.extent;
+    buffer_copy.bufferImageHeight = image_ci.extent.height;
+    buffer_copy.bufferRowLength = image_ci.extent.width;
+    buffer_copy.imageExtent = image_ci.extent;
     buffer_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     buffer_copy.imageSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;  // This value is unsupported by VkImageSubresourceLayers
     buffer_copy.imageSubresource.mipLevel = 0;
@@ -2796,18 +2723,9 @@ TEST_F(NegativeCopyBufferImage, SameImage) {
     TEST_DESCRIPTION("use wrong layout copying to the same image.");
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent = {32, 32, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_create_info.flags = 0;
-    vkt::Image src_image(*m_device, image_create_info, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
 
     m_command_buffer.Begin();
     VkImageCopy copy_region;
@@ -2829,16 +2747,9 @@ TEST_F(NegativeCopyBufferImage, ImageRemainingArrayLayers) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ci.extent = {64, 64, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 4;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image(*m_device, ci, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 4, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     VkImageCopy copy_region = {};
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
@@ -2861,19 +2772,11 @@ TEST_F(NegativeCopyBufferImage, ImageMemory) {
     RETURN_IF_SKIP(Init());
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
-    VkImageCreateInfo image_info = vku::InitStructHelper();
-    image_info.extent = {64, 64, 1};
-    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_info.arrayLayers = 1;
-    image_info.mipLevels = 1;
-
     // Create a small image with a dedicated allocation
-    vkt::Image image_no_mem(*m_device, image_info, vkt::no_mem);
-    vkt::Image image(*m_device, image_info);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_no_mem(*m_device, image_ci, vkt::no_mem);
+    vkt::Image image(*m_device, image_ci);
 
     VkImageCopy copy_region;
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -2932,16 +2835,7 @@ TEST_F(NegativeCopyBufferImage, ImageMissingUsage) {
     VkImageStencilUsageCreateInfo stencil_usage_ci = vku::InitStructHelper();
     stencil_usage_ci.stencilUsage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    VkImageCreateInfo image_ci = vku::InitStructHelper();
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
-    image_ci.format = format;
-    image_ci.extent = {32, 32, 1};
-    image_ci.mipLevels = 1;
-    image_ci.arrayLayers = 1;
-    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image sampled_image(*m_device, image_ci, vkt::set_layout);
 
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;

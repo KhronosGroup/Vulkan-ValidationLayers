@@ -112,20 +112,11 @@ TEST_F(VkArmBestPracticesLayerTest, TooManySamples) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-Arm-vkCreateImage-too-large-sample-count");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-samples-02258");
 
-    VkImageCreateInfo image_info{};
-    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_info.extent = {1920, 1080, 1};
-    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-    image_info.samples = VK_SAMPLE_COUNT_8_BIT;
-    image_info.arrayLayers = 1;
-    image_info.mipLevels = 1;
-
+    auto image_ci = vkt::Image::ImageCreateInfo2D(1920, 1080, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_8_BIT;
     VkImage image = VK_NULL_HANDLE;
-    vk::CreateImage(device(), &image_info, nullptr, &image);
-
+    vk::CreateImage(device(), &image_ci, nullptr, &image);
     m_errorMonitor->VerifyFound();
 
     if (image) {
@@ -141,19 +132,10 @@ TEST_F(VkArmBestPracticesLayerTest, NonTransientMSImage) {
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCreateImage-non-transient-ms-image");
 
-    VkImageCreateInfo image_info{};
-    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_info.extent = {1920, 1080, 1};
-    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_info.samples = VK_SAMPLE_COUNT_4_BIT;
-    image_info.arrayLayers = 1;
-    image_info.mipLevels = 1;
-
+    auto image_ci = vkt::Image::ImageCreateInfo2D(1920, 1080, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     VkImage image;
-    vk::CreateImage(device(), &image_info, nullptr, &image);
+    vk::CreateImage(device(), &image_ci, nullptr, &image);
 
     m_errorMonitor->VerifyFound();
 }

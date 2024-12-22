@@ -127,22 +127,11 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
     // Create an image to use in an imageless framebuffer.  Bind swapchain memory to it.
     VkImageSwapchainCreateInfoKHR image_swapchain_create_info = vku::InitStructHelper();
     image_swapchain_create_info.swapchain = m_swapchain;
-    VkImageCreateInfo imageCreateInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                         &image_swapchain_create_info,
-                                         0,
-                                         VK_IMAGE_TYPE_2D,
-                                         attachmentFormat,
-                                         {attachmentWidth, attachmentHeight, 1},
-                                         1,
-                                         1,
-                                         VK_SAMPLE_COUNT_1_BIT,
-                                         VK_IMAGE_TILING_OPTIMAL,
-                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                         VK_SHARING_MODE_EXCLUSIVE,
-                                         0,
-                                         nullptr,
-                                         VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image image(*m_device, imageCreateInfo, vkt::no_mem);
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(attachmentWidth, attachmentHeight, 1, 1, attachmentFormat,
+                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.pNext = &image_swapchain_create_info;
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     VkBindImageMemoryDeviceGroupInfo bind_devicegroup_info = vku::InitStructHelper();
     bind_devicegroup_info.deviceIndexCount = physical_device_group[0].physicalDeviceCount;
