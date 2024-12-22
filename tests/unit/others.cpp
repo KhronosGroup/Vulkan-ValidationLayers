@@ -173,20 +173,18 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->VerifyFound();
 }
 
+#ifdef ANNOTATED_SPEC_LINK
 TEST_F(VkLayerTest, SpecLinksImplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     RETURN_IF_SKIP(Init());
 
-#ifdef ANNOTATED_SPEC_LINK
     std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
     std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
     std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
-    std::string spec_version = "doc/view/" + major_version + "." + minor_version + "." + patch_version + ".0/windows";
-#else   // ANNOTATED_SPEC_LINK
     // keep VUID seperate otherwise vk_validation_stats.py will get confused
-    std::string spec_version = "https://docs.vulkan.org/spec/latest/chapters/features.html#" +
+    std::string spec_version = "doc/view/" + major_version + "." + minor_version + "." + patch_version + ".0/windows/1." +
+                               minor_version + "-extensions/vkspec.html#" +
                                std::string("VUID-vkGetPhysicalDeviceFeatures-pFeatures-parameter");
-#endif  // ANNOTATED_SPEC_LINK
 
     m_errorMonitor->SetDesiredError(spec_version.c_str());
     vk::GetPhysicalDeviceFeatures(Gpu(), nullptr);
@@ -197,29 +195,52 @@ TEST_F(VkLayerTest, SpecLinksExplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     RETURN_IF_SKIP(Init());
 
-#ifdef ANNOTATED_SPEC_LINK
     std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
     std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
     std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
-    std::string spec_version = "doc/view/" + major_version + "." + minor_version + "." + patch_version + ".0/windows";
-#else   // ANNOTATED_SPEC_LINK
     // keep VUID seperate otherwise vk_validation_stats.py will get confused
-    std::string spec_version =
-        "https://docs.vulkan.org/spec/latest/chapters/memory.html#" + std::string("VUID-vkAllocateMemory-pAllocateInfo-01714");
-#endif  // ANNOTATED_SPEC_LINK
+    std::string spec_version = "doc/view/" + major_version + "." + minor_version + "." + patch_version + ".0/windows/1." +
+                               minor_version + "-extensions/vkspec.html#" + std::string("VUID-VkBufferCreateInfo-size-00912");
 
-    VkPhysicalDeviceMemoryProperties memory_info;
-    vk::GetPhysicalDeviceMemoryProperties(Gpu(), &memory_info);
-
-    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
-    mem_alloc.memoryTypeIndex = memory_info.memoryTypeCount;
-    mem_alloc.allocationSize = 4;
-
-    VkDeviceMemory mem;
+    VkBufferCreateInfo info = vku::InitStructHelper();
+    info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    info.size = 0;
     m_errorMonitor->SetDesiredError(spec_version.c_str());
-    vk::AllocateMemory(device(), &mem_alloc, nullptr, &mem);
+    vkt::Buffer buffer(*m_device, info, vkt::no_mem);
     m_errorMonitor->VerifyFound();
 }
+
+#else   // ANNOTATED_SPEC_LINK
+
+TEST_F(VkLayerTest, SpecLinksImplicit) {
+    TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
+    RETURN_IF_SKIP(Init());
+
+    // keep VUID seperate otherwise vk_validation_stats.py will get confused
+    std::string spec_version = "https://docs.vulkan.org/spec/latest/chapters/features.html#" +
+                               std::string("VUID-vkGetPhysicalDeviceFeatures-pFeatures-parameter");
+
+    m_errorMonitor->SetDesiredError(spec_version.c_str());
+    vk::GetPhysicalDeviceFeatures(Gpu(), nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, SpecLinksExplicit) {
+    TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
+    RETURN_IF_SKIP(Init());
+
+    // keep VUID seperate otherwise vk_validation_stats.py will get confused
+    std::string spec_version =
+        "https://docs.vulkan.org/spec/latest/chapters/resources.html#" + std::string("VUID-VkBufferCreateInfo-size-00912");
+
+    VkBufferCreateInfo info = vku::InitStructHelper();
+    info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    info.size = 0;
+    m_errorMonitor->SetDesiredError(spec_version.c_str());
+    vkt::Buffer buffer(*m_device, info, vkt::no_mem);
+    m_errorMonitor->VerifyFound();
+}
+#endif  // ANNOTATED_SPEC_LINK
 
 TEST_F(VkLayerTest, DeviceIDPropertiesUnsupported) {
     TEST_DESCRIPTION("VkPhysicalDeviceIDProperties cannot be used without extensions in 1.0");
