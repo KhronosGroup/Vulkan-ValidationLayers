@@ -133,25 +133,10 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
 
 TEST_F(PositiveImage, CreateImageViewFollowsParameterCompatibilityRequirements) {
     TEST_DESCRIPTION("Verify that creating an ImageView with valid usage does not generate validation errors.");
-
     RETURN_IF_SKIP(Init());
-
-    VkImageCreateInfo imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                 VK_IMAGE_TYPE_2D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {128, 128, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image image(*m_device, imgInfo, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
     image.CreateView();
 }
 

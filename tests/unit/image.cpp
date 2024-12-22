@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -863,22 +864,9 @@ TEST_F(NegativeImage, Array2DImageType) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     // Trigger check by setting imagecreateflags to 2d_array_compat and imageType to 2D
-    VkImageCreateInfo ici = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                             nullptr,
-                             VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT,
-                             VK_IMAGE_TYPE_2D,
-                             VK_FORMAT_R8G8B8A8_UNORM,
-                             {32, 32, 1},
-                             1,
-                             1,
-                             VK_SAMPLE_COUNT_1_BIT,
-                             VK_IMAGE_TILING_OPTIMAL,
-                             VK_IMAGE_USAGE_SAMPLED_BIT,
-                             VK_SHARING_MODE_EXCLUSIVE,
-                             0,
-                             nullptr,
-                             VK_IMAGE_LAYOUT_UNDEFINED};
-    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-flags-00950");
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-00950");
 }
 
 TEST_F(NegativeImage, View2DImageType) {
@@ -888,22 +876,9 @@ TEST_F(NegativeImage, View2DImageType) {
     AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     // Trigger check by setting imagecreateflags to 2d_array_compat and imageType to 2D
-    VkImageCreateInfo ici = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                             nullptr,
-                             VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT,
-                             VK_IMAGE_TYPE_2D,
-                             VK_FORMAT_R8G8B8A8_UNORM,
-                             {32, 32, 1},
-                             1,
-                             1,
-                             VK_SAMPLE_COUNT_1_BIT,
-                             VK_IMAGE_TILING_OPTIMAL,
-                             VK_IMAGE_USAGE_SAMPLED_BIT,
-                             VK_SHARING_MODE_EXCLUSIVE,
-                             0,
-                             nullptr,
-                             VK_IMAGE_LAYOUT_UNDEFINED};
-    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-flags-07755");
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-07755");
 }
 
 TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
@@ -921,22 +896,10 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     vk::GetPhysicalDeviceMemoryProperties(m_device->Physical().handle(), &memProps);
 
     // Test mismatch detection for image of type VK_IMAGE_TYPE_1D
-    VkImageCreateInfo imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                 VK_IMAGE_TYPE_1D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image image1D(*m_device, imgInfo, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    vkt::Image image1D(*m_device, image_ci, vkt::set_layout);
 
     // Initialize VkImageViewCreateInfo with mismatched viewType
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
@@ -953,22 +916,9 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
 
     // Test mismatch detection for image of type VK_IMAGE_TYPE_2D
-    imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-               nullptr,
-               VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-               VK_IMAGE_TYPE_2D,
-               VK_FORMAT_R8G8B8A8_UNORM,
-               {1, 1, 1},
-               1,
-               6,
-               VK_SAMPLE_COUNT_1_BIT,
-               VK_IMAGE_TILING_OPTIMAL,
-               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-               VK_SHARING_MODE_EXCLUSIVE,
-               0,
-               nullptr,
-               VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image image2D(*m_device, imgInfo, vkt::set_layout);
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.arrayLayers = 6;
+    vkt::Image image2D(*m_device, image_ci, vkt::set_layout);
 
     // Initialize VkImageViewCreateInfo with mismatched viewType
     ivci = vku::InitStructHelper();
@@ -992,22 +942,9 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01003");
 
     // Test mismatch detection for image of type VK_IMAGE_TYPE_3D
-    imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-               nullptr,
-               VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-               VK_IMAGE_TYPE_3D,
-               VK_FORMAT_R8G8B8A8_UNORM,
-               {1, 1, 1},
-               1,
-               1,
-               VK_SAMPLE_COUNT_1_BIT,
-               VK_IMAGE_TILING_OPTIMAL,
-               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-               VK_SHARING_MODE_EXCLUSIVE,
-               0,
-               nullptr,
-               VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image image3D(*m_device, imgInfo, vkt::set_layout);
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.arrayLayers = 1;
+    vkt::Image image3D(*m_device, image_ci, vkt::set_layout);
 
     // Initialize VkImageViewCreateInfo with mismatched viewType
     ivci = vku::InitStructHelper();
@@ -1048,26 +985,13 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
 
     // Initialize VkImageCreateInfo with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT and VK_IMAGE_CREATE_SPARSE_BINDING_BIT which
     // are incompatible create flags.
-    imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-               nullptr,
-               VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT,
-               VK_IMAGE_TYPE_3D,
-               VK_FORMAT_R8G8B8A8_UNORM,
-               {1, 1, 1},
-               1,
-               1,
-               VK_SAMPLE_COUNT_1_BIT,
-               VK_IMAGE_TILING_OPTIMAL,
-               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-               VK_SHARING_MODE_EXCLUSIVE,
-               0,
-               nullptr,
-               VK_IMAGE_LAYOUT_UNDEFINED};
+    image_ci.flags =
+        VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     VkImage image_sparse;
 
     // Creating a sparse image means we should not bind memory to it.
     m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-flags-09403");
-    vk::CreateImage(device(), &imgInfo, NULL, &image_sparse);
+    vk::CreateImage(device(), &image_ci, NULL, &image_sparse);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1126,22 +1050,9 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
         fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_SINT, formatProps);
 
         // Create image with modified format
-        VkImageCreateInfo imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                     nullptr,
-                                     VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                     VK_IMAGE_TYPE_2D,
-                                     VK_FORMAT_R32G32B32A32_UINT,
-                                     {1, 1, 1},
-                                     1,
-                                     1,
-                                     VK_SAMPLE_COUNT_1_BIT,
-                                     VK_IMAGE_TILING_OPTIMAL,
-                                     usages[i],
-                                     VK_SHARING_MODE_EXCLUSIVE,
-                                     0,
-                                     nullptr,
-                                     VK_IMAGE_LAYOUT_UNDEFINED};
-        vkt::Image image(*m_device, imgInfo, vkt::set_layout);
+        auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R32G32B32A32_UINT, usages[i]);
+        image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+        vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
         // Initialize VkImageViewCreateInfo with modified format
         VkImageViewCreateInfo ivci = vku::InitStructHelper();
@@ -1179,22 +1090,9 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
     fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, formatProps);
 
     // Create image with modified format
-    VkImageCreateInfo imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                 VK_IMAGE_TYPE_2D,
-                                 VK_FORMAT_D24_UNORM_S8_UINT,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 usages[i],
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image image(*m_device, imgInfo, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_D24_UNORM_S8_UINT, usages[i]);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     // Initialize VkImageViewCreateInfo with modified format
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
@@ -1235,22 +1133,10 @@ TEST_F(NegativeImage, ImageViewUsageCreateInfo) {
     fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), VK_FORMAT_R32G32B32A32_UINT, formatProps);
 
     // Create image with sampled and storage usages
-    VkImageCreateInfo imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                 VK_IMAGE_TYPE_2D,
-                                 VK_FORMAT_R32G32B32A32_UINT,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image image(*m_device, imgInfo, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R32G32B32A32_UINT,
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     // Force the imageview format to exclude storage feature, include color attachment
     memset(&formatProps, 0, sizeof(formatProps));
@@ -1772,24 +1658,9 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
         GTEST_SKIP() << "Device does not support R8_UINT as color attachment";
     }
 
-    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                   nullptr,
-                                   0,
-                                   VK_IMAGE_TYPE_2D,
-                                   VK_FORMAT_R8_UINT,
-                                   {128, 128, 1},
-                                   1,
-                                   1,
-                                   VK_SAMPLE_COUNT_1_BIT,
-                                   VK_IMAGE_TILING_OPTIMAL,
-                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                   VK_SHARING_MODE_EXCLUSIVE,
-                                   0,
-                                   nullptr,
-                                   VK_IMAGE_LAYOUT_UNDEFINED};
-
-    imageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-    vkt::Image mutImage(*m_device, imageInfo, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    vkt::Image mutImage(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
     imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -1803,17 +1674,15 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
 
     // Use CUBE_ARRAY without feature enabled
     {
-        VkImageCreateInfo cubeImageInfo = imageInfo;
-        cubeImageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-        cubeImageInfo.arrayLayers = 6;
-        vkt::Image cubeImage(*m_device, cubeImageInfo);
+        image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+        image_ci.arrayLayers = 6;
+        vkt::Image cubeImage(*m_device, image_ci);
 
-        VkImageViewCreateInfo cubeImgViewInfo = imgViewInfo;
-        cubeImgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-        cubeImgViewInfo.format = VK_FORMAT_R8_UINT;  // compatiable format
-        cubeImgViewInfo.image = cubeImage.handle();
+        imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+        imgViewInfo.format = VK_FORMAT_R8_UINT;  // compatiable format
+        imgViewInfo.image = cubeImage.handle();
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-viewType-02961");
-        CreateImageViewTest(*this, &cubeImgViewInfo, "VUID-VkImageViewCreateInfo-viewType-01004");
+        CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-viewType-01004");
     }
 }
 
@@ -2895,24 +2764,9 @@ TEST_F(NegativeImage, ImageViewIncompatibleFormat) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                   nullptr,
-                                   0,
-                                   VK_IMAGE_TYPE_2D,
-                                   VK_FORMAT_R8_UINT,
-                                   {128, 128, 1},
-                                   1,
-                                   1,
-                                   VK_SAMPLE_COUNT_1_BIT,
-                                   VK_IMAGE_TILING_OPTIMAL,
-                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                   VK_SHARING_MODE_EXCLUSIVE,
-                                   0,
-                                   nullptr,
-                                   VK_IMAGE_LAYOUT_UNDEFINED};
-
-    imageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-    vkt::Image mutImage(*m_device, imageInfo, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    vkt::Image mutImage(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
     imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -2928,10 +2782,10 @@ TEST_F(NegativeImage, ImageViewIncompatibleFormat) {
     CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
 
     // With a identical format, there should be no error
-    imgViewInfo.format = imageInfo.format;
+    imgViewInfo.format = image_ci.format;
     CreateImageViewTest(*this, &imgViewInfo, {});
 
-    vkt::Image mut_compat_image(*m_device, imageInfo);
+    vkt::Image mut_compat_image(*m_device, image_ci);
 
     imgViewInfo.image = mut_compat_image.handle();
     imgViewInfo.format = VK_FORMAT_R8_SINT;  // different, but size compatible
@@ -2946,22 +2800,9 @@ TEST_F(NegativeImage, ImageViewIncompatibleDepthFormat) {
     const VkFormat depthOnlyFormat = FindSupportedDepthOnlyFormat(Gpu());
     const VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(Gpu());
 
-    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                   nullptr,
-                                   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                   VK_IMAGE_TYPE_2D,
-                                   depthStencilFormat,
-                                   {128, 128, 1},
-                                   1,
-                                   1,
-                                   VK_SAMPLE_COUNT_1_BIT,
-                                   VK_IMAGE_TILING_OPTIMAL,
-                                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                   VK_SHARING_MODE_EXCLUSIVE,
-                                   0,
-                                   nullptr,
-                                   VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image mutImage(*m_device, imageInfo, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, depthStencilFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    vkt::Image mutImage(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
     imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -3009,45 +2850,33 @@ TEST_F(NegativeImage, ImageFormatList) {
     formatList.viewFormatCount = 4;
     formatList.pViewFormats = formats;
 
-    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                   &formatList,
-                                   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                   VK_IMAGE_TYPE_2D,
-                                   VK_FORMAT_R8G8B8A8_UNORM,
-                                   {128, 128, 1},
-                                   1,
-                                   1,
-                                   VK_SAMPLE_COUNT_1_BIT,
-                                   VK_IMAGE_TILING_OPTIMAL,
-                                   VK_IMAGE_USAGE_SAMPLED_BIT,
-                                   VK_SHARING_MODE_EXCLUSIVE,
-                                   0,
-                                   nullptr,
-                                   VK_IMAGE_LAYOUT_UNDEFINED};
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.pNext = &formatList;
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
     // Not all 4 formats are compatible
-    CreateImageTest(*this, &imageInfo, "VUID-VkImageCreateInfo-pNext-06722");
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-pNext-06722");
 
     // Should work with only first 3 in array
     formatList.viewFormatCount = 3;
-    vkt::Image mutableImage(*m_device, imageInfo);
+    vkt::Image mutableImage(*m_device, image_ci);
 
     // Make sure no error if 0 format
     formatList.viewFormatCount = 0;
     formatList.pViewFormats = &formats[3];  // non-compatible format
-    vkt::Image mutableImageZero(*m_device, imageInfo);
+    vkt::Image mutableImageZero(*m_device, image_ci);
 
     // reset
     formatList.viewFormatCount = 3;
     formatList.pViewFormats = formats;
 
     // Can't use 2 or higher formats if no mutable flag
-    imageInfo.flags = 0;
-    CreateImageTest(*this, &imageInfo, "VUID-VkImageCreateInfo-flags-04738");
+    image_ci.flags = 0;
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-04738");
 
     // Make sure no error if 1 format
     formatList.viewFormatCount = 1;
-    vkt::Image normalImage(*m_device, imageInfo);
+    vkt::Image normalImage(*m_device, image_ci);
 
     VkImageViewCreateInfo imageViewInfo = vku::InitStructHelper(nullptr);
     imageViewInfo.flags = 0;
@@ -3118,28 +2947,16 @@ TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
     formatList.viewFormatCount = 1;
     formatList.pViewFormats = formats;
 
-    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                   &formatList,
-                                   VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT,
-                                   VK_IMAGE_TYPE_2D,
-                                   VK_FORMAT_ASTC_4x4_UNORM_BLOCK,
-                                   {128, 128, 1},
-                                   1,
-                                   1,
-                                   VK_SAMPLE_COUNT_1_BIT,
-                                   VK_IMAGE_TILING_OPTIMAL,
-                                   VK_IMAGE_USAGE_SAMPLED_BIT,
-                                   VK_SHARING_MODE_EXCLUSIVE,
-                                   0,
-                                   nullptr,
-                                   VK_IMAGE_LAYOUT_UNDEFINED};
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.pNext = &formatList;
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
 
     // The first image in the list should be size-compatible (128-bit)
-    vkt::Image good_image(*m_device, imageInfo);
+    vkt::Image good_image(*m_device, image_ci);
 
     // The second image in the list should NOT be size-compatible (64-bit)
     formatList.viewFormatCount = 2;
-    CreateImageTest(*this, &imageInfo, "VUID-VkImageCreateInfo-pNext-06722");
+    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-pNext-06722");
 }
 
 TEST_F(NegativeImage, BlockTextImageViewCompatibleFormat) {

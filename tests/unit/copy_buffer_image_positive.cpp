@@ -69,24 +69,13 @@ TEST_F(PositiveCopyBufferImage, ImageTypeExtentMismatchMaintenance5) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.flags = 0;
-    ci.imageType = VK_IMAGE_TYPE_1D;
-    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ci.extent = {32, 1, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 1;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_2D(*m_device, image_ci, vkt::set_layout);
 
-    // Create 1D image
-    vkt::Image image_1D(*m_device, ci, vkt::set_layout);
-
-    // 2D image
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.extent = {32, 32, 1};
-    vkt::Image image_2D(*m_device, ci, vkt::set_layout);
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    image_ci.extent.height = 1;
+    vkt::Image image_1D(*m_device, image_ci, vkt::set_layout);
 
     VkImageCopy copy_region;
     copy_region.extent = {32, 1, 1};

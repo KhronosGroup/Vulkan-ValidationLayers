@@ -407,21 +407,12 @@ TEST_F(PositiveMemory, BindImageMemoryMultiThreaded) {
         GTEST_SKIP() << "This test can crash drivers with threading issues";
     }
 
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent = {32, 32, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_create_info.flags = 0;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     // Create an image object, allocate memory, bind memory, and destroy the object
     auto worker_thread = [&]() {
         for (uint32_t i = 0; i < 1000; ++i) {
-            vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+            vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
             VkMemoryRequirements mem_reqs;
             vk::GetImageMemoryRequirements(device(), image, &mem_reqs);

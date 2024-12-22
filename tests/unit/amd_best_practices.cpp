@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
@@ -58,79 +59,37 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
-    InitRenderTarget();
-
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-DontUseMutableRenderTargets");
 
     // create a colot attachment image with mutable bit set
-    VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                 VK_IMAGE_TYPE_1D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
+    auto image_ci = vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+
     VkImage test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-DontUseMutableRenderTargets");
     // create a depth attachment image with mutable bit set
-    img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                nullptr,
-                VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                VK_IMAGE_TYPE_1D,
-                VK_FORMAT_D32_SFLOAT,
-                {1, 1, 1},
-                1,
-                1,
-                VK_SAMPLE_COUNT_1_BIT,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                VK_SHARING_MODE_EXCLUSIVE,
-                0,
-                nullptr,
-                VK_IMAGE_LAYOUT_UNDEFINED};
-    test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+    image_ci.format = VK_FORMAT_D32_SFLOAT;
+    image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-DontUseMutableRenderTargets");
     // create a storage image with mutable bit set
-    img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-               nullptr,
-               VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-               VK_IMAGE_TYPE_1D,
-               VK_FORMAT_R8G8B8A8_UNORM,
-               {1, 1, 1},
-               1,
-               1,
-               VK_SAMPLE_COUNT_1_BIT,
-               VK_IMAGE_TILING_OPTIMAL,
-               VK_IMAGE_USAGE_STORAGE_BIT,
-               VK_SHARING_MODE_EXCLUSIVE,
-               0,
-               nullptr,
-               VK_IMAGE_LAYOUT_UNDEFINED};
-    test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+
+    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
-
-    InitRenderTarget();
 
     if (m_device->Physical().queue_properties_.size() < 2) {
         GTEST_SKIP() << "Test not supported by a single queue family device";
@@ -143,46 +102,21 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-AvoidConcurrentRenderTargets");
 
-    // create a render target image with mutable bit set
-    VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                  nullptr,
-                                  0,
-                                  VK_IMAGE_TYPE_1D,
-                                  VK_FORMAT_R8G8B8A8_UNORM,
-                                  {1, 1, 1},
-                                  1,
-                                  1,
-                                  VK_SAMPLE_COUNT_1_BIT,
-                                  VK_IMAGE_TILING_OPTIMAL,
-                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                  VK_SHARING_MODE_CONCURRENT,
-                                  (uint32_t)queueFamilies.size(),
-                                  queueFamilies.data(),
-                                  VK_IMAGE_LAYOUT_UNDEFINED};
+    auto image_ci = vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.sharingMode = VK_SHARING_MODE_CONCURRENT;
+    image_ci.queueFamilyIndexCount = (uint32_t)queueFamilies.size();
+    image_ci.pQueueFamilyIndices = queueFamilies.data();
     VkImage test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-AvoidConcurrentRenderTargets");
-    // create a render target image with mutable bit set
-    img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                nullptr,
-                0,
-                VK_IMAGE_TYPE_1D,
-                VK_FORMAT_D32_SFLOAT,
-                {1, 1, 1},
-                1,
-                1,
-                VK_SAMPLE_COUNT_1_BIT,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                VK_SHARING_MODE_CONCURRENT,
-                (uint32_t)queueFamilies.size(),
-                queueFamilies.data(),
-                VK_IMAGE_LAYOUT_UNDEFINED};
+    image_ci.format = VK_FORMAT_D32_SFLOAT;
+    image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
     test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 }
 
@@ -190,35 +124,17 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageStorageRT) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
 
-    InitRenderTarget();
-
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-DontUseStorageRenderTargets");
-
-    // create a render target image with mutable bit set
-    VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 0,
-                                 VK_IMAGE_TYPE_1D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
+    auto image_ci = vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
     VkImage test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, PrimitiveRestart) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
-
     InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-CreatePipelines-AvoidPrimitiveRestart");
@@ -233,7 +149,6 @@ TEST_F(VkAmdBestPracticesLayerTest, PrimitiveRestart) {
 TEST_F(VkAmdBestPracticesLayerTest, NumDynamicStates) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
-
     InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-CreatePipelines-MinimizeNumDynamicStates");
@@ -261,7 +176,6 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
     // TODO: add dynamic buffer check as well
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
-
     InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-CreatePipelinesLayout-KeepLayoutSmall");
@@ -305,8 +219,6 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     // TODO: add dynamic buffer check as well
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
-
-    InitRenderTarget();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-UpdateDescriptors-AvoidCopyingDescriptors");
 
@@ -362,28 +274,15 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
 
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
 
     {
-        VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                      nullptr,
-                                      VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                      VK_IMAGE_TYPE_1D,
-                                      VK_FORMAT_R8G8B8A8_UNORM,
-                                      {1, 1, 1},
-                                      1,
-                                      1,
-                                      VK_SAMPLE_COUNT_1_BIT,
-                                      VK_IMAGE_TILING_OPTIMAL,
-                                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                      VK_SHARING_MODE_EXCLUSIVE,
-                                      0,
-                                      nullptr,
-                                      VK_IMAGE_LAYOUT_UNDEFINED};
-        vkt::Image image_1D(*m_device, img_info, vkt::set_layout);
+        auto image_ci = vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+        image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+        vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
         m_command_buffer.Begin();
-        image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         VkClearColorValue clear_value = {{0.0f, 0.0f, 0.0f, 0.0f}};
         VkImageSubresourceRange image_range = {};
@@ -393,7 +292,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
 
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-ClearAttachment-ClearImage-color");
 
-        vk::CmdClearColorImage(m_command_buffer.handle(), image_1D.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
+        vk::CmdClearColorImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
                                &image_range);
         m_errorMonitor->VerifyFound();
 
@@ -403,27 +302,16 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
     vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
 
     {
-        VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                      nullptr,
-                                      VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                      VK_IMAGE_TYPE_1D,
-                                      VK_FORMAT_D32_SFLOAT_S8_UINT,
-                                      {1, 1, 1},
-                                      1,
-                                      1,
-                                      VK_SAMPLE_COUNT_1_BIT,
-                                      VK_IMAGE_TILING_OPTIMAL,
-                                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                      VK_SHARING_MODE_EXCLUSIVE,
-                                      0,
-                                      nullptr,
-                                      VK_IMAGE_LAYOUT_UNDEFINED};
+        auto image_ci =
+            vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
+                                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+        image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
-        vkt::Image image_1D(*m_device, img_info, vkt::set_layout);
+        vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
         m_command_buffer.Begin();
-        image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         VkClearDepthStencilValue clear_value = {0.0f, 0};
         VkImageSubresourceRange image_range = {};
@@ -433,8 +321,8 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
 
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-ClearAttachment-ClearImage-depth-stencil");
 
-        vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image_1D.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                      &clear_value, 1, &image_range);
+        vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value,
+                                      1, &image_range);
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.End();
@@ -444,43 +332,29 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
 TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
 
-    VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                  nullptr,
-                                  0,
-                                  VK_IMAGE_TYPE_2D,
-                                  VK_FORMAT_R8G8B8A8_UNORM,
-                                  {1, 1, 1},
-                                  1,
-                                  1,
-                                  VK_SAMPLE_COUNT_1_BIT,
-                                  VK_IMAGE_TILING_OPTIMAL,
-                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                                  VK_SHARING_MODE_EXCLUSIVE,
-                                  0,
-                                  nullptr,
-                                  VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image image1D_1(*m_device, img_info, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image_1(*m_device, image_ci, vkt::set_layout);
 
-    img_info.tiling = VK_IMAGE_TILING_LINEAR;
-    img_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image_1D_2(*m_device, img_info, vkt::set_layout);
-    if (!image_1D_2.initialized()) {
+    image_ci.tiling = VK_IMAGE_TILING_LINEAR;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image image_2(*m_device, image_ci, vkt::set_layout);
+    if (!image_2.initialized()) {
         GTEST_SKIP() << "Could not initilize Linear image, skipping image to image copy test";
     }
 
     m_command_buffer.Begin();
 
-    image1D_1.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    image_1.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-AvoidImageToImageCopy");
 
     VkImageCopy copy{};
-    copy.extent = img_info.extent;
+    copy.extent = image_ci.extent;
     copy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy.dstSubresource.layerCount = 1;
     copy.srcSubresource = copy.dstSubresource;
-    vk::CmdCopyImage(m_command_buffer.handle(), image1D_1.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_1D_2.handle(),
+    vk::CmdCopyImage(m_command_buffer.handle(), image_1.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_2.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -489,29 +363,12 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
 TEST_F(VkAmdBestPracticesLayerTest, GeneralLayout) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                  nullptr,
-                                  0,
-                                  VK_IMAGE_TYPE_2D,
-                                  VK_FORMAT_R8G8B8A8_UNORM,
-                                  {1024, 1024, 1},
-                                  1,
-                                  1,
-                                  VK_SAMPLE_COUNT_1_BIT,
-                                  VK_IMAGE_TILING_OPTIMAL,
-                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                  VK_SHARING_MODE_EXCLUSIVE,
-                                  0,
-                                  nullptr,
-                                  VK_IMAGE_LAYOUT_UNDEFINED};
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-AvoidGeneral");
 
     // the init function initializes to general layout
-    vkt::Image image_1D(*m_device, img_info);
-    image_1D.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-AvoidGeneral");
+    auto image_ci = vkt::Image::ImageCreateInfo2D(1024, 1024, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     m_errorMonitor->VerifyFound();
 }
 
@@ -545,45 +402,32 @@ TEST_F(VkAmdBestPracticesLayerTest, RobustAccessOn) {
 TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
 
-    VkImageCreateInfo img_info = {
-        VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        nullptr,
-        VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-        VK_IMAGE_TYPE_1D,
-        VK_FORMAT_R8G8B8A8_UNORM,
-        {1, 1, 1},
-        1,
-        1,
-        VK_SAMPLE_COUNT_1_BIT,
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_SHARING_MODE_EXCLUSIVE,
-        0,
-        nullptr,
-        VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image image_1D(*m_device, img_info, vkt::set_layout);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
+        256, 256, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     m_command_buffer.Begin();
     // check for read-to-read barrier
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-PipelineBarrier-readToReadBarrier");
-    image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryBarrier-oldLayout-01197");
 
     // check total number of barriers warning
-    uint32_t warn_Limit = 250;
-    for (uint32_t i = 0; i < warn_Limit; i++) {
-        image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    uint32_t warn_limit = 250;
+    for (uint32_t i = 0; i < warn_limit; i++) {
+        image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-CmdBuffer-highBarrierCount");
-    image_1D.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -591,35 +435,20 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
 
 TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     AddSurfaceExtension();
-
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
-
     RETURN_IF_SKIP(InitState());
     RETURN_IF_SKIP(InitSwapchain());
     InitRenderTarget();
 
-    VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                 VK_IMAGE_TYPE_1D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
-    vkt::Image image_1D(*m_device, img_info);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    vkt::Image image(*m_device, image_ci);
 
     uint32_t warn_limit = 11;
 
     for (uint32_t i = 0; i < warn_limit; i++) {
-        image_1D.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        image_1D.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+        image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     }
 
     vkt::Semaphore image_acquired(*m_device);
@@ -634,7 +463,6 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
 TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableAMDValidation));
     RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
 
     constexpr int fence_warn_limit = 5;
     std::vector<vkt::Fence> test_fences;
