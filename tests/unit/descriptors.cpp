@@ -5241,8 +5241,6 @@ TEST_F(NegativeDescriptors, DuplicateLayoutDifferentSamplerArray) {
 }
 
 TEST_F(NegativeDescriptors, DSBufferLimitWithTemplateUpdate) {
-    TEST_DESCRIPTION("");
-
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
@@ -5283,9 +5281,9 @@ TEST_F(NegativeDescriptors, DSBufferLimitWithTemplateUpdate) {
     template_create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
     template_create_info.descriptorSetLayout = descriptor_set.layout_;
 
-    vkt::DescriptorUpdateTemplate descriptorUpdateTemplate(*m_device, template_create_info);
+    vkt::DescriptorUpdateTemplate descriptor_update_template(*m_device, template_create_info);
 
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00328");
-    vk::UpdateDescriptorSetWithTemplateKHR(device(), descriptor_set.set_, descriptorUpdateTemplate, &buffer_info);
+    vk::UpdateDescriptorSetWithTemplateKHR(device(), descriptor_set.set_, descriptor_update_template, &buffer_info);
     m_errorMonitor->VerifyFound();
 }

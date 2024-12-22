@@ -767,7 +767,7 @@ static void ReplaceStatePtr(DescriptorSet &set_state, T &dst, const T &src, bool
 
 void vvl::SamplerDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                      const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
-    if (!immutable_) {
+    if (!immutable_ && update.pImageInfo) {
         ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(update.pImageInfo[index].sampler),
                         is_bindless);
     }
@@ -813,9 +813,7 @@ bool vvl::SamplerDescriptor::Invalid() const { return !sampler_state_ || sampler
 void vvl::ImageSamplerDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                           const VkWriteDescriptorSet &update, const uint32_t index,
                                                           bool is_bindless) {
-    if (!update.pImageInfo) {
-        return;
-    }
+    if (!update.pImageInfo) return;
     const auto &image_info = update.pImageInfo[index];
     if (!immutable_) {
         ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler), is_bindless);
@@ -870,6 +868,7 @@ bool vvl::ImageSamplerDescriptor::Invalid() const {
 
 void vvl::ImageDescriptor::WriteUpdate(DescriptorSet &set_state, const ValidationStateTracker &dev_data,
                                                    const VkWriteDescriptorSet &update, const uint32_t index, bool is_bindless) {
+    if (!update.pImageInfo) return;
     const auto &image_info = update.pImageInfo[index];
     image_layout_ = image_info.imageLayout;
     ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView), is_bindless);
@@ -1101,48 +1100,56 @@ void vvl::MutableDescriptor::WriteUpdate(DescriptorSet &set_state, const Validat
     VkDeviceSize buffer_size = 0;
     switch (DescriptorTypeToClass(update.descriptorType)) {
         case DescriptorClass::PlainSampler:
-            if (!immutable_) {
+            if (!immutable_ && update.pImageInfo) {
                 ReplaceStatePtr(set_state, sampler_state_,
                                 dev_data.GetConstCastShared<vvl::Sampler>(update.pImageInfo[index].sampler), is_bindless);
             }
             break;
         case DescriptorClass::ImageSampler: {
-            const auto &image_info = update.pImageInfo[index];
-            if (!immutable_) {
-                ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler),
+            if (update.pImageInfo) {
+                const auto &image_info = update.pImageInfo[index];
+                if (!immutable_) {
+                    ReplaceStatePtr(set_state, sampler_state_, dev_data.GetConstCastShared<vvl::Sampler>(image_info.sampler),
+                                    is_bindless);
+                }
+                image_layout_ = image_info.imageLayout;
+                ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView),
                                 is_bindless);
             }
-            image_layout_ = image_info.imageLayout;
-            ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView),
-                            is_bindless);
             break;
         }
         case DescriptorClass::Image: {
-            const auto &image_info = update.pImageInfo[index];
-            image_layout_ = image_info.imageLayout;
-            ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView),
-                            is_bindless);
+            if (update.pImageInfo) {
+                const auto &image_info = update.pImageInfo[index];
+                image_layout_ = image_info.imageLayout;
+                ReplaceStatePtr(set_state, image_view_state_, dev_data.GetConstCastShared<vvl::ImageView>(image_info.imageView),
+                                is_bindless);
+            }
             break;
         }
         case DescriptorClass::GeneralBuffer: {
-            const auto &buffer_info = update.pBufferInfo[index];
-            offset_ = buffer_info.offset;
-            range_ = buffer_info.range;
-            // can be null if using nullDescriptors
-            const auto buffer_state = dev_data.GetConstCastShared<vvl::Buffer>(update.pBufferInfo->buffer);
-            if (buffer_state) {
-                buffer_size = buffer_state->create_info.size;
+            if (update.pBufferInfo) {
+                const auto &buffer_info = update.pBufferInfo[index];
+                offset_ = buffer_info.offset;
+                range_ = buffer_info.range;
+                // can be null if using nullDescriptors
+                const auto buffer_state = dev_data.GetConstCastShared<vvl::Buffer>(update.pBufferInfo->buffer);
+                if (buffer_state) {
+                    buffer_size = buffer_state->create_info.size;
+                }
+                ReplaceStatePtr(set_state, buffer_state_, buffer_state, is_bindless);
             }
-            ReplaceStatePtr(set_state, buffer_state_, buffer_state, is_bindless);
             break;
         }
         case DescriptorClass::TexelBuffer: {
-            // can be null if using nullDescriptors
-            const auto buffer_view = dev_data.GetConstCastShared<vvl::BufferView>(update.pTexelBufferView[index]);
-            if (buffer_view) {
-                buffer_size = buffer_view->buffer_state->create_info.size;
+            if (update.pTexelBufferView) {
+                // can be null if using nullDescriptors
+                const auto buffer_view = dev_data.GetConstCastShared<vvl::BufferView>(update.pTexelBufferView[index]);
+                if (buffer_view) {
+                    buffer_size = buffer_view->buffer_state->create_info.size;
+                }
+                ReplaceStatePtr(set_state, buffer_view_state_, buffer_view, is_bindless);
             }
-            ReplaceStatePtr(set_state, buffer_view_state_, buffer_view, is_bindless);
             break;
         }
         case DescriptorClass::AccelerationStructure: {

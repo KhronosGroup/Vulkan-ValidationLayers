@@ -75,13 +75,10 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
     update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
     update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
-
-    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateDescriptorUpdateTemplateKHR(device(), &update_template_ci, nullptr, &update_template));
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
     std::unique_ptr<vkt::DescriptorSetLayout> push_dsl = nullptr;
     std::unique_ptr<vkt::PipelineLayout> pipeline_layout = nullptr;
-    VkDescriptorUpdateTemplate push_template = VK_NULL_HANDLE;
 
     push_dsl.reset(new vkt::DescriptorSetLayout(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT));
     pipeline_layout.reset(new vkt::PipelineLayout(*m_device, {push_dsl.get()}));
@@ -95,7 +92,7 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     push_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     push_template_ci.pipelineLayout = pipeline_layout->handle();
     push_template_ci.set = 0;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateDescriptorUpdateTemplateKHR(device(), &push_template_ci, nullptr, &push_template));
+    vkt::DescriptorUpdateTemplate push_template(*m_device, push_template_ci);
 
     auto do_test = [&](const char *desired_failure) {
         m_errorMonitor->SetDesiredError(desired_failure);
@@ -136,9 +133,6 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     buff_info.offset = 0;
     buff_info.range = buff_ci.size + 1;
     do_test("VUID-VkDescriptorBufferInfo-range-00342");
-
-    vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
-    vk::DestroyDescriptorUpdateTemplateKHR(device(), push_template, nullptr);
 }
 
 TEST_F(NegativePushDescriptor, DestroyDescriptorSetLayout) {
@@ -204,8 +198,7 @@ TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout;
     pipeline_layout_ci.pushConstantRangeCount = 0;
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    vk::CreatePipelineLayout(device(), &pipeline_layout_ci, nullptr, &pipeline_layout);
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
     struct SimpleTemplateData {
         VkDescriptorBufferInfo buff_info;
@@ -226,9 +219,7 @@ TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
     update_template_ci.descriptorSetLayout = ds_layout;
     update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     update_template_ci.pipelineLayout = pipeline_layout;
-
-    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
-    vk::CreateDescriptorUpdateTemplateKHR(device(), &update_template_ci, nullptr, &update_template);
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
@@ -239,9 +230,6 @@ TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout, 0, &update_template_data);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
-
-    vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
-    vk::DestroyPipelineLayout(device(), pipeline_layout, nullptr);
 }
 
 TEST_F(NegativePushDescriptor, SetLayoutWithoutExtension) {
@@ -956,9 +944,7 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
     update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
     update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     update_template_ci.pipelineLayout = pipeline_layout.handle();
-
-    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
-    vk::CreateDescriptorUpdateTemplateKHR(device(), &update_template_ci, nullptr, &update_template);
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
@@ -969,8 +955,6 @@ TEST_F(NegativePushDescriptor, UnsupportedDescriptorTemplateBindPoint) {
                                             &update_template_data);
     m_errorMonitor->VerifyFound();
     command_buffer.End();
-
-    vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
 }
 
 TEST_F(NegativePushDescriptor, InvalidDescriptorUpdateTemplateType) {
@@ -1009,9 +993,7 @@ TEST_F(NegativePushDescriptor, InvalidDescriptorUpdateTemplateType) {
     update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
     update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     update_template_ci.pipelineLayout = pipeline_layout.handle();
-
-    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
-    vk::CreateDescriptorUpdateTemplateKHR(device(), &update_template_ci, nullptr, &update_template);
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
@@ -1022,8 +1004,6 @@ TEST_F(NegativePushDescriptor, InvalidDescriptorUpdateTemplateType) {
                                             &update_template_data);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
-
-    vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
 }
 
 TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
@@ -1067,13 +1047,11 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
     update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
     update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     update_template_ci.pipelineLayout = pipeline_layout.handle();
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
-    VkDescriptorUpdateTemplate update_template = VK_NULL_HANDLE;
-    vk::CreateDescriptorUpdateTemplateKHR(device(), &update_template_ci, nullptr, &update_template);
     update_template_ci.descriptorSetLayout = push_dsl3.handle();
     update_template_ci.pipelineLayout = pipeline_layout3.handle();
-    VkDescriptorUpdateTemplate update_template2 = VK_NULL_HANDLE;
-    vk::CreateDescriptorUpdateTemplateKHR(device(), &update_template_ci, nullptr, &update_template2);
+    vkt::DescriptorUpdateTemplate update_template2(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;
     update_template_data.buff_info = {buffer.handle(), 0, 32};
@@ -1099,7 +1077,4 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
-
-    vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template, nullptr);
-    vk::DestroyDescriptorUpdateTemplateKHR(device(), update_template2, nullptr);
 }
