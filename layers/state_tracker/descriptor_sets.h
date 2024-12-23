@@ -204,8 +204,8 @@ class DescriptorSetLayoutDef {
     }
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t) const;
     bool IsTypeMutable(const VkDescriptorType type, uint32_t binding) const;
-    const std::vector<std::vector<VkDescriptorType>> &GetMutableTypes() const;
     const std::vector<VkDescriptorType> &GetMutableTypes(uint32_t binding) const;
+    std::string PrintMutableTypes(uint32_t binding) const;
     // For a particular binding, get the global index range
     //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
     const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t) const;
@@ -257,17 +257,13 @@ static inline bool operator==(const DescriptorSetLayoutDef &lhs, const Descripto
     if ((lhs.GetCreateFlags() != rhs.GetCreateFlags()) || (lhs.GetBindingFlags() != rhs.GetBindingFlags())) {
         return false;
     }
-    // vectors of enums
-    if (lhs.GetMutableTypes() != rhs.GetMutableTypes()) {
-        return false;
-    }
     // vectors of vku::safe_VkDescriptorSetLayoutBinding structures
     const auto &lhs_bindings = lhs.GetBindings();
     const auto &rhs_bindings = rhs.GetBindings();
     if (lhs_bindings.size() != rhs_bindings.size()) {
         return false;
     }
-    for (size_t i = 0; i < lhs_bindings.size(); i++) {
+    for (uint32_t i = 0; i < lhs_bindings.size(); i++) {
         const auto &l = lhs_bindings[i];
         const auto &r = rhs_bindings[i];
         if (l.descriptorType != r.descriptorType || l.descriptorCount != r.descriptorCount || l.stageFlags != r.stageFlags) {
@@ -285,6 +281,10 @@ static inline bool operator==(const DescriptorSetLayoutDef &lhs, const Descripto
                     return false;
                 }
             }
+        }
+        // These have been sorted already so can direct compare
+        if (lhs.GetMutableTypes(i) != rhs.GetMutableTypes(i)) {
+            return false;
         }
     }
     return true;
@@ -339,6 +339,7 @@ class DescriptorSetLayout : public StateObject {
     }
     bool IsTypeMutable(const VkDescriptorType type, uint32_t binding) const { return layout_id_->IsTypeMutable(type, binding); }
     const std::vector<VkDescriptorType> &GetMutableTypes(uint32_t binding) const { return layout_id_->GetMutableTypes(binding); }
+    std::string PrintMutableTypes(uint32_t binding) const { return layout_id_->PrintMutableTypes(binding); }
     // For a particular binding, get the global index range
     //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
     const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t binding) const {

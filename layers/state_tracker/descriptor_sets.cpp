@@ -17,6 +17,7 @@
  */
 
 #include "state_tracker/descriptor_sets.h"
+#include <vulkan/vk_enum_string_helper.h>
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -189,17 +190,13 @@ bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef 
     if ((lhs.GetCreateFlags() != rhs.GetCreateFlags()) || (lhs.GetBindingFlags() != rhs.GetBindingFlags())) {
         return false;
     }
-    // vectors of enums
-    if (lhs.GetMutableTypes() != rhs.GetMutableTypes()) {
-        return false;
-    }
     // vectors of vku::safe_VkDescriptorSetLayoutBinding structures
     const auto &lhs_bindings = lhs.GetBindings();
     const auto &rhs_bindings = rhs.GetBindings();
     if (lhs_bindings.size() != rhs_bindings.size()) {
         return false;
     }
-    for (size_t i = 0; i < lhs_bindings.size(); i++) {
+    for (uint32_t i = 0; i < lhs_bindings.size(); i++) {
         const auto &l = lhs_bindings[i];
         const auto &r = rhs_bindings[i];
         // For things where we are comparing with the bound pipeline, the binding will always be right, but when comparing two
@@ -214,6 +211,10 @@ bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef 
             if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
                 return false;
             }
+        }
+        // These have been sorted already so can direct compare
+        if (lhs.GetMutableTypes(i) != rhs.GetMutableTypes(i)) {
+            return false;
         }
     }
     return true;
@@ -243,13 +244,10 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
             ss << string_VkDescriptorBindingFlags(flag) << " ";
         }
         ss << ")";
-    } else if (GetMutableTypes() != other.GetMutableTypes()) {
-        // TODO - this is a 2d array, need a smarter way to print out details
-        ss << "Mutable types doesn't match";
     } else if (lhs_bindings.size() != rhs_bindings.size()) {
         ss << "binding count " << lhs_bindings.size() << " doesn't match " << rhs_bindings.size();
     } else {
-        for (size_t i = 0; i < lhs_bindings.size(); i++) {
+        for (uint32_t i = 0; i < lhs_bindings.size(); i++) {
             const auto &l = lhs_bindings[i];
             const auto &r = rhs_bindings[i];
             if (l.binding != r.binding) {
@@ -278,6 +276,10 @@ std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const Des
                         break;
                     }
                 }
+            } else if (GetMutableTypes(i) != other.GetMutableTypes(i)) {
+                // These have been sorted already so can direct compare
+                ss << "Mutable types doesn't match at binding " << i << "\n[" << PrintMutableTypes(i) << "]\ndoesn't match"
+                   << "\n[" << other.PrintMutableTypes(i) << "]";
             }
         }
     }
@@ -450,8 +452,23 @@ bool vvl::DescriptorSetLayoutDef::IsTypeMutable(const VkDescriptorType type, uin
     return false;
 }
 
-const std::vector<std::vector<VkDescriptorType>> &vvl::DescriptorSetLayoutDef::GetMutableTypes() const {
-    return mutable_types_;
+std::string vvl::DescriptorSetLayoutDef::PrintMutableTypes(uint32_t binding) const {
+    if (binding >= mutable_types_.size()) {
+        return "no Mutable Type list at this binding";
+    }
+    std::ostringstream ss;
+    const auto mutable_types = mutable_types_[binding];
+    if (mutable_types.empty()) {
+        ss << "pMutableDescriptorTypeLists is empty";
+    } else {
+        for (uint32_t i = 0; i < mutable_types.size(); i++) {
+            ss << string_VkDescriptorType(mutable_types[i]);
+            if (i + 1 != mutable_types.size()) {
+                ss << ", ";
+            }
+        }
+    }
+    return ss.str();
 }
 
 const std::vector<VkDescriptorType> &vvl::DescriptorSetLayoutDef::GetMutableTypes(uint32_t binding) const {
