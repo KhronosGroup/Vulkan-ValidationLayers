@@ -465,6 +465,62 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
 }
 
+TEST_F(PositiveDescriptors, DescriptorSetCompatibilityMutableDescriptors) {
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
+    RETURN_IF_SKIP(Init());
+
+    // Make sure we check the contents of this list and not just if the order happens to match
+    // (We sort these internally so this should work)
+    VkDescriptorType descriptor_types_0[] = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
+    VkDescriptorType descriptor_types_1[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
+
+    VkMutableDescriptorTypeListEXT type_list = {};
+    type_list.descriptorTypeCount = 2;
+    type_list.pDescriptorTypes = descriptor_types_0;
+
+    VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
+    mdtci.mutableDescriptorTypeListCount = 1;
+    mdtci.pMutableDescriptorTypeLists = &type_list;
+
+    OneOffDescriptorSet descriptor_set_0(m_device, {{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
+                                         0, &mdtci);
+    const vkt::PipelineLayout pipeline_layout_0(*m_device, {&descriptor_set_0.layout_});
+
+    type_list.pDescriptorTypes = descriptor_types_1;
+    OneOffDescriptorSet descriptor_set_1(m_device, {{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
+                                         0, &mdtci);
+    const vkt::PipelineLayout pipeline_layout_1(*m_device, {&descriptor_set_1.layout_});
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    descriptor_set_0.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set_0.UpdateDescriptorSets();
+    descriptor_set_1.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set_1.UpdateDescriptorSets();
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO {
+            uint a;
+        };
+        void main() {
+            a = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipeline(*this);
+    pipeline.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipeline.cp_ci_.layout = pipeline_layout_0.handle();
+    pipeline.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_1.handle(), 0, 1,
+                              &descriptor_set_1.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     TEST_DESCRIPTION("Copy acceleration structure descriptor in a mutable descriptor.");
 

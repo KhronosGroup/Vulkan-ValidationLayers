@@ -302,6 +302,7 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
             if (desc->pImageInfo) {
                 for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
+                    // Only validate image here, we have to validate Sampler state tracker object
                     skip |= ValidateObject(desc->pImageInfo[i].imageView, kVulkanObjectTypeImageView, true,
                                            "VUID-VkWriteDescriptorSet-descriptorType-02996",
                                            "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239",
@@ -365,8 +366,10 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
             }
             break;
         }
-        // TODO - These need to be checked as well
+        // handled in core check because need to know if using immutable samplers or not
         case VK_DESCRIPTOR_TYPE_SAMPLER:
+
+        // TODO - These need to be checked as well
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
         case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
