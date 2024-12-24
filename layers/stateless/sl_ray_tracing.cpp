@@ -655,6 +655,11 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         }
 
         skip |= ValidatePipelineBinaryInfo(create_info.pNext, create_info.flags, pipelineCache, create_info_loc);
+
+        if (const auto *pipeline_robustness_info =
+                vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pCreateInfos[i].pNext)) {
+            skip |= ValidatePipelineRobustnessCreateInfo(*pipeline_robustness_info, create_info_loc);
+        }
     }
 
     return skip;
