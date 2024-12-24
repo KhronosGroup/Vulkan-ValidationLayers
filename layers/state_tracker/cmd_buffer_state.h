@@ -113,8 +113,6 @@ class Event : public StateObject {
     const bool metal_event_export;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
-    int write_in_use = 0;
-
     // Signaling state.
     // Gets updated at queue submission granularity or when signaled from the host.
     bool signaled = false;

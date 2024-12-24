@@ -327,14 +327,6 @@ void CommandBuffer::Reset(const Location &loc) {
 // Track which resources are in-flight by atomically incrementing their "in_use" count
 void CommandBuffer::IncrementResources() {
     submitCount++;
-
-    // TODO : We should be able to remove the NULL look-up checks from the code below as long as
-    //  all the corresponding cases are verified to cause CB_INVALID state and the CB_INVALID state
-    //  should then be flagged prior to calling this function
-    for (auto event : writeEventsBeforeWait) {
-        auto event_state = dev_data.Get<vvl::Event>(event);
-        if (event_state) event_state->write_in_use++;
-    }
 }
 
 // Discussed in details in https://github.com/KhronosGroup/Vulkan-Docs/issues/1081
@@ -1656,13 +1648,6 @@ void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Locat
 }
 
 void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after) {
-    // First perform decrement on general case bound objects
-    for (auto event : writeEventsBeforeWait) {
-        auto event_state = dev_data.Get<vvl::Event>(event);
-        if (event_state) {
-            event_state->write_in_use--;
-        }
-    }
     QueryMap local_query_to_state_map;
     VkQueryPool first_pool = VK_NULL_HANDLE;
     for (auto &function : query_updates) {
