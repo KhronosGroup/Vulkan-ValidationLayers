@@ -448,14 +448,21 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     // Create export memory with a different handle type
     auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
     export_memory_info.handleTypes = handle_type2;
-    VkMemoryRequirements buffer_mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &buffer_mem_reqs);
+    VkBufferMemoryRequirementsInfo2 buffer_memory_requirements_info = vku::InitStructHelper();
+    buffer_memory_requirements_info.buffer = buffer.handle();
+    VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
+    VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper(&memory_dedicated_requirements);
+    vk::GetBufferMemoryRequirements2(device(), &buffer_memory_requirements_info, &mem_reqs2);
+    VkMemoryRequirements buffer_mem_reqs = mem_reqs2.memoryRequirements;
     const auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                                                     &export_memory_info);
     const auto memory = vkt::DeviceMemory(*m_device, alloc_info);
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkBindBufferMemory-buffer-01444");  // required dedicated
     m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-02726");
+    if (memory_dedicated_requirements.requiresDedicatedAllocation) {
+        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-buffer-01444");
+    }
     vk::BindBufferMemory(device(), buffer.handle(), memory.handle(), 0);
     m_errorMonitor->VerifyFound();
 
@@ -465,6 +472,9 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkBindBufferMemory-buffer-01444");  // required dedicated
     m_errorMonitor->SetDesiredError("VUID-VkBindBufferMemoryInfo-memory-02726");
+    if (memory_dedicated_requirements.requiresDedicatedAllocation) {
+        m_errorMonitor->SetDesiredError("VUID-VkBindBufferMemoryInfo-buffer-01444");
+    }
     vk::BindBufferMemory2(device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();
 }
@@ -1374,6 +1384,9 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02989");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01617");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01615");
+    if (image_dedicated_allocation) {
+        m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-01445");
+    }
     vk::BindImageMemory(device(), image_import.handle(), memory_image_import.handle(), 0);
     m_errorMonitor->VerifyFound();
 
@@ -1385,6 +1398,9 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-memory-02989");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01617");
     m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01615");
+    if (image_dedicated_allocation) {
+        m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-image-01445");
+    }
     vk::BindImageMemory2(device(), 1, &bind_image_info);
     m_errorMonitor->VerifyFound();
 }
@@ -2088,7 +2104,21 @@ TEST_F(NegativeExternalMemorySync, ImageDedicatedAllocation) {
 
     m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateInfo-pNext-00639");
     // pNext chain contains VkExportMemoryAllocateInfo but not VkMemoryDedicatedAllocateInfo
-    vkt::Image image(*m_device, image_info, 0, &export_memory_info);
+    vkt::Image image;
+    image.InitNoMemory(*m_device, image_info);
+    {
+        VkImageMemoryRequirementsInfo2 image_memory_requirements_info = vku::InitStructHelper();
+        image_memory_requirements_info.image = image.handle();
+        VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
+
+        VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&memory_dedicated_requirements);
+        vk::GetImageMemoryRequirements2(device(), &image_memory_requirements_info, &memory_requirements);
+
+        if (memory_dedicated_requirements.requiresDedicatedAllocation) {
+            m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-01445");
+        }
+    }
+    image.AllocateAndBindMemory(*m_device, 0, &export_memory_info);
     m_errorMonitor->VerifyFound();
 }
 
