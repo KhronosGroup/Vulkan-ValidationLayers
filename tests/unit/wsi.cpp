@@ -130,18 +130,22 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
 
     vkt::Image image_from_swapchain(*m_device, image_create_info, vkt::no_mem);
 
-    VkMemoryRequirements mem_reqs = {};
-    vk::GetImageMemoryRequirements(device(), image_from_swapchain.handle(), &mem_reqs);
+    VkImageMemoryRequirementsInfo2 image_memory_requirements_info = vku::InitStructHelper();
+    image_memory_requirements_info.image = image_from_swapchain.handle();
+    VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
+
+    VkMemoryRequirements2 mem_reqs = vku::InitStructHelper(&memory_dedicated_requirements);
+    vk::GetImageMemoryRequirements2(device(), &image_memory_requirements_info, &mem_reqs);
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.memoryTypeIndex = 0;
-    alloc_info.allocationSize = mem_reqs.size;
+    alloc_info.allocationSize = mem_reqs.memoryRequirements.size;
     if (alloc_info.allocationSize == 0) {
         GTEST_SKIP() << "Driver seems to not be returning an valid allocation size and need to end test";
     }
 
     vkt::DeviceMemory mem;
-    bool pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
+    bool pass = m_device->Physical().SetMemoryType(mem_reqs.memoryRequirements.memoryTypeBits, &alloc_info, 0);
     // some devices don't give us good memory requirements for the swapchain image
     if (pass) {
         mem.init(*m_device, alloc_info);
@@ -175,6 +179,9 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
         m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-pNext-01631");
     }
     m_errorMonitor->SetDesiredError("VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644");
+    if (memory_dedicated_requirements.requiresDedicatedAllocation) {
+        m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-image-01445");
+    }
     vk::BindImageMemory2(device(), 1, &bind_info);
     m_errorMonitor->VerifyFound();
 
