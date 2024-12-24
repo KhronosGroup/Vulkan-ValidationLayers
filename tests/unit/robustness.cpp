@@ -20,6 +20,9 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess2);
     RETURN_IF_SKIP(Init());
 
     {
@@ -68,6 +71,9 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStage) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess2);
     RETURN_IF_SKIP(Init());
 
     CreateComputePipelineHelper pipe(*this);
@@ -89,8 +95,11 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStageWithIdentifier) 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::pipelineCreationCacheControl);
     AddRequiredFeature(vkt::Feature::shaderModuleIdentifier);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess2);
     RETURN_IF_SKIP(Init());
 
     CreateComputePipelineHelper pipe(*this);
@@ -116,9 +125,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStageWithIdentifier) 
     m_errorMonitor->VerifyFound();
 }
 
-// Need to fix check to check if feature is exposed
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5657
-TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustBufferAccess2Unsupported) {
+TEST_F(NegativeRobustness, PipelineRobustnessRobustBufferAccess2Unsupported) {
     TEST_DESCRIPTION("Create a pipeline using VK_EXT_pipeline_robustness with robustBufferAccess2 being unsupported");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -176,9 +183,7 @@ TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustBufferAccess2Unsuppo
     }
 }
 
-// Need to fix check to check if feature is exposed
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5657
-TEST_F(NegativeRobustness, DISABLED_PipelineRobustnessRobustImageAccess2Unsupported) {
+TEST_F(NegativeRobustness, PipelineRobustnessRobustImageAccess2Unsupported) {
     TEST_DESCRIPTION("Create a pipeline using VK_EXT_pipeline_robustness with robustImageAccess2 being unsupported");
 
     AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
