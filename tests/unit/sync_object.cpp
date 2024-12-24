@@ -3821,7 +3821,9 @@ TEST_F(NegativeSyncObject, ResetEventThenSet) {
     m_default_queue->Wait();
 }
 
-// TODO: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8748
+// This test should only be used for manual inspection
+// Because a command buffer with vkCmdWaitEvents is submitted with an
+// event that is never signaled, the test results in a VK_ERROR_DEVICE_LOST
 TEST_F(NegativeSyncObject, DISABLED_WaitEventThenSet) {
 #if defined(VVL_ENABLE_TSAN)
     // NOTE: This test in particular has failed sporadically on CI when TSAN is enabled.
@@ -3829,7 +3831,18 @@ TEST_F(NegativeSyncObject, DISABLED_WaitEventThenSet) {
 #endif
     TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
 
-    RETURN_IF_SKIP(Init());
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(InitFramework());
+    void *pNext = nullptr;
+    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        pNext = &portability_subset_features;
+        GetPhysicalDeviceFeatures2(portability_subset_features);
+        if (!portability_subset_features.events) {
+            GTEST_SKIP() << "VkPhysicalDevicePortabilitySubsetFeaturesKHR::events not supported";
+        }
+    }
+    RETURN_IF_SKIP(InitState(nullptr, pNext));
 
     vkt::Event event(*m_device);
 
@@ -3843,7 +3856,6 @@ TEST_F(NegativeSyncObject, DISABLED_WaitEventThenSet) {
     m_errorMonitor->SetDesiredError("VUID-vkSetEvent-event-09543");
     vk::SetEvent(device(), event.handle());
     m_errorMonitor->VerifyFound();
-    m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncObject, RenderPassPipelineBarrierGraphicsStage) {
