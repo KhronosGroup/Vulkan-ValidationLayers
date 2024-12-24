@@ -246,8 +246,15 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
                     discard_rectangles_extension_version = ext_props[j].specVersion;
                 } else if (extension == vvl::Extension::_VK_NV_scissor_exclusive) {
                     scissor_exclusive_extension_version = ext_props[j].specVersion;
+                } else if (extension == vvl::Extension::_VK_EXT_robustness2 &&
+                           IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) {
+                    VkPhysicalDeviceRobustness2FeaturesEXT robustness_2_features = vku::InitStructHelper();
+                    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
+                    DispatchGetPhysicalDeviceFeatures2Helper(phys_device, &features2);
+                    device_supported_robustness_2_features[phys_device] = robustness_2_features;
                 }
             }
+
             device_extensions_enumerated[phys_device] = std::move(dev_exts_enumerated);
         }
     }

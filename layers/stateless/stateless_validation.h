@@ -34,13 +34,17 @@ class StatelessValidation : public ValidationObject {
 
   public:
     StatelessValidation(vvl::dispatch::Device *dev, StatelessValidation *instance_vo)
-        : BaseClass(dev, LayerObjectTypeParameterValidation) {}
+        : BaseClass(dev, LayerObjectTypeParameterValidation),
+          device_supported_robustness_2_features(instance_vo->device_supported_robustness_2_features) {}
     StatelessValidation(vvl::dispatch::Instance *inst) : BaseClass(inst, LayerObjectTypeParameterValidation) {}
     ~StatelessValidation() {}
 
     VkPhysicalDeviceLimits device_limits = {};
     vvl::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
     vvl::unordered_map<VkPhysicalDevice, vvl::unordered_set<vvl::Extension>> device_extensions_enumerated{};
+    // Validation requires special handling for VkPhysicalDeviceRobustness2FeaturesEXT, because for some cases robustness features
+    // need to only be supported, not enabled
+    vvl::unordered_map<VkPhysicalDevice, VkPhysicalDeviceRobustness2FeaturesEXT> device_supported_robustness_2_features{};
     // We have a copy of this in Stateless and ValidationStateTracker, could move the ValidationObject, but we don't have a way to
     // set it at the ValidationObject level
     DeviceFeatures enabled_features = {};
@@ -458,6 +462,8 @@ class StatelessValidation : public ValidationObject {
     bool ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
                                     const Location &loc) const;
     bool ValidatePipelineRenderingCreateInfo(const VkPipelineRenderingCreateInfo &rendering_struct, const Location &loc) const;
+    bool ValidatePipelineRobustnessCreateInfo(const VkPipelineRobustnessCreateInfo &robustness_create_info,
+                                              const Location &loc) const;
     bool ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
