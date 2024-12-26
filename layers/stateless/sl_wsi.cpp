@@ -18,6 +18,7 @@
 
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
+#include "generated/dispatch_functions.h"
 
 bool StatelessValidation::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                                     VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
@@ -124,6 +125,32 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInf
             LogError("VUID-VkSwapchainCreateInfoKHR-presentModeFifoLatestReady-10161", device, loc.dot(Field::presentMode),
                      "is %s, but feature presentModeFifoLatestReady is not enabled", string_VkPresentModeKHR(create_info.presentMode));
     }
+
+    if (create_info.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) {
+        const bool is_required_ext_supported =
+            SupportedByPdev(physical_device, vvl::Extension::_VK_KHR_surface_protected_capabilities);
+        const bool is_required_ext_enabled = IsExtEnabled(instance_extensions.vk_khr_surface_protected_capabilities);
+
+        if (is_required_ext_supported && !is_required_ext_enabled) {
+            skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03187", device, loc.dot(Field::flags),
+                             "contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR, but extension VK_KHR_surface_protected_capabilities "
+                             "was not enabled and surface capabilities VkSurfaceProtectedCapabilitiesKHR were not queried.");
+        } else if (is_required_ext_enabled) {
+            VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+            surface_info.surface = create_info.surface;
+            VkSurfaceProtectedCapabilitiesKHR surface_protected_capabilities = vku::InitStructHelper();
+            VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper(&surface_protected_capabilities);
+            const VkResult result =
+                DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device, &surface_info, &surface_capabilities);
+
+            if (result == VK_SUCCESS && !surface_protected_capabilities.supportsProtected) {
+                skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03187", device, loc.dot(Field::flags),
+                                 "contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR but the surface "
+                                 "capabilities does not have VkSurfaceProtectedCapabilitiesKHR.supportsProtected set to VK_TRUE.");
+            }
+        }
+    }
+
     return skip;
 }
 

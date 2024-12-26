@@ -465,32 +465,6 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         }
     }
 
-    if (create_info.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) {
-        const bool is_required_ext_enabled = IsExtEnabled(instance_extensions.vk_khr_surface_protected_capabilities);
-
-        // Assume that the "protected" flag is not supported if VK_KHR_surface_protected_capabilities is not enabled
-        bool log_error = !is_required_ext_enabled;
-
-        if (is_required_ext_enabled) {
-            VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
-            surface_info.surface = create_info.surface;
-            VkSurfaceProtectedCapabilitiesKHR surface_protected_capabilities = vku::InitStructHelper();
-            VkSurfaceCapabilities2KHR surface_capabilities = vku::InitStructHelper(&surface_protected_capabilities);
-            const VkResult result = DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->VkHandle(),
-                                                                                     &surface_info, &surface_capabilities);
-
-            log_error = (result == VK_SUCCESS) && !surface_protected_capabilities.supportsProtected;
-        }
-
-        if (log_error) {
-            if (LogError("VUID-VkSwapchainCreateInfoKHR-flags-03187", device, create_info_loc.dot(Field::flags),
-                         "contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR but the surface "
-                         "capabilities does not have VkSurfaceProtectedCapabilitiesKHR.supportsProtected set to VK_TRUE.")) {
-                return true;
-            }
-        }
-    }
-
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfaceFormats2KHR():
     {
         // Validate pCreateInfo->imageFormat against VkSurfaceFormatKHR::format:
