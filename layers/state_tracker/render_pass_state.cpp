@@ -267,6 +267,10 @@ static void InitRenderPassState(vvl::RenderPass *render_pass) {
     attachment_tracker.FinalTransitions();
 }
 
+static bool IsDynamicRenderingMultiviewEnabled(const VkRenderingInfo *rendering_info) {
+    return rendering_info && rendering_info->viewMask != 0u;
+}
+
 namespace vvl {
 
 RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCreateInfo)
@@ -395,7 +399,8 @@ RenderPass::RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization
     : StateObject(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),
       use_dynamic_rendering_inherited(false),
-      has_multiview_enabled(false),
+      has_multiview_enabled(
+          IsDynamicRenderingMultiviewEnabled((pRenderingInfo && rasterization_enabled) ? pRenderingInfo : nullptr)),
       rasterization_enabled(rasterization_enabled),
       dynamic_rendering_begin_rendering_info((pRenderingInfo && rasterization_enabled) ? pRenderingInfo : nullptr) {}
 
