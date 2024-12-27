@@ -2066,3 +2066,71 @@ TEST_F(PositiveSyncVal, IndirectDrawAndSuballocatedIndexBuffer) {
 
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, DynamicRenderingDSWithOnlyStencilAspect) {
+    TEST_DESCRIPTION("");
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image color_image(*m_device, 32u, 32u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
+
+    vkt::Image depth_image(*m_device, 32u, 32u, 1u, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    {
+        RenderPassSingleSubpass rp(*this);
+        rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+        rp.AddColorAttachment(0);
+        rp.AddAttachmentDescription(VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+        rp.AddDepthStencilAttachment(1);
+        rp.CreateRenderPass();
+
+        VkImageView image_views[] = {color_image_view, depth_image_view};
+        vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2u, image_views);
+
+        VkClearValue color_clear_value;
+        color_clear_value.color.float32[0] = 0.0f;
+        color_clear_value.color.float32[1] = 0.0f;
+        color_clear_value.color.float32[2] = 0.0f;
+        color_clear_value.color.float32[3] = 1.0f;
+
+        VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
+        render_pass_begin_info.renderPass = rp.Handle();
+        render_pass_begin_info.framebuffer = framebuffer.handle();
+        render_pass_begin_info.renderArea = {{0, 0}, {32u, 32u}};
+        render_pass_begin_info.clearValueCount = 1u;
+        render_pass_begin_info.pClearValues = &color_clear_value;
+
+        m_command_buffer.begin();
+        m_command_buffer.BeginRenderPass(render_pass_begin_info);
+        m_command_buffer.EndRenderPass();
+        m_command_buffer.end();
+    }
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_image_view.handle();
+
+    VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
+    depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_stencil_attachment.imageView = depth_image_view.handle();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+    rendering_info.pDepthAttachment = &depth_stencil_attachment;
+    rendering_info.pStencilAttachment = &depth_stencil_attachment;
+
+    m_command_buffer.begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.end();
+}
