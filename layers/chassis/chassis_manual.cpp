@@ -329,7 +329,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_dispatch->device = *pDevice;
     // Save local info in device object
     device_dispatch->api_version = device_dispatch->device_extensions.InitFromDeviceCreateInfo(
-        &instance_dispatch->instance_extensions, instance_dispatch->api_version,
+        &instance_dispatch->instance_extensions, device_dispatch->api_version,
         reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info));
     layer_init_device_dispatch_table(*pDevice, &device_dispatch->device_dispatch_table, fpGetDeviceProcAddr);
 
