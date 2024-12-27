@@ -976,9 +976,11 @@ syncval_state::DynamicRenderingInfo::Attachment::Attachment(const SyncValidator 
     if (view) {
         if (type == AttachmentType::kColor) {
             view_gen = view->MakeImageRangeGen(offset, extent);
-        } else if (type == AttachmentType::kDepth) {
+        } else if (type == AttachmentType::kDepth &&
+                   (view->normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
             view_gen = view->MakeImageRangeGen(offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT);
-        } else {
+        } else if (type == AttachmentType::kStencil &&
+                   (view->normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
             view_gen = view->MakeImageRangeGen(offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT);
         }
 
