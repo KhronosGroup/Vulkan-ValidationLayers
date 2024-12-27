@@ -84,7 +84,9 @@ struct SharedDispatchValidationResources final {
                 gpuav.InternalError(device, loc, "Unable to create shader object.");
                 return;
             }
-        } else {
+        }
+
+        {
             VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
             shader_module_ci.codeSize = cmd_validation_dispatch_comp_size * sizeof(uint32_t);
             shader_module_ci.pCode = cmd_validation_dispatch_comp;
