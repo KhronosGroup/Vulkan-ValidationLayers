@@ -118,6 +118,12 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInf
             }
         }
     }
+
+    if (create_info.presentMode == VK_PRESENT_MODE_FIFO_LATEST_READY_EXT && !enabled_features.presentModeFifoLatestReady) {
+        skip |=
+            LogError("VUID-VkSwapchainCreateInfoKHR-presentModeFifoLatestReady-10161", device, loc.dot(Field::presentMode),
+                     "is %s, but feature presentModeFifoLatestReady is not enabled", string_VkPresentModeKHR(create_info.presentMode));
+    }
     return skip;
 }
 
