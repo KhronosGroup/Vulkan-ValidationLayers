@@ -1900,6 +1900,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionAcquire) {
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     RETURN_IF_SKIP(Init());
 
     if (IsPlatformMockICD()) {
@@ -2210,6 +2211,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     AddSurfaceExtension();
 
     RETURN_IF_SKIP(InitFramework());
@@ -2342,10 +2344,12 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionCaps) {
 TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     TEST_DESCRIPTION("Test acquiring swapchain images with Maint1 features.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     RETURN_IF_SKIP(Init());
     if (IsPlatformMockICD()) {
         GTEST_SKIP() << "Test not supported by MockICD";
@@ -3402,6 +3406,7 @@ TEST_F(NegativeWsi, IncompatibleImageWithSwapchain) {
 TEST_F(NegativeWsi, SwapchainPresentModeInfoImplicit) {
     TEST_DESCRIPTION("VkSwapchainPresentModeInfoEXT implicit VUs");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddSurfaceExtension();
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
@@ -3536,6 +3541,162 @@ TEST_F(NegativeWsi, SurfaceCounters) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeWsi, PresentInfoSwapchainsDifferentPresentModes) {
+    TEST_DESCRIPTION("Submit VkPresentInfo where one swapchain has VkSwapchainPresentModesCreateInfoEXT and the other does not");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    SurfaceContext surface_context{};
+    vkt::Surface surface2{};
+    if (CreateSurface(surface_context, surface2) != VK_SUCCESS) {
+        GTEST_SKIP() << "Cannot create required surface";
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_ci.imageArrayLayers = 1u;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0u;
+
+    vkt::Swapchain swapchain1(*m_device, swapchain_ci);
+    VkSwapchainPresentModesCreateInfoEXT present_modes_ci = vku::InitStructHelper();
+    present_modes_ci.presentModeCount = 1u;
+    present_modes_ci.pPresentModes = &swapchain_ci.presentMode;
+    swapchain_ci.surface = surface2.Handle();
+    swapchain_ci.pNext = &present_modes_ci;
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+
+    vkt::Semaphore image_acquired1(*m_device);
+    vkt::Semaphore image_acquired2(*m_device);
+    const uint32_t image_index1 = swapchain1.AcquireNextImage(image_acquired1, kWaitTimeout);
+    const uint32_t image_index2 = swapchain2.AcquireNextImage(image_acquired2, kWaitTimeout);
+
+    const VkImageMemoryBarrier present_transitions[] = {
+        TransitionToPresent(swapchain1.GetImages()[image_index1], VK_IMAGE_LAYOUT_UNDEFINED, 0),
+        TransitionToPresent(swapchain2.GetImages()[image_index2], VK_IMAGE_LAYOUT_UNDEFINED, 0),
+    };
+    m_command_buffer.Begin();
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
+                           0u, nullptr, 0u, nullptr, 2u, present_transitions);
+    m_command_buffer.End();
+
+    VkSemaphore acquire_semaphores[] = {image_acquired1.handle(), image_acquired2.handle()};
+    VkPipelineStageFlags wait_masks[] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+
+    vkt::Semaphore semaphore(*m_device);
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.waitSemaphoreCount = 2u;
+    submit_info.pWaitSemaphores = acquire_semaphores;
+    submit_info.pWaitDstStageMask = wait_masks;
+    submit_info.commandBufferCount = 1u;
+    submit_info.pCommandBuffers = &m_command_buffer.handle();
+    submit_info.signalSemaphoreCount = 1u;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    vk::QueueSubmit(m_default_queue->handle(), 1u, &submit_info, VK_NULL_HANDLE);
+
+    VkSwapchainKHR swapchains[] = {swapchain1.handle(), swapchain2.handle()};
+    uint32_t image_indices[] = {image_index1, image_index2};
+
+    VkPresentInfoKHR present = vku::InitStructHelper();
+    present.waitSemaphoreCount = 1u;
+    present.pWaitSemaphores = &semaphore.handle();
+    present.pSwapchains = swapchains;
+    present.pImageIndices = image_indices;
+    present.swapchainCount = 2;
+    m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pSwapchains-09199");
+    vk::QueuePresentKHR(m_default_queue->handle(), &present);
+    m_errorMonitor->VerifyFound();
+    vk::DeviceWaitIdle(device());
+}
+
+TEST_F(NegativeWsi, ReleaseSwapchainImagesWithoutFeature) {
+    TEST_DESCRIPTION("Submit VkPresentInfo where one swapchain has VkSwapchainPresentModesCreateInfoEXT and the other does not");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    VkReleaseSwapchainImagesInfoEXT release_info = vku::InitStructHelper();
+    release_info.swapchain = m_swapchain.handle();
+    release_info.imageIndexCount = 1u;
+    release_info.pImageIndices = &image_index;
+
+    m_errorMonitor->SetDesiredError("VUID-vkReleaseSwapchainImagesEXT-swapchainMaintenance1-10159");
+    vk::ReleaseSwapchainImagesEXT(device(), &release_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, SwapchainCreateMissingMaintenanc1Feature) {
+    TEST_DESCRIPTION("Submit VkPresentInfo where one swapchain has VkSwapchainPresentModesCreateInfoEXT and the other does not");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainPresentModesCreateInfoEXT present_modes_create_info = vku::InitStructHelper();
+    present_modes_create_info.presentModeCount = 1u;
+    present_modes_create_info.pPresentModes = &m_surface_non_shared_present_mode;
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper(&present_modes_create_info);
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_ci.imageArrayLayers = 1u;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0u;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-swapchainMaintenance1-10155");
+    m_swapchain.Init(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+
+    VkSwapchainPresentScalingCreateInfoEXT present_scaling_ci = vku::InitStructHelper();
+    present_scaling_ci.scalingBehavior = VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
+    swapchain_ci.pNext = &present_scaling_ci;
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154");
+    m_swapchain.Init(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+
+    swapchain_ci.pNext = nullptr;
+    swapchain_ci.flags = VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT;
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-swapchainMaintenance1-10157");
+    m_swapchain.Init(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeWsi, ImageCompressionPropertiesSwapchainWithoutFeature) {
     TEST_DESCRIPTION("Use image compression control swapchain pNext without feature enabled");
 
@@ -3593,8 +3754,10 @@ TEST_F(NegativeWsi, MissingPresentModeFifoLatestReadyFeature) {
 TEST_F(NegativeWsi, MissingPresentModesCreateInfoFifoLatestReadyFeature) {
     TEST_DESCRIPTION("Create swapchain with unsupported fifo latest ready present mode");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     RETURN_IF_SKIP(Init());
@@ -3678,6 +3841,7 @@ TEST_F(NegativeWsi, InitSwapchainPresentScalingInvalidExtent) {
     TEST_DESCRIPTION("Initialize swapchain with present scaling and invalid imageExtent");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     AddSurfaceExtension();
@@ -3954,6 +4118,7 @@ TEST_F(NegativeWsi, PresentSignaledFence) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
 
@@ -3986,6 +4151,7 @@ TEST_F(NegativeWsi, PresentFenceInUse) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
 
@@ -4021,6 +4187,7 @@ TEST_F(NegativeWsi, PresentMismatchedSwapchainCount) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
     RETURN_IF_SKIP(InitSurface());
@@ -4145,6 +4312,7 @@ TEST_F(NegativeWsi, PresentWithUnsupportedQueue) {
     AddSurfaceExtension();
     AddRequiredExtensions(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSwapchain());
 
