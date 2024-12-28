@@ -832,10 +832,13 @@ bool SyncOpResetEvent::DoValidate(const CommandExecutionContext &exec_context, c
                 vuid = "SYNC-vkCmdResetEvent-missingbarrier-wait";
                 break;
             }
+            case vvl::Func::Empty:
+            case vvl::Func::vkCmdResetEvent:
+            case vvl::Func::vkCmdResetEvent2KHR:
+            case vvl::Func::vkCmdResetEvent2:
+                break;  // Valid, but nothing to do
             default:
-                // The only other valid last command that wasn't one.
-                assert((sync_event->last_command == vvl::Func::Empty) || (sync_event->last_command == vvl::Func::vkCmdResetEvent) ||
-                       (sync_event->last_command == vvl::Func::vkCmdResetEvent2KHR));
+                assert(false);
                 break;
         }
         if (vuid) {
