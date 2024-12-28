@@ -3512,3 +3512,86 @@ TEST_F(NegativeWsi, SurfaceCounters) {
     m_swapchain.Init(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeWsi, MissingPresentModeFifoLatestReadyFeature) {
+    TEST_DESCRIPTION("Create swapchain with unsupported fifo latest ready present mode");
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = VK_PRESENT_MODE_FIFO_LATEST_READY_EXT;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainCreateInfoKHR-presentModeFifoLatestReady-10161");
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeWsi, MissingPresentModesCreateInfoFifoLatestReadyFeature) {
+    TEST_DESCRIPTION("Create swapchain with unsupported fifo latest ready present mode");
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_PRESENT_MODE_FIFO_LATEST_READY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfacePresentModeCompatibilityEXT present_mode_compatibility = vku::InitStructHelper();
+    VkSurfaceCapabilities2KHR surface_caps = vku::InitStructHelper(&present_mode_compatibility);
+
+    VkSurfacePresentModeEXT present_mode = vku::InitStructHelper();
+    present_mode.presentMode = VK_PRESENT_MODE_FIFO_LATEST_READY_EXT;
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper(&present_mode);
+    surface_info.surface = m_surface.Handle();
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+    std::vector<VkPresentModeKHR> presentModes(present_mode_compatibility.presentModeCount);
+    present_mode_compatibility.pPresentModes = presentModes.data();
+    vk::GetPhysicalDeviceSurfaceCapabilities2KHR(Gpu(), &surface_info, &surface_caps);
+
+    VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_LATEST_READY_EXT;
+
+    if (std::find(presentModes.begin(), presentModes.end(), presentMode) == presentModes.end()) {
+        GTEST_SKIP() << "VK_PRESENT_MODE_FIFO_LATEST_READY_EXT is not compatible";
+    }
+
+    VkSwapchainPresentModesCreateInfoEXT present_modes_ci = vku::InitStructHelper();
+    present_modes_ci.presentModeCount = 1;
+    present_modes_ci.pPresentModes = &presentMode;
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper(&present_modes_ci);
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = VK_PRESENT_MODE_FIFO_LATEST_READY_EXT;
+    swapchain_ci.clipped = VK_FALSE;
+    swapchain_ci.oldSwapchain = 0;
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSwapchainCreateInfoKHR-presentModeFifoLatestReady-10161");
+    m_errorMonitor->SetDesiredError("VUID-VkSwapchainPresentModesCreateInfoEXT-presentModeFifoLatestReady-10160");
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    m_errorMonitor->VerifyFound();
+}
