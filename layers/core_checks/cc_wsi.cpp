@@ -126,6 +126,13 @@ bool CoreChecks::ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR presen
     for (uint32_t i = 0; i < swapchain_present_modes_ci->presentModeCount; i++) {
         VkPresentModeKHR swapchain_present_mode = swapchain_present_modes_ci->pPresentModes[i];
 
+        if (swapchain_present_mode == VK_PRESENT_MODE_FIFO_LATEST_READY_EXT && !enabled_features.presentModeFifoLatestReady) {
+            skip |= LogError("VUID-VkSwapchainPresentModesCreateInfoEXT-presentModeFifoLatestReady-10160", device,
+                             create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoEXT, Field::pPresentModes, i),
+                             "is %s, but feature presentModeFifoLatestReady is not enabled",
+                             string_VkPresentModeKHR(create_info.presentMode));
+        }
+
         if (std::find(present_modes.begin(), present_modes.end(), swapchain_present_mode) == present_modes.end()) {
             if (LogError("VUID-VkSwapchainPresentModesCreateInfoEXT-None-07762", device,
                          create_info_loc.pNext(Struct::VkSwapchainPresentModesCreateInfoEXT, Field::pPresentModes, i),
