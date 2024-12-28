@@ -912,16 +912,18 @@ void DrawIndexed(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
         return;
     }
 
-    if (gpuav.enabled_features.robustBufferAccess2) {
-        const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        const LastBound &last_bound = cb_state.lastBound[lv_bind_point];
-        const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
-        if (pipeline_state) {
-            const auto robustness_ci =
-                vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pipeline_state->GraphicsCreateInfo().pNext);
-            if (robustness_ci && robustness_ci->vertexInputs) {
-                return;
-            }
+    if (gpuav.enabled_features.robustBufferAccess) {
+        return;
+    }
+
+    const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const LastBound &last_bound = cb_state.lastBound[lv_bind_point];
+    const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
+    if (pipeline_state) {
+        const auto robustness_ci =
+            vku::FindStructInPNextChain<VkPipelineRobustnessCreateInfo>(pipeline_state->GraphicsCreateInfo().pNext);
+        if (robustness_ci && robustness_ci->vertexInputs) {
+            return;
         }
     }
 
