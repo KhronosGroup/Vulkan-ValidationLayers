@@ -293,6 +293,15 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2
                          error_obj.location.dot(Field::pSurfaceInfo).dot(Field::surface),
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
+    if (pSurfaceFormats) {
+        for (uint32_t i = 0; i < *pSurfaceFormatCount; ++i) {
+            if (vku::FindStructInPNextChain<VkImageCompressionPropertiesEXT>(pSurfaceFormats[i].pNext) &&
+                !enabled_features.imageCompressionControlSwapchain) {
+                skip |= LogError("VUID-VkSurfaceFormat2KHR-pNext-06750", device, error_obj.location.dot(Field::pNext),
+                                 "contains VkImageCompressionPropertiesEXT, but imageCompressionControlSwapchain is not enabled");
+            }
+        }
+    }
     return skip;
 }
 
