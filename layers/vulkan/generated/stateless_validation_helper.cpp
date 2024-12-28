@@ -23625,6 +23625,7 @@ bool StatelessValidation::PreCallValidateReleaseSwapchainImagesEXT(VkDevice devi
                               "VUID-VkReleaseSwapchainImagesInfoEXT-imageIndexCount-arraylength",
                               "VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateReleaseSwapchainImagesEXT(device, pReleaseInfo, error_obj);
     return skip;
 }
 

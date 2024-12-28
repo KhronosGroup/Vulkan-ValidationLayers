@@ -215,6 +215,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkGetDeviceMicromapCompatibilityEXT',
             'vkGetMicromapBuildSizesEXT',
             'vkWriteMicromapsPropertiesEXT',
+            'vkReleaseSwapchainImagesEXT',
         ]
 
         # Commands to ignore
