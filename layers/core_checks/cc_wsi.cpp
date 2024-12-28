@@ -806,6 +806,8 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         skip |= sem_submit_state.ValidateWaitSemaphore(present_info_loc.dot(Field::pWaitSemaphores, i), *semaphore_state, 0);
     }
 
+    uint32_t swapchain_with_present_modes = pPresentInfo->swapchainCount;
+    uint32_t swapchain_without_present_modes = pPresentInfo->swapchainCount;
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         auto swapchain_data = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
         ASSERT_AND_CONTINUE(swapchain_data);
@@ -866,7 +868,23 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                                  "image on queue that cannot present to this surface.");
             }
         }
+
+        if (vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(swapchain_data->create_info.pNext)) {
+            swapchain_with_present_modes = i;
+        } else {
+            swapchain_without_present_modes = i;
+        }
     }
+    if (swapchain_with_present_modes < pPresentInfo->swapchainCount &&
+        swapchain_without_present_modes < pPresentInfo->swapchainCount) {
+        skip |= LogError(
+            "VUID-VkPresentInfoKHR-pSwapchains-09199", device, error_obj.location,
+            "pSwapchains[%" PRIu32 "] (%s) was created with VkSwapchainPresentModesCreateInfoEXT, but pSwapchains[%" PRIu32
+            "] (%s) was not.",
+            swapchain_with_present_modes, FormatHandle(pPresentInfo->pSwapchains[swapchain_with_present_modes]).c_str(),
+            swapchain_without_present_modes, FormatHandle(pPresentInfo->pSwapchains[swapchain_without_present_modes]).c_str());
+    }
+
     if (pPresentInfo->pNext) {
         // Verify ext struct
         const auto *present_regions = vku::FindStructInPNextChain<VkPresentRegionsKHR>(pPresentInfo->pNext);

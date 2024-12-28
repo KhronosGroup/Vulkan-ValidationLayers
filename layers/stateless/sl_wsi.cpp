@@ -45,6 +45,48 @@ bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice de
     return skip;
 }
 
+bool StatelessValidation::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfoKHR &create_info,
+                                                                  const Location &loc) const {
+    bool skip = false;
+
+    if (enabled_features.swapchainMaintenance1) {
+        return skip;
+    }
+
+    if (vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(create_info.pNext)) {
+        skip |= LogError("VUID-VkSwapchainCreateInfoKHR-swapchainMaintenance1-10155", device, loc.dot(Field::pNext),
+                         "contains VkSwapchainPresentModesCreateInfoEXT, but swapchainMaintenance1 is not enabled");
+    }
+
+    if (const auto *present_scaling_create_info =
+            vku::FindStructInPNextChain<VkSwapchainPresentScalingCreateInfoEXT>(create_info.pNext)) {
+        if (present_scaling_create_info->scalingBehavior != 0) {
+            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154", device,
+                             loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::scalingBehavior),
+                             " is %s, but swapchainMaintenance1 is not enabled",
+                             string_VkPresentScalingFlagsEXT(present_scaling_create_info->scalingBehavior).c_str());
+        } else if (present_scaling_create_info->presentGravityX != 0) {
+            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154", device,
+                             loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::presentGravityX),
+                             " is %s, but swapchainMaintenance1 is not enabled",
+                             string_VkPresentGravityFlagsEXT(present_scaling_create_info->presentGravityX).c_str());
+        } else if (present_scaling_create_info->presentGravityY != 0) {
+            skip |= LogError("VUID-VkSwapchainPresentScalingCreateInfoEXT-swapchainMaintenance1-10154", device,
+                             loc.pNext(Struct::VkSwapchainPresentScalingCreateInfoEXT, Field::presentGravityY),
+                             " is %s, but swapchainMaintenance1 is not enabled",
+                             string_VkPresentGravityFlagsEXT(present_scaling_create_info->presentGravityY).c_str());
+        }
+    }
+
+    if (create_info.flags & VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT) {
+        skip |= LogError("VUID-VkSwapchainCreateInfoKHR-swapchainMaintenance1-10157", device, loc.dot(Field::flags),
+                         "is %s, but swapchainMaintenance1 is not enabled",
+                         string_VkSwapchainCreateFlagsKHR(create_info.flags).c_str());
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const {
     bool skip = false;
 
@@ -151,6 +193,21 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const VkSwapchainCreateInf
         }
     }
 
+    skip |= ValidateSwapchainCreateInfoMaintenance1(create_info, loc);
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateReleaseSwapchainImagesEXT(VkDevice device,
+                                                                          const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
+                                                                          const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    if (!enabled_features.swapchainMaintenance1) {
+        skip |= LogError("VUID-vkReleaseSwapchainImagesEXT-swapchainMaintenance1-10159", device, error_obj.location,
+                         "swapchainMaintenance1 is not enabled");
+    }
+
     return skip;
 }
 
@@ -189,6 +246,12 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
                              error_obj.location.dot(Field::pPresentInfo).dot(Field::swapchainCount).Fields().c_str(),
                              pPresentInfo->swapchainCount);
         }
+    }
+
+    if (vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext) &&
+        !enabled_features.swapchainMaintenance1) {
+        skip |= LogError("VUID-VkPresentInfoKHR-swapchainMaintenance1-10158", device, error_obj.location.dot(Field::pNext),
+                         "contains VkSwapchainPresentFenceInfoEXT, but swapchainMaintenance1 is not enabled");
     }
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
