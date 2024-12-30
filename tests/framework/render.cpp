@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,13 +176,6 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
         }
     };
 
-    static bool driver_printed = false;
-    static bool print_driver_info = GetEnvironment("VK_LAYER_TESTS_PRINT_DRIVER") != "";
-    if (print_driver_info && !driver_printed &&
-        InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
-
     // Beginning with the 1.3.216 Vulkan SDK, the VK_KHR_PORTABILITY_subset extension is mandatory.
 #ifdef VK_USE_PLATFORM_METAL_EXT
     AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
@@ -270,17 +263,35 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
 
     m_errorMonitor->CreateCallback(instance_);
 
-    if (print_driver_info && !driver_printed) {
-        VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
-        VkPhysicalDeviceProperties2 physical_device_properties2 = vku::InitStructHelper(&driver_properties);
-        vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
-        printf("Driver Name = %s\n", driver_properties.driverName);
-        printf("Driver Info = %s\n", driver_properties.driverInfo);
+    static bool driver_printed = false;
+    static bool print_driver_info = GetEnvironment("VK_LAYER_TESTS_PRINT_DRIVER") != "";
 
-        driver_printed = true;
+    if (print_driver_info && !driver_printed) {
+        bool phys_dev_props_2_enabled = m_target_api_version.Minor() >= 1;
+        if (!phys_dev_props_2_enabled) {
+            for (const char *ext : vvl::make_span(ici.ppEnabledExtensionNames, ici.enabledExtensionCount)) {
+                if (strcmp(ext, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) == 0) {
+                    phys_dev_props_2_enabled = true;
+                    break;
+                }
+            }
+        }
+
+        if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) && phys_dev_props_2_enabled) {
+            VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
+            VkPhysicalDeviceProperties2 physical_device_properties2 = vku::InitStructHelper(&driver_properties);
+            vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
+            printf("Driver Name = %s\n", driver_properties.driverName);
+            printf("Driver Info = %s\n", driver_properties.driverInfo);
+
+            driver_printed = true;
+        } else {
+            printf(
+                "Could not print driver info - VK_KHR_get_physical_device_properties2 is either not supported or not enabled.\n");
+        }
     }
 
-    APIVersion used_version = std::min(m_instance_api_version, APIVersion(physDevProps_.apiVersion));
+    const APIVersion used_version = std::min(m_instance_api_version, APIVersion(physDevProps_.apiVersion));
     if (used_version < m_target_api_version) {
         GTEST_SKIP() << "At least Vulkan version 1." << m_target_api_version.Minor() << " is required";
     }
