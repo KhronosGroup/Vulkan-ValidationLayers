@@ -33,10 +33,6 @@
 #include "apple_wsi.h"
 #endif
 
-using std::string;
-using std::strncmp;
-using std::vector;
-
 template <typename C, typename F>
 typename C::iterator RemoveIf(C &container, F &&fn) {
     return container.erase(std::remove_if(container.begin(), container.end(), std::forward<F>(fn)), container.end());
@@ -941,8 +937,8 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(ta
 void VkRenderFramework::InitRenderTarget(const VkImageView *dsBinding) { InitRenderTarget(1, dsBinding); }
 
 void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *dsBinding) {
-    vector<VkAttachmentReference> color_references;
-    vector<VkAttachmentDescription> attachment_descriptions;
+    std::vector<VkAttachmentReference> color_references;
+    std::vector<VkAttachmentDescription> attachment_descriptions;
 
     attachment_descriptions.reserve(targets + 1);  // +1 for dsBinding
     color_references.reserve(targets);

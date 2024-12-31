@@ -289,7 +289,6 @@ TEST_F(PositiveThreading, Queue) {
     TEST_DESCRIPTION("Test concurrent Queue access from vkGet and vkSubmit");
 
     using namespace std::chrono;
-    using std::thread;
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
@@ -341,7 +340,7 @@ TEST_F(PositiveThreading, Queue) {
         }
     };
 
-    std::array<thread, 3> threads = {thread(testing_thread1), thread(testing_thread2), thread(testing_thread3)};
+    std::array<std::thread, 3> threads = {std::thread(testing_thread1), std::thread(testing_thread2), std::thread(testing_thread3)};
     for (auto &t : threads) t.join();
 
     vk::QueueWaitIdle(queue_h);
