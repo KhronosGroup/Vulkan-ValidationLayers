@@ -42,8 +42,6 @@
 #define GetCurrentDir getcwd
 #endif
 
-using std::string;
-
 #if defined(__ANDROID__)
 static void PropCallback(void *cookie, [[maybe_unused]] const char *name, const char *value, [[maybe_unused]] uint32_t serial) {
     std::string *property = static_cast<std::string *>(cookie);
@@ -62,7 +60,7 @@ std::string GetEnvironment(const char *variable) {
     }
     char *buffer = new char[size];
     GetEnvironmentVariable(variable, buffer, size);
-    string output = buffer;
+    std::string output = buffer;
     delete[] buffer;
     return output;
 #elif defined(__ANDROID__)

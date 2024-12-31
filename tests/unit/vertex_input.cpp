@@ -70,17 +70,16 @@ TEST_F(NegativeVertexInput, DivisorExtension) {
         GTEST_SKIP() << "This device does not support vertexBindingDivisors";
     }
 
-    using std::vector;
     struct TestCase {
         uint32_t div_binding;
         uint32_t div_divisor;
         uint32_t desc_binding;
         VkVertexInputRate desc_rate;
-        vector<std::string> vuids;
+        std::vector<std::string> vuids;
     };
 
     // clang-format off
-    vector<TestCase> test_cases = {
+    std::vector<TestCase> test_cases = {
         {   0,
             1,
             0,
@@ -208,17 +207,16 @@ TEST_F(NegativeVertexInput, DivisorExtensionKHR) {
         GTEST_SKIP() << "This device does not support vertexBindingDivisors";
     }
 
-    using std::vector;
     struct TestCase {
         uint32_t div_binding;
         uint32_t div_divisor;
         uint32_t desc_binding;
         VkVertexInputRate desc_rate;
-        vector<std::string> vuids;
+        std::vector<std::string> vuids;
     };
 
     // clang-format off
-    vector<TestCase> test_cases = {
+    std::vector<TestCase> test_cases = {
         {   0,
             1,
             0,

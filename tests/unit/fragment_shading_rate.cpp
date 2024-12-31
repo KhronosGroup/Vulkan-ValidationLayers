@@ -2052,13 +2052,12 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
         csosci.sampleOrderType = VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV;
         csosci.customSampleOrderCount = 1;
 
-        using std::vector;
         struct TestCase {
             const VkCoarseSampleOrderCustomNV *order;
-            vector<std::string> vuids;
+            std::vector<std::string> vuids;
         };
 
-        vector<TestCase> test_cases = {
+        std::vector<TestCase> test_cases = {
             {&sampOrdBadShadingRate, {"VUID-VkCoarseSampleOrderCustomNV-shadingRate-02073"}},
             {&sampOrdBadSampleCount,
              {"VUID-VkCoarseSampleOrderCustomNV-sampleCount-02074", "VUID-VkCoarseSampleOrderCustomNV-sampleLocationCount-02075"}},

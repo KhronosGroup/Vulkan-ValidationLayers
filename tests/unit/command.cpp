@@ -2196,7 +2196,6 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
         VkRect2D scissor = {{0, 0}, {64, 64}};
         VkRect2D scissors[100] = {scissor, scissor};
 
-        using std::vector;
         struct TestCase {
             uint32_t viewport_count;
             VkViewport *viewports;
@@ -2205,10 +2204,10 @@ TEST_F(NegativeCommand, ExclusiveScissorNV) {
             uint32_t exclusive_scissor_count;
             VkRect2D *exclusive_scissors;
 
-            vector<std::string> vuids;
+            std::vector<std::string> vuids;
         };
 
-        vector<TestCase> test_cases = {
+        std::vector<TestCase> test_cases = {
             {1,
              viewports,
              1,

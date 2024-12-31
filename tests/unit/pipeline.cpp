@@ -3689,17 +3689,16 @@ TEST_F(NegativePipeline, Viewport) {
     VkRect2D scissors[] = {scissor, scissor};
 
     // test viewport and scissor arrays
-    using std::vector;
     struct TestCase {
         uint32_t viewport_count;
         VkViewport *viewports;
         uint32_t scissor_count;
         VkRect2D *scissors;
 
-        vector<std::string> vuids;
+        std::vector<std::string> vuids;
     };
 
-    vector<TestCase> test_cases = {
+    std::vector<TestCase> test_cases = {
         {2,
          viewports,
          1,

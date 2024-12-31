@@ -3260,7 +3260,6 @@ TEST_F(NegativeDynamicState, SetViewportParam) {
     m_errorMonitor->VerifyFound();
 
     // core viewport tests
-    using std::vector;
     struct TestCase {
         VkViewport vp;
         std::string vuid;
@@ -3278,7 +3277,7 @@ TEST_F(NegativeDynamicState, SetViewportParam) {
     const auto below_zero = NearestSmaller(0.0f);
     const auto past_one = NearestGreater(1.0f);
 
-    vector<TestCase> test_cases = {
+    std::vector<TestCase> test_cases = {
         {{0.0, 0.0, 0.0, 64.0, 0.0, 1.0}, "VUID-VkViewport-width-01770"},
         {{0.0, 0.0, one_past_max_w, 64.0, 0.0, 1.0}, "VUID-VkViewport-width-01771"},
         {{0.0, 0.0, NAN, 64.0, 0.0, 1.0}, "VUID-VkViewport-width-01770"},
@@ -3918,17 +3917,16 @@ TEST_F(NegativeDynamicState, Viewport) {
     VkRect2D scissors[] = {scissor, scissor};
 
     // test viewport and scissor arrays
-    using std::vector;
     struct TestCase {
         uint32_t viewport_count;
         VkViewport *viewports;
         uint32_t scissor_count;
         VkRect2D *scissors;
 
-        vector<std::string> vuids;
+        std::vector<std::string> vuids;
     };
 
-    vector<TestCase> dyn_test_cases = {
+    std::vector<TestCase> dyn_test_cases = {
         {0,
          viewports,
          1,
@@ -4024,17 +4022,16 @@ TEST_F(NegativeDynamicState, MultiViewport) {
     VkRect2D scissor = {{0, 0}, {64, 64}};
     VkRect2D scissors[] = {scissor, scissor};
 
-    using std::vector;
     struct TestCase {
         uint32_t viewport_count;
         VkViewport *viewports;
         uint32_t scissor_count;
         VkRect2D *scissors;
 
-        vector<std::string> vuids;
+        std::vector<std::string> vuids;
     };
 
-    vector<TestCase> test_cases = {
+    std::vector<TestCase> test_cases = {
         {0,
          viewports,
          2,
@@ -4109,7 +4106,7 @@ TEST_F(NegativeDynamicState, MultiViewport) {
         CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, test_case.vuids);
     }
 
-    vector<TestCase> dyn_test_cases = {
+    std::vector<TestCase> dyn_test_cases = {
         {0,
          viewports,
          2,
