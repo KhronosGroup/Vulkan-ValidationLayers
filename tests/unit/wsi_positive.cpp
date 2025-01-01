@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1953,8 +1953,7 @@ TEST_F(PositiveWsi, MixKHRAndKHR2SurfaceCapsQueries) {
     swapchain_ci.minImageCount = surface_caps.minImageCount;
     swapchain_ci.imageFormat = m_surface_formats[0].format;
     swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_ci.imageExtent.width = surface_caps.maxImageExtent.width;
-    swapchain_ci.imageExtent.height = surface_caps.maxImageExtent.height;
+    swapchain_ci.imageExtent = surface_caps.maxImageExtent;
     swapchain_ci.imageArrayLayers = 1;
     swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1997,8 +1996,7 @@ TEST_F(PositiveWsi, MixKHRAndKHR2SurfaceCapsQueries2) {
     swapchain_ci.minImageCount = surface_caps2.surfaceCapabilities.minImageCount;
     swapchain_ci.imageFormat = m_surface_formats[0].format;
     swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_ci.imageExtent.width = surface_caps2.surfaceCapabilities.maxImageExtent.width;
-    swapchain_ci.imageExtent.height = surface_caps2.surfaceCapabilities.maxImageExtent.height;
+    swapchain_ci.imageExtent = surface_caps2.surfaceCapabilities.maxImageExtent;
     swapchain_ci.imageArrayLayers = 1;
     swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -2025,13 +2023,18 @@ TEST_F(PositiveWsi, CreateSwapchainImagesWithConcurrentSharingMode) {
     VkSurfaceCapabilitiesKHR surface_caps;
     vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface.Handle(), &surface_caps);
 
+    VkImageFormatProperties img_format_props;
+    vk::GetPhysicalDeviceImageFormatProperties(Gpu(), m_surface_formats[0].format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0, &img_format_props);
+    VkExtent2D img_ext = {std::min(m_surface_capabilities.maxImageExtent.width, img_format_props.maxExtent.width),
+                          std::min(m_surface_capabilities.maxImageExtent.height, img_format_props.maxExtent.height)};
+
     VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
     swapchain_ci.surface = m_surface.Handle();
     swapchain_ci.minImageCount = surface_caps.minImageCount;
     swapchain_ci.imageFormat = m_surface_formats[0].format;
     swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_ci.imageExtent.width = surface_caps.maxImageExtent.width;
-    swapchain_ci.imageExtent.height = surface_caps.maxImageExtent.height;
+    swapchain_ci.imageExtent = img_ext;
     swapchain_ci.imageArrayLayers = 1u;
     swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_ci.imageSharingMode = VK_SHARING_MODE_CONCURRENT;

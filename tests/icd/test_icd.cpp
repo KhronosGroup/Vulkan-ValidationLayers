@@ -1,5 +1,5 @@
 /*
-** Copyright (c) 2015-2018, 2023 The Khronos Group Inc.
+** Copyright (c) 2015-2018, 2023-2025 The Khronos Group Inc.
 ** Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
@@ -1517,6 +1517,25 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(V
             present_mode_compatibility->pPresentModes[2] = VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR;
         }
     }
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
+                                                                               VkSurfaceKHR surface,
+                                                                               VkSurfaceCapabilities2EXT* pSurfaceCapabilities) {
+    VkSurfaceCapabilitiesKHR surface_capabilities_khr;
+    GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surface_capabilities_khr);
+    pSurfaceCapabilities->minImageCount = surface_capabilities_khr.minImageCount;
+    pSurfaceCapabilities->maxImageCount = surface_capabilities_khr.maxImageCount;
+    pSurfaceCapabilities->currentExtent = surface_capabilities_khr.currentExtent;
+    pSurfaceCapabilities->minImageExtent = surface_capabilities_khr.minImageExtent;
+    pSurfaceCapabilities->maxImageExtent = surface_capabilities_khr.maxImageExtent;
+    pSurfaceCapabilities->maxImageArrayLayers = surface_capabilities_khr.maxImageArrayLayers;
+    pSurfaceCapabilities->supportedTransforms = surface_capabilities_khr.supportedTransforms;
+    pSurfaceCapabilities->currentTransform = surface_capabilities_khr.currentTransform;
+    pSurfaceCapabilities->supportedCompositeAlpha = surface_capabilities_khr.supportedCompositeAlpha;
+    pSurfaceCapabilities->supportedUsageFlags = surface_capabilities_khr.supportedUsageFlags;
+    pSurfaceCapabilities->supportedSurfaceCounters = VK_SURFACE_COUNTER_VBLANK_BIT_EXT;
     return VK_SUCCESS;
 }
 

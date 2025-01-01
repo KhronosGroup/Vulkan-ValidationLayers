@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2024 LunarG, Inc.
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -4384,12 +4384,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice 
 }
 
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
-                                                                               VkSurfaceKHR surface,
-                                                                               VkSurfaceCapabilities2EXT* pSurfaceCapabilities) {
-    return VK_SUCCESS;
-}
-
 static VKAPI_ATTR VkResult VKAPI_CALL DisplayPowerControlEXT(VkDevice device, VkDisplayKHR display,
                                                              const VkDisplayPowerInfoEXT* pDisplayPowerInfo) {
     return VK_SUCCESS;

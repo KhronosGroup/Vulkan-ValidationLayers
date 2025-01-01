@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -673,12 +673,12 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     // Validate pCreateInfo->imageExtent against VkImageFormatProperties::maxExtent
     if ((create_info.imageExtent.width > image_properties.maxExtent.width) ||
         (create_info.imageExtent.height > image_properties.maxExtent.height)) {
-        if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageExtent),
-                     "(%s), which is bigger than max extent (%s)"
-                     "returned by vkGetPhysicalDeviceImageFormatProperties(): "
-                     "for imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL.",
-                     string_VkExtent2D(create_info.imageExtent).c_str(), string_VkExtent3D(image_properties.maxExtent).c_str(),
-                     string_VkFormat(create_info.imageFormat))) {
+        if (LogError(
+                "VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc.dot(Field::imageExtent),
+                "(%s), which is bigger than max extent (%s)"
+                " returned by vkGetPhysicalDeviceImageFormatProperties() for imageFormat %s with tiling VK_IMAGE_TILING_OPTIMAL.",
+                string_VkExtent2D(create_info.imageExtent).c_str(), string_VkExtent3D(image_properties.maxExtent).c_str(),
+                string_VkFormat(create_info.imageFormat))) {
             return true;
         }
     }
