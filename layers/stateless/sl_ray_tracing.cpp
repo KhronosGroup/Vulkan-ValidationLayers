@@ -990,9 +990,6 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
                                    "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
         if (geom.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
             const Location triangles_loc = geometry_loc.dot(Field::triangles);
-            skip |= ValidateStructType(triangles_loc, &geom.geometry.triangles,
-                                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, true,
-                                       "VUID-VkAccelerationStructureGeometryKHR-triangles-parameter", kVUIDUndefined);
 
             skip |= ValidateAccelerationStructureGeometryTrianglesDataKHR(geom.geometry.triangles, triangles_loc);
 
@@ -1010,16 +1007,10 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(cons
             }
         } else if (geom.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
             const Location instances_loc = geometry_loc.dot(Field::instances);
-            skip |= ValidateStructType(instances_loc, &geom.geometry.instances,
-                                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, true,
-                                       "VUID-VkAccelerationStructureGeometryKHR-instances-parameter", kVUIDUndefined);
 
             skip |= ValidateAccelerationStructureGeometryInstancesDataKHR(geom.geometry.instances, instances_loc);
         } else if (geom.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
             const Location aabbs_loc = geometry_loc.dot(Field::aabbs);
-            skip |= ValidateStructType(aabbs_loc, &geom.geometry.aabbs,
-                                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, true,
-                                       "VUID-VkAccelerationStructureGeometryKHR-aabbs-parameter", kVUIDUndefined);
 
             skip |= ValidateAccelerationStructureGeometryAabbsDataKHR(geom.geometry.aabbs, aabbs_loc);
 
