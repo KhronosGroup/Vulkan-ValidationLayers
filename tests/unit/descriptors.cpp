@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
@@ -18,6 +18,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
+#include "../framework/ray_tracing_objects.h"
 
 class NegativeDescriptors : public VkLayerTest {};
 
@@ -5366,5 +5367,80 @@ TEST_F(NegativeDescriptors, DSBufferLimitWithTemplateUpdate) {
 
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00328");
     vk::UpdateDescriptorSetWithTemplateKHR(device(), descriptor_set.set_, descriptor_update_template, &buffer_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, UpdateDescriptorSetWithAccelerationStructure) {
+    TEST_DESCRIPTION("Update descriptor set with invalid acceleration structures.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorPoolSize pool_size;
+    pool_size.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    pool_size.descriptorCount = 1u;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1u;
+    ds_pool_ci.poolSizeCount = 1u;
+    ds_pool_ci.pPoolSizes = &pool_size;
+
+    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding binding;
+    binding.binding = 0u;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    binding.descriptorCount = 1u;
+    binding.stageFlags = VK_SHADER_STAGE_ALL;
+    binding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper();
+    create_info.bindingCount = 1u;
+    create_info.pBindings = &binding;
+
+    vkt::DescriptorSetLayout set_layout(*m_device, create_info);
+
+    VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
+    allocate_info.descriptorPool = pool.handle();
+    allocate_info.descriptorSetCount = 1u;
+    allocate_info.pSetLayouts = &set_layout.handle();
+
+    VkDescriptorSet descriptor_set;
+    vk::AllocateDescriptorSets(device(), &allocate_info, &descriptor_set);
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set;
+    descriptor_write.dstBinding = 0u;
+    descriptor_write.descriptorCount = 1u;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02382");
+    vk::UpdateDescriptorSets(device(), 1u, &descriptor_write, 0u, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
+    blas->Build();
+
+    VkAccelerationStructureKHR null_acceleration_structure = VK_NULL_HANDLE;
+
+    VkWriteDescriptorSetAccelerationStructureKHR blas_descriptor = vku::InitStructHelper();
+    blas_descriptor.accelerationStructureCount = 1u;
+    blas_descriptor.pAccelerationStructures = &null_acceleration_structure;
+    descriptor_write.pNext = &blas_descriptor;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580");
+    vk::UpdateDescriptorSets(device(), 1u, &descriptor_write, 0u, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    blas_descriptor.pAccelerationStructures = &blas->handle();
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03579");
+    vk::UpdateDescriptorSets(device(), 1u, &descriptor_write, 0u, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    blas_descriptor.accelerationStructureCount = 0u;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength");
+    vk::UpdateDescriptorSets(device(), 1u, &descriptor_write, 0u, nullptr);
     m_errorMonitor->VerifyFound();
 }
