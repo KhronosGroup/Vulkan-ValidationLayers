@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,15 +27,12 @@ bool StatelessValidation::manual_PreCallValidateCreateShaderModule(VkDevice devi
                                                                    VkShaderModule *pShaderModule,
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
-    if (pCreateInfo) {
-        constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
-                                                VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
+    constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
+                                            VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT};
 
-        skip |=
-            ValidateStructPnext(error_obj.location.dot(Field::pCreateInfo), pCreateInfo->pNext, allowed_structs.size(),
+    skip |= ValidateStructPnext(error_obj.location.dot(Field::pCreateInfo), pCreateInfo->pNext, allowed_structs.size(),
                                 allowed_structs.data(), GeneratedVulkanHeaderVersion, "VUID-vkCreateShaderModule-pCreateInfo-06904",
                                 "VUID-vkCreateShaderModule-pCreateInfo-06904", VK_NULL_HANDLE, true);
-    }
     return skip;
 }
 

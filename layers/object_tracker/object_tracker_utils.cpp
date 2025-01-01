@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1103,17 +1103,15 @@ bool ObjectLifetimes::PreCallValidateCreateFramebuffer(VkDevice device, const Vk
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateFramebuffer-device-parameter"
 
-    if (pCreateInfo) {
-        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-        skip |= ValidateObject(pCreateInfo->renderPass, kVulkanObjectTypeRenderPass, false,
-                               "VUID-VkFramebufferCreateInfo-renderPass-parameter", "VUID-VkFramebufferCreateInfo-commonparent",
-                               create_info_loc.dot(Field::renderPass));
-        if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
-            for (uint32_t index1 = 0; index1 < pCreateInfo->attachmentCount; ++index1) {
-                skip |= ValidateObject(pCreateInfo->pAttachments[index1], kVulkanObjectTypeImageView, true,
-                                       "VUID-VkFramebufferCreateInfo-flags-02778", "VUID-VkFramebufferCreateInfo-commonparent",
-                                       create_info_loc.dot(Field::pAttachments, index1));
-            }
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    skip |= ValidateObject(pCreateInfo->renderPass, kVulkanObjectTypeRenderPass, false,
+                           "VUID-VkFramebufferCreateInfo-renderPass-parameter", "VUID-VkFramebufferCreateInfo-commonparent",
+                           create_info_loc.dot(Field::renderPass));
+    if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
+        for (uint32_t index1 = 0; index1 < pCreateInfo->attachmentCount; ++index1) {
+            skip |= ValidateObject(pCreateInfo->pAttachments[index1], kVulkanObjectTypeImageView, true,
+                                   "VUID-VkFramebufferCreateInfo-flags-02778", "VUID-VkFramebufferCreateInfo-commonparent",
+                                   create_info_loc.dot(Field::pAttachments, index1));
         }
     }
 
@@ -1232,20 +1230,18 @@ bool ObjectLifetimes::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice dev
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateDescriptorUpdateTemplate-device-parameter"
 
-    if (pCreateInfo) {
-        const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
-            skip |= ValidateObject(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout, false,
-                                   "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00350",
-                                   "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent",
-                                   create_info_loc.dot(Field::descriptorSetLayout));
-        }
-        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS) {
-            skip |= ValidateObject(pCreateInfo->pipelineLayout, kVulkanObjectTypePipelineLayout, false,
-                                   "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00352",
-                                   "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent",
-                                   create_info_loc.dot(Field::pipelineLayout));
-        }
+    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
+        skip |= ValidateObject(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout, false,
+                               "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00350",
+                               "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent",
+                               create_info_loc.dot(Field::descriptorSetLayout));
+    }
+    if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS) {
+        skip |=
+            ValidateObject(pCreateInfo->pipelineLayout, kVulkanObjectTypePipelineLayout, false,
+                           "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00352",
+                           "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent", create_info_loc.dot(Field::pipelineLayout));
     }
 
     return skip;
@@ -1580,10 +1576,6 @@ bool ObjectLifetimes::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice devi
                                                                    const ErrorObject &error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateIndirectExecutionSetEXT-device-parameter"
-
-    if (!pCreateInfo) {
-        return skip;
-    }
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     const Location info_loc = create_info_loc.dot(Field::info);

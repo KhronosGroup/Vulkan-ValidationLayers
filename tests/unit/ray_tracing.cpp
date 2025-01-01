@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -972,6 +972,18 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     // .dstAccelerationStructure buffer is not bound to host visible memory
     m_errorMonitor->SetDesiredError("VUID-vkCopyMemoryToAccelerationStructureKHR-buffer-03730");
     vk::CopyMemoryToAccelerationStructureKHR(device(), VK_NULL_HANDLE, &info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracing, NullCreateAccelerationStructureKHR) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    VkAccelerationStructureKHR as;
+    m_errorMonitor->SetDesiredError("VUID-vkCreateAccelerationStructureKHR-pCreateInfo-parameter");
+    vk::CreateAccelerationStructureKHR(device(), nullptr, nullptr, &as);
     m_errorMonitor->VerifyFound();
 }
 
