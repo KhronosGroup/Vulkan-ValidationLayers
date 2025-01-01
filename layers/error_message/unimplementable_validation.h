@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 LunarG, Inc.
- * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,12 @@ const char* unimplementable_validation[] = {
 
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/6639#note_468463
     "VUID-VkIndirectCommandsVertexBufferTokenEXT-vertexBindingUnit-11134",
+
+    // Unlike things like VkIndirectCommandsTokenDataEXT/VkDescriptorDataEXT this is
+    // an union of pNext structs that have no way to hit without hitting other things first
+    "VUID-VkAccelerationStructureGeometryKHR-triangles-parameter",
+    "VUID-VkAccelerationStructureGeometryKHR-instances-parameter",
+    "VUID-VkAccelerationStructureGeometryKHR-aabbs-parameter",
 
     // These implicit VUs ask to check for a valid structure that has no sType,
     // there is nothing that can actually be validated
