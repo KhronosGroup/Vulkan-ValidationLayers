@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -337,7 +337,6 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                                                               const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
                                                               const ErrorObject &error_obj) const {
     bool skip = false;
-    if (!pCreateInfo) return skip;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     const auto &limits = device_limits;
@@ -837,9 +836,6 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (!pCreateInfo) {
-        return skip;
-    }
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     if (pCreateInfo->maxSets == 0 && ((pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_ALLOW_OVERALLOCATION_SETS_BIT_NV) == 0)) {
         skip |= LogError("VUID-VkDescriptorPoolCreateInfo-descriptorPoolOverallocation-09227", device,

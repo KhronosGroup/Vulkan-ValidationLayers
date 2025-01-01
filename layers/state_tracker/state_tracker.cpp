@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -382,31 +382,29 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
 
     std::shared_ptr<vvl::Buffer> buffer_state = CreateBufferState(*pBuffer, pCreateInfo);
 
-    if (pCreateInfo) {
-        const auto *opaque_capture_address = vku::FindStructInPNextChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
-        if (opaque_capture_address && (opaque_capture_address->opaqueCaptureAddress != 0)) {
-            WriteLockGuard guard(buffer_address_lock_);
-            // address is used for GPU-AV and ray tracing buffer validation
-            buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
-            const auto address_range = buffer_state->DeviceAddressRange();
+    const auto *opaque_capture_address = vku::FindStructInPNextChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
+    if (opaque_capture_address && (opaque_capture_address->opaqueCaptureAddress != 0)) {
+        WriteLockGuard guard(buffer_address_lock_);
+        // address is used for GPU-AV and ray tracing buffer validation
+        buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
+        const auto address_range = buffer_state->DeviceAddressRange();
 
-            BufferAddressInfillUpdateOps ops{{buffer_state.get()}};
-            sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
+        BufferAddressInfillUpdateOps ops{{buffer_state.get()}};
+        sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
+    }
+
+    const VkBufferUsageFlags descriptor_buffer_usages =
+        VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
+        descriptorBufferAddressSpaceSize += pCreateInfo->size;
+
+        if ((buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
+            resourceDescriptorBufferAddressSpaceSize += pCreateInfo->size;
         }
 
-        const VkBufferUsageFlags descriptor_buffer_usages =
-            VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-
-        if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
-            descriptorBufferAddressSpaceSize += pCreateInfo->size;
-
-            if ((buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
-                resourceDescriptorBufferAddressSpaceSize += pCreateInfo->size;
-            }
-
-            if ((buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
-                samplerDescriptorBufferAddressSpaceSize += pCreateInfo->size;
-            }
+        if ((buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
+            samplerDescriptorBufferAddressSpaceSize += pCreateInfo->size;
         }
     }
     Add(std::move(buffer_state));

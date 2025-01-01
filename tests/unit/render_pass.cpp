@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
@@ -1783,6 +1783,14 @@ TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
     fb_ci.pAttachments = image_views;
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-02778");
     vk::CreateFramebuffer(device(), &fb_ci, NULL, &framebuffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRenderPass, NullFramebufferCreateInfo) {
+    RETURN_IF_SKIP(Init());
+    VkFramebuffer framebuffer;
+    m_errorMonitor->SetDesiredError("VUID-vkCreateFramebuffer-pCreateInfo-parameter");
+    vk::CreateFramebuffer(device(), nullptr, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
 }
 

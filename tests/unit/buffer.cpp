@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -662,6 +662,14 @@ TEST_F(NegativeBuffer, CreateBufferSize) {
     info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     info.size = 0;
     CreateBufferTest(*this, &info, "VUID-VkBufferCreateInfo-size-00912");
+}
+
+TEST_F(NegativeBuffer, NullBufferCreateInfo) {
+    RETURN_IF_SKIP(Init());
+    VkBuffer buffer = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-vkCreateBuffer-pCreateInfo-parameter");
+    vk::CreateBuffer(device(), nullptr, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeBuffer, DedicatedAllocationBufferFlags) {

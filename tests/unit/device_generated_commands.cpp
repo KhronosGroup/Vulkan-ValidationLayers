@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2346,6 +2346,14 @@ TEST_F(NegativeDeviceGeneratedCommands, InitialPipelineObject) {
     exe_set_pipeline_info.initialPipeline = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredError("pCreateInfo->info.pPipelineInfo->initialPipeline is VK_NULL_HANDLE");
     vk::CreateIndirectExecutionSetEXT(device(), &exe_set_ci, nullptr, &exe_set);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceGeneratedCommands, NullIndirectExecutionSetEXT) {
+    RETURN_IF_SKIP(InitBasicDeviceGeneratedCommands());
+    VkIndirectExecutionSetEXT exe_set = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-vkCreateIndirectExecutionSetEXT-pCreateInfo-parameter");
+    vk::CreateIndirectExecutionSetEXT(device(), nullptr, nullptr, &exe_set);
     m_errorMonitor->VerifyFound();
 }
 

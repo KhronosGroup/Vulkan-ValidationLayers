@@ -975,6 +975,18 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeRayTracing, NullCreateAccelerationStructureKHR) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    VkAccelerationStructureKHR as;
+    m_errorMonitor->SetDesiredError("VUID-vkCreateAccelerationStructureKHR-pCreateInfo-parameter");
+    vk::CreateAccelerationStructureKHR(device(), nullptr, nullptr, &as);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeRayTracing, CreateAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate acceleration structure creation.");
 
