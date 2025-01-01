@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
                     if (!PushConstantRangesContained(token_range, layout_range)) {
                         skip |= LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-11132",
                                          pipeline_layout_state->Handle(), update_range_loc,
-                                         "is in the range %s but the push constant range in "
+                                         "is %s but the push constant range in "
                                          "VkIndirectCommandsLayoutCreateInfoEXT::pipelineLayout is %s.",
                                          string_VkPushConstantRange(token_range).c_str(),
                                          string_VkPushConstantRange(layout_range).c_str());
@@ -98,7 +98,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
                     const VkPushConstantRange& layout_range = dynamic_layout_create->pPushConstantRanges[pc_index];
                     if (!PushConstantRangesContained(token_range, layout_range)) {
                         skip |= LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-updateRange-11132", device, update_range_loc,
-                                         "is in the range %s but the push constant range in "
+                                         "is %s but the push constant range in "
                                          "VkPipelineLayoutCreateInfo::pPushConstantRanges[%" PRIu32 "] is %s.",
                                          string_VkPushConstantRange(token_range).c_str(), pc_index,
                                          string_VkPushConstantRange(layout_range).c_str());
@@ -177,12 +177,11 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
             const VkPushConstantRange& token_range = push_constant_token->updateRange;
             for (const auto& [past_index, past_range] : token_ranges) {
                 if (RangesIntersect(past_range.offset, past_range.size, token_range.offset, token_range.size)) {
-                    skip |=
-                        LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11099", device,
-                                 data_loc.dot(Field::pPushConstant).dot(Field::updateRange),
-                                 "is in the range %s which overlaps with pTokens[%" PRIu32 "].data.pPushConstant->updateRange %s.",
-                                 string_VkPushConstantRange(token_range).c_str(), past_index,
-                                 string_VkPushConstantRange(past_range).c_str());
+                    skip |= LogError("VUID-VkIndirectCommandsLayoutCreateInfoEXT-pTokens-11099", device,
+                                     data_loc.dot(Field::pPushConstant).dot(Field::updateRange),
+                                     "is %s which overlaps with pTokens[%" PRIu32 "].data.pPushConstant->updateRange (%s).",
+                                     string_VkPushConstantRange(token_range).c_str(), past_index,
+                                     string_VkPushConstantRange(past_range).c_str());
                     break;
                 }
             }

@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,8 +85,8 @@
 
 [[maybe_unused]] static std::string string_VkPushConstantRange(VkPushConstantRange range) {
     std::stringstream ss;
-    ss << "[" << range.offset << ", " << (range.offset + range.size)
-       << ") - stageFlags: " << string_VkShaderStageFlags(range.stageFlags);
+    ss << "range [" << range.offset << ", " << (range.offset + range.size) << ") for "
+       << string_VkShaderStageFlags(range.stageFlags);
     return ss.str();
 }
 
