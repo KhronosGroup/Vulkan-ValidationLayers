@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2024 Valve Corporation
-# Copyright (c) 2020-2024 LunarG, Inc.
+# Copyright (c) 2020-2025 Valve Corporation
+# Copyright (c) 2020-2025 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -95,16 +95,19 @@ def VerifyCopyrights(commit, target_files):
         if not commit_year or int(commit_year) < int(year):
             commit_year = year.decode('utf-8')
     for file in target_files:
-        if file is None or not os.path.isfile(file):
+        if file is None:
+            continue
+        file_path = repo_relative(file)
+        if not os.path.isfile(file_path):
             continue
         for company in ["LunarG", "Valve"]:
             # Capture the last year on the line as a separate match. It should be the highest (or only year of the range)
-            copyright_match = re.search('Copyright .*(\d{4}) ' + company, open(file, encoding="utf-8", errors='ignore').read(1024))
+            copyright_match = re.search('Copyright .*(\d{4}) ' + company, open(file_path, encoding="utf-8", errors='ignore').read(1024))
             if copyright_match:
                 copyright_year = copyright_match.group(1)
                 if int(commit_year) > int(copyright_year):
                     msg = f'Change written in {commit_year} but copyright ends in {copyright_year}.'
-                    CPrint('ERR_MSG', f'\n{file} has an out-of-date {company} copyright notice. {msg}')
+                    CPrint('ERR_MSG', f'\n{file_path} has an out-of-date {company} copyright notice. {msg}')
                     retval = 1
     return retval
 #
