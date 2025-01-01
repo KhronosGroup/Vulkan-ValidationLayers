@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022-2024 The Khronos Group Inc.
- * Copyright (c) 2022-2024 RasterGrid Kft.
+ * Copyright (c) 2022-2025 The Khronos Group Inc.
+ * Copyright (c) 2022-2025 RasterGrid Kft.
  * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -86,14 +86,14 @@ TEST_F(NegativeVideo, VideoProfileInvalidLumaChromaSubsampling) {
     m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07013");
     profile = *config.Profile();
     profile.chromaSubsampling = VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR | VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR;
-    vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), &profile, config.Caps());
+    vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), &profile, config.Caps());
     m_errorMonitor->VerifyFound();
 
     // Multiple bits in lumaBitDepth
     m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-lumaBitDepth-07014");
     profile = *config.Profile();
     profile.lumaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR | VK_VIDEO_COMPONENT_BIT_DEPTH_10_BIT_KHR;
-    vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), &profile, config.Caps());
+    vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), &profile, config.Caps());
     m_errorMonitor->VerifyFound();
 
     // Multiple bits in chromaBitDepth
@@ -101,7 +101,7 @@ TEST_F(NegativeVideo, VideoProfileInvalidLumaChromaSubsampling) {
     profile = *config.Profile();
     profile.chromaSubsampling = VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR;
     profile.chromaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR | VK_VIDEO_COMPONENT_BIT_DEPTH_10_BIT_KHR;
-    vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), &profile, config.Caps());
+    vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), &profile, config.Caps());
     m_errorMonitor->VerifyFound();
 }
 
@@ -120,7 +120,7 @@ TEST_F(NegativeVideo, VideoProfileMissingCodecInfo) {
 
         // Missing codec-specific info for H.264 decode profile
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07179");
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), &profile, config.Caps());
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), &profile, config.Caps());
         m_errorMonitor->VerifyFound();
     }
 
@@ -132,7 +132,7 @@ TEST_F(NegativeVideo, VideoProfileMissingCodecInfo) {
 
         // Missing codec-specific info for H.265 decode profile
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07180");
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), &profile, config.Caps());
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), &profile, config.Caps());
         m_errorMonitor->VerifyFound();
     }
 
@@ -144,7 +144,7 @@ TEST_F(NegativeVideo, VideoProfileMissingCodecInfo) {
 
         // Missing codec-specific info for AV1 decode profile
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-09256");
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), &profile, config.Caps());
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), &profile, config.Caps());
         m_errorMonitor->VerifyFound();
     }
 
@@ -156,7 +156,7 @@ TEST_F(NegativeVideo, VideoProfileMissingCodecInfo) {
 
         // Missing codec-specific info for H.264 encode profile
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07181");
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), &profile, config.Caps());
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), &profile, config.Caps());
         m_errorMonitor->VerifyFound();
     }
 
@@ -168,7 +168,7 @@ TEST_F(NegativeVideo, VideoProfileMissingCodecInfo) {
 
         // Missing codec-specific info for H.265 encode profile
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07182");
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), &profile, config.Caps());
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), &profile, config.Caps());
         m_errorMonitor->VerifyFound();
     }
 
@@ -180,7 +180,7 @@ TEST_F(NegativeVideo, VideoProfileMissingCodecInfo) {
 
         // Missing codec-specific info for AV1 encode profile
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-10262");
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), &profile, config.Caps());
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), &profile, config.Caps());
         m_errorMonitor->VerifyFound();
     }
 }
@@ -200,13 +200,13 @@ TEST_F(NegativeVideo, CapabilityQueryMissingChain) {
         // Missing decode caps struct for decode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07183");
         caps.pNext = &decode_h264_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
 
         // Missing H.264 decode caps struct for H.264 decode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07184");
         caps.pNext = &decode_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
     }
 
@@ -220,13 +220,13 @@ TEST_F(NegativeVideo, CapabilityQueryMissingChain) {
         // Missing decode caps struct for decode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07183");
         caps.pNext = &decode_h265_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
 
         // Missing H.265 decode caps struct for H.265 decode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07185");
         caps.pNext = &decode_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
     }
 
@@ -240,13 +240,13 @@ TEST_F(NegativeVideo, CapabilityQueryMissingChain) {
         // Missing decode caps struct for decode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07183");
         caps.pNext = &decode_av1_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
 
         // Missing AV1 decode caps struct for AV1 decode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-09257");
         caps.pNext = &decode_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
     }
 
@@ -260,13 +260,13 @@ TEST_F(NegativeVideo, CapabilityQueryMissingChain) {
         // Missing encode caps struct for encode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07186");
         caps.pNext = &encode_h264_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
 
         // Missing H.264 encode caps struct for H.264 encode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07187");
         caps.pNext = &encode_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
     }
 
@@ -280,13 +280,13 @@ TEST_F(NegativeVideo, CapabilityQueryMissingChain) {
         // Missing encode caps struct for encode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07186");
         caps.pNext = &encode_h265_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
 
         // Missing H.265 encode caps struct for H.265 encode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07188");
         caps.pNext = &encode_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
     }
 
@@ -300,13 +300,13 @@ TEST_F(NegativeVideo, CapabilityQueryMissingChain) {
         // Missing encode caps struct for encode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-07186");
         caps.pNext = &encode_av1_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
 
         // Missing AV1 encode caps struct for AV1 encode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoCapabilitiesKHR-pVideoProfile-10263");
         caps.pNext = &encode_caps;
-        vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), &caps);
+        vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), &caps);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -325,14 +325,14 @@ TEST_F(NegativeVideo, VideoFormatQueryMissingProfile) {
     uint32_t format_count = 0;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pNext-06812");
-    vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &format_info, &format_count, nullptr);
+    vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &format_info, &format_count, nullptr);
     m_errorMonitor->VerifyFound();
 
     auto profile_list = vku::InitStruct<VkVideoProfileListInfoKHR>();
     format_info.pNext = &profile_list;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoFormatPropertiesKHR-pNext-06812");
-    vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &format_info, &format_count, nullptr);
+    vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &format_info, &format_count, nullptr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -350,7 +350,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsUnsupportedProfile) {
     quality_level_info.pVideoProfile = config.Profile();
 
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-pVideoProfile-08259");
-    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
     m_errorMonitor->VerifyFound();
 }
 
@@ -368,7 +368,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsProfileNotEncode) {
     quality_level_info.pVideoProfile = config.Profile();
 
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-pVideoProfile-08260");
-    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
     m_errorMonitor->VerifyFound();
 }
 
@@ -387,7 +387,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsInvalidQualityLevel) {
     quality_level_info.qualityLevel = config.EncodeCaps()->maxQualityLevels;
 
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-qualityLevel-08261");
-    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
     m_errorMonitor->VerifyFound();
 }
 
@@ -409,7 +409,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingCodecInfo) {
         // Missing codec-specific info for H.264 encode profile
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-pVideoProfile-08259");
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07181");
-        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
         m_errorMonitor->VerifyFound();
     }
 
@@ -422,7 +422,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingCodecInfo) {
         // Missing codec-specific info for H.265 encode profile
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-pVideoProfile-08259");
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07182");
-        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
         m_errorMonitor->VerifyFound();
     }
 
@@ -435,7 +435,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingCodecInfo) {
         // Missing codec-specific info for AV1 encode profile
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-pVideoProfile-08259");
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-10262");
-        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
         m_errorMonitor->VerifyFound();
     }
 }
@@ -454,7 +454,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingChain) {
 
         // Missing codec-specific output structure for H.264 encode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-pQualityLevelInfo-08257");
-        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(gpu(), &quality_level_info, &quality_level_props);
+        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, &quality_level_props);
         m_errorMonitor->VerifyFound();
     }
 
@@ -464,7 +464,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingChain) {
 
         // Missing codec-specific output structure for H.265 encode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-pQualityLevelInfo-08258");
-        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(gpu(), &quality_level_info, &quality_level_props);
+        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, &quality_level_props);
         m_errorMonitor->VerifyFound();
     }
 
@@ -474,7 +474,7 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingChain) {
 
         // Missing codec-specific output structure for AV1 encode profile
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-pQualityLevelInfo-10305");
-        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(gpu(), &quality_level_info, &quality_level_props);
+        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, &quality_level_props);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1084,7 +1084,7 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
     std::vector<VkBindVideoSessionMemoryInfoKHR> bind_info(mem_req_count, vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>());
     for (uint32_t i = 0; i < mem_req_count; ++i) {
         VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-        ASSERT_TRUE(m_device->phy().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
+        ASSERT_TRUE(m_device->Physical().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
         alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size * 2;
 
         VkDeviceMemory memory = VK_NULL_HANDLE;
@@ -1128,7 +1128,7 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
     // Incompatible memory type
     uint32_t invalid_mem_type_index = vvl::kU32Max;
     uint32_t invalid_mem_type_req_index = vvl::kU32Max;
-    auto mem_props = m_device->phy().memory_properties_;
+    auto mem_props = m_device->Physical().memory_properties_;
     for (uint32_t i = 0; i < mem_req_count; ++i) {
         uint32_t mem_type_bits = mem_reqs[i].memoryRequirements.memoryTypeBits;
         for (uint32_t mem_type_index = 0; mem_type_index < mem_props.memoryTypeCount; ++mem_type_index) {
@@ -3808,7 +3808,7 @@ TEST_F(NegativeVideo, BeginCodingSessionMemoryNotBound) {
         if (i == mem_req_count / 2) continue;
 
         VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-        m_device->phy().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0);
+        m_device->Physical().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0);
         alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size;
 
         VkDeviceMemory memory = VK_NULL_HANDLE;
@@ -16047,7 +16047,7 @@ TEST_F(NegativeVideo, CreateImageViewProfileIndependent) {
         VK_FORMAT_FEATURE_VIDEO_DECODE_OUTPUT_BIT_KHR | VK_FORMAT_FEATURE_VIDEO_DECODE_DPB_BIT_KHR |
         VK_FORMAT_FEATURE_VIDEO_ENCODE_INPUT_BIT_KHR | VK_FORMAT_FEATURE_VIDEO_ENCODE_DPB_BIT_KHR;
     VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_props);
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), format, &format_props);
     if ((format_props.optimalTilingFeatures & video_format_flags) != 0) {
         GTEST_SKIP() << "Test expects R8G8_SNORM format to not support video usage";
     }
@@ -17021,7 +17021,7 @@ TEST_F(NegativeVideoBestPractices, BindVideoSessionMemory) {
     // Create non-video-related DeviceMemory
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = buf_mem_reqs.size;
-    ASSERT_TRUE(m_device->phy().SetMemoryType(buf_mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    ASSERT_TRUE(m_device->Physical().SetMemoryType(buf_mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory memory(*m_device, alloc_info);
 
     // Set VkBindVideoSessionMemoryInfoKHR::memory to an allocation created before GetVideoSessionMemoryRequirementsKHR was called

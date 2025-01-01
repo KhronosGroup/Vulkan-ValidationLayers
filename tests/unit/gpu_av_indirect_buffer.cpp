@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
- * Copyright (c) 2020-2024 Google, Inc.
+ * Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
+ * Copyright (c) 2020-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -226,7 +226,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
-    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 2;
     count_buffer.Memory().Unmap();
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -245,7 +245,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+    count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 1;
     count_buffer.Memory().Unmap();
 
@@ -296,7 +296,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+    count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 1;
     count_buffer.Memory().Unmap();
 
@@ -340,12 +340,12 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
         mesh_draw_ptr->groupCountX = 0;
         mesh_draw_ptr->groupCountY = 0;
         mesh_draw_ptr->groupCountZ = 0;
-        mesh_draw_buffer.memory().unmap();
+        mesh_draw_buffer.Memory().Unmap();
         m_errorMonitor->SetDesiredWarningRegex(
             "WARNING-GPU-AV-drawCount",
             "Indirect draw count of 1 would exceed size \\(12\\) of buffer .* stride = 12 offset = 8 "
             ".* = 20");
-        count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+        count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
         *count_ptr = 1;
         count_buffer.Memory().Unmap();
         m_command_buffer.Begin(&begin_info);
@@ -363,7 +363,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
             "WARNING-GPU-AV-drawCount",
             "Indirect draw count of 2 would exceed size \\(12\\) of buffer .* stride = 12 offset = 4 "
             ".* = 28");
-        count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+        count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
         *count_ptr = 2;
         count_buffer.Memory().Unmap();
         m_command_buffer.Begin(&begin_info);
@@ -437,7 +437,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
     vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer.handle(), draw_buffer.handle(), 0, 3,
                                     (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4));
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     if (mesh_shader_props.maxMeshWorkGroupCount[0] < std::numeric_limits<uint32_t>::max()) {
         draw_ptr[8] = mesh_shader_props.maxMeshWorkGroupCount[0] + 1;
@@ -653,7 +653,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     vk::CmdDrawIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 4, sizeof(VkDrawIndirectCommand));
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();

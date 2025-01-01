@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,11 +206,11 @@ GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &dev
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
         kHostVisibleMemProps, &alloc_flags);
 
-    auto instance_buffer_ptr = static_cast<VkAccelerationStructureInstanceKHR *>(instances_buffer.memory().Map());
+    auto instance_buffer_ptr = static_cast<VkAccelerationStructureInstanceKHR *>(instances_buffer.Memory().Map());
     for (size_t vk_instance_i = 0; vk_instance_i < instances_.vk_instances.size(); ++vk_instance_i) {
         instance_buffer_ptr[vk_instance_i] = instances_.vk_instances[vk_instance_i];
     }
-    instances_buffer.memory().unmap();
+    instances_buffer.Memory().Unmap();
 
     instances_.buffer = std::move(instances_buffer);
 
@@ -885,13 +885,13 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
         indices[3 * triangle_i + 2] = 2;
     }
 
-    auto vertex_buffer_ptr = static_cast<float *>(vertex_buffer.memory().Map());
+    auto vertex_buffer_ptr = static_cast<float *>(vertex_buffer.Memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
-    vertex_buffer.memory().unmap();
+    vertex_buffer.Memory().Unmap();
 
-    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.memory().Map());
+    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.Memory().Map());
     std::copy(indices.begin(), indices.end(), index_buffer_ptr);
-    index_buffer.memory().unmap();
+    index_buffer.Memory().Unmap();
 
     // clang-format off
     VkTransformMatrixKHR transform_matrix = {{
@@ -901,9 +901,9 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
     }};
     // clang-format on
 
-    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.memory().Map());
+    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.Memory().Map());
     std::memcpy(transform_buffer_ptr, &transform_matrix, sizeof(transform_matrix));
-    transform_buffer.memory().unmap();
+    transform_buffer.Memory().Unmap();
 
     // Assign vertex and index buffers to out geometry
     triangle_geometry.SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer), uint32_t(vertices.size() / 3) - 1);
@@ -1017,17 +1017,17 @@ GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device &device) {
     vkt::Buffer index_buffer(device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
     vkt::Buffer transform_buffer(device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
-    auto vertex_buffer_ptr = static_cast<Vertex *>(vertex_buffer.memory().Map());
+    auto vertex_buffer_ptr = static_cast<Vertex *>(vertex_buffer.Memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
-    vertex_buffer.memory().unmap();
+    vertex_buffer.Memory().Unmap();
 
-    auto index_buffer_ptr = static_cast<TriangleIndices *>(index_buffer.memory().Map());
+    auto index_buffer_ptr = static_cast<TriangleIndices *>(index_buffer.Memory().Map());
     std::copy(indices.begin(), indices.end(), index_buffer_ptr);
-    index_buffer.memory().unmap();
+    index_buffer.Memory().Unmap();
 
-    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.memory().Map());
+    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.Memory().Map());
     std::memcpy(transform_buffer_ptr, &transform_matrix, sizeof(transform_matrix));
-    transform_buffer.memory().unmap();
+    transform_buffer.Memory().Unmap();
 
     // Assign vertex and index buffers to out geometry
     cube_geometry.SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer), 8 - 1);
@@ -1301,22 +1301,22 @@ vkt::as::BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::D
 
 BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Queue &queue, vkt::CommandBuffer &cmd_buffer) {
     // Create acceleration structure
-    cmd_buffer.begin();
+    cmd_buffer.Begin();
     // Build Bottom Level Acceleration Structure
     auto bot_level_accel_struct =
         std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(device));
     bot_level_accel_struct->BuildCmdBuffer(cmd_buffer);
-    cmd_buffer.end();
+    cmd_buffer.End();
 
     queue.Submit(cmd_buffer);
     device.Wait();
 
-    cmd_buffer.begin();
+    cmd_buffer.Begin();
     // Build Top Level Acceleration Structure
     vkt::as::BuildGeometryInfoKHR top_level_accel_struct =
         vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(device, bot_level_accel_struct);
     top_level_accel_struct.BuildCmdBuffer(cmd_buffer);
-    cmd_buffer.end();
+    cmd_buffer.End();
 
     queue.Submit(cmd_buffer);
     device.Wait();
@@ -1554,7 +1554,7 @@ void Pipeline::BuildSbt() {
     std::cout << "SBT buffer fill:\n";
 #endif
 
-    void *const sbt_buffer_base_ptr = sbt_buffer_.memory().Map();
+    void *const sbt_buffer_base_ptr = sbt_buffer_.Memory().Map();
     void *sbt_buffer_ptr = sbt_buffer_base_ptr;
     (void)sbt_buffer_base_ptr;
     size_t sbt_buffer_space_left = static_cast<size_t>(sbt_buffer_info.size);
@@ -1826,7 +1826,7 @@ vkt::Buffer Pipeline::GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, u
 
     vkt::Buffer indirect_rt_buffer(*device_, sizeof(VkTraceRaysIndirectCommand2KHR), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                    vkt::device_address);
-    auto indirect_rt_ptr = (VkTraceRaysIndirectCommand2KHR *)indirect_rt_buffer.memory().Map();
+    auto indirect_rt_ptr = (VkTraceRaysIndirectCommand2KHR *)indirect_rt_buffer.Memory().Map();
     *indirect_rt_ptr = {};
     indirect_rt_ptr->raygenShaderRecordAddress = sbt.ray_gen_sbt.deviceAddress;
     indirect_rt_ptr->raygenShaderRecordSize = sbt.ray_gen_sbt.size;
@@ -1843,7 +1843,7 @@ vkt::Buffer Pipeline::GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, u
     indirect_rt_ptr->height = height;
     indirect_rt_ptr->depth = depth;
 
-    indirect_rt_buffer.memory().unmap();
+    indirect_rt_buffer.Memory().Unmap();
 
     return indirect_rt_buffer;
 }

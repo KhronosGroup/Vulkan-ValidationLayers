@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2016, 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2016, 2020-2024 Valve Corporation
- * Copyright (c) 2015-2016, 2020-2024 LunarG, Inc.
+ * Copyright (c) 2015-2016, 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2016, 2020-2025 Valve Corporation
+ * Copyright (c) 2015-2016, 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -262,8 +262,6 @@ class Device : public internal::Handle<VkDevice> {
 
     void SetName(const char *name) { Handle<VkDevice>::SetName(handle_, VK_OBJECT_TYPE_DEVICE, name); }
     const PhysicalDevice &Physical() const { return physical_device_; }
-    // Deprecated, use Physical()
-    const PhysicalDevice &phy() const { return physical_device_; }
 
     std::vector<const char *> GetEnabledExtensions() { return enabled_extensions_; }
     bool IsEnabledExtension(const char *extension) const;
@@ -372,15 +370,6 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
 
     // vkUnmapMemory()
     void Unmap() const;
-
-    // Deprecated, use Map() and Unmap()
-    const void *map(VkFlags flags) const { return Map(flags); }
-    void *map(VkFlags flags) { return Map(flags); }
-    const void *map() const { return Map(0); }
-    void *map() { return Map(0); }
-
-    // vkUnmapMemory()
-    void unmap() const { return Unmap(); };
 
     static VkMemoryAllocateInfo GetResourceAllocInfo(const Device &dev, const VkMemoryRequirements &reqs,
                                                      VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
@@ -635,14 +624,8 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     const DeviceMemory &Memory() const { return internal_mem_; }
     DeviceMemory &Memory() { return internal_mem_; }
 
-    // Deprecated, use Memory()
-    const DeviceMemory &memory() const { return internal_mem_; }
-    DeviceMemory &memory() { return internal_mem_; }
-
     // vkGetObjectMemoryRequirements()
     VkMemoryRequirements MemoryRequirements() const;
-    // Deprecated, use MemoryRequirements()
-    VkMemoryRequirements memory_requirements() const { return MemoryRequirements(); };
 
     // Allocate and bind memory
     // The assumption that this object was created in no_mem configuration
@@ -689,8 +672,6 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     }
 
     [[nodiscard]] VkDeviceAddress Address() const;
-    // Deprecated, use Address()
-    [[nodiscard]] VkDeviceAddress address() const { return Address(); };
 
   private:
     VkBufferCreateInfo create_info_;
@@ -755,14 +736,8 @@ class Image : public internal::NonDispHandle<VkImage> {
     const DeviceMemory &Memory() const { return internal_mem_; }
     DeviceMemory &Memory() { return internal_mem_; }
 
-    // Deprecated, use Memory()
-    const DeviceMemory &memory() const { return internal_mem_; }
-    DeviceMemory &memory() { return internal_mem_; }
-
     // vkGetObjectMemoryRequirements()
     VkMemoryRequirements MemoryRequirements() const;
-    // Deprecated, use MemoryRequirements()
-    VkMemoryRequirements memory_requirements() const { return MemoryRequirements(); };
 
     // Allocate and bind memory
     // The assumption that this object was created in no_mem configuration
@@ -1175,14 +1150,6 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void End();
     void Reset(VkCommandBufferResetFlags flags);
     void Reset() { Reset(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT); }
-
-    // Deprecated, use Begin(), End(), Reset()
-    void begin(const VkCommandBufferBeginInfo *info) { Begin(info); };
-    void begin(VkCommandBufferUsageFlags flags) { Begin(flags); };
-    void begin() { Begin(0u); }
-    void end() { End(); };
-    void reset(VkCommandBufferResetFlags flags) { Reset(flags); };
-    void reset() { Reset(VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT); }
 
     static VkCommandBufferAllocateInfo CreateInfo(VkCommandPool const &pool);
 

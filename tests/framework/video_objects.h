@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022-2024 The Khronos Group Inc.
- * Copyright (c) 2022-2024 RasterGrid Kft.
+ * Copyright (c) 2022-2025 The Khronos Group Inc.
+ * Copyright (c) 2022-2025 RasterGrid Kft.
  * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -524,7 +524,7 @@ class BitstreamBuffer {
 
             VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
             VkMemoryPropertyFlags mem_props = is_protected ? VK_MEMORY_PROPERTY_PROTECTED_BIT : 0;
-            ASSERT_TRUE(device_->phy().SetMemoryType(mem_req.memoryTypeBits, &alloc_info, mem_props));
+            ASSERT_TRUE(device_->Physical().SetMemoryType(mem_req.memoryTypeBits, &alloc_info, mem_props));
             alloc_info.allocationSize = mem_req.size;
 
             ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device_->handle(), &alloc_info, nullptr, &memory_));
@@ -626,7 +626,7 @@ class VideoPictureResource {
 
             VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
             VkMemoryPropertyFlags mem_props = is_protected ? VK_MEMORY_PROPERTY_PROTECTED_BIT : 0;
-            ASSERT_TRUE(device_->phy().SetMemoryType(mem_req.memoryTypeBits, &alloc_info, mem_props));
+            ASSERT_TRUE(device_->Physical().SetMemoryType(mem_req.memoryTypeBits, &alloc_info, mem_props));
             alloc_info.allocationSize = mem_req.size;
 
             ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device_->handle(), &alloc_info, nullptr, &memory_));
@@ -2343,7 +2343,7 @@ class VideoContext {
         for (uint32_t i = 0; i < mem_req_count; ++i) {
             VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
 
-            ASSERT_TRUE(device_->phy().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
+            ASSERT_TRUE(device_->Physical().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
             alloc_info.allocationSize = mem_reqs[i].memoryRequirements.size;
 
             VkDeviceMemory memory = VK_NULL_HANDLE;
@@ -2801,14 +2801,14 @@ class VkVideoLayerTest : public VkLayerTest {
 
         VkPhysicalDeviceProtectedMemoryProperties prot_mem_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props = vku::InitStructHelper(&prot_mem_props);
-        vk::GetPhysicalDeviceProperties2(gpu(), &props);
+        vk::GetPhysicalDeviceProperties2(Gpu(), &props);
 
         protected_no_fault_supported_ = (prot_mem_props.protectedNoFault == VK_TRUE);
 
         RETURN_IF_SKIP(InitState());
 
         uint32_t qf_count;
-        vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &qf_count, nullptr);
+        vk::GetPhysicalDeviceQueueFamilyProperties2(Gpu(), &qf_count, nullptr);
 
         queue_family_props_.resize(qf_count, vku::InitStruct<VkQueueFamilyProperties2>());
         queue_family_video_props_.resize(qf_count, vku::InitStruct<VkQueueFamilyVideoPropertiesKHR>());
@@ -2817,7 +2817,7 @@ class VkVideoLayerTest : public VkLayerTest {
             queue_family_props_[i].pNext = &queue_family_video_props_[i];
             queue_family_video_props_[i].pNext = &queue_family_query_result_status_props_[i];
         }
-        vk::GetPhysicalDeviceQueueFamilyProperties2(gpu(), &qf_count, queue_family_props_.data());
+        vk::GetPhysicalDeviceQueueFamilyProperties2(Gpu(), &qf_count, queue_family_props_.data());
 
         InitConfigs();
 
@@ -2981,7 +2981,7 @@ class VkVideoLayerTest : public VkLayerTest {
     }
 
     bool GetCodecCapabilities(VideoConfig& config) {
-        if (vk::GetPhysicalDeviceVideoCapabilitiesKHR(gpu(), config.Profile(), config.Caps()) != VK_SUCCESS) {
+        if (vk::GetPhysicalDeviceVideoCapabilitiesKHR(Gpu(), config.Profile(), config.Caps()) != VK_SUCCESS) {
             return false;
         }
 
@@ -3012,13 +3012,13 @@ class VkVideoLayerTest : public VkLayerTest {
             if (decode_caps->flags & VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR) {
                 info.imageUsage = VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
 
-                VkResult result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, nullptr);
+                VkResult result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, nullptr);
                 if (result != VK_SUCCESS || count == 0) {
                     return false;
                 }
 
                 std::vector<VkVideoFormatPropertiesKHR> pic_props(count, vku::InitStruct<VkVideoFormatPropertiesKHR>());
-                result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, pic_props.data());
+                result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, pic_props.data());
                 if (result != VK_SUCCESS) {
                     return false;
                 }
@@ -3029,13 +3029,13 @@ class VkVideoLayerTest : public VkLayerTest {
 
                 info.imageUsage = VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
 
-                result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, nullptr);
+                result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, nullptr);
                 if (result != VK_SUCCESS || count == 0) {
                     return false;
                 }
                 std::vector<VkVideoFormatPropertiesKHR> dpb_props(count, vku::InitStruct<VkVideoFormatPropertiesKHR>());
 
-                result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, dpb_props.data());
+                result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, dpb_props.data());
                 if (result != VK_SUCCESS) {
                     return false;
                 }
@@ -3049,13 +3049,13 @@ class VkVideoLayerTest : public VkLayerTest {
             } else if (decode_caps->flags & VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR) {
                 info.imageUsage = VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
 
-                VkResult result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, nullptr);
+                VkResult result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, nullptr);
                 if (result != VK_SUCCESS || count == 0) {
                     return false;
                 }
                 std::vector<VkVideoFormatPropertiesKHR> dpb_props(count, vku::InitStruct<VkVideoFormatPropertiesKHR>());
 
-                result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, dpb_props.data());
+                result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, dpb_props.data());
                 if (result != VK_SUCCESS) {
                     return false;
                 }
@@ -3074,13 +3074,13 @@ class VkVideoLayerTest : public VkLayerTest {
 
             info.imageUsage = VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
 
-            VkResult result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, nullptr);
+            VkResult result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, nullptr);
             if (result != VK_SUCCESS || count == 0) {
                 return false;
             }
 
             std::vector<VkVideoFormatPropertiesKHR> pic_props(count, vku::InitStruct<VkVideoFormatPropertiesKHR>());
-            result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, pic_props.data());
+            result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, pic_props.data());
             if (result != VK_SUCCESS) {
                 return false;
             }
@@ -3091,13 +3091,13 @@ class VkVideoLayerTest : public VkLayerTest {
 
             info.imageUsage = VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR;
 
-            result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, nullptr);
+            result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, nullptr);
             if (result != VK_SUCCESS || count == 0) {
                 return false;
             }
             std::vector<VkVideoFormatPropertiesKHR> dpb_props(count, vku::InitStruct<VkVideoFormatPropertiesKHR>());
 
-            result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, dpb_props.data());
+            result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, dpb_props.data());
             if (result != VK_SUCCESS) {
                 return false;
             }
@@ -3128,7 +3128,7 @@ class VkVideoLayerTest : public VkLayerTest {
 
                     info.imageUsage = quant_map_type.image_usage;
 
-                    result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, nullptr);
+                    result = vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, nullptr);
                     if (result != VK_SUCCESS || count == 0) {
                         return false;
                     }
@@ -3161,7 +3161,7 @@ class VkVideoLayerTest : public VkLayerTest {
                     }
 
                     result =
-                        vk::GetPhysicalDeviceVideoFormatPropertiesKHR(gpu(), &info, &count, quant_map_type.format_props.data());
+                        vk::GetPhysicalDeviceVideoFormatPropertiesKHR(Gpu(), &info, &count, quant_map_type.format_props.data());
                     // This should never happen since the initial call to get count was fine.
                     if (result != VK_SUCCESS) {
                         return false;

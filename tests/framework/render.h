@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,8 +79,6 @@ class VkRenderFramework : public VkTestFramework {
     VkDevice device() const { return m_device->handle(); }
     vkt::Device *DeviceObj() const { return m_device; }
     VkPhysicalDevice Gpu() const;
-    // Deprecated, use Gpu()
-    VkPhysicalDevice gpu() const { return Gpu(); }
     VkRenderPass RenderPass() const { return m_renderPass; }
     VkFramebuffer Framebuffer() const { return m_framebuffer->handle(); }
 
@@ -89,8 +87,6 @@ class VkRenderFramework : public VkTestFramework {
 
     ErrorMonitor &Monitor();
     const VkPhysicalDeviceProperties &PhysicalDeviceProps() const;
-    // Deprecated, use PhysicalDeviceProps()
-    const VkPhysicalDeviceProperties &physDevProps() const { return PhysicalDeviceProps(); }
 
     bool InstanceLayerSupported(const char *layer_name, uint32_t spec_version = 0, uint32_t impl_version = 0);
     bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);

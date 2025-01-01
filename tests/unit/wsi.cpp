@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -3527,14 +3527,14 @@ TEST_F(NegativeWsi, ImageCompressionPropertiesSwapchainWithoutFeature) {
     surface_info.surface = m_surface.Handle();
 
     uint32_t surface_format_count;
-    vk::GetPhysicalDeviceSurfaceFormats2KHR(gpu(), &surface_info, &surface_format_count, nullptr);
+    vk::GetPhysicalDeviceSurfaceFormats2KHR(Gpu(), &surface_info, &surface_format_count, nullptr);
 
     std::vector<VkSurfaceFormat2KHR> surface_formats(surface_format_count, vku::InitStruct<VkSurfaceFormat2KHR>());
     VkImageCompressionPropertiesEXT image_compression_control = vku::InitStructHelper();
     surface_formats[0].pNext = &image_compression_control;
 
     m_errorMonitor->SetDesiredError("VUID-VkSurfaceFormat2KHR-pNext-06750");
-    vk::GetPhysicalDeviceSurfaceFormats2KHR(gpu(), &surface_info, &surface_format_count, surface_formats.data());
+    vk::GetPhysicalDeviceSurfaceFormats2KHR(Gpu(), &surface_info, &surface_format_count, surface_formats.data());
     m_errorMonitor->VerifyFound();
 }
 

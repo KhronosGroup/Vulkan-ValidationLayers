@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1457,9 +1457,9 @@ void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
     CommandBuffer cmd_buf(*device_, pool);
 
     /* Build command buffer to set image layout in the driver */
-    cmd_buf.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    cmd_buf.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     SetLayout(cmd_buf, aspect, image_layout);
-    cmd_buf.end();
+    cmd_buf.End();
 
     auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];
     graphics_queue->Submit(cmd_buf);
@@ -1884,7 +1884,7 @@ void CommandBuffer::Begin(VkCommandBufferUsageFlags flags) {
     hinfo.queryFlags = 0;
     hinfo.pipelineStatistics = 0;
 
-    begin(&info);
+    Begin(&info);
 }
 
 void CommandBuffer::End() {

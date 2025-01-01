@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+ * Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,9 +47,9 @@ template <typename IndirectCmdT>
 Buffer IndirectBuffer(const Device &dev, const std::vector<IndirectCmdT> &indirect_cmds) {
     vkt::Buffer indirect_buffer(dev, indirect_cmds.size() * sizeof(IndirectCmdT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    auto *indirect_buffer_ptr = static_cast<IndirectCmdT *>(indirect_buffer.memory().map());
+    auto *indirect_buffer_ptr = static_cast<IndirectCmdT *>(indirect_buffer.Memory().Map());
     std::copy(indirect_cmds.data(), indirect_cmds.data() + indirect_cmds.size(), indirect_buffer_ptr);
-    indirect_buffer.memory().unmap();
+    indirect_buffer.Memory().Unmap();
     return indirect_buffer;
 }
 
