@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -3712,4 +3712,81 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
     }
+}
+
+TEST_F(NegativeCommand, InvalidCommandBufferInheritanceInfo) {
+    TEST_DESCRIPTION("Test VkCommandBufferInheritanceInfo using disabled featuers.");
+
+    AddRequiredExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceConditionalRenderingInfoEXT inheritance_conditional_rendering_info = vku::InitStructHelper();
+    inheritance_conditional_rendering_info.conditionalRenderingEnable = VK_TRUE;
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper(&inheritance_conditional_rendering_info);
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceConditionalRenderingInfoEXT-conditionalRenderingEnable-01977");
+    vk::BeginCommandBuffer(secondary_cb.handle(), &begin_info);
+    m_errorMonitor->VerifyFound();
+
+    inheritance_info.pNext = nullptr;
+    inheritance_info.occlusionQueryEnable = VK_TRUE;
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceInfo-occlusionQueryEnable-00056");
+    vk::BeginCommandBuffer(secondary_cb.handle(), &begin_info);
+    m_errorMonitor->VerifyFound();
+
+    inheritance_info.occlusionQueryEnable = VK_FALSE;
+    inheritance_info.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
+    vk::BeginCommandBuffer(secondary_cb.handle(), &begin_info);
+    m_errorMonitor->VerifyFound();
+
+    inheritance_info.pipelineStatistics = 0u;
+    inheritance_info.queryFlags = VK_QUERY_CONTROL_PRECISE_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
+    vk::BeginCommandBuffer(secondary_cb.handle(), &begin_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeCommand, PipelineStatisticsInvalidFlags) {
+    TEST_DESCRIPTION("Use invalid pipelineStatistics flags.");
+
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    inheritance_info.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_FLAG_BITS_MAX_ENUM;  // Invalid
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
+    vk::BeginCommandBuffer(secondary_cb.handle(), &begin_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeCommand, QueryControlInvalidFlags) {
+    TEST_DESCRIPTION("Use invalid query control flags.");
+
+    AddRequiredFeature(vkt::Feature::inheritedQueries);
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.pInheritanceInfo = &inheritance_info;
+
+    inheritance_info.queryFlags = VK_QUERY_CONTROL_FLAG_BITS_MAX_ENUM;  // Invalid
+    m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
+    vk::BeginCommandBuffer(secondary_cb.handle(), &begin_info);
+    m_errorMonitor->VerifyFound();
 }
