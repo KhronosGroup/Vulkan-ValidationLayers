@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -3759,5 +3759,75 @@ TEST_F(NegativeRayTracing, OpacityMicromapCaptureReplayFeatureDisable) {
 
     vk::CreateMicromapEXT(device(), &maCreateInfo, nullptr, &micromap);
 
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeRayTracing, AccelerationStructureGeometry) {
+    TEST_DESCRIPTION("Test VkAccelerationStructureGeometryKHR parameters");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    VkAccelerationStructureBuildGeometryInfoKHR build_info = vku::InitStructHelper();
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_info.flags =
+        VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+    uint32_t max_primitives_count = 0u;
+    VkAccelerationStructureBuildSizesInfoKHR build_sizes_info = vku::InitStructHelper();
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-flags-03796");
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
+                                              &max_primitives_count, &build_sizes_info);
+    m_errorMonitor->VerifyFound();
+
+    build_info.flags = 0u;
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03790");
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
+                                              &max_primitives_count, &build_sizes_info);
+    m_errorMonitor->VerifyFound();
+
+    VkAccelerationStructureGeometryKHR geometry = vku::InitStructHelper();
+    geometry.geometry.triangles = vku::InitStructHelper();
+
+    build_info.geometryCount = 1u;
+    build_info.pGeometries = &geometry;
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03789");
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
+                                              &max_primitives_count, &build_sizes_info);
+    m_errorMonitor->VerifyFound();
+
+    geometry.geometry.instances = vku::InitStructHelper();
+    geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+    build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03791");
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
+                                              &max_primitives_count, &build_sizes_info);
+    m_errorMonitor->VerifyFound();
+
+    VkAccelerationStructureGeometryKHR geometries[2];
+    geometries[0] = vku::InitStructHelper();
+    geometries[0].geometry.triangles = vku::InitStructHelper();
+    geometries[0].geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+    geometries[1] = vku::InitStructHelper();
+    geometries[1].geometry.aabbs = vku::InitStructHelper();
+    geometries[1].geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+    build_info.geometryCount = 2u;
+    build_info.pGeometries = geometries;
+    uint32_t max_primitives_counts[2] = {0u, 0u};
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03792");
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
+                                              max_primitives_counts, &build_sizes_info);
+    m_errorMonitor->VerifyFound();
+
+    build_info.geometryCount = 1u;
+    build_info.pGeometries = &geometry;
+    geometry.geometryType = VK_GEOMETRY_TYPE_MAX_ENUM_KHR;  // Invalid
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
+    vk::GetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
+                                              &max_primitives_count, &build_sizes_info);
     m_errorMonitor->VerifyFound();
 }
