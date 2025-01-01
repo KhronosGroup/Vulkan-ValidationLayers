@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
- * Copyright (c) 2020-2024 Google, Inc.
+ * Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
+ * Copyright (c) 2020-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndexBufferOOB) {
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -65,9 +65,9 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex32) {
 
     char const *vsSource = R"glsl(
         #version 450
-        
+
         layout(location=0) in vec3 pos;
-        
+
         void main() {
         gl_Position = vec4(pos, 1.0);
         }
@@ -112,7 +112,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex32) {
     vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -129,9 +129,9 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex16) {
 
     char const *vsSource = R"glsl(
         #version 450
-        
+
         layout(location=0) in vec3 pos;
-        
+
         void main() {
         gl_Position = vec4(pos, 1.0);
         }
@@ -177,7 +177,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex16) {
     vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -197,9 +197,9 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex8) {
 
     char const *vsSource = R"glsl(
         #version 450
-        
+
         layout(location=0) in vec3 pos;
-        
+
         void main() {
         gl_Position = vec4(pos, 1.0);
         }
@@ -244,7 +244,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex8) {
     vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -261,9 +261,9 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex32) {
 
     char const *vsSource = R"glsl(
         #version 450
-        
+
         layout(location=0) in vec3 pos;
-        
+
         void main() {
         gl_Position = vec4(pos, 1.0);
         }
@@ -309,7 +309,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex32) {
     vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 3, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -326,9 +326,9 @@ TEST_F(NegativeGpuAVIndexBuffer, DISABLED_DrawInSecondaryCmdBufferBadVertexIndex
 
     char const *vsSource = R"glsl(
         #version 450
-        
+
         layout(location=0) in vec3 pos;
-        
+
         void main() {
         gl_Position = vec4(pos, 1.0);
         }
@@ -367,7 +367,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DISABLED_DrawInSecondaryCmdBufferBadVertexIndex
             secondary_cmd_buffers.emplace_back(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
         secondary_cmd_buffers_handles.push_back(secondary_cmd_buffer.handle());
 
-        secondary_cmd_buffer.begin(&secondary_begin_info);
+        secondary_cmd_buffer.Begin(&secondary_begin_info);
         vk::CmdBindPipeline(secondary_cmd_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
         VkDeviceSize vertex_buffer_offset = 0;
@@ -389,7 +389,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DISABLED_DrawInSecondaryCmdBufferBadVertexIndex
                                              "index_buffer\\[2\\] \\(42\\) \\+ vertexOffset \\(3\\) = Vertex index 45");
         vk::CmdDrawIndexed(secondary_cmd_buffer.handle(), 3, 1, 0, 3, 0);
 
-        secondary_cmd_buffer.end();
+        secondary_cmd_buffer.End();
     }
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -399,7 +399,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DISABLED_DrawInSecondaryCmdBufferBadVertexIndex
     vk::CmdExecuteCommands(m_command_buffer.handle(), size32(secondary_cmd_buffers_handles), secondary_cmd_buffers_handles.data());
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -416,9 +416,9 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16) {
 
     char const *vsSource = R"glsl(
         #version 450
-        
+
         layout(location=0) in vec3 pos;
-        
+
         void main() {
         gl_Position = vec4(pos, 1.0);
         }
@@ -456,7 +456,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16) {
     vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -479,11 +479,11 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16_2) {
 
     char const *vsSource = R"glsl(
         #version 450
-        
+
         layout(location=0) in vec3 pos;
         layout(location=1) in vec2 uv;
         layout(location=2) in vec3 normal;
-        
+
         void main() {
         gl_Position = vec4(pos + uv.xyx + normal, 1.0);
         }
@@ -535,7 +535,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16_2) {
     vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -554,9 +554,9 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex8) {
 
     char const *vsSource = R"glsl(
         #version 450
-        
+
         layout(location=0) in vec3 pos;
-        
+
         void main() {
         gl_Position = vec4(pos, 1.0);
         }
@@ -595,7 +595,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex8) {
     vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -620,11 +620,11 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16DebugLabel) {
 
     char const *vsSource = R"glsl(
         #version 450
-        
+
         layout(location=0) in vec3 pos;
         layout(location=1) in vec2 uv;
         layout(location=2) in vec3 normal;
-        
+
         void main() {
         gl_Position = vec4(pos + uv.xyx + normal, 1.0);
         }
@@ -687,7 +687,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16DebugLabel) {
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -706,9 +706,9 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex32DebugLabel) {
 
     char const *vsSource = R"glsl(
         #version 450
-        
+
         layout(location=0) in vec3 pos;
-        
+
         void main() {
         gl_Position = vec4(pos, 1.0);
         }
@@ -764,7 +764,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex32DebugLabel) {
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
 
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();

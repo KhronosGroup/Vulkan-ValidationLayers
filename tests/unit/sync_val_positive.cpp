@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1939,10 +1939,10 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
         release_dependency.imageMemoryBarrierCount = 1;
         release_dependency.pImageMemoryBarriers = &release_barrier;
 
-        transfer_command_buffer.begin();
+        transfer_command_buffer.Begin();
         vk::CmdCopyBufferToImage2(transfer_command_buffer, &copy_info);
         vk::CmdPipelineBarrier2(transfer_command_buffer, &release_dependency);
-        transfer_command_buffer.end();
+        transfer_command_buffer.End();
 
         transfer_queue->Submit2(transfer_command_buffer, vkt::Signal(semaphore));
     }
@@ -1969,9 +1969,9 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
         acquire_dependency.imageMemoryBarrierCount = 1;
         acquire_dependency.pImageMemoryBarriers = &acquire_barrier;
 
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdPipelineBarrier2(m_command_buffer, &acquire_dependency);
-        m_command_buffer.end();
+        m_command_buffer.End();
 
         m_default_queue->Submit2(m_command_buffer, vkt::Wait(semaphore));
     }

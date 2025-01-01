@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -217,12 +217,12 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
 void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::CommandBuffer &cb, VkPipelineStageFlags src_stages,
                               VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
                               const VkImageMemoryBarrier *img_barrier) {
-    cb.begin();
+    cb.Begin();
     uint32_t num_buf_barrier = (buf_barrier) ? 1 : 0;
     uint32_t num_img_barrier = (img_barrier) ? 1 : 0;
     vk::CmdPipelineBarrier(cb.handle(), src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier,
                            img_barrier);
-    cb.end();
+    cb.End();
     queue->Submit(cb);
     queue->Wait();
 }
@@ -237,14 +237,14 @@ void ValidOwnershipTransfer(ErrorMonitor *monitor, vkt::Queue *queue_from, vkt::
 
 void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::CommandBuffer &cb,
                               const VkBufferMemoryBarrier2 *buf_barrier, const VkImageMemoryBarrier2 *img_barrier) {
-    cb.begin();
+    cb.Begin();
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.bufferMemoryBarrierCount = (buf_barrier) ? 1 : 0;
     dep_info.pBufferMemoryBarriers = buf_barrier;
     dep_info.imageMemoryBarrierCount = (img_barrier) ? 1 : 0;
     dep_info.pImageMemoryBarriers = img_barrier;
     vk::CmdPipelineBarrier2KHR(cb.handle(), &dep_info);
-    cb.end();
+    cb.End();
     queue->Submit(cb);
     queue->Wait();
 }

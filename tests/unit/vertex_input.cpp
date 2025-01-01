@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1860,7 +1860,7 @@ TEST_F(NegativeVertexInput, VertexInputRebinding) {
     VkDeviceSize offsets[2] = {0, 0};
     VkBuffer buffers[2] = {vertex_buffer.handle(), vertex_buffer.handle()};
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 2, buffers, offsets);
@@ -1874,5 +1874,5 @@ TEST_F(NegativeVertexInput, VertexInputRebinding) {
     vk::CmdDraw(m_command_buffer.handle(), 3u, 3u, 0u, 0u);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }

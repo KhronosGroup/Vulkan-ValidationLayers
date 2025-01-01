@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
- * Copyright (c) 2020-2024 Google, Inc.
+ * Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
+ * Copyright (c) 2020-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,9 +69,9 @@ class NegativeDebugPrintfRayTracing : public DebugPrintfTests {
             vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(cube)));
 
         // Build Bottom Level Acceleration Structure
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         out_cube_blas->BuildCmdBuffer(m_command_buffer.handle());
-        m_command_buffer.end();
+        m_command_buffer.End();
 
         m_default_queue->Submit(m_command_buffer);
         m_device->Wait();
@@ -126,9 +126,9 @@ class NegativeDebugPrintfRayTracing : public DebugPrintfTests {
         tlas.SetNullInfos(false);
         tlas.SetNullBuildRangeInfos(false);
 
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         tlas.BuildCmdBuffer(m_command_buffer.handle());
-        m_command_buffer.end();
+        m_command_buffer.End();
 
         m_default_queue->Submit(m_command_buffer);
         m_device->Wait();
@@ -904,14 +904,14 @@ TEST_F(NegativeDebugPrintfRayTracing, Raygen) {
 
     pipeline.Build();
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
                               &pipeline.GetDescriptorSet().set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
     vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_errorMonitor->SetDesiredInfo("In Raygen");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -934,18 +934,18 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Triangle));
 
     // Build Bottom Level Acceleration Structure
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     blas->BuildCmdBuffer(m_command_buffer.handle());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
     // Build Top Level Acceleration Structure
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     tlas.BuildCmdBuffer(m_command_buffer.handle());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
@@ -953,9 +953,9 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
     // Buffer used to count invocations for the 3 shader types
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              kHostVisibleMemProps);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -1062,7 +1062,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
     const uint32_t ray_gen_depth = 1;
     const uint32_t ray_gen_rays_count = ray_gen_width * ray_gen_height * ray_gen_depth;
     for (uint32_t frame = 0; frame < frames_count; ++frame) {
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(),
                                   0, 1, &pipeline.GetDescriptorSet().set_, 0, nullptr);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
@@ -1071,7 +1071,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         vk::CmdTraceRaysKHR(m_command_buffer.handle(), &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt,
                             &trace_rays_sbt.hit_sbt, &trace_rays_sbt.callable_sbt, ray_gen_width, ray_gen_height, ray_gen_depth);
 
-        m_command_buffer.end();
+        m_command_buffer.End();
         for (uint32_t i = 0; i < ray_gen_rays_count; ++i) {
             std::string msg = "In Raygen " + std::to_string(frame * ray_gen_rays_count + i);
             m_errorMonitor->SetDesiredInfo(msg.c_str());
@@ -1091,11 +1091,11 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
         m_errorMonitor->VerifyFound();
     }
 
-    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.memory().map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     ASSERT_EQ(debug_buffer_ptr[0], ray_gen_rays_count * frames_count);
     ASSERT_EQ(debug_buffer_ptr[1], 3 * ray_gen_rays_count * frames_count);
     ASSERT_EQ(debug_buffer_ptr[2], 2 * ray_gen_rays_count * frames_count);
-    debug_buffer.memory().unmap();
+    debug_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
@@ -1118,18 +1118,18 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
         vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Triangle));
 
     // Build Bottom Level Acceleration Structure
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     blas->BuildCmdBuffer(m_command_buffer.handle());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
     // Build Top Level Acceleration Structure
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     tlas.BuildCmdBuffer(m_command_buffer.handle());
-    m_command_buffer.end();
+    m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
@@ -1137,9 +1137,9 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
     // Buffer used to count invocations for the 3 shader types
     vkt::Buffer debug_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                              kHostVisibleMemProps);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -1161,7 +1161,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
 
     uint32_t frames_count = 42;
     for (uint32_t frame = 0; frame < frames_count; ++frame) {
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(),
                                   0, 1, &pipeline.GetDescriptorSet().set_, 0, nullptr);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
@@ -1170,7 +1170,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
         vk::CmdTraceRaysKHR(m_command_buffer.handle(), &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt,
                             &trace_rays_sbt.hit_sbt, &trace_rays_sbt.callable_sbt, 1, 1, 1);
 
-        m_command_buffer.end();
+        m_command_buffer.End();
         m_errorMonitor->SetDesiredInfo("In Raygen");
         m_errorMonitor->SetDesiredInfo("In Miss", 3);
         m_errorMonitor->SetDesiredInfo("In Closest Hit", 2);
@@ -1179,11 +1179,11 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
     }
     m_errorMonitor->VerifyFound();
 
-    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.memory().map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     ASSERT_EQ(debug_buffer_ptr[0], frames_count);
     ASSERT_EQ(debug_buffer_ptr[1], 3 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[2], 2 * frames_count);
-    debug_buffer.memory().unmap();
+    debug_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
@@ -1204,9 +1204,9 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
     // Buffer used to count invocations for the 2 * 3 shaders
     vkt::Buffer debug_buffer(*m_device, 2 * 3 * sizeof(uint32_t),
                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -1231,7 +1231,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
 
     uint32_t frames_count = 42;
     for (uint32_t frame = 0; frame < frames_count; ++frame) {
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(),
                                   0, 1, &pipeline.GetDescriptorSet().set_, 0, nullptr);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
@@ -1246,7 +1246,7 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
         vk::CmdTraceRaysKHR(m_command_buffer.handle(), &sbt_ray_gen_2.ray_gen_sbt, &sbt_ray_gen_2.miss_sbt, &sbt_ray_gen_2.hit_sbt,
                             &sbt_ray_gen_2.callable_sbt, 1, 1, 1);
 
-        m_command_buffer.end();
+        m_command_buffer.End();
         m_errorMonitor->SetDesiredInfo("In Raygen 1");
         m_errorMonitor->SetDesiredInfo("In Raygen 2");
         m_errorMonitor->SetDesiredInfo("In Miss 1", 2);
@@ -1259,14 +1259,14 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
     m_errorMonitor->VerifyFound();
 
     // Check debug buffer to cross check that every expected shader invocation happened
-    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.memory().map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     ASSERT_EQ(debug_buffer_ptr[0], 1 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[1], 1 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[2], (2 + 0) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[3], (1 + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[4], (1 + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[5], (1 + 2) * frames_count);
-    debug_buffer.memory().unmap();
+    debug_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndirect) {
@@ -1289,9 +1289,9 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
     // Buffer used to count invocations for the 2 * 3 shaders
     vkt::Buffer debug_buffer(*m_device, 2 * 3 * sizeof(uint32_t),
                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -1319,18 +1319,18 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
 
     uint32_t frames_count = 42;
     for (uint32_t frame = 0; frame < frames_count; ++frame) {
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(),
                                   0, 1, &pipeline.GetDescriptorSet().set_, 0, nullptr);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
 
         // Invoke ray gen shader 1
-        vk::CmdTraceRaysIndirect2KHR(m_command_buffer.handle(), sbt_ray_gen_1.address());
+        vk::CmdTraceRaysIndirect2KHR(m_command_buffer.handle(), sbt_ray_gen_1.Address());
 
         // Invoke ray gen shader 2
-        vk::CmdTraceRaysIndirect2KHR(m_command_buffer.handle(), sbt_ray_gen_2.address());
+        vk::CmdTraceRaysIndirect2KHR(m_command_buffer.handle(), sbt_ray_gen_2.Address());
 
-        m_command_buffer.end();
+        m_command_buffer.End();
         m_errorMonitor->SetDesiredInfo("In Raygen 1");
         m_errorMonitor->SetDesiredInfo("In Raygen 2");
         m_errorMonitor->SetDesiredInfo("In Miss 1", 2);
@@ -1343,14 +1343,14 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
     }
 
     // Check debug buffer to cross check that every expected shader invocation happened
-    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.memory().map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     ASSERT_EQ(debug_buffer_ptr[0], 1 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[1], 1 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[2], (2 + 0) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[3], (1 + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[4], (1 + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[5], (1 + 2) * frames_count);
-    debug_buffer.memory().unmap();
+    debug_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndirectDeferredBuild) {
@@ -1373,9 +1373,9 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
     // Buffer used to count invocations for the 2 * 3 shaders
     vkt::Buffer debug_buffer(*m_device, 2 * 3 * sizeof(uint32_t),
                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -1408,18 +1408,18 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
 
     uint32_t frames_count = 1;
     for (uint32_t frame = 0; frame < frames_count; ++frame) {
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(),
                                   0, 1, &pipeline.GetDescriptorSet().set_, 0, nullptr);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
 
         // Invoke ray gen shader 1
-        vk::CmdTraceRaysIndirect2KHR(m_command_buffer.handle(), sbt_ray_gen_1.address());
+        vk::CmdTraceRaysIndirect2KHR(m_command_buffer.handle(), sbt_ray_gen_1.Address());
 
         // Invoke ray gen shader 2
-        vk::CmdTraceRaysIndirect2KHR(m_command_buffer.handle(), sbt_ray_gen_2.address());
+        vk::CmdTraceRaysIndirect2KHR(m_command_buffer.handle(), sbt_ray_gen_2.Address());
 
-        m_command_buffer.end();
+        m_command_buffer.End();
         m_errorMonitor->SetDesiredInfo("In Raygen 1", ray_gen_1_rays_count);
         m_errorMonitor->SetDesiredInfo("In Raygen 2");
         m_errorMonitor->SetDesiredInfo("In Miss 1", 2 * ray_gen_1_rays_count + 0);
@@ -1432,12 +1432,12 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
     m_errorMonitor->VerifyFound();
 
     // Check debug buffer to cross check that every expected shader invocation happened
-    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.memory().map());
+    auto debug_buffer_ptr = static_cast<uint32_t*>(debug_buffer.Memory().Map());
     ASSERT_EQ(debug_buffer_ptr[0], 1 * ray_gen_1_rays_count * frames_count);
     ASSERT_EQ(debug_buffer_ptr[1], 1 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[2], (2 * ray_gen_1_rays_count + 0) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[3], (1 * ray_gen_1_rays_count + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[4], (1 * ray_gen_1_rays_count + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[5], (1 * ray_gen_1_rays_count + 2) * frames_count);
-    debug_buffer.memory().unmap();
+    debug_buffer.Memory().Unmap();
 }

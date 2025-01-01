@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
- * Copyright (c) 2020-2024 Google, Inc.
+ * Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
+ * Copyright (c) 2020-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1679,10 +1679,10 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
             uint i;
         };
 
-        layout(push_constant, std430) uniform foo_0 { 
+        layout(push_constant, std430) uniform foo_0 {
             Ptr ptr;
-            uint a; 
-            uint b; 
+            uint a;
+            uint b;
         };
         void main() {
             ptr.i = a + b;
@@ -1711,7 +1711,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
 
     vkt::Buffer out_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
-    std::array<VkDeviceAddress, 3> push_constants_data = {{out_buffer.address(), VkDeviceAddress(2) << 32 | 1u, 3}};
+    std::array<VkDeviceAddress, 3> push_constants_data = {{out_buffer.Address(), VkDeviceAddress(2) << 32 | 1u, 3}};
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
@@ -1778,10 +1778,10 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
             uint i;
         };
 
-        layout(push_constant, std430) uniform foo_0 { 
+        layout(push_constant, std430) uniform foo_0 {
             Ptr ptr;
-            uint a; 
-            uint b; 
+            uint a;
+            uint b;
         };
         void main() {
             ptr.i = a + b;
@@ -1824,7 +1824,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
 
     vkt::Buffer out_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
-    std::array<VkDeviceAddress, 3> push_constants_data = {{out_buffer.address(), VkDeviceAddress(2) << 32 | 1u, 3}};
+    std::array<VkDeviceAddress, 3> push_constants_data = {{out_buffer.Address(), VkDeviceAddress(2) << 32 | 1u, 3}};
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);

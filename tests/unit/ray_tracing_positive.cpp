@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1417,12 +1417,12 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
     {
         char* ptr;
 
-        vk::MapMemory(device(), vertexBuffer.memory(), 0, VK_WHOLE_SIZE, 0, (void**)&ptr);
+        vk::MapMemory(device(), vertexBuffer.Memory(), 0, VK_WHOLE_SIZE, 0, (void**)&ptr);
 
         memcpy(ptr, &vertexData[0], sizeof(vertexData));
         memcpy(ptr+sizeof(vertexData), &indexData[0], sizeof(indexData));
 
-        vk::UnmapMemory(device(), vertexBuffer.memory());
+        vk::UnmapMemory(device(), vertexBuffer.Memory());
     }
 
     VkAccelerationStructureBuildSizesInfoKHR bottomASBuildSizesInfo{VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR};
@@ -1672,12 +1672,12 @@ TEST_F(PositiveRayTracing, SerializeAccelerationStructure) {
 
     VkCopyAccelerationStructureToMemoryInfoKHR copy_accel_struct_to_memory_info = vku::InitStructHelper();
     copy_accel_struct_to_memory_info.src = blas.GetDstAS()->handle();
-    copy_accel_struct_to_memory_info.dst.deviceAddress = serialized_accel_struct_buffer.address();
+    copy_accel_struct_to_memory_info.dst.deviceAddress = serialized_accel_struct_buffer.Address();
     copy_accel_struct_to_memory_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     vk::CmdCopyAccelerationStructureToMemoryKHR(m_command_buffer.handle(), &copy_accel_struct_to_memory_info);
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
@@ -1693,15 +1693,15 @@ TEST_F(PositiveRayTracing, SerializeAccelerationStructure) {
     deserialized_blas.GetDstAS()->Build();
 
     VkCopyMemoryToAccelerationStructureInfoKHR copy_memory_to_accel_struct_info = vku::InitStructHelper();
-    copy_memory_to_accel_struct_info.src.deviceAddress = serialized_accel_struct_buffer.address();
+    copy_memory_to_accel_struct_info.src.deviceAddress = serialized_accel_struct_buffer.Address();
     copy_memory_to_accel_struct_info.dst = deserialized_blas.GetDstAS()->handle();
     copy_memory_to_accel_struct_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
 
     vk::CmdCopyMemoryToAccelerationStructureKHR(m_command_buffer.handle(), &copy_memory_to_accel_struct_info);
 
-    m_command_buffer.end();
+    m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
