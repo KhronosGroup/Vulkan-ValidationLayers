@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -620,9 +620,10 @@ void Validator::InitSettings(const Location &loc) {
                             "sizeof(uint32_t) bytes. No indirect buffer checking will be "
                             "attempted");
         } else if (!supported_features.shaderInt64) {
-            InternalWarning(device, loc,
-                            "shaderInt64 feature not available, countBuffer (as seen in commands like "
-                            "vkCmdDrawIndexedIndirectCount) validation will not be performed.");
+            InternalWarning(
+                device, loc,
+                "shaderInt64 feature not available, indirect trace rays validation and countBuffer (as seen in commands like "
+                "vkCmdDrawIndexedIndirectCount) validation cannot be performed.");
         }
     }
 
