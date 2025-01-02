@@ -1,6 +1,6 @@
-// Copyright (c) 2022-2024 The Khronos Group Inc.
-// Copyright (c) 2022-2024 Valve Corporation
-// Copyright (c) 2022-2024 LunarG, Inc.
+// Copyright (c) 2022-2025 The Khronos Group Inc.
+// Copyright (c) 2022-2025 Valve Corporation
+// Copyright (c) 2022-2025 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,27 +32,45 @@ struct VkTraceRaysIndirectCommandKHR {
 };
 
 layout(buffer_reference, std430) buffer IndirectCommandReference {
-    VkTraceRaysIndirectCommandKHR ray_query_dimensions;
+    VkTraceRaysIndirectCommandKHR trace_rays_dimensions;
 };
 
 layout(push_constant) uniform PushConstants {
     // Need to put the buffer reference first otherwise it is incorrect, probably an alignment issue
     IndirectCommandReference indirect_data;
-    uint ray_query_width_limit;
-    uint ray_query_height_limit;
-    uint ray_query_depth_limit;
+    uint trace_rays_width_limit;
+    uint trace_rays_height_limit;
+    uint trace_rays_depth_limit;
+    uint max_ray_dispatch_invocation_count;
 };
 
 #include "common.h"
 
 void main() {
-    if (indirect_data.ray_query_dimensions.width > ray_query_width_limit) {
-        GpuavLogError2(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitWidth, indirect_data.ray_query_dimensions.width, 0);
+    if (indirect_data.trace_rays_dimensions.width > trace_rays_width_limit) {
+        GpuavLogError2(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitWidth, indirect_data.trace_rays_dimensions.width, 0);
     }
-    if (indirect_data.ray_query_dimensions.height > ray_query_height_limit) {
-        GpuavLogError2(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitHeight, indirect_data.ray_query_dimensions.height, 0);
+    if (indirect_data.trace_rays_dimensions.height > trace_rays_height_limit) {
+        GpuavLogError2(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitHeight, indirect_data.trace_rays_dimensions.height, 0);
     }
-    if (indirect_data.ray_query_dimensions.depth > ray_query_depth_limit) {
-        GpuavLogError2(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitDepth, indirect_data.ray_query_dimensions.depth, 0);
+    if (indirect_data.trace_rays_dimensions.depth > trace_rays_depth_limit) {
+        GpuavLogError2(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitDepth, indirect_data.trace_rays_dimensions.depth, 0);
     }
+
+    const uint64_t trace_rays_volume = 
+        indirect_data.trace_rays_dimensions.width * 
+        indirect_data.trace_rays_dimensions.height * 
+        indirect_data.trace_rays_dimensions.depth;
+
+    if (trace_rays_volume > max_ray_dispatch_invocation_count) {
+        GpuavLogError4(
+            kErrorGroupGpuPreTraceRays, 
+            kErrorSubCodePreTraceRaysLimitVolume, 
+            indirect_data.trace_rays_dimensions.width, 
+            indirect_data.trace_rays_dimensions.height,
+            indirect_data.trace_rays_dimensions.depth,
+            0);
+    }
+
+    
 }

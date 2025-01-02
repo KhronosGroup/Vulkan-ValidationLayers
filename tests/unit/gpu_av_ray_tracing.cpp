@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+ * Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  * Copyright (c) 2020-2022 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,156 +19,117 @@
 
 class NegativeGpuAVRayTracing : public GpuAVRayTracingTest {};
 
-TEST_F(NegativeGpuAVRayTracing, DISABLED_CmdTraceRaysIndirectKHR) {
-    TEST_DESCRIPTION("Invalid parameters used in vkCmdTraceRaysIndirectKHR");
-
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirect) {
+    TEST_DESCRIPTION("Test debug printf in raygen shader.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
-    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    RETURN_IF_SKIP(InitFrameworkForRayTracingTest(&validation_features));
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::rayTracingPipelineTraceRaysIndirect);
+    RETURN_IF_SKIP(InitGpuAvFramework());
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
+
     RETURN_IF_SKIP(InitState());
 
-    OneOffDescriptorSet desc_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}});
-    const vkt::PipelineLayout rt_pipeline_layout(*m_device, {&desc_set.layout_});
+    vkt::rt::Pipeline pipeline(*this, m_device);
 
-    VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
-    VkShaderObj chit_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    const char *ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(location = 0) rayPayloadEXT vec3 hit;
 
-    std::array<VkPipelineShaderStageCreateInfo, 2> shader_stages;
-    shader_stages[0] = vku::InitStructHelper();
-    shader_stages[0].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-    shader_stages[0].module = chit_shader.handle();
-    shader_stages[0].pName = "main";
+        void main() {
+          traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+        }
+    )glsl";
+    pipeline.SetGlslRayGenShader(ray_gen);
 
-    shader_stages[1] = vku::InitStructHelper();
-    shader_stages[1].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-    shader_stages[1].module = rgen_shader.handle();
-    shader_stages[1].pName = "main";
+    pipeline.AddGlslMissShader(kRayTracingPayloadMinimalGlsl);
+    pipeline.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
 
-    std::array<VkRayTracingShaderGroupCreateInfoKHR, 1> shader_groups;
-    shader_groups[0] = vku::InitStructHelper();
-    shader_groups[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-    shader_groups[0].generalShader = 1;
-    shader_groups[0].closestHitShader = VK_SHADER_UNUSED_KHR;
-    shader_groups[0].anyHitShader = VK_SHADER_UNUSED_KHR;
-    shader_groups[0].intersectionShader = VK_SHADER_UNUSED_KHR;
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
-    VkRayTracingPipelineCreateInfoKHR raytracing_pipeline_ci = vku::InitStructHelper();
-    raytracing_pipeline_ci.flags = 0;
-    raytracing_pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
-    raytracing_pipeline_ci.pStages = shader_stages.data();
-    raytracing_pipeline_ci.pGroups = shader_groups.data();
-    raytracing_pipeline_ci.groupCount = shader_groups.size();
-    raytracing_pipeline_ci.layout = rt_pipeline_layout;
+    pipeline.Build();
 
-    VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
-
-    const VkResult result = vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
-                                                             &raytracing_pipeline_ci, nullptr, &raytracing_pipeline);
-    ASSERT_EQ(VK_SUCCESS, result);
-
-    // Create dummy shader binding table (SBT)
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.usage =
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
-    buffer_ci.size = 4096;
-    vkt::Buffer sbt_buffer(*m_device, buffer_ci, vkt::no_mem);
-
-    VkMemoryRequirements mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), sbt_buffer.handle(), &mem_reqs);
-
-    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
-    alloc_info.allocationSize = 4096;
-    vkt::DeviceMemory mem(*m_device, alloc_info);
-    vk::BindBufferMemory(device(), sbt_buffer.handle(), mem.handle(), 0);
-
-    VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(ray_tracing_properties);
-
-    const VkDeviceAddress sbt_address = sbt_buffer.Address();
-
-    VkStridedDeviceAddressRegionKHR stridebufregion = {};
-    stridebufregion.deviceAddress = sbt_address;
-    stridebufregion.stride = ray_tracing_properties.shaderGroupHandleAlignment;
-    stridebufregion.size = stridebufregion.stride;
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
 
     // Create and fill buffers storing indirect data (ray query dimensions)
-    vkt::Buffer ray_query_dimensions_buffer_1(*m_device, 4096,
-                                              VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                              kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer trace_rays_big_width(
+        *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
-    VkTraceRaysIndirectCommandKHR ray_query_dimensions{vvl::kU32Max, 1, 1};
+    VkTraceRaysIndirectCommandKHR trace_rays_dim{rt_pipeline_props.maxRayDispatchInvocationCount + 1, 1, 1};
 
-    uint8_t *ray_query_dimensions_buffer_1_ptr = (uint8_t *)ray_query_dimensions_buffer_1.Memory().Map();
-    std::memcpy(ray_query_dimensions_buffer_1_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
-    ray_query_dimensions_buffer_1.Memory().Unmap();
+    uint8_t *ray_query_dimensions_buffer_1_ptr = (uint8_t *)trace_rays_big_width.Memory().Map();
+    std::memcpy(ray_query_dimensions_buffer_1_ptr, &trace_rays_dim, sizeof(trace_rays_dim));
+    trace_rays_big_width.Memory().Unmap();
 
-    ray_query_dimensions = {1, vvl::kU32Max, 1};
+    trace_rays_dim = {1, rt_pipeline_props.maxRayDispatchInvocationCount + 1, 1};
 
-    vkt::Buffer ray_query_dimensions_buffer_2(*m_device, 4096,
-                                              VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                              kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer trace_rays_big_height(
+        *m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
-    uint8_t *ray_query_dimensions_buffer_2_ptr = (uint8_t *)ray_query_dimensions_buffer_2.Memory().Map();
-    std::memcpy(ray_query_dimensions_buffer_2_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
-    ray_query_dimensions_buffer_2.Memory().Unmap();
+    uint8_t *ray_query_dimensions_buffer_2_ptr = (uint8_t *)trace_rays_big_height.Memory().Map();
+    std::memcpy(ray_query_dimensions_buffer_2_ptr, &trace_rays_dim, sizeof(trace_rays_dim));
+    trace_rays_big_height.Memory().Unmap();
 
-    ray_query_dimensions = {1, 1, vvl::kU32Max};
+    trace_rays_dim = {1, 1, rt_pipeline_props.maxRayDispatchInvocationCount + 1};
 
-    vkt::Buffer ray_query_dimensions_buffer_3(*m_device, 4096,
-                                              VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                              kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer trace_ray_big_depth(*m_device, 4096, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                    vkt::device_address);
 
-    uint8_t *ray_query_dimensions_buffer_3_ptr = (uint8_t *)ray_query_dimensions_buffer_3.Memory().Map();
-    std::memcpy(ray_query_dimensions_buffer_3_ptr, &ray_query_dimensions, sizeof(ray_query_dimensions));
-    ray_query_dimensions_buffer_3.Memory().Unmap();
+    uint8_t *ray_query_dimensions_buffer_3_ptr = (uint8_t *)trace_ray_big_depth.Memory().Map();
+    std::memcpy(ray_query_dimensions_buffer_3_ptr, &trace_rays_dim, sizeof(trace_rays_dim));
+    trace_ray_big_depth.Memory().Unmap();
 
-    // Trace rays
     m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracing_pipeline);
-
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rt_pipeline_layout.handle(), 0, 1,
-                              &desc_set.set_, 0, nullptr);
-
-    vk::CmdTraceRaysIndirectKHR(m_command_buffer.handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
-                                ray_query_dimensions_buffer_1.Address());
-
-    vk::CmdTraceRaysIndirectKHR(m_command_buffer.handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
-                                ray_query_dimensions_buffer_2.Address());
-
-    vk::CmdTraceRaysIndirectKHR(m_command_buffer.handle(), &stridebufregion, &stridebufregion, &stridebufregion, &stridebufregion,
-                                ray_query_dimensions_buffer_3.Address());
-
-    m_command_buffer.End();
+    vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
 
     if (uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupCount[0]) *
             uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupSize[0]) <
-        uint64_t(vvl::kU32Max)) {
+        uint64_t(rt_pipeline_props.maxRayDispatchInvocationCount + 1)) {
         m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-width-03638");
     }
+    m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-width-03641");
+    vk::CmdTraceRaysIndirectKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                                &trace_rays_sbt.callable_sbt, trace_rays_big_width.Address());
+
     if (uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupCount[1]) *
             uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupSize[1]) <
-        uint64_t(vvl::kU32Max)) {
+        uint64_t(rt_pipeline_props.maxRayDispatchInvocationCount + 1)) {
         m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-height-03639");
     }
+    m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-width-03641");
+    vk::CmdTraceRaysIndirectKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                                &trace_rays_sbt.callable_sbt, trace_rays_big_height.Address());
+
     if (uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupCount[2]) *
             uint64_t(PhysicalDeviceProps().limits.maxComputeWorkGroupSize[2]) <
-        uint64_t(vvl::kU32Max)) {
+        uint64_t(rt_pipeline_props.maxRayDispatchInvocationCount + 1)) {
         m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-depth-03640");
     }
+    m_errorMonitor->SetDesiredError("VUID-VkTraceRaysIndirectCommandKHR-width-03641");
+    vk::CmdTraceRaysIndirectKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                                &trace_rays_sbt.callable_sbt, trace_ray_big_depth.Address());
+
+    m_command_buffer.End();
+
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyPipeline(device(), raytracing_pipeline, nullptr);
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8545
