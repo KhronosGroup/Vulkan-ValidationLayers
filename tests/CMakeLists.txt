@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2024 Valve Corporation
-# Copyright (c) 2014-2024 LunarG, Inc.
+# Copyright (c) 2014-2025 Valve Corporation
+# Copyright (c) 2014-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -87,6 +87,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/descriptors.cpp
     unit/descriptors_positive.cpp
     unit/device_feature_property.cpp
+    unit/device_feature_property_positive.cpp
     unit/device_generated_commands.cpp
     unit/device_generated_commands_positive.cpp
     unit/device_queue.cpp
