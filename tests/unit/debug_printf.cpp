@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
- * Copyright (c) 2020-2024 Google, Inc.
+ * Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
+ * Copyright (c) 2020-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3234,6 +3234,18 @@ TEST_F(NegativeDebugPrintf, MisformattedEmptyString) {
         #extension GL_EXT_debug_printf : enable
         void main() {
             debugPrintfEXT("");
+        }
+    )glsl";
+    BasicFormattingTest(shader_source);
+}
+
+TEST_F(NegativeDebugPrintf, MisformattedNewLine) {
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        void main() {
+            uint x = 3;
+            debugPrintfEXT("\n\t%v3f\t\n", x);
         }
     )glsl";
     BasicFormattingTest(shader_source);
