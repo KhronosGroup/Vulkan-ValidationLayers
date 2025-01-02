@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
@@ -15,18 +15,65 @@
 
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
 class NegativePushDescriptor : public VkLayerTest {};
 
 TEST_F(NegativePushDescriptor, DSBufferInfo) {
-    TEST_DESCRIPTION(
-        "Attempt to update buffer descriptor set that has incorrect parameters in VkDescriptorBufferInfo struct. This includes:\n"
-        "1. offset value greater than or equal to buffer size\n"
-        "2. range value of 0\n"
-        "3. range value greater than buffer (size - offset)");
+    TEST_DESCRIPTION("set that has incorrect parameters in VkDescriptorBufferInfo struct");
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
 
+    std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
+
+    const VkDeviceSize min_alignment = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
+    vkt::Buffer buffer(*m_device, min_alignment, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, 0};
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pTexelBufferView = nullptr;
+    descriptor_write.pBufferInfo = &buffer_info;
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.dstSet = descriptor_set.set_;
+
+    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
+
+    m_command_buffer.Begin();
+
+    // Cause error due to offset out of range
+    buffer_info.offset = min_alignment;
+    buffer_info.range = VK_WHOLE_SIZE;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-offset-00340");
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                                &descriptor_write);
+    m_errorMonitor->VerifyFound();
+
+    // Now cause error due to range of 0
+    buffer_info.offset = 0;
+    buffer_info.range = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-range-00341");
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                                &descriptor_write);
+    m_errorMonitor->VerifyFound();
+
+    // Now cause error due to range exceeding buffer size - offset
+    buffer_info.offset = 0;
+    buffer_info.range = min_alignment + 1;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-range-00342");
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                                &descriptor_write);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativePushDescriptor, DSBufferInfoTemplate) {
     AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -35,54 +82,29 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
 
-    // Create a buffer to be used for invalid updates
-    VkBufferCreateInfo buff_ci = vku::InitStructHelper();
-    buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buff_ci.size = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
-    vkt::Buffer buffer(*m_device, buff_ci);
-
-    VkDescriptorBufferInfo buff_info = {};
-    buff_info.buffer = buffer.handle();
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.pTexelBufferView = nullptr;
-    descriptor_write.pBufferInfo = &buff_info;
-    descriptor_write.pImageInfo = nullptr;
-
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_write.dstSet = descriptor_set.set_;
+    const VkDeviceSize min_alignment = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
+    vkt::Buffer buffer(*m_device, min_alignment, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Setup for update w/ template tests
     // Create a template of descriptor set updates
     struct SimpleTemplateData {
         uint8_t padding[7];
-        VkDescriptorBufferInfo buff_info;
+        VkDescriptorBufferInfo buffer_info;
         uint32_t other_padding[4];
     };
     SimpleTemplateData update_template_data = {};
+    update_template_data.buffer_info.buffer = buffer;
 
     VkDescriptorUpdateTemplateEntry update_template_entry = {};
     update_template_entry.dstBinding = 0;
     update_template_entry.dstArrayElement = 0;
     update_template_entry.descriptorCount = 1;
     update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    update_template_entry.offset = offsetof(SimpleTemplateData, buff_info);
+    update_template_entry.offset = offsetof(SimpleTemplateData, buffer_info);
     update_template_entry.stride = sizeof(SimpleTemplateData);
 
-    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
-    update_template_ci.descriptorUpdateEntryCount = 1;
-    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
-    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
-    update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
-    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
-
-    std::unique_ptr<vkt::DescriptorSetLayout> push_dsl = nullptr;
-    std::unique_ptr<vkt::PipelineLayout> pipeline_layout = nullptr;
-
-    push_dsl.reset(new vkt::DescriptorSetLayout(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT));
-    pipeline_layout.reset(new vkt::PipelineLayout(*m_device, {push_dsl.get()}));
-    ASSERT_TRUE(push_dsl->initialized());
+    vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
 
     VkDescriptorUpdateTemplateCreateInfo push_template_ci = vku::InitStructHelper();
     push_template_ci.descriptorUpdateEntryCount = 1;
@@ -90,49 +112,34 @@ TEST_F(NegativePushDescriptor, DSBufferInfo) {
     push_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
     push_template_ci.descriptorSetLayout = VK_NULL_HANDLE;
     push_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    push_template_ci.pipelineLayout = pipeline_layout->handle();
+    push_template_ci.pipelineLayout = pipeline_layout.handle();
     push_template_ci.set = 0;
     vkt::DescriptorUpdateTemplate push_template(*m_device, push_template_ci);
 
-    auto do_test = [&](const char *desired_failure) {
-        m_errorMonitor->SetDesiredError(desired_failure);
-        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredError(desired_failure);
-        m_command_buffer.Begin();
-        vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout->handle(), 0, 1,
-                                    &descriptor_write);
-        m_command_buffer.End();
-        m_errorMonitor->VerifyFound();
-
-        update_template_data.buff_info = buff_info;  // copy the test case information into our "pData"
-        m_errorMonitor->SetDesiredError(desired_failure);
-        vk::UpdateDescriptorSetWithTemplateKHR(device(), descriptor_set.set_, update_template, &update_template_data);
-        m_errorMonitor->VerifyFound();
-
-        m_errorMonitor->SetDesiredError(desired_failure);
-        m_command_buffer.Begin();
-        vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), push_template, pipeline_layout->handle(), 0,
-                                                &update_template_data);
-        m_command_buffer.End();
-        m_errorMonitor->VerifyFound();
-    };
+    m_command_buffer.Begin();
 
     // Cause error due to offset out of range
-    buff_info.offset = buff_ci.size;
-    buff_info.range = VK_WHOLE_SIZE;
-    do_test("VUID-VkDescriptorBufferInfo-offset-00340");
+    update_template_data.buffer_info.offset = min_alignment;
+    update_template_data.buffer_info.range = VK_WHOLE_SIZE;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-offset-00340");
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), push_template, pipeline_layout, 0, &update_template_data);
+    m_errorMonitor->VerifyFound();
 
     // Now cause error due to range of 0
-    buff_info.offset = 0;
-    buff_info.range = 0;
-    do_test("VUID-VkDescriptorBufferInfo-range-00341");
+    update_template_data.buffer_info.offset = 0;
+    update_template_data.buffer_info.range = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-range-00341");
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), push_template, pipeline_layout, 0, &update_template_data);
+    m_errorMonitor->VerifyFound();
 
     // Now cause error due to range exceeding buffer size - offset
-    buff_info.offset = 0;
-    buff_info.range = buff_ci.size + 1;
-    do_test("VUID-VkDescriptorBufferInfo-range-00342");
+    update_template_data.buffer_info.offset = 0;
+    update_template_data.buffer_info.range = min_alignment + 1;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-range-00342");
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), push_template, pipeline_layout, 0, &update_template_data);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
 }
 
 TEST_F(NegativePushDescriptor, DestroyDescriptorSetLayout) {
