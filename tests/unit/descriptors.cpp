@@ -1397,6 +1397,95 @@ TEST_F(NegativeDescriptors, DynamicOffsetWithNullBuffer) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDescriptors, DSBufferInfo) {
+    RETURN_IF_SKIP(Init());
+
+    std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
+
+    const VkDeviceSize min_alignment = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
+    vkt::Buffer buffer(*m_device, min_alignment, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    // Cause error due to offset out of range
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, min_alignment, VK_WHOLE_SIZE);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-offset-00340");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+
+    // Now cause error due to range of 0
+    descriptor_set.Clear();
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, 0);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-range-00341");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+
+    // Now cause error due to range exceeding buffer size - offset
+    descriptor_set.Clear();
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, min_alignment + 1);
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-range-00342");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, DSBufferInfoTemplate) {
+    AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
+
+    const VkDeviceSize min_alignment = m_device->Physical().limits_.minUniformBufferOffsetAlignment;
+    vkt::Buffer buffer(*m_device, min_alignment, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    // Setup for update w/ template tests
+    // Create a template of descriptor set updates
+    struct SimpleTemplateData {
+        uint8_t padding[7];
+        VkDescriptorBufferInfo buffer_info;
+        uint32_t other_padding[4];
+    };
+    SimpleTemplateData update_template_data = {};
+    update_template_data.buffer_info.buffer = buffer;
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = offsetof(SimpleTemplateData, buffer_info);
+    update_template_entry.stride = sizeof(SimpleTemplateData);
+
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+    // Cause error due to offset out of range
+    update_template_data.buffer_info.offset = min_alignment;
+    update_template_data.buffer_info.range = VK_WHOLE_SIZE;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-offset-00340");
+    vk::UpdateDescriptorSetWithTemplateKHR(device(), descriptor_set.set_, update_template, &update_template_data);
+    m_errorMonitor->VerifyFound();
+
+    // Now cause error due to range of 0
+    update_template_data.buffer_info.offset = 0;
+    update_template_data.buffer_info.range = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-range-00341");
+    vk::UpdateDescriptorSetWithTemplateKHR(device(), descriptor_set.set_, update_template, &update_template_data);
+    m_errorMonitor->VerifyFound();
+
+    // Now cause error due to range exceeding buffer size - offset
+    update_template_data.buffer_info.offset = 0;
+    update_template_data.buffer_info.range = min_alignment + 1;
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-range-00342");
+    vk::UpdateDescriptorSetWithTemplateKHR(device(), descriptor_set.set_, update_template, &update_template_data);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, BindInvalidPipelineLayout) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/6621");
     RETURN_IF_SKIP(Init());
