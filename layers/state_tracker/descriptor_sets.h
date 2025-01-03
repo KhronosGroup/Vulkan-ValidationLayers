@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -823,8 +823,6 @@ class DescriptorSet : public StateObject {
     // Return true if given binding is present in this set
     bool HasBinding(const uint32_t binding) const { return layout_->HasBinding(binding); };
 
-    std::string StringifySetAndLayout() const;
-
     // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
     virtual void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
@@ -1033,6 +1031,25 @@ class DescriptorSet : public StateObject {
     // If this descriptor set is a push descriptor set, the descriptor
     // set writes that were last pushed.
     std::vector<vku::safe_VkWriteDescriptorSet> push_descriptor_set_writes;
+};
+
+// When updating a descriptor the VkDescriptorSetLayout can be sourced from 2 spots
+// 1. The VkDescriptorSet found in VkWriteDescriptorSet::dstSet (normal way)
+// 2. The VkPipelineLayout provided in vkCmdPushDescriptorSet
+//
+// This object is created to allow both code paths to share same logic, but still provide error messages that fit for each incoming
+// call
+struct DslErrorSource {
+    const Location &ds_loc_;
+    const VkDescriptorSet ds_handle_ = VK_NULL_HANDLE;
+    const VkPipelineLayout pipeline_layout_handle_ = VK_NULL_HANDLE;
+    const uint32_t set_ = 0;  // used for vkCmdPushDescriptorSet to pick set
+
+    DslErrorSource(const Location &ds_loc, VkDescriptorSet ds_handle) : ds_loc_(ds_loc), ds_handle_(ds_handle) {}
+    DslErrorSource(const Location &ds_loc, VkPipelineLayout pipeline_layout_handle, uint32_t set)
+        : ds_loc_(ds_loc), pipeline_layout_handle_(pipeline_layout_handle), set_(set) {}
+
+    std::string PrintMessage(const ValidationObject &error_logger) const;
 };
 
 }  // namespace vvl

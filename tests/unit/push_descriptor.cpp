@@ -13,6 +13,8 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <gtest/gtest.h>
+#include <vulkan/vulkan_core.h>
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
@@ -164,7 +166,7 @@ TEST_F(NegativePushDescriptor, DestroyDescriptorSetLayout) {
     pipeline_layout_ci.pushConstantRangeCount = 0;
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
-    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, 32};
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -235,6 +237,124 @@ TEST_F(NegativePushDescriptor, TemplateDestroyDescriptorSetLayout) {
     vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplate-pData-01686");
     vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout, 0, &update_template_data);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativePushDescriptor, EmptyDescriptorSetLayout) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8065");
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    // Layout is created with no bindings
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+
+    VkDescriptorPoolSize pool_sizes = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &pool_sizes;
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pBufferInfo = &buffer_info;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+    VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
+    pipeline_layout_ci.setLayoutCount = 1;
+    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
+    pipeline_layout_ci.pushConstantRangeCount = 0;
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-10009");
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                                &descriptor_write);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativePushDescriptor, DSUpdateIndex) {
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    vkt::DescriptorSetLayout ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstBinding = 2;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pTexelBufferView = nullptr;
+    descriptor_write.pBufferInfo = &buffer_info;
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00315");
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                                &descriptor_write);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativePushDescriptor, DSUpdateEmptyBinding) {
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, VK_SHADER_STAGE_ALL, nullptr};
+    vkt::DescriptorSetLayout ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pTexelBufferView = nullptr;
+    descriptor_write.pBufferInfo = &buffer_info;
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00316");
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                                &descriptor_write);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativePushDescriptor, DSTypeMismatch) {
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    vkt::DescriptorSetLayout ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pTexelBufferView = nullptr;
+    descriptor_write.pBufferInfo = &buffer_info;
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00319");
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                                &descriptor_write);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -639,101 +759,112 @@ TEST_F(NegativePushDescriptor, DescriptorUpdateTemplateEntryWithInlineUniformBlo
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePushDescriptor, SetCmdPush) {
-    TEST_DESCRIPTION("Attempt to push a push descriptor set with incorrect arguments.");
+TEST_F(NegativePushDescriptor, SetCmdPushQueueFamily) {
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-
     RETURN_IF_SKIP(Init());
 
     // Create ordinary and push descriptor set layout
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const vkt::DescriptorSetLayout ds_layout(*m_device, {binding});
-    ASSERT_TRUE(ds_layout.initialized());
     const vkt::DescriptorSetLayout push_ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
-    ASSERT_TRUE(push_ds_layout.initialized());
 
     // Now use the descriptor set layouts to create a pipeline layout
     const vkt::PipelineLayout pipeline_layout(*m_device, {&push_ds_layout, &ds_layout});
-    ASSERT_TRUE(pipeline_layout.initialized());
 
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     // Create a "write" struct, noting that the buffer_info cannot be a temporary arg (the return from WriteDescriptorSet
     // references its data), and the DescriptorSet() can be temporary, because the value is ignored
-    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
 
     VkWriteDescriptorSet descriptor_write =
         vkt::Device::WriteDescriptorSet(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
-    // Section 1: Queue family matching/capabilities.
     // Create command pool on a non-graphics queue
     const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
     const std::optional<uint32_t> transfer_qfi = m_device->TransferOnlyQueueFamily();
-    if (transfer_qfi || compute_qfi) {
-        const uint32_t err_qfi = compute_qfi ? compute_qfi.value() : transfer_qfi.value();
+    if (!transfer_qfi && !compute_qfi) {
+        GTEST_SKIP() << "Queue family type not supported";
+    }
 
-        vkt::CommandPool command_pool(*m_device, err_qfi);
-        ASSERT_TRUE(command_pool.initialized());
-        vkt::CommandBuffer command_buffer(*m_device, command_pool);
-        ASSERT_TRUE(command_buffer.initialized());
-        command_buffer.Begin();
+    const uint32_t err_qfi = compute_qfi ? compute_qfi.value() : transfer_qfi.value();
 
+    vkt::CommandPool command_pool(*m_device, err_qfi);
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
+    command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-pipelineBindPoint-00363");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
+    if (err_qfi == transfer_qfi) {
+        // This as this queue neither supports the gfx or compute bindpoints, we'll get two errors
+        m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-commandBuffer-cmdpool");
+    }
+    vk::CmdPushDescriptorSetKHR(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_write);
+    m_errorMonitor->VerifyFound();
+    command_buffer.End();
+
+    // If we succeed in testing only one condition above, we need to test the other below.
+    if (transfer_qfi && err_qfi != transfer_qfi.value()) {
+        // Need to test the neither compute/gfx supported case separately.
+        vkt::CommandPool tran_command_pool(*m_device, transfer_qfi.value());
+        vkt::CommandBuffer tran_command_buffer(*m_device, tran_command_pool);
+        tran_command_buffer.Begin();
+
+        // We can't avoid getting *both* errors in this case
         m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-pipelineBindPoint-00363");
         m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
-        if (err_qfi == transfer_qfi) {
-            // This as this queue neither supports the gfx or compute bindpoints, we'll get two errors
-            m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-commandBuffer-cmdpool");
-        }
-        vk::CmdPushDescriptorSetKHR(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+        m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-commandBuffer-cmdpool");
+        vk::CmdPushDescriptorSetKHR(tran_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
                                     &descriptor_write);
         m_errorMonitor->VerifyFound();
-        command_buffer.End();
-
-        // If we succeed in testing only one condition above, we need to test the other below.
-        if (transfer_qfi && err_qfi != transfer_qfi.value()) {
-            // Need to test the neither compute/gfx supported case separately.
-            vkt::CommandPool tran_command_pool(*m_device, transfer_qfi.value());
-            ASSERT_TRUE(tran_command_pool.initialized());
-            vkt::CommandBuffer tran_command_buffer(*m_device, tran_command_pool);
-            ASSERT_TRUE(tran_command_buffer.initialized());
-            tran_command_buffer.Begin();
-
-            // We can't avoid getting *both* errors in this case
-            m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-pipelineBindPoint-00363");
-            m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-commandBuffer-cmdpool");
-            vk::CmdPushDescriptorSetKHR(tran_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
-                                        1, &descriptor_write);
-            m_errorMonitor->VerifyFound();
-            tran_command_buffer.End();
-        }
+        tran_command_buffer.End();
     }
+}
+
+TEST_F(NegativePushDescriptor, SetCmdPush) {
+    TEST_DESCRIPTION("Attempt to push a push descriptor set with incorrect arguments.");
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    // Create ordinary and push descriptor set layout
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {binding});
+    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&push_ds_layout, &ds_layout});
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // Create a "write" struct, noting that the buffer_info cannot be a temporary arg (the return from WriteDescriptorSet
+    // references its data), and the DescriptorSet() can be temporary, because the value is ignored
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
+
+    VkWriteDescriptorSet descriptor_write =
+        vkt::Device::WriteDescriptorSet(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
     // Push to the non-push binding
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-set-00365");
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 1, 1,
                                 &descriptor_write);
     m_errorMonitor->VerifyFound();
 
     // Specify set out of bounds
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-set-00364");
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1,
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 2, 1,
                                 &descriptor_write);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
-    // TODO: Add VALIDATION_ERROR_ code support to core_validation::ValidateCmd
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-commandBuffer-recording");
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
                                 &descriptor_write);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativePushDescriptor, SetCmdPush14) {
     TEST_DESCRIPTION("Attempt to push a push descriptor set with incorrect arguments. Rely on 1.4 for the feature");
-
     SetTargetApiVersion(VK_API_VERSION_1_4);
     AddRequiredFeature(vkt::Feature::pushDescriptor);
     RETURN_IF_SKIP(Init());
@@ -741,86 +872,33 @@ TEST_F(NegativePushDescriptor, SetCmdPush14) {
     // Create ordinary and push descriptor set layout
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const vkt::DescriptorSetLayout ds_layout(*m_device, {binding});
-    ASSERT_TRUE(ds_layout.initialized());
     const vkt::DescriptorSetLayout push_ds_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
-    ASSERT_TRUE(push_ds_layout.initialized());
-
-    // Now use the descriptor set layouts to create a pipeline layout
     const vkt::PipelineLayout pipeline_layout(*m_device, {&push_ds_layout, &ds_layout});
-    ASSERT_TRUE(pipeline_layout.initialized());
 
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     // Create a "write" struct, noting that the buffer_info cannot be a temporary arg (the return from WriteDescriptorSet
     // references its data), and the DescriptorSet() can be temporary, because the value is ignored
-    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
 
     VkWriteDescriptorSet descriptor_write =
         vkt::Device::WriteDescriptorSet(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
-    // Section 1: Queue family matching/capabilities.
-    // Create command pool on a non-graphics queue
-    const std::optional<uint32_t> compute_qfi = m_device->ComputeOnlyQueueFamily();
-    const std::optional<uint32_t> transfer_qfi = m_device->TransferOnlyQueueFamily();
-    if (transfer_qfi || compute_qfi) {
-        const uint32_t err_qfi = compute_qfi ? compute_qfi.value() : transfer_qfi.value();
-
-        vkt::CommandPool command_pool(*m_device, err_qfi);
-        ASSERT_TRUE(command_pool.initialized());
-        vkt::CommandBuffer command_buffer(*m_device, command_pool);
-        ASSERT_TRUE(command_buffer.initialized());
-        command_buffer.Begin();
-
-        m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-pipelineBindPoint-00363");
-        m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
-        if (err_qfi == transfer_qfi) {
-            // This as this queue neither supports the gfx or compute bindpoints, we'll get two errors
-            m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-commandBuffer-cmdpool");
-        }
-        vk::CmdPushDescriptorSet(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                 &descriptor_write);
-        m_errorMonitor->VerifyFound();
-        command_buffer.End();
-
-        // If we succeed in testing only one condition above, we need to test the other below.
-        if (transfer_qfi && err_qfi != transfer_qfi.value()) {
-            // Need to test the neither compute/gfx supported case separately.
-            vkt::CommandPool tran_command_pool(*m_device, transfer_qfi.value());
-            ASSERT_TRUE(tran_command_pool.initialized());
-            vkt::CommandBuffer tran_command_buffer(*m_device, tran_command_pool);
-            ASSERT_TRUE(tran_command_buffer.initialized());
-            tran_command_buffer.Begin();
-
-            // We can't avoid getting *both* errors in this case
-            m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-pipelineBindPoint-00363");
-            m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-commandBuffer-cmdpool");
-            vk::CmdPushDescriptorSet(tran_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                     &descriptor_write);
-            m_errorMonitor->VerifyFound();
-            tran_command_buffer.End();
-        }
-    }
-
     // Push to the non-push binding
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-set-00365");
-    vk::CmdPushDescriptorSet(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
-                             &descriptor_write);
+    vk::CmdPushDescriptorSet(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 1, 1, &descriptor_write);
     m_errorMonitor->VerifyFound();
 
     // Specify set out of bounds
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-set-00364");
-    vk::CmdPushDescriptorSet(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1,
-                             &descriptor_write);
+    vk::CmdPushDescriptorSet(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 2, 1, &descriptor_write);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
-    // TODO: Add VALIDATION_ERROR_ code support to core_validation::ValidateCmd
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-commandBuffer-recording");
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
-    vk::CmdPushDescriptorSet(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                             &descriptor_write);
+    vk::CmdPushDescriptorSet(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_write);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1029,11 +1107,11 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
     vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     vkt::DescriptorSetLayout push_dsl2(*m_device, {{1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}},
                                        VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
-    vkt::DescriptorSetLayout push_dsl3(*m_device, ds_bindings);
+    vkt::DescriptorSetLayout normal_dsl(*m_device, ds_bindings);
 
     vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
     vkt::PipelineLayout pipeline_layout2(*m_device, {&push_dsl2});
-    vkt::PipelineLayout pipeline_layout3(*m_device, {&push_dsl, &push_dsl3});
+    vkt::PipelineLayout pipeline_layout3(*m_device, {&push_dsl, &normal_dsl});
 
     struct SimpleTemplateData {
         VkDescriptorBufferInfo buff_info;
@@ -1056,7 +1134,7 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
     update_template_ci.pipelineLayout = pipeline_layout.handle();
     vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
-    update_template_ci.descriptorSetLayout = push_dsl3.handle();
+    update_template_ci.descriptorSetLayout = normal_dsl.handle();
     update_template_ci.pipelineLayout = pipeline_layout3.handle();
     vkt::DescriptorUpdateTemplate update_template2(*m_device, update_template_ci);
 
@@ -1065,21 +1143,20 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
 
     m_command_buffer.Begin();
 
+    // bindings don't match up
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplate-layout-07993");
-    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout2.handle(), 0,
-                                            &update_template_data);
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout2, 0, &update_template_data);
     m_errorMonitor->VerifyFound();
 
+    // OOB
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplate-set-07304");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplate-set-07995");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplate-layout-07993");
-    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout.handle(), 1,
-                                            &update_template_data);
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout, 1, &update_template_data);
     m_errorMonitor->VerifyFound();
 
+    // Missing Push Descriptor Flag
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplate-set-07995");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSetWithTemplate-set-07305");
-    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template2, pipeline_layout3.handle(), 1,
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template2, pipeline_layout3, 1,
                                             &update_template_data);
     m_errorMonitor->VerifyFound();
 

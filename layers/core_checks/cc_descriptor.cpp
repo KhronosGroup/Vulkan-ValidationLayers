@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -897,9 +897,9 @@ bool CoreChecks::VerifyUpdateConsistency(const vvl::DescriptorSet &set, uint32_t
     if (skip) {
         std::stringstream error_str;
         if (set.IsPushDescriptor()) {
-            error_str << " push descriptors";
+            error_str << "(push descriptors)";
         } else {
-            error_str << " descriptor set " << FormatHandle(set);
+            error_str << FormatHandle(set);
         }
         error_str << " binding #" << orig_binding.binding << " with #" << update_count
                   << " descriptors being updated but this update oversteps the bounds of this binding and the next binding is "
@@ -1432,7 +1432,9 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
     for (uint32_t i = 0; i < descriptorWriteCount; i++) {
         if (const auto set_node = Get<vvl::DescriptorSet>(pDescriptorWrites[i].dstSet)) {
             const Location write_loc = loc.dot(Field::pDescriptorWrites, i);
-            skip |= ValidateWriteUpdate(*set_node, pDescriptorWrites[i], write_loc, false);
+            const Location dst_set_loc = write_loc.dot(Field::dstSet);
+            vvl::DslErrorSource dsl_error_source(dst_set_loc, pDescriptorWrites[i].dstSet);
+            skip |= ValidateWriteUpdate(*set_node, pDescriptorWrites[i], write_loc, dsl_error_source);
         }
     }
 
@@ -1545,23 +1547,13 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker &
     }
 }
 
-std::string vvl::DescriptorSet::StringifySetAndLayout() const {
-    auto layout_handle = layout_->Handle();
-    std::ostringstream str;
-    if (IsPushDescriptor()) {
-        str << "Push Descriptors defined with " << state_data_->FormatHandle(layout_handle);
-    } else {
-        str << state_data_->FormatHandle(Handle()) << " allocated with " << state_data_->FormatHandle(layout_handle);
-    }
-    return str.str();
-}
-
 // Loop through the write updates to validate for a push descriptor set, ignoring dstSet
 bool CoreChecks::ValidatePushDescriptorsUpdate(const vvl::DescriptorSet &push_set, uint32_t descriptorWriteCount,
-                                               const VkWriteDescriptorSet *pDescriptorWrites, const Location &loc) const {
+                                               const VkWriteDescriptorSet *pDescriptorWrites,
+                                               const vvl::DslErrorSource &dsl_error_source, const Location &loc) const {
     bool skip = false;
     for (uint32_t i = 0; i < descriptorWriteCount; i++) {
-        skip |= ValidateWriteUpdate(push_set, pDescriptorWrites[i], loc.dot(Field::pDescriptorWrites, i), true);
+        skip |= ValidateWriteUpdate(push_set, pDescriptorWrites[i], loc.dot(Field::pDescriptorWrites, i), dsl_error_source);
     }
     return skip;
 }
@@ -1670,49 +1662,50 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
     return skip;
 }
 
-// Validate the state for a given write update but don't actually perform the update
-//  If an error would occur for this update, return false and fill in details in error_msg string
 bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const VkWriteDescriptorSet &update,
-                                     const Location &write_loc, bool push) const {
+                                     const Location &write_loc, const vvl::DslErrorSource &dsl_error_source) const {
     bool skip = false;
     const vvl::DescriptorSetLayout *dst_layout = dst_set.GetLayout().get();
-    // Even if PushDescriptor, the error logging will remove the null Set handle
-    const LogObjectList objlist(update.dstSet, dst_layout->Handle());
 
     // Verify dst layout still valid (ObjectLifetimes only checks if null, we check if valid dstSet here)
     if (dst_layout->Destroyed()) {
-        return LogError("VUID-VkWriteDescriptorSet-dstSet-00320", update.dstSet, write_loc.dot(Field::dstSet),
-                        "(%s) has been destroyed.", dst_set.StringifySetAndLayout().c_str());
+        return LogError("VUID-VkWriteDescriptorSet-dstSet-00320", dst_layout->Handle(), dsl_error_source.ds_loc_,
+                        "%s has been destroyed.%s", FormatHandle(dst_layout->Handle()).c_str(),
+                        dsl_error_source.PrintMessage(*this).c_str());
     }
 
     const Location dst_binding_loc = write_loc.dot(Field::dstBinding);
     if (dst_layout->GetBindingCount() == 0) {
-        return LogError("VUID-VkWriteDescriptorSet-dstBinding-10009", objlist, write_loc.dot(Field::dstSet),
-                        "was created with %s that has a binding count of zero.", FormatHandle(dst_layout->Handle()).c_str());
+        return LogError("VUID-VkWriteDescriptorSet-dstBinding-10009", dst_layout->Handle(), dsl_error_source.ds_loc_,
+                        "%s was created with bindingCount of zero.%s", FormatHandle(dst_layout->Handle()).c_str(),
+                        dsl_error_source.PrintMessage(*this).c_str());
     } else if (update.dstBinding > dst_layout->GetMaxBinding()) {
-        return LogError("VUID-VkWriteDescriptorSet-dstBinding-00315", objlist, dst_binding_loc,
-                        "(%" PRIu32 ") is larger than %s binding count (%" PRIu32 ").", update.dstBinding,
-                        FormatHandle(dst_layout->Handle()).c_str(), dst_layout->GetBindingCount());
+        return LogError("VUID-VkWriteDescriptorSet-dstBinding-00315", dst_layout->Handle(), dst_binding_loc,
+                        "(%" PRIu32 ") is larger than bindingCount (%" PRIu32 ") used to create %s.%s", update.dstBinding,
+                        dst_layout->GetBindingCount(), FormatHandle(dst_layout->Handle()).c_str(),
+                        dsl_error_source.PrintMessage(*this).c_str());
     }
 
     const vvl::DescriptorBinding *dst_binding = dst_set.GetBinding(update.dstBinding);
     if (!dst_binding) {
         // Spec: "Bindings that are not specified have a descriptorCount and stageFlags of zero"
         // If we can't find the binding, it means it was not in the layout and is same of having a zero descriptorCount
-        skip |= LogError("VUID-VkWriteDescriptorSet-dstBinding-00316", objlist, dst_binding_loc,
-                         "(%" PRIu32
-                         ") was never set in any VkDescriptorSetLayoutBinding::binding for %s, therefore the descriptorCount value "
-                         "is considered zero.",
-                         update.dstBinding, FormatHandle(dst_layout->Handle()).c_str());
+        skip |=
+            LogError("VUID-VkWriteDescriptorSet-dstBinding-00316", dst_layout->Handle(), dst_binding_loc,
+                     "(%" PRIu32
+                     ") was never set in any VkDescriptorSetLayoutBinding::binding for %s, therefore the descriptorCount value "
+                     "is considered zero.%s",
+                     update.dstBinding, FormatHandle(dst_layout->Handle()).c_str(), dsl_error_source.PrintMessage(*this).c_str());
         return skip;  // the rest of checks assume a valid DescriptorBinding state
     } else if (dst_binding->count == 0) {
-        skip |= LogError("VUID-VkWriteDescriptorSet-dstBinding-00316", objlist, dst_binding_loc,
-                         "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.", update.dstBinding,
-                         FormatHandle(dst_layout->Handle()).c_str());
+        skip |= LogError("VUID-VkWriteDescriptorSet-dstBinding-00316", dst_layout->Handle(), dst_binding_loc,
+                         "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.%s", update.dstBinding,
+                         FormatHandle(dst_layout->Handle()).c_str(), dsl_error_source.PrintMessage(*this).c_str());
     }
 
     if (!vvl::IsBindless(dst_binding->binding_flags)) {
         if (const auto *used_handle = dst_set.InUse()) {
+            const LogObjectList objlist(update.dstSet, dst_layout->Handle());
             skip |= LogError("VUID-vkUpdateDescriptorSets-None-03047", objlist, dst_binding_loc,
                              "(%" PRIu32 ") was created with %s, but %s is in use by %s.", update.dstBinding,
                              string_VkDescriptorBindingFlags(dst_binding->binding_flags).c_str(),
@@ -1720,7 +1713,26 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
         }
     }
 
-    skip |= ValidateWriteUpdateDescriptorType(*dst_layout, dst_set, *dst_binding, update, write_loc);
+    if (dst_binding->type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+        // Check if the new descriptor descriptor type is in the list of allowed mutable types for this binding
+        if (!dst_layout->IsTypeMutable(update.descriptorType, update.dstBinding)) {
+            skip |=
+                LogError("VUID-VkWriteDescriptorSet-dstSet-04611", dst_layout->Handle(), write_loc.dot(Field::dstBinding),
+                         "(%" PRIu32
+                         ") is of type VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but the new descriptorType (%s) was not in "
+                         "VkMutableDescriptorTypeListEXT::pDescriptorTypes (%s).%s",
+                         update.dstBinding, string_VkDescriptorType(update.descriptorType),
+                         dst_layout->PrintMutableTypes(update.dstBinding).c_str(), dsl_error_source.PrintMessage(*this).c_str());
+        }
+    } else if (dst_binding->type != update.descriptorType) {
+        skip |=
+            LogError("VUID-VkWriteDescriptorSet-descriptorType-00319", dst_layout->Handle(), write_loc.dot(Field::descriptorType),
+                     "(%s) is different from pBindings[%" PRIu32 "].descriptorType (%s) of %s.%s",
+                     string_VkDescriptorType(update.descriptorType), update.dstBinding, string_VkDescriptorType(dst_binding->type),
+                     FormatHandle(dst_layout->Handle()).c_str(), dsl_error_source.PrintMessage(*this).c_str());
+    }
+
+    skip |= ValidateWriteUpdateDescriptorType(update, write_loc);
 
     // descriptorCount must be greater than 0
     if (update.descriptorCount == 0) {
@@ -1754,6 +1766,7 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
                                  "next binding.";
                     }
 
+                    const LogObjectList objlist(update.dstSet, dst_layout->Handle());
                     skip |= LogError(
                         "VUID-VkWriteDescriptorSet-descriptorCount-00317", objlist, write_loc,
                         "binding #%" PRIu32 " (started on dstBinding [%" PRIu32 "] + %" PRIu32
@@ -1765,6 +1778,7 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
                 }
                 // Check if all immutableSamplers or not
                 if (current_binding->has_immutable_samplers != immutable_samplers) {
+                    const LogObjectList objlist(update.dstSet, dst_layout->Handle());
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorCount-00318", objlist, write_loc,
                                      "binding #%" PRIu32 " (started on dstBinding [%" PRIu32 "] + %" PRIu32
                                      " descriptors offset) %s Immutable Samplers, which is different from the previous binding.",
@@ -1786,61 +1800,43 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
 
     if (dst_binding->IsVariableCount()) {
         if ((update.dstArrayElement + update.descriptorCount) > dst_set.GetVariableDescriptorCount()) {
+            // Can't use Variable Count with PushDescriptors
+            const LogObjectList objlist(update.dstSet, dst_layout->Handle());
             skip |= LogError("VUID-VkWriteDescriptorSet-dstArrayElement-00321", objlist, write_loc.dot(Field::dstArrayElement),
                              "(%" PRIu32 ") + descriptorCount (%" PRIu32 ") is larger than (%" PRIu32 ") for dstBinding (%" PRIu32
-                             ") in %s.",
+                             ") in %s (allocated with %s).",
                              update.dstArrayElement, update.descriptorCount, dst_set.GetVariableDescriptorCount(),
-                             update.dstBinding, dst_set.StringifySetAndLayout().c_str());
+                             update.dstBinding, FormatHandle(dst_set.Handle()).c_str(), FormatHandle(dst_layout->Handle()).c_str());
         }
     } else {
         skip |= VerifyUpdateConsistency(dst_set, update.dstBinding, update.dstArrayElement, update.descriptorCount, false,
-                                        write_loc.dot(Field::dstBinding));
+                                        dsl_error_source.ds_loc_);
     }
 
+    // The pipeline_layout is there for PushDescriptors as the proxy VkDescriptorSet comes from there and not update.dstSet
+    const bool is_push_descriptor = dsl_error_source.pipeline_layout_handle_ != VK_NULL_HANDLE;
     // Update is within bounds and consistent so last step is to validate update contents
-    skip |= VerifyWriteUpdateContents(dst_set, update, write_loc, push);
+    skip |= VerifyWriteUpdateContents(dst_set, update, write_loc, is_push_descriptor);
 
     return skip;
 }
 
-bool CoreChecks::ValidateWriteUpdateDescriptorType(const vvl::DescriptorSetLayout &dst_layout, const vvl::DescriptorSet &dst_set,
-                                                   const vvl::DescriptorBinding &dst_binding, const VkWriteDescriptorSet &update,
-                                                   const Location &write_loc) const {
+bool CoreChecks::ValidateWriteUpdateDescriptorType(const VkWriteDescriptorSet &update, const Location &write_loc) const {
     bool skip = false;
     // Always used unless dealing with Mutable where the type is found in the vvl::DescriptorBinding
     const VkDescriptorType descriptor_type = update.descriptorType;
 
-    if (dst_binding.type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
-        // Check if the new descriptor descriptor type is in the list of allowed mutable types for this binding
-        if (!dst_layout.IsTypeMutable(descriptor_type, update.dstBinding)) {
-            const LogObjectList objlist(update.dstSet, dst_layout.Handle());
-            skip |= LogError("VUID-VkWriteDescriptorSet-dstSet-04611", objlist, write_loc.dot(Field::dstBinding),
-                             "(%" PRIu32
-                             ") is of type VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but the new descriptorType (%s) was not in "
-                             "VkMutableDescriptorTypeListEXT::pDescriptorTypes (%s).",
-                             update.dstBinding, string_VkDescriptorType(descriptor_type),
-                             dst_layout.PrintMutableTypes(update.dstBinding).c_str());
-        }
-    } else if (dst_binding.type != descriptor_type) {
-        // We know that binding is valid, verify update and do update on each descriptor
-        const LogObjectList objlist(update.dstSet, dst_layout.Handle());
-        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00319", objlist, write_loc.dot(Field::descriptorType),
-                         "(%s) is different from pBinding[%" PRIu32 "].descriptorType (%s) of %s.",
-                         string_VkDescriptorType(descriptor_type), update.dstBinding, string_VkDescriptorType(dst_binding.type),
-                         dst_set.StringifySetAndLayout().c_str());
-    }
-
     // VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER and VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
     // Valid bufferView handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
     if (descriptor_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-        skip |= ValidateWriteUpdateInlineUniformBlock(dst_layout, update, write_loc);
+        skip |= ValidateWriteUpdateInlineUniformBlock(update, write_loc);
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
-        skip |= ValidateWriteUpdateAccelerationStructureKHR(dst_layout, update, write_loc);
+        skip |= ValidateWriteUpdateAccelerationStructureKHR(update, write_loc);
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
-        skip |= ValidateWriteUpdateAccelerationStructureNV(dst_layout, update, write_loc);
+        skip |= ValidateWriteUpdateAccelerationStructureNV(update, write_loc);
     } else if (IsValueIn(descriptor_type, {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC})) {
-        skip |= ValidateWriteUpdateBufferInfo(dst_layout, update, write_loc);
+        skip |= ValidateWriteUpdateBufferInfo(update, write_loc);
     } else if (IsValueIn(descriptor_type,
                          {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                           VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT})) {
@@ -1859,8 +1855,7 @@ bool CoreChecks::ValidateWriteUpdateDescriptorType(const vvl::DescriptorSetLayou
     return skip;
 }
 
-bool CoreChecks::ValidateWriteUpdateBufferInfo(const vvl::DescriptorSetLayout &dst_layout, const VkWriteDescriptorSet &update,
-                                               const Location &write_loc) const {
+bool CoreChecks::ValidateWriteUpdateBufferInfo(const VkWriteDescriptorSet &update, const Location &write_loc) const {
     bool skip = false;
     const VkDescriptorType descriptor_type = update.descriptorType;
     if (!update.pBufferInfo) {
@@ -1907,49 +1902,42 @@ bool CoreChecks::ValidateWriteUpdateBufferInfo(const vvl::DescriptorSetLayout &d
     return skip;
 }
 
-bool CoreChecks::ValidateWriteUpdateInlineUniformBlock(const vvl::DescriptorSetLayout &dst_layout,
-                                                       const VkWriteDescriptorSet &update, const Location &write_loc) const {
+bool CoreChecks::ValidateWriteUpdateInlineUniformBlock(const VkWriteDescriptorSet &update, const Location &write_loc) const {
     bool skip = false;
     if ((update.dstArrayElement % 4) != 0) {
-        const LogObjectList objlist(update.dstSet, dst_layout.Handle());
-        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02219", objlist, write_loc.dot(Field::dstBinding),
+        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02219", device, write_loc.dot(Field::dstBinding),
                          "(%" PRIu32 ") is of type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but dstArrayElement (%" PRIu32
                          ") is not a multiple of 4.",
                          update.dstBinding, update.dstArrayElement);
     }
     if ((update.descriptorCount % 4) != 0) {
-        const LogObjectList objlist(update.dstSet, dst_layout.Handle());
-        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02220", objlist, write_loc.dot(Field::dstBinding),
+        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02220", device, write_loc.dot(Field::dstBinding),
                          "(%" PRIu32 ") is of type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but descriptorCount (%" PRIu32
                          ") is not a multiple of 4.",
                          update.dstBinding, update.descriptorCount);
     }
     const auto *write_inline_info = vku::FindStructInPNextChain<VkWriteDescriptorSetInlineUniformBlock>(update.pNext);
     if (!write_inline_info) {
-        const LogObjectList objlist(update.dstSet, dst_layout.Handle());
-        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02221", objlist, write_loc.dot(Field::dstBinding),
+        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02221", device, write_loc.dot(Field::dstBinding),
                          "(%" PRIu32
                          ") is of type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but there is no "
                          "VkWriteDescriptorSetInlineUniformBlock in the pNext chain.",
                          update.dstBinding);
     } else if (write_inline_info->dataSize != update.descriptorCount) {
-        const LogObjectList objlist(update.dstSet, dst_layout.Handle());
-        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02221", objlist,
+        skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02221", device,
                          write_loc.pNext(Struct::VkWriteDescriptorSetInlineUniformBlock, Field::dataSize),
                          "(%" PRIu32 ") is different then descriptorCount (%" PRIu32 "), but dstBinding (%" PRIu32
                          ") is of type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK.",
                          write_inline_info->dataSize, update.descriptorCount, update.dstBinding);
     } else if ((write_inline_info->dataSize % 4) != 0) {
-        const LogObjectList objlist(update.dstSet, dst_layout.Handle());
-        skip |= LogError("VUID-VkWriteDescriptorSetInlineUniformBlock-dataSize-02222", objlist,
+        skip |= LogError("VUID-VkWriteDescriptorSetInlineUniformBlock-dataSize-02222", device,
                          write_loc.pNext(Struct::VkWriteDescriptorSetInlineUniformBlock, Field::dataSize), "is %" PRIu32 ".",
                          write_inline_info->dataSize);
     }
     return skip;
 }
 
-bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const vvl::DescriptorSetLayout &dst_layout,
-                                                             const VkWriteDescriptorSet &update, const Location &write_loc) const {
+bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescriptorSet &update, const Location &write_loc) const {
     bool skip = false;
 
     const auto *pnext_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureKHR>(update.pNext);
@@ -1979,9 +1967,8 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const vvl::Descript
         if (!as_state) continue;
         if (as_state->create_info.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
             as_state->create_info.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR) {
-            const LogObjectList objlist(update.dstSet, dst_layout.Handle(), as_state->Handle());
             skip |=
-                LogError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03579", objlist,
+                LogError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03579", as_state->Handle(),
                          write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::pAccelerationStructures, j),
                          "was created with %s.", string_VkAccelerationStructureTypeKHR(as_state->create_info.type));
         }
@@ -1990,8 +1977,7 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const vvl::Descript
     return skip;
 }
 
-bool CoreChecks::ValidateWriteUpdateAccelerationStructureNV(const vvl::DescriptorSetLayout &dst_layout,
-                                                            const VkWriteDescriptorSet &update, const Location &write_loc) const {
+bool CoreChecks::ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescriptorSet &update, const Location &write_loc) const {
     bool skip = false;
 
     const auto *pnext_struct = vku::FindStructInPNextChain<VkWriteDescriptorSetAccelerationStructureNV>(update.pNext);
@@ -2014,9 +2000,8 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureNV(const vvl::Descripto
         auto as_state = Get<vvl::AccelerationStructureNV>(pnext_struct->pAccelerationStructures[j]);
         if (!as_state) continue;
         if (as_state->create_info.info.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV) {
-            const LogObjectList objlist(update.dstSet, dst_layout.Handle(), as_state->Handle());
             skip |=
-                LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03748", objlist,
+                LogError("VUID-VkWriteDescriptorSetAccelerationStructureNV-pAccelerationStructures-03748", as_state->Handle(),
                          write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::pAccelerationStructures, j),
                          "was created with %s.", string_VkAccelerationStructureTypeKHR(as_state->create_info.info.type));
         }
@@ -2027,7 +2012,7 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureNV(const vvl::Descripto
 
 // Verify that the contents of the update are ok, but don't perform actual update
 bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, const VkWriteDescriptorSet &update,
-                                           const Location &write_loc, bool push) const {
+                                           const Location &write_loc, bool is_push_descriptor) const {
     bool skip = false;
 
     switch (update.descriptorType) {
@@ -2132,7 +2117,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                                              FormatHandle(update.pImageInfo[di].sampler).c_str());
                         }
                     }
-                } else if (update.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER && !push) {
+                } else if (update.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER && !is_push_descriptor) {
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02752", update.dstSet, image_info_loc,
                                      "Attempted write update to an immutable sampler descriptor.");
                 }
@@ -3364,7 +3349,8 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
 
         if (ds_layout_state->IsPushDescriptor()) {
             skip |= LogError("VUID-VkDescriptorSetAllocateInfo-pSetLayouts-00308", pAllocateInfo->pSetLayouts[i], set_layout_loc,
-                             "(%s) was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT.",
+                             "(%s) was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT. (For Push Descriptors, "
+                             "you don't allocate a VkDescriptorSet and VkWriteDescriptorSet::dstSet is ignored)",
                              FormatHandle(pAllocateInfo->pSetLayouts[i]).c_str());
         }
         if (ds_layout_state->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
@@ -3537,33 +3523,39 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
     bool skip = false;
     const bool is_2 = loc.function != Func::vkCmdPushDescriptorSetKHR && loc.function != Func::vkCmdPushDescriptorSet;
 
-    auto layout_data = Get<vvl::PipelineLayout>(layout);
-    if (!layout_data) return skip;  // dynamicPipelineLayout
+    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
+    if (!pipeline_layout) return skip;  // dynamicPipelineLayout
 
     // Validate the set index points to a push descriptor set and is in range
-    const LogObjectList objlist(cb_state.Handle(), layout);
-    const auto &set_layouts = layout_data->set_layouts;
-    if (set < set_layouts.size()) {
-        const auto &dsl = set_layouts[set];
-        if (dsl) {
-            if (!dsl->IsPushDescriptor()) {
-                const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfo-set-00365" : "VUID-vkCmdPushDescriptorSet-set-00365";
-                skip |=
-                    LogError(vuid, objlist, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.",
-                             set, FormatHandle(layout).c_str());
-            } else {
-                // Create an empty proxy in order to use the existing descriptor set update validation
-                // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
-                // don't have to do this. Note we need to const_cast<>(this) because GPU-AV needs a non-const version of
-                // the state tracker. The proxy here could get away with const.
-                vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
-                skip |= ValidatePushDescriptorsUpdate(proxy_ds, descriptorWriteCount, pDescriptorWrites, loc);
-            }
-        }
-    } else {
+    const auto &set_layouts = pipeline_layout->set_layouts;
+    if (set >= set_layouts.size()) {
         const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfo-set-00364" : "VUID-vkCmdPushDescriptorSet-set-00364";
-        skip |= LogError(vuid, objlist, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
-                         FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
+        const LogObjectList objlist(cb_state.Handle(), layout);
+        skip |= LogError(vuid, objlist, loc.dot(Field::set),
+                         "(%" PRIu32 ") is indexing outside the range for %s (which had a setLayoutCount of only %" PRIu32 ").",
+                         set, FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
+        return skip;
+    }
+
+    const auto &dsl = set_layouts[set];
+    ASSERT_AND_RETURN_SKIP(dsl);
+
+    if (!dsl->IsPushDescriptor()) {
+        const char *vuid = is_2 ? "VUID-VkPushDescriptorSetInfo-set-00365" : "VUID-vkCmdPushDescriptorSet-set-00365";
+        const LogObjectList objlist(cb_state.Handle(), layout);
+        skip |= LogError(vuid, objlist, loc.dot(Field::set),
+                         "(%" PRIu32
+                         ") points to %s inside %s which is not a push descriptor set layout (it was not created with "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT).",
+                         set, FormatHandle(dsl->Handle()).c_str(), FormatHandle(layout).c_str());
+    } else {
+        // Create an empty proxy in order to use the existing descriptor set update validation
+        // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
+        // don't have to do this. Note we need to const_cast<>(this) because GPU-AV needs a non-const version of
+        // the state tracker. The proxy here could get away with const.
+        vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
+        vvl::DslErrorSource dsl_error_source(loc, layout, set);
+        skip |= ValidatePushDescriptorsUpdate(proxy_ds, descriptorWriteCount, pDescriptorWrites, dsl_error_source, loc);
     }
 
     return skip;
@@ -3598,7 +3590,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuf
 
     skip |= ValidateCmdPushDescriptorSet(*cb_state, pPushDescriptorSetInfo->layout, pPushDescriptorSetInfo->set,
                                          pPushDescriptorSetInfo->descriptorWriteCount, pPushDescriptorSetInfo->pDescriptorWrites,
-                                         error_obj.location);
+                                         error_obj.location.dot(Field::pPushDescriptorSetInfo));
 
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
         skip |= ValidatePipelineBindPoint(*cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
@@ -3734,78 +3726,84 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
 
     const bool is_2 =
         loc.function != Func::vkCmdPushDescriptorSetWithTemplateKHR && loc.function != Func::vkCmdPushDescriptorSetWithTemplate;
-    auto layout_data = Get<vvl::PipelineLayout>(layout);
-    const auto dsl = layout_data ? layout_data->GetDsl(set) : nullptr;
-    // Validate the set index points to a push descriptor set and is in range
-    if (dsl) {
-        if (!dsl->IsPushDescriptor()) {
-            const char *vuid =
-                is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-set-07305" : "VUID-vkCmdPushDescriptorSetWithTemplate-set-07305";
-            const LogObjectList objlist(commandBuffer, layout);
-            skip |= LogError(vuid, objlist, loc, "Set index %" PRIu32 " does not match push descriptor set layout index for %s.",
-                             set, FormatHandle(layout).c_str());
-        }
-    } else if (layout_data && (set >= layout_data->set_layouts.size())) {
+    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
+    if (!pipeline_layout) return skip;  // dynamicPipelineLayout
+    const auto &set_layouts = pipeline_layout->set_layouts;
+    if (set >= set_layouts.size()) {
         const char *vuid =
             is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-set-07304" : "VUID-vkCmdPushDescriptorSetWithTemplate-set-07304";
         const LogObjectList objlist(commandBuffer, layout);
-        skip |= LogError(vuid, objlist, loc, "Set index %" PRIu32 " is outside of range for %s (set < %" PRIu32 ").", set,
-                         FormatHandle(layout).c_str(), static_cast<uint32_t>(layout_data->set_layouts.size()));
+        skip |= LogError(vuid, objlist, loc.dot(Field::set),
+                         "(%" PRIu32 ") is indexing outside the range for %s (which had a setLayoutCount of only %" PRIu32 ").",
+                         set, FormatHandle(layout).c_str(), static_cast<uint32_t>(set_layouts.size()));
+        return skip;
+    }
+
+    const auto &dsl = set_layouts[set];
+    ASSERT_AND_RETURN_SKIP(dsl);
+
+    if (!dsl->IsPushDescriptor()) {
+        const char *vuid =
+            is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-set-07305" : "VUID-vkCmdPushDescriptorSetWithTemplate-set-07305";
+        const LogObjectList objlist(commandBuffer, layout);
+        skip |= LogError(vuid, objlist, loc.dot(Field::set),
+                         "(%" PRIu32
+                         ") points to %s inside %s which is not a push descriptor set layout (it was not created with "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT).",
+                         set, FormatHandle(dsl->Handle()).c_str(), FormatHandle(layout).c_str());
     }
 
     auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
-    if (template_state) {
-        const auto &template_ci = template_state->create_info;
+    if (!template_state) return skip;
+    const auto &template_ci = template_state->create_info;
 
-        skip |= ValidatePipelineBindPoint(*cb_state, template_ci.pipelineBindPoint, loc);
+    skip |= ValidatePipelineBindPoint(*cb_state, template_ci.pipelineBindPoint, loc);
 
-        if (template_ci.templateType != VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS) {
-            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-descriptorUpdateTemplate-07994"
-                                    : "VUID-vkCmdPushDescriptorSetWithTemplate-descriptorUpdateTemplate-07994";
-            skip |= LogError(vuid, commandBuffer, loc.dot(Field::descriptorUpdateTemplate),
-                             "%s was not created with flag "
-                             "VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS.",
-                             FormatHandle(descriptorUpdateTemplate).c_str());
-        }
-        if (template_ci.set != set) {
-            const char *vuid =
-                is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-set-07995" : "VUID-vkCmdPushDescriptorSetWithTemplate-set-07995";
-            skip |= LogError(vuid, commandBuffer, loc.dot(Field::descriptorUpdateTemplate),
-                             "%s created with set %" PRIu32 " does not match command parameter set %" PRIu32 ".",
-                             FormatHandle(descriptorUpdateTemplate).c_str(), template_ci.set, set);
-        }
-        auto template_layout = Get<vvl::PipelineLayout>(template_ci.pipelineLayout);
-        if (!IsPipelineLayoutSetCompatible(set, layout_data.get(), template_layout.get())) {
-            const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, template_ci.pipelineLayout, layout);
-            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-layout-07993"
-                                    : "VUID-vkCmdPushDescriptorSetWithTemplate-layout-07993";
-            skip |= LogError(vuid, objlist, loc.dot(Field::descriptorUpdateTemplate),
-                             "%s created with %s is incompatible "
-                             "with command parameter "
-                             "%s for set %" PRIu32 ".\n%s",
-                             FormatHandle(descriptorUpdateTemplate).c_str(), FormatHandle(template_ci.pipelineLayout).c_str(),
-                             FormatHandle(layout).c_str(), set,
-                             DescribePipelineLayoutSetNonCompatible(set, layout_data.get(), template_layout.get()).c_str());
-        }
+    if (template_ci.templateType != VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS) {
+        const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-descriptorUpdateTemplate-07994"
+                                : "VUID-vkCmdPushDescriptorSetWithTemplate-descriptorUpdateTemplate-07994";
+        skip |= LogError(vuid, commandBuffer, loc.dot(Field::descriptorUpdateTemplate),
+                         "(%s) was not created with VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS.",
+                         FormatHandle(descriptorUpdateTemplate).c_str());
+    }
+    if (template_ci.set != set) {
+        const char *vuid =
+            is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-set-07995" : "VUID-vkCmdPushDescriptorSetWithTemplate-set-07995";
+        skip |=
+            LogError(vuid, commandBuffer, loc.dot(Field::set),
+                     "(%" PRIu32 ") does not match the set (%" PRIu32 ") that the descriptorUpdateTemplate (%s) was created with.",
+                     set, template_ci.set, FormatHandle(descriptorUpdateTemplate).c_str());
+    }
+    auto template_layout = Get<vvl::PipelineLayout>(template_ci.pipelineLayout);
+    if (!IsPipelineLayoutSetCompatible(set, pipeline_layout.get(), template_layout.get())) {
+        const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, template_ci.pipelineLayout, layout);
+        const char *vuid =
+            is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-layout-07993" : "VUID-vkCmdPushDescriptorSetWithTemplate-layout-07993";
+        skip |= LogError(vuid, objlist, loc.dot(Field::descriptorUpdateTemplate),
+                         "%s created with %s is incompatible "
+                         "with command parameter "
+                         "%s for set %" PRIu32 ".\n%s",
+                         FormatHandle(descriptorUpdateTemplate).c_str(), FormatHandle(template_ci.pipelineLayout).c_str(),
+                         FormatHandle(layout).c_str(), set,
+                         DescribePipelineLayoutSetNonCompatible(set, pipeline_layout.get(), template_layout.get()).c_str());
     }
 
-    if (dsl && template_state) {
-        if (!Get<vvl::DescriptorSetLayout>(dsl->VkHandle())) {
-            const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, layout);
-            const char *vuid = is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-pData-01686"
-                                    : "VUID-vkCmdPushDescriptorSetWithTemplate-pData-01686";
-            skip |= LogError(vuid, objlist, loc.dot(Field::pData),
-                             "does not point to a valid layout, it possible the "
-                             "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.");
-        } else {
-            // Create an empty proxy in order to use the existing descriptor set update validation
-            vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
-            // Decode the template into a set of write updates
-            vvl::DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
-            // Validate the decoded update against the proxy_ds
-            skip |= ValidatePushDescriptorsUpdate(proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
-                                                  decoded_template.desc_writes.data(), loc);
-        }
+    if (!Get<vvl::DescriptorSetLayout>(dsl->VkHandle())) {
+        const LogObjectList objlist(commandBuffer, descriptorUpdateTemplate, layout);
+        const char *vuid =
+            is_2 ? "VUID-VkPushDescriptorSetWithTemplateInfo-pData-01686" : "VUID-vkCmdPushDescriptorSetWithTemplate-pData-01686";
+        skip |= LogError(vuid, objlist, loc.dot(Field::pData),
+                         "does not point to a valid layout, it possible the "
+                         "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.");
+    } else {
+        // Create an empty proxy in order to use the existing descriptor set update validation
+        vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
+        // Decode the template into a set of write updates
+        vvl::DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
+        // Validate the decoded update against the proxy_ds
+        vvl::DslErrorSource dsl_error_source(loc, layout, set);
+        skip |= ValidatePushDescriptorsUpdate(proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
+                                              decoded_template.desc_writes.data(), dsl_error_source, loc);
     }
 
     return skip;
@@ -3832,7 +3830,8 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplate2(
     bool skip = false;
     skip |= ValidateCmdPushDescriptorSetWithTemplate(
         commandBuffer, pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate, pPushDescriptorSetWithTemplateInfo->layout,
-        pPushDescriptorSetWithTemplateInfo->set, pPushDescriptorSetWithTemplateInfo->pData, error_obj.location);
+        pPushDescriptorSetWithTemplateInfo->set, pPushDescriptorSetWithTemplateInfo->pData,
+        error_obj.location.dot(Field::pPushDescriptorSetWithTemplateInfo));
     return skip;
 }
 

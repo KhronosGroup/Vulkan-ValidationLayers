@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022-2024 RasterGrid Kft.
  *
@@ -32,6 +32,7 @@ typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRan
 namespace vvl {
 struct DrawDispatchVuid;
 class DescriptorBinding;
+struct DslErrorSource;
 }  // namespace vvl
 
 namespace spirv {
@@ -612,27 +613,22 @@ class CoreChecks : public ValidationStateTracker {
                                  bool is_copy, const Location& set_loc) const;
     // Validate contents of a WriteUpdate
     bool ValidateWriteUpdate(const vvl::DescriptorSet& dst_set, const VkWriteDescriptorSet& update, const Location& write_loc,
-                             bool push) const;
-    bool ValidateWriteUpdateDescriptorType(const vvl::DescriptorSetLayout& dst_layout, const vvl::DescriptorSet& dst_set,
-                                           const vvl::DescriptorBinding& dst_binding, const VkWriteDescriptorSet& update,
-                                           const Location& write_loc) const;
-    bool ValidateWriteUpdateBufferInfo(const vvl::DescriptorSetLayout& dst_layout, const VkWriteDescriptorSet& update,
-                                       const Location& write_loc) const;
-    bool ValidateWriteUpdateInlineUniformBlock(const vvl::DescriptorSetLayout& dst_layout, const VkWriteDescriptorSet& update,
-                                               const Location& write_loc) const;
-    bool ValidateWriteUpdateAccelerationStructureKHR(const vvl::DescriptorSetLayout& dst_layout, const VkWriteDescriptorSet& update,
-                                                     const Location& write_loc) const;
-    bool ValidateWriteUpdateAccelerationStructureNV(const vvl::DescriptorSetLayout& dst_layout, const VkWriteDescriptorSet& update,
-                                                    const Location& write_loc) const;
+                             const vvl::DslErrorSource& dsl_error_source) const;
+    bool ValidateWriteUpdateDescriptorType(const VkWriteDescriptorSet& update, const Location& write_loc) const;
+    bool ValidateWriteUpdateBufferInfo(const VkWriteDescriptorSet& update, const Location& write_loc) const;
+    bool ValidateWriteUpdateInlineUniformBlock(const VkWriteDescriptorSet& update, const Location& write_loc) const;
+    bool ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescriptorSet& update, const Location& write_loc) const;
+    bool ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, const VkWriteDescriptorSet& update, const Location& write_loc,
-                                   bool push) const;
+                                   bool is_push_descriptor) const;
     // Shared helper functions - These are useful because the shared sampler image descriptor type
     //  performs common functions with both sampler and image descriptors so they can share their common functions
     bool ValidateImageUpdate(const vvl::ImageView& view_state, VkImageLayout image_layout, VkDescriptorType type,
                              const Location& image_info_loc) const;
     // Validate contents of a push descriptor update
     bool ValidatePushDescriptorsUpdate(const vvl::DescriptorSet& push_set, uint32_t descriptorWriteCount,
-                                       const VkWriteDescriptorSet* pDescriptorWrites, const Location& loc) const;
+                                       const VkWriteDescriptorSet* pDescriptorWrites, const vvl::DslErrorSource& dsl_error_source,
+                                       const Location& loc) const;
     // Descriptor Set Validation Functions
     bool ValidateBufferUsage(const vvl::Buffer& buffer_state, VkDescriptorType type, const Location& buffer_loc) const;
     bool ValidateBufferUpdate(const VkDescriptorBufferInfo& buffer_info, VkDescriptorType type,

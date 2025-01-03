@@ -2217,7 +2217,7 @@ TEST_F(NegativeDescriptors, DSTypeMismatch) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set.UpdateDescriptorSets();
 
     m_errorMonitor->VerifyFound();
@@ -2246,7 +2246,7 @@ TEST_F(NegativeDescriptors, DSUpdateIndex) {
                                                  });
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     // This is the wrong type, but out of bounds will be flagged first
-    descriptor_set.WriteDescriptorImageInfo(2, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.WriteDescriptorImageInfo(2, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
@@ -2260,7 +2260,7 @@ TEST_F(NegativeDescriptors, DSUpdateEmptyBinding) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     // descriptor_write.descriptorCount = 1, Lie here to avoid parameter_validation error
     // This is the wrong type, but empty binding error will be flagged first
-    descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00316");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
@@ -2273,7 +2273,7 @@ TEST_F(NegativeDescriptors, UpdateIndexSmaller) {
                                                      {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler.handle(), VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00316");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
@@ -2517,8 +2517,6 @@ TEST_F(NegativeDescriptors, Maint1BindingSliceOf3DImage) {
 
 TEST_F(NegativeDescriptors, UpdateDestroyDescriptorSetLayout) {
     TEST_DESCRIPTION("Attempt updates to descriptor sets with destroyed descriptor set layouts");
-    // TODO: Update to match the descriptor set layout specific VUIDs/VALIDATION_ERROR_* when present
-
     RETURN_IF_SKIP(Init());
 
     // Set up the descriptor (resource) and write/copy operations to use.
