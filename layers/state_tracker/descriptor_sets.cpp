@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1426,4 +1426,16 @@ bool vvl::MutableDescriptor::Invalid() const {
             break;
     }
     return false;
+}
+
+std::string vvl::DslErrorSource::PrintMessage(const ValidationObject &error_logger) const {
+    std::stringstream msg;
+    msg << " (The VkDescriptorSetLayout was used to ";
+    if (pipeline_layout_handle_ == VK_NULL_HANDLE) {
+        msg << "allocate " << error_logger.FormatHandle(ds_handle_);
+    } else {
+        msg << "create " << error_logger.FormatHandle(pipeline_layout_handle_) << " at pSetLayouts[" << set_ << "]";
+    }
+    msg << ")";
+    return msg.str();
 }

@@ -4516,17 +4516,17 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplate(VkCom
                                                                            const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
-    auto layout_data = Get<vvl::PipelineLayout>(layout);
-    if (!cb_state || !template_state || !layout_data) {
+    auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
+    if (!cb_state || !template_state || !pipeline_layout) {
         return;
     }
 
     cb_state->RecordCmd(record_obj.location.function);
-    auto dsl = layout_data->GetDsl(set);
+    auto dsl = pipeline_layout->set_layouts[set];
     const auto &template_ci = template_state->create_info;
     // Decode the template into a set of write updates
     vvl::DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
-    cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, *layout_data, record_obj.location.function, set,
+    cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, *pipeline_layout, record_obj.location.function, set,
                                      static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                      decoded_template.desc_writes.data());
 }
@@ -4543,19 +4543,19 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplate2(
     const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto template_state = Get<vvl::DescriptorUpdateTemplate>(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
-    auto layout_data = Get<vvl::PipelineLayout>(pPushDescriptorSetWithTemplateInfo->layout);
-    if (!cb_state || !template_state || !layout_data) {
+    auto pipeline_layout = Get<vvl::PipelineLayout>(pPushDescriptorSetWithTemplateInfo->layout);
+    if (!cb_state || !template_state || !pipeline_layout) {
         return;
     }
 
     cb_state->RecordCmd(record_obj.location.function);
-    auto dsl = layout_data->GetDsl(pPushDescriptorSetWithTemplateInfo->set);
+    auto dsl = pipeline_layout->set_layouts[pPushDescriptorSetWithTemplateInfo->set];
     const auto &template_ci = template_state->create_info;
     // Decode the template into a set of write updates
     vvl::DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(),
                                                 pPushDescriptorSetWithTemplateInfo->pData, dsl->VkHandle());
     cb_state->PushDescriptorSetState(
-        template_ci.pipelineBindPoint, *layout_data, record_obj.location.function, pPushDescriptorSetWithTemplateInfo->set,
+        template_ci.pipelineBindPoint, *pipeline_layout, record_obj.location.function, pPushDescriptorSetWithTemplateInfo->set,
         static_cast<uint32_t>(decoded_template.desc_writes.size()), decoded_template.desc_writes.data());
 }
 
