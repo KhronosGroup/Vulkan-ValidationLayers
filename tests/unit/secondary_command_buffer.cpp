@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -826,4 +826,32 @@ TEST_F(NegativeSecondaryCommandBuffer, MaxCommandBufferNestingLevel) {
     vk::CmdExecuteCommands(secondary4.handle(), 1u, &secondary3.handle());
     m_errorMonitor->VerifyFound();
     secondary4.End();
+}
+
+TEST_F(NegativeSecondaryCommandBuffer, MissingInheritedQueriesFeature) {
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
+    RETURN_IF_SKIP(Init());
+
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1);
+    qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT;
+    vkt::QueryPool query_pool(*m_device, qpci);
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceInfo inheritance_info = vku::InitStructHelper();
+    inheritance_info.pipelineStatistics = qpci.pipelineStatistics;
+
+    VkCommandBufferBeginInfo seconary_begin_info = vku::InitStructHelper();
+    seconary_begin_info.pInheritanceInfo = &inheritance_info;
+    secondary.Begin(&seconary_begin_info);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0u, 1u);
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0u, 0u);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-commandBuffer-00101");
+    vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0u);
+    m_command_buffer.End();
 }

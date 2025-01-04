@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2332,5 +2332,27 @@ TEST_F(NegativeMemory, DISABLED_MaxMemoryAllocationSize) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkAllocateMemory-pAllocateInfo-01713");  // need to bypass stateless
     m_errorMonitor->SetDesiredWarning("WARNING-CoreValidation-AllocateMemory-maxMemoryAllocationSize");
     vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeMemory, MapMemoryWithMapPlacedFlag) {
+    TEST_DESCRIPTION("Test vkCmdUpdateBuffer");
+
+    AddRequiredExtensions(VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const VkDeviceSize allocation_size = 8192u;
+
+    VkMemoryAllocateInfo memory_info = vku::InitStructHelper();
+    memory_info.allocationSize = allocation_size;
+
+    bool pass = m_device->Physical().SetMemoryType(vvl::kU32Max, &memory_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    ASSERT_TRUE(pass);
+
+    vkt::DeviceMemory memory(*m_device, memory_info);
+
+    void *data;
+    m_errorMonitor->SetDesiredError("VUID-vkMapMemory-flags-09568");
+    vk::MapMemory(device(), memory.handle(), 0u, 4u, VK_MEMORY_MAP_PLACED_BIT_EXT, &data);
     m_errorMonitor->VerifyFound();
 }
