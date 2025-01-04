@@ -3153,3 +3153,60 @@ TEST_F(NegativeCopyBufferImage, InterleavedRegions) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeCopyBufferImage, FillBuffer) {
+    TEST_DESCRIPTION("Test vkCmdFillBuffer");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 32u, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer invalid_usage_buffer(*m_device, 32u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-size-00026");
+    vk::CmdFillBuffer(m_command_buffer.handle(), buffer.handle(), 0u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-size-00028");
+    vk::CmdFillBuffer(m_command_buffer.handle(), buffer.handle(), 0u, 3u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-dstBuffer-00029");
+    vk::CmdFillBuffer(m_command_buffer.handle(), invalid_usage_buffer.handle(), 0u, 4u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-dstOffset-00025");
+    vk::CmdFillBuffer(m_command_buffer.handle(), buffer.handle(), 1u, 4u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, UpdateBuffer) {
+    TEST_DESCRIPTION("Test vkCmdUpdateBuffer");
+    RETURN_IF_SKIP(Init());
+
+    const uint32_t large_buffer_size = 131072u;
+    vkt::Buffer large_buffer(*m_device, large_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer invalid_usage_buffer(*m_device, 32, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    std::vector<uint8_t> data(large_buffer_size);
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-dataSize-00037");
+    vk::CmdUpdateBuffer(m_command_buffer.handle(), large_buffer.handle(), 0u, large_buffer_size, data.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-dataSize-00038");
+    vk::CmdUpdateBuffer(m_command_buffer.handle(), large_buffer.handle(), 0u, 5u, data.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-dstOffset-00036");
+    vk::CmdUpdateBuffer(m_command_buffer.handle(), large_buffer.handle(), 1u, 4u, data.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-dstBuffer-00034");
+    vk::CmdUpdateBuffer(m_command_buffer.handle(), invalid_usage_buffer.handle(), 0u, 4u, data.data());
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
