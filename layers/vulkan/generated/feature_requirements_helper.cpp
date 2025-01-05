@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -4357,21 +4357,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-                case Feature::constantAlphaColorBlendFactors : {
-                auto vk_struct = const_cast<VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(
-                    vku::FindStructInPNextChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(*inout_pnext_chain));
-                if (!vk_struct) {
-                    vk_struct = new VkPhysicalDevicePortabilitySubsetFeaturesKHR;
-                    *vk_struct = vku::InitStructHelper();
-                    if (*inout_pnext_chain) {
-                        vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
-                    } else {
-                        *inout_pnext_chain = vk_struct;
-                    }
+            case Feature::constantAlphaColorBlendFactors : {
+            auto vk_struct = const_cast<VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDevicePortabilitySubsetFeaturesKHR;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
                 }
-                return {&vk_struct->constantAlphaColorBlendFactors,
-                        "VkPhysicalDevicePortabilitySubsetFeaturesKHR::constantAlphaColorBlendFactors"};
             }
+            return {&vk_struct->constantAlphaColorBlendFactors,
+                    "VkPhysicalDevicePortabilitySubsetFeaturesKHR::constantAlphaColorBlendFactors"};
+        }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
