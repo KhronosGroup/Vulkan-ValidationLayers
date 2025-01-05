@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -653,26 +653,35 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
     }
 
     skip |= ValidateRenderPassStripeBeginInfo(commandBuffer, pRenderingInfo->pNext, pRenderingInfo->renderArea, rendering_info_loc);
+    skip |= ValidateBeginRenderingColorAttachment(commandBuffer, *pRenderingInfo, rendering_info_loc);
+    skip |= ValidateBeginRenderingDepthAttachment(commandBuffer, *pRenderingInfo, rendering_info_loc);
+    skip |= ValidateBeginRenderingStencilAttachment(commandBuffer, *pRenderingInfo, rendering_info_loc);
+    return skip;
+}
 
-    for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
-        if (pRenderingInfo->pColorAttachments[j].imageView == VK_NULL_HANDLE) {
-            continue;
-        }
-        const Location attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, j);
-        const VkImageLayout image_layout = pRenderingInfo->pColorAttachments[j].imageLayout;
-        const VkResolveModeFlagBits resolve_mode = pRenderingInfo->pColorAttachments[j].resolveMode;
-        const VkImageLayout resolve_image_layout = pRenderingInfo->pColorAttachments[j].resolveImageLayout;
+bool StatelessValidation::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer,
+                                                                const VkRenderingInfo &rendering_info,
+                                                                const Location &rendering_info_loc) const {
+    bool skip = false;
+    for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+        const VkRenderingAttachmentInfo &color_attachment = rendering_info.pColorAttachments[i];
+        if (color_attachment.imageView == VK_NULL_HANDLE) continue;
+        const Location color_attachment_loc = rendering_info_loc.dot(Field::pColorAttachments, i);
+
+        const VkImageLayout image_layout = color_attachment.imageLayout;
         if (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
             image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
             skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06090", commandBuffer,
-                             attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
+                             color_attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
         }
 
+        const VkResolveModeFlagBits resolve_mode = color_attachment.resolveMode;
+        const VkImageLayout resolve_image_layout = color_attachment.resolveImageLayout;
         if (resolve_mode != VK_RESOLVE_MODE_NONE) {
             if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
                 resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
                 skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06091", commandBuffer,
-                                 attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
+                                 color_attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
                                  string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
             }
         }
@@ -681,14 +690,14 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
             if (image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
                 image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
                 skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06096", commandBuffer,
-                                 attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
+                                 color_attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
             }
 
             if (resolve_mode != VK_RESOLVE_MODE_NONE) {
                 if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
                     resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
                     skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06097", commandBuffer,
-                                     attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
+                                     color_attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
                                      string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
                 }
             }
@@ -696,102 +705,112 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
 
         if (IsImageLayoutDepthOnly(image_layout) || IsImageLayoutStencilOnly(image_layout)) {
             skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06100", commandBuffer,
-                             attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
+                             color_attachment_loc.dot(Field::imageLayout), "is %s.", string_VkImageLayout(image_layout));
         }
 
         if (resolve_mode != VK_RESOLVE_MODE_NONE) {
             if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
                 resolve_image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL) {
                 skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06101", commandBuffer,
-                                 attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
+                                 color_attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
                                  string_VkImageLayout(resolve_image_layout), string_VkResolveModeFlagBits(resolve_mode));
             }
         }
     }
 
-    if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
-        const Location attachment_loc = rendering_info_loc.dot(Field::pDepthAttachment);
-        const VkImageLayout layout = pRenderingInfo->pDepthAttachment->imageLayout;
-        if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06092", commandBuffer, attachment_loc.dot(Field::imageLayout),
-                             "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.");
-        } else if (IsImageLayoutStencilOnly(layout)) {
-            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-07732", commandBuffer, attachment_loc.dot(Field::imageLayout),
-                             "is %s.", string_VkImageLayout(layout));
+    return skip;
+}
+
+bool StatelessValidation::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer,
+                                                                const VkRenderingInfo &rendering_info,
+                                                                const Location &rendering_info_loc) const {
+    bool skip = false;
+    if (!rendering_info.pDepthAttachment || rendering_info.pDepthAttachment->imageView == VK_NULL_HANDLE) return skip;
+
+    const VkRenderingAttachmentInfo &depth_attachment = *rendering_info.pDepthAttachment;
+    const Location attachment_loc = rendering_info_loc.dot(Field::pDepthAttachment);
+
+    if (depth_attachment.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06092", commandBuffer, attachment_loc.dot(Field::imageLayout),
+                         "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.");
+    } else if (IsImageLayoutStencilOnly(depth_attachment.imageLayout)) {
+        skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-07732", commandBuffer, attachment_loc.dot(Field::imageLayout),
+                         "is %s.", string_VkImageLayout(depth_attachment.imageLayout));
+    }
+
+    if (depth_attachment.resolveMode != VK_RESOLVE_MODE_NONE) {
+        const VkImageLayout resolve_layout = depth_attachment.resolveImageLayout;
+        if (resolve_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06093", commandBuffer,
+                             attachment_loc.dot(Field::resolveImageLayout),
+                             "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL and resolveMode is %s.",
+                             string_VkResolveModeFlagBits(depth_attachment.resolveMode));
+        } else if (IsImageLayoutStencilOnly(resolve_layout)) {
+            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-07733", commandBuffer,
+                             attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
+                             string_VkImageLayout(resolve_layout), string_VkResolveModeFlagBits(depth_attachment.resolveMode));
         }
 
-        if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE) {
-            const VkImageLayout resolve_layout = pRenderingInfo->pDepthAttachment->resolveImageLayout;
-            if (resolve_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-                skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06093", commandBuffer,
-                                 attachment_loc.dot(Field::resolveImageLayout),
-                                 "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL and resolveMode is %s.",
-                                 string_VkResolveModeFlagBits(pRenderingInfo->pDepthAttachment->resolveMode));
-            } else if (IsImageLayoutStencilOnly(resolve_layout)) {
-                skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-07733", commandBuffer,
-                                 attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
-                                 string_VkImageLayout(resolve_layout),
-                                 string_VkResolveModeFlagBits(pRenderingInfo->pDepthAttachment->resolveMode));
-            }
+        if (IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
+            resolve_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
+            skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06098", commandBuffer,
+                             attachment_loc.dot(Field::resolveImageLayout),
+                             "is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
+        }
 
-            if (IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
-                resolve_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
-                skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06098", commandBuffer,
-                                 attachment_loc.dot(Field::resolveImageLayout),
-                                 "is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
-            }
-
-            if (!(pRenderingInfo->pDepthAttachment->resolveMode &
-                  phys_dev_ext_props.depth_stencil_resolve_props.supportedDepthResolveModes)) {
-                skip |= LogError(
-                    "VUID-VkRenderingInfo-pDepthAttachment-06102", commandBuffer, attachment_loc.dot(Field::resolveMode),
-                    "is %s, but supportedDepthResolveModes is %s.",
-                    string_VkResolveModeFlagBits(pRenderingInfo->pDepthAttachment->resolveMode),
-                    string_VkResolveModeFlags(phys_dev_ext_props.depth_stencil_resolve_props.supportedDepthResolveModes).c_str());
-            }
+        if (!(depth_attachment.resolveMode & phys_dev_ext_props.depth_stencil_resolve_props.supportedDepthResolveModes)) {
+            skip |= LogError(
+                "VUID-VkRenderingInfo-pDepthAttachment-06102", commandBuffer, attachment_loc.dot(Field::resolveMode),
+                "is %s, but supportedDepthResolveModes is %s.", string_VkResolveModeFlagBits(depth_attachment.resolveMode),
+                string_VkResolveModeFlags(phys_dev_ext_props.depth_stencil_resolve_props.supportedDepthResolveModes).c_str());
         }
     }
 
-    if (pRenderingInfo->pStencilAttachment != nullptr && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
-        const Location attachment_loc = rendering_info_loc.dot(Field::pStencilAttachment);
-        const VkImageLayout layout = pRenderingInfo->pStencilAttachment->imageLayout;
-        if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06094", commandBuffer, attachment_loc.dot(Field::imageLayout),
-                             "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.");
-        } else if (IsImageLayoutDepthOnly(layout)) {
-            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-07734", commandBuffer, attachment_loc.dot(Field::imageLayout),
-                             "is %s.", string_VkImageLayout(layout));
+    return skip;
+}
+
+bool StatelessValidation::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuffer,
+                                                                  const VkRenderingInfo &rendering_info,
+                                                                  const Location &rendering_info_loc) const {
+    bool skip = false;
+    if (!rendering_info.pStencilAttachment || rendering_info.pStencilAttachment->imageView == VK_NULL_HANDLE) return skip;
+
+    const VkRenderingAttachmentInfo &stencil_attachment = *rendering_info.pStencilAttachment;
+    const Location attachment_loc = rendering_info_loc.dot(Field::pStencilAttachment);
+
+    if (stencil_attachment.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06094", commandBuffer, attachment_loc.dot(Field::imageLayout),
+                         "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.");
+    } else if (IsImageLayoutDepthOnly(stencil_attachment.imageLayout)) {
+        skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-07734", commandBuffer, attachment_loc.dot(Field::imageLayout),
+                         "is %s.", string_VkImageLayout(stencil_attachment.imageLayout));
+    }
+
+    if (stencil_attachment.resolveMode != VK_RESOLVE_MODE_NONE) {
+        const VkImageLayout resolve_layout = stencil_attachment.resolveImageLayout;
+        if (resolve_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06095", commandBuffer,
+                             attachment_loc.dot(Field::resolveImageLayout),
+                             "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL and resolveMode is %s.",
+                             string_VkResolveModeFlagBits(stencil_attachment.resolveMode));
+        } else if (IsImageLayoutDepthOnly(resolve_layout)) {
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-07735", commandBuffer,
+                             attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
+                             string_VkImageLayout(resolve_layout), string_VkResolveModeFlagBits(stencil_attachment.resolveMode));
         }
 
-        if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE) {
-            const VkImageLayout resolve_layout = pRenderingInfo->pStencilAttachment->resolveImageLayout;
-            if (resolve_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-                skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06095", commandBuffer,
-                                 attachment_loc.dot(Field::resolveImageLayout),
-                                 "is VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL and resolveMode is %s.",
-                                 string_VkResolveModeFlagBits(pRenderingInfo->pStencilAttachment->resolveMode));
-            } else if (IsImageLayoutDepthOnly(resolve_layout)) {
-                skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-07735", commandBuffer,
-                                 attachment_loc.dot(Field::resolveImageLayout), "is %s and resolveMode is %s.",
-                                 string_VkImageLayout(resolve_layout),
-                                 string_VkResolveModeFlagBits(pRenderingInfo->pStencilAttachment->resolveMode));
-            }
+        if (IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
+            resolve_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06099", commandBuffer,
+                             attachment_loc.dot(Field::resolveImageLayout),
+                             "is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
+        }
 
-            if (IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
-                resolve_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
-                skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06099", commandBuffer,
-                                 attachment_loc.dot(Field::resolveImageLayout),
-                                 "is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
-            }
-
-            if (!(pRenderingInfo->pStencilAttachment->resolveMode &
-                  phys_dev_ext_props.depth_stencil_resolve_props.supportedStencilResolveModes)) {
-                skip |= LogError(
-                    "VUID-VkRenderingInfo-pStencilAttachment-06103", commandBuffer, attachment_loc.dot(Field::resolveMode),
-                    "is %s, but supportedStencilResolveModes is %s.",
-                    string_VkResolveModeFlagBits(pRenderingInfo->pStencilAttachment->resolveMode),
-                    string_VkResolveModeFlags(phys_dev_ext_props.depth_stencil_resolve_props.supportedStencilResolveModes).c_str());
-            }
+        if (!(stencil_attachment.resolveMode & phys_dev_ext_props.depth_stencil_resolve_props.supportedStencilResolveModes)) {
+            skip |= LogError(
+                "VUID-VkRenderingInfo-pStencilAttachment-06103", commandBuffer, attachment_loc.dot(Field::resolveMode),
+                "is %s, but supportedStencilResolveModes is %s.", string_VkResolveModeFlagBits(stencil_attachment.resolveMode),
+                string_VkResolveModeFlags(phys_dev_ext_props.depth_stencil_resolve_props.supportedStencilResolveModes).c_str());
         }
     }
 

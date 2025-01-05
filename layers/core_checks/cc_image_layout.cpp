@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -656,13 +656,13 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer 
         for (uint32_t k = 0; k < render_pass_info->pSubpasses[j].colorAttachmentCount; ++k) {
             auto &attachment_ref = subpass.pColorAttachments[k];
             if (attachment_ref.attachment == VK_ATTACHMENT_UNUSED) continue;
-            const Location color_loc = subpass_loc.dot(Field::pColorAttachments, k);
+            const Location color_attachment_loc = subpass_loc.dot(Field::pColorAttachments, k);
             auto image_view = attachments[attachment_ref.attachment];
 
             if (auto view_state = Get<vvl::ImageView>(image_view)) {
                 skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(attachment_ref.layout, *view_state, framebuffer,
                                                                              render_pass, attachment_ref.attachment, rp_loc,
-                                                                             color_loc.dot(Field::layout));
+                                                                             color_attachment_loc.dot(Field::layout));
                 if (subpass.pResolveAttachments) {
                     skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
                         attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment, rp_loc,
