@@ -423,6 +423,7 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         } else {
             // Need to add a VkPhysicalDeviceFeatures pointer
             enabled_features = new VkPhysicalDeviceFeatures;
+            memset(enabled_features, 0, sizeof(VkPhysicalDeviceFeatures));
             enabled_features->shaderInt64 = VK_TRUE;
             modified_create_info->pEnabledFeatures = enabled_features;
         }
