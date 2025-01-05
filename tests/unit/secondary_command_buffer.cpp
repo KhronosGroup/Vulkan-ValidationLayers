@@ -855,3 +855,26 @@ TEST_F(NegativeSecondaryCommandBuffer, MissingInheritedQueriesFeature) {
     vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0u);
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSecondaryCommandBuffer, MissingSimultaniousUseBit) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    secondary.End();
+
+    vkt::CommandBuffer primary(*m_device, m_command_pool);
+    primary.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdExecuteCommands(primary.handle(), 1u, &secondary.handle());
+    primary.End();
+
+    m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &secondary.handle());
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00073");
+    m_default_queue->Submit(primary);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+}
