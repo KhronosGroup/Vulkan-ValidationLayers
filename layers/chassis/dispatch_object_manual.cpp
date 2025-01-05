@@ -1,8 +1,8 @@
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@
 #include "state_tracker/pipeline_state.h"
 
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
+
+#define DISPATCH_MAX_STACK_ALLOCATIONS 32
+
 namespace vvl {
 namespace dispatch {
 
@@ -1879,6 +1882,152 @@ VkResult Device::CreateIndirectExecutionSetEXT(VkDevice device, const VkIndirect
     if (VK_SUCCESS == result) {
         *pIndirectExecutionSet = WrapNew(*pIndirectExecutionSet);
     }
+    return result;
+}
+
+VkResult Device::BindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo *pBindInfos) {
+    if (!wrap_handles) return device_dispatch_table.BindBufferMemory2(device, bindInfoCount, pBindInfos);
+    small_vector<vku::safe_VkBindBufferMemoryInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindInfos;
+    vku::safe_VkBindBufferMemoryInfo *local_pBindInfos = nullptr;
+    {
+        if (pBindInfos) {
+            var_local_pBindInfos.resize(bindInfoCount);
+            local_pBindInfos = var_local_pBindInfos.data();
+            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+                local_pBindInfos[index0].initialize(&pBindInfos[index0]);
+
+                if (pBindInfos[index0].buffer) {
+                    local_pBindInfos[index0].buffer = Unwrap(pBindInfos[index0].buffer);
+                }
+                if (pBindInfos[index0].memory) {
+                    local_pBindInfos[index0].memory = Unwrap(pBindInfos[index0].memory);
+                }
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.BindBufferMemory2(device, bindInfoCount, (const VkBindBufferMemoryInfo *)local_pBindInfos);
+
+    if (pBindInfos) {
+        for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            auto *bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[index0].pNext);
+            if (bind_memory_status) {
+                auto *local_bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(local_pBindInfos[index0].pNext);
+                *bind_memory_status->pResult = *local_bind_memory_status->pResult;
+            }
+        }
+    }
+
+    return result;
+}
+
+VkResult Device::BindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos) {
+    if (!wrap_handles) return device_dispatch_table.BindImageMemory2(device, bindInfoCount, pBindInfos);
+    small_vector<vku::safe_VkBindImageMemoryInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindInfos;
+    vku::safe_VkBindImageMemoryInfo *local_pBindInfos = nullptr;
+    {
+        if (pBindInfos) {
+            var_local_pBindInfos.resize(bindInfoCount);
+            local_pBindInfos = var_local_pBindInfos.data();
+            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+                local_pBindInfos[index0].initialize(&pBindInfos[index0]);
+                UnwrapPnextChainHandles(local_pBindInfos[index0].pNext);
+
+                if (pBindInfos[index0].image) {
+                    local_pBindInfos[index0].image = Unwrap(pBindInfos[index0].image);
+                }
+                if (pBindInfos[index0].memory) {
+                    local_pBindInfos[index0].memory = Unwrap(pBindInfos[index0].memory);
+                }
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.BindImageMemory2(device, bindInfoCount, (const VkBindImageMemoryInfo *)local_pBindInfos);
+
+    if (pBindInfos) {
+        for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            auto *bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[index0].pNext);
+            if (bind_memory_status) {
+                auto *local_bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(local_pBindInfos[index0].pNext);
+                *bind_memory_status->pResult = *local_bind_memory_status->pResult;
+            }
+        }
+    }
+
+    return result;
+}
+
+VkResult Device::BindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo *pBindInfos) {
+    if (!wrap_handles) return device_dispatch_table.BindBufferMemory2KHR(device, bindInfoCount, pBindInfos);
+    small_vector<vku::safe_VkBindBufferMemoryInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindInfos;
+    vku::safe_VkBindBufferMemoryInfo *local_pBindInfos = nullptr;
+    {
+        if (pBindInfos) {
+            var_local_pBindInfos.resize(bindInfoCount);
+            local_pBindInfos = var_local_pBindInfos.data();
+            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+                local_pBindInfos[index0].initialize(&pBindInfos[index0]);
+
+                if (pBindInfos[index0].buffer) {
+                    local_pBindInfos[index0].buffer = Unwrap(pBindInfos[index0].buffer);
+                }
+                if (pBindInfos[index0].memory) {
+                    local_pBindInfos[index0].memory = Unwrap(pBindInfos[index0].memory);
+                }
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.BindBufferMemory2KHR(device, bindInfoCount, (const VkBindBufferMemoryInfo *)local_pBindInfos);
+
+    if (pBindInfos) {
+        for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            auto *bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[index0].pNext);
+            if (bind_memory_status) {
+                auto *local_bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(local_pBindInfos[index0].pNext);
+                *bind_memory_status->pResult = *local_bind_memory_status->pResult;
+            }
+        }
+    }
+
+    return result;
+}
+
+VkResult Device::BindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos) {
+    if (!wrap_handles) return device_dispatch_table.BindImageMemory2KHR(device, bindInfoCount, pBindInfos);
+    small_vector<vku::safe_VkBindImageMemoryInfo, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindInfos;
+    vku::safe_VkBindImageMemoryInfo *local_pBindInfos = nullptr;
+    {
+        if (pBindInfos) {
+            var_local_pBindInfos.resize(bindInfoCount);
+            local_pBindInfos = var_local_pBindInfos.data();
+            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+                local_pBindInfos[index0].initialize(&pBindInfos[index0]);
+                UnwrapPnextChainHandles(local_pBindInfos[index0].pNext);
+
+                if (pBindInfos[index0].image) {
+                    local_pBindInfos[index0].image = Unwrap(pBindInfos[index0].image);
+                }
+                if (pBindInfos[index0].memory) {
+                    local_pBindInfos[index0].memory = Unwrap(pBindInfos[index0].memory);
+                }
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.BindImageMemory2KHR(device, bindInfoCount, (const VkBindImageMemoryInfo *)local_pBindInfos);
+
+    if (pBindInfos) {
+        for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            auto *bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[index0].pNext);
+            if (bind_memory_status) {
+                auto *local_bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(local_pBindInfos[index0].pNext);
+                *bind_memory_status->pResult = *local_bind_memory_status->pResult;
+            }
+        }
+    }
+
     return result;
 }
 

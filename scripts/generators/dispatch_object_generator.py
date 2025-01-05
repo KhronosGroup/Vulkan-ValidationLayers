@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2024 The Khronos Group Inc.
-# Copyright (c) 2015-2024 Valve Corporation
-# Copyright (c) 2015-2024 LunarG, Inc.
-# Copyright (c) 2015-2024 Google Inc.
+# Copyright (c) 2015-2025 The Khronos Group Inc.
+# Copyright (c) 2015-2025 Valve Corporation
+# Copyright (c) 2015-2025 LunarG, Inc.
+# Copyright (c) 2015-2025 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -163,9 +163,14 @@ class DispatchObjectGenerator(BaseGenerator):
             'vkGetDisplayModePropertiesKHR',
             'vkGetDisplayModeProperties2KHR',
             'vkGetDisplayPlaneSupportedDisplaysKHR',
-            # need to handle binaries in VkPipelineBinaryHandlesInfoKHR as output, not input.
+            # Need to handle binaries in VkPipelineBinaryHandlesInfoKHR as output, not input.
             'vkCreatePipelineBinariesKHR',
             'vkGetPipelineKeyKHR',
+            # Need to handle VkBindMemoryStatus
+            'vkBindBufferMemory2',
+            'vkBindBufferMemory2KHR',
+            'vkBindImageMemory2',
+            'vkBindImageMemory2KHR',
             )
 
         # List of all extension structs strings containing handles
@@ -202,9 +207,9 @@ class DispatchObjectGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2024 The Khronos Group Inc.
-            * Copyright (c) 2015-2024 Valve Corporation
-            * Copyright (c) 2015-2024 LunarG, Inc.
+            * Copyright (c) 2015-2025 The Khronos Group Inc.
+            * Copyright (c) 2015-2025 Valve Corporation
+            * Copyright (c) 2015-2025 LunarG, Inc.
             *
             * Licensed under the Apache License, Version 2.0 (the "License");
             * you may not use this file except in compliance with the License.
