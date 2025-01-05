@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -272,7 +272,9 @@ bool BestPractices::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
         const Location color_attachment_info = rendering_info.dot(Field::pColorAttachments, i);
 
         auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
-        ASSERT_AND_CONTINUE(image_view_state);
+        if (!image_view_state) {
+            continue;
+        }
 
         if (VendorCheckEnabled(kBPVendorNVIDIA)) {
             if (color_attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
