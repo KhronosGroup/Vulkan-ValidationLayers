@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -296,7 +296,7 @@ std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard, Re
     std::stringstream out;
     assert(hazard.IsHazard());
     out << FormatHazardState(hazard.State(), queue_flags_, key_values);
-    out << ", " << FormatUsage(hazard.TagEx()) << ")";
+    out << FormatUsage(hazard.TagEx()) << ")";
     return out.str();
 }
 
