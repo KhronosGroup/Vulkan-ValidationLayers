@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -234,6 +234,10 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
     if (ib_mem) {
         const uint32_t scan_stride = GetIndexAlignment(ib_type);
+        // Check if all indices are within the memory allocation size, if robustness is enabled they might not be
+        if ((firstIndex + indexCount) * scan_stride > ib_mem_state->allocate_info.allocationSize) {
+            return skip;
+        }
         const uint8_t* scan_begin = static_cast<const uint8_t*>(ib_mem) + firstIndex * scan_stride;
         const uint8_t* scan_end = scan_begin + indexCount * scan_stride;
 
