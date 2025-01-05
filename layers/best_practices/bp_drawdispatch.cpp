@@ -214,7 +214,11 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
 
     // check for sparse/underutilised index buffer, and post-transform cache thrashing
     const auto ib_state = Get<vvl::Buffer>(cmd_state.index_buffer_binding.buffer);
-    ASSERT_AND_RETURN_SKIP(ib_state);
+    // If the maintenance6 feature is enabled, buffer can be VK_NULL_HANDLE. If buffer is VK_NULL_HANDLE and the nullDescriptor
+    // feature is enabled, every index fetched results in a value of zero.
+    if (!ib_state) {
+        return skip;
+    }
 
     const VkIndexType ib_type = cmd_state.index_buffer_binding.index_type;
     const auto ib_mem_state = ib_state->MemState();
