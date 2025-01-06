@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2096,7 +2096,12 @@ void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindIn
         // if bindInfoCount is 1, we know for sure if that single image was bound or not
         if (bindInfoCount > 1) {
             for (uint32_t i = 0; i < bindInfoCount; i++) {
-                if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
+                // If user passed in VkBindMemoryStatus, we can update which buffers are good or not
+                if (auto *bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[i].pNext)) {
+                    if (bind_memory_status->pResult && *bind_memory_status->pResult == VK_SUCCESS) {
+                        UpdateBindImageMemoryState(pBindInfos[i]);
+                    }
+                } else if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
                     image_state->indeterminate_state = true;
                 }
             }
