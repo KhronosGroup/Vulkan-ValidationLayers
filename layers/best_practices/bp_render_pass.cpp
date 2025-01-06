@@ -848,10 +848,10 @@ void BestPractices::RecordAttachmentAccess(bp_state::CommandBuffer& cb_state, ui
     }
 }
 
-void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cmd_state, uint32_t fb_attachment,
+void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cb_state, uint32_t fb_attachment,
                                                      uint32_t color_attachment, VkImageAspectFlags aspects, uint32_t rectCount,
                                                      const VkClearRect* pRects) {
-    auto& rp_state = cmd_state.render_pass_state;
+    auto& rp_state = cb_state.render_pass_state;
     // If we observe a full clear before any other access to a frame buffer attachment,
     // we have candidate for redundant clear attachments.
     auto itr =
@@ -870,7 +870,7 @@ void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cm
         return;
     }
 
-    if (cmd_state.IsSecondary()) {
+    if (cb_state.IsSecondary()) {
         // The first command might be a clear, but might not be the first in the render pass, defer any checks until
         // CmdExecuteCommands.
         rp_state.earlyClearAttachments.push_back(
