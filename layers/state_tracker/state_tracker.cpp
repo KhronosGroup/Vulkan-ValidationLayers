@@ -1793,7 +1793,7 @@ void ValidationStateTracker::PostCallRecordBindBufferMemory2(VkDevice device, ui
         // if bindInfoCount is 1, we know for sure if that single buffer was bound or not
         if (bindInfoCount > 1) {
             for (uint32_t i = 0; i < bindInfoCount; i++) {
-                // If user passed in VkBindMemoryStatus, we can update which buffers are good or not
+                // If user passed in VkBindMemoryStatus, we can update which buffers are valid or not
                 if (auto *bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[i].pNext)) {
                     if (bind_memory_status->pResult && *bind_memory_status->pResult == VK_SUCCESS) {
                         UpdateBindBufferMemoryState(pBindInfos[i]);
@@ -3737,7 +3737,7 @@ void ValidationStateTracker::PostCallRecordBindImageMemory2(VkDevice device, uin
         // if bindInfoCount is 1, we know for sure if that single image was bound or not
         if (bindInfoCount > 1) {
             for (uint32_t i = 0; i < bindInfoCount; i++) {
-                // If user passed in VkBindMemoryStatus, we can update which buffers are good or not
+                // If user passed in VkBindMemoryStatus, we can update which images are valid or not
                 if (auto *bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[i].pNext)) {
                     if (bind_memory_status->pResult && *bind_memory_status->pResult == VK_SUCCESS) {
                         UpdateBindImageMemoryState(pBindInfos[i]);

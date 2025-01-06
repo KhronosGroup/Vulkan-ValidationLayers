@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
- * Copyright (c) 2023-2024 Collabora, Inc.
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2025 Collabora, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -556,3 +556,68 @@ TEST_F(PositiveMemory, BindMemoryDX12Handle) {
     vk::BindImageMemory(device(), image, memory, 0);
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+TEST_F(PositiveMemory, BindMemoryStatusBuffer) {
+    TEST_DESCRIPTION("Use VkBindMemoryStatus when binding buffer to memory.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD, skipping";
+    }
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 32u;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+    vkt::Buffer buffer;
+    buffer.InitNoMemory(*m_device, buffer_ci);
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = 32u;
+    vkt::DeviceMemory memory(*m_device, alloc_info);
+
+    VkResult result = VK_RESULT_MAX_ENUM;
+
+    VkBindMemoryStatus bind_memory_status = vku::InitStructHelper();
+    bind_memory_status.pResult = &result;
+
+    VkBindBufferMemoryInfo bind_info = vku::InitStructHelper(&bind_memory_status);
+    bind_info.buffer = buffer;
+    bind_info.memory = memory;
+    bind_info.memoryOffset = 0u;
+    vk::BindBufferMemory2(device(), 1u, &bind_info);
+
+    ASSERT_NE(result, VK_RESULT_MAX_ENUM);
+}
+
+TEST_F(PositiveMemory, BindMemoryStatusImage) {
+    TEST_DESCRIPTION("Use VkBindMemoryStatus when binding image to memory.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD, skipping";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    vkt::DeviceMemory memory;
+    memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
+
+    VkResult result = VK_RESULT_MAX_ENUM;
+
+    VkBindMemoryStatus bind_memory_status = vku::InitStructHelper();
+    bind_memory_status.pResult = &result;
+
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_memory_status);
+    bind_info.image = image;
+    bind_info.memory = memory;
+    bind_info.memoryOffset = 0u;
+    vk::BindImageMemory2(device(), 1u, &bind_info);
+
+    ASSERT_NE(result, VK_RESULT_MAX_ENUM);
+}

@@ -264,7 +264,7 @@ void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindI
         auto image_state = Get<ImageState>(info.image);
 
         // Need to protect if some VkBindMemoryStatus are not VK_SUCCESS
-        if (!image_state->MemState()) continue;
+        if (!image_state->HasBeenBound()) continue;
 
         if (image_state->IsTiled()) {
             image_state->SetOpaqueBaseAddress(*this);
@@ -2975,7 +2975,7 @@ void SyncValidator::PostCallRecordBindImageMemory(VkDevice device, VkImage image
 
 void SyncValidator::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
                                                    const RecordObject &record_obj) {
-    // Don't check |record_obj.result| as some bind might be valid
+    // Don't check |record_obj.result| as some binds might still be valid
     BaseClass::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     UpdateSyncImageMemoryBindState(bindInfoCount, pBindInfos);
