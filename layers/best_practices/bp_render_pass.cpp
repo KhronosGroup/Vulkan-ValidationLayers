@@ -495,7 +495,6 @@ void BestPractices::RecordCmdBeginRenderingCommon(bp_state::CommandBuffer& cb_st
     ASSERT_AND_RETURN(rp);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        std::shared_ptr<vvl::ImageView> depth_image_view_shared_ptr;
         vvl::ImageView* depth_image_view = nullptr;
         std::optional<VkAttachmentLoadOp> load_op;
 
@@ -503,9 +502,10 @@ void BestPractices::RecordCmdBeginRenderingCommon(bp_state::CommandBuffer& cb_st
             const auto depth_attachment = rp->dynamic_rendering_begin_rendering_info.pDepthAttachment;
             if (depth_attachment) {
                 load_op.emplace(depth_attachment->loadOp);
-                depth_image_view_shared_ptr = Get<vvl::ImageView>(depth_attachment->imageView);
-                ASSERT_AND_RETURN(depth_image_view_shared_ptr);
-                depth_image_view = depth_image_view_shared_ptr.get();
+                const auto depth_image_view_shared_ptr = Get<vvl::ImageView>(depth_attachment->imageView);
+                if (depth_image_view_shared_ptr) {
+                    depth_image_view = depth_image_view_shared_ptr.get();
+                }
             }
 
             for (uint32_t i = 0; i < rp->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
