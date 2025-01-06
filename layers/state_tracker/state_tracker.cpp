@@ -1803,11 +1803,10 @@ void ValidationStateTracker::PostCallRecordBindBufferMemory2(VkDevice device, ui
                 }
             }
         }
-        return;
-    }
-
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
-        UpdateBindBufferMemoryState(pBindInfos[i]);
+    } else {
+        for (uint32_t i = 0; i < bindInfoCount; i++) {
+            UpdateBindBufferMemoryState(pBindInfos[i]);
+        }
     }
 }
 
@@ -3734,9 +3733,24 @@ void ValidationStateTracker::PostCallRecordBindImageMemory(VkDevice device, VkIm
 void ValidationStateTracker::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                                                             const VkBindImageMemoryInfo *pBindInfos,
                                                             const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
-    for (uint32_t i = 0; i < bindInfoCount; i++) {
-        UpdateBindImageMemoryState(pBindInfos[i]);
+    if (VK_SUCCESS != record_obj.result) {
+        // if bindInfoCount is 1, we know for sure if that single image was bound or not
+        if (bindInfoCount > 1) {
+            for (uint32_t i = 0; i < bindInfoCount; i++) {
+                // If user passed in VkBindMemoryStatus, we can update which buffers are good or not
+                if (auto *bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[i].pNext)) {
+                    if (bind_memory_status->pResult && *bind_memory_status->pResult == VK_SUCCESS) {
+                        UpdateBindImageMemoryState(pBindInfos[i]);
+                    }
+                } else if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
+                    image_state->indeterminate_state = true;
+                }
+            }
+        }
+    } else {
+        for (uint32_t i = 0; i < bindInfoCount; i++) {
+            UpdateBindImageMemoryState(pBindInfos[i]);
+        }
     }
 }
 
