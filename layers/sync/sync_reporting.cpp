@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -335,12 +335,9 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
         if (batch.queue) {
             // Queue and Batch information (for enqueued operations)
             out << FormatStateObject(SyncNodeFormatter(sync_state_, batch.queue->GetQueueState()));
-            out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index;
+            out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index << ", ";
         }
-
-        // Commandbuffer Usages Information
-        out << ", "
-            << FormatResourceUsageRecord(record.Formatter(sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index));
+        out << FormatResourceUsageRecord(record.Formatter(sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index));
     }
     return out.str();
 }
