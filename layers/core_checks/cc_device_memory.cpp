@@ -2092,27 +2092,15 @@ bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindI
 
 void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
                                                 const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) {
-        // if bindInfoCount is 1, we know for sure if that single image was bound or not
-        if (bindInfoCount > 1) {
-            for (uint32_t i = 0; i < bindInfoCount; i++) {
-                // If user passed in VkBindMemoryStatus, we can update which buffers are good or not
-                if (auto *bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[i].pNext)) {
-                    if (bind_memory_status->pResult && *bind_memory_status->pResult == VK_SUCCESS) {
-                        UpdateBindImageMemoryState(pBindInfos[i]);
-                    }
-                } else if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
-                    image_state->indeterminate_state = true;
-                }
-            }
-        }
-        return;
-    }
+    // Don't check |record_obj.result| as some bind might be valid
     BaseClass::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
-            image_state->SetInitialLayoutMap();
+            // Need to protect if some VkBindMemoryStatus are not VK_SUCCESS
+            if (image_state->MemState()) {
+                image_state->SetInitialLayoutMap();
+            }
         }
     }
 }

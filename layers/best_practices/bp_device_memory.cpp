@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -17,6 +17,8 @@
  * limitations under the License.
  */
 
+#include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_core.h>
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/buffer_state.h"
@@ -319,21 +321,49 @@ void BestPractices::ManualPostCallRecordBindBufferMemory2(VkDevice device, uint3
                                                           const VkBindBufferMemoryInfo* pBindInfos,
                                                           const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS && bindInfoCount > 1) {
-        // Details of check found in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5527
-        LogWarning(
-            "BestPractices-Partial-Bound-Buffer", device, record_obj.location,
-            "all buffer are now in an indeterminate state because the call failed to return VK_SUCCESS. The best action to take "
-            "is to destroy the buffers instead of trying to rebind");
+        bool found_status = false;
+        for (uint32_t i = 0; i < bindInfoCount; i++) {
+            if (auto* bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[i].pNext)) {
+                found_status = true;
+                if (bind_memory_status->pResult && *bind_memory_status->pResult != VK_SUCCESS) {
+                    LogWarning("BestPractices-Partial-Bound-Buffer-Status", device,
+                               record_obj.location.dot(Field::pBindInfos, i).pNext(vvl::Struct::VkBindMemoryStatus, Field::pResult),
+                               "was %s", string_VkResult(*bind_memory_status->pResult));
+                }
+            }
+        }
+
+        if (!found_status) {
+            // Details of check found in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5527
+            LogWarning("BestPractices-Partial-Bound-Buffer", device, record_obj.location,
+                       "all buffer are now in an indeterminate state because the call failed to return VK_SUCCESS. The best action "
+                       "to take "
+                       "is to destroy the buffers instead of trying to rebind");
+        }
     }
 }
 
 void BestPractices::ManualPostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                                                          const VkBindImageMemoryInfo* pBindInfos, const RecordObject& record_obj) {
     if (record_obj.result != VK_SUCCESS && bindInfoCount > 1) {
-        // Details of check found in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5527
-        LogWarning(
-            "BestPractices-Partial-Bound-Image", device, record_obj.location,
-            "all image are now in an indeterminate state because the call failed to return VK_SUCCESS. The best action to take is "
-            "to destroy the images instead of trying to rebind");
+        bool found_status = false;
+        for (uint32_t i = 0; i < bindInfoCount; i++) {
+            if (auto* bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[i].pNext)) {
+                found_status = true;
+                if (bind_memory_status->pResult && *bind_memory_status->pResult != VK_SUCCESS) {
+                    LogWarning("BestPractices-Partial-Bound-Image-Status", device,
+                               record_obj.location.dot(Field::pBindInfos, i).pNext(vvl::Struct::VkBindMemoryStatus, Field::pResult),
+                               "was %s", string_VkResult(*bind_memory_status->pResult));
+                }
+            }
+        }
+
+        if (!found_status) {
+            // Details of check found in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5527
+            LogWarning("BestPractices-Partial-Bound-Image", device, record_obj.location,
+                       "all image are now in an indeterminate state because the call failed to return VK_SUCCESS. The best action "
+                       "to take is "
+                       "to destroy the images instead of trying to rebind");
+        }
     }
 }

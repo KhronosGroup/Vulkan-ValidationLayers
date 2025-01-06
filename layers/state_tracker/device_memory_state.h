@@ -260,6 +260,7 @@ class Bindable : public StateObject {
                ((external_memory_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_SCREEN_BUFFER_BIT_QNX) != 0);
     }
 
+    // Will be false if VkBindMemoryStatus had a non-success result
     const vvl::DeviceMemory *MemState() const {
         const MEM_BINDING *binding = Binding();
         return binding ? binding->memory_state.get() : nullptr;
