@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -52,35 +52,35 @@ static bool IsClearColorZeroOrOne(VkFormat format, const std::array<uint32_t, 4>
     return is_one || is_zero;
 }
 
-void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cmd_state, VkCompareOp new_depth_compare_op,
+void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cb_state, VkCompareOp new_depth_compare_op,
                                             bool new_depth_test_enable) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
-    if (cmd_state.nv.depth_compare_op != new_depth_compare_op) {
+    if (cb_state.nv.depth_compare_op != new_depth_compare_op) {
         switch (new_depth_compare_op) {
             case VK_COMPARE_OP_LESS:
             case VK_COMPARE_OP_LESS_OR_EQUAL:
-                cmd_state.nv.zcull_direction = ZcullDirection::Less;
+                cb_state.nv.zcull_direction = ZcullDirection::Less;
                 break;
             case VK_COMPARE_OP_GREATER:
             case VK_COMPARE_OP_GREATER_OR_EQUAL:
-                cmd_state.nv.zcull_direction = ZcullDirection::Greater;
+                cb_state.nv.zcull_direction = ZcullDirection::Greater;
                 break;
             default:
                 // The other ops carry over the previous state.
                 break;
         }
     }
-    cmd_state.nv.depth_compare_op = new_depth_compare_op;
-    cmd_state.nv.depth_test_enable = new_depth_test_enable;
+    cb_state.nv.depth_compare_op = new_depth_compare_op;
+    cb_state.nv.depth_test_enable = new_depth_test_enable;
 }
 
-void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkImage depth_attachment,
+void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cb_state, VkImage depth_attachment,
                                          const VkImageSubresourceRange& subresource_range) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     if (depth_attachment == VK_NULL_HANDLE) {
-        cmd_state.nv.zcull_scope = {};
+        cb_state.nv.zcull_scope = {};
         return;
     }
 
@@ -92,29 +92,29 @@ void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cmd_state, VkI
     const uint32_t mip_levels = image_state->create_info.mipLevels;
     const uint32_t array_layers = image_state->create_info.arrayLayers;
 
-    auto& tree = cmd_state.nv.zcull_per_image[depth_attachment];
+    auto& tree = cb_state.nv.zcull_per_image[depth_attachment];
     if (tree.states.empty()) {
         tree.mip_levels = mip_levels;
         tree.array_layers = array_layers;
         tree.states.resize(array_layers * mip_levels);
     }
 
-    cmd_state.nv.zcull_scope.image = depth_attachment;
-    cmd_state.nv.zcull_scope.range = subresource_range;
-    cmd_state.nv.zcull_scope.tree = &tree;
+    cb_state.nv.zcull_scope.image = depth_attachment;
+    cb_state.nv.zcull_scope.range = subresource_range;
+    cb_state.nv.zcull_scope.tree = &tree;
 }
 
-void BestPractices::RecordUnbindZcullScope(bp_state::CommandBuffer& cmd_state) {
+void BestPractices::RecordUnbindZcullScope(bp_state::CommandBuffer& cb_state) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
-    RecordBindZcullScope(cmd_state, VK_NULL_HANDLE, VkImageSubresourceRange{});
+    RecordBindZcullScope(cb_state, VK_NULL_HANDLE, VkImageSubresourceRange{});
 }
 
-void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBuffer& cmd_state) {
+void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBuffer& cb_state) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
-    auto& scope = cmd_state.nv.zcull_scope;
-    RecordResetZcullDirection(cmd_state, scope.image, scope.range);
+    auto& scope = cb_state.nv.zcull_scope;
+    RecordResetZcullDirection(cb_state, scope.image, scope.range);
 }
 
 template <typename Func>
@@ -133,14 +133,14 @@ static void ForEachSubresource(const vvl::Image& image, const VkImageSubresource
     }
 }
 
-void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state, VkImage depth_image,
+void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cb_state, VkImage depth_image,
                                               const VkImageSubresourceRange& subresource_range) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
-    RecordSetZcullDirection(cmd_state, depth_image, subresource_range, ZcullDirection::Unknown);
+    RecordSetZcullDirection(cb_state, depth_image, subresource_range, ZcullDirection::Unknown);
 
-    const auto image_it = cmd_state.nv.zcull_per_image.find(depth_image);
-    if (image_it == cmd_state.nv.zcull_per_image.end()) {
+    const auto image_it = cb_state.nv.zcull_per_image.find(depth_image);
+    if (image_it == cb_state.nv.zcull_per_image.end()) {
         return;
     }
     auto& tree = image_it->second;
@@ -155,19 +155,19 @@ void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state
     });
 }
 
-void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cmd_state, ZcullDirection mode) {
+void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cb_state, ZcullDirection mode) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
-    auto& scope = cmd_state.nv.zcull_scope;
-    RecordSetZcullDirection(cmd_state, scope.image, scope.range, mode);
+    auto& scope = cb_state.nv.zcull_scope;
+    RecordSetZcullDirection(cb_state, scope.image, scope.range, mode);
 }
 
-void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, VkImage depth_image,
+void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cb_state, VkImage depth_image,
                                             const VkImageSubresourceRange& subresource_range, ZcullDirection mode) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
-    const auto image_it = cmd_state.nv.zcull_per_image.find(depth_image);
-    if (image_it == cmd_state.nv.zcull_per_image.end()) {
+    const auto image_it = cb_state.nv.zcull_per_image.find(depth_image);
+    if (image_it == cb_state.nv.zcull_per_image.end()) {
         return;
     }
     auto& tree = image_it->second;
@@ -175,16 +175,16 @@ void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, 
     auto image = Get<vvl::Image>(depth_image);
     ASSERT_AND_RETURN(image);
 
-    ForEachSubresource(*image, subresource_range, [&tree, &cmd_state](uint32_t layer, uint32_t level) {
-        tree.GetState(layer, level).direction = cmd_state.nv.zcull_direction;
+    ForEachSubresource(*image, subresource_range, [&tree, &cb_state](uint32_t layer, uint32_t level) {
+        tree.GetState(layer, level).direction = cb_state.nv.zcull_direction;
     });
 }
 
-void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
+void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cb_state) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     // Add one draw to each subresource depending on the current Z-cull direction
-    auto& scope = cmd_state.nv.zcull_scope;
+    auto& scope = cb_state.nv.zcull_scope;
 
     auto image = Get<vvl::Image>(scope.image);
     if (!image) return;
@@ -207,20 +207,20 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
     });
 }
 
-bool BestPractices::ValidateZcullScope(const bp_state::CommandBuffer& cmd_state, const Location& loc) const {
+bool BestPractices::ValidateZcullScope(const bp_state::CommandBuffer& cb_state, const Location& loc) const {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     bool skip = false;
 
-    if (cmd_state.nv.depth_test_enable) {
-        auto& scope = cmd_state.nv.zcull_scope;
-        skip |= ValidateZcull(cmd_state, scope.image, scope.range, loc);
+    if (cb_state.nv.depth_test_enable) {
+        auto& scope = cb_state.nv.zcull_scope;
+        skip |= ValidateZcull(cb_state, scope.image, scope.range, loc);
     }
 
     return skip;
 }
 
-bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkImage image,
+bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cb_state, VkImage image,
                                   const VkImageSubresourceRange& subresource_range, const Location& loc) const {
     bool skip = false;
 
@@ -228,8 +228,8 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
     const char* bad_mode = nullptr;
     bool is_balanced = false;
 
-    const auto image_it = cmd_state.nv.zcull_per_image.find(image);
-    if (image_it == cmd_state.nv.zcull_per_image.end()) {
+    const auto image_it = cb_state.nv.zcull_per_image.find(image);
+    if (image_it == cb_state.nv.zcull_per_image.end()) {
         return skip;
     }
     const auto& tree = image_it->second;
@@ -265,12 +265,12 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
 
     if (is_balanced) {
         skip |= LogPerformanceWarning(
-            "BestPractices-NVIDIA-Zcull-LessGreaterRatio", cmd_state.Handle(), loc,
+            "BestPractices-NVIDIA-Zcull-LessGreaterRatio", cb_state.Handle(), loc,
             "%s Depth attachment %s is primarily rendered with depth compare op %s, but some draws use %s. "
             "Z-cull is disabled for the least used direction, which harms depth testing performance. "
             "The Z-cull direction can be reset by clearing the depth attachment, transitioning from VK_IMAGE_LAYOUT_UNDEFINED, "
             "using VK_ATTACHMENT_LOAD_OP_DONT_CARE, or using VK_ATTACHMENT_STORE_OP_DONT_CARE.",
-            VendorSpecificTag(kBPVendorNVIDIA), FormatHandle(cmd_state.nv.zcull_scope.image).c_str(), good_mode, bad_mode);
+            VendorSpecificTag(kBPVendorNVIDIA), FormatHandle(cb_state.nv.zcull_scope.image).c_str(), good_mode, bad_mode);
     }
 
     return skip;

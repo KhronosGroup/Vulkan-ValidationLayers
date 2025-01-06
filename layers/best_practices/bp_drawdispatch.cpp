@@ -127,12 +127,12 @@ void BestPractices::RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_state, uint
     }
 }
 
-void BestPractices::RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cmd_state) {
+void BestPractices::RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cb_state) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
-    if (cmd_state.nv.depth_test_enable && cmd_state.nv.zcull_direction != ZcullDirection::Unknown) {
-        RecordSetScopeZcullDirection(cmd_state, cmd_state.nv.zcull_direction);
-        RecordZcullDraw(cmd_state);
+    if (cb_state.nv.depth_test_enable && cb_state.nv.zcull_direction != ZcullDirection::Unknown) {
+        RecordSetScopeZcullDirection(cb_state, cb_state.nv.zcull_direction);
+        RecordZcullDraw(cb_state);
     }
 }
 
@@ -162,9 +162,9 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
 
     // Check if we reached the limit for small indexed draw calls.
     // Note that we cannot update the draw call count here, so we do it in PostCallRecordCmdDrawIndexed.
-    const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+    const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices &&
-        (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1) &&
+        (cb_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1) &&
         (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG))) {
         skip |= LogPerformanceWarning("BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls", device, error_obj.location,
                                       "%s %s: The command buffer contains many small indexed drawcalls "
@@ -175,7 +175,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
     }
 
     if (VendorCheckEnabled(kBPVendorArm)) {
-        skip |= ValidateIndexBufferArm(*cmd_state, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
+        skip |= ValidateIndexBufferArm(*cb_state, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
                                        error_obj.location);
     }
 
@@ -207,34 +207,34 @@ bool BestPractices::PostTransformLRUCacheModel::query_cache(uint32_t value) {
     return false;
 }
 
-bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_state, uint32_t indexCount, uint32_t instanceCount,
+bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cb_state, uint32_t indexCount, uint32_t instanceCount,
                                            uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
                                            const Location& loc) const {
     bool skip = false;
 
     // check for sparse/underutilised index buffer, and post-transform cache thrashing
-    const auto ib_state = Get<vvl::Buffer>(cmd_state.index_buffer_binding.buffer);
+    const auto ib_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
     // If the maintenance6 feature is enabled, buffer can be VK_NULL_HANDLE. If buffer is VK_NULL_HANDLE and the nullDescriptor
     // feature is enabled, every index fetched results in a value of zero.
     if (!ib_state) {
         return skip;
     }
 
-    const VkIndexType ib_type = cmd_state.index_buffer_binding.index_type;
+    const VkIndexType ib_type = cb_state.index_buffer_binding.index_type;
     const auto ib_mem_state = ib_state->MemState();
     if (!ib_mem_state) return skip;
 
     const void* ib_mem = ib_mem_state->p_driver_data;
     bool primitive_restart_enable = false;
 
-    const auto* pipeline_state = cmd_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto* pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (pipeline_state && !pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
         const auto* ia_state = pipeline_state->InputAssemblyState();
         if (ia_state) {
             primitive_restart_enable = ia_state->primitiveRestartEnable == VK_TRUE;
         }
     } else {
-        primitive_restart_enable = cmd_state.dynamic_state_value.primitive_restart_enable;
+        primitive_restart_enable = cb_state.dynamic_state_value.primitive_restart_enable;
     }
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
