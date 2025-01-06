@@ -225,17 +225,9 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cb_sta
     if (!ib_mem_state) return skip;
 
     const void* ib_mem = ib_mem_state->p_driver_data;
-    bool primitive_restart_enable = false;
 
-    const auto* pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (pipeline_state && !pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
-        const auto* ia_state = pipeline_state->InputAssemblyState();
-        if (ia_state) {
-            primitive_restart_enable = ia_state->primitiveRestartEnable == VK_TRUE;
-        }
-    } else {
-        primitive_restart_enable = cb_state.dynamic_state_value.primitive_restart_enable;
-    }
+    const auto& last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const bool primitive_restart_enable = last_bound_state.IsPrimitiveRestartEnable();
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
     if (ib_mem) {
