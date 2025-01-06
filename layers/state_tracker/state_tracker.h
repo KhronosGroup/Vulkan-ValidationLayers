@@ -1475,8 +1475,8 @@ class ValidationStateTracker : public ValidationObject {
     void RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags);
     void RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
-    void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
-    void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bindInfo);
+    void UpdateBindBufferMemoryState(const VkBindBufferMemoryInfo& bind_info);
+    void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bind_info);
     void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, vvl::AllocateDescriptorSetsData&) const;
 
     void PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
