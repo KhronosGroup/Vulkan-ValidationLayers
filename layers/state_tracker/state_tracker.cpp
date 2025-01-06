@@ -1766,19 +1766,24 @@ void ValidationStateTracker::PreCallRecordDestroyQueryPool(VkDevice device, VkQu
     Destroy<vvl::QueryPool>(queryPool);
 }
 
-void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
-    if (auto buffer_state = Get<vvl::Buffer>(buffer)) {
-        // Track objects tied to memory
-        if (auto mem_state = Get<vvl::DeviceMemory>(mem)) {
-            buffer_state->BindMemory(buffer_state.get(), mem_state, memoryOffset, 0u, buffer_state->requirements.size);
-        }
+void ValidationStateTracker::UpdateBindBufferMemoryState(const VkBindBufferMemoryInfo &bind_info) {
+    auto buffer_state = Get<vvl::Buffer>(bind_info.buffer);
+    if (!buffer_state) return;
+
+    // Track objects tied to memory
+    if (auto mem_state = Get<vvl::DeviceMemory>(bind_info.memory)) {
+        buffer_state->BindMemory(buffer_state.get(), mem_state, bind_info.memoryOffset, 0u, buffer_state->requirements.size);
     }
 }
 
-void ValidationStateTracker::PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem,
+void ValidationStateTracker::PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
                                                             VkDeviceSize memoryOffset, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    UpdateBindBufferMemoryState(buffer, mem, memoryOffset);
+    VkBindBufferMemoryInfo bind_info = vku::InitStructHelper();
+    bind_info.buffer = buffer;
+    bind_info.memory = memory;
+    bind_info.memoryOffset = memoryOffset;
+    UpdateBindBufferMemoryState(bind_info);
 }
 
 void ValidationStateTracker::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
@@ -1797,7 +1802,7 @@ void ValidationStateTracker::PostCallRecordBindBufferMemory2(VkDevice device, ui
     }
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        UpdateBindBufferMemoryState(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
+        UpdateBindBufferMemoryState(pBindInfos[i]);
     }
 }
 
