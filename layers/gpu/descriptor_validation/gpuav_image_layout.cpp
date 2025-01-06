@@ -668,15 +668,15 @@ void Validator::PostCallRecordBindImageMemory(VkDevice device, VkImage image, Vk
 
 void Validator::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
                                                const RecordObject &record_obj) {
-    // Don't check |record_obj.result| as some bind might be valid
+    // Don't check |record_obj.result| as some binds might still be valid
     BaseClass::PostCallRecordBindImageMemory2(device, bindInfoCount, pBindInfos, record_obj);
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         if (auto image_state = Get<vvl::Image>(pBindInfos[i].image)) {
             // Need to protect if some VkBindMemoryStatus are not VK_SUCCESS
-            if (image_state->MemState()) {
-                image_state->SetInitialLayoutMap();
-            }
+            if (!image_state->HasBeenBound()) continue;
+
+            image_state->SetInitialLayoutMap();
         }
     }
 }

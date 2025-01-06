@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -147,6 +147,9 @@ class Image : public Bindable {
     bool IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_create_info) const;
 
     bool IsSwapchainImage() const { return create_from_swapchain != VK_NULL_HANDLE; }
+
+    // TODO - need to understand if VkBindImageMemorySwapchainInfoKHR counts as "bound"
+    bool HasBeenBound() const { return (MemState() != nullptr) || (bind_swapchain); }
 
     inline bool IsImageTypeEqual(const VkImageCreateInfo &other_create_info) const {
         return create_info.imageType == other_create_info.imageType;

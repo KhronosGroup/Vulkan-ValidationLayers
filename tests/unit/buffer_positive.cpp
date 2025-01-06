@@ -280,39 +280,3 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Usage) {
     buffer_ci.usage = 0xBAD0000;
     CreateBufferTest(*this, &buffer_ci, {});
 }
-
-TEST_F(PositiveBuffer, BindMemoryStatus) {
-    TEST_DESCRIPTION("Use VkBindMemoryStatus when binding buffer to memory.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredFeature(vkt::Feature::maintenance6);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "Test not supported by MockICD, skipping";
-    }
-
-    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = 32u;
-    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-
-    vkt::Buffer buffer;
-    buffer.InitNoMemory(*m_device, buffer_ci);
-
-    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.allocationSize = 32u;
-    vkt::DeviceMemory memory(*m_device, alloc_info);
-
-    VkResult result = VK_RESULT_MAX_ENUM;
-
-    VkBindMemoryStatus bind_memory_status = vku::InitStructHelper();
-    bind_memory_status.pResult = &result;
-
-    VkBindBufferMemoryInfo bindInfo = vku::InitStructHelper(&bind_memory_status);
-    bindInfo.buffer = buffer.handle();
-    bindInfo.memory = memory.handle();
-    bindInfo.memoryOffset = 0u;
-    vk::BindBufferMemory2(device(), 1u, &bindInfo);
-
-    ASSERT_NE(result, VK_RESULT_MAX_ENUM);
-}

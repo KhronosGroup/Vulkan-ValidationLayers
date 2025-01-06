@@ -2296,11 +2296,11 @@ TEST_F(NegativeMemory, DISABLED_PartialBoundBuffer) {
 
     VkBindBufferMemoryInfo bind_buffer_infos[2];
     bind_buffer_infos[0] = vku::InitStructHelper();
-    bind_buffer_infos[0].buffer = buffer_0.handle();
-    bind_buffer_infos[0].memory = buffer_memory.handle();
+    bind_buffer_infos[0].buffer = buffer_0;
+    bind_buffer_infos[0].memory = buffer_memory;
     bind_buffer_infos[1] = vku::InitStructHelper();
-    bind_buffer_infos[1].buffer = buffer_1.handle();
-    bind_buffer_infos[1].memory = buffer_memory.handle();
+    bind_buffer_infos[1].buffer = buffer_1;
+    bind_buffer_infos[1].memory = buffer_memory;
 
     VkResult result = vk::BindBufferMemory2KHR(device(), 2, bind_buffer_infos);
     if (result == VK_SUCCESS) {
