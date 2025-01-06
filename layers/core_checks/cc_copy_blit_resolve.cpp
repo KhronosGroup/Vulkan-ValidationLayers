@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -680,8 +680,8 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buff
     const auto *src_binding = src_buffer_state.Binding();
     const auto *dst_binding = dst_buffer_state.Binding();
 
-    const bool validate_no_memory_overlaps =
-        !are_buffers_sparse && (regionCount > 0) && src_binding && (src_binding->memory_state == dst_binding->memory_state);
+    const bool validate_no_memory_overlaps = !are_buffers_sparse && (regionCount > 0) && src_binding && dst_binding &&
+                                             (src_binding->memory_state == dst_binding->memory_state);
 
     using MemoryRange = vvl::BindableMemoryTracker::BufferRange;
 
