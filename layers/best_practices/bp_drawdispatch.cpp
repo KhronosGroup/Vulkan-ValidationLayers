@@ -228,11 +228,13 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     bool primitive_restart_enable = false;
 
     const auto* pipeline_state = cmd_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    ASSERT_AND_RETURN_SKIP(pipeline_state);
-
-    const auto* ia_state = pipeline_state->InputAssemblyState();
-    if (ia_state) {
-        primitive_restart_enable = ia_state->primitiveRestartEnable == VK_TRUE;
+    if (pipeline_state && !pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
+        const auto* ia_state = pipeline_state->InputAssemblyState();
+        if (ia_state) {
+            primitive_restart_enable = ia_state->primitiveRestartEnable == VK_TRUE;
+        }
+    } else {
+        primitive_restart_enable = cmd_state.dynamic_state_value.primitive_restart_enable;
     }
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
