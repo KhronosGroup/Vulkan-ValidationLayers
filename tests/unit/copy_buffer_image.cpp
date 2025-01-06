@@ -3210,3 +3210,27 @@ TEST_F(NegativeCopyBufferImage, UpdateBuffer) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeCopyBufferImage, CopyToBufferWithoutMemoryBound) {
+    TEST_DESCRIPTION("Copy to dst buffer that has no memory bound");
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_ci.size = 32u;
+    vkt::Buffer src_buffer(*m_device, buffer_ci);
+    vkt::Buffer dst_buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    m_command_buffer.Begin();
+
+    VkBufferCopy region;
+    region.srcOffset = 0u;
+    region.dstOffset = 0u;
+    region.size = 32u;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-dstBuffer-00121");
+    vk::CmdCopyBuffer(m_command_buffer, src_buffer.handle(), dst_buffer.handle(), 1u, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
