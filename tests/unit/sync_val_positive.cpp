@@ -2107,10 +2107,10 @@ TEST_F(PositiveSyncVal, DynamicRenderingDSWithOnlyStencilAspect) {
         render_pass_begin_info.clearValueCount = 1u;
         render_pass_begin_info.pClearValues = &color_clear_value;
 
-        m_command_buffer.begin();
+        m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(render_pass_begin_info);
         m_command_buffer.EndRenderPass();
-        m_command_buffer.end();
+        m_command_buffer.End();
     }
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -2129,8 +2129,8 @@ TEST_F(PositiveSyncVal, DynamicRenderingDSWithOnlyStencilAspect) {
     rendering_info.pDepthAttachment = &depth_stencil_attachment;
     rendering_info.pStencilAttachment = &depth_stencil_attachment;
 
-    m_command_buffer.begin();
+    m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
     m_command_buffer.EndRendering();
-    m_command_buffer.end();
+    m_command_buffer.End();
 }
