@@ -3682,47 +3682,43 @@ void ValidationStateTracker::PreCallRecordUnmapMemory2KHR(VkDevice device, const
     PreCallRecordUnmapMemory2(device, pMemoryUnmapInfo, record_obj);
 }
 
-void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bindInfo) {
-    if (auto image_state = Get<vvl::Image>(bindInfo.image)) {
-        // An Android sepcial image cannot get VkSubresourceLayout until the image binds a memory.
-        // See: VUID-vkGetImageSubresourceLayout-image-09432
-        image_state->fragment_encoder =
-            std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*image_state));
-        const auto swapchain_info = vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
-        if (swapchain_info) {
-            if (auto swapchain = Get<vvl::Swapchain>(swapchain_info->swapchain)) {
-                // All images bound to this swapchain and index are aliases
-                image_state->SetSwapchain(swapchain, swapchain_info->imageIndex);
+void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bind_info) {
+    auto image_state = Get<vvl::Image>(bind_info.image);
+    if (!image_state) return;
+
+    // An Android sepcial image cannot get VkSubresourceLayout until the image binds a memory.
+    // See: VUID-vkGetImageSubresourceLayout-image-09432
+    image_state->fragment_encoder =
+        std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*image_state));
+    const auto swapchain_info = vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(bind_info.pNext);
+    if (swapchain_info) {
+        if (auto swapchain = Get<vvl::Swapchain>(swapchain_info->swapchain)) {
+            // All images bound to this swapchain and index are aliases
+            image_state->SetSwapchain(swapchain, swapchain_info->imageIndex);
+        }
+    } else {
+        // Track bound memory range information
+        if (auto mem_info = Get<vvl::DeviceMemory>(bind_info.memory)) {
+            VkDeviceSize plane_index = 0u;
+            if (image_state->disjoint && image_state->IsExternalBuffer() == false) {
+                auto plane_info = vku::FindStructInPNextChain<VkBindImagePlaneMemoryInfo>(bind_info.pNext);
+                plane_index = vkuGetPlaneIndex(plane_info->planeAspect);
             }
-        } else {
-            // Track bound memory range information
-            if (auto mem_info = Get<vvl::DeviceMemory>(bindInfo.memory)) {
-                VkDeviceSize plane_index = 0u;
-                if (image_state->disjoint && image_state->IsExternalBuffer() == false) {
-                    auto plane_info = vku::FindStructInPNextChain<VkBindImagePlaneMemoryInfo>(bindInfo.pNext);
-                    plane_index = vkuGetPlaneIndex(plane_info->planeAspect);
-                }
-                image_state->BindMemory(
-                    image_state.get(), mem_info, bindInfo.memoryOffset, plane_index,
-                    image_state->requirements[static_cast<decltype(image_state->requirements)::size_type>(plane_index)].size);
-            }
+            image_state->BindMemory(
+                image_state.get(), mem_info, bind_info.memoryOffset, plane_index,
+                image_state->requirements[static_cast<decltype(image_state->requirements)::size_type>(plane_index)].size);
         }
     }
 }
 
-VkBindImageMemoryInfo ValidationStateTracker::ConvertImageMemoryInfo(VkDevice device, VkImage image, VkDeviceMemory mem,
-                                                                     VkDeviceSize memoryOffset) {
-    VkBindImageMemoryInfo bind_info = vku::InitStructHelper();
-    bind_info.image = image;
-    bind_info.memory = mem;
-    bind_info.memoryOffset = memoryOffset;
-    return bind_info;
-}
-
-void ValidationStateTracker::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem,
+void ValidationStateTracker::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory,
                                                            VkDeviceSize memoryOffset, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    UpdateBindImageMemoryState(ConvertImageMemoryInfo(device, image, mem, memoryOffset));
+    VkBindImageMemoryInfo bind_info = vku::InitStructHelper();
+    bind_info.image = image;
+    bind_info.memory = memory;
+    bind_info.memoryOffset = memoryOffset;
+    UpdateBindImageMemoryState(bind_info);
 }
 
 void ValidationStateTracker::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
