@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -526,8 +526,11 @@ void Validator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffe
 
     valcmd::DrawIndexedIndirectIndexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, count, VK_NULL_HANDLE, 0,
                                            "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+#if 0
     valcmd::DrawIndexedIndirectVertexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, count, VK_NULL_HANDLE, 0,
                                             "VUID-vkCmdDrawIndexedIndirect-None-02721");
+#endif
     valcmd::FirstInstance<VkDrawIndexedIndirectCommand>(*this, *cb_state, record_obj.location, buffer, offset, count,
                                                         VK_NULL_HANDLE, 0, "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
@@ -671,8 +674,11 @@ void Validator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer command
 
     valcmd::DrawIndexedIndirectIndexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, maxDrawCount, countBuffer,
                                            countBufferOffset, "VUID-VkDrawIndexedIndirectCommand-robustBufferAccess2-08798");
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+#if 0
     valcmd::DrawIndexedIndirectVertexBuffer(*this, *cb_state, record_obj.location, buffer, offset, stride, maxDrawCount,
                                             countBuffer, countBufferOffset, "VUID-vkCmdDrawIndexedIndirectCount-None-02721");
+#endif
     PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
     descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
