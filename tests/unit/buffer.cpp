@@ -812,3 +812,97 @@ TEST_F(NegativeBuffer, MaxBufferSize13) {
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-size-06409");
 }
+
+TEST_F(NegativeBuffer, BindIdxBufferWithoutMemory) {
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCreateInfo buff_ci = vku::InitStructHelper();
+    buff_ci.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    buff_ci.size = 256u;
+    vkt::Buffer buffer(*m_device, buff_ci, vkt::no_mem);
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer-buffer-08785");
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 0u, VK_INDEX_TYPE_UINT16);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeBuffer, IdxBufferInvalidType) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCreateInfo buff_ci = vku::InitStructHelper();
+    buff_ci.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    buff_ci.size = 256u;
+    vkt::Buffer buffer(*m_device, buff_ci);
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer-indexType-08786");
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 0u, VK_INDEX_TYPE_NONE_KHR);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeBuffer, BindVertexBufferWithoutMemory) {
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCreateInfo buff_ci = vku::InitStructHelper();
+    buff_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    buff_ci.size = 256u;
+    vkt::Buffer buffer(*m_device, buff_ci, vkt::no_mem);
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers-pBuffers-00628");
+    VkDeviceSize offset = 0u;
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0u, 1u, &buffer.handle(), &offset);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeBuffer, BindVertexBuffer2WithoutMemory) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCreateInfo buff_ci = vku::InitStructHelper();
+    buff_ci.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    buff_ci.size = 256u;
+    vkt::Buffer buffer(*m_device, buff_ci, vkt::no_mem);
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers2-pBuffers-03360");
+    VkDeviceSize offset = 0u;
+    VkDeviceSize size = buff_ci.size;
+    VkDeviceSize stride = 4u;
+    vk::CmdBindVertexBuffers2(m_command_buffer.handle(), 0u, 1u, &buffer.handle(), &offset, &size, &stride);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeBuffer, BindNullVertexBufferWithOffset) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(Init());
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers2-pBuffers-04112");
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkDeviceSize offset = 4u;
+    VkDeviceSize size = 4u;
+    VkDeviceSize stride = 4u;
+    vk::CmdBindVertexBuffers2(m_command_buffer.handle(), 0u, 1u, &buffer, &offset, &size, &stride);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
