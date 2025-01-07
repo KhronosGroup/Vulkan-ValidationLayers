@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2024 The Khronos Group Inc.
-// Copyright (c) 2021-2024 Valve Corporation
-// Copyright (c) 2021-2024 LunarG, Inc.
+// Copyright (c) 2021-2025 The Khronos Group Inc.
+// Copyright (c) 2021-2025 Valve Corporation
+// Copyright (c) 2021-2025 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ const uint kDrawMeshFlags_DrawCountFromBuffer = uint(1) << 0;
 struct DrawMeshPushData {
     uint flags;
     uint draw_cmds_stride_dwords;
+    uint cpu_draw_count;
     uint max_workgroup_count_x;
     uint max_workgroup_count_y;
     uint max_workgroup_count_z;
@@ -83,6 +84,7 @@ const uint kFirstInstanceFlags_DrawCountFromBuffer = uint(1) << 0;
 struct FirstInstancePushData {
     uint flags;
     uint draw_cmds_stride_dwords;
+    uint cpu_draw_count;
     uint first_instance_member_pos;
     uint draw_buffer_dwords_offset;
     uint count_buffer_dwords_offset;
