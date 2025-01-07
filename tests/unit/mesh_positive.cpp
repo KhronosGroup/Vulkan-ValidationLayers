@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -430,4 +430,43 @@ TEST_F(PositiveMesh, MeshAndTaskShaderDerivatives) {
                OpFunctionEnd
     )";
     VkShaderObj ms(this, ms_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+}
+
+TEST_F(PositiveMesh, TessellationDynamicState) {
+    TEST_DESCRIPTION("Test basic VK_EXT_mesh_shader.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3TessellationDomainOrigin);
+    RETURN_IF_SKIP(Init());
+
+    InitRenderTarget();
+
+    const char *mesh_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        layout(max_vertices = 3, max_primitives=1) out;
+        layout(triangles) out;
+        void main() {
+            SetMeshOutputsEXT(3,1);
+        }
+    )glsl";
+
+    VkShaderObj ms(this, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
+    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 }
