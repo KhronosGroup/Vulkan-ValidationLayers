@@ -19,13 +19,13 @@
 #include <memory>
 #include <spirv/unified1/spirv.hpp>
 #include "containers/custom_containers.h"
+#include "instruction.h"
 
 namespace gpuav {
 namespace spirv {
 
 class Module;
 struct Function;
-struct Instruction;
 
 // Core data structure of module.
 // The vector acts as our linked list to iterator and make occasional insertions.
