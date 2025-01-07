@@ -54,8 +54,8 @@ TEST_F(NegativeGpuAVIndexBuffer, IndexBufferOOB) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
-
-TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex32) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+TEST_F(NegativeGpuAVIndexBuffer, DISABLED_IndirectDrawBadVertexIndex32) {
     TEST_DESCRIPTION("Validate illegal index buffer values - uint32_t index");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -119,7 +119,8 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex32) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex16) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+TEST_F(NegativeGpuAVIndexBuffer, DISABLED_IndirectDrawBadVertexIndex16) {
     TEST_DESCRIPTION("Validate illegal index buffer values - uint16_t index");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -184,7 +185,8 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex16) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex8) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+TEST_F(NegativeGpuAVIndexBuffer, DISABLED_IndirectDrawBadVertexIndex8) {
     TEST_DESCRIPTION("Validate illegal index buffer values - uint8_t index");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME);
@@ -251,7 +253,8 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex8) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex32) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+TEST_F(NegativeGpuAVIndexBuffer, DISABLED_DrawBadVertexIndex32) {
     TEST_DESCRIPTION("Validate illegal index buffer values - uint32_t index");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -406,7 +409,8 @@ TEST_F(NegativeGpuAVIndexBuffer, DISABLED_DrawInSecondaryCmdBufferBadVertexIndex
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+TEST_F(NegativeGpuAVIndexBuffer, DISABLED_DrawBadVertexIndex16) {
     TEST_DESCRIPTION("Validate illegal index buffer values - uint16_t index");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -463,7 +467,8 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16_2) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+TEST_F(NegativeGpuAVIndexBuffer, DISABLED_DrawBadVertexIndex16_2) {
     TEST_DESCRIPTION("Validate illegal index buffer values - uint16_t index");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -542,7 +547,8 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16_2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex8) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+TEST_F(NegativeGpuAVIndexBuffer, DISABLED_DrawBadVertexIndex8) {
     TEST_DESCRIPTION("Validate illegal index buffer values - uint8_t index");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME);
@@ -602,7 +608,8 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex8) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16DebugLabel) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+TEST_F(NegativeGpuAVIndexBuffer, DISABLED_DrawBadVertexIndex16DebugLabel) {
     TEST_DESCRIPTION(
         "Validate illegal index buffer values - uint16_t index. Also make sure debug label regions are properly accounted for.");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -694,7 +701,8 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16DebugLabel) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex32DebugLabel) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9163
+TEST_F(NegativeGpuAVIndexBuffer, DISABLED_IndirectDrawBadVertexIndex32DebugLabel) {
     TEST_DESCRIPTION(
         "Validate illegal index buffer values - uint32_t index. Also make sure debug label regions are properly accounted for.");
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
