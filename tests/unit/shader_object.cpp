@@ -7209,3 +7209,31 @@ TEST_F(NegativeShaderObject, PushConstantNotDeclared) {
     push_constant_range.offset = 0u;
     const vkt::Shader validShader(*m_device, createInfo);
 }
+
+TEST_F(NegativeShaderObject, BindWithoutFeature) {
+    TEST_DESCRIPTION("Use vkCmdBindShadersEXT without enabling shaderObject feature");
+
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    m_command_buffer.Begin();
+    VkShaderStageFlagBits stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    VkShaderEXT handle = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-None-08462");
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &stage, &handle);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, InvalidRayTracingStage) {
+    TEST_DESCRIPTION("Use vkCmdBindShadersEXT without enabling shaderObject feature");
+
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    m_command_buffer.Begin();
+    VkShaderStageFlagBits stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    VkShaderEXT handle = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-pStages-08465");
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &stage, &handle);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
