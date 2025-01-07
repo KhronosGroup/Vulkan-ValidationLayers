@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -548,8 +548,10 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
 
     // VK_EXT_discard_rectangles
     {
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_discard_rectangle_07751);
+        if (last_bound_state.IsDiscardRectangleEnable()) {
+            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, cb_state, objlist, loc,
+                                              vuid.dynamic_discard_rectangle_07751);
+        }
     }
 
     // VK_EXT_vertex_input_dynamic_state
