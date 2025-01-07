@@ -930,7 +930,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                                          string_VkSurfaceTransformFlagBitsKHR(swapchain_data->create_info.preTransform),
                                          swapchain_data->create_info.imageExtent.height);
                     }
-                    if (rect.layer > swapchain_data->create_info.imageArrayLayers) {
+                    if (rect.layer >= swapchain_data->create_info.imageArrayLayers) {
                         skip |= LogError(
                             "VUID-VkRectLayerKHR-layer-01262", pPresentInfo->pSwapchains[i], rect_loc.dot(Field::layer),
                             "layer (%" PRIu32 ") is greater than the corresponding swapchain's imageArrayLayers (%" PRIu32 ").",
@@ -1017,7 +1017,9 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             for (uint32_t i = 0; i < swapchain_present_mode_info->swapchainCount; i++) {
                 const VkPresentModeKHR present_mode = swapchain_present_mode_info->pPresentModes[i];
                 const auto swapchain_state = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
-                ASSERT_AND_CONTINUE(swapchain_state);
+                if (!swapchain_state) {
+                    continue;
+                }
                 if (!swapchain_state->present_modes.empty()) {
                     bool found_match = std::find(swapchain_state->present_modes.begin(), swapchain_state->present_modes.end(),
                                                  present_mode) != swapchain_state->present_modes.end();
