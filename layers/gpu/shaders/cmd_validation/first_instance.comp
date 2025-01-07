@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2024 The Khronos Group Inc.
-// Copyright (c) 2021-2024 Valve Corporation
-// Copyright (c) 2021-2024 LunarG, Inc.
+// Copyright (c) 2021-2025 The Khronos Group Inc.
+// Copyright (c) 2021-2025 Valve Corporation
+// Copyright (c) 2021-2025 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,7 +42,11 @@ void main() {
     const uint draw_i = gl_GlobalInvocationID.x;
 
     if ((pc.flags & kFirstInstanceFlags_DrawCountFromBuffer) != 0) {
-        if (draw_i >= count_buffer[ pc.count_buffer_dwords_offset ]) return;
+        // Need to clamp draw count value stored in count buffer to the maxDrawCount
+        // that was specified at vkCmdDrawIndexedIndirect time.
+        // pc.cpu_draw_count is used to store maxDrawCount
+        const uint draw_count = min(count_buffer[pc.count_buffer_dwords_offset], pc.cpu_draw_count);
+        if (draw_i >= draw_count) return;
     }
 
     const uint draw_indexed_indirect_cmd_i = draw_i * pc.draw_cmds_stride_dwords + pc.first_instance_member_pos + pc.draw_buffer_dwords_offset;
