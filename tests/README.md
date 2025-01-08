@@ -7,7 +7,7 @@ The following is information how to setup and run the tests. There is seperate d
 
 ## Building the tests
 
-Make sure `-DBUILD_TESTS` was passed into the CMake command when generating the project
+Make sure `-D BUILD_TESTS=ON` was passed into the CMake command when generating the project
 
 ## Different Categories of tests
 
@@ -98,7 +98,7 @@ export VK_DRIVER_FILES=<path to MoltenVK repository>/Package/Latest/MoltenVK/mac
 
 ## Running Tests on Test Driver and Profiles layer
 
-To allow a much higher coverage of testing the Validation Layers a test writer can use the Profile layer. [More details here](https://vulkan.lunarg.com/doc/view/1.3.204.1/windows/profiles_layer.html), but the main idea is the layer intercepts the Physical Device queries allowing testing of much more device properties. The `VVL Test ICD` is a "null driver" that is used to handle the Vulkan calls as the Validation Layers mostly only care about input "input" of the driver. If your tests relies on the "output" of the driver (such that a driver/implementation is correctly doing what it should do with valid input), then it might be worth looking into the [Vulkan CTS instead](https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/vulkan_cts.md).
+To allow a much higher coverage of testing the Validation Layers a test writer can use the Profile layer. [More details here](https://vulkan.lunarg.com/doc/view/latest/windows/profiles_layer.html), but the main idea is the layer intercepts the Physical Device queries allowing testing of much more device properties. The `VVL Test ICD` is a "null driver" that is used to handle the Vulkan calls as the Validation Layers mostly only care about input "input" of the driver. If your tests relies on the "output" of the driver (such that a driver/implementation is correctly doing what it should do with valid input), then it might be worth looking into the [Vulkan CTS instead](https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/vulkan_cts.md).
 
 The Profile Layer can be found in the Vulkan SDK, otherwise, they will need to be cloned from [Vulkan Profiles](https://github.com/KhronosGroup/Vulkan-Profiles). The Validation Layers test builds a test driver (Also known as a `MockICD` or a null driver).
 
@@ -155,38 +155,12 @@ It would be ideal to generate this similarly to the layer generated in [the Prof
 
 This file will **never** fully cover all tests because some require certain properties/extension to be **both** enabled and disabled. The goal is to get as close to 100% coverage as possible.
 
-### Address Sanitization (ASAN)
+### Skipping tests from using VVL Test ICD
 
-ASAN (Address Sanitization) has become a part of our CI process to ensure high quality code.
+If you need a test to detect the driver is using `Test ICD` use the following
 
-`-D VVL_ENABLE_ASAN=ON` will enable address sanitization in the build.
-
-You could also set the needed compiler flags via environment variables:
-```bash
-export CFLAGS=-fsanitize=address
-export CXXFLAGS=-fsanitize=address
-export LDFLAGS=-fsanitize=address
+```c++
+if (IsPlatformMockICD()) {
+    GTEST_SKIP() << "Test not supported on a mock ICD";
+}
 ```
-
-- https://clang.llvm.org/docs/AddressSanitizer.html
-- https://github.com/google/sanitizers/wiki/AddressSanitizer
-- https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html
-- https://learn.microsoft.com/en-us/cpp/sanitizers/asan?view=msvc-170
-
-### Thread Sanitization (TSAN)
-
-TSAN (Thread Sanitization) has become a part of our CI process to detect data race bugs.
-
-```bash
-# NOTE: ThreadSanitizer generally requires all code to be compiled with -fsanitize=thread to prevent false positives.
-# https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual#non-instrumented-code
-export CFLAGS=-fsanitize=thread
-export CXXFLAGS=-fsanitize=thread
-export LDFLAGS=-fsanitize=thread
-```
-
-- https://clang.llvm.org/docs/ThreadSanitizer.html
-- https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual
-- https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html
-
-NOTE: `MSVC` currently doesn't offer any form of thread sanitization.

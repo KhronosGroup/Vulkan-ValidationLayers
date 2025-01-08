@@ -9,6 +9,7 @@
 7. [MacOS build](#building-on-macos)
 8. [Android Build](#building-for-android)
 9. [Installed Files](#installed-files)
+9. [Sanitization](#sanitization)
 
 ## Requirements
 
@@ -315,3 +316,28 @@ CMake Docs:
 # NOTE: --config is only needed for multi-config generators (Visual Studio, Xcode, etc)
 cmake --install build/ --config Release --prefix build/install
 ```
+
+## Sanitization
+
+[ASAN (Address Sanitization)](https://clang.llvm.org/docs/AddressSanitizer.html) has become a part of our CI process to ensure high quality code.
+
+`-D VVL_ENABLE_ASAN=ON` will enable address sanitization in the build.
+
+You could also set the needed compiler flags via environment variables:
+```bash
+export CFLAGS=-fsanitize=address
+export CXXFLAGS=-fsanitize=address
+export LDFLAGS=-fsanitize=address
+```
+
+[TSAN (Thread Sanitization)](https://clang.llvm.org/docs/ThreadSanitizer.html) has become a part of our CI process to detect data race bugs.
+
+```bash
+# NOTE: ThreadSanitizer generally requires all code to be compiled with -fsanitize=thread to prevent false positives.
+# https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual#non-instrumented-code
+export CFLAGS=-fsanitize=thread
+export CXXFLAGS=-fsanitize=thread
+export LDFLAGS=-fsanitize=thread
+```
+
+NOTE: `MSVC` currently doesn't offer any form of thread sanitization.
