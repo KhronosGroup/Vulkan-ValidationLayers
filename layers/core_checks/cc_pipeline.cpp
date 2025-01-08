@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -126,6 +126,37 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipel
                          "is VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS "
                          "but robustImageAccess2 is not supported.");
     }
+
+    if (!has_robust_buffer_access2) {
+        if (pipeline_robustness_info.storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) {
+            skip |= LogError(
+                "VUID-VkPipelineRobustnessCreateInfo-robustBufferAccess2-06931", device,
+                loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::storageBuffers),
+                "is VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2, but robustBufferAccess2 is not supported.");
+        }
+        if (pipeline_robustness_info.uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) {
+            skip |= LogError(
+                "VUID-VkPipelineRobustnessCreateInfo-robustBufferAccess2-06932", device,
+                loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::uniformBuffers),
+                "is VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2, but robustBufferAccess2 is not supported.");
+        }
+        if (pipeline_robustness_info.vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) {
+            skip |= LogError(
+                "VUID-VkPipelineRobustnessCreateInfo-robustBufferAccess2-06933", device,
+                loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::vertexInputs),
+                "is VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2, but robustBufferAccess2 is not supported.");
+        }
+    }
+
+    if (!has_robust_image_access2) {
+        if (pipeline_robustness_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2) {
+            skip |= LogError(
+                "VUID-VkPipelineRobustnessCreateInfo-robustImageAccess2-06934", device,
+                loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::images),
+                "is VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2, but robustImageAccess2 is not supported.");
+        }
+    }
+
     return skip;
 }
 

@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -246,12 +246,6 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
                     discard_rectangles_extension_version = ext_props[j].specVersion;
                 } else if (extension == vvl::Extension::_VK_NV_scissor_exclusive) {
                     scissor_exclusive_extension_version = ext_props[j].specVersion;
-                } else if (extension == vvl::Extension::_VK_EXT_robustness2 &&
-                           IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) {
-                    VkPhysicalDeviceRobustness2FeaturesEXT robustness_2_features = vku::InitStructHelper();
-                    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
-                    DispatchGetPhysicalDeviceFeatures2Helper(phys_device, &features2);
-                    device_supported_robustness_2_features[phys_device] = robustness_2_features;
                 }
             }
 

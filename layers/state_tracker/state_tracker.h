@@ -1816,9 +1816,10 @@ class ValidationStateTracker : public ValidationObject {
     // Enabling the other robustness features can reduce performance on GPU, so just the
     // support is needed to check
     bool has_robust_image_access;  // VK_EXT_image_robustness
-    // TODO - Issue 5657
-    // bool has_robust_image_access2;  // VK_EXT_robustness2
-    // bool has_robust_buffer_access2; // VK_EXT_robustness2
+    // Validation requires special handling for VkPhysicalDeviceRobustness2FeaturesEXT, because for some cases robustness features
+    // // need to only be supported, not enabled
+    bool has_robust_image_access2;   // VK_EXT_robustness2
+    bool has_robust_buffer_access2;  // VK_EXT_robustness2
 
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
     struct DeviceExtensionProperties {
