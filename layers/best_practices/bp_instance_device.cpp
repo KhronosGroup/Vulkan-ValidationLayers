@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -348,7 +348,9 @@ struct EventValidator {
                 } else {
                     // check global event state
                     auto event_state = state_tracker.Get<vvl::Event>(event);
-                    signaled = event_state->signaled;
+                    if (event_state) {
+                        signaled = event_state->signaled;
+                    }
                 }
                 if (signaled) {
                     const LogObjectList objlist(cb.VkHandle(), event);
