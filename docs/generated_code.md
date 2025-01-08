@@ -11,6 +11,8 @@ values when the Vulkan Headers or SPIR-V Grammer is updated.
 
 `pyparsing` is required, so if it is not installed, you will need to call `pip install pyparsing`
 
+`clang-format` is required, we format the code after it is generated
+
 # How to generate the code
 
 - Linux:
