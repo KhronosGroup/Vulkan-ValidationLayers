@@ -125,7 +125,7 @@ static char const kFragmentSubpassLoadGlsl[] = R"glsl(
     }
 )glsl";
 
-[[maybe_unused]] static const char *kTaskMinimalGlsl = R"glsl(
+[[maybe_unused]] static const char* kTaskMinimalGlsl = R"glsl(
     #version 460
     #extension GL_EXT_mesh_shader : require // Requires SPIR-V 1.5 (Vulkan 1.2)
     layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
@@ -134,7 +134,7 @@ static char const kFragmentSubpassLoadGlsl[] = R"glsl(
     }
 )glsl";
 
-[[maybe_unused]] static const char *kMeshMinimalGlsl = R"glsl(
+[[maybe_unused]] static const char* kMeshMinimalGlsl = R"glsl(
     #version 460
     #extension GL_EXT_mesh_shader : require // Requires SPIR-V 1.5 (Vulkan 1.2)
     layout(max_vertices = 3, max_primitives=1) out;
@@ -142,7 +142,7 @@ static char const kFragmentSubpassLoadGlsl[] = R"glsl(
     void main() {}
 )glsl";
 
-[[maybe_unused]] static const char *kRayTracingMinimalGlsl = R"glsl(
+[[maybe_unused]] static const char* kRayTracingMinimalGlsl = R"glsl(
     #version 460
     #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
     void main() {}
@@ -158,7 +158,7 @@ static char const kFragmentSubpassLoadGlsl[] = R"glsl(
         }
     )glsl";
 
-[[maybe_unused]] static const char *kRayTracingNVMinimalGlsl = R"glsl(
+[[maybe_unused]] static const char* kRayTracingNVMinimalGlsl = R"glsl(
     #version 460
     #extension GL_NV_ray_tracing : require
     void main() {}
@@ -338,4 +338,4 @@ static char const kShaderTileImageDepthStencilReadSpv[] = R"(
         }
     )glsl";
 
-[[maybe_unused]] static char const *kMissGlsl = kRayTracingPayloadMinimalGlsl;
+[[maybe_unused]] static char const* kMissGlsl = kRayTracingPayloadMinimalGlsl;

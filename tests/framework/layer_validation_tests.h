@@ -79,10 +79,12 @@
 // This is only for tests where you have a good reason to have more than the default (10) duplicate message limit.
 // It is highly suggested you first try to breakup your test up into smaller tests if you are trying to use this.
 static VkBool32 kVkFalse = VK_FALSE;
-static const VkLayerSettingEXT kDisableMessageLimitSetting = {OBJECT_LAYER_NAME, "enable_message_limit",
-                                                              VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
-[[maybe_unused]] static VkLayerSettingsCreateInfoEXT kDisableMessageLimit = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT,
-                                                                             nullptr, 1, &kDisableMessageLimitSetting};
+static const VkLayerSettingEXT kDisableMessageLimitSetting = {
+    OBJECT_LAYER_NAME, "enable_message_limit", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse
+};
+[[maybe_unused]] static VkLayerSettingsCreateInfoEXT kDisableMessageLimit = {
+    VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &kDisableMessageLimitSetting
+};
 
 //--------------------------------------------------------------------------------------
 // Mesh and VertexFormat Data
@@ -100,7 +102,7 @@ uint32_t size32(ElementT (&)[array_size]) {
 }
 
 template <class Container>
-uint32_t size32(const Container &c) {
+uint32_t size32(const Container& c) {
     return static_cast<uint32_t>(c.size());
 }
 
@@ -112,14 +114,21 @@ VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy);
 // Returns true if *any* requested features are available.
 // Assumption is that the framework can successfully create an image as
 // long as at least one of the feature bits is present (excepting VTX_BUF).
-bool FormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL,
+bool FormatIsSupported(VkPhysicalDevice phy,
+                       VkFormat format,
+                       VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL,
                        VkFormatFeatureFlags features = ~VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT);
 
 // Returns true if format and *all* requested features are available.
-bool FormatFeaturesAreSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features);
+bool FormatFeaturesAreSupported(VkPhysicalDevice phy,
+                                VkFormat format,
+                                VkImageTiling tiling,
+                                VkFormatFeatureFlags features);
 
 // Returns true if format and *all* requested features are available.
-bool ImageFormatIsSupported(const VkInstance inst, const VkPhysicalDevice phy, const VkImageCreateInfo info,
+bool ImageFormatIsSupported(const VkInstance inst,
+                            const VkPhysicalDevice phy,
+                            const VkImageCreateInfo info,
                             const VkFormatFeatureFlags features);
 
 // Returns true if format and *all* requested features are available.
@@ -168,27 +177,28 @@ using VkLayerTestBase = VkRenderFramework;
 // It is the root for all other test class variations
 class VkLayerTest : public VkLayerTestBase {
   public:
-    const char *kValidationLayerName = "VK_LAYER_KHRONOS_validation";
-    const char *kSynchronization2LayerName = "VK_LAYER_KHRONOS_synchronization2";
+    const char* kValidationLayerName = "VK_LAYER_KHRONOS_validation";
+    const char* kSynchronization2LayerName = "VK_LAYER_KHRONOS_synchronization2";
 
-    void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
-              void *instance_pnext = nullptr);
+    void Init(VkPhysicalDeviceFeatures* features = nullptr,
+              VkPhysicalDeviceFeatures2* features2 = nullptr,
+              void* instance_pnext = nullptr);
     void AddSurfaceExtension();
 
     template <typename Features>
-    VkPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2(Features &feature_query) {
+    VkPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2(Features& feature_query) {
         VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&feature_query);
         return GetPhysicalDeviceFeatures2(features2);
     }
 
     template <typename Properties>
-    VkPhysicalDeviceProperties2 GetPhysicalDeviceProperties2(Properties &props_query) {
+    VkPhysicalDeviceProperties2 GetPhysicalDeviceProperties2(Properties& props_query) {
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&props_query);
         return GetPhysicalDeviceProperties2(props2);
     }
 
     template <typename Proc, bool assert_proc = true>
-    [[nodiscard]] const Proc GetInstanceProcAddr(const char *proc_name) const noexcept {
+    [[nodiscard]] const Proc GetInstanceProcAddr(const char* proc_name) const noexcept {
         static_assert(std::is_pointer_v<Proc>);
 
         auto proc = reinterpret_cast<Proc>(vk::GetInstanceProcAddr(instance(), proc_name));
@@ -199,7 +209,7 @@ class VkLayerTest : public VkLayerTestBase {
     }
 
     template <typename Proc, bool assert_proc = true>
-    [[nodiscard]] const Proc GetDeviceProcAddr(const char *proc_name) noexcept {
+    [[nodiscard]] const Proc GetDeviceProcAddr(const char* proc_name) noexcept {
         static_assert(std::is_pointer_v<Proc>);
 
         auto proc = reinterpret_cast<Proc>(vk::GetDeviceProcAddr(device(), proc_name));
@@ -213,46 +223,46 @@ class VkLayerTest : public VkLayerTestBase {
   protected:
     void SetTargetApiVersion(APIVersion target_api_version);
     bool LoadDeviceProfileLayer(
-        PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
-        PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT);
+        PFN_vkSetPhysicalDeviceFormatPropertiesEXT& fpvkSetPhysicalDeviceFormatPropertiesEXT,
+        PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT& fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT);
     bool LoadDeviceProfileLayer(
-        PFN_vkSetPhysicalDeviceFormatProperties2EXT &fpvkSetPhysicalDeviceFormatProperties2EXT,
-        PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT &fpvkGetOriginalPhysicalDeviceFormatProperties2EXT);
-    bool LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkSetPhysicalDeviceLimitsEXT,
-                                PFN_vkGetOriginalPhysicalDeviceLimitsEXT &fpvkGetOriginalPhysicalDeviceLimitsEXT);
-    bool LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpvkSetPhysicalDeviceFeaturesEXT,
-                                PFN_vkGetOriginalPhysicalDeviceFeaturesEXT &fpvkGetOriginalPhysicalDeviceFeaturesEXT);
-    bool LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &fpvkSetPhysicalDeviceProperties2EXT);
+        PFN_vkSetPhysicalDeviceFormatProperties2EXT& fpvkSetPhysicalDeviceFormatProperties2EXT,
+        PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT& fpvkGetOriginalPhysicalDeviceFormatProperties2EXT);
+    bool LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT& fpvkSetPhysicalDeviceLimitsEXT,
+                                PFN_vkGetOriginalPhysicalDeviceLimitsEXT& fpvkGetOriginalPhysicalDeviceLimitsEXT);
+    bool LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT& fpvkSetPhysicalDeviceFeaturesEXT,
+                                PFN_vkGetOriginalPhysicalDeviceFeaturesEXT& fpvkGetOriginalPhysicalDeviceFeaturesEXT);
+    bool LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT& fpvkSetPhysicalDeviceProperties2EXT);
 
     VkLayerTest();
 };
 
 template <>
-VkPhysicalDeviceFeatures2 VkLayerTest::GetPhysicalDeviceFeatures2(VkPhysicalDeviceFeatures2 &feature_query);
+VkPhysicalDeviceFeatures2 VkLayerTest::GetPhysicalDeviceFeatures2(VkPhysicalDeviceFeatures2& feature_query);
 
 template <>
-VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysicalDeviceProperties2 &props2);
+VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysicalDeviceProperties2& props2);
 
 class VkBestPracticesLayerTest : public VkLayerTest {
   public:
-    void InitBestPracticesFramework(const char *ValidationChecksToEnable = "");
-    void InitBestPractices(const char *ValidationChecksToEnable = "");
+    void InitBestPracticesFramework(const char* ValidationChecksToEnable = "");
+    void InitBestPractices(const char* ValidationChecksToEnable = "");
 
   protected:
-    VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};
-    VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 0, nullptr};
+    VkValidationFeatureEnableEXT enables_[1] = { VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT };
+    VkValidationFeaturesEXT features_ = { VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 0, nullptr };
 };
 
 class GpuAVTest : public virtual VkLayerTest {
   public:
-    void InitGpuAvFramework(void *p_next = nullptr);
+    void InitGpuAvFramework(void* p_next = nullptr);
 
     VkValidationFeaturesEXT GetGpuAvValidationFeatures();
 };
 
 class GpuAVBufferDeviceAddressTest : public GpuAVTest {
   public:
-    void InitGpuVUBufferDeviceAddress(void *p_next = nullptr);
+    void InitGpuVUBufferDeviceAddress(void* p_next = nullptr);
 };
 
 class GpuAVDescriptorIndexingTest : public GpuAVTest {
@@ -262,7 +272,10 @@ class GpuAVDescriptorIndexingTest : public GpuAVTest {
 
 class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
   public:
-    void ComputeStorageBufferTest(const char *shader, bool is_glsl, VkDeviceSize buffer_size, const char *expected_error = nullptr);
+    void ComputeStorageBufferTest(const char* shader,
+                                  bool is_glsl,
+                                  VkDeviceSize buffer_size,
+                                  const char* expected_error = nullptr);
 };
 
 class GpuAVRayQueryTest : public GpuAVTest {
@@ -277,14 +290,14 @@ class GpuAVImageLayout : public GpuAVTest {
 
 class DebugPrintfTests : public VkLayerTest {
   public:
-    void InitDebugPrintfFramework(void *p_next = nullptr, bool reserve_slot = false);
+    void InitDebugPrintfFramework(void* p_next = nullptr, bool reserve_slot = false);
 };
 
 struct SyncValSettings;
 class VkSyncValTest : public VkLayerTest {
   public:
-    void InitSyncValFramework(const SyncValSettings *p_sync_settings = nullptr);
-    void InitSyncVal(const SyncValSettings *p_sync_settings = nullptr);
+    void InitSyncValFramework(const SyncValSettings* p_sync_settings = nullptr);
+    void InitSyncVal(const SyncValSettings* p_sync_settings = nullptr);
     void InitTimelineSemaphore();
 };
 
@@ -296,12 +309,12 @@ class AndroidExternalResolveTest : public VkLayerTest {
 
 class DescriptorBufferTest : public VkLayerTest {
   public:
-    void InitBasicDescriptorBuffer(void *instance_pnext = nullptr);
+    void InitBasicDescriptorBuffer(void* instance_pnext = nullptr);
 };
 
 class DescriptorIndexingTest : public VkLayerTest {
   public:
-    void ComputePipelineShaderTest(const char *shader, std::vector<VkDescriptorSetLayoutBinding> &bindings);
+    void ComputePipelineShaderTest(const char* shader, std::vector<VkDescriptorSetLayoutBinding>& bindings);
 };
 
 class DynamicRenderingTest : public VkLayerTest {
@@ -312,7 +325,7 @@ class DynamicRenderingTest : public VkLayerTest {
 
 class DynamicStateTest : public VkLayerTest {
   public:
-    void InitBasicExtendedDynamicState();  // enables VK_EXT_extended_dynamic_state
+    void InitBasicExtendedDynamicState(); // enables VK_EXT_extended_dynamic_state
 };
 
 class ExternalMemorySyncTest : public VkLayerTest {
@@ -328,7 +341,7 @@ class DeviceGeneratedCommandsTest : public VkLayerTest {
   public:
     void InitBasicDeviceGeneratedCommands();
 
-    void SetPreProcessBuffer(VkGeneratedCommandsInfoEXT &generated_commands_info);
+    void SetPreProcessBuffer(VkGeneratedCommandsInfoEXT& generated_commands_info);
     std::unique_ptr<vkt::Buffer> pre_process_buffer_ = std::make_unique<vkt::Buffer>();
 };
 
@@ -340,7 +353,8 @@ class GraphicsLibraryTest : public VkLayerTest {
 class HostImageCopyTest : public VkLayerTest {
   public:
     void InitHostImageCopyTest();
-    bool CopyLayoutSupported(const std::vector<VkImageLayout> &copy_src_layouts, const std::vector<VkImageLayout> &copy_dst_layouts,
+    bool CopyLayoutSupported(const std::vector<VkImageLayout>& copy_src_layouts,
+                             const std::vector<VkImageLayout>& copy_dst_layouts,
                              VkImageLayout layout);
     std::vector<VkImageLayout> copy_src_layouts;
     std::vector<VkImageLayout> copy_dst_layouts;
@@ -370,10 +384,10 @@ class QueryTest : public VkLayerTest {
 
 class RayTracingTest : public virtual VkLayerTest {
   public:
-    void InitFrameworkForRayTracingTest(VkValidationFeaturesEXT *enabled_features = nullptr);
+    void InitFrameworkForRayTracingTest(VkValidationFeaturesEXT* enabled_features = nullptr);
 
-    void NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR *features2 = nullptr,
-                                          VkValidationFeaturesEXT *enabled_features = nullptr);
+    void NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR* features2 = nullptr,
+                                          VkValidationFeaturesEXT* enabled_features = nullptr);
 };
 
 class GpuAVRayTracingTest : public GpuAVTest, public RayTracingTest {};
@@ -397,7 +411,8 @@ class WsiTest : public VkLayerTest {
   public:
     // most tests need images in VK_IMAGE_LAYOUT_PRESENT_SRC_KHR layout
     void SetImageLayoutPresentSrc(VkImage image);
-    VkImageMemoryBarrier TransitionToPresent(VkImage swapchain_image, VkImageLayout old_layout, VkAccessFlags src_access_mask);
+    VkImageMemoryBarrier
+    TransitionToPresent(VkImage swapchain_image, VkImageLayout old_layout, VkAccessFlags src_access_mask);
 
   protected:
     // Find physical device group that contains physical device selected by the test framework
@@ -406,10 +421,10 @@ class WsiTest : public VkLayerTest {
   protected:
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     struct WaylandContext {
-        wl_display *display = nullptr;
-        wl_registry *registry = nullptr;
-        wl_surface *surface = nullptr;
-        wl_compositor *compositor = nullptr;
+        wl_display* display = nullptr;
+        wl_registry* registry = nullptr;
+        wl_surface* surface = nullptr;
+        wl_compositor* compositor = nullptr;
     };
     void InitWaylandContext(WaylandContext& context);
     void ReleaseWaylandContext(WaylandContext& context);
@@ -427,50 +442,68 @@ class CooperativeMatrixTest : public VkLayerTest {
 class ParentTest : public VkLayerTest {
   public:
     ~ParentTest();
-    vkt::Device *m_second_device = nullptr;
+    vkt::Device* m_second_device = nullptr;
 };
 
 template <typename T>
-bool IsValidVkStruct(const T &s) {
+bool IsValidVkStruct(const T& s) {
     return vku::GetSType<T>() == s.sType;
 }
 
 struct DebugUtilsLabelCheckData {
-    std::function<void(const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *)> callback;
+    std::function<void(const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, DebugUtilsLabelCheckData*)> callback;
     size_t count;
 };
 
-bool operator==(const VkDebugUtilsLabelEXT &rhs, const VkDebugUtilsLabelEXT &lhs);
+bool operator==(const VkDebugUtilsLabelEXT& rhs, const VkDebugUtilsLabelEXT& lhs);
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                   VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                                  const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
+                                                  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                  void* pUserData);
 
-void TestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
-                          bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
-void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo &create_info,
+void TestRenderPassCreate(ErrorMonitor* error_monitor,
+                          const vkt::Device& device,
+                          const VkRenderPassCreateInfo& create_info,
+                          bool rp2_supported,
+                          const char* rp1_vuid,
+                          const char* rp2_vuid);
+void PositiveTestRenderPassCreate(ErrorMonitor* error_monitor,
+                                  const vkt::Device& device,
+                                  const VkRenderPassCreateInfo& create_info,
                                   bool rp2_supported);
-void PositiveTestRenderPass2KHRCreate(const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info);
-void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info,
-                              const std::initializer_list<const char *> &vuids);
-void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
-                         const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid);
+void PositiveTestRenderPass2KHRCreate(const vkt::Device& device, const VkRenderPassCreateInfo2KHR& create_info);
+void TestRenderPass2KHRCreate(ErrorMonitor& error_monitor,
+                              const vkt::Device& device,
+                              const VkRenderPassCreateInfo2KHR& create_info,
+                              const std::initializer_list<const char*>& vuids);
+void TestRenderPassBegin(ErrorMonitor* error_monitor,
+                         const VkDevice device,
+                         const VkCommandBuffer command_buffer,
+                         const VkRenderPassBeginInfo* begin_info,
+                         bool rp2Supported,
+                         const char* rp1_vuid,
+                         const char* rp2_vuid);
 
-VkResult GPDIFPHelper(VkPhysicalDevice dev, const VkImageCreateInfo *ci, VkImageFormatProperties *limits = nullptr);
+VkResult GPDIFPHelper(VkPhysicalDevice dev, const VkImageCreateInfo* ci, VkImageFormatProperties* limits = nullptr);
 
-VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
+VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu,
+                                   VkImageTiling tiling,
                                    VkFormatFeatureFlags undesired_features = vvl::kU32Max);
 
-VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, VkFormatFeatureFlags2 undesired_features);
+VkFormat
+FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, VkFormatFeatureFlags2 undesired_features);
 
-void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo, const std::string &code = "");
+void CreateSamplerTest(VkLayerTest& test, const VkSamplerCreateInfo* pCreateInfo, const std::string& code = "");
 
-void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, const std::string &code = "");
+void CreateBufferTest(VkLayerTest& test, const VkBufferCreateInfo* pCreateInfo, const std::string& code = "");
 
-void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, const std::string &code = "");
+void CreateImageTest(VkLayerTest& test, const VkImageCreateInfo* pCreateInfo, const std::string& code = "");
 
-void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, const std::vector<std::string> &codes);
+void CreateBufferViewTest(VkLayerTest& test,
+                          const VkBufferViewCreateInfo* pCreateInfo,
+                          const std::vector<std::string>& codes);
 
-void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, const std::string &code = "");
+void CreateImageViewTest(VkLayerTest& test, const VkImageViewCreateInfo* pCreateInfo, const std::string& code = "");
 
-void PrintAndroid(const char *c);
+void PrintAndroid(const char* c);

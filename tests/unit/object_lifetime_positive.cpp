@@ -12,8 +12,8 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
 class PositiveObjectLifetime : public VkLayerTest {};
@@ -77,7 +77,7 @@ TEST_F(PositiveObjectLifetime, DestroyFreeNullHandles) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, { dsl_binding });
 
     VkDescriptorSet descriptor_sets[3] = {};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
@@ -103,7 +103,7 @@ TEST_F(PositiveObjectLifetime, FreeCommandBuffersNull) {
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &command_buffer);
 
-    VkCommandBuffer free_command_buffers[2] = {command_buffer, VK_NULL_HANDLE};
+    VkCommandBuffer free_command_buffers[2] = { command_buffer, VK_NULL_HANDLE };
     vk::FreeCommandBuffers(device(), m_command_pool.handle(), 2, &free_command_buffers[0]);
 }
 
@@ -112,7 +112,7 @@ TEST_F(PositiveObjectLifetime, FreeDescriptorSetsNull) {
 
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1};
+    VkDescriptorPoolSize ds_type_count = { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1 };
 
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1;
@@ -121,12 +121,13 @@ TEST_F(PositiveObjectLifetime, FreeDescriptorSetsNull) {
     ds_pool_ci.pPoolSizes = &ds_type_count;
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                                nullptr};
+    VkDescriptorSetLayoutBinding dsl_binding = {
+        0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr
+    };
 
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, { dsl_binding });
 
-    VkDescriptorSet descriptor_sets[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+    VkDescriptorSet descriptor_sets[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorSetCount = 1;
     alloc_info.descriptorPool = ds_pool.handle();
@@ -140,8 +141,10 @@ TEST_F(PositiveObjectLifetime, DescriptorBufferInfoCopy) {
     TEST_DESCRIPTION("Destroy a buffer then try to copy it in the descriptor set");
     RETURN_IF_SKIP(Init());
 
-    OneOffDescriptorSet descriptor_set_0(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    OneOffDescriptorSet descriptor_set_1(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet descriptor_set_0(m_device,
+                                         { { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } });
+    OneOffDescriptorSet descriptor_set_1(m_device,
+                                         { { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } });
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
@@ -176,21 +179,21 @@ TEST_F(PositiveObjectLifetime, DescriptorSetMutableBufferDestroyed) {
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &type_list;
 
-    OneOffDescriptorSet descriptor_set0(m_device, {{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}}, 0,
-                                        &mdtci);
-    OneOffDescriptorSet descriptor_set1(m_device,
-                                        {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set0.layout_, &descriptor_set1.layout_});
+    OneOffDescriptorSet descriptor_set0(
+        m_device, { { 0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } }, 0, &mdtci);
+    OneOffDescriptorSet descriptor_set1(
+        m_device, { { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } });
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set0.layout_, &descriptor_set1.layout_ });
 
-    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);  // used
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT); // used
     descriptor_set0.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set0.UpdateDescriptorSets();
 
-    vkt::Buffer uniform_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);  // not used
+    vkt::Buffer uniform_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT); // not used
     descriptor_set1.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set1.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer SSBO { uint x; };
         // layout(set=1, binding=0) uniform UBO { uint y; };
@@ -208,8 +211,14 @@ TEST_F(PositiveObjectLifetime, DescriptorSetMutableBufferDestroyed) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set0.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set0.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 }

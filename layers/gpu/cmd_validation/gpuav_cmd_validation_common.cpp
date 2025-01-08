@@ -28,26 +28,34 @@
 
 namespace gpuav {
 
-void BindErrorLoggingDescSet(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint bind_point,
-                             VkPipelineLayout pipeline_layout, uint32_t cmd_index, uint32_t error_logger_index) {
+void BindErrorLoggingDescSet(Validator& gpuav,
+                             CommandBuffer& cb_state,
+                             VkPipelineBindPoint bind_point,
+                             VkPipelineLayout pipeline_layout,
+                             uint32_t cmd_index,
+                             uint32_t error_logger_index) {
     assert(cmd_index < cst::indices_count);
     assert(error_logger_index < cst::indices_count);
-    std::array<uint32_t, 2> dynamic_offsets = {
-        {cmd_index * gpuav.indices_buffer_alignment_, error_logger_index * gpuav.indices_buffer_alignment_}};
+    std::array<uint32_t, 2> dynamic_offsets = { { cmd_index * gpuav.indices_buffer_alignment_,
+                                                  error_logger_index * gpuav.indices_buffer_alignment_ } };
 
-    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout, glsl::kDiagCommonDescriptorSet, 1,
-                                  &cb_state.GetErrorLoggingDescSet(), static_cast<uint32_t>(dynamic_offsets.size()),
+    DispatchCmdBindDescriptorSets(cb_state.VkHandle(),
+                                  bind_point,
+                                  pipeline_layout,
+                                  glsl::kDiagCommonDescriptorSet,
+                                  1,
+                                  &cb_state.GetErrorLoggingDescSet(),
+                                  static_cast<uint32_t>(dynamic_offsets.size()),
                                   dynamic_offsets.data());
 }
 
-void RestorablePipelineState::Create(CommandBuffer &cb_state, VkPipelineBindPoint bind_point) {
+void RestorablePipelineState::Create(CommandBuffer& cb_state, VkPipelineBindPoint bind_point) {
     pipeline_bind_point_ = bind_point;
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
 
-    LastBound &last_bound = cb_state.lastBound[lv_bind_point];
+    LastBound& last_bound = cb_state.lastBound[lv_bind_point];
     if (last_bound.pipeline_state) {
         pipeline_ = last_bound.pipeline_state->VkHandle();
-
     } else {
         assert(shader_objects_.empty());
         if (lv_bind_point == BindPoint_Graphics) {
@@ -66,7 +74,7 @@ void RestorablePipelineState::Create(CommandBuffer &cb_state, VkPipelineBindPoin
 
     descriptor_sets_.reserve(last_bound.ds_slots.size());
     for (std::size_t set_i = 0; set_i < last_bound.ds_slots.size(); set_i++) {
-        const auto &bound_descriptor_set = last_bound.ds_slots[set_i].ds_state;
+        const auto& bound_descriptor_set = last_bound.ds_slots[set_i].ds_state;
         if (bound_descriptor_set) {
             descriptor_sets_.emplace_back(bound_descriptor_set->VkHandle(), static_cast<uint32_t>(set_i));
             if (bound_descriptor_set->IsPushDescriptor()) {
@@ -86,7 +94,7 @@ void RestorablePipelineState::Create(CommandBuffer &cb_state, VkPipelineBindPoin
         DispatchCmdEndRendering(cb_state.VkHandle());
 
         VkRenderingInfo rendering_info = vku::InitStructHelper();
-        rendering_info.renderArea = {{0, 0}, {1, 1}};
+        rendering_info.renderArea = { { 0, 0 }, { 1, 1 } };
         rendering_info.layerCount = 1;
         rendering_info.viewMask = 0;
         rendering_info.colorAttachmentCount = 0;
@@ -106,34 +114,46 @@ void RestorablePipelineState::Restore() const {
     if (!shader_objects_.empty()) {
         std::vector<VkShaderStageFlagBits> stages;
         std::vector<VkShaderEXT> shaders;
-        for (const vvl::ShaderObject *shader_obj : shader_objects_) {
+        for (const vvl::ShaderObject* shader_obj : shader_objects_) {
             stages.emplace_back(shader_obj->create_info.stage);
             shaders.emplace_back(shader_obj->VkHandle());
         }
-        DispatchCmdBindShadersEXT(cb_state_.VkHandle(), static_cast<uint32_t>(shader_objects_.size()), stages.data(),
-                                  shaders.data());
+        DispatchCmdBindShadersEXT(
+            cb_state_.VkHandle(), static_cast<uint32_t>(shader_objects_.size()), stages.data(), shaders.data());
     }
 
     for (std::size_t i = 0; i < descriptor_sets_.size(); i++) {
         VkDescriptorSet descriptor_set = descriptor_sets_[i].first;
         if (descriptor_set != VK_NULL_HANDLE) {
-            DispatchCmdBindDescriptorSets(cb_state_.VkHandle(), pipeline_bind_point_, desc_set_pipeline_layout_,
-                                          descriptor_sets_[i].second, 1, &descriptor_set,
-                                          static_cast<uint32_t>(dynamic_offsets_[i].size()), dynamic_offsets_[i].data());
+            DispatchCmdBindDescriptorSets(cb_state_.VkHandle(),
+                                          pipeline_bind_point_,
+                                          desc_set_pipeline_layout_,
+                                          descriptor_sets_[i].second,
+                                          1,
+                                          &descriptor_set,
+                                          static_cast<uint32_t>(dynamic_offsets_[i].size()),
+                                          dynamic_offsets_[i].data());
         }
     }
 
     if (!push_descriptor_set_writes_.empty()) {
-        DispatchCmdPushDescriptorSetKHR(cb_state_.VkHandle(), pipeline_bind_point_, desc_set_pipeline_layout_,
-                                        push_descriptor_set_index_, static_cast<uint32_t>(push_descriptor_set_writes_.size()),
-                                        reinterpret_cast<const VkWriteDescriptorSet *>(push_descriptor_set_writes_.data()));
+        DispatchCmdPushDescriptorSetKHR(
+            cb_state_.VkHandle(),
+            pipeline_bind_point_,
+            desc_set_pipeline_layout_,
+            push_descriptor_set_index_,
+            static_cast<uint32_t>(push_descriptor_set_writes_.size()),
+            reinterpret_cast<const VkWriteDescriptorSet*>(push_descriptor_set_writes_.data()));
     }
 
-    for (const auto &push_constant_range : push_constants_data_) {
-        DispatchCmdPushConstants(cb_state_.VkHandle(), push_constant_range.layout, push_constant_range.stage_flags,
-                                 push_constant_range.offset, static_cast<uint32_t>(push_constant_range.values.size()),
+    for (const auto& push_constant_range : push_constants_data_) {
+        DispatchCmdPushConstants(cb_state_.VkHandle(),
+                                 push_constant_range.layout,
+                                 push_constant_range.stage_flags,
+                                 push_constant_range.offset,
+                                 static_cast<uint32_t>(push_constant_range.values.size()),
                                  push_constant_range.values.data());
     }
 }
 
-}  // namespace gpuav
+} // namespace gpuav

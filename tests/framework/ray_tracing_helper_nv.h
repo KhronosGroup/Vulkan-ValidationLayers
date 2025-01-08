@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include "layer_validation_tests.h"
 #include "descriptor_helper.h"
+#include "layer_validation_tests.h"
 #include "shader_helper.h"
 
 namespace nv {
@@ -64,7 +64,9 @@ class RayTracingPipelineHelper {
     // info_override can be any callable that takes a CreateNVRayTracingPipelineHelper &
     // flags, error can be any args accepted by "SetDesiredFailure".
     template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test& test, const OverrideFunc& info_override, const std::vector<Error>& errors,
+    static void OneshotTest(Test& test,
+                            const OverrideFunc& info_override,
+                            const std::vector<Error>& errors,
                             const VkFlags flags = kErrorBit) {
         RayTracingPipelineHelper helper(test);
         info_override(helper);
@@ -75,12 +77,14 @@ class RayTracingPipelineHelper {
     }
 
     template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test& test, const OverrideFunc& info_override, Error error, const VkFlags flags = kErrorBit) {
+    static void
+    OneshotTest(Test& test, const OverrideFunc& info_override, Error error, const VkFlags flags = kErrorBit) {
         OneshotTest(test, info_override, std::vector<Error>(1, error), flags);
     }
 
     template <typename Test, typename OverrideFunc>
-    static void OneshotPositiveTest(Test& test, const OverrideFunc& info_override, const VkFlags message_flag_mask = kErrorBit) {
+    static void
+    OneshotPositiveTest(Test& test, const OverrideFunc& info_override, const VkFlags message_flag_mask = kErrorBit) {
         RayTracingPipelineHelper helper(test);
         info_override(helper);
 
@@ -91,9 +95,13 @@ class RayTracingPipelineHelper {
     VkPipeline pipeline_ = VK_NULL_HANDLE;
 };
 
-// DEPRECATED: This is part of the legacy ray tracing framework, now only used in the old nvidia ray tracing extension tests.
-void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device& device, vkt::Buffer* vbo, vkt::Buffer* ibo,
-                                                    VkGeometryNV* geometry, VkDeviceSize offset = 0,
+// DEPRECATED: This is part of the legacy ray tracing framework, now only used in the old nvidia ray tracing extension
+// tests.
+void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device& device,
+                                                    vkt::Buffer* vbo,
+                                                    vkt::Buffer* ibo,
+                                                    VkGeometryNV* geometry,
+                                                    VkDeviceSize offset = 0,
                                                     bool buffer_device_address = false);
-}  // namespace rt
-}  // namespace nv
+} // namespace rt
+} // namespace nv

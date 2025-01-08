@@ -14,11 +14,11 @@
  */
 
 #include "debug_printf_pass.h"
-#include "module.h"
 #include "gpu/shaders/gpuav_error_header.h"
-#include <spirv/unified1/NonSemanticDebugPrintf.h>
+#include "module.h"
 #include <cstring>
 #include <iostream>
+#include <spirv/unified1/NonSemanticDebugPrintf.h>
 
 namespace gpuav {
 namespace spirv {
@@ -37,7 +37,8 @@ uint32_t DebugPrintfPass::GetLinkFunctionId(uint32_t argument_count) {
 }
 
 bool DebugPrintfPass::RequiresInstrumentation(const Instruction& inst) {
-    if (inst.Opcode() == spv::OpExtInst && inst.Word(3) == ext_import_id_ && inst.Word(4) == NonSemanticDebugPrintfDebugPrintf) {
+    if (inst.Opcode() == spv::OpExtInst && inst.Word(3) == ext_import_id_ &&
+        inst.Word(4) == NonSemanticDebugPrintfDebugPrintf) {
         target_instruction_ = &inst;
         return true;
     }
@@ -45,8 +46,11 @@ bool DebugPrintfPass::RequiresInstrumentation(const Instruction& inst) {
 }
 
 // Takes the various arguments and casts them to a valid uint32_t to be passed as a parameter in the function
-void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& argument_type, std::vector<uint32_t>& params,
-                                           BasicBlock& block, InstructionIt* inst_it) {
+void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id,
+                                           const Type& argument_type,
+                                           std::vector<uint32_t>& params,
+                                           BasicBlock& block,
+                                           InstructionIt* inst_it) {
     const uint32_t uint32_type_id = module_.type_manager_.GetTypeInt(32, false).Id();
 
     switch (argument_type.spv_type_) {
@@ -57,7 +61,8 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
             assert(component_type);
             for (uint32_t i = 0; i < component_count; i++) {
                 const uint32_t extract_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpCompositeExtract, {component_type_id, extract_id, argument_id, i}, inst_it);
+                block.CreateInstruction(
+                    spv::OpCompositeExtract, { component_type_id, extract_id, argument_id, i }, inst_it);
                 CreateFunctionParams(extract_id, *component_type, params, block, inst_it);
             }
             break;
@@ -72,22 +77,24 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
             if (is_signed) {
                 const uint32_t bitcast_id = module_.TakeNextId();
                 const uint32_t unsigned_type_id = module_.type_manager_.GetTypeInt(width, false).Id();
-                block.CreateInstruction(spv::OpBitcast, {unsigned_type_id, bitcast_id, argument_id}, inst_it);
+                block.CreateInstruction(spv::OpBitcast, { unsigned_type_id, bitcast_id, argument_id }, inst_it);
                 incoming_id = bitcast_id;
 
                 if (width == 8) {
                     if (expanded_parameter_count_ > 31) {
-                        module_.InternalWarning("DEBUG-PRINTF-SIGNED-8-MASK",
-                                                "More than 32 expanded parameters, can't properly detect 8-bit signed ints [Simple "
-                                                "fix is to turn long printf() into 2 shorter printf() calls]");
+                        module_.InternalWarning(
+                            "DEBUG-PRINTF-SIGNED-8-MASK",
+                            "More than 32 expanded parameters, can't properly detect 8-bit signed ints [Simple "
+                            "fix is to turn long printf() into 2 shorter printf() calls]");
                     } else {
                         signed_8_bitmask_ |= 1 << expanded_parameter_count_;
                     }
                 } else if (width == 16) {
                     if (expanded_parameter_count_ > 31) {
-                        module_.InternalWarning("DEBUG-PRINTF-SIGNED-16-MASK",
-                                                "More than 32 expanded parameters, can't properly detect 16-bit signed ints "
-                                                "[Simple fix is to turn long printf() into 2 shorter printf() calls]");
+                        module_.InternalWarning(
+                            "DEBUG-PRINTF-SIGNED-16-MASK",
+                            "More than 32 expanded parameters, can't properly detect 16-bit signed ints "
+                            "[Simple fix is to turn long printf() into 2 shorter printf() calls]");
                     } else {
                         signed_16_bitmask_ |= 1 << expanded_parameter_count_;
                     }
@@ -96,7 +103,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
 
             if (width == 8 || width == 16) {
                 const uint32_t uconvert_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_id, incoming_id}, inst_it);
+                block.CreateInstruction(spv::OpUConvert, { uint32_type_id, uconvert_id, incoming_id }, inst_it);
                 params.push_back(uconvert_id);
                 expanded_parameter_count_++;
             } else if (width == 32) {
@@ -104,18 +111,18 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                 expanded_parameter_count_++;
             } else if (width == 64) {
                 const uint32_t uconvert_high_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_high_id, incoming_id}, inst_it);
+                block.CreateInstruction(spv::OpUConvert, { uint32_type_id, uconvert_high_id, incoming_id }, inst_it);
                 params.push_back(uconvert_high_id);
                 expanded_parameter_count_++;
 
                 const uint32_t uint64_type_id = module_.type_manager_.GetTypeInt(64, false).Id();
                 const uint32_t shift_right_id = module_.TakeNextId();
                 const uint32_t constant_32_id = module_.type_manager_.GetConstantUInt32(32).Id();
-                block.CreateInstruction(spv::OpShiftRightLogical, {uint64_type_id, shift_right_id, incoming_id, constant_32_id},
-                                        inst_it);
+                block.CreateInstruction(
+                    spv::OpShiftRightLogical, { uint64_type_id, shift_right_id, incoming_id, constant_32_id }, inst_it);
 
                 const uint32_t uconvert_low_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_low_id, shift_right_id}, inst_it);
+                block.CreateInstruction(spv::OpUConvert, { uint32_type_id, uconvert_low_id, shift_right_id }, inst_it);
                 params.push_back(uconvert_low_id);
             } else {
                 module_.InternalError(Name(), "CreateFunctionParams has unsupported for int width");
@@ -128,23 +135,24 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
             if (width == 16) {
                 const uint32_t float32_type_id = module_.type_manager_.GetTypeFloat(32).Id();
                 const uint32_t fconvert_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpFConvert, {float32_type_id, fconvert_id, argument_id}, inst_it);
+                block.CreateInstruction(spv::OpFConvert, { float32_type_id, fconvert_id, argument_id }, inst_it);
 
                 const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {uint32_type_id, bitcast_id, fconvert_id}, inst_it);
+                block.CreateInstruction(spv::OpBitcast, { uint32_type_id, bitcast_id, fconvert_id }, inst_it);
                 params.push_back(bitcast_id);
                 expanded_parameter_count_++;
             } else if (width == 32) {
                 const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {uint32_type_id, bitcast_id, argument_id}, inst_it);
+                block.CreateInstruction(spv::OpBitcast, { uint32_type_id, bitcast_id, argument_id }, inst_it);
                 params.push_back(bitcast_id);
                 expanded_parameter_count_++;
             } else if (width == 64) {
                 if (expanded_parameter_count_ > 31) {
                     // It is very unlikely to hit this
-                    module_.InternalWarning("DEBUG-PRINTF-DOUBLE-MASK",
-                                            "More than 32 expanded parameters, can't properly detect 64-bit float [Simple fix is "
-                                            "to turn long printf() into 2 shorter printf() calls]");
+                    module_.InternalWarning(
+                        "DEBUG-PRINTF-DOUBLE-MASK",
+                        "More than 32 expanded parameters, can't properly detect 64-bit float [Simple fix is "
+                        "to turn long printf() into 2 shorter printf() calls]");
                 } else {
                     double_bitmask_ |= 1 << expanded_parameter_count_;
                 }
@@ -159,20 +167,20 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
 
                 const uint32_t uint64_type_id = module_.type_manager_.GetTypeInt(64, false).Id();
                 const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {uint64_type_id, bitcast_id, argument_id}, inst_it);
+                block.CreateInstruction(spv::OpBitcast, { uint64_type_id, bitcast_id, argument_id }, inst_it);
 
                 const uint32_t uconvert_high_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_high_id, bitcast_id}, inst_it);
+                block.CreateInstruction(spv::OpUConvert, { uint32_type_id, uconvert_high_id, bitcast_id }, inst_it);
                 params.push_back(uconvert_high_id);
                 expanded_parameter_count_++;
 
                 const uint32_t shift_right_id = module_.TakeNextId();
                 const uint32_t constant_32_id = module_.type_manager_.GetConstantUInt32(32).Id();
-                block.CreateInstruction(spv::OpShiftRightLogical, {uint64_type_id, shift_right_id, bitcast_id, constant_32_id},
-                                        inst_it);
+                block.CreateInstruction(
+                    spv::OpShiftRightLogical, { uint64_type_id, shift_right_id, bitcast_id, constant_32_id }, inst_it);
 
                 const uint32_t uconvert_low_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpUConvert, {uint32_type_id, uconvert_low_id, shift_right_id}, inst_it);
+                block.CreateInstruction(spv::OpUConvert, { uint32_type_id, uconvert_low_id, shift_right_id }, inst_it);
                 params.push_back(uconvert_low_id);
             } else {
                 module_.InternalError(Name(), "CreateFunctionParams has unsupported for float width");
@@ -185,7 +193,8 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
             const uint32_t zero_id = module_.type_manager_.GetConstantZeroUint32().Id();
             const uint32_t one_id = module_.type_manager_.GetConstantUInt32(1).Id();
             const uint32_t select_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpSelect, {uint32_type_id, select_id, argument_id, one_id, zero_id}, inst_it);
+            block.CreateInstruction(
+                spv::OpSelect, { uint32_type_id, select_id, argument_id, one_id, zero_id }, inst_it);
             params.push_back(select_id);
             expanded_parameter_count_++;
             break;
@@ -218,18 +227,18 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* i
     const size_t double_bitmask_slot = 5;
     const size_t signed_8_bitmask_slot = 6;
     const size_t signed_16_bitmask_slot = 7;
-    std::vector<uint32_t> function_call_params = {void_type,
-                                                  function_result,
-                                                  0,  // function_def_slot
-                                                  inst_position_constant.Id(),
-                                                  string_id_constant.Id(),
-                                                  0,  // double_bitmask_slot,
-                                                  0,  // signed_8_bitmask_slot,
-                                                  0,  // signed_16_bitmask_slot,
-                                                  block_func.stage_info_x_id_,
-                                                  block_func.stage_info_y_id_,
-                                                  block_func.stage_info_z_id_,
-                                                  block_func.stage_info_w_id_};
+    std::vector<uint32_t> function_call_params = { void_type,
+                                                   function_result,
+                                                   0, // function_def_slot
+                                                   inst_position_constant.Id(),
+                                                   string_id_constant.Id(),
+                                                   0, // double_bitmask_slot,
+                                                   0, // signed_8_bitmask_slot,
+                                                   0, // signed_16_bitmask_slot,
+                                                   block_func.stage_info_x_id_,
+                                                   block_func.stage_info_y_id_,
+                                                   block_func.stage_info_z_id_,
+                                                   block_func.stage_info_w_id_ };
 
     // where we find the first arugment in OpExtInst instruction
     const uint32_t first_argument_offset = 6;
@@ -243,10 +252,10 @@ void DebugPrintfPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* i
         } else {
             argument_inst = block.function_.FindInstruction(argument_id);
         }
-        assert(argument_inst);  // argument is either constant or found within function block
+        assert(argument_inst); // argument is either constant or found within function block
 
         const Type* argument_type = module_.type_manager_.FindTypeById(argument_inst->TypeId());
-        assert(argument_type);  // type needs to have been declared already
+        assert(argument_type); // type needs to have been declared already
 
         CreateFunctionParams(argument_inst->ResultId(), *argument_type, function_call_params, block, inst_it);
     }
@@ -287,27 +296,29 @@ void DebugPrintfPass::CreateDescriptorSet() {
         }
     }
     if (!has_array_stride) {
-        module_.AddDecoration(runtime_array_type_id, spv::DecorationArrayStride, {4});
+        module_.AddDecoration(runtime_array_type_id, spv::DecorationArrayStride, { 4 });
     }
 
     const uint32_t struct_type_id = module_.TakeNextId();
     auto new_struct_inst = std::make_unique<Instruction>(4, spv::OpTypeStruct);
-    new_struct_inst->Fill({struct_type_id, uint32_type.Id(), runtime_array_type_id});
+    new_struct_inst->Fill({ struct_type_id, uint32_type.Id(), runtime_array_type_id });
     const Type& struct_type = module_.type_manager_.AddType(std::move(new_struct_inst), SpvType::kStruct);
     module_.AddDecoration(struct_type_id, spv::DecorationBlock, {});
-    module_.AddMemberDecoration(struct_type_id, gpuav::kDebugPrintfOutputBufferDWordsCount, spv::DecorationOffset, {0});
-    module_.AddMemberDecoration(struct_type_id, gpuav::kDebugPrintfOutputBufferData, spv::DecorationOffset, {4});
+    module_.AddMemberDecoration(
+        struct_type_id, gpuav::kDebugPrintfOutputBufferDWordsCount, spv::DecorationOffset, { 0 });
+    module_.AddMemberDecoration(struct_type_id, gpuav::kDebugPrintfOutputBufferData, spv::DecorationOffset, { 4 });
 
     // create a storage buffer interface variable
     const Type& pointer_type = module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, struct_type);
     output_buffer_variable_id_ = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(4, spv::OpVariable);
-    new_inst->Fill({pointer_type.Id(), output_buffer_variable_id_, spv::StorageClassStorageBuffer});
+    new_inst->Fill({ pointer_type.Id(), output_buffer_variable_id_, spv::StorageClassStorageBuffer });
     module_.type_manager_.AddVariable(std::move(new_inst), pointer_type);
     module_.AddInterfaceVariables(output_buffer_variable_id_, spv::StorageClassStorageBuffer);
 
-    module_.AddDecoration(output_buffer_variable_id_, spv::DecorationDescriptorSet, {module_.output_buffer_descriptor_set_});
-    module_.AddDecoration(output_buffer_variable_id_, spv::DecorationBinding, {binding_slot_});
+    module_.AddDecoration(
+        output_buffer_variable_id_, spv::DecorationDescriptorSet, { module_.output_buffer_descriptor_set_ });
+    module_.AddDecoration(output_buffer_variable_id_, spv::DecorationBinding, { binding_slot_ });
 }
 
 void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_t function_id) {
@@ -338,7 +349,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     const uint32_t void_type_id = module_.type_manager_.GetTypeVoid().Id();
     const uint32_t uint32_type_id = module_.type_manager_.GetTypeInt(32, false).Id();
     {
-        std::vector<uint32_t> words = {function_type_id, void_type_id};
+        std::vector<uint32_t> words = { function_type_id, void_type_id };
         for (size_t i = 0; i < argument_count; i++) {
             words.push_back(uint32_type_id);
         }
@@ -351,13 +362,13 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     std::vector<uint32_t> function_param_ids;
     {
         auto new_inst = std::make_unique<Instruction>(5, spv::OpFunction);
-        new_inst->Fill({void_type_id, function_id, spv::FunctionControlMaskNone, function_type_id});
+        new_inst->Fill({ void_type_id, function_id, spv::FunctionControlMaskNone, function_type_id });
         new_function->pre_block_inst_.emplace_back(std::move(new_inst));
 
         for (size_t i = 0; i < argument_count; i++) {
             const uint32_t new_id = module_.TakeNextId();
             auto param_inst = std::make_unique<Instruction>(3, spv::OpFunctionParameter);
-            param_inst->Fill({uint32_type_id, new_id});
+            param_inst->Fill({ uint32_type_id, new_id });
             new_function->pre_block_inst_.emplace_back(std::move(param_inst));
             function_param_ids.push_back(new_id);
         }
@@ -369,7 +380,8 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     auto& merge_block = new_function->blocks_[2];
 
     const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
-    const uint32_t pointer_type_id = module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, uint32_type).Id();
+    const uint32_t pointer_type_id =
+        module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, uint32_type).Id();
     const uint32_t zero_id = module_.type_manager_.GetConstantZeroUint32().Id();
     const uint32_t one_id = module_.type_manager_.GetConstantUInt32(1).Id();
     const uint32_t byte_written_id = module_.type_manager_.GetConstantUInt32(byte_written).Id();
@@ -378,54 +390,59 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     // Atomically get a write index in the output buffer, and check if this index is with buffer's bounds
     {
         const uint32_t access_chain_id = module_.TakeNextId();
-        check_block->CreateInstruction(spv::OpAccessChain, {pointer_type_id, access_chain_id, output_buffer_variable_id_, zero_id});
+        check_block->CreateInstruction(spv::OpAccessChain,
+                                       { pointer_type_id, access_chain_id, output_buffer_variable_id_, zero_id });
 
         atomic_add_id = module_.TakeNextId();
         const uint32_t scope_invok_id = module_.type_manager_.GetConstantUInt32(spv::ScopeInvocation).Id();
         const uint32_t mask_none_id = module_.type_manager_.GetConstantUInt32(spv::MemoryAccessMaskNone).Id();
         check_block->CreateInstruction(
-            spv::OpAtomicIAdd, {uint32_type_id, atomic_add_id, access_chain_id, scope_invok_id, mask_none_id, byte_written_id});
+            spv::OpAtomicIAdd,
+            { uint32_type_id, atomic_add_id, access_chain_id, scope_invok_id, mask_none_id, byte_written_id });
 
         const uint32_t int_add_id = module_.TakeNextId();
-        check_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, byte_written_id});
+        check_block->CreateInstruction(spv::OpIAdd, { uint32_type_id, int_add_id, atomic_add_id, byte_written_id });
 
         const uint32_t array_length_id = module_.TakeNextId();
-        check_block->CreateInstruction(spv::OpArrayLength, {uint32_type_id, array_length_id, output_buffer_variable_id_, 1});
+        check_block->CreateInstruction(spv::OpArrayLength,
+                                       { uint32_type_id, array_length_id, output_buffer_variable_id_, 1 });
 
         const uint32_t less_than_equal_id = module_.TakeNextId();
         const uint32_t bool_type_id = module_.type_manager_.GetTypeBool().Id();
-        check_block->CreateInstruction(spv::OpULessThanEqual, {bool_type_id, less_than_equal_id, int_add_id, array_length_id});
+        check_block->CreateInstruction(spv::OpULessThanEqual,
+                                       { bool_type_id, less_than_equal_id, int_add_id, array_length_id });
 
         const uint32_t merge_block_label_id = merge_block->GetLabelId();
-        check_block->CreateInstruction(spv::OpSelectionMerge, {merge_block_label_id, spv::SelectionControlMaskNone});
+        check_block->CreateInstruction(spv::OpSelectionMerge, { merge_block_label_id, spv::SelectionControlMaskNone });
 
         const uint32_t store_block_label_id = store_block->GetLabelId();
-        check_block->CreateInstruction(spv::OpBranchConditional, {less_than_equal_id, store_block_label_id, merge_block_label_id});
+        check_block->CreateInstruction(spv::OpBranchConditional,
+                                       { less_than_equal_id, store_block_label_id, merge_block_label_id });
     }
 
     // Store how many 32-bit words
     {
         const uint32_t int_add_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, zero_id});
+        store_block->CreateInstruction(spv::OpIAdd, { uint32_type_id, int_add_id, atomic_add_id, zero_id });
 
         const uint32_t access_chain_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpAccessChain,
-                                       {pointer_type_id, access_chain_id, output_buffer_variable_id_, one_id, int_add_id});
+        store_block->CreateInstruction(
+            spv::OpAccessChain, { pointer_type_id, access_chain_id, output_buffer_variable_id_, one_id, int_add_id });
 
-        store_block->CreateInstruction(spv::OpStore, {access_chain_id, byte_written_id});
+        store_block->CreateInstruction(spv::OpStore, { access_chain_id, byte_written_id });
     }
 
     // Store Shader Stage ID
     {
         const uint32_t int_add_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, one_id});
+        store_block->CreateInstruction(spv::OpIAdd, { uint32_type_id, int_add_id, atomic_add_id, one_id });
 
         const uint32_t access_chain_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpAccessChain,
-                                       {pointer_type_id, access_chain_id, output_buffer_variable_id_, one_id, int_add_id});
+        store_block->CreateInstruction(
+            spv::OpAccessChain, { pointer_type_id, access_chain_id, output_buffer_variable_id_, one_id, int_add_id });
 
         const uint32_t shader_id = module_.type_manager_.GetConstantUInt32(module_.shader_id_).Id();
-        store_block->CreateInstruction(spv::OpStore, {access_chain_id, shader_id});
+        store_block->CreateInstruction(spv::OpStore, { access_chain_id, shader_id });
     }
 
     // Write a 32-bit word to the output buffer for each argument
@@ -433,18 +450,18 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     for (uint32_t i = 0; i < argument_count; i++) {
         const uint32_t int_add_id = module_.TakeNextId();
         const uint32_t offset_id = module_.type_manager_.GetConstantUInt32(i + argument_id_offset).Id();
-        store_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, offset_id});
+        store_block->CreateInstruction(spv::OpIAdd, { uint32_type_id, int_add_id, atomic_add_id, offset_id });
 
         const uint32_t access_chain_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpAccessChain,
-                                       {pointer_type_id, access_chain_id, output_buffer_variable_id_, one_id, int_add_id});
+        store_block->CreateInstruction(
+            spv::OpAccessChain, { pointer_type_id, access_chain_id, output_buffer_variable_id_, one_id, int_add_id });
 
-        store_block->CreateInstruction(spv::OpStore, {access_chain_id, function_param_ids[i]});
+        store_block->CreateInstruction(spv::OpStore, { access_chain_id, function_param_ids[i] });
     }
 
     // merge block of the above if() check
     {
-        store_block->CreateInstruction(spv::OpBranch, {merge_block->GetLabelId()});
+        store_block->CreateInstruction(spv::OpBranch, { merge_block->GetLabelId() });
         merge_block->CreateInstruction(spv::OpReturn, {});
     }
 
@@ -473,15 +490,17 @@ bool DebugPrintfPass::Run() {
     }
 
     if (ext_import_id_ == 0) {
-        return false;  // no printf strings found, early return
+        return false; // no printf strings found, early return
     }
 
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (!RequiresInstrumentation(*(inst_it->get()))) continue;
-                if (!Validate(*(function.get()))) continue;  // if not valid, don't attempt to instrument it
+                if (!RequiresInstrumentation(*(inst_it->get())))
+                    continue;
+                if (!Validate(*(function.get())))
+                    continue; // if not valid, don't attempt to instrument it
                 instrumentations_count_++;
 
                 CreateFunctionCall(block_it, &inst_it);
@@ -547,9 +566,9 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
     static const char* tag = "DEBUG-PRINTF-FORMATTING";
 
     struct ParamInfo {
-        bool is_float = false;  // else int (don't attempt to validate unsigned vs signed here)
+        bool is_float = false; // else int (don't attempt to validate unsigned vs signed here)
         bool is_64_bit = false;
-        uint32_t vector_size = 0;  // zero == scalar
+        uint32_t vector_size = 0; // zero == scalar
         char modifier[32];
     };
 
@@ -570,7 +589,8 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
         }
     }
     if (!op_string) {
-        module_.InternalError(tag, "OpExtInst points to an empty/invalid OpString, this should have been caught in spirv-val");
+        module_.InternalError(
+            tag, "OpExtInst points to an empty/invalid OpString, this should have been caught in spirv-val");
         return false;
     }
 
@@ -601,15 +621,17 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
 
     // No reason to start checking at the last character, since always need % and something following it
     for (size_t i = 0; i < op_string_len - 1; i++) {
-        if (op_string[i] != '%') continue;
+        if (op_string[i] != '%')
+            continue;
         const size_t starting_i = i;
         i++;
         char modifier = op_string[i];
-        if (modifier == '%') continue;  // skip "%%"
+        if (modifier == '%')
+            continue; // skip "%%"
 
         if (modifier == ' ') {
-            std::string err_msg =
-                "OpString \"" + print_op_string() + "\" contains a isolated % which is missing the modifier (to escape use %%)";
+            std::string err_msg = "OpString \"" + print_op_string() +
+                                  "\" contains a isolated % which is missing the modifier (to escape use %%)";
             module_.InternalError(tag, err_msg.c_str());
             valid = false;
             break;
@@ -658,11 +680,12 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
                 case '9':
                 case '*':
                 case '.':
-                    break;  // expected for precision
+                    break; // expected for precision
                 case 'v': {
                     if (i + 1 >= op_string_len) {
-                        std::string err_msg = "OpString \"" + print_op_string() +
-                                              "\" contains a %v at the end, but vectors require a width and type after it";
+                        std::string err_msg =
+                            "OpString \"" + print_op_string() +
+                            "\" contains a %v at the end, but vectors require a width and type after it";
                         module_.InternalError(tag, err_msg.c_str());
                         valid = false;
                     } else {
@@ -688,7 +711,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
                                           "\" modifier which is an unknown modifier.";
                     module_.InternalError(tag, err_msg.c_str());
                     valid = false;
-                    break;  // unknown
+                    break; // unknown
             };
 
             i++;
@@ -701,25 +724,27 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
             param_info.modifier[i - starting_i] = '\0';
 
             if (!found_specifier) {
-                std::string err_msg = "OpString \"" + print_op_string() + "\" contains \"" + std::string(param_info.modifier) +
-                                      "\" which is missing a valid specifier (d, i, o, u, x, X, a, A, e, E, f, F, g, or G).";
+                std::string err_msg =
+                    "OpString \"" + print_op_string() + "\" contains \"" + std::string(param_info.modifier) +
+                    "\" which is missing a valid specifier (d, i, o, u, x, X, a, A, e, E, f, F, g, or G).";
                 module_.InternalError(tag, err_msg.c_str());
                 valid = false;
             }
         }
 
-        if (!valid) break;
+        if (!valid)
+            break;
         param_infos.push_back(param_info);
     }
-    if (!valid) return false;
+    if (!valid)
+        return false;
 
     const uint32_t argument_count = target_instruction_->Length() - first_argument_offset;
     if (argument_count > param_infos.size()) {
-        std::string err_msg = "OpString \"" + print_op_string() + "\" contains only " + std::to_string(param_infos.size()) +
-                              " modifiers, but " + std::to_string(argument_count) +
+        std::string err_msg = "OpString \"" + print_op_string() + "\" contains only " +
+                              std::to_string(param_infos.size()) + " modifiers, but " + std::to_string(argument_count) +
                               " arguments were passed in and some will be ignored";
         module_.InternalWarning(tag, err_msg.c_str());
-
     } else if (argument_count < param_infos.size()) {
         std::string err_msg = "OpString \"" + print_op_string() + "\" contains " + std::to_string(param_infos.size()) +
                               " modifiers, but only " + std::to_string(argument_count) +
@@ -740,28 +765,30 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
             const Instruction* inst = current_function.FindInstruction(argument_id);
             if (!inst) {
                 module_.InternalWarning(tag, "Unable to find OpExtInst ID inside function block");
-                return true;  // possibily our error, so leave a warning
+                return true; // possibily our error, so leave a warning
             }
             argument_type = module_.type_manager_.FindTypeById(inst->TypeId());
         }
         if (!argument_type) {
             module_.InternalWarning(tag, "Unable find OpExtInst ID type");
-            return true;  // possibily our error, so leave a warning
+            return true; // possibily our error, so leave a warning
         }
 
         // first strip/validate vectors
         if (param.vector_size != 0) {
             if (argument_type->spv_type_ != SpvType::kVector) {
-                std::string err_msg = "OpString \"" + print_op_string() + "\" contains a vector modifier \"" + param.modifier +
-                                      "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not a vector";
+                std::string err_msg = "OpString \"" + print_op_string() + "\" contains a vector modifier \"" +
+                                      param.modifier + "\", but the argument (SPIR-V Id " +
+                                      std::to_string(argument_id) + ") is not a vector";
                 module_.InternalError(tag, err_msg.c_str());
                 return false;
             }
             const uint32_t vector_size = argument_type->inst_.Word(3);
             if (vector_size != param.vector_size) {
-                std::string err_msg = "OpString \"" + print_op_string() + "\" contains a " + std::to_string(param.vector_size) +
-                                      "-wide vector modifier \"" + param.modifier + "\", but the argument (SPIR-V Id " +
-                                      std::to_string(argument_id) + ") is a " + std::to_string(vector_size) +
+                std::string err_msg = "OpString \"" + print_op_string() + "\" contains a " +
+                                      std::to_string(param.vector_size) + "-wide vector modifier \"" + param.modifier +
+                                      "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is a " +
+                                      std::to_string(vector_size) +
                                       "-wide vector (values might be truncated or padded)";
                 module_.InternalWarning(tag, err_msg.c_str());
             }
@@ -771,8 +798,9 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
             assert(argument_type);
         } else {
             if (argument_type->spv_type_ == SpvType::kVector) {
-                std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-vector modifier \"" + param.modifier +
-                                      "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is a vector";
+                std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-vector modifier \"" +
+                                      param.modifier + "\", but the argument (SPIR-V Id " +
+                                      std::to_string(argument_id) + ") is a vector";
                 module_.InternalError(tag, err_msg.c_str());
                 return false;
             }
@@ -790,20 +818,24 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
 
         const bool type_is_64 = argument_type->spv_type_ != SpvType::kBool && argument_type->inst_.Word(2) == 64;
         if (!param.is_64_bit && type_is_64) {
-            std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-64-bit modifier \"" + param.modifier +
-                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") a 64-bit";
+            std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-64-bit modifier \"" +
+                                  param.modifier + "\", but the argument (SPIR-V Id " + std::to_string(argument_id) +
+                                  ") a 64-bit";
             module_.InternalWarning(tag, err_msg.c_str());
         } else if (param.is_64_bit && !type_is_64) {
-            std::string err_msg = "OpString \"" + print_op_string() + "\" contains a 64-bit modifier \"" + param.modifier +
-                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not 64-bit";
+            std::string err_msg = "OpString \"" + print_op_string() + "\" contains a 64-bit modifier \"" +
+                                  param.modifier + "\", but the argument (SPIR-V Id " + std::to_string(argument_id) +
+                                  ") is not 64-bit";
             module_.InternalWarning(tag, err_msg.c_str());
         } else if (!param.is_float && argument_type->spv_type_ == SpvType::kFloat) {
-            std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-float modifier \"" + param.modifier +
-                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is a float";
+            std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-float modifier \"" +
+                                  param.modifier + "\", but the argument (SPIR-V Id " + std::to_string(argument_id) +
+                                  ") is a float";
             module_.InternalWarning(tag, err_msg.c_str());
         } else if (param.is_float && argument_type->spv_type_ != SpvType::kFloat) {
-            std::string err_msg = "OpString \"" + print_op_string() + "\" contains a float modifier \"" + param.modifier +
-                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not a float";
+            std::string err_msg = "OpString \"" + print_op_string() + "\" contains a float modifier \"" +
+                                  param.modifier + "\", but the argument (SPIR-V Id " + std::to_string(argument_id) +
+                                  ") is not a float";
             module_.InternalWarning(tag, err_msg.c_str());
         }
     }
@@ -811,5 +843,5 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
     return true;
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

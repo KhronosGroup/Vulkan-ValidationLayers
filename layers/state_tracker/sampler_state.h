@@ -29,7 +29,7 @@ struct DescriptorSlot {
     DescriptorSlot(uint32_t s, uint32_t b) : set(s), binding(b) {}
 };
 
-inline bool operator==(const DescriptorSlot &lhs, const DescriptorSlot &rhs) noexcept {
+inline bool operator==(const DescriptorSlot& lhs, const DescriptorSlot& rhs) noexcept {
     return lhs.set == rhs.set && lhs.binding == rhs.binding;
 }
 
@@ -38,14 +38,16 @@ struct SamplerUsedByImage {
     uint32_t sampler_index;
 };
 
-inline bool operator==(const SamplerUsedByImage &a, const SamplerUsedByImage &b) noexcept {
+inline bool operator==(const SamplerUsedByImage& a, const SamplerUsedByImage& b) noexcept {
     return a.sampler_slot == b.sampler_slot && a.sampler_index == b.sampler_index;
 }
 
 namespace std {
 template <>
 struct hash<DescriptorSlot> {
-    size_t operator()(DescriptorSlot slot) const noexcept { return hash<uint32_t>()(slot.set) ^ hash<uint32_t>()(slot.binding); }
+    size_t operator()(DescriptorSlot slot) const noexcept {
+        return hash<uint32_t>()(slot.set) ^ hash<uint32_t>()(slot.binding);
+    }
 };
 template <>
 struct hash<SamplerUsedByImage> {
@@ -53,36 +55,35 @@ struct hash<SamplerUsedByImage> {
         return hash<DescriptorSlot>()(s.sampler_slot) ^ hash<uint32_t>()(s.sampler_index);
     }
 };
-}  // namespace std
+} // namespace std
 
 namespace vvl {
 
 class Sampler : public StateObject {
   public:
     const vku::safe_VkSamplerCreateInfo safe_create_info;
-    const VkSamplerCreateInfo &create_info;
+    const VkSamplerCreateInfo& create_info;
 
     const VkSamplerYcbcrConversion samplerConversion;
     const VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo;
 
-    Sampler(const VkSampler handle, const VkSamplerCreateInfo *pCreateInfo)
-        : StateObject(handle, kVulkanObjectTypeSampler),
-          safe_create_info(pCreateInfo),
-          create_info(*safe_create_info.ptr()),
-          samplerConversion(GetConversion(pCreateInfo)),
-          customCreateInfo(GetCustomCreateInfo(pCreateInfo)) {}
+    Sampler(const VkSampler handle, const VkSamplerCreateInfo* pCreateInfo) :
+        StateObject(handle, kVulkanObjectTypeSampler), safe_create_info(pCreateInfo),
+        create_info(*safe_create_info.ptr()), samplerConversion(GetConversion(pCreateInfo)),
+        customCreateInfo(GetCustomCreateInfo(pCreateInfo)) {}
 
     VkSampler VkHandle() const { return handle_.Cast<VkSampler>(); }
 
   private:
-    static inline VkSamplerYcbcrConversion GetConversion(const VkSamplerCreateInfo *pCreateInfo) {
-        auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+    static inline VkSamplerYcbcrConversion GetConversion(const VkSamplerCreateInfo* pCreateInfo) {
+        auto* conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
         return conversion_info ? conversion_info->conversion : VK_NULL_HANDLE;
     }
-    static inline VkSamplerCustomBorderColorCreateInfoEXT GetCustomCreateInfo(const VkSamplerCreateInfo *pCreateInfo) {
+    static inline VkSamplerCustomBorderColorCreateInfoEXT GetCustomCreateInfo(const VkSamplerCreateInfo* pCreateInfo) {
         VkSamplerCustomBorderColorCreateInfoEXT result{};
         auto cbci = vku::FindStructInPNextChain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
-        if (cbci) result = *cbci;
+        if (cbci)
+            result = *cbci;
         return result;
     }
 };
@@ -94,15 +95,14 @@ class SamplerYcbcrConversion : public StateObject {
     const VkFilter chromaFilter;
     const uint64_t external_format;
 
-    SamplerYcbcrConversion(VkSamplerYcbcrConversion handle, const VkSamplerYcbcrConversionCreateInfo *info,
-                           VkFormatFeatureFlags2KHR features)
-        : StateObject(handle, kVulkanObjectTypeSamplerYcbcrConversion),
-          format_features(features),
-          format(info->format),
-          chromaFilter(info->chromaFilter),
-          external_format(GetExternalFormat(info->pNext)) {}
+    SamplerYcbcrConversion(VkSamplerYcbcrConversion handle,
+                           const VkSamplerYcbcrConversionCreateInfo* info,
+                           VkFormatFeatureFlags2KHR features) :
+        StateObject(handle, kVulkanObjectTypeSamplerYcbcrConversion),
+        format_features(features), format(info->format), chromaFilter(info->chromaFilter),
+        external_format(GetExternalFormat(info->pNext)) {}
 
     VkSamplerYcbcrConversion VkHandle() const { return handle_.Cast<VkSamplerYcbcrConversion>(); }
 };
 
-}  // namespace vvl
+} // namespace vvl

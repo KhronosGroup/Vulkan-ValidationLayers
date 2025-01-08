@@ -24,11 +24,11 @@ class Queue;
 // The core validation uses the "submission" term to refer to a separate batch from the submission command.
 // Synchronization validation follows more closely the specification and uses "batch" term.
 struct SubmissionReference {
-    Queue *queue = nullptr;
+    Queue* queue = nullptr;
     uint64_t seq = 0;
 
     SubmissionReference() = default;
-    SubmissionReference(Queue *q, uint64_t queue_seq) : queue(q), seq(queue_seq) {}
+    SubmissionReference(Queue* q, uint64_t queue_seq) : queue(q), seq(queue_seq) {}
 };
 
-}  // namespace vvl
+} // namespace vvl

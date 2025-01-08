@@ -18,18 +18,18 @@
 
 #pragma once
 
+#include "chassis/validation_object.h"
+#include "utils/vk_layer_utils.h"
 #include <atomic>
 #include <chrono>
 #include <shared_mutex>
 #include <string>
 #include <thread>
-#include "chassis/validation_object.h"
-#include "utils/vk_layer_utils.h"
 
 VK_DEFINE_NON_DISPATCHABLE_HANDLE(DISTINCT_NONDISPATCHABLE_PHONY_HANDLE)
 // The following line must match the vulkan_core.h condition guarding VK_DEFINE_NON_DISPATCHABLE_HANDLE
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
+#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || \
+    defined(__ia64) || defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
 // If pointers are 64-bit, then there can be separate counters for each
 // NONDISPATCHABLE_HANDLE type.  Otherwise they are all typedef uint64_t.
 #define DISTINCT_NONDISPATCHABLE_HANDLES
@@ -47,7 +47,7 @@ static_assert(std::is_same<uint64_t, DISTINCT_NONDISPATCHABLE_PHONY_HANDLE>::val
 // cache pressure.
 inline constexpr size_t kObjectUserDataAlignment = 64;
 static_assert(vku::concurrent::get_hardware_destructive_interference_size() % kObjectUserDataAlignment ==
-              0);  // sanity check on the build machine
+              0); // sanity check on the build machine
 
 class alignas(kObjectUserDataAlignment) ObjectUseData {
   public:
@@ -100,7 +100,7 @@ template <typename T>
 class counter {
   public:
     VulkanObjectType object_type;
-    ValidationObject *object_data;
+    ValidationObject* object_data;
 
     vvl::concurrent_unordered_map<T, std::shared_ptr<ObjectUseData>, 6> object_table;
 
@@ -118,10 +118,13 @@ class counter {
         if (iter != object_table.end()) {
             return iter->second;
         } else {
-            object_data->LogError("UNASSIGNED-Threading-Info", object, loc,
+            object_data->LogError("UNASSIGNED-Threading-Info",
+                                  object,
+                                  loc,
                                   "Couldn't find %s Object 0x%" PRIxLEAST64
                                   ". This should not happen and may indicate a bug in the application.",
-                                  string_VulkanObjectType(object_type), (uint64_t)(object));
+                                  string_VulkanObjectType(object_type),
+                                  (uint64_t)(object));
             return nullptr;
         }
     }
@@ -210,7 +213,7 @@ class counter {
         use_data->RemoveReader();
     }
 
-    counter(VulkanObjectType type = kVulkanObjectTypeUnknown, ValidationObject *val_obj = nullptr) {
+    counter(VulkanObjectType type = kVulkanObjectTypeUnknown, ValidationObject* val_obj = nullptr) {
         object_type = type;
         object_data = val_obj;
     }
@@ -223,11 +226,11 @@ class counter {
         return err_str.str();
     }
 
-    void HandleErrorOnWrite(const std::shared_ptr<ObjectUseData> &use_data, T object, const Location& loc) {
+    void HandleErrorOnWrite(const std::shared_ptr<ObjectUseData>& use_data, T object, const Location& loc) {
         const std::thread::id tid = std::this_thread::get_id();
         const std::string error_message = GetErrorMessage(tid, use_data->thread.load(std::memory_order_relaxed));
-        const bool skip =
-            object_data->LogError("UNASSIGNED-Threading-MultipleThreads-Write", object, loc, "%s", error_message.c_str());
+        const bool skip = object_data->LogError(
+            "UNASSIGNED-Threading-MultipleThreads-Write", object, loc, "%s", error_message.c_str());
         if (skip) {
             // Wait for thread-safe access to object instead of skipping call.
             use_data->WaitForObjectIdle(true);
@@ -239,12 +242,12 @@ class counter {
         }
     }
 
-    void HandleErrorOnRead(const std::shared_ptr<ObjectUseData> &use_data, T object, const Location& loc) {
+    void HandleErrorOnRead(const std::shared_ptr<ObjectUseData>& use_data, T object, const Location& loc) {
         const std::thread::id tid = std::this_thread::get_id();
         // There is a writer of the object.
         const auto error_message = GetErrorMessage(tid, use_data->thread.load(std::memory_order_relaxed));
-        const bool skip =
-            object_data->LogError("UNASSIGNED-Threading-MultipleThreads-Read", object, loc, "%s", error_message.c_str());
+        const bool skip = object_data->LogError(
+            "UNASSIGNED-Threading-MultipleThreads-Read", object, loc, "%s", error_message.c_str());
         if (skip) {
             // Wait for thread-safe access to object instead of skipping call.
             use_data->WaitForObjectIdle(false);
@@ -300,81 +303,79 @@ class ThreadSafety : public ValidationObject {
 
 #include "generated/thread_safety_counter_definitions.h"
 
-#else   // DISTINCT_NONDISPATCHABLE_HANDLES
+#else  // DISTINCT_NONDISPATCHABLE_HANDLES
     // Special entry to allow tracking of command pool Reset and Destroy
     counter<uint64_t> c_VkCommandPoolContents;
 
     counter<uint64_t> c_uint64_t;
-#endif  // DISTINCT_NONDISPATCHABLE_HANDLES
+#endif // DISTINCT_NONDISPATCHABLE_HANDLES
 
     // If this ThreadSafety is for a VkDevice, then parent_instance points to the
     // ThreadSafety object of its parent VkInstance. This is used to get to the counters
     // for objects created with the instance as parent.
-    ThreadSafety *parent_instance;
+    ThreadSafety* parent_instance;
 
-    ThreadSafety(vvl::dispatch::Instance *inst)
-        : BaseClass(inst, LayerObjectTypeThreading),
-          c_VkCommandBuffer(kVulkanObjectTypeCommandBuffer, this),
-          c_VkDevice(kVulkanObjectTypeDevice, this),
-          c_VkInstance(kVulkanObjectTypeInstance, this),
-          c_VkQueue(kVulkanObjectTypeQueue, this),
-          c_VkCommandPoolContents(kVulkanObjectTypeCommandPool, this),
+    ThreadSafety(vvl::dispatch::Instance* inst) :
+        BaseClass(inst, LayerObjectTypeThreading), c_VkCommandBuffer(kVulkanObjectTypeCommandBuffer, this),
+        c_VkDevice(kVulkanObjectTypeDevice, this), c_VkInstance(kVulkanObjectTypeInstance, this),
+        c_VkQueue(kVulkanObjectTypeQueue, this), c_VkCommandPoolContents(kVulkanObjectTypeCommandPool, this),
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 #include "generated/thread_safety_counter_instances.h"
-#else   // DISTINCT_NONDISPATCHABLE_HANDLES
-          c_uint64_t(kVulkanObjectTypeUnknown, this),
-#endif  // DISTINCT_NONDISPATCHABLE_HANDLES
-          parent_instance(nullptr) {
+#else  // DISTINCT_NONDISPATCHABLE_HANDLES
+        c_uint64_t(kVulkanObjectTypeUnknown, this),
+#endif // DISTINCT_NONDISPATCHABLE_HANDLES
+        parent_instance(nullptr) {
     }
 
-    ThreadSafety(vvl::dispatch::Device *dev, ThreadSafety *instance_vo)
-        : BaseClass(dev, LayerObjectTypeThreading),
-          c_VkCommandBuffer(kVulkanObjectTypeCommandBuffer, this),
-          c_VkDevice(kVulkanObjectTypeDevice, this),
-          c_VkInstance(kVulkanObjectTypeInstance, this),
-          c_VkQueue(kVulkanObjectTypeQueue, this),
-          c_VkCommandPoolContents(kVulkanObjectTypeCommandPool, this),
+    ThreadSafety(vvl::dispatch::Device* dev, ThreadSafety* instance_vo) :
+        BaseClass(dev, LayerObjectTypeThreading), c_VkCommandBuffer(kVulkanObjectTypeCommandBuffer, this),
+        c_VkDevice(kVulkanObjectTypeDevice, this), c_VkInstance(kVulkanObjectTypeInstance, this),
+        c_VkQueue(kVulkanObjectTypeQueue, this), c_VkCommandPoolContents(kVulkanObjectTypeCommandPool, this),
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 #include "generated/thread_safety_counter_instances.h"
-#else   // DISTINCT_NONDISPATCHABLE_HANDLES
-          c_uint64_t(kVulkanObjectTypeUnknown, this),
-#endif  // DISTINCT_NONDISPATCHABLE_HANDLES
-          parent_instance(instance_vo) {
+#else  // DISTINCT_NONDISPATCHABLE_HANDLES
+        c_uint64_t(kVulkanObjectTypeUnknown, this),
+#endif // DISTINCT_NONDISPATCHABLE_HANDLES
+        parent_instance(instance_vo) {
     }
 
-#define WRAPPER(type)                                                                                 \
+#define WRAPPER(type)                                                                               \
     void StartWriteObject(type object, const Location& loc) { c_##type.StartWrite(object, loc); }   \
     void FinishWriteObject(type object, const Location& loc) { c_##type.FinishWrite(object, loc); } \
     void StartReadObject(type object, const Location& loc) { c_##type.StartRead(object, loc); }     \
     void FinishReadObject(type object, const Location& loc) { c_##type.FinishRead(object, loc); }   \
-    void CreateObject(type object) { c_##type.CreateObject(object); }                                 \
+    void CreateObject(type object) { c_##type.CreateObject(object); }                               \
     void DestroyObject(type object) { c_##type.DestroyObject(object); }
 
-#define WRAPPER_PARENT_INSTANCE(type)                                                                                           \
-    void StartWriteObjectParentInstance(type object, const Location& loc) {                                                       \
-        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object, loc);                                       \
-    }                                                                                                                           \
-    void FinishWriteObjectParentInstance(type object, const Location& loc) {                                                      \
-        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object, loc);                                      \
-    }                                                                                                                           \
-    void StartReadObjectParentInstance(type object, const Location& loc) {                                                        \
-        (parent_instance ? parent_instance : this)->c_##type.StartRead(object, loc);                                        \
-    }                                                                                                                           \
-    void FinishReadObjectParentInstance(type object, const Location& loc) {                                                       \
-        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object, loc);                                       \
-    }                                                                                                                           \
-    void CreateObjectParentInstance(type object) { (parent_instance ? parent_instance : this)->c_##type.CreateObject(object); } \
-    void DestroyObjectParentInstance(type object) { (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object); }
+#define WRAPPER_PARENT_INSTANCE(type)                                                  \
+    void StartWriteObjectParentInstance(type object, const Location& loc) {            \
+        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object, loc);  \
+    }                                                                                  \
+    void FinishWriteObjectParentInstance(type object, const Location& loc) {           \
+        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object, loc); \
+    }                                                                                  \
+    void StartReadObjectParentInstance(type object, const Location& loc) {             \
+        (parent_instance ? parent_instance : this)->c_##type.StartRead(object, loc);   \
+    }                                                                                  \
+    void FinishReadObjectParentInstance(type object, const Location& loc) {            \
+        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object, loc);  \
+    }                                                                                  \
+    void CreateObjectParentInstance(type object) {                                     \
+        (parent_instance ? parent_instance : this)->c_##type.CreateObject(object);     \
+    }                                                                                  \
+    void DestroyObjectParentInstance(type object) {                                    \
+        (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object);    \
+    }
 
     WRAPPER_PARENT_INSTANCE(VkDevice)
     WRAPPER_PARENT_INSTANCE(VkInstance)
     WRAPPER(VkQueue)
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 #include "generated/thread_safety_counter_bodies.h"
-#else   // DISTINCT_NONDISPATCHABLE_HANDLES
+#else  // DISTINCT_NONDISPATCHABLE_HANDLES
     WRAPPER(uint64_t)
     WRAPPER_PARENT_INSTANCE(uint64_t)
-#endif  // DISTINCT_NONDISPATCHABLE_HANDLES
+#endif // DISTINCT_NONDISPATCHABLE_HANDLES
 
     void CreateObject(VkCommandBuffer object) { c_VkCommandBuffer.CreateObject(object); }
     void DestroyObject(VkCommandBuffer object) { c_VkCommandBuffer.DestroyObject(object); }
@@ -405,8 +406,8 @@ class ThreadSafety : public ValidationObject {
         if (iter != command_pool_map.end()) {
             VkCommandPool pool = iter->second;
             // We set up a read guard against the "Contents" counter to catch conflict vs. vkResetCommandPool and
-            // vkDestroyCommandPool while *not* establishing a read guard against the command pool counter itself to avoid false
-            // positive for non-externally sync'd command buffers
+            // vkDestroyCommandPool while *not* establishing a read guard against the command pool counter itself to
+            // avoid false positive for non-externally sync'd command buffers
             c_VkCommandPoolContents.StartRead(pool, loc);
         }
         c_VkCommandBuffer.StartRead(object, loc);
@@ -420,41 +421,51 @@ class ThreadSafety : public ValidationObject {
         }
     }
 
-    void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                  VkDisplayPlanePropertiesKHR *pProperties,
-                                                                  const RecordObject &record_obj) override;
+    void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                  uint32_t* pPropertyCount,
+                                                                  VkDisplayPlanePropertiesKHR* pProperties,
+                                                                  const RecordObject& record_obj) override;
 
-    void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                   VkDisplayPlaneProperties2KHR *pProperties,
-                                                                   const RecordObject &record_obj) override;
+    void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                   uint32_t* pPropertyCount,
+                                                                   VkDisplayPlaneProperties2KHR* pProperties,
+                                                                   const RecordObject& record_obj) override;
 
-    void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                             VkDisplayPropertiesKHR *pProperties,
-                                                             const RecordObject &record_obj) override;
+    void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                             uint32_t* pPropertyCount,
+                                                             VkDisplayPropertiesKHR* pProperties,
+                                                             const RecordObject& record_obj) override;
 
-    void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                              VkDisplayProperties2KHR *pProperties,
-                                                              const RecordObject &record_obj) override;
+    void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                              uint32_t* pPropertyCount,
+                                                              VkDisplayProperties2KHR* pProperties,
+                                                              const RecordObject& record_obj) override;
 
     void PreCallRecordGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                      const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
-                                                      VkDisplayPlaneCapabilities2KHR *pCapabilities,
-                                                      const RecordObject &record_obj) override;
+                                                      const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
+                                                      VkDisplayPlaneCapabilities2KHR* pCapabilities,
+                                                      const RecordObject& record_obj) override;
 
     void PostCallRecordGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                       const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
-                                                       VkDisplayPlaneCapabilities2KHR *pCapabilities,
-                                                       const RecordObject &record_obj) override;
+                                                       const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
+                                                       VkDisplayPlaneCapabilities2KHR* pCapabilities,
+                                                       const RecordObject& record_obj) override;
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-    void PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display *dpy, RROutput rrOutput,
-                                                VkDisplayKHR *pDisplay, const RecordObject &record_obj) override;
+    void PostCallRecordGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice,
+                                                Display* dpy,
+                                                RROutput rrOutput,
+                                                VkDisplayKHR* pDisplay,
+                                                const RecordObject& record_obj) override;
 
-#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-    void PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId, VkDisplayKHR *display,
-                                        const RecordObject &record_obj) override;
+    void PostCallRecordGetDrmDisplayEXT(VkPhysicalDevice physicalDevice,
+                                        int32_t drmFd,
+                                        uint32_t connectorId,
+                                        VkDisplayKHR* display,
+                                        const RecordObject& record_obj) override;
 
 #include "generated/thread_safety_commands.h"
 };

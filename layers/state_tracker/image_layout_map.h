@@ -24,15 +24,15 @@
 
 #include "containers/range_vector.h"
 #include "containers/subresource_adapter.h"
+#include "error_message/logging.h"
 #include "utils/vk_layer_utils.h"
 #include "vulkan/vulkan.h"
-#include "error_message/logging.h"
 
 namespace vvl {
 class Image;
 class ImageView;
 class CommandBuffer;
-}  // namespace vvl
+} // namespace vvl
 
 namespace image_layout_map {
 const static VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
@@ -44,8 +44,8 @@ using Encoder = subresource_adapter::RangeEncoder;
 using RangeGenerator = subresource_adapter::RangeGenerator;
 
 struct InitialLayoutState {
-    VkImageView image_view;          // For relaxed matching rule evaluation, else VK_NULL_HANDLE
-    VkImageAspectFlags aspect_mask;  // For relaxed matching rules... else 0
+    VkImageView image_view;         // For relaxed matching rule evaluation, else VK_NULL_HANDLE
+    VkImageAspectFlags aspect_mask; // For relaxed matching rules... else 0
     LoggingLabel label;
     InitialLayoutState(const vvl::CommandBuffer& cb_state_, const vvl::ImageView* view_state_);
     InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0), label() {}
@@ -63,8 +63,11 @@ class ImageLayoutRegistry {
 
         bool operator==(const SubresourceLayout& rhs) const;
         bool operator!=(const SubresourceLayout& rhs) const { return !(*this == rhs); }
-        SubresourceLayout(const VkImageSubresource& subresource_, VkImageLayout current_layout_, VkImageLayout initial_layout_)
-            : subresource(subresource_), current_layout(current_layout_), initial_layout(initial_layout_) {}
+        SubresourceLayout(const VkImageSubresource& subresource_,
+                          VkImageLayout current_layout_,
+                          VkImageLayout initial_layout_) :
+            subresource(subresource_),
+            current_layout(current_layout_), initial_layout(initial_layout_) {}
         SubresourceLayout() = default;
     };
 
@@ -73,9 +76,11 @@ class ImageLayoutRegistry {
         VkImageLayout current_layout;
         InitialLayoutState* state;
 
-        LayoutEntry(VkImageLayout initial_ = kInvalidLayout, VkImageLayout current_ = kInvalidLayout,
-                    InitialLayoutState* s = nullptr)
-            : initial_layout(initial_), current_layout(current_), state(s) {}
+        LayoutEntry(VkImageLayout initial_ = kInvalidLayout,
+                    VkImageLayout current_ = kInvalidLayout,
+                    InitialLayoutState* s = nullptr) :
+            initial_layout(initial_),
+            current_layout(current_), state(s) {}
 
         bool operator!=(const LayoutEntry& rhs) const {
             return initial_layout != rhs.initial_layout || current_layout != rhs.current_layout || state != rhs.state;
@@ -111,11 +116,15 @@ class ImageLayoutRegistry {
     using LayoutMap = subresource_adapter::BothRangeMap<LayoutEntry, 16>;
     using RangeType = LayoutMap::key_type;
 
-    bool SetSubresourceRangeLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range, VkImageLayout layout,
+    bool SetSubresourceRangeLayout(const vvl::CommandBuffer& cb_state,
+                                   const VkImageSubresourceRange& range,
+                                   VkImageLayout layout,
                                    VkImageLayout expected_layout = kInvalidLayout);
-    void SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
+    void SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state,
+                                          const VkImageSubresourceRange& range,
                                           VkImageLayout layout);
-    void SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
+    void SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state,
+                                          VkImageLayout layout,
                                           const vvl::ImageView& view_state);
     bool UpdateFrom(const ImageLayoutRegistry& from);
     uintptr_t CompatibilityKey() const;
@@ -143,13 +152,16 @@ class ImageLayoutRegistry {
         return AnyInRange(RangeGen(normalized_range), std::move(func));
     }
 
-    bool AnyInRange(const RangeGenerator& gen, std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
+    bool AnyInRange(const RangeGenerator& gen,
+                    std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
         return AnyInRange(RangeGenerator(gen), std::move(func));
     }
 
-    bool AnyInRange(RangeGenerator&& gen, std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
+    bool AnyInRange(RangeGenerator&& gen,
+                    std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
         for (; gen->non_empty(); ++gen) {
-            for (auto pos = layout_map_.lower_bound(*gen); (pos != layout_map_.end()) && (gen->intersects(pos->first)); ++pos) {
+            for (auto pos = layout_map_.lower_bound(*gen); (pos != layout_map_.end()) && (gen->intersects(pos->first));
+                 ++pos) {
                 if (func(pos->first, pos->second)) {
                     return true;
                 }
@@ -168,7 +180,7 @@ class ImageLayoutRegistry {
     LayoutMap layout_map_;
     InitialLayoutStates initial_layout_states_;
 };
-}  // namespace image_layout_map
+} // namespace image_layout_map
 
 class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkImageLayout, 16> {
   public:
@@ -179,7 +191,8 @@ class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkIma
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
-    bool AnyInRange(RangeGenerator& gen, std::function<bool(const key_type& range, const mapped_type& state)>&& func) const;
+    bool AnyInRange(RangeGenerator& gen,
+                    std::function<bool(const key_type& range, const mapped_type& state)>&& func) const;
 
   private:
     mutable std::shared_mutex lock_;

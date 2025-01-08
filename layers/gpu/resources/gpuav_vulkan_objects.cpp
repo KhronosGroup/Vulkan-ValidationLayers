@@ -17,26 +17,27 @@
 
 #include "gpu/resources/gpuav_vulkan_objects.h"
 
-#include "gpu/core/gpuav.h"
 #include "generated/dispatch_functions.h"
+#include "gpu/core/gpuav.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 namespace gpuav {
 namespace vko {
 
 // Implementation for Descriptor Set Manager class
-DescriptorSetManager::DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set)
-    : device(device), num_bindings_in_set(num_bindings_in_set) {}
+DescriptorSetManager::DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set) :
+    device(device), num_bindings_in_set(num_bindings_in_set) {}
 
 DescriptorSetManager::~DescriptorSetManager() {
-    for (auto &pool : desc_pool_map_) {
+    for (auto& pool : desc_pool_map_) {
         DispatchDestroyDescriptorPool(device, pool.first, nullptr);
     }
     desc_pool_map_.clear();
 }
 
-VkResult DescriptorSetManager::GetDescriptorSet(VkDescriptorPool *out_desc_pool, VkDescriptorSetLayout ds_layout,
-                                                VkDescriptorSet *out_desc_sets) {
+VkResult DescriptorSetManager::GetDescriptorSet(VkDescriptorPool* out_desc_pool,
+                                                VkDescriptorSetLayout ds_layout,
+                                                VkDescriptorSet* out_desc_sets) {
     std::vector<VkDescriptorSet> desc_sets;
     VkResult result = GetDescriptorSets(1, out_desc_pool, ds_layout, &desc_sets);
     assert(result == VK_SUCCESS);
@@ -46,8 +47,10 @@ VkResult DescriptorSetManager::GetDescriptorSet(VkDescriptorPool *out_desc_pool,
     return result;
 }
 
-VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
-                                                 std::vector<VkDescriptorSet> *out_desc_sets) {
+VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count,
+                                                 VkDescriptorPool* out_pool,
+                                                 VkDescriptorSetLayout ds_layout,
+                                                 std::vector<VkDescriptorSet>* out_desc_sets) {
     auto guard = Lock();
 
     VkResult result = VK_SUCCESS;
@@ -60,7 +63,7 @@ VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPoo
     out_desc_sets->clear();
     out_desc_sets->resize(count);
 
-    for (auto &[desc_pool, pool_tracker] : desc_pool_map_) {
+    for (auto& [desc_pool, pool_tracker] : desc_pool_map_) {
         if (pool_tracker.used + count < pool_tracker.size) {
             desc_pool_to_use = desc_pool;
             break;
@@ -74,14 +77,14 @@ VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPoo
         // hardcoded like so, should be dynamic depending on the descriptor sets
         // to be created. Not too dramatic as Vulkan will gracefully fail if there is a
         // mismatch between this and created descriptor sets.
-        const std::array<VkDescriptorPoolSize, 2> pool_sizes = {{{
-                                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                                                     max_sets * num_bindings_in_set,
-                                                                 },
-                                                                 {
-                                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
-                                                                     max_sets * num_bindings_in_set,
-                                                                 }}};
+        const std::array<VkDescriptorPoolSize, 2> pool_sizes = { { {
+                                                                       VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                                                       max_sets * num_bindings_in_set,
+                                                                   },
+                                                                   {
+                                                                       VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
+                                                                       max_sets * num_bindings_in_set,
+                                                                   } } };
 
         VkDescriptorPoolCreateInfo desc_pool_info = vku::InitStructHelper();
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
@@ -138,15 +141,15 @@ void DescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDe
 }
 
 void SharedResourcesCache::Clear() {
-    for (auto &[key, value] : shared_validation_resources_map_) {
-        auto &[object, destructor] = value;
+    for (auto& [key, value] : shared_validation_resources_map_) {
+        auto& [object, destructor] = value;
         destructor(object);
     }
     shared_validation_resources_map_.clear();
 }
 
-void *Buffer::MapMemory(const Location &loc) const {
-    void *buffer_ptr = nullptr;
+void* Buffer::MapMemory(const Location& loc) const {
+    void* buffer_ptr = nullptr;
     VkResult result = vmaMapMemory(gpuav.vma_allocator_, allocation, &buffer_ptr);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, loc, "Unable to map device memory.");
@@ -155,26 +158,29 @@ void *Buffer::MapMemory(const Location &loc) const {
     return buffer_ptr;
 }
 
-void Buffer::UnmapMemory() const { vmaUnmapMemory(gpuav.vma_allocator_, allocation); }
+void Buffer::UnmapMemory() const {
+    vmaUnmapMemory(gpuav.vma_allocator_, allocation);
+}
 
-void Buffer::FlushAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
+void Buffer::FlushAllocation(const Location& loc, VkDeviceSize offset, VkDeviceSize size) const {
     VkResult result = vmaFlushAllocation(gpuav.vma_allocator_, allocation, offset, size);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, loc, "Unable to flush device memory.");
     }
 }
 
-void Buffer::InvalidateAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
+void Buffer::InvalidateAllocation(const Location& loc, VkDeviceSize offset, VkDeviceSize size) const {
     VkResult result = vmaInvalidateAllocation(gpuav.vma_allocator_, allocation, offset, size);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, loc, "Unable to invalidate device memory.");
     }
 }
 
-bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                    const VmaAllocationCreateInfo *allocation_create_info) {
-    VkResult result =
-        vmaCreateBuffer(gpuav.vma_allocator_, buffer_create_info, allocation_create_info, &buffer, &allocation, nullptr);
+bool Buffer::Create(const Location& loc,
+                    const VkBufferCreateInfo* buffer_create_info,
+                    const VmaAllocationCreateInfo* allocation_create_info) {
+    VkResult result = vmaCreateBuffer(
+        gpuav.vma_allocator_, buffer_create_info, allocation_create_info, &buffer, &allocation, nullptr);
     if (result != VK_SUCCESS) {
         gpuav.InternalVmaError(gpuav.device, loc, "Unable to allocate device memory for internal buffer.");
         return false;
@@ -207,18 +213,20 @@ VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayo
     return descriptor.second;
 }
 
-void GpuResourcesManager::ManageBuffer(Buffer mem_buffer) { buffers_.emplace_back(mem_buffer); }
+void GpuResourcesManager::ManageBuffer(Buffer mem_buffer) {
+    buffers_.emplace_back(mem_buffer);
+}
 
 void GpuResourcesManager::DestroyResources() {
-    for (auto &[desc_pool, desc_set] : descriptors_) {
+    for (auto& [desc_pool, desc_set] : descriptors_) {
         descriptor_set_manager_.PutBackDescriptorSet(desc_pool, desc_set);
     }
     descriptors_.clear();
 
-    for (auto &buffer : buffers_) {
+    for (auto& buffer : buffers_) {
         buffer.Destroy();
     }
     buffers_.clear();
 }
-}  // namespace vko
-}  // namespace gpuav
+} // namespace vko
+} // namespace gpuav

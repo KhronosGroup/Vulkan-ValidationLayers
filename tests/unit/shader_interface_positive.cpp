@@ -11,9 +11,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 
 class PositiveShaderInterface : public VkLayerTest {};
@@ -24,7 +24,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
                 #version 450
 
                 layout(location = 0, component = 0) out vec2 rg;
@@ -73,7 +73,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
             )glsl";
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
                 #version 450
 
                 layout(location = 0, component = 0) in float r;
@@ -119,8 +119,8 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
             )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -131,7 +131,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputStructComponents) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
                 #version 450
 
                 struct R {
@@ -148,7 +148,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputStructComponents) {
             )glsl";
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
                 #version 450
 
                 struct R {
@@ -165,8 +165,8 @@ TEST_F(PositiveShaderInterface, InputAndOutputStructComponents) {
             )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -185,7 +185,7 @@ TEST_F(PositiveShaderInterface, RelaxedBlockLayout) {
     // "Structure id 2 decorated as Block for variable in Uniform storage class
     // must follow standard uniform buffer layout rules: member 1 at offset 4 is not aligned to 16"
 
-    const char *spv_source = R"(
+    const char* spv_source = R"(
                   OpCapability Shader
                   OpMemoryModel Logical GLSL450
                   OpEntryPoint Vertex %main "main"
@@ -225,7 +225,7 @@ TEST_F(PositiveShaderInterface, UboStd430Layout) {
     // must follow standard uniform buffer layout rules: member 0 is an array
     // with stride 4 not satisfying alignment to 16"
 
-    const char *spv_source = R"(
+    const char* spv_source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Vertex %main "main"
@@ -268,7 +268,7 @@ TEST_F(PositiveShaderInterface, ScalarBlockLayout) {
     // "Structure id 2 decorated as Block for variable in Uniform storage class
     // must follow standard uniform buffer layout rules: member 1 at offset 4 is not aligned to 16"
 
-    const char *spv_source = R"(
+    const char* spv_source = R"(
                   OpCapability Shader
                   OpMemoryModel Logical GLSL450
                   OpEntryPoint Vertex %main "main"
@@ -296,14 +296,14 @@ TEST_F(PositiveShaderInterface, ScalarBlockLayout) {
 }
 
 TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenButMasked) {
-    TEST_DESCRIPTION(
-        "Test that no error is produced when the fragment shader fails to declare an output, but the corresponding attachment's "
-        "write mask is 0.");
+    TEST_DESCRIPTION("Test that no error is produced when the fragment shader fails to declare an output, but the "
+                     "corresponding attachment's "
+                     "write mask is 0.");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         void main() {}
     )glsl";
@@ -315,10 +315,10 @@ TEST_F(PositiveShaderInterface, FragmentOutputNotWrittenButMasked) {
 }
 
 TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
-    TEST_DESCRIPTION(
-        "Test that pipeline validation accepts the relaxed type matching rules set out in VK_KHR_maintenance4 (default in Vulkan "
-        "1.3) device extension:"
-        "fundamental type must match, and producer side must have at least as many components");
+    TEST_DESCRIPTION("Test that pipeline validation accepts the relaxed type matching rules set out in "
+                     "VK_KHR_maintenance4 (default in Vulkan "
+                     "1.3) device extension:"
+                     "fundamental type must match, and producer side must have at least as many components");
 
     SetTargetApiVersion(VK_API_VERSION_1_1); // At least 1.1 is required for maintenance4
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -327,7 +327,7 @@ TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
 
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location=0) out vec3 x;
         layout(location=1) out ivec3 y;
@@ -337,7 +337,7 @@ TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
            x = vec3(0); y = ivec3(0); z = vec3(0);
         }
     )glsl";
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 color;
         layout(location=0) in float x;
@@ -352,18 +352,19 @@ TEST_F(PositiveShaderInterface, RelaxedTypeMatch) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveShaderInterface, TessPerVertex) {
-    TEST_DESCRIPTION("Test that pipeline validation accepts per-vertex variables passed between the TCS and TES stages");
+    TEST_DESCRIPTION(
+        "Test that pipeline validation accepts per-vertex variables passed between the TCS and TES stages");
 
     AddRequiredFeature(vkt::Feature::tessellationShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *tcsSource = R"glsl(
+    char const* tcsSource = R"glsl(
         #version 450
         layout(location=0) out int x[];
         layout(vertices=3) out;
@@ -373,7 +374,7 @@ TEST_F(PositiveShaderInterface, TessPerVertex) {
            x[gl_InvocationID] = gl_InvocationID;
         }
     )glsl";
-    char const *tesSource = R"glsl(
+    char const* tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         layout(location=0) in int x[];
@@ -388,28 +389,35 @@ TEST_F(PositiveShaderInterface, TessPerVertex) {
     VkShaderObj tes(this, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+    VkPipelineInputAssemblyStateCreateInfo iasci{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                                                  nullptr,
+                                                  0,
+                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+                                                  VK_FALSE };
 
-    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+    VkPipelineTessellationStateCreateInfo tsci{
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3
+    };
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pTessellationState = &tsci;
     pipe.gp_ci_.pInputAssemblyState = &iasci;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = {
+        vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()
+    };
     pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveShaderInterface, GeometryInputBlockPositive) {
-    TEST_DESCRIPTION(
-        "Test that pipeline validation accepts a user-defined interface block passed into the geometry shader. This is interesting "
-        "because the 'extra' array level is not present on the member type, but on the block instance.");
+    TEST_DESCRIPTION("Test that pipeline validation accepts a user-defined interface block passed into the geometry "
+                     "shader. This is interesting "
+                     "because the 'extra' array level is not present on the member type, but on the block instance.");
 
     AddRequiredFeature(vkt::Feature::geometryShader);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
 
         layout(location = 0) out VertexData { vec4 x; } gs_out;
@@ -419,7 +427,7 @@ TEST_F(PositiveShaderInterface, GeometryInputBlockPositive) {
         }
     )glsl";
 
-    char const *gsSource = R"glsl(
+    char const* gsSource = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip, max_vertices=3) out;
@@ -435,7 +443,7 @@ TEST_F(PositiveShaderInterface, GeometryInputBlockPositive) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -445,7 +453,7 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
         layout(location=0) out vec4 color;
@@ -455,16 +463,18 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    const vkt::DescriptorSetLayout dsl(*m_device, {dslb});
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
+    VkDescriptorSetLayoutBinding dslb = {
+        0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr
+    };
+    const vkt::DescriptorSetLayout dsl(*m_device, { dslb });
+    const vkt::PipelineLayout pl(*m_device, { &dsl });
 
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentDescription(
+        VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+    rp.AddAttachmentReference({ 1, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddColorAttachment(0);
     rp.AddInputAttachment(1);
     rp.CreateRenderPass();
@@ -487,7 +497,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentMissingNotRead) {
     // void main() {
     //     // (not actually called) color = subpassLoad(xs[0]);
     // }
-    const char *fsSource = R"(
+    const char* fsSource = R"(
                OpCapability Shader
                OpCapability InputAttachment
                OpMemoryModel Logical GLSL450
@@ -521,9 +531,9 @@ TEST_F(PositiveShaderInterface, InputAttachmentMissingNotRead) {
 
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -537,12 +547,12 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(m_render_target_fmt);
     // index 0 is unused
-    rp.AddAttachmentReference({VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL });
     // index 1 is is valid (for both color and input)
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     // index 2 and 3 point to same image as index 1
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddInputAttachment(0);
     rp.AddInputAttachment(1);
     rp.AddInputAttachment(2);
@@ -552,7 +562,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
 
     // use static array of 2 and index into element 1 to read
     {
-        const char *fs_source = R"glsl(
+        const char* fs_source = R"glsl(
             #version 460
             layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[2];
             layout(location=0) out vec4 color;
@@ -562,9 +572,11 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         )glsl";
         VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        const auto set_info = [&](CreatePipelineHelper& helper) {
+            helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+            helper.dsl_bindings_ = {
+                { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }
+            };
             helper.gp_ci_.renderPass = rp.Handle();
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -572,7 +584,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
 
     // use undefined size array and index into element 1 to read
     {
-        const char *fs_source = R"glsl(
+        const char* fs_source = R"glsl(
             #version 460
             layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[];
             layout(location=0) out vec4 color;
@@ -582,9 +594,11 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         )glsl";
         VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        const auto set_info = [&](CreatePipelineHelper& helper) {
+            helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+            helper.dsl_bindings_ = {
+                { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }
+            };
             helper.gp_ci_.renderPass = rp.Handle();
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -593,7 +607,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
     // Array of size 1
     // loads from index 0, but not the invalid index 0 since has offest of 3
     {
-        const char *fs_source = R"glsl(
+        const char* fs_source = R"glsl(
             #version 460
             layout(input_attachment_index=3, set=0, binding=0) uniform subpassInput xs[1];
             layout(location=0) out vec4 color;
@@ -603,9 +617,11 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         )glsl";
         VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        const auto set_info = [&](CreatePipelineHelper& helper) {
+            helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+            helper.dsl_bindings_ = {
+                { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }
+            };
             helper.gp_ci_.renderPass = rp.Handle();
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -613,7 +629,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
 
     // Index from non-zero
     {
-        const char *fs_source = R"glsl(
+        const char* fs_source = R"glsl(
             #version 460
             layout(input_attachment_index=2, set=0, binding=0) uniform subpassInput xs[2];
             layout(location=0) out vec4 color;
@@ -623,9 +639,11 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         )glsl";
         VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
 
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        const auto set_info = [&](CreatePipelineHelper& helper) {
+            helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+            helper.dsl_bindings_ = {
+                { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }
+            };
             helper.gp_ci_.renderPass = rp.Handle();
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -643,12 +661,12 @@ TEST_F(PositiveShaderInterface, InputAttachmentRuntimeArray) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(m_render_target_fmt);
     // index 0 is unused
-    rp.AddAttachmentReference({VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL });
     // index 1 is is valid (for both color and input)
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     // index 2 and 3 point to same image as index 1
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddInputAttachment(0);
     rp.AddInputAttachment(1);
     rp.AddInputAttachment(2);
@@ -658,7 +676,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentRuntimeArray) {
 
     // use OpTypeRuntimeArray and index into it
     // This is something that is needed to be validated at draw time, so should not be an error
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 460
         #extension GL_EXT_nonuniform_qualifier : require
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[];
@@ -670,14 +688,13 @@ TEST_F(PositiveShaderInterface, InputAttachmentRuntimeArray) {
     )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+                                 { 3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
         helper.gp_ci_.renderPass = rp.Handle();
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-
 }
 TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     TEST_DESCRIPTION("Input Attachment sharing same variable, but different aspect");
@@ -691,9 +708,9 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     rp.AddAttachmentDescription(m_render_target_fmt);
     rp.AddAttachmentDescription(ds_format);
     // index 0 = color | index 1 = depth | index 2 = stencil
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
+    rp.AddAttachmentReference({ 1, VK_IMAGE_LAYOUT_GENERAL });
+    rp.AddAttachmentReference({ 1, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddInputAttachment(0);
     rp.AddInputAttachment(1);
     rp.AddInputAttachment(2);
@@ -701,7 +718,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
     rp.CreateRenderPass();
 
     // Depth and Stencil use same index, but valid because differnet image aspect masks
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
             #version 460
             layout(input_attachment_index = 0, set = 0, binding = 0) uniform subpassInput i_color;
             layout(input_attachment_index = 1, set = 0, binding = 1) uniform subpassInput i_depth;
@@ -717,19 +734,19 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
         )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                {2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+                                 { 1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+                                 { 2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
         helper.gp_ci_.renderPass = rp.Handle();
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 TEST_F(PositiveShaderInterface, FragmentOutputNotConsumedButAlphaToCoverageEnabled) {
-    TEST_DESCRIPTION(
-        "Test that no warning is produced when writing to non-existing color attachment if alpha to coverage is enabled.");
+    TEST_DESCRIPTION("Test that no warning is produced when writing to non-existing color attachment if alpha to "
+                     "coverage is enabled.");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget(0u);
@@ -738,7 +755,7 @@ TEST_F(PositiveShaderInterface, FragmentOutputNotConsumedButAlphaToCoverageEnabl
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_TRUE;
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ms_ci_ = ms_state_ci;
         helper.cb_ci_.attachmentCount = 0;
     };
@@ -751,7 +768,7 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageOutputIndex0) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget(0u);
 
-    const char *fs_src = R"glsl(
+    const char* fs_src = R"glsl(
         #version 460
         layout(location = 0, index = 0) out vec4 c0;
         void main() {
@@ -764,8 +781,8 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageOutputIndex0) {
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_TRUE;
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
         helper.ms_ci_ = ms_state_ci;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -803,7 +820,7 @@ TEST_F(PositiveShaderInterface, DISABLED_InputOutputMatch2) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -873,18 +890,22 @@ TEST_F(PositiveShaderInterface, InputOutputMatch) {
     vertex_input_attribute_descriptions[3].format = VK_FORMAT_R8G8B8A8_UNORM;
     vertex_input_attribute_descriptions[3].offset = 96;
 
-    OneOffDescriptorSet ds(
-        m_device, {
-                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                  });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0,
+                                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                 1,
+                                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                 nullptr },
+                           });
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 4;
     pipe.vi_ci_.pVertexAttributeDescriptions = vertex_input_attribute_descriptions;
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &ds.layout_ });
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -899,8 +920,14 @@ TEST_F(PositiveShaderInterface, InputOutputMatch) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &buffer_handle, &offset);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &ds.set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
@@ -943,7 +970,7 @@ TEST_F(PositiveShaderInterface, NestedStructs) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -953,7 +980,7 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageOffsetToAlpha) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget(0u);
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0, component = 3) out float x;
         void main(){
@@ -966,8 +993,8 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageOffsetToAlpha) {
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_TRUE;
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
         helper.ms_ci_ = ms_state_ci;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -979,7 +1006,7 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget(0u);
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         // Just need to declare variable
         layout(location=0) out vec4 fragData[4];
@@ -992,8 +1019,8 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageArray) {
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state_ci.alphaToCoverageEnable = VK_TRUE;
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
         helper.ms_ci_ = ms_state_ci;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -1008,7 +1035,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         struct S {
             float b;
@@ -1024,7 +1051,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         struct S {
             float b;
@@ -1044,8 +1071,8 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockStructArray) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -1056,7 +1083,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructLastElementArra
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         struct A {
             float a0_;
@@ -1079,7 +1106,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructLastElementArra
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         struct A {
             float a0_;
@@ -1106,8 +1133,8 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructLastElementArra
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -1118,7 +1145,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         struct A {
             float a0_;
@@ -1141,7 +1168,7 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructArray) {
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         struct A {
             float a0_;
@@ -1168,8 +1195,8 @@ TEST_F(PositiveShaderInterface, VsFsTypeMismatchBlockNestedStructArray) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -1180,13 +1207,13 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location=0) out float[4][2][2] x;
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0) in float[4][2][2] x;
         layout(location=0) out float color;
@@ -1196,8 +1223,8 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -1211,13 +1238,13 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayVertex) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location=0) out float[4][3][2] x;
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0) in float[4][2][2] x;
         layout(location=0) out float color;
@@ -1227,8 +1254,8 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayVertex) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -1242,13 +1269,13 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location=0) out float[4][3][2] x; // 24 locations
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0) in float[3][2][4] x; // 24 locations
         layout(location=0) out float color;
@@ -1258,8 +1285,8 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -1273,13 +1300,13 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims2) {
         GTEST_SKIP() << "maxVertexOutputComponents is too low";
     }
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location=0) out float[4][3][2] x; // 24 locations
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0) in float[24] x;
         layout(location=0) out float color;
@@ -1289,8 +1316,8 @@ TEST_F(PositiveShaderInterface, MultidimensionalArrayDims2) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -1306,7 +1333,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is too low";
     }
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location=0) out f64vec3[2][2] x; // take 2 locations each (total 8)
@@ -1314,7 +1341,7 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
         void main() {}
     )glsl";
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location=0) flat in f64vec3[2][2] x;
@@ -1325,8 +1352,8 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -1343,7 +1370,7 @@ TEST_F(PositiveShaderInterface, PackingInsideArray) {
     // layout(location = 0, component = 1) out float[2] x;
     // layout(location = 1, component = 0) out int y;
     // layout(location = 1, component = 2) out int z;
-    char const *vsSource = R"(
+    char const* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Vertex %main "main" %x %y %z
@@ -1376,7 +1403,7 @@ TEST_F(PositiveShaderInterface, PackingInsideArray) {
     // layout(location = 1, component = 1) in float x2;
     // layout(location = 1, component = 2) flat in int z;
     // layout(location=0) out float color;
-    char const *fsSource = R"(
+    char const* fsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main" %x1 %y %x2 %z %color
@@ -1413,8 +1440,8 @@ TEST_F(PositiveShaderInterface, PackingInsideArray) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -1424,7 +1451,7 @@ TEST_F(PositiveShaderInterface, MultipleFragmentAttachment) {
     RETURN_IF_SKIP(Init());
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 color[2];
         void main() {
@@ -1435,20 +1462,32 @@ TEST_F(PositiveShaderInterface, MultipleFragmentAttachment) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentDescription(
+        VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentDescription(
+        VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+    rp.AddAttachmentReference({ 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
     rp.AddColorAttachment(0);
     rp.AddColorAttachment(1);
     rp.CreateRenderPass();
 
-    VkPipelineColorBlendAttachmentState cb_as[2] = {{VK_FALSE, VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD,
-                                                     VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD, 0xf},
-                                                    {VK_FALSE, VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD,
-                                                     VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD, 0xf}};
+    VkPipelineColorBlendAttachmentState cb_as[2] = { { VK_FALSE,
+                                                       VK_BLEND_FACTOR_ZERO,
+                                                       VK_BLEND_FACTOR_ZERO,
+                                                       VK_BLEND_OP_ADD,
+                                                       VK_BLEND_FACTOR_ZERO,
+                                                       VK_BLEND_FACTOR_ZERO,
+                                                       VK_BLEND_OP_ADD,
+                                                       0xf },
+                                                     { VK_FALSE,
+                                                       VK_BLEND_FACTOR_ZERO,
+                                                       VK_BLEND_FACTOR_ZERO,
+                                                       VK_BLEND_OP_ADD,
+                                                       VK_BLEND_FACTOR_ZERO,
+                                                       VK_BLEND_FACTOR_ZERO,
+                                                       VK_BLEND_OP_ADD,
+                                                       0xf } };
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
@@ -1475,7 +1514,7 @@ TEST_F(PositiveShaderInterface, MissingInputAttachmentIndex) {
     // }
     //
     // missing OpDecorate %xs InputAttachmentIndex 0
-    const char *fsSource = R"(
+    const char* fsSource = R"(
                OpCapability Shader
                OpCapability InputAttachment
                OpMemoryModel Logical GLSL450
@@ -1509,13 +1548,13 @@ TEST_F(PositiveShaderInterface, MissingInputAttachmentIndex) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddInputAttachment(0);
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    pipe.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 }

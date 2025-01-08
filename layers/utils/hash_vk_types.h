@@ -19,21 +19,23 @@
 // Includes everything needed for overloading std::hash
 #include "hash_util.h"
 
-#include <vulkan/vulkan.h>
 #include "generated/vk_extension_helper.h"
-#include <vulkan/utility/vk_safe_struct.hpp>
 #include <vector>
+#include <vulkan/utility/vk_safe_struct.hpp>
+#include <vulkan/vulkan.h>
 
 // Hash and equality and/or compare functions for selected Vk types (and useful collections thereof)
 
 // VkDescriptorSetLayoutBinding
-static inline bool operator==(const vku::safe_VkDescriptorSetLayoutBinding &lhs, const vku::safe_VkDescriptorSetLayoutBinding &rhs) {
+static inline bool operator==(const vku::safe_VkDescriptorSetLayoutBinding& lhs,
+                              const vku::safe_VkDescriptorSetLayoutBinding& rhs) {
     if ((lhs.binding != rhs.binding) || (lhs.descriptorType != rhs.descriptorType) ||
         (lhs.descriptorCount != rhs.descriptorCount) || (lhs.stageFlags != rhs.stageFlags) ||
         !hash_util::SimilarForNullity(lhs.pImmutableSamplers, rhs.pImmutableSamplers)) {
         return false;
     }
-    if (lhs.pImmutableSamplers) {  // either one will do as they *are* similar for nullity (i.e. either both null or both non-null)
+    if (lhs.pImmutableSamplers) { // either one will do as they *are* similar for nullity (i.e. either both null or both
+                                  // non-null)
         for (uint32_t samp = 0; samp < lhs.descriptorCount; samp++) {
             if (lhs.pImmutableSamplers[samp] != rhs.pImmutableSamplers[samp]) {
                 return false;
@@ -46,7 +48,7 @@ static inline bool operator==(const vku::safe_VkDescriptorSetLayoutBinding &lhs,
 namespace std {
 template <>
 struct hash<vku::safe_VkDescriptorSetLayoutBinding> {
-    size_t operator()(const vku::safe_VkDescriptorSetLayoutBinding &value) const {
+    size_t operator()(const vku::safe_VkDescriptorSetLayoutBinding& value) const {
         hash_util::HashCombiner hc;
         hc << value.binding << value.descriptorType << value.descriptorCount << value.stageFlags;
         if (value.pImmutableSamplers) {
@@ -57,59 +59,60 @@ struct hash<vku::safe_VkDescriptorSetLayoutBinding> {
         return hc.Value();
     }
 };
-}  // namespace std
+} // namespace std
 
 // VkPushConstantRange
-static inline bool operator==(const VkPushConstantRange &lhs, const VkPushConstantRange &rhs) {
+static inline bool operator==(const VkPushConstantRange& lhs, const VkPushConstantRange& rhs) {
     return (lhs.stageFlags == rhs.stageFlags) && (lhs.offset == rhs.offset) && (lhs.size == rhs.size);
 }
 
 namespace std {
 template <>
 struct hash<VkPushConstantRange> {
-    size_t operator()(const VkPushConstantRange &value) const {
+    size_t operator()(const VkPushConstantRange& value) const {
         hash_util::HashCombiner hc;
         return (hc << value.stageFlags << value.offset << value.size).Value();
     }
 };
-}  // namespace std
+} // namespace std
 
 using PushConstantRanges = std::vector<VkPushConstantRange>;
 
 namespace std {
 template <>
 struct hash<PushConstantRanges> : public hash_util::IsOrderedContainer<PushConstantRanges> {};
-}  // namespace std
+} // namespace std
 
 // VkImageSubresourceRange
-static inline bool operator==(const VkImageSubresourceRange &lhs, const VkImageSubresourceRange &rhs) {
-    return (lhs.aspectMask == rhs.aspectMask) && (lhs.baseMipLevel == rhs.baseMipLevel) && (lhs.levelCount == rhs.levelCount) &&
-           (lhs.baseArrayLayer == rhs.baseArrayLayer) && (lhs.layerCount == rhs.layerCount);
+static inline bool operator==(const VkImageSubresourceRange& lhs, const VkImageSubresourceRange& rhs) {
+    return (lhs.aspectMask == rhs.aspectMask) && (lhs.baseMipLevel == rhs.baseMipLevel) &&
+           (lhs.levelCount == rhs.levelCount) && (lhs.baseArrayLayer == rhs.baseArrayLayer) &&
+           (lhs.layerCount == rhs.layerCount);
 }
 namespace std {
 template <>
 struct hash<VkImageSubresourceRange> {
-    size_t operator()(const VkImageSubresourceRange &value) const {
+    size_t operator()(const VkImageSubresourceRange& value) const {
         hash_util::HashCombiner hc;
         hc << value.aspectMask << value.baseMipLevel << value.levelCount << value.baseArrayLayer << value.layerCount;
         return hc.Value();
     }
 };
-}  // namespace std
+} // namespace std
 
 namespace std {
 template <>
 struct hash<const ExtEnabled DeviceExtensions::*> {
   public:
-    size_t operator()(const ExtEnabled DeviceExtensions::*const &p) const noexcept {
+    size_t operator()(const ExtEnabled DeviceExtensions::*const& p) const noexcept {
         static DeviceExtensions dummy_de;
         static std::hash<uint8_t> h;
         return h(dummy_de.*p);
     }
 };
-}  // namespace std
+} // namespace std
 
-static inline bool operator==(const VkShaderModuleIdentifierEXT &a, const VkShaderModuleIdentifierEXT &b) {
+static inline bool operator==(const VkShaderModuleIdentifierEXT& a, const VkShaderModuleIdentifierEXT& b) {
     if (a.identifierSize != b.identifierSize) {
         return false;
     }
@@ -124,8 +127,8 @@ static inline bool operator==(const VkShaderModuleIdentifierEXT &a, const VkShad
 namespace std {
 template <>
 struct hash<VkShaderModuleIdentifierEXT> {
-    size_t operator()(const VkShaderModuleIdentifierEXT &value) const {
+    size_t operator()(const VkShaderModuleIdentifierEXT& value) const {
         return hash_util::HashCombiner().Combine(value.identifier, value.identifier + value.identifierSize).Value();
     }
 };
-}  // namespace std
+} // namespace std

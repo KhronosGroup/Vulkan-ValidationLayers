@@ -14,8 +14,8 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "pass.h"
+#include <stdint.h>
 
 namespace gpuav {
 namespace spirv {
@@ -34,7 +34,10 @@ class DebugPrintfPass : public Pass {
   private:
     bool RequiresInstrumentation(const Instruction& inst);
     void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it);
-    void CreateFunctionParams(uint32_t argument_id, const Type& argument_type, std::vector<uint32_t>& params, BasicBlock& block,
+    void CreateFunctionParams(uint32_t argument_id,
+                              const Type& argument_type,
+                              std::vector<uint32_t>& params,
+                              BasicBlock& block,
                               InstructionIt* inst_it);
     void CreateDescriptorSet();
     void CreateBufferWriteFunction(uint32_t argument_count, uint32_t function_id);
@@ -61,5 +64,5 @@ class DebugPrintfPass : public Pass {
     uint32_t expanded_parameter_count_ = 0;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

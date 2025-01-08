@@ -18,9 +18,9 @@
 #pragma once
 
 #if defined(TRACY_ENABLE)
+#include "tracy/../client/TracyProfiler.hpp"
 #include "tracy/Tracy.hpp"
 #include "tracy/TracyC.h"
-#include "tracy/../client/TracyProfiler.hpp"
 
 // Define CPU zones
 #define VVL_ZoneScoped ZoneScoped

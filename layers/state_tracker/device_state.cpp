@@ -37,9 +37,8 @@ VkQueueFlags PhysicalDevice::GetSupportedQueues() {
     return flag;
 }
 
-PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle)
-    : StateObject(handle, kVulkanObjectTypePhysicalDevice),
-      queue_family_properties(GetQueueFamilyProps(handle)),
-      supported_queues(GetSupportedQueues()) {}
+PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle) :
+    StateObject(handle, kVulkanObjectTypePhysicalDevice), queue_family_properties(GetQueueFamilyProps(handle)),
+    supported_queues(GetSupportedQueues()) {}
 
-}  // namespace vvl
+} // namespace vvl

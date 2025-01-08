@@ -11,18 +11,18 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
+#include "../framework/gpu_av_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
-#include "../framework/descriptor_helper.h"
 #include "../framework/shader_helper.h"
-#include "../framework/gpu_av_helper.h"
 
 class PositiveGpuAVRayTracing : public GpuAVRayTracingTest {};
 
 TEST_F(PositiveGpuAVRayTracing, BasicTraceRays) {
-    TEST_DESCRIPTION(
-        "Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration structure, and trace one "
-        "ray. Only call traceRay in the ray generation shader");
+    TEST_DESCRIPTION("Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration "
+                     "structure, and trace one "
+                     "ray. Only call traceRay in the ray generation shader");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -83,7 +83,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRays) {
     // Descriptor set
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     pipeline.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    vkt::as::BuildGeometryInfoKHR tlas(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -91,21 +92,33 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRays) {
 
     // Bind descriptor set, pipeline, and trace rays
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                              pipeline.GetPipelineLayout(),
+                              0,
+                              1,
+                              &pipeline.GetDescriptorSet().set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
-                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    vk::CmdTraceRaysKHR(m_command_buffer,
+                        &trace_rays_sbt.ray_gen_sbt,
+                        &trace_rays_sbt.miss_sbt,
+                        &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt,
+                        1,
+                        1,
+                        1);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
 TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultipleStages) {
-    TEST_DESCRIPTION(
-        "Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration structure, and trace one "
-        "ray");
+    TEST_DESCRIPTION("Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration "
+                     "structure, and trace one "
+                     "ray");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -170,7 +183,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultipleStages) {
     // Descriptor set
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     pipeline.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    vkt::as::BuildGeometryInfoKHR tlas(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -178,21 +192,33 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultipleStages) {
 
     // Bind descriptor set, pipeline, and trace rays
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                              pipeline.GetPipelineLayout(),
+                              0,
+                              1,
+                              &pipeline.GetDescriptorSet().set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
-                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    vk::CmdTraceRaysKHR(m_command_buffer,
+                        &trace_rays_sbt.ray_gen_sbt,
+                        &trace_rays_sbt.miss_sbt,
+                        &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt,
+                        1,
+                        1,
+                        1);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
 TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
-    TEST_DESCRIPTION(
-        "Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration structure, and trace one "
-        "ray, with dynamic t_min and t_max");
+    TEST_DESCRIPTION("Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration "
+                     "structure, and trace one "
+                     "ray, with dynamic t_min and t_max");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -272,17 +298,19 @@ TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
     pipeline.CreateDescriptorSet();
 
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    vkt::as::BuildGeometryInfoKHR tlas(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     auto uniform_buffer_ptr = static_cast<float*>(uniform_buffer.Memory().Map());
-    uniform_buffer_ptr[0] = 0.1f;   // t_min
-    uniform_buffer_ptr[1] = 42.0f;  // t_max
+    uniform_buffer_ptr[0] = 0.1f;  // t_min
+    uniform_buffer_ptr[1] = 42.0f; // t_max
     uniform_buffer.Memory().Unmap();
 
-    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(
+        1, uniform_buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
     // Build pipeline
@@ -290,21 +318,33 @@ TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
 
     // Bind descriptor set, pipeline, and trace rays
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                              pipeline.GetPipelineLayout(),
+                              0,
+                              1,
+                              &pipeline.GetDescriptorSet().set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
-                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    vk::CmdTraceRaysKHR(m_command_buffer,
+                        &trace_rays_sbt.ray_gen_sbt,
+                        &trace_rays_sbt.miss_sbt,
+                        &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt,
+                        1,
+                        1,
+                        1);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
 TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
-    TEST_DESCRIPTION(
-        "Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration structure, and trace one "
-        "ray, with dynamic ray flags mask set to gl_RayFlagsCullBackFacingTrianglesEXT");
+    TEST_DESCRIPTION("Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration "
+                     "structure, and trace one "
+                     "ray, with dynamic ray flags mask set to gl_RayFlagsCullBackFacingTrianglesEXT");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -380,16 +420,18 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
     pipeline.CreateDescriptorSet();
 
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    vkt::as::BuildGeometryInfoKHR tlas(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
-    uniform_buffer_ptr[0] = 16;  // gl_RayFlagsCullBackFacingTrianglesEXT
+    uniform_buffer_ptr[0] = 16; // gl_RayFlagsCullBackFacingTrianglesEXT
     uniform_buffer.Memory().Unmap();
 
-    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(
+        1, uniform_buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -398,21 +440,33 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
 
     // Bind descriptor set, pipeline, and trace rays
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                              pipeline.GetPipelineLayout(),
+                              0,
+                              1,
+                              &pipeline.GetDescriptorSet().set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
-                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    vk::CmdTraceRaysKHR(m_command_buffer,
+                        &trace_rays_sbt.ray_gen_sbt,
+                        &trace_rays_sbt.miss_sbt,
+                        &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt,
+                        1,
+                        1,
+                        1);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
 TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
-    TEST_DESCRIPTION(
-        "Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration structure, and trace one "
-        "ray, with dynamic ray flags mask set to gl_RayFlagsSkipTrianglesEXT");
+    TEST_DESCRIPTION("Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration "
+                     "structure, and trace one "
+                     "ray, with dynamic ray flags mask set to gl_RayFlagsSkipTrianglesEXT");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -492,16 +546,18 @@ TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
     pipeline.CreateDescriptorSet();
 
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    vkt::as::BuildGeometryInfoKHR tlas(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
 
     vkt::Buffer uniform_buffer(*m_device, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
 
     auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
-    uniform_buffer_ptr[0] = 0x100;  // gl_RayFlagsSkipTrianglesEXT, or RayFlagsSkipTrianglesKHRMask in SPIR-V
+    uniform_buffer_ptr[0] = 0x100; // gl_RayFlagsSkipTrianglesEXT, or RayFlagsSkipTrianglesKHRMask in SPIR-V
     uniform_buffer.Memory().Unmap();
 
-    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(
+        1, uniform_buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -510,22 +566,34 @@ TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
 
     // Bind descriptor set, pipeline, and trace rays
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                              pipeline.GetPipelineLayout(),
+                              0,
+                              1,
+                              &pipeline.GetDescriptorSet().set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
-                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    vk::CmdTraceRaysKHR(m_command_buffer,
+                        &trace_rays_sbt.ray_gen_sbt,
+                        &trace_rays_sbt.miss_sbt,
+                        &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt,
+                        1,
+                        1,
+                        1);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
 TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
-    TEST_DESCRIPTION(
-        "Setup a ray tracing pipeline (ray generation, miss and closest hit shaders are in one shader with corresponding entry "
-        "points) and acceleration structure, and trace one "
-        "ray. Only call traceRay in the ray generation shader");
+    TEST_DESCRIPTION("Setup a ray tracing pipeline (ray generation, miss and closest hit shaders are in one shader "
+                     "with corresponding entry "
+                     "points) and acceleration structure, and trace one "
+                     "ray. Only call traceRay in the ray generation shader");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -572,7 +640,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
         ColorPayload payload;
         TraceRay(_tlas, -1, RAY_FLAG_NONE, 0, 0, 0, ray, payload);
 
-        // the index will either be 0 or 1, this can be adjusted, but the main thing is to use this to trigger (or not trigger)
+        // the index will either be 0 or 1, this can be adjusted, but the main thing is to use this to trigger (or not
+    trigger)
         // descriptor indexing OOB
         Texture2D tex = MyTextures[NonUniformResourceIndex(payload.index)];
         float4 val = tex[uv];
@@ -699,20 +768,30 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
 
     // Buffer binding
     vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(0, buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(
+        0, buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     // Texture array binding
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    pipeline.GetDescriptorSet().WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
-    pipeline.GetDescriptorSet().WriteDescriptorImageInfo(1, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    pipeline.GetDescriptorSet().WriteDescriptorImageInfo(1,
+                                                         image_view,
+                                                         sampler.handle(),
+                                                         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                         0);
+    pipeline.GetDescriptorSet().WriteDescriptorImageInfo(1,
+                                                         image_view,
+                                                         sampler.handle(),
+                                                         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                         1);
 
     // TLAS binding
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    vkt::as::BuildGeometryInfoKHR tlas(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(2, 1, &tlas.GetDstAS()->handle());
 
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
@@ -722,22 +801,34 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysMultiEntryPoint) {
 
     // Bind descriptor set, pipeline, and trace rays
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                              pipeline.GetPipelineLayout(),
+                              0,
+                              1,
+                              &pipeline.GetDescriptorSet().set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
-                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    vk::CmdTraceRaysKHR(m_command_buffer,
+                        &trace_rays_sbt.ray_gen_sbt,
+                        &trace_rays_sbt.miss_sbt,
+                        &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt,
+                        1,
+                        1,
+                        1);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
 
 TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDeferredBuild) {
-    TEST_DESCRIPTION(
-        "Setup a ray tracing pipeline (ray generation, miss and closest hit shaders, and deferred build) and acceleration "
-        "structure, and trace one "
-        "ray. Only call traceRay in the ray generation shader");
+    TEST_DESCRIPTION("Setup a ray tracing pipeline (ray generation, miss and closest hit shaders, and deferred build) "
+                     "and acceleration "
+                     "structure, and trace one "
+                     "ray. Only call traceRay in the ray generation shader");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -797,7 +888,8 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDeferredBuild) {
 
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     pipeline.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    vkt::as::BuildGeometryInfoKHR tlas(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -807,12 +899,24 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDeferredBuild) {
 
     // Bind descriptor set, pipeline, and trace rays
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                              pipeline.GetPipelineLayout(),
+                              0,
+                              1,
+                              &pipeline.GetDescriptorSet().set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
-                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    vk::CmdTraceRaysKHR(m_command_buffer,
+                        &trace_rays_sbt.ray_gen_sbt,
+                        &trace_rays_sbt.miss_sbt,
+                        &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt,
+                        1,
+                        1,
+                        1);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();

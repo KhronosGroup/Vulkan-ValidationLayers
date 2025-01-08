@@ -19,29 +19,37 @@
  */
 #pragma once
 #include "cc_submit.h"
-#include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/queue_state.h"
+#include "state_tracker/state_tracker.h"
 
 namespace core {
 
-// CommandBuffer is over 3 times larger than the next largest state object struct, but the majority of the state is only used in
-// CoreChecks. This state object is used by everyone else (best practice, sync val, GPU-AV, etc). For this reason, we have
-// CommandBuffer object only for core and keep only the most basic items in the parent class
+// CommandBuffer is over 3 times larger than the next largest state object struct, but the majority of the state is only
+// used in CoreChecks. This state object is used by everyone else (best practice, sync val, GPU-AV, etc). For this
+// reason, we have CommandBuffer object only for core and keep only the most basic items in the parent class
 class CommandBuffer : public vvl::CommandBuffer {
   public:
-    CommandBuffer(CoreChecks& core, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* pCreateInfo,
+    CommandBuffer(CoreChecks& core,
+                  VkCommandBuffer handle,
+                  const VkCommandBufferAllocateInfo* pCreateInfo,
                   const vvl::CommandPool* cmd_pool);
 
-    void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
+    void RecordWaitEvents(vvl::Func command,
+                          uint32_t eventCount,
+                          const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
 };
 
 // Override Retire to validate submissions in the order defined by synchronization
 class Queue : public vvl::Queue {
   public:
-    Queue(ValidationStateTracker& dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index,
-          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties& queue_family_properties,
+    Queue(ValidationStateTracker& dev_data,
+          VkQueue handle,
+          uint32_t family_index,
+          uint32_t queue_index,
+          VkDeviceQueueCreateFlags flags,
+          const VkQueueFamilyProperties& queue_family_properties,
           const ValidationObject& error_logger);
 
   private:
@@ -51,4 +59,4 @@ class Queue : public vvl::Queue {
     QueueSubmissionValidator queue_submission_validator_;
 };
 
-}  // namespace core
+} // namespace core

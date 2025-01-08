@@ -18,25 +18,33 @@
 
 #include "stateless/stateless_validation.h"
 
-bool StatelessValidation::manual_PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
-                                                                const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
-                                                                const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateCreateSemaphore(VkDevice device,
+                                                                const VkSemaphoreCreateInfo* pCreateInfo,
+                                                                const VkAllocationCallbacks* pAllocator,
+                                                                VkSemaphore* pSemaphore,
+                                                                const ErrorObject& error_obj) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     skip |= ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT,
-                                        "VUID-VkSemaphoreCreateInfo-pNext-06789", error_obj.location,
-                                        "VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT", pCreateInfo->pNext);
-#endif  // VK_USE_PLATFORM_METAL_EXT
+                                        "VUID-VkSemaphoreCreateInfo-pNext-06789",
+                                        error_obj.location,
+                                        "VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT",
+                                        pCreateInfo->pNext);
+#endif // VK_USE_PLATFORM_METAL_EXT
     return skip;
 }
-bool StatelessValidation::manual_PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
-                                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent,
-                                                            const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateCreateEvent(VkDevice device,
+                                                            const VkEventCreateInfo* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator,
+                                                            VkEvent* pEvent,
+                                                            const ErrorObject& error_obj) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     skip |= ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT,
-                                        "VUID-VkEventCreateInfo-pNext-06790", error_obj.location,
-                                        "VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT", pCreateInfo->pNext);
-#endif  // VK_USE_PLATFORM_METAL_EXT
+                                        "VUID-VkEventCreateInfo-pNext-06790",
+                                        error_obj.location,
+                                        "VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT",
+                                        pCreateInfo->pNext);
+#endif // VK_USE_PLATFORM_METAL_EXT
     return skip;
 }

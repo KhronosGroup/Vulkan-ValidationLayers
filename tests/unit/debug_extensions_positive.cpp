@@ -23,9 +23,8 @@ TEST_F(PositiveDebugExtensions, SetDebugUtilsObjectBuffer) {
     }
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
-        data->count++;
-    };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                             DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -60,9 +59,8 @@ TEST_F(PositiveDebugExtensions, SetDebugUtilsObjectDevice) {
     }
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
-        data->count++;
-    };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                             DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -141,7 +139,7 @@ TEST_F(PositiveDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.End();
 
-    std::array cbs = {&cb0, &cb1};
+    std::array cbs = { &cb0, &cb1 };
     m_default_queue->Submit(cbs);
     m_default_queue->Wait();
 }
@@ -176,8 +174,8 @@ TEST_F(PositiveDebugExtensions, SwapchainImagesDebugMarker) {
     swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
-                                         info.surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = { info.surface_capabilities.minImageExtent.width,
+                                          info.surface_capabilities.minImageExtent.height };
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -200,7 +198,7 @@ TEST_F(PositiveDebugExtensions, SwapchainImagesDebugMarker) {
     }
 
     {
-        int tags[2] = {1, 2};
+        int tags[2] = { 1, 2 };
         VkDebugMarkerObjectTagInfoEXT name_info = vku::InitStructHelper();
         name_info.object = (uint64_t)images[0];
         name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT;

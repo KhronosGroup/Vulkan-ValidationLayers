@@ -14,9 +14,9 @@
  */
 #pragma once
 
-#include <vector>
-#include "instruction.h"
 #include "generated/spirv_grammar_helper.h"
+#include "instruction.h"
+#include <vector>
 
 namespace gpuav {
 namespace spirv {
@@ -38,16 +38,16 @@ static constexpr bool ConstantOperation(uint32_t opcode) {
         case spv::OpSpecConstantTrue:
         case spv::OpSpecConstantFalse:
         case spv::OpSpecConstantComposite:
-        case spv::OpSpecConstantOp:  // always must be in function block
+        case spv::OpSpecConstantOp: // always must be in function block
         default:
             return false;
     }
 }
 
 // There is a LOT that can be done with types, but for simplicity it only does what is needed.
-// The main thing is to try find the type so we don't add a duplicate (but not end of the world if 1 or 2 are duplicated as a
-// trade-off to doing complex logic to resolve more complex types). The class also takes advantage that while Instrumenting we are
-// always aware of our types we are adding or just explictly found.
+// The main thing is to try find the type so we don't add a duplicate (but not end of the world if 1 or 2 are duplicated
+// as a trade-off to doing complex logic to resolve more complex types). The class also takes advantage that while
+// Instrumenting we are always aware of our types we are adding or just explictly found.
 struct Type {
     Type(SpvType spv_type, const Instruction& inst) : spv_type_(spv_type), inst_(inst) {}
 
@@ -67,8 +67,8 @@ static bool IsSpecConstant(uint32_t opcode) {
 // Represents a OpConstant* or OpSpecConstant*
 // (Currently doesn't handle OpSpecConstantComposite or OpSpecConstantOp)
 struct Constant {
-    Constant(const Type& type, const Instruction& inst)
-        : type_(type), inst_(inst), is_spec_constant_(IsSpecConstant(inst.Opcode())) {}
+    Constant(const Type& type, const Instruction& inst) :
+        type_(type), inst_(inst), is_spec_constant_(IsSpecConstant(inst.Opcode())) {}
 
     uint32_t Id() const { return inst_.ResultId(); }
 
@@ -141,8 +141,8 @@ class TypeManager {
   private:
     Module& module_;
 
-    // Currently we don't worry about duplicated types. If duplicate types are added from the original SPIR-V, we just use the first
-    // one we fine. We should only be adding a new object because it currently doesn't exists.
+    // Currently we don't worry about duplicated types. If duplicate types are added from the original SPIR-V, we just
+    // use the first one we fine. We should only be adding a new object because it currently doesn't exists.
     vvl::unordered_map<uint32_t, std::unique_ptr<Type>> id_to_type_;
     vvl::unordered_map<uint32_t, std::unique_ptr<Constant>> id_to_constant_;
     vvl::unordered_map<uint32_t, std::unique_ptr<Variable>> id_to_variable_;
@@ -176,5 +176,5 @@ class TypeManager {
     std::vector<const Variable*> output_variables_;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

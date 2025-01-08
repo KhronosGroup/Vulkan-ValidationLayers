@@ -15,7 +15,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
-const char *vkComponentTypeToGLSL(VkComponentTypeKHR type) {
+const char* vkComponentTypeToGLSL(VkComponentTypeKHR type) {
     switch (type) {
         case VK_COMPONENT_TYPE_FLOAT16_KHR:
             return "float16_t";
@@ -64,16 +64,18 @@ void CooperativeMatrixTest::InitCooperativeMatrixKHR() {
         for (uint32_t i = 0; i < props_count; i++) {
             coop_matrix_flex_props.emplace_back(vku::InitStruct<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>());
         }
-        vk::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(Gpu(), &props_count, coop_matrix_flex_props.data());
+        vk::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+            Gpu(), &props_count, coop_matrix_flex_props.data());
     }
 }
 
-bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type) {
+bool CooperativeMatrixTest::HasValidProperty(
+    VkScopeKHR scope, uint32_t m, uint32_t n, uint32_t k, VkComponentTypeKHR type) {
     bool found_a = false;
     bool found_b = false;
     bool found_c = false;
     bool found_r = false;
-    for (const auto &prop : coop_matrix_props) {
+    for (const auto& prop : coop_matrix_props) {
         if (prop.scope == scope && prop.AType == type && prop.MSize == m && prop.KSize == k) {
             found_a = true;
         }
@@ -95,7 +97,7 @@ bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint3
     found_b = false;
     found_c = false;
     found_r = false;
-    for (const auto &prop : coop_matrix_flex_props) {
+    for (const auto& prop : coop_matrix_flex_props) {
         if (prop.scope == scope && prop.AType == type && (m % prop.MGranularity) == 0 && (k % prop.KGranularity) == 0) {
             found_a = true;
         }
@@ -105,7 +107,8 @@ bool CooperativeMatrixTest::HasValidProperty(VkScopeKHR scope, uint32_t m, uint3
         if (prop.scope == scope && prop.CType == type && (m % prop.MGranularity) == 0 && (n % prop.NGranularity) == 0) {
             found_c = true;
         }
-        if (prop.scope == scope && prop.ResultType == type && (m % prop.MGranularity) == 0 && (n % prop.NGranularity) == 0) {
+        if (prop.scope == scope && prop.ResultType == type && (m % prop.MGranularity) == 0 &&
+            (n % prop.NGranularity) == 0) {
             found_r = true;
         }
     }
@@ -129,15 +132,16 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
 
     VkPhysicalDeviceFloat16Int8FeaturesKHR float16_features = vku::InitStructHelper();
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features = vku::InitStructHelper(&float16_features);
-    VkPhysicalDeviceVulkanMemoryModelFeaturesKHR memory_model_features = vku::InitStructHelper(&cooperative_matrix_features);
+    VkPhysicalDeviceVulkanMemoryModelFeaturesKHR memory_model_features =
+        vku::InitStructHelper(&cooperative_matrix_features);
     GetPhysicalDeviceFeatures2(memory_model_features);
     RETURN_IF_SKIP(InitState(nullptr, &memory_model_features));
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
+    const vkt::PipelineLayout pl(*m_device, { &dsl });
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #extension GL_NV_cooperative_matrix : enable
         #extension GL_KHR_shader_subgroup_basic : enable
@@ -162,8 +166,8 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
         8,
     };
     VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
-        {1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+        { 0, sizeof(uint32_t) * 0, sizeof(uint32_t) },
+        { 1, sizeof(uint32_t) * 1, sizeof(uint32_t) },
     };
 
     VkSpecializationInfo specInfo = {
@@ -174,8 +178,8 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixNV) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -200,7 +204,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
 
     VkCooperativeMatrixPropertiesKHR subgroup_prop = vku::InitStructHelper();
     bool found_scope_subgroup = false;
-    for (const auto &prop : coop_matrix_props) {
+    for (const auto& prop : coop_matrix_props) {
         if (prop.scope == VK_SCOPE_SUBGROUP_KHR) {
             found_scope_subgroup = true;
             subgroup_prop = prop;
@@ -211,15 +215,15 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
         GTEST_SKIP() << "VK_SCOPE_SUBGROUP_KHR not Found";
     }
 
-    const VkSampler *ptr = nullptr;
+    const VkSampler* ptr = nullptr;
     const std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr},
-        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr},
-        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr},
-        {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr},
+        { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr },
+        { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr },
+        { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr },
+        { 3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, ptr },
     };
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
+    const vkt::PipelineLayout pl(*m_device, { &dsl });
 
     std::string css = R"glsl(
          #version 450 core
@@ -248,7 +252,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
          }
     )glsl";
 
-    auto replace = [](std::string &str, const std::string &from, const std::string &to) {
+    auto replace = [](std::string& str, const std::string& from, const std::string& to) {
         size_t pos;
         while ((pos = str.find(from)) != std::string::npos) str.replace(pos, from.length(), to);
     };
@@ -262,7 +266,7 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, css.c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &dsl });
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }

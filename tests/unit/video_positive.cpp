@@ -61,19 +61,21 @@ TEST_F(PositiveVideo, MultipleCmdBufs) {
     cb1.End();
 
     cb2.Begin();
-    vk::CmdPipelineBarrier2KHR(cb2.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb2.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
     cb2.BeginVideoCoding(context.Begin().AddResource(-1, 0));
     cb2.DecodeVideo(context.DecodeFrame(0));
     cb2.EndVideoCoding(context.End());
     cb2.End();
 
-    std::array cbs = {&cb1, &cb2};
+    std::array cbs = { &cb1, &cb2 };
     context.Queue().Submit(cbs);
     m_device->Wait();
 }
 
 TEST_F(PositiveVideo, BeginCodingOutOfBoundsSlotIndex) {
-    TEST_DESCRIPTION("vkCmdBeginCodingKHR - referenced DPB slot index is invalid but it should not cause submit time crash");
+    TEST_DESCRIPTION(
+        "vkCmdBeginCodingKHR - referenced DPB slot index is invalid but it should not cause submit time crash");
 
     RETURN_IF_SKIP(Init());
 
@@ -184,7 +186,8 @@ TEST_F(PositiveVideo, VideoDecodeH264) {
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.Begin();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1).AddResource(-1, 2));
     cb.ControlVideoCoding(context.Control().Reset());
@@ -216,8 +219,8 @@ TEST_F(PositiveVideo, VideoDecodeH264Interlaced) {
     const uint32_t dpb_slots = 2;
     const uint32_t active_refs = 2;
 
-    VideoConfig config =
-        GetConfig(GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeH264Interlaced(), dpb_slots), active_refs));
+    VideoConfig config = GetConfig(
+        GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeH264Interlaced(), dpb_slots), active_refs));
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 interlaced decode support with 2 DPB slots and 2 active references";
     }
@@ -232,7 +235,8 @@ TEST_F(PositiveVideo, VideoDecodeH264Interlaced) {
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.Begin();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1));
     cb.ControlVideoCoding(context.Control().Reset());
@@ -264,8 +268,8 @@ TEST_F(PositiveVideo, VideoDecodeH264InterlacedPartialInvalidation) {
     const uint32_t dpb_slots = 3;
     const uint32_t active_refs = 2;
 
-    VideoConfig config =
-        GetConfig(GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeH264Interlaced(), dpb_slots), active_refs));
+    VideoConfig config = GetConfig(
+        GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeH264Interlaced(), dpb_slots), active_refs));
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 interlaced decode support with 3 DPB slots and 2 active references";
     }
@@ -280,7 +284,8 @@ TEST_F(PositiveVideo, VideoDecodeH264InterlacedPartialInvalidation) {
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.Begin();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1));
     cb.ControlVideoCoding(context.Control().Reset());
@@ -327,7 +332,8 @@ TEST_F(PositiveVideo, VideoDecodeH265) {
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.Begin();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1).AddResource(-1, 2));
     cb.ControlVideoCoding(context.Control().Reset());
@@ -360,7 +366,8 @@ TEST_F(PositiveVideo, VideoDecodeAV1) {
     const uint32_t dpb_slots = 3;
     const uint32_t active_refs = 2;
 
-    VideoConfig config = GetConfig(GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeAV1(), dpb_slots), active_refs));
+    VideoConfig config =
+        GetConfig(GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsDecodeAV1(), dpb_slots), active_refs));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 decode support with at least 3 DPB slots and 2 active references";
     }
@@ -375,7 +382,8 @@ TEST_F(PositiveVideo, VideoDecodeAV1) {
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.Begin();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1).AddResource(-1, 2));
     cb.ControlVideoCoding(context.Control().Reset());
@@ -405,8 +413,9 @@ TEST_F(PositiveVideo, DecodeAV1DistinctWithFilmGrain) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecodeAV1FilmGrain()),
-                                                 [](const VideoConfig& config) { return !config.SupportsDecodeOutputDistinct(); }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecodeAV1FilmGrain()),
+                                [](const VideoConfig& config) { return !config.SupportsDecodeOutputDistinct(); }));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 decode support with reference pictures, film grain, and no distinct mode";
     }
@@ -432,8 +441,9 @@ TEST_F(PositiveVideo, DecodeAV1CoincideWithoutFilmGrain) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecodeAV1FilmGrain()),
-                                                 [](const VideoConfig& config) { return config.SupportsDecodeOutputCoincide(); }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecodeAV1FilmGrain()),
+                                [](const VideoConfig& config) { return config.SupportsDecodeOutputCoincide(); }));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 decode support with reference pictures, film grain, and coincide mode";
     }
@@ -491,7 +501,8 @@ TEST_F(PositiveVideo, VideoEncodeH264) {
     }
 
     cb.Begin();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1).AddResource(-1, 2));
     cb.ControlVideoCoding(context.Control().Reset().RateControl(rc_info).EncodeQualityLevel(0));
@@ -550,7 +561,8 @@ TEST_F(PositiveVideo, VideoEncodeH265) {
     }
 
     cb.Begin();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1).AddResource(-1, 2));
     cb.ControlVideoCoding(context.Control().Reset().RateControl(rc_info).EncodeQualityLevel(0));
@@ -577,9 +589,8 @@ TEST_F(PositiveVideo, VideoEncodeH265) {
 }
 
 TEST_F(PositiveVideo, EncodeRateControlVirtualBufferSize) {
-    TEST_DESCRIPTION(
-        "vkCmdControlVideoCodingKHR - test valid values for "
-        "virtualBufferSizeInMs and initialVirtualBufferSizeInMs");
+    TEST_DESCRIPTION("vkCmdControlVideoCodingKHR - test valid values for "
+                     "virtualBufferSizeInMs and initialVirtualBufferSizeInMs");
 
     RETURN_IF_SKIP(Init());
 
@@ -621,8 +632,8 @@ TEST_F(PositiveVideo, VideoEncodeAV1) {
     const uint32_t dpb_slots = 3;
     const uint32_t active_refs = 2;
 
-    VideoConfig config = GetConfig(
-        GetConfigsWithReferences(GetConfigsWithDpbSlots(GetConfigsWithRateControl(GetConfigsEncodeAV1()), dpb_slots), active_refs));
+    VideoConfig config = GetConfig(GetConfigsWithReferences(
+        GetConfigsWithDpbSlots(GetConfigsWithRateControl(GetConfigsEncodeAV1()), dpb_slots), active_refs));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support with rate control and 3 DPB slots and 2 active references";
     }
@@ -647,7 +658,8 @@ TEST_F(PositiveVideo, VideoEncodeAV1) {
     }
 
     cb.Begin();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1).AddResource(-1, 2));
     cb.ControlVideoCoding(context.Control().Reset().RateControl(rc_info).EncodeQualityLevel(0));
@@ -711,8 +723,8 @@ TEST_F(PositiveVideo, VideoEncodeQuantDeltaMap) {
 
                 cb.Begin();
                 cb.BeginVideoCoding(context.Begin().SetSessionParams(params));
-                cb.EncodeVideo(context.EncodeFrame().QuantizationMap(VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                                                     texel_size, quantization_map));
+                cb.EncodeVideo(context.EncodeFrame().QuantizationMap(
+                    VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR, texel_size, quantization_map));
                 cb.EndVideoCoding(context.End());
                 cb.End();
                 context.Queue().Submit(cb);
@@ -768,8 +780,8 @@ TEST_F(PositiveVideo, VideoEncodeEmphasisMap) {
 
                 cb.Begin();
                 cb.BeginVideoCoding(context.Begin().SetSessionParams(params).RateControl(rc_info));
-                cb.EncodeVideo(
-                    context.EncodeFrame().QuantizationMap(VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR, texel_size, quantization_map));
+                cb.EncodeVideo(context.EncodeFrame().QuantizationMap(
+                    VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR, texel_size, quantization_map));
                 cb.EndVideoCoding(context.End());
                 cb.End();
                 context.Queue().Submit(cb);
@@ -786,9 +798,10 @@ TEST_F(PositiveVideo, EncodeRateControlH264LayerCount) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH264()), [](const VideoConfig& config) {
-        return config.EncodeCapsH264()->maxTemporalLayerCount > 1;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH264()), [](const VideoConfig& config) {
+            return config.EncodeCapsH264()->maxTemporalLayerCount > 1;
+        }));
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 encode support with rate control and temporal layer support";
     }
@@ -811,15 +824,15 @@ TEST_F(PositiveVideo, EncodeRateControlH264LayerCount) {
 }
 
 TEST_F(PositiveVideo, EncodeRateControlH265LayerCount) {
-    TEST_DESCRIPTION(
-        "vkCmdBeginVideoCodingKHR / vkCmdControlVideoCodingKHR - H.265 sub-layer count must only match "
-        "the layer count if the layer count is greater than 1");
+    TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR / vkCmdControlVideoCodingKHR - H.265 sub-layer count must only match "
+                     "the layer count if the layer count is greater than 1");
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH265()), [](const VideoConfig& config) {
-        return config.EncodeCapsH265()->maxSubLayerCount > 1;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH265()), [](const VideoConfig& config) {
+            return config.EncodeCapsH265()->maxSubLayerCount > 1;
+        }));
     if (!config) {
         GTEST_SKIP() << "Test requires H.265 encode support with rate control and sub-layer support";
     }
@@ -842,15 +855,15 @@ TEST_F(PositiveVideo, EncodeRateControlH265LayerCount) {
 }
 
 TEST_F(PositiveVideo, EncodeRateControlAV1LayerCount) {
-    TEST_DESCRIPTION(
-        "vkCmdBeginVideoCodingKHR / vkCmdControlVideoCodingKHR - AV1 temporal layer count must only match "
-        "the layer count if the layer count is greater than 1");
+    TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR / vkCmdControlVideoCodingKHR - AV1 temporal layer count must only match "
+                     "the layer count if the layer count is greater than 1");
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeAV1()), [](const VideoConfig& config) {
-        return config.EncodeCapsAV1()->maxTemporalLayerCount > 1;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeAV1()), [](const VideoConfig& config) {
+            return config.EncodeCapsAV1()->maxTemporalLayerCount > 1;
+        }));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support with rate control and temporal layer support";
     }
@@ -912,13 +925,14 @@ TEST_F(PositiveVideo, EncodeAV1MotionVectorScaling) {
     RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(GetConfigsWithDpbSlots(
-        GetConfigsWithReferences(FilterConfigs(
-            GetConfigsEncodeAV1(),
-            [](const VideoConfig& config) {
-                return ((config.Caps()->minCodedExtent.width < config.Caps()->maxCodedExtent.width) ||
-                        (config.Caps()->minCodedExtent.height < config.Caps()->maxCodedExtent.height)) &&
-                       (config.EncodeCapsAV1()->flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_MOTION_VECTOR_SCALING_BIT_KHR) != 0;
-            })),
+        GetConfigsWithReferences(
+            FilterConfigs(GetConfigsEncodeAV1(),
+                          [](const VideoConfig& config) {
+                              return ((config.Caps()->minCodedExtent.width < config.Caps()->maxCodedExtent.width) ||
+                                      (config.Caps()->minCodedExtent.height < config.Caps()->maxCodedExtent.height)) &&
+                                     (config.EncodeCapsAV1()->flags &
+                                      VK_VIDEO_ENCODE_AV1_CAPABILITY_MOTION_VECTOR_SCALING_BIT_KHR) != 0;
+                          })),
         2));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support with references and motion vector scaling support";
@@ -956,7 +970,8 @@ TEST_F(PositiveVideo, EncodeAV1SingleReference) {
     const uint32_t min_ref_count = 1;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxSingleReferenceCount > 0;
     }));
     if (!config) {
@@ -976,7 +991,8 @@ TEST_F(PositiveVideo, EncodeAV1SingleReference) {
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(1, 1));
 
     VideoEncodeInfo encode_info = context.EncodeFrame(0).AddReferenceFrame(1);
-    encode_info.CodecInfo().encode_av1.picture_info.predictionMode = VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_SINGLE_REFERENCE_KHR;
+    encode_info.CodecInfo().encode_av1.picture_info.predictionMode =
+        VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_SINGLE_REFERENCE_KHR;
 
     // Test all supported reference names
     for (uint8_t ref_name_idx = 0; ref_name_idx < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++ref_name_idx) {
@@ -1005,7 +1021,8 @@ TEST_F(PositiveVideo, EncodeAV1UnidirectionalCompound) {
     const uint32_t min_ref_count = 1;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxUnidirectionalCompoundReferenceCount > 0;
     }));
     if (!config) {
@@ -1030,10 +1047,10 @@ TEST_F(PositiveVideo, EncodeAV1UnidirectionalCompound) {
 
     // Unidirectional compound supports the following combinations
     std::vector<std::pair<uint8_t, uint8_t>> ref_name_pairs = {
-        std::make_pair<uint8_t, uint8_t>(0, 1),  // LAST_FRAME + LAST2_FRAME
-        std::make_pair<uint8_t, uint8_t>(0, 2),  // LAST_FRAME + LAST3_FRAME
-        std::make_pair<uint8_t, uint8_t>(0, 3),  // LAST_FRAME + GOLDEN_FRAME
-        std::make_pair<uint8_t, uint8_t>(4, 6),  // BWDREF_FRAME + ALTREF_FRAME
+        std::make_pair<uint8_t, uint8_t>(0, 1), // LAST_FRAME + LAST2_FRAME
+        std::make_pair<uint8_t, uint8_t>(0, 2), // LAST_FRAME + LAST3_FRAME
+        std::make_pair<uint8_t, uint8_t>(0, 3), // LAST_FRAME + GOLDEN_FRAME
+        std::make_pair<uint8_t, uint8_t>(4, 6), // BWDREF_FRAME + ALTREF_FRAME
     };
 
     // Test all supported reference name combinations
@@ -1065,7 +1082,8 @@ TEST_F(PositiveVideo, EncodeAV1BidirectionalCompound) {
     const uint32_t min_ref_count = 1;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxBidirectionalCompoundReferenceCount > 0;
     }));
     if (!config) {
@@ -1085,12 +1103,14 @@ TEST_F(PositiveVideo, EncodeAV1BidirectionalCompound) {
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(1, 1));
 
     VideoEncodeInfo encode_info = context.EncodeFrame(0).AddReferenceFrame(1);
-    encode_info.CodecInfo().encode_av1.picture_info.predictionMode = VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_BIDIRECTIONAL_COMPOUND_KHR;
+    encode_info.CodecInfo().encode_av1.picture_info.predictionMode =
+        VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_BIDIRECTIONAL_COMPOUND_KHR;
 
     // Test all supported reference name combinations (one from group 1 and one from group 2)
     const uint8_t bwdref_frame_idx = STD_VIDEO_AV1_REFERENCE_NAME_BWDREF_FRAME - 1;
     for (uint8_t ref_name_1 = 0; ref_name_1 < bwdref_frame_idx; ref_name_1++) {
-        for (uint8_t ref_name_2 = bwdref_frame_idx; ref_name_2 < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ref_name_2++) {
+        for (uint8_t ref_name_2 = bwdref_frame_idx; ref_name_2 < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR;
+             ref_name_2++) {
             const uint32_t ref_name_mask = (1 << ref_name_1) | (1 << ref_name_2);
             if ((config.EncodeCapsAV1()->bidirectionalCompoundReferenceNameMask & ref_name_mask) == ref_name_mask) {
                 for (uint32_t i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
@@ -1209,16 +1229,15 @@ TEST_F(PositiveVideo, GetEncodedSessionParamsAV1) {
 }
 
 TEST_F(PositiveSyncValVideo, ImageRangeGenYcbcrSubsampling) {
-    TEST_DESCRIPTION(
-        "Test that subsampled YCbCr image planes are handled correctly "
-        "by the image range generation utilities used by sync validation");
+    TEST_DESCRIPTION("Test that subsampled YCbCr image planes are handled correctly "
+                     "by the image range generation utilities used by sync validation");
 
     RETURN_IF_SKIP(Init());
 
     // Test values that require the implementation to handle YCbCr subsampling correctly
     // across planes in order for this test to not hit any asserts
-    const VkExtent2D max_coded_extent = {272, 272};
-    const VkExtent2D coded_extent = {256, 256};
+    const VkExtent2D max_coded_extent = { 272, 272 };
+    const VkExtent2D coded_extent = { 256, 256 };
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsDecode(), [&](const VideoConfig& config) {
         return (config.PictureFormatProps()->format == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM ||
@@ -1250,7 +1269,7 @@ TEST_F(PositiveSyncValVideo, ImageRangeGenYcbcrSubsampling) {
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
 
     // Also test with an offset (ignoring other validation violations)
-    decode_info->dstPictureResource.codedOffset = {1, 1};
+    decode_info->dstPictureResource.codedOffset = { 1, 1 };
     cb.DecodeVideo(decode_info);
 
     cb.EndVideoCoding(context.End());
@@ -1262,8 +1281,9 @@ TEST_F(PositiveSyncValVideo, DecodeCoincide) {
 
     RETURN_IF_SKIP(Init());
 
-    auto config = GetConfig(FilterConfigs(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 3),
-                                          [](const VideoConfig& config) { return !config.SupportsDecodeOutputDistinct(); }));
+    auto config =
+        GetConfig(FilterConfigs(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 3),
+                                [](const VideoConfig& config) { return !config.SupportsDecodeOutputDistinct(); }));
     if (!config) {
         GTEST_SKIP() << "Test requires video decode support with references, 3 DPB slots, and coincide mode support";
     }
@@ -1307,8 +1327,9 @@ TEST_F(PositiveSyncValVideo, DecodeDistinct) {
 
     RETURN_IF_SKIP(Init());
 
-    auto config = GetConfig(FilterConfigs(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 4),
-                                          [](const VideoConfig& config) { return config.SupportsDecodeOutputDistinct(); }));
+    auto config =
+        GetConfig(FilterConfigs(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 4),
+                                [](const VideoConfig& config) { return config.SupportsDecodeOutputDistinct(); }));
     if (!config) {
         GTEST_SKIP() << "Test requires video decode support with references, 4 DPB slots, and distinct mode support";
     }
@@ -1411,14 +1432,16 @@ TEST_F(PositiveSyncValVideo, EncodeQuantizationMap) {
 
     std::vector<TestConfig> tests;
     if (delta_config) {
-        tests.emplace_back(TestConfig{delta_config, VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      delta_config.QuantDeltaMapProps()});
+        tests.emplace_back(TestConfig{ delta_config,
+                                       VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       delta_config.QuantDeltaMapProps() });
     }
     if (emphasis_config) {
-        tests.emplace_back(TestConfig{emphasis_config, VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                      emphasis_config.EmphasisMapProps()});
+        tests.emplace_back(TestConfig{ emphasis_config,
+                                       VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                                       emphasis_config.EmphasisMapProps() });
     }
 
     for (auto& [config, encode_flag, session_create_flag, map_props] : tests) {
@@ -1440,8 +1463,12 @@ TEST_F(PositiveSyncValVideo, EncodeQuantizationMap) {
         cb.Begin();
 
         VkClearColorValue clear_value{};
-        VkImageSubresourceRange subres_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        vk::CmdClearColorImage(cb.handle(), quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
+        VkImageSubresourceRange subres_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+        vk::CmdClearColorImage(cb.handle(),
+                               quantization_map.Image(),
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                               &clear_value,
+                               1,
                                &subres_range);
 
         auto barrier_from_transfer = vku::InitStruct<VkImageMemoryBarrier2>();
@@ -1485,14 +1512,18 @@ TEST_F(PositiveSyncValVideo, EncodeQuantizationMap) {
 
         cb.EndVideoCoding(context.End());
 
-        vk::CmdClearColorImage(cb.handle(), quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
+        vk::CmdClearColorImage(cb.handle(),
+                               quantization_map.Image(),
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                               &clear_value,
+                               1,
                                &subres_range);
 
         cb.End();
     }
 
-    if (!delta_config || (QueueFamilyFlags(delta_config.QueueFamilyIndex()) & VK_QUEUE_TRANSFER_BIT) == 0 || !emphasis_config ||
-        (QueueFamilyFlags(emphasis_config.QueueFamilyIndex()) & VK_QUEUE_TRANSFER_BIT) == 0) {
+    if (!delta_config || (QueueFamilyFlags(delta_config.QueueFamilyIndex()) & VK_QUEUE_TRANSFER_BIT) == 0 ||
+        !emphasis_config || (QueueFamilyFlags(emphasis_config.QueueFamilyIndex()) & VK_QUEUE_TRANSFER_BIT) == 0) {
         GTEST_SKIP() << "Not all quantization map types could be tested";
     }
 }

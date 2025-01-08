@@ -11,8 +11,8 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
 #include "../framework/barrier_queue_family.h"
+#include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
 class PositiveBuffer : public VkLayerTest {};
@@ -21,12 +21,13 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
     TEST_DESCRIPTION("Valid buffer ownership transfers that shouldn't create errors");
     RETURN_IF_SKIP(Init());
 
-    vkt::Queue *no_gfx_queue = m_device->QueueWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    vkt::Queue* no_gfx_queue = m_device->QueueWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (!no_gfx_queue) {
         GTEST_SKIP() << "Required queue not present (non-graphics non-compute capable required)";
     }
 
-    vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool no_gfx_pool(
+        *m_device, no_gfx_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer no_gfx_cb(*m_device, no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
@@ -35,19 +36,38 @@ TEST_F(PositiveBuffer, OwnershipTranfers) {
     // Let gfx own it.
     buffer_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     buffer_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    ValidOwnershipTransferOp(m_errorMonitor, m_default_queue, m_command_buffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT, &buffer_barrier, nullptr);
+    ValidOwnershipTransferOp(m_errorMonitor,
+                             m_default_queue,
+                             m_command_buffer,
+                             VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             &buffer_barrier,
+                             nullptr);
 
     // Transfer it to non-gfx
     buffer_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
-    ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_command_buffer, no_gfx_queue, no_gfx_cb,
-                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, &buffer_barrier, nullptr);
+    ValidOwnershipTransfer(m_errorMonitor,
+                           m_default_queue,
+                           m_command_buffer,
+                           no_gfx_queue,
+                           no_gfx_cb,
+                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           &buffer_barrier,
+                           nullptr);
 
     // Transfer it to gfx
     buffer_barrier.srcQueueFamilyIndex = no_gfx_queue->family_index;
     buffer_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    ValidOwnershipTransfer(m_errorMonitor, no_gfx_queue, no_gfx_cb, m_default_queue, m_command_buffer,
-                           VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, &buffer_barrier, nullptr);
+    ValidOwnershipTransfer(m_errorMonitor,
+                           no_gfx_queue,
+                           no_gfx_cb,
+                           m_default_queue,
+                           m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                           &buffer_barrier,
+                           nullptr);
 }
 
 TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
@@ -69,13 +89,14 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
 
     VkPhysicalDeviceVulkan13Properties props_1_3 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(props_1_3);
-    if (props_1_3.uniformTexelBufferOffsetAlignmentBytes < 4 || !props_1_3.uniformTexelBufferOffsetSingleTexelAlignment) {
+    if (props_1_3.uniformTexelBufferOffsetAlignmentBytes < 4 ||
+        !props_1_3.uniformTexelBufferOffsetSingleTexelAlignment) {
         GTEST_SKIP() << "need uniformTexelBufferOffsetAlignmentBytes to be more than 4 with "
                         "uniformTexelBufferOffsetSingleTexelAlignment support";
     }
 
     // to prevent VUID-VkBufferViewCreateInfo-buffer-02751
-    const uint32_t block_size = 4;  // VK_FORMAT_R8G8B8A8_UNORM
+    const uint32_t block_size = 4; // VK_FORMAT_R8G8B8A8_UNORM
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
 
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
@@ -86,7 +107,8 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     CreateBufferViewTest(*this, &buff_view_ci, {});
 }
 
-// The two PerfGetBufferAddress tests are intended to be used locally to monitor performance of the internal address -> buffer map
+// The two PerfGetBufferAddress tests are intended to be used locally to monitor performance of the internal address ->
+// buffer map
 TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     TEST_DESCRIPTION("Add elements to buffer_address_map, worst case scenario");
 
@@ -103,8 +125,8 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
     // Create buffers. They have the same starting offset, but a growing size.
-    // This is the worst case scenario for adding an element in the current buffer_address_map: inserted range will have to be split
-    // for every range currently in the map.
+    // This is the worst case scenario for adding an element in the current buffer_address_map: inserted range will have
+    // to be split for every range currently in the map.
     constexpr size_t N = 1400;
     std::vector<vkt::Buffer> buffers(N);
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -114,7 +136,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     VkDeviceAddress ref_address = 0;
 
     for (size_t i = 0; i < N; ++i) {
-        vkt::Buffer &buffer = buffers[i];
+        vkt::Buffer& buffer = buffers[i];
         buffer_ci.size = (i + 1) * 4096;
         buffer.InitNoMemory(*m_device, buffer_ci);
         vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
@@ -129,7 +151,8 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
     }
 }
 
-// The two PerfGetBufferAddress tests are intended to be used locally to monitor performance of the internal address -> buffer map
+// The two PerfGetBufferAddress tests are intended to be used locally to monitor performance of the internal address ->
+// buffer map
 TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
     TEST_DESCRIPTION("Add elements to buffer_address_map, good case scenario");
 
@@ -145,16 +168,16 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
     alloc_info.allocationSize = 100 * 4096 * 4096;
     vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
 
-    // Create buffers. They have consecutive device address ranges, so no overlaps: no split will be needed when inserting, it
-    // should be fast.
-    constexpr size_t N = 1400;  // 100 * 4096;
+    // Create buffers. They have consecutive device address ranges, so no overlaps: no split will be needed when
+    // inserting, it should be fast.
+    constexpr size_t N = 1400; // 100 * 4096;
     std::vector<vkt::Buffer> buffers(N);
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = 4096;
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     for (size_t i = 0; i < N; ++i) {
-        vkt::Buffer &buffer = buffers[i];
+        vkt::Buffer& buffer = buffers[i];
         buffer.InitNoMemory(*m_device, buffer_ci);
         // Consecutive offsets
         vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), i * buffer_ci.size);
@@ -230,7 +253,8 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT);
+    vkt::Buffer buffer(
+        *m_device, 32, VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT);
 
     VkBufferUsageFlags2CreateInfoKHR buffer_usage_flags = vku::InitStructHelper();
     buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT;
@@ -257,8 +281,8 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Ignore) {
     buffer_ci.usage = VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
     CreateBufferTest(*this, &buffer_ci, {});
 
-    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR |
-                      VK_BUFFER_USAGE_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT;
+    buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                      VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_BUFFER_USAGE_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT;
     CreateBufferTest(*this, &buffer_ci, {});
 }
 

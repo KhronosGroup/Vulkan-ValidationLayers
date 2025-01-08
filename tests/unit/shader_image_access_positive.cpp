@@ -9,9 +9,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include <vulkan/vulkan_core.h>
 
 class PositiveShaderImageAccess : public VkLayerTest {};
 
@@ -20,7 +20,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariable) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : enable
         layout(set = 0, binding = 0) uniform texture2D texture_image;
@@ -37,7 +37,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariable) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
@@ -48,7 +48,7 @@ TEST_F(PositiveShaderImageAccess, MultipleFunctionParameterToVariable) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : enable
         layout(set = 0, binding = 0) uniform texture2D texture_image;
@@ -70,7 +70,7 @@ TEST_F(PositiveShaderImageAccess, MultipleFunctionParameterToVariable) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
@@ -81,7 +81,7 @@ TEST_F(PositiveShaderImageAccess, DifferentFunctionParameterToVariable) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : enable
 
@@ -99,8 +99,8 @@ TEST_F(PositiveShaderImageAccess, DifferentFunctionParameterToVariable) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
@@ -115,7 +115,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoad) {
     //    int foo(texture2D func_texture) { return textureSize(func_texture, 0).x; }
     //    void main() {  int x = foo(texture_image); }
     // But replaced so the OpFunctionCall takes a OpLoad instead of OpVariable
-    char const *csSource = R"(
+    char const* csSource = R"(
                OpCapability Shader
                OpCapability ImageQuery
                OpMemoryModel Logical GLSL450
@@ -157,9 +157,10 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoad) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
 
@@ -168,7 +169,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariableSampledImage) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : enable
 
@@ -186,8 +187,8 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToVariableSampledImage) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
@@ -202,7 +203,7 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoadSampledImage) {
     //    int foo(texture2D func_texture) { return texture(sampler2D(func_texture,  func_sampler), vec2(0.0)); }
     //    void main() {  vec4 x = foo(texture_image, sampler_descriptor); }
     // But replaced so the OpFunctionCall takes a OpLoad instead of OpVariable
-    char const *csSource = R"(
+    char const* csSource = R"(
                 OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main"
@@ -250,10 +251,11 @@ TEST_F(PositiveShaderImageAccess, FunctionParameterToLoadSampledImage) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
 
@@ -265,7 +267,7 @@ TEST_F(PositiveShaderImageAccess, CopyObjectFromLoad) {
     // This is simple
     //    int x = textureSize(texture_image, 0).x;
     // but with inserted OpCopyObject calls
-    char const *csSource = R"(
+    char const* csSource = R"(
                OpCapability Shader
                OpCapability ImageQuery
                OpMemoryModel Logical GLSL450
@@ -300,9 +302,10 @@ TEST_F(PositiveShaderImageAccess, CopyObjectFromLoad) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
 
@@ -311,7 +314,7 @@ TEST_F(PositiveShaderImageAccess, UndefImage) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"(
+    char const* csSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main"
@@ -349,10 +352,11 @@ TEST_F(PositiveShaderImageAccess, UndefImage) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 }
 
@@ -362,7 +366,7 @@ TEST_F(PositiveShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform isampler2D s; // not accessed (so ignored)
         layout(set=0, binding=1) uniform usampler2D u; // accessed
@@ -382,19 +386,20 @@ TEST_F(PositiveShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
     vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
-    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+        });
+    vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler);
     descriptor_set.WriteDescriptorImageInfo(1, imageView, sampler);
     descriptor_set.UpdateDescriptorSets();
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
@@ -402,8 +407,14 @@ TEST_F(PositiveShaderImageAccess, ComponentTypeMismatchFunctionTwoArgs) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
@@ -417,7 +428,8 @@ TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT,
+                                fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
@@ -426,7 +438,8 @@ TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
 
     VkFormatProperties formatProps;
     fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), bad_format, &formatProps);
-    formatProps.optimalTilingFeatures = (formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
+    formatProps.optimalTilingFeatures =
+        (formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
     fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), bad_format, formatProps);
 
     fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), good_format, &formatProps);
@@ -440,12 +453,12 @@ TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
     vkt::ImageView good_view = good_image.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
+    sampler_ci.minFilter = VK_FILTER_LINEAR; // turned off feature bit for test
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
     sampler_ci.compareEnable = VK_FALSE;
     vkt::Sampler sampler(*m_device, sampler_ci);
 
-    char const *fs_source = R"glsl(
+    char const* fs_source = R"glsl(
         #version 450
         layout (set=0, binding=0) uniform sampler2D bad; // never accessed
         layout (set=0, binding=1) uniform sampler2D good;
@@ -456,12 +469,13 @@ TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
     )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
-    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+        });
+    vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     descriptor_set.WriteDescriptorImageInfo(0, bad_view, sampler);
     descriptor_set.WriteDescriptorImageInfo(1, good_view, sampler);
@@ -474,8 +488,14 @@ TEST_F(PositiveShaderImageAccess, SamplerNeverAccessed) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
@@ -490,7 +510,7 @@ TEST_F(PositiveShaderImageAccess, DISABLED_ExtraUnusedInvalidDescriptor) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fs_source = R"glsl(
+    char const* fs_source = R"glsl(
         #version 460
         layout (set = 1, binding = 0) uniform textureCube kTexturesCube[2];
         layout (set = 0, binding = 1) uniform sampler kSamplers;
@@ -503,11 +523,12 @@ TEST_F(PositiveShaderImageAccess, DISABLED_ExtraUnusedInvalidDescriptor) {
     )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 3, VK_SHADER_STAGE_ALL, nullptr},
-                                                     {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
-    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_, &descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 3, VK_SHADER_STAGE_ALL, nullptr },
+                                           { 1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                       });
+    vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_, &descriptor_set.layout_ });
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image_2d(*m_device, image_ci);
@@ -519,26 +540,38 @@ TEST_F(PositiveShaderImageAccess, DISABLED_ExtraUnusedInvalidDescriptor) {
     vkt::Image image_cube(*m_device, image_ci);
     vkt::ImageView image_view_cube = image_cube.CreateView(VK_IMAGE_VIEW_TYPE_CUBE);
 
-    descriptor_set.WriteDescriptorImageInfo(0, image_view_cube, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
-    descriptor_set.WriteDescriptorImageInfo(0, image_view_cube, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorImageInfo(0,
+                                            image_view_cube,
+                                            VK_NULL_HANDLE,
+                                            VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                            0);
+    descriptor_set.WriteDescriptorImageInfo(0,
+                                            image_view_cube,
+                                            VK_NULL_HANDLE,
+                                            VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                            1);
     // Set kTexturesCube[2] to be a non-Cube image view
-    descriptor_set.WriteDescriptorImageInfo(0, image_view_2d, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
+    descriptor_set.WriteDescriptorImageInfo(0,
+                                            image_view_2d,
+                                            VK_NULL_HANDLE,
+                                            VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                            2);
     descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set.UpdateDescriptorSets();
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    const VkDescriptorSet sets[2] = {descriptor_set.set_, descriptor_set.set_};
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 2, sets, 0,
-                              nullptr);
+    const VkDescriptorSet sets[2] = { descriptor_set.set_, descriptor_set.set_ };
+    vk::CmdBindDescriptorSets(
+        m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 2, sets, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
@@ -549,7 +582,7 @@ TEST_F(PositiveShaderImageAccess, FunctionDescriptorIndexing) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fs_source = R"glsl(
+    char const* fs_source = R"glsl(
         #version 460
         layout (set = 0, binding = 0) uniform sampler2D tex[3];
         layout (location=0) out vec4 color;
@@ -564,11 +597,12 @@ TEST_F(PositiveShaderImageAccess, FunctionDescriptorIndexing) {
     )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
-    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_, &descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_ALL, nullptr },
+        });
+    vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_, &descriptor_set.layout_ });
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image(*m_device, image_ci);
@@ -576,23 +610,29 @@ TEST_F(PositiveShaderImageAccess, FunctionDescriptorIndexing) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
+    descriptor_set.WriteDescriptorImageInfo(
+        0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(
+        0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorImageInfo(
+        0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 2);
     descriptor_set.UpdateDescriptorSets();
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();

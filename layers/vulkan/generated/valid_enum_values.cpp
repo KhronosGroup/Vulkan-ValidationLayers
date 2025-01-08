@@ -22,8 +22,9 @@
 
 // NOLINTBEGIN
 
-#include "stateless/stateless_validation.h"
 #include <vulkan/vk_enum_string_helper.h>
+
+#include "stateless/stateless_validation.h"
 
 //  Checking for values is a 2 part process
 //    1. Check if is valid at all

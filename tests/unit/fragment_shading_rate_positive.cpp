@@ -44,14 +44,20 @@ TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
     RETURN_IF_SKIP(Init());
 
     VkImageFormatProperties format_props = {};
-    VkResult result = vk::GetPhysicalDeviceImageFormatProperties(
-        m_device->Physical().handle(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, 0, &format_props);
+    VkResult result =
+        vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(),
+                                                   VK_FORMAT_B8G8R8A8_UNORM,
+                                                   VK_IMAGE_TYPE_2D,
+                                                   VK_IMAGE_TILING_OPTIMAL,
+                                                   VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
+                                                   0,
+                                                   &format_props);
     if (result != VK_SUCCESS) {
         GTEST_SKIP() << "Image options not supported";
     }
 
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    vkt::Image image(
+        *m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
@@ -67,8 +73,15 @@ TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
     imageMemoryBarrier.subresourceRange.levelCount = 1;
 
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                           VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, 0u, 0u, nullptr, 0u, nullptr, 1u,
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
+                           0u,
+                           0u,
+                           nullptr,
+                           0u,
+                           nullptr,
+                           1u,
                            &imageMemoryBarrier);
     m_command_buffer.End();
 }
@@ -95,7 +108,10 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
     vkt::Image image(*m_device, 1, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     vkt::ImageView imageView = image.CreateView();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle(),
+    vkt::Framebuffer framebuffer(*m_device,
+                                 rp.Handle(),
+                                 1,
+                                 &imageView.handle(),
                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize.width,
                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize.height);
     ASSERT_TRUE(framebuffer.initialized());

@@ -28,30 +28,30 @@ TEST_F(NegativePipelineTopology, PolygonMode) {
     rs_ci.lineWidth = 1.0f;
     rs_ci.rasterizerDiscardEnable = VK_TRUE;
 
-    auto set_polygonMode = [&](CreatePipelineHelper &helper) { helper.rs_state_ci_ = rs_ci; };
+    auto set_polygonMode = [&](CreatePipelineHelper& helper) { helper.rs_state_ci_ = rs_ci; };
 
     // Set polygonMode to POINT while the non-solid fill mode feature is disabled.
     // Introduce failure by setting unsupported polygon mode
     rs_ci.polygonMode = VK_POLYGON_MODE_POINT;
-    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit,
-                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_polygonMode, kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507");
 
     // Set polygonMode to LINE while the non-solid fill mode feature is disabled.
     // Introduce failure by setting unsupported polygon mode
     rs_ci.polygonMode = VK_POLYGON_MODE_LINE;
-    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit,
-                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_polygonMode, kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507");
 
     // Set polygonMode to FILL_RECTANGLE_NV while the extension is not enabled.
     // Introduce failure by setting unsupported polygon mode
     rs_ci.polygonMode = VK_POLYGON_MODE_FILL_RECTANGLE_NV;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-parameter");
-    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, kErrorBit,
-                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_polygonMode, kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414");
 }
 
 // Create VS declaring PointSize but not writing to it
-static const char *NoPointSizeVertShader = R"glsl(
+static const char* NoPointSizeVertShader = R"glsl(
     #version 450
     vec2 vertices[3];
     out gl_PerVertex
@@ -75,17 +75,17 @@ TEST_F(NegativePipelineTopology, PointSize) {
 
     VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08773");
 }
 
 TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndRestricted) {
-    TEST_DESCRIPTION(
-        "Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, with no dynamic state and "
-        "dynamicPrimitiveTopologyUnrestricted is false.");
+    TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, with no "
+                     "dynamic state and "
+                     "dynamicPrimitiveTopologyUnrestricted is false.");
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -99,17 +99,16 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndRestricted) {
 
     VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08773");
 }
 
 TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndUnrestricted) {
-    TEST_DESCRIPTION(
-        "Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, with "
-        "dynamicPrimitiveTopologyUnrestricted is true, but not dynamic state.");
+    TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, with "
+                     "dynamicPrimitiveTopologyUnrestricted is true, but not dynamic state.");
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -123,9 +122,9 @@ TEST_F(NegativePipelineTopology, PointSizeNonDynamicAndUnrestricted) {
 
     VkShaderObj vs(this, NoPointSizeVertShader, VK_SHADER_STAGE_VERTEX_BIT);
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08773");
 }
@@ -154,10 +153,10 @@ TEST_F(NegativePipelineTopology, PointSizeDynamicAndRestricted) {
     dyn_state_ci.dynamicStateCount = 1;
     dyn_state_ci.pDynamicStates = &dyn_state;
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.dyn_state_ci_ = dyn_state_ci;
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-08773");
 }
@@ -175,48 +174,53 @@ TEST_F(NegativePipelineTopology, PrimitiveTopology) {
 
     VkPrimitiveTopology topology;
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = topology;
         helper.ia_ci_.primitiveRestartEnable = VK_TRUE;
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
 
     topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
 
     topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
 
     topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
 
     {
         topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252",
-                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"};
+        constexpr std::array vuids = { "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252",
+                                       "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429" };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
     }
 
     {
         topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252",
-                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"};
+        constexpr std::array vuids = { "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252",
+                                       "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429" };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
     }
 
     {
         topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
-                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430",
-                                      "VUID-VkGraphicsPipelineCreateInfo-topology-08889"};
+        constexpr std::array vuids = { "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
+                                       "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430",
+                                       "VUID-VkGraphicsPipelineCreateInfo-topology-08889" };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
     }
 
     topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
 
     topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
 }
 
 TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
@@ -232,19 +236,20 @@ TEST_F(NegativePipelineTopology, PrimitiveTopologyListRestart) {
 
     VkPrimitiveTopology topology;
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = topology;
         helper.ia_ci_.primitiveRestartEnable = VK_TRUE;
         helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
 
     topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
 
     if (m_device->Physical().Features().tessellationShader) {
         topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
-                                      "VUID-VkGraphicsPipelineCreateInfo-topology-08889"};
+        constexpr std::array vuids = { "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
+                                       "VUID-VkGraphicsPipelineCreateInfo-topology-08889" };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
     }
 }
@@ -257,8 +262,8 @@ TEST_F(NegativePipelineTopology, PatchListNoTessellation) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    auto set_info = [&](CreatePipelineHelper &helper) { helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST; };
-    const char *vuid = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
+    auto set_info = [&](CreatePipelineHelper& helper) { helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST; };
+    const char* vuid = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
                            ? "VUID-VkGraphicsPipelineCreateInfo-topology-08889"
                            : "VUID-VkGraphicsPipelineCreateInfo-topology-08889";
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
@@ -275,16 +280,18 @@ TEST_F(NegativePipelineTopology, FillRectangleNV) {
 
     VkPolygonMode polygon_mode = VK_POLYGON_MODE_LINE;
 
-    auto set_polygon_mode = [&polygon_mode](CreatePipelineHelper &helper) { helper.rs_state_ci_.polygonMode = polygon_mode; };
+    auto set_polygon_mode = [&polygon_mode](CreatePipelineHelper& helper) {
+        helper.rs_state_ci_.polygonMode = polygon_mode;
+    };
 
     // Set unsupported polygon mode VK_POLYGON_MODE_LINE
-    CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, kErrorBit,
-                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_polygon_mode, kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507");
 
     // Set unsupported polygon mode VK_POLYGON_MODE_POINT
     polygon_mode = VK_POLYGON_MODE_POINT;
-    CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, kErrorBit,
-                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_polygon_mode, kErrorBit, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507");
 
     // Set supported polygon mode VK_POLYGON_MODE_FILL
     polygon_mode = VK_POLYGON_MODE_FILL;

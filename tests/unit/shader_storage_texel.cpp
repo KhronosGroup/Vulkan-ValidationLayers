@@ -12,9 +12,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 
 class NegativeShaderStorageTexel : public VkLayerTest {};
 
@@ -29,7 +29,7 @@ TEST_F(NegativeShaderStorageTexel, WriteLessComponent) {
     // imageStore(storageTexelBuffer, 1, uvec3(1, 1, 1));
     //
     // Rgba8ui == 4-component but only writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpCapability ImageBuffer
                OpCapability StorageImageExtendedFormats
@@ -57,14 +57,17 @@ TEST_F(NegativeShaderStorageTexel, WriteLessComponent) {
                OpFunctionEnd
         )";
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT; // Rgba8ui
     if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
-    const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    const auto set_info = [&](CreateComputePipelineHelper& helper) {
+        helper.cs_ = std::make_unique<VkShaderObj>(
+            this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+        helper.dsl_bindings_ = {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr }
+        };
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
 }
@@ -81,7 +84,7 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     // imageStore(storageTexelBuffer, 1, uvec3(1, 1, 1));
     //
     // Unknown will become a 4-component but writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpCapability ImageBuffer
                OpCapability StorageImageWriteWithoutFormat
@@ -115,11 +118,12 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
                OpFunctionEnd
         )";
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+                           });
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT; // Rgba8ui
     if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
@@ -143,14 +147,21 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     ds.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &ds.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &ds.set_,
+                              0,
+                              nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageWrite-04469");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
@@ -165,7 +176,8 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
 
     PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT fpvkGetOriginalPhysicalDeviceFormatProperties2EXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT, fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT,
+                                fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
@@ -181,7 +193,7 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     fmt_props_3.bufferFeatures &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
     fpvkSetPhysicalDeviceFormatProperties2EXT(Gpu(), format, fmt_props);
 
-    const char *csSource = R"(
+    const char* csSource = R"(
                   OpCapability Shader
                   OpCapability ImageBuffer
                   OpCapability StorageImageWriteWithoutFormat
@@ -217,17 +229,18 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
                   OpFunctionEnd
                   )";
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+                           });
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &ds.layout_ });
     cs_pipeline.LateBindPipelineInfo();
-    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
+    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT; // override with wrong value
+    cs_pipeline.CreateComputePipeline(false);                     // need false to prevent late binding
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
 
@@ -248,8 +261,14 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     m_command_buffer.Begin();
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0,
-                              1, &ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              cs_pipeline.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &ds.set_,
+                              0,
+                              nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeImage-07029");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();

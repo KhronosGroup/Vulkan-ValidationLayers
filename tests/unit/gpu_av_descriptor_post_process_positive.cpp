@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-#include <vulkan/vulkan_core.h>
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
+#include <vulkan/vulkan_core.h>
 
 class PositiveGpuAVDescriptorPostProcess : public GpuAVDescriptorIndexingTest {};
 
@@ -42,8 +42,8 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, MixingProtectedResources) {
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs_image_protected.size;
-    if (!m_device->Physical().SetMemoryType(mem_reqs_image_protected.memoryTypeBits, &alloc_info,
-                                            VK_MEMORY_PROPERTY_PROTECTED_BIT)) {
+    if (!m_device->Physical().SetMemoryType(
+            mem_reqs_image_protected.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_PROTECTED_BIT)) {
         GTEST_SKIP() << "Memory type not found";
     }
     vkt::DeviceMemory memory_image_protected(*m_device, alloc_info);
@@ -52,16 +52,17 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, MixingProtectedResources) {
     vkt::ImageView image_view_protected = image_protected.CreateView();
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    uint32_t* buffer_ptr = (uint32_t*)buffer.Memory().Map();
     buffer_ptr[0] = 0;
     buffer.Memory().Unmap();
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr },
+        });
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -69,13 +70,17 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, MixingProtectedResources) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, sizeof(uint32_t));
-    descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
-    descriptor_set.WriteDescriptorImageInfo(1, image_view_protected, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorImageInfo(
+        1, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(1,
+                                            image_view_protected,
+                                            sampler,
+                                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                            1);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
 
@@ -99,8 +104,14 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, MixingProtectedResources) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
@@ -115,7 +126,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageBindingPartiallyBound) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
 
@@ -135,9 +146,14 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageBindingPartiallyBound) {
 
     OneOffDescriptorIndexingSet descriptor_set(
         m_device,
-        {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
-         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0}});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+        { { 0,
+            VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            2,
+            VK_SHADER_STAGE_ALL,
+            nullptr,
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT },
+          { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0 } });
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout.handle();
@@ -153,20 +169,34 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageBindingPartiallyBound) {
     vkt::ImageView uint_image_view = uint_image.CreateView();
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *data = (uint32_t *)buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer.Memory().Map();
     *data = 0;
     buffer.Memory().Unmap();
 
-    descriptor_set.WriteDescriptorImageInfo(0, float_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
-    descriptor_set.WriteDescriptorImageInfo(0, uint_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorImageInfo(0,
+                                            float_image_view,
+                                            VK_NULL_HANDLE,
+                                            VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                            0);
+    descriptor_set.WriteDescriptorImageInfo(0,
+                                            uint_image_view,
+                                            VK_NULL_HANDLE,
+                                            VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                            1);
     descriptor_set.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
@@ -182,7 +212,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageBindingRuntimeArray) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 460
         #extension GL_EXT_nonuniform_qualifier : enable
         #extension GL_EXT_samplerless_texture_functions : require
@@ -202,8 +232,8 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageBindingRuntimeArray) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
-                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr },
+                           { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
@@ -218,20 +248,27 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageBindingRuntimeArray) {
     vkt::ImageView uint_image_view = uint_image.CreateView();
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *data = (uint32_t *)buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer.Memory().Map();
     *data = 0;
     buffer.Memory().Unmap();
 
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, float_image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                                   VK_IMAGE_LAYOUT_GENERAL, 0);
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, uint_image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                                   VK_IMAGE_LAYOUT_GENERAL, 1);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(
+        0, float_image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 0);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(
+        0, uint_image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 1);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(
+        1, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
@@ -246,7 +283,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisample) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
 
@@ -267,11 +304,16 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisample) {
     OneOffDescriptorIndexingSet descriptor_set(
         m_device,
         {
-            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
-            {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
-            {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
+            { 0,
+              VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+              1,
+              VK_SHADER_STAGE_ALL,
+              nullptr,
+              VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT },
+            { 1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr, 0 },
+            { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0 },
         });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -290,8 +332,14 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisample) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
@@ -304,7 +352,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSets) 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
         layout(set = 0, binding = 0) uniform texture2D BaseTexture;
@@ -315,7 +363,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSets) 
         }
     )glsl";
 
-    char const *cs_source_ms = R"glsl(
+    char const* cs_source_ms = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
         layout(set = 0, binding = 0) uniform texture2DMS BaseTextureMS;
@@ -334,22 +382,24 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSets) 
     vkt::Image ms_image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView ms_image_view = ms_image.CreateView();
 
-    OneOffDescriptorSet descriptor_set0(m_device, {
-                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                      {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                      {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  });
-    const vkt::PipelineLayout pipeline_layout0(*m_device, {&descriptor_set0.layout_});
+    OneOffDescriptorSet descriptor_set0(m_device,
+                                        {
+                                            { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                            { 1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                            { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                        });
+    const vkt::PipelineLayout pipeline_layout0(*m_device, { &descriptor_set0.layout_ });
     descriptor_set0.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set0.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set0.WriteDescriptorBufferInfo(2, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set0.UpdateDescriptorSets();
 
-    OneOffDescriptorSet descriptor_set1(m_device, {
-                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                      {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  });
-    const vkt::PipelineLayout pipeline_layout1(*m_device, {&descriptor_set1.layout_});
+    OneOffDescriptorSet descriptor_set1(m_device,
+                                        {
+                                            { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                            { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                        });
+    const vkt::PipelineLayout pipeline_layout1(*m_device, { &descriptor_set1.layout_ });
     descriptor_set1.WriteDescriptorImageInfo(0, ms_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set1.WriteDescriptorBufferInfo(2, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set1.UpdateDescriptorSets();
@@ -366,13 +416,25 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSets) 
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout0.handle(), 0, 1,
-                              &descriptor_set0.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout0.handle(),
+                              0,
+                              1,
+                              &descriptor_set0.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_ms.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout1.handle(), 0, 1,
-                              &descriptor_set1.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout1.handle(),
+                              0,
+                              1,
+                              &descriptor_set1.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
     m_command_buffer.End();
@@ -386,7 +448,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSetsPa
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
         layout(set = 0, binding = 0) uniform texture2D BaseTexture;
@@ -396,7 +458,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSetsPa
             dummy = texture(sampler2D(BaseTexture, BaseTextureSampler), vec2(0));
         }
     )glsl";
-    char const *cs_source_ms = R"glsl(
+    char const* cs_source_ms = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
         layout(set = 0, binding = 0) uniform texture2DMS BaseTextureMS;
@@ -417,11 +479,16 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSetsPa
     OneOffDescriptorIndexingSet descriptor_set0(
         m_device,
         {
-            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
-            {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
-            {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
+            { 0,
+              VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+              1,
+              VK_SHADER_STAGE_ALL,
+              nullptr,
+              VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT },
+            { 1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr, 0 },
+            { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0 },
         });
-    const vkt::PipelineLayout pipeline_layout0(*m_device, {&descriptor_set0.layout_});
+    const vkt::PipelineLayout pipeline_layout0(*m_device, { &descriptor_set0.layout_ });
     descriptor_set0.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set0.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set0.WriteDescriptorBufferInfo(2, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -430,10 +497,15 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSetsPa
     OneOffDescriptorIndexingSet descriptor_set1(
         m_device,
         {
-            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
-            {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
+            { 0,
+              VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+              1,
+              VK_SHADER_STAGE_ALL,
+              nullptr,
+              VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT },
+            { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0 },
         });
-    const vkt::PipelineLayout pipeline_layout1(*m_device, {&descriptor_set1.layout_});
+    const vkt::PipelineLayout pipeline_layout1(*m_device, { &descriptor_set1.layout_ });
     descriptor_set1.WriteDescriptorImageInfo(0, ms_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set1.WriteDescriptorBufferInfo(2, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set1.UpdateDescriptorSets();
@@ -450,18 +522,36 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSetsPa
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout0.handle(), 0, 1,
-                              &descriptor_set0.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout0.handle(),
+                              0,
+                              1,
+                              &descriptor_set0.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_ms.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout1.handle(), 0, 1,
-                              &descriptor_set1.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout1.handle(),
+                              0,
+                              1,
+                              &descriptor_set1.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout0.handle(), 0, 1,
-                              &descriptor_set0.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout0.handle(),
+                              0,
+                              1,
+                              &descriptor_set0.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
@@ -475,7 +565,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDispatches) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
 
@@ -488,7 +578,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDispatches) {
         }
     )glsl";
 
-    char const *cs_source_ms = R"glsl(
+    char const* cs_source_ms = R"glsl(
         #version 460
         #extension GL_EXT_samplerless_texture_functions : require
 
@@ -512,11 +602,16 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDispatches) {
     OneOffDescriptorIndexingSet descriptor_set(
         m_device,
         {
-            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
-            {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
-            {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
+            { 0,
+              VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+              1,
+              VK_SHADER_STAGE_ALL,
+              nullptr,
+              VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT },
+            { 1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr, 0 },
+            { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0 },
         });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -534,8 +629,14 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDispatches) {
     descriptor_set.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
@@ -546,8 +647,14 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDispatches) {
     descriptor_set.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_ms.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
@@ -564,7 +671,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, NonMultisampleMismatchWithPipeline) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 1};
+    image_create_info.extent = { 32, 32, 1 };
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
@@ -580,25 +687,38 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, NonMultisampleMismatchWithPipeline) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    uint32_t* buffer_ptr = (uint32_t*)buffer.Memory().Map();
     buffer_ptr[0] = 1;
     buffer.Memory().Unmap();
 
-    OneOffDescriptorIndexingSet descriptor_set(m_device,
-                                               {
-                                                   {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr,
-                                                    VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
-                                                   {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0},
-                                               });
-    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorImageInfo(0, bad_image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
-    descriptor_set.WriteDescriptorImageInfo(0, good_image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    OneOffDescriptorIndexingSet descriptor_set(
+        m_device,
+        {
+            { 0,
+              VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              2,
+              VK_SHADER_STAGE_ALL,
+              nullptr,
+              VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT },
+            { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr, 0 },
+        });
+    vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
+    descriptor_set.WriteDescriptorImageInfo(0,
+                                            bad_image_view,
+                                            sampler.handle(),
+                                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                            0);
+    descriptor_set.WriteDescriptorImageInfo(0,
+                                            good_image_view,
+                                            sampler.handle(),
+                                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                            1);
     descriptor_set.WriteDescriptorBufferInfo(1, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         // mySampler[0] is bad
         // mySampler[1] is good
@@ -619,8 +739,14 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, NonMultisampleMismatchWithPipeline) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
@@ -629,18 +755,20 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, NonMultisampleMismatchWithPipeline) {
 }
 
 TEST_F(PositiveGpuAVDescriptorPostProcess, SharedDescriptorDifferentOpVariableId) {
-    TEST_DESCRIPTION("Same descriptor set is accessed by 2 different shaders, so the Variable IDs will not match other pipeline");
+    TEST_DESCRIPTION(
+        "Same descriptor set is accessed by 2 different shaders, so the Variable IDs will not match other pipeline");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+        });
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -648,18 +776,18 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, SharedDescriptorDifferentOpVariableId
     vkt::ImageView image_view = image.CreateView();
 
     vkt::Buffer buffer(*m_device, 60, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    uint32_t* buffer_ptr = (uint32_t*)buffer.Memory().Map();
     buffer_ptr[0] = 0;
     buffer.Memory().Unmap();
 
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorImageInfo(
+        0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(
+        0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
     descriptor_set.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *cs_source0 = R"glsl(
+    char const* cs_source0 = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set=0, binding=0) uniform sampler2D sample_array[];
@@ -676,9 +804,9 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, SharedDescriptorDifferentOpVariableId
     pipe0.cp_ci_.layout = pipeline_layout.handle();
     pipe0.CreateComputePipeline();
 
-    // This is the same shader as above, but the goal is to make sure the OpVariable ID are different as the descriptor is being
-    // aliased
-    char const *cs_source1 = R"(
+    // This is the same shader as above, but the goal is to make sure the OpVariable ID are different as the descriptor
+    // is being aliased
+    char const* cs_source1 = R"(
                OpCapability Shader
                OpCapability RuntimeDescriptorArray
                OpMemoryModel Logical GLSL450
@@ -727,13 +855,20 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, SharedDescriptorDifferentOpVariableId
                OpFunctionEnd
     )";
     CreateComputePipelineHelper pipe1(*this);
-    pipe1.cs_ = std::make_unique<VkShaderObj>(this, cs_source1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe1.cs_ = std::make_unique<VkShaderObj>(
+        this, cs_source1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe1.cp_ci_.layout = pipeline_layout.handle();
     pipe1.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe0.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
@@ -772,7 +907,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
     //     float4 sampledColor = texture[dataIndex].Sample(sampler, float2(0));
     //     storageBuffer[0].color = sampledColor;
     // }
-    char const *cs_source = R"(
+    char const* cs_source = R"(
                OpCapability RuntimeDescriptorArray
                OpCapability Shader
                OpExtension "SPV_KHR_storage_buffer_storage_class"
@@ -839,7 +974,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
     )";
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    uint32_t* buffer_ptr = (uint32_t*)buffer.Memory().Map();
     *buffer_ptr = 0;
     buffer.Memory().Unmap();
 
@@ -848,27 +983,35 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr },
+                                         { 1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                         { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } });
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
+    descriptor_set.WriteDescriptorImageInfo(
+        0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(
+        0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
     descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set.WriteDescriptorBufferInfo(2, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.cp_ci_.layout = pipeline_layout.handle();
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 

@@ -40,12 +40,12 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
     stage_create_info.pName = "main";
     VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
     group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-    group_create_info.generalShader = 1;  // Bad index here
+    group_create_info.generalShader = 1; // Bad index here
     group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
     group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
     group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
-    VkPipelineLibraryCreateInfoKHR library_count_zero = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 0};
-    VkPipelineLibraryCreateInfoKHR library_count_one = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 1};
+    VkPipelineLibraryCreateInfoKHR library_count_zero = { VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 0 };
+    VkPipelineLibraryCreateInfoKHR library_count_one = { VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 1 };
     {
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
         pipeline_ci.pLibraryInfo = &library_count_zero;
@@ -55,12 +55,14 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
         pipeline_ci.stageCount = 0;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-07999");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         pipeline_ci.stageCount = 1;
         pipeline_ci.groupCount = 0;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-08700");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         pipeline_ci.groupCount = 1;
     }
@@ -75,7 +77,8 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
         pipeline_ci.pLibraryInterface = NULL;
         m_errorMonitor->SetUnexpectedError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-parameter");
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03590");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -89,7 +92,8 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
         pipeline_ci.flags = VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-None-09497");
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-02904");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -106,13 +110,15 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
         VkPipeline fake_pipeline_handle = CastFromUint64<VkPipeline>(fake_pipeline_id);
         pipeline_ci.basePipelineHandle = fake_pipeline_handle;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-07984");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         pipeline_ci.basePipelineHandle = VK_NULL_HANDLE;
         pipeline_ci.basePipelineIndex = 10;
         m_errorMonitor->SetDesiredError("VUID-vkCreateRayTracingPipelinesKHR-flags-03415");
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-07985");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -126,7 +132,8 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
         pipeline_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
         pipeline_ci.pLibraryInterface = NULL;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03465");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -144,7 +151,8 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
         pipeline_ci.stageCount = 1;
         pipeline_ci.pDynamicState = &dynamic_states;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-pDynamicStates-03602");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -158,17 +166,20 @@ TEST_F(NegativeRayTracingPipeline, BasicUsage) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03470");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03471");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         pipeline_ci.flags = VK_PIPELINE_CREATE_DISPATCH_BASE;
         m_errorMonitor->SetDesiredError("VUID-vkCreateRayTracingPipelinesKHR-flags-03816");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -191,7 +202,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
     VkShaderObj frag_shader(this, kMinimalShaderGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
-    VkPipelineLibraryCreateInfoKHR library_info = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 0};
+    VkPipelineLibraryCreateInfoKHR library_info = { VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 0 };
 
     // No raygen stage
     {
@@ -216,7 +227,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-stage-03425");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -229,7 +241,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
 
         VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        group_create_info.generalShader = 1;  // Bad index here
+        group_create_info.generalShader = 1; // Bad index here
         group_create_info.closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
@@ -243,7 +255,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03474");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -270,7 +283,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
 
         group_create_infos[1] = vku::InitStructHelper();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        group_create_infos[1].generalShader = 1;  // Index 1 corresponds to a closest hit shader
+        group_create_infos[1].generalShader = 1; // Index 1 corresponds to a closest hit shader
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
@@ -284,7 +297,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03474");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -312,7 +326,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         group_create_infos[1] = vku::InitStructHelper();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         group_create_infos[1].generalShader = 0;
-        group_create_infos[1].closestHitShader = 0;  // This should not be set for a general shader group
+        group_create_infos[1].closestHitShader = 0; // This should not be set for a general shader group
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
@@ -325,7 +339,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03475");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -355,7 +370,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
-        group_create_infos[1].intersectionShader = 5;  // invalid index
+        group_create_infos[1].intersectionShader = 5; // invalid index
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
         pipeline_ci.pLibraryInfo = &library_info;
@@ -366,7 +381,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -396,7 +412,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
-        group_create_infos[1].intersectionShader = 0;  // Index 0 corresponds to a raygen shader
+        group_create_infos[1].intersectionShader = 0; // Index 0 corresponds to a raygen shader
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
         pipeline_ci.pLibraryInfo = &library_info;
@@ -407,7 +423,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -448,7 +465,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03477");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -477,7 +495,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
-        group_create_infos[1].anyHitShader = 5;  // IKHRalid index
+        group_create_infos[1].anyHitShader = 5; // IKHRalid index
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
@@ -489,7 +507,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -518,7 +537,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_KHR;
-        group_create_infos[1].anyHitShader = 1;  // Index 1 corresponds to a closest hit shader
+        group_create_infos[1].anyHitShader = 1; // Index 1 corresponds to a closest hit shader
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
         VkRayTracingPipelineCreateInfoKHR pipeline_ci = vku::InitStructHelper();
@@ -530,7 +549,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -558,7 +578,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         group_create_infos[1] = vku::InitStructHelper();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
-        group_create_infos[1].closestHitShader = 5;  // invalid index
+        group_create_infos[1].closestHitShader = 5; // invalid index
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
@@ -571,7 +591,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-closestHitShader-03478");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -599,7 +620,7 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         group_create_infos[1] = vku::InitStructHelper();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
-        group_create_infos[1].closestHitShader = 1;  // Index 1 corresponds to an any hit shader
+        group_create_infos[1].closestHitShader = 1; // Index 1 corresponds to an any hit shader
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
@@ -612,7 +633,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingShaderGroupCreateInfoKHR-closestHitShader-03478");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -653,7 +675,8 @@ TEST_F(NegativeRayTracingPipeline, ShaderGroupsKHR) {
         pipeline_ci.layout = empty_pipeline_layout.handle();
 
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-stage-06899");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -669,7 +692,7 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {});
 
-    const char *ray_generation_shader = R"glsl(
+    const char* ray_generation_shader = R"glsl(
         #version 460 core
         #extension GL_KHR_ray_tracing : enable
         void main() {
@@ -706,11 +729,12 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
 
     VkPipeline library = VK_NULL_HANDLE;
     VkPipeline invalid_library = VK_NULL_HANDLE;
-    vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &library);
+    vk::CreateRayTracingPipelinesKHR(
+        m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &library);
 
     pipeline_ci.flags = 0;
-    vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr,
-                                     &invalid_library);
+    vk::CreateRayTracingPipelinesKHR(
+        m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &invalid_library);
 
     VkPipelineLibraryCreateInfoKHR library_ci = vku::InitStructHelper();
     library_ci.libraryCount = 1;
@@ -722,44 +746,51 @@ TEST_F(NegativeRayTracingPipeline, LibraryFlags) {
     {
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-04718");
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR;
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-04719");
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR;
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-04720");
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR;
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-04721");
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR;
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-04722");
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR;
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-04723");
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
     {
         pipeline_ci.flags = 0;
         library_ci.pLibraries = &invalid_library;
         m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381");
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 
@@ -795,31 +826,43 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     // Check only when the reported size is
     if (ray_tracing_properties.shaderGroupHandleCaptureReplaySize > 0) {
         m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-03484");
-        vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.Handle(), 1, 1,
-                                                            (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1),
-                                                            &fake_buffer);
+        vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(
+            m_device->handle(),
+            rt_pipe.Handle(),
+            1,
+            1,
+            (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1),
+            &fake_buffer);
         m_errorMonitor->VerifyFound();
     }
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-03484");
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483");
-    // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.Handle(), 2, rt_pipe.GetShaderGroupsCount(),
+    // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount =
+    // groups_KHR_.size();
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(),
+                                                        rt_pipe.Handle(),
+                                                        2,
+                                                        rt_pipe.GetShaderGroupsCount(),
                                                         (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1),
                                                         &fake_buffer);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483");
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-04051");
-    // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
+    // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount =
+    // groups_KHR_.size();
     uint32_t invalid_firstgroup = rt_pipe.GetShaderGroupsCount() + 1;
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.Handle(), invalid_firstgroup, 0,
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(),
+                                                        rt_pipe.Handle(),
+                                                        invalid_firstgroup,
+                                                        0,
                                                         (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1),
                                                         &fake_buffer);
     m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeRayTracingPipeline, DeferredOp) {
-    TEST_DESCRIPTION(
-        "Test that objects created with deferred operations are recorded once the operation has successfully completed.");
+    TEST_DESCRIPTION("Test that objects created with deferred operations are recorded once the operation has "
+                     "successfully completed.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::rayTracingPipeline);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
@@ -828,7 +871,7 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     }
     RETURN_IF_SKIP(InitState());
 
-    static const char *chit_src = R"glsl(
+    static const char* chit_src = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
         layout(location = 0) rayPayloadEXT uvec4 hitValue;
@@ -851,9 +894,10 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     VkShaderObj chit_shader(this, chit_src, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     const vkt::DescriptorSetLayout ds_layout(
-        *m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr},
-                    {1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr}});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+        *m_device,
+        { { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr },
+          { 1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, nullptr } });
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &ds_layout });
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
@@ -881,7 +925,8 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     library_pipeline.pLibraryInterface = &interface_ci;
 
     VkPipeline library = VK_NULL_HANDLE;
-    vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
+    vk::CreateRayTracingPipelinesKHR(
+        m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
 
     VkPipelineLibraryCreateInfoKHR library_info_one = vku::InitStructHelper();
     library_info_one.libraryCount = 1;
@@ -910,8 +955,8 @@ TEST_F(NegativeRayTracingPipeline, DeferredOp) {
     vk::CreateDeferredOperationKHR(m_device->handle(), 0, &deferredOperation);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
-    VkResult result = vk::CreateRayTracingPipelinesKHR(m_device->handle(), deferredOperation, VK_NULL_HANDLE, 1, &pipeline_ci,
-                                                       nullptr, &pipeline);
+    VkResult result = vk::CreateRayTracingPipelinesKHR(
+        m_device->handle(), deferredOperation, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
 
     m_command_buffer.Begin();
     if (result == VK_OPERATION_DEFERRED_KHR) {
@@ -962,10 +1007,14 @@ TEST_F(NegativeRayTracingPipeline, MaxResources) {
     RETURN_IF_SKIP(InitState(nullptr, &ray_tracing_features));
 
     const vkt::DescriptorSetLayout ds_layout(
-        *m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_device->Physical().limits_.maxPerStageResources,
-                     VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr},
-                    {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr}});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+        *m_device,
+        { { 0,
+            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            m_device->Physical().limits_.maxPerStageResources,
+            VK_SHADER_STAGE_RAYGEN_BIT_KHR,
+            nullptr },
+          { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr } });
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &ds_layout });
     VkShaderObj rgen_shader(this, kRayTracingMinimalGlsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
@@ -1018,7 +1067,8 @@ TEST_F(NegativeRayTracingPipeline, PipelineFlags) {
     shader_group.intersectionShader = VK_SHADER_UNUSED_KHR;
 
     VkRayTracingPipelineCreateInfoKHR create_info = vku::InitStructHelper();
-    create_info.flags = VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR;
+    create_info.flags =
+        VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR;
     create_info.layout = empty_pipeline_layout.handle();
     create_info.stageCount = 1;
     create_info.pStages = &stage_create_info;
@@ -1061,7 +1111,8 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroup)
     vkt::rt::Pipeline pipeline(*this, m_device);
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     pipeline.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    vkt::as::BuildGeometryInfoKHR tlas(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
     pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
@@ -1199,12 +1250,12 @@ TEST_F(NegativeRayTracingPipeline, PipelineBinaryRayTracingPipeline) {
 
         VkPipeline test_pipeline;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateRayTracingPipelinesKHR-pNext-09617");
-        vk::CreateRayTracingPipelinesKHR(device(), VK_NULL_HANDLE, pipeline_cache, 1, &raytracing_pipeline_ci, nullptr,
-                                         &test_pipeline);
+        vk::CreateRayTracingPipelinesKHR(
+            device(), VK_NULL_HANDLE, pipeline_cache, 1, &raytracing_pipeline_ci, nullptr, &test_pipeline);
         m_errorMonitor->VerifyFound();
 
-        err = vk::CreateRayTracingPipelinesKHR(device(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &raytracing_pipeline_ci, nullptr,
-                                               &test_pipeline);
+        err = vk::CreateRayTracingPipelinesKHR(
+            device(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &raytracing_pipeline_ci, nullptr, &test_pipeline);
         ASSERT_EQ(VK_SUCCESS, err);
 
         VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
@@ -1230,8 +1281,8 @@ TEST_F(NegativeRayTracingPipeline, PipelineBinaryRayTracingPipeline) {
 
         VkPipeline test_pipeline2;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateRayTracingPipelinesKHR-pNext-09616");
-        vk::CreateRayTracingPipelinesKHR(device(), VK_NULL_HANDLE, pipeline_cache, 1, &raytracing_pipeline_ci, nullptr,
-                                         &test_pipeline2);
+        vk::CreateRayTracingPipelinesKHR(
+            device(), VK_NULL_HANDLE, pipeline_cache, 1, &raytracing_pipeline_ci, nullptr, &test_pipeline2);
         m_errorMonitor->VerifyFound();
 
         for (uint32_t i = 0; i < binaries.size(); i++) {
@@ -1248,8 +1299,8 @@ TEST_F(NegativeRayTracingPipeline, PipelineBinaryRayTracingPipeline) {
 
         VkPipeline test_pipeline;
 
-        err = vk::CreateRayTracingPipelinesKHR(device(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &raytracing_pipeline_ci, nullptr,
-                                               &test_pipeline);
+        err = vk::CreateRayTracingPipelinesKHR(
+            device(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &raytracing_pipeline_ci, nullptr, &test_pipeline);
         ASSERT_EQ(VK_SUCCESS, err);
 
         VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
@@ -1287,8 +1338,8 @@ TEST_F(NegativeRayTracingPipeline, PipelineBinaryRayTracingPipeline) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateRayTracingPipelinesKHR-binaryCount-09621");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateRayTracingPipelinesKHR-binaryCount-09622");
 
-        vk::CreateRayTracingPipelinesKHR(device(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &raytracing_pipeline_ci, nullptr,
-                                         &test_pipeline2);
+        vk::CreateRayTracingPipelinesKHR(
+            device(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &raytracing_pipeline_ci, nullptr, &test_pipeline2);
         m_errorMonitor->VerifyFound();
 
         for (uint32_t i = 0; i < binaries.size(); i++) {

@@ -18,30 +18,32 @@
  */
 #pragma once
 
-#include "vulkan/vulkan.h"
 #include "containers/custom_containers.h"
-#include "utils/vk_layer_utils.h"
-#include "generated/vk_object_types.h"
 #include "error_message/logging.h"
+#include "generated/vk_object_types.h"
+#include "utils/vk_layer_utils.h"
+#include "vulkan/vulkan.h"
 
 #include <atomic>
 
 // Intentionally ignore VulkanTypedHandle::node, it is optional
-inline bool operator==(const VulkanTypedHandle &a, const VulkanTypedHandle &b) noexcept {
+inline bool operator==(const VulkanTypedHandle& a, const VulkanTypedHandle& b) noexcept {
     return a.handle == b.handle && a.type == b.type;
 }
 namespace std {
 template <>
 struct hash<VulkanTypedHandle> {
-    size_t operator()(VulkanTypedHandle obj) const noexcept { return hash<uint64_t>()(obj.handle) ^ hash<uint32_t>()(obj.type); }
+    size_t operator()(VulkanTypedHandle obj) const noexcept {
+        return hash<uint64_t>()(obj.handle) ^ hash<uint32_t>()(obj.type);
+    }
 };
-}  // namespace std
+} // namespace std
 
 namespace vvl {
 // inheriting from enable_shared_from_this<> adds a method, shared_from_this(), which
 // returns a shared_ptr version of the current object. It requires the object to
 // be created with std::make_shared<> and it MUST NOT be used from the constructor
-class StateObject: public std::enable_shared_from_this<StateObject>, public TypedHandleWrapper {
+class StateObject : public std::enable_shared_from_this<StateObject>, public TypedHandleWrapper {
   public:
     // Parent nodes are stored as weak_ptrs to avoid cyclic memory dependencies.
     // Because weak_ptrs cannot safely be used as hash keys, the parents are stored
@@ -78,17 +80,17 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
     virtual bool Invalid() const { return Destroyed(); }
 
     // Save the tedium of two part testing...
-    static bool Invalid(const StateObject *node) { return !node || node->Destroyed(); }
-    static bool Invalid(const std::shared_ptr<const StateObject> &node) { return !node || node->Destroyed(); }
+    static bool Invalid(const StateObject* node) { return !node || node->Destroyed(); }
+    static bool Invalid(const std::shared_ptr<const StateObject>& node) { return !node || node->Destroyed(); }
 
     using TypedHandleWrapper::Handle;
-    static VulkanTypedHandle Handle(const StateObject *node) { return (node) ? node->Handle() : VulkanTypedHandle(); }
-    static VulkanTypedHandle Handle(const std::shared_ptr<const StateObject> &node) { return Handle(node.get()); }
+    static VulkanTypedHandle Handle(const StateObject* node) { return (node) ? node->Handle() : VulkanTypedHandle(); }
+    static VulkanTypedHandle Handle(const std::shared_ptr<const StateObject>& node) { return Handle(node.get()); }
 
     virtual const VulkanTypedHandle* InUse() const;
 
-    virtual bool AddParent(StateObject *parent_node);
-    virtual void RemoveParent(StateObject *parent_node);
+    virtual bool AddParent(StateObject* parent_node);
+    virtual void RemoveParent(StateObject* parent_node);
 
     // Invalidate is called on a state object to inform its parents that it
     // is being destroyed (unlink == true) or otherwise becoming invalid (unlink == false)
@@ -99,14 +101,14 @@ class StateObject: public std::enable_shared_from_this<StateObject>, public Type
 
   protected:
     template <typename Derived, typename Shared = std::shared_ptr<Derived>>
-    static Shared SharedFromThisImpl(Derived *derived) {
+    static Shared SharedFromThisImpl(Derived* derived) {
         using Base = typename std::conditional<std::is_const<Derived>::value, const StateObject, StateObject>::type;
-        auto base = static_cast<Base *>(derived);
+        auto base = static_cast<Base*>(derived);
         return std::static_pointer_cast<Derived>(base->shared_from_this());
     }
 
     // Called recursively for every parent object of something that has become invalid
-    virtual void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink);
+    virtual void NotifyInvalidate(const NodeList& invalid_nodes, bool unlink);
 
     // returns a copy of the current set of parents so that they can be walked
     // without the tree lock held. If unlink == true, parent_nodes_ is also cleared.
@@ -141,6 +143,8 @@ class RefcountedStateObject : public StateObject {
 
     void EndUse() { in_use_.fetch_sub(1); }
 
-    const VulkanTypedHandle* InUse() const override { return ((in_use_.load() > 0) || StateObject::InUse()) ? &Handle() : nullptr; }
+    const VulkanTypedHandle* InUse() const override {
+        return ((in_use_.load() > 0) || StateObject::InUse()) ? &Handle() : nullptr;
+    }
 };
 } // namespace vvl

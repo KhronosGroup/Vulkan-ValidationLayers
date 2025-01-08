@@ -21,24 +21,25 @@
 #include "generated/dispatch_functions.h"
 #include "state_tracker/state_tracker.h"
 
-static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkBufferCreateInfo *create_info) {
-    const auto *external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);
+static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkBufferCreateInfo* create_info) {
+    const auto* external_memory_info =
+        vku::FindStructInPNextChain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);
     return external_memory_info ? external_memory_info->handleTypes : 0;
 }
 
-static VkMemoryRequirements GetMemoryRequirements(ValidationStateTracker &dev_data, VkBuffer buffer) {
+static VkMemoryRequirements GetMemoryRequirements(ValidationStateTracker& dev_data, VkBuffer buffer) {
     VkMemoryRequirements result{};
     DispatchGetBufferMemoryRequirements(dev_data.device, buffer, &result);
     return result;
 }
 
-static VkBufferUsageFlags2KHR GetBufferUsageFlags(const VkBufferCreateInfo &create_info) {
-    const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
+static VkBufferUsageFlags2KHR GetBufferUsageFlags(const VkBufferCreateInfo& create_info) {
+    const auto* usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(create_info.pNext);
     return usage_flags2 ? usage_flags2->usage : create_info.usage;
 }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
+static bool GetMetalExport(const VkBufferViewCreateInfo* info) {
     bool retval = false;
     auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
     while (export_metal_object_info) {
@@ -46,7 +47,8 @@ static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
             retval = true;
             break;
         }
-        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+        export_metal_object_info =
+            vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
     }
     return retval;
 }
@@ -54,18 +56,19 @@ static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
 
 namespace vvl {
 
-Buffer::Buffer(ValidationStateTracker &dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo)
-    : Bindable(handle, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
-               (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
-      safe_create_info(pCreateInfo),
-      create_info(*safe_create_info.ptr()),
-      requirements(GetMemoryRequirements(dev_data, handle)),
-      usage(GetBufferUsageFlags(create_info)),
-      supported_video_profiles(dev_data.video_profile_cache_.Get(
-          dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+Buffer::Buffer(ValidationStateTracker& dev_data, VkBuffer handle, const VkBufferCreateInfo* pCreateInfo) :
+    Bindable(handle,
+             kVulkanObjectTypeBuffer,
+             (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
+             (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0,
+             GetExternalHandleTypes(pCreateInfo)),
+    safe_create_info(pCreateInfo), create_info(*safe_create_info.ptr()),
+    requirements(GetMemoryRequirements(dev_data, handle)), usage(GetBufferUsageFlags(create_info)),
+    supported_video_profiles(dev_data.video_profile_cache_.Get(
+        dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
-        tracker_.emplace<BindableSparseMemoryTracker>(&requirements,
-                                                      (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0);
+        tracker_.emplace<BindableSparseMemoryTracker>(
+            &requirements, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0);
         SetMemoryTracker(&std::get<BindableSparseMemoryTracker>(tracker_));
     } else {
         tracker_.emplace<BindableLinearMemoryTracker>(&requirements);
@@ -73,7 +76,7 @@ Buffer::Buffer(ValidationStateTracker &dev_data, VkBuffer handle, const VkBuffer
     }
 }
 
-bool Buffer::CompareCreateInfo(const Buffer &other) const {
+bool Buffer::CompareCreateInfo(const Buffer& other) const {
     bool valid_queue_family = true;
     if (create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
         if (create_info.queueFamilyIndexCount != other.create_info.queueFamilyIndexCount) {
@@ -88,8 +91,8 @@ bool Buffer::CompareCreateInfo(const Buffer &other) const {
         }
     }
 
-    // There are limitations what actually needs to be compared, so for simplicity (until found otherwise needed), we only need to
-    // check the ExternalHandleType and not other pNext chains
+    // There are limitations what actually needs to be compared, so for simplicity (until found otherwise needed), we
+    // only need to check the ExternalHandleType and not other pNext chains
     const bool valid_external = GetExternalHandleTypes(&create_info) == GetExternalHandleTypes(&other.create_info);
 
     return (create_info.flags == other.create_info.flags) && (create_info.size == other.create_info.size) &&
@@ -97,16 +100,16 @@ bool Buffer::CompareCreateInfo(const Buffer &other) const {
            valid_queue_family;
 }
 
-BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *pCreateInfo,
-                       VkFormatFeatureFlags2KHR format_features)
-    : StateObject(handle, kVulkanObjectTypeBufferView),
-      safe_create_info(pCreateInfo),
-      create_info(*safe_create_info.ptr()),
-      buffer_state(bf),
+BufferView::BufferView(const std::shared_ptr<vvl::Buffer>& bf,
+                       VkBufferView handle,
+                       const VkBufferViewCreateInfo* pCreateInfo,
+                       VkFormatFeatureFlags2KHR format_features) :
+    StateObject(handle, kVulkanObjectTypeBufferView),
+    safe_create_info(pCreateInfo), create_info(*safe_create_info.ptr()), buffer_state(bf),
 #ifdef VK_USE_PLATFORM_METAL_EXT
-      metal_bufferview_export(GetMetalExport(pCreateInfo)),
+    metal_bufferview_export(GetMetalExport(pCreateInfo)),
 #endif
-      buffer_format_features(format_features) {
+    buffer_format_features(format_features) {
 }
 
-}  // namespace vvl
+} // namespace vvl

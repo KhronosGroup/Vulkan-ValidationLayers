@@ -40,7 +40,7 @@ TEST_F(NegativeSyncValReporting, DebugRegion) {
 
     m_errorMonitor->SetDesiredError("RegionA");
     m_command_buffer.Copy(buffer_c, buffer_a);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
 
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
     m_command_buffer.End();
@@ -80,15 +80,15 @@ TEST_F(NegativeSyncValReporting, DebugRegion2) {
 
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
     m_command_buffer.Copy(buffer_c, buffer_a);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
 
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
     m_command_buffer.End();
 }
 
 TEST_F(NegativeSyncValReporting, DebugRegion3) {
-    TEST_DESCRIPTION(
-        "Prior access debug region reporting: there is a nested region but prior access happens in the top level region");
+    TEST_DESCRIPTION("Prior access debug region reporting: there is a nested region but prior access happens in the "
+                     "top level region");
 
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
@@ -115,7 +115,7 @@ TEST_F(NegativeSyncValReporting, DebugRegion3) {
 
     m_errorMonitor->SetDesiredError("RegionA");
     m_command_buffer.Copy(buffer_c, buffer_a);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
 
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
     m_command_buffer.End();
@@ -161,10 +161,10 @@ TEST_F(NegativeSyncValReporting, DebugRegion4) {
 
     m_errorMonitor->SetDesiredError("VulkanFrame::FirstPass::CopyAToB");
     m_command_buffer.Copy(buffer_c, buffer_a);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
 
-    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);  // FirstPass
-    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);  // VulkanFrame
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer); // FirstPass
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer); // VulkanFrame
 
     m_command_buffer.End();
 }
@@ -197,7 +197,7 @@ TEST_F(NegativeSyncValReporting, DebugRegion_Secondary) {
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
     m_command_buffer.Copy(buffer_c, buffer_a);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_command_buffer.End();
 }
 
@@ -232,9 +232,9 @@ TEST_F(NegativeSyncValReporting, DebugRegion_Secondary2) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("RegionA");
-    VkCommandBuffer secondary_cbs[2] = {secondary_cb0, secondary_cb1};
+    VkCommandBuffer secondary_cbs[2] = { secondary_cb0, secondary_cb1 };
     vk::CmdExecuteCommands(m_command_buffer, 2, secondary_cbs);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_command_buffer.End();
 }
 
@@ -268,10 +268,10 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.End();
 
-    std::array command_buffers = {&cb0, &cb1};
+    std::array command_buffers = { &cb0, &cb1 };
     m_errorMonitor->SetDesiredError("RegionA");
     m_default_queue->Submit(command_buffers);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->Wait();
 }
 
@@ -303,7 +303,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion2) {
     cb1.End();
     m_errorMonitor->SetDesiredError("RegionA");
     m_default_queue->Submit(cb1);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->Wait();
 }
 
@@ -323,7 +323,8 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion3) {
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
 
-    vkt::Event event(*m_device);  // events are not used for some specific functionality, only to create additional debug regions
+    vkt::Event event(
+        *m_device); // events are not used for some specific functionality, only to create additional debug regions
     vkt::Event event2(*m_device);
 
     // CommandBuffer0
@@ -344,8 +345,8 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion3) {
     cb0.Copy(buffer_a, buffer_b);
     vk::CmdEndDebugUtilsLabelEXT(cb0);
 
-    vk::CmdEndDebugUtilsLabelEXT(cb0);  // FirstPass
-    vk::CmdEndDebugUtilsLabelEXT(cb0);  // VulkanFrame_CommandBuffer0
+    vk::CmdEndDebugUtilsLabelEXT(cb0); // FirstPass
+    vk::CmdEndDebugUtilsLabelEXT(cb0); // VulkanFrame_CommandBuffer0
     cb0.End();
 
     // CommandBuffer1
@@ -366,14 +367,14 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion3) {
     cb1.Copy(buffer_c, buffer_a);
     vk::CmdEndDebugUtilsLabelEXT(cb1);
 
-    vk::CmdEndDebugUtilsLabelEXT(cb1);  // SecondPass
-    vk::CmdEndDebugUtilsLabelEXT(cb1);  // VulkanFrame_CommandBuffer1
+    vk::CmdEndDebugUtilsLabelEXT(cb1); // SecondPass
+    vk::CmdEndDebugUtilsLabelEXT(cb1); // VulkanFrame_CommandBuffer1
     cb1.End();
 
-    std::array command_buffers = {&cb0, &cb1};
+    std::array command_buffers = { &cb0, &cb1 };
     m_errorMonitor->SetDesiredError("VulkanFrame_CommandBuffer0::FirstPass::CopyAToB");
     m_default_queue->Submit(command_buffers);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->Wait();
 }
 
@@ -402,23 +403,24 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion4) {
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
     cb1.Copy(buffer_a, buffer_b);
-    vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionB
+    vk::CmdEndDebugUtilsLabelEXT(cb1); // RegionB
     cb1.End();
     m_default_queue->Submit(cb1);
 
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
     cb2.Copy(buffer_c, buffer_a);
-    vk::CmdEndDebugUtilsLabelEXT(cb2);  // RegionA
+    vk::CmdEndDebugUtilsLabelEXT(cb2); // RegionA
     cb2.End();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
     m_default_queue->Submit(cb2);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->Wait();
 }
 
 TEST_F(NegativeSyncValReporting, QSDebugRegion5) {
-    TEST_DESCRIPTION("Prior access debug region reporting: debug region is formed by two command buffers from the same submit");
+    TEST_DESCRIPTION(
+        "Prior access debug region reporting: debug region is formed by two command buffers from the same submit");
 
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
@@ -441,11 +443,11 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion5) {
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
     cb1.Copy(buffer_a, buffer_b);
-    vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionB
-    vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionA
+    vk::CmdEndDebugUtilsLabelEXT(cb1); // RegionB
+    vk::CmdEndDebugUtilsLabelEXT(cb1); // RegionA
     cb1.End();
 
-    std::array command_buffers = {&cb0, &cb1};
+    std::array command_buffers = { &cb0, &cb1 };
     m_default_queue->Submit(command_buffers);
 
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
@@ -454,7 +456,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion5) {
     cb2.End();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
     m_default_queue->Submit(cb2);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->Wait();
 }
 
@@ -482,8 +484,8 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion6) {
     label.pLabelName = "RegionB";
     vk::CmdBeginDebugUtilsLabelEXT(cb1, &label);
     cb1.Copy(buffer_a, buffer_b);
-    vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionB
-    vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionA
+    vk::CmdEndDebugUtilsLabelEXT(cb1); // RegionB
+    vk::CmdEndDebugUtilsLabelEXT(cb1); // RegionA
     cb1.End();
 
     VkSubmitInfo submit_infos[2];
@@ -501,13 +503,14 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion6) {
     cb2.End();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
     m_default_queue->Submit(cb2);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->Wait();
 }
 
 // Regression test for part 1 of https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7502
 TEST_F(NegativeSyncValReporting, QSDebugRegion7) {
-    TEST_DESCRIPTION("Prior access debug region reporting: command buffer has labels but hazardous command is not in debug region");
+    TEST_DESCRIPTION(
+        "Prior access debug region reporting: command buffer has labels but hazardous command is not in debug region");
 
     AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitSyncValFramework());
@@ -574,7 +577,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion_Secondary) {
     cb1.End();
     m_errorMonitor->SetDesiredError("RegionA::RegionB");
     m_default_queue->Submit(cb1);
-    m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
+    m_errorMonitor->VerifyFound(); // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->Wait();
 }
 
@@ -630,7 +633,7 @@ TEST_F(NegativeSyncValReporting, ReportBufferResource_SubmitTime) {
     buffer_a.SetName("BufferA");
     vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     buffer_b.SetName("BufferB");
-    VkBufferCopy region = {0, 0, 256};
+    VkBufferCopy region = { 0, 0, 256 };
 
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.Begin();
@@ -658,7 +661,11 @@ TEST_F(NegativeSyncValReporting, ReportImageResource_SubmitTime) {
     vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     buffer.SetName("BufferA");
 
-    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_B8G8R8A8_UNORM,
+    vkt::Image image(*m_device,
+                     64,
+                     64,
+                     1,
+                     VK_FORMAT_B8G8R8A8_UNORM,
                      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     image.SetName("ImageB");
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
@@ -668,13 +675,13 @@ TEST_F(NegativeSyncValReporting, ReportImageResource_SubmitTime) {
     image2.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy image_copy{};
-    image_copy.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    image_copy.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    image_copy.extent = {64, 64, 1};
+    image_copy.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    image_copy.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    image_copy.extent = { 64, 64, 1 };
 
     VkBufferImageCopy buffer_image_copy{};
-    buffer_image_copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    buffer_image_copy.imageExtent = {64, 64, 1};
+    buffer_image_copy.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    buffer_image_copy.imageExtent = { 64, 64, 1 };
 
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
     cb0.Begin();
@@ -704,11 +711,12 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer_SubmitTime) {
     vkt::Buffer buffer_b(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     buffer_b.SetName("BufferB");
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(1, buffer_b, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -723,25 +731,26 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer_SubmitTime) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     // Submit dispatch that writes to buffer_b
     vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.Begin();
     vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(
+        cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(cb.handle(), 1, 1, 1);
     cb.End();
     m_default_queue->Submit(cb);
 
-    // One more dispatch that writes to the same buffer (WAW hazard). Expect BufferB in the error message but not BufferA.
+    // One more dispatch that writes to the same buffer (WAW hazard). Expect BufferB in the error message but not
+    // BufferA.
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
     vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(
+        cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(cb2.handle(), 1, 1, 1);
     cb2.End();
     const char* contains_b_but_not_a = "(?=.*BufferB)(?!.*BufferA)";
@@ -763,12 +772,13 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer2_SubmitTime) {
     vkt::Buffer buffer_e(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     buffer_e.SetName("BufferD");
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+            { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(1, buffer_c, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(2, buffer_e, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -785,20 +795,21 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer2_SubmitTime) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     // Submit dispatch that writes to buffer_b
     vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.Begin();
     vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(
+        cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(cb.handle(), 1, 1, 1);
     cb.End();
     m_default_queue->Submit(cb);
 
-    // Submit copy that writes to the same buffer (WAW hazard). Expect BufferC in the error message but not BufferA/BufferE
+    // Submit copy that writes to the same buffer (WAW hazard). Expect BufferC in the error message but not
+    // BufferA/BufferE
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
     cb2.Copy(buffer_a, buffer_c);
@@ -826,13 +837,14 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer3_SubmitTime) {
     vkt::Buffer buffer_d(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     buffer_d.SetName("BufferD");
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+            { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+            { 3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(1, buffer_b, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(2, buffer_c, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -854,7 +866,7 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer3_SubmitTime) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     // Create WAW with bufferB. Copy-write then dispatch-write.
@@ -867,8 +879,8 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer3_SubmitTime) {
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
     vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(
+        cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(cb2.handle(), 1, 1, 1);
     cb2.End();
     const char* contains_b_but_not_d = "(?=.*BufferB)(?!.*BufferD)";
@@ -904,13 +916,15 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorImage_SubmitTime) {
 
     vkt::ImageView view = image.CreateView();
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    descriptor_set.WriteDescriptorImageInfo(1, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(
+        1, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
     const char* cs_source = R"glsl(
@@ -923,15 +937,15 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorImage_SubmitTime) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     // Submit dispatch that writes to image
     vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.Begin();
     vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(
+        cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(cb.handle(), 1, 1, 1);
     cb.End();
     m_default_queue->Submit(cb);
@@ -940,8 +954,8 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorImage_SubmitTime) {
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
     vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(
+        cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(cb2.handle(), 1, 1, 1);
     cb2.End();
     const char* contains_b_but_not_a = "(?=.*ImageB)(?!.*BufferA)";
@@ -987,7 +1001,7 @@ TEST_F(NegativeSyncValReporting, DebugLabelRegionsFromSecondaryCommandBuffers) {
     vk::CmdEndDebugUtilsLabelEXT(primary_1.handle());
     primary_1.End();
 
-    std::vector primaries = {&primary_0, &primary_1};
+    std::vector primaries = { &primary_0, &primary_1 };
 
     const char* region_patterns = "(?=.*primary_0::RegionB)(?=.*primary_1::RegionB)";
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", region_patterns);

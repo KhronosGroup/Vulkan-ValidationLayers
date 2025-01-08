@@ -58,7 +58,8 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     library_pipeline.pLibraryInterface = &interface_ci;
 
     VkPipeline library = VK_NULL_HANDLE;
-    vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
+    vk::CreateRayTracingPipelinesKHR(
+        m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
 
     VkPipelineLibraryCreateInfoKHR library_info_one = vku::InitStructHelper();
     library_info_one.libraryCount = 1;
@@ -86,7 +87,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     group_create_infos[1] = vku::InitStructHelper();
     group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
     group_create_infos[1].generalShader = VK_SHADER_UNUSED_KHR;
-    group_create_infos[1].closestHitShader = 1;  // Index 1 corresponds to the closest hit shader from the library
+    group_create_infos[1].closestHitShader = 1; // Index 1 corresponds to the closest hit shader from the library
     group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_KHR;
     group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_KHR;
 
@@ -99,8 +100,8 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     pipeline_ci.layout = empty_pipeline_layout.handle();
     pipeline_ci.pLibraryInterface = &interface_ci;
 
-    VkResult err =
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+    VkResult err = vk::CreateRayTracingPipelinesKHR(
+        m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
     ASSERT_EQ(VK_SUCCESS, err);
     ASSERT_NE(pipeline, VK_NULL_HANDLE);
 
@@ -140,7 +141,8 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     interface_ci.maxPipelineRayPayloadSize = 4;
 
     VkRayTracingPipelineCreateInfoKHR library_pipeline = vku::InitStructHelper();
-    library_pipeline.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    library_pipeline.flags =
+        VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     library_pipeline.stageCount = 1;
     library_pipeline.pStages = &stage_create_info;
     library_pipeline.groupCount = 1;
@@ -149,14 +151,16 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     library_pipeline.pLibraryInterface = &interface_ci;
 
     VkPipeline library = VK_NULL_HANDLE;
-    vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
+    vk::CreateRayTracingPipelinesKHR(
+        m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
     vk::DestroyPipeline(device(), library, nullptr);
 }
 
 TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
-    TEST_DESCRIPTION(
-        "Regression test for issue 6282: make sure that when validating vkGetRayTracingCaptureReplayShaderGroupHandlesKHR on a "
-        "pipeline created using pipeline libraries, the total shader group count is computed using info from the libraries.");
+    TEST_DESCRIPTION("Regression test for issue 6282: make sure that when validating "
+                     "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR on a "
+                     "pipeline created using pipeline libraries, the total shader group count is computed using info "
+                     "from the libraries.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
@@ -182,7 +186,8 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     rt_pipe.InitLibraryInfo();
     rt_pipe.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     rt_pipe.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    vkt::as::BuildGeometryInfoKHR tlas(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     rt_pipe.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     rt_pipe.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -190,11 +195,13 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     rt_pipe.AddLibrary(rt_pipe_lib);
     rt_pipe.Build();
 
-    // dataSize must be at least groupCount * VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleCaptureReplaySize
+    // dataSize must be at least groupCount *
+    // VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleCaptureReplaySize
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(ray_tracing_properties);
     const size_t buffer_size = (3 * ray_tracing_properties.shaderGroupHandleCaptureReplaySize);
     void* out_buffer = malloc(buffer_size);
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.Handle(), 0, 3, buffer_size, out_buffer);
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(
+        m_device->handle(), rt_pipe.Handle(), 0, 3, buffer_size, out_buffer);
     free(out_buffer);
 }

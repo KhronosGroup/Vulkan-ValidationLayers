@@ -12,13 +12,18 @@
 
 #include "descriptor_helper.h"
 
-OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const std::vector<VkDescriptorSetLayoutBinding> &bindings,
-                                         VkDescriptorSetLayoutCreateFlags layout_flags, void *layout_pnext,
-                                         VkDescriptorPoolCreateFlags pool_flags, void *allocate_pnext, void *create_pool_pnext)
-    : device_{device}, layout_(*device, bindings, layout_flags, layout_pnext) {
+OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device* device,
+                                         const std::vector<VkDescriptorSetLayoutBinding>& bindings,
+                                         VkDescriptorSetLayoutCreateFlags layout_flags,
+                                         void* layout_pnext,
+                                         VkDescriptorPoolCreateFlags pool_flags,
+                                         void* allocate_pnext,
+                                         void* create_pool_pnext) :
+    device_{ device },
+    layout_(*device, bindings, layout_flags, layout_pnext) {
     std::vector<VkDescriptorPoolSize> pool_sizes;
-    for (const auto &b : bindings) {
-        pool_sizes.emplace_back(VkDescriptorPoolSize{b.descriptorType, std::max(1u, b.descriptorCount)});
+    for (const auto& b : bindings) {
+        pool_sizes.emplace_back(VkDescriptorPoolSize{ b.descriptorType, std::max(1u, b.descriptorCount) });
     }
 
     VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper(create_pool_pnext);
@@ -27,7 +32,8 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const std::vector<
     pool_ci.poolSizeCount = pool_sizes.size();
     pool_ci.pPoolSizes = pool_sizes.data();
     VkResult err = vk::CreateDescriptorPool(device_->handle(), &pool_ci, nullptr, &pool_);
-    if (err != VK_SUCCESS) return;
+    if (err != VK_SUCCESS)
+        return;
 
     if ((layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) == 0) {
         VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(allocate_pnext);
@@ -38,8 +44,10 @@ OneOffDescriptorSet::OneOffDescriptorSet(vkt::Device *device, const std::vector<
     }
 }
 
-OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device *device, const OneOffDescriptorIndexingSet::Bindings &bindings,
-                                                         void *allocate_pnext, void *create_pool_pnext) {
+OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device* device,
+                                                         const OneOffDescriptorIndexingSet::Bindings& bindings,
+                                                         void* allocate_pnext,
+                                                         void* create_pool_pnext) {
     device_ = device;
     std::vector<VkDescriptorPoolSize> pool_sizes;
     VkDescriptorSetLayoutCreateFlags layout_flags = 0;
@@ -47,10 +55,10 @@ OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device *device, co
     std::vector<VkDescriptorSetLayoutBinding> ds_layout_bindings;
     std::vector<VkDescriptorBindingFlags> ds_binding_flags;
 
-    for (const auto &b : bindings) {
-        pool_sizes.emplace_back(VkDescriptorPoolSize{b.descriptorType, std::max(1u, b.descriptorCount)});
-        ds_layout_bindings.emplace_back(
-            VkDescriptorSetLayoutBinding{b.binding, b.descriptorType, b.descriptorCount, b.stageFlags, b.pImmutableSamplers});
+    for (const auto& b : bindings) {
+        pool_sizes.emplace_back(VkDescriptorPoolSize{ b.descriptorType, std::max(1u, b.descriptorCount) });
+        ds_layout_bindings.emplace_back(VkDescriptorSetLayoutBinding{
+            b.binding, b.descriptorType, b.descriptorCount, b.stageFlags, b.pImmutableSamplers });
         ds_binding_flags.emplace_back(b.flag);
 
         // Automatically set the needed flags if using UAB
@@ -76,7 +84,8 @@ OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device *device, co
     pool_ci.poolSizeCount = pool_sizes.size();
     pool_ci.pPoolSizes = pool_sizes.data();
     VkResult err = vk::CreateDescriptorPool(device_->handle(), &pool_ci, nullptr, &pool_);
-    if (err != VK_SUCCESS) return;
+    if (err != VK_SUCCESS)
+        return;
 
     if ((layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT) == 0) {
         VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(allocate_pnext);
@@ -92,14 +101,18 @@ OneOffDescriptorSet::~OneOffDescriptorSet() {
     vk::DestroyDescriptorPool(device_->handle(), pool_, nullptr);
 }
 
-bool OneOffDescriptorSet::Initialized() { return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE; }
+bool OneOffDescriptorSet::Initialized() {
+    return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE;
+}
 
 void OneOffDescriptorSet::Clear() {
     resource_infos.clear();
     descriptor_writes.clear();
 }
 
-void OneOffDescriptorSet::AddDescriptorWrite(uint32_t binding, uint32_t array_element, VkDescriptorType descriptor_type,
+void OneOffDescriptorSet::AddDescriptorWrite(uint32_t binding,
+                                             uint32_t array_element,
+                                             VkDescriptorType descriptor_type,
                                              uint32_t descriptor_count /*= 1*/) {
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = set_;
@@ -110,8 +123,12 @@ void OneOffDescriptorSet::AddDescriptorWrite(uint32_t binding, uint32_t array_el
     descriptor_writes.emplace_back(descriptor_write);
 }
 
-void OneOffDescriptorSet::WriteDescriptorBufferInfo(int binding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range,
-                                                    VkDescriptorType descriptorType, uint32_t arrayElement) {
+void OneOffDescriptorSet::WriteDescriptorBufferInfo(int binding,
+                                                    VkBuffer buffer,
+                                                    VkDeviceSize offset,
+                                                    VkDeviceSize range,
+                                                    VkDescriptorType descriptorType,
+                                                    uint32_t arrayElement) {
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = buffer;
     buffer_info.offset = offset;
@@ -123,7 +140,9 @@ void OneOffDescriptorSet::WriteDescriptorBufferInfo(int binding, VkBuffer buffer
     AddDescriptorWrite(binding, arrayElement, descriptorType);
 }
 
-void OneOffDescriptorSet::WriteDescriptorBufferView(int binding, VkBufferView buffer_view, VkDescriptorType descriptorType,
+void OneOffDescriptorSet::WriteDescriptorBufferView(int binding,
+                                                    VkBufferView buffer_view,
+                                                    VkDescriptorType descriptorType,
                                                     uint32_t arrayElement) {
     ResourceInfo resource_info;
     resource_info.buffer_view = buffer_view;
@@ -131,8 +150,11 @@ void OneOffDescriptorSet::WriteDescriptorBufferView(int binding, VkBufferView bu
     AddDescriptorWrite(binding, arrayElement, descriptorType);
 }
 
-void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding, VkImageView image_view, VkSampler sampler,
-                                                   VkDescriptorType descriptorType, VkImageLayout imageLayout,
+void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding,
+                                                   VkImageView image_view,
+                                                   VkSampler sampler,
+                                                   VkDescriptorType descriptorType,
+                                                   VkImageLayout imageLayout,
                                                    uint32_t arrayElement) {
     VkDescriptorImageInfo image_info = {};
     image_info.imageView = image_view;
@@ -145,8 +167,9 @@ void OneOffDescriptorSet::WriteDescriptorImageInfo(int binding, VkImageView imag
     AddDescriptorWrite(binding, arrayElement, descriptorType);
 }
 
-void OneOffDescriptorSet::WriteDescriptorAccelStruct(int binding, uint32_t accelerationStructureCount,
-                                                     const VkAccelerationStructureKHR *pAccelerationStructures,
+void OneOffDescriptorSet::WriteDescriptorAccelStruct(int binding,
+                                                     uint32_t accelerationStructureCount,
+                                                     const VkAccelerationStructureKHR* pAccelerationStructures,
                                                      uint32_t arrayElement /*= 0*/) {
     VkWriteDescriptorSetAccelerationStructureKHR write_desc_set_accel_struct = vku::InitStructHelper();
     write_desc_set_accel_struct.accelerationStructureCount = accelerationStructureCount;
@@ -155,13 +178,14 @@ void OneOffDescriptorSet::WriteDescriptorAccelStruct(int binding, uint32_t accel
     ResourceInfo resource_info;
     resource_info.accel_struct_info = write_desc_set_accel_struct;
     resource_infos.emplace_back(resource_info);
-    AddDescriptorWrite(binding, arrayElement, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, accelerationStructureCount);
+    AddDescriptorWrite(
+        binding, arrayElement, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, accelerationStructureCount);
 }
 
 void OneOffDescriptorSet::UpdateDescriptorSets() {
     assert(resource_infos.size() == descriptor_writes.size());
     for (size_t i = 0; i < resource_infos.size(); i++) {
-        const auto &info = resource_infos[i];
+        const auto& info = resource_infos[i];
         if (info.image_info.has_value()) {
             descriptor_writes[i].pImageInfo = &info.image_info.value();
         } else if (info.buffer_info.has_value()) {

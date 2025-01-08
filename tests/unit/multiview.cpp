@@ -13,9 +13,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "utils/convert_utils.h"
 
@@ -42,7 +42,7 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddColorAttachment(0);
     rp.CreateRenderPass(&renderPassMultiviewCreateInfo);
 
@@ -50,7 +50,7 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
     image_create_info.flags = 0u;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent = {32u, 32u, 1u};
+    image_create_info.extent = { 32u, 32u, 1u };
     image_create_info.mipLevels = 1u;
     image_create_info.arrayLayers = 2u;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -99,14 +99,14 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddColorAttachment(0);
     rp.CreateRenderPass(&renderPassMultiviewCreateInfo);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 1};
+    image_create_info.extent = { 32, 32, 1 };
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -149,8 +149,8 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
 }
 
 TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
-    TEST_DESCRIPTION(
-        "Validate all required resources are bound if multiview is enabled after vkCmdBeginRenderPass and vkCmdNextSubpass");
+    TEST_DESCRIPTION("Validate all required resources are bound if multiview is enabled after vkCmdBeginRenderPass and "
+                     "vkCmdNextSubpass");
 
     constexpr unsigned multiview_count = 2u;
     constexpr unsigned extra_subpass_count = multiview_count - 1u;
@@ -194,23 +194,25 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     std::vector<VkSubpassDependency> dependencies;
     dependencies.resize(extra_subpass_count);
     for (unsigned i = 0; i < dependencies.size(); ++i) {
-        auto &subpass_dep = dependencies[i];
+        auto& subpass_dep = dependencies[i];
         subpass_dep.srcSubpass = i;
         subpass_dep.dstSubpass = i + 1;
 
         subpass_dep.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
+                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         subpass_dep.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
+                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-        subpass_dep.srcAccessMask = VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
-                                    VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        subpass_dep.dstAccessMask = VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
-                                    VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        subpass_dep.srcAccessMask =
+            VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+            VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        subpass_dep.dstAccessMask =
+            VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+            VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
         subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
     }
@@ -324,7 +326,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
     // Push constants
     {
-        char const *const vsSource = R"glsl(
+        char const* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo {
            mat3 m;
@@ -337,15 +339,15 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 36};
+        VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, 36 };
         VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
         pipeline_layout_info.pushConstantRangeCount = 1;
         pipeline_layout_info.pPushConstantRanges = &push_constant_range;
 
-        vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<const vkt::DescriptorSetLayout *>{});
+        vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<const vkt::DescriptorSetLayout*>{});
 
         CreatePipelineHelper pipe(*this);
-        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
         pipe.pipeline_layout_ci_ = pipeline_layout_info;
         pipe.CreateGraphicsPipeline();
 
@@ -361,8 +363,12 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         const float dummy_values[16] = {};
         m_command_buffer.Begin();
         // This push constants should not be counted when render pass begins
-        vk::CmdPushConstants(m_command_buffer.handle(), layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, push_constant_range.offset,
-                             push_constant_range.size, dummy_values);
+        vk::CmdPushConstants(m_command_buffer.handle(),
+                             layout.handle(),
+                             VK_SHADER_STAGE_VERTEX_BIT,
+                             push_constant_range.offset,
+                             push_constant_range.size,
+                             dummy_values);
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -372,8 +378,12 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             // This push constants should not be counted when we change subpass
-            vk::CmdPushConstants(m_command_buffer.handle(), layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, push_constant_range.offset,
-                                 push_constant_range.size, dummy_values);
+            vk::CmdPushConstants(m_command_buffer.handle(),
+                                 layout.handle(),
+                                 VK_SHADER_STAGE_VERTEX_BIT,
+                                 push_constant_range.offset,
+                                 push_constant_range.size,
+                                 dummy_values);
             m_command_buffer.NextSubpass();
             vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
 
@@ -391,7 +401,9 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     // Descriptor sets
     {
         vkt::Buffer buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-        OneOffDescriptorSet descriptor_set{m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}}};
+        OneOffDescriptorSet descriptor_set{
+            m_device, { { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } }
+        };
         descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE);
         descriptor_set.UpdateDescriptorSets();
 
@@ -399,13 +411,13 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         pipeline_layout_info.setLayoutCount = 1;
         pipeline_layout_info.pSetLayouts = &descriptor_set.layout_.handle();
 
-        vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<vkt::DescriptorSetLayout const *>{});
+        vkt::PipelineLayout layout(*m_device, pipeline_layout_info, std::vector<vkt::DescriptorSetLayout const*>{});
 
         VkShaderObj const vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj const fs(this, kFragmentUniformGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper pipe(*this);
-        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
         pipe.pipeline_layout_ci_ = pipeline_layout_info;
         pipe.CreateGraphicsPipeline();
 
@@ -420,8 +432,14 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
         m_command_buffer.Begin();
         // This descriptor bind should not be counted when render pass begins
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                                  &descriptor_set.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  pipe.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &descriptor_set.set_,
+                                  0,
+                                  nullptr);
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
@@ -431,8 +449,14 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
         for (unsigned i = 0; i < extra_subpass_count; ++i) {
             // This descriptor bind should not be counted when next subpass begins
-            vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0,
-                                      1, &descriptor_set.set_, 0, nullptr);
+            vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                      pipe.pipeline_layout_.handle(),
+                                      0,
+                                      1,
+                                      &descriptor_set.set_,
+                                      0,
+                                      nullptr);
             m_command_buffer.NextSubpass();
             vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
 
@@ -449,7 +473,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
     // Vertex buffer
     {
-        float const vertex_data[] = {1.0f, 0.0f};
+        float const vertex_data[] = { 1.0f, 0.0f };
         vkt::Buffer vbo(*m_device, sizeof(vertex_data), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
         VkVertexInputBindingDescription input_binding{};
@@ -463,7 +487,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         input_attribs.format = VK_FORMAT_R32G32_SFLOAT;
         input_attribs.offset = 0;
 
-        char const *const vsSource = R"glsl(
+        char const* const vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec2 input0;
         void main(){
@@ -475,7 +499,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper pipe(*this);
-        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
         pipe.vi_ci_.vertexBindingDescriptionCount = 1;
         pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
         pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
@@ -523,10 +547,10 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
 
     // Index buffer
     {
-        float const vertex_data[] = {1.0f, 0.0f};
+        float const vertex_data[] = { 1.0f, 0.0f };
         vkt::Buffer vbo(*m_device, sizeof(vertex_data), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-        uint32_t const index_data[] = {0};
+        uint32_t const index_data[] = { 0 };
         vkt::Buffer ibo(*m_device, sizeof(index_data), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
         VkVertexInputBindingDescription input_binding{};
@@ -540,7 +564,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         input_attribs.format = VK_FORMAT_R32G32_SFLOAT;
         input_attribs.offset = 0;
 
-        char const *const vsSource = R"glsl(
+        char const* const vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec2 input0;
         void main(){
@@ -552,7 +576,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
         VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper pipe(*this);
-        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
         pipe.vi_ci_.vertexBindingDescriptionCount = 1;
         pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
         pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
@@ -613,14 +637,14 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddColorAttachment(0);
     rp.CreateRenderPass(&renderPassMultiviewCreateInfo);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 1};
+    image_create_info.extent = { 32, 32, 1 };
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 4;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -661,7 +685,7 @@ TEST_F(NegativeMultiview, Features) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
-    std::vector<const char *> device_extensions;
+    std::vector<const char*> device_extensions;
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         device_extensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     }
@@ -689,7 +713,8 @@ TEST_F(NegativeMultiview, Features) {
     device_create_info.enabledExtensionCount = device_extensions.size();
     VkDevice testDevice;
 
-    if ((multiview_features.multiviewGeometryShader == VK_FALSE) && (multiview_features.multiviewTessellationShader == VK_FALSE)) {
+    if ((multiview_features.multiviewGeometryShader == VK_FALSE) &&
+        (multiview_features.multiviewTessellationShader == VK_FALSE)) {
         GTEST_SKIP() << "multiviewGeometryShader and multiviewTessellationShader feature not supported";
     }
 
@@ -712,18 +737,28 @@ TEST_F(NegativeMultiview, RenderPassCreateOverlappingCorrelationMasks) {
     RETURN_IF_SKIP(Init());
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
-    const VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    std::array viewMasks = {0x3u};
-    std::array correlationMasks = {0x1u, 0x2u};
-    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(
-        nullptr, 1u, viewMasks.data(), 0u, nullptr, static_cast<uint32_t>(correlationMasks.size()), correlationMasks.data());
+    const VkSubpassDescription subpass = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr
+    };
+    std::array viewMasks = { 0x3u };
+    std::array correlationMasks = { 0x1u, 0x2u };
+    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr,
+                                                                   1u,
+                                                                   viewMasks.data(),
+                                                                   0u,
+                                                                   nullptr,
+                                                                   static_cast<uint32_t>(correlationMasks.size()),
+                                                                   correlationMasks.data());
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
 
     PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, false);
 
     // Correlation masks must not overlap
     correlationMasks[1] = 0x3u;
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported,
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2Supported,
                          "VUID-VkRenderPassMultiviewCreateInfo-pCorrelationMasks-00841",
                          "VUID-VkRenderPassCreateInfo2-pCorrelatedViewMasks-03056");
 
@@ -734,7 +769,8 @@ TEST_F(NegativeMultiview, RenderPassCreateOverlappingCorrelationMasks) {
         correlationMasks[1] = 0;
         auto safe_rpci2 = ConvertVkRenderPassCreateInfoToV2KHR(rpci);
 
-        TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, *safe_rpci2.ptr(), {"VUID-VkRenderPassCreateInfo2-viewMask-03057"});
+        TestRenderPass2KHRCreate(
+            *m_errorMonitor, *m_device, *safe_rpci2.ptr(), { "VUID-VkRenderPassCreateInfo2-viewMask-03057" });
     }
 }
 
@@ -748,15 +784,19 @@ TEST_F(NegativeMultiview, RenderPassViewMasksNotEnough) {
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
     VkSubpassDescription subpasses[] = {
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
+        { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr },
+        { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr },
     };
-    uint32_t viewMasks[] = {0x3u, 0u};
+    uint32_t viewMasks[] = { 0x3u, 0u };
     auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, viewMasks, 0u, nullptr, 0u, nullptr);
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 0u, nullptr);
 
     // Not enough view masks
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pNext-01928",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2Supported,
+                         "VUID-VkRenderPassCreateInfo-pNext-01928",
                          "VUID-VkRenderPassCreateInfo2-viewMask-03058");
 }
 
@@ -770,20 +810,32 @@ TEST_F(NegativeMultiview, RenderPassCreateSubpassMissingAttributesBitNVX) {
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
     VkSubpassDescription subpasses[] = {
-        {VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr,
-         nullptr, 0, nullptr},
+        { VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX,
+          VK_PIPELINE_BIND_POINT_GRAPHICS,
+          0,
+          nullptr,
+          0,
+          nullptr,
+          nullptr,
+          nullptr,
+          0,
+          nullptr },
     };
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 1u, subpasses, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-flags-00856",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2Supported,
+                         "VUID-VkSubpassDescription-flags-00856",
                          "VUID-VkSubpassDescription2-flags-03076");
 }
 
 TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
-    TEST_DESCRIPTION(
-        "Hit RenderPass incompatible cases: drawing with an active renderpass that's not compatible with the bound pipeline state "
-        "object's creation renderpass since only the former uses Multiview.");
+    TEST_DESCRIPTION("Hit RenderPass incompatible cases: drawing with an active renderpass that's not compatible with "
+                     "the bound pipeline state "
+                     "object's creation renderpass since only the former uses Multiview.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
@@ -793,11 +845,12 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     RETURN_IF_SKIP(Init());
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                       });
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     // Set up VkRenderPassCreateInfo struct used with VK_VERSION_1_0
     VkAttachmentReference color_att = {};
@@ -814,7 +867,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_att;
 
-    uint32_t viewMasks[] = {0x3u};
+    uint32_t viewMasks[] = { 0x3u };
     VkRenderPassMultiviewCreateInfo rpmvci = vku::InitStructHelper();
     rpmvci.subpassCount = 1;
     rpmvci.pViewMasks = viewMasks;
@@ -853,13 +906,14 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     rp[0].init(*m_device, rpci);
     rpci.pNext = nullptr;
     rp[1].init(*m_device, rpci);
-    uint32_t viewMasks2[] = {0x1u};
+    uint32_t viewMasks2[] = { 0x1u };
     rpmvci.pViewMasks = viewMasks2;
     rpci.pNext = &rpmvci;
     rp[2].init(*m_device, rpci);
 
     // Create render passes with VK_VERSION_1_2 struct and vkCreateRenderPass2KHR call
-    // Create rp2[0] with Multiview, rp2[1] without Multiview (zero viewMask), rp2[2] with Multiview but another viewMask
+    // Create rp2[0] with Multiview, rp2[1] without Multiview (zero viewMask), rp2[2] with Multiview but another
+    // viewMask
     std::array<vkt::RenderPass, 3> rp2;
     if (rp2Supported) {
         rp2[0].init(*m_device, rpci2);
@@ -871,7 +925,8 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
         rp2[2].init(*m_device, rpci2);
     }
 
-    auto ici2d = vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    auto ici2d =
+        vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::Image image(*m_device, ici2d);
     vkt::ImageView iv = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
 
@@ -894,7 +949,7 @@ TEST_F(NegativeMultiview, DrawWithPipelineIncompatibleWithRenderPass) {
     VkRenderPassBeginInfo rp_begin = vku::InitStructHelper();
     rp_begin.renderPass = rp[0].handle();
     rp_begin.framebuffer = fb.handle();
-    rp_begin.renderArea = {{0, 0}, {128, 128}};
+    rp_begin.renderArea = { { 0, 0 }, { 128, 128 } };
 
     // Create a graphics pipeline with rp[1]
     CreatePipelineHelper pipe_1(*this);
@@ -995,11 +1050,12 @@ TEST_F(NegativeMultiview, RenderPassViewMasksZero) {
     }
 
     VkSubpassDescription subpasses[2];
-    subpasses[0] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    subpasses[1] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    uint32_t viewMasks[] = {0x3u, 0x0};
-    uint32_t correlationMasks[] = {0x1u, 0x3u};
-    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, viewMasks, 0u, nullptr, 2u, correlationMasks);
+    subpasses[0] = { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr };
+    subpasses[1] = { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr };
+    uint32_t viewMasks[] = { 0x3u, 0x0 };
+    uint32_t correlationMasks[] = { 0x1u, 0x3u };
+    auto rpmvci =
+        vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, viewMasks, 0u, nullptr, 2u, correlationMasks);
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 0u, nullptr);
 
@@ -1021,12 +1077,13 @@ TEST_F(NegativeMultiview, RenderPassViewOffsets) {
     }
 
     VkSubpassDescription subpasses[2];
-    subpasses[0] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    subpasses[1] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    uint32_t viewMasks[] = {0x1u, 0x2u};
-    uint32_t correlationMasks[] = {0x1u, 0x2u};
+    subpasses[0] = { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr };
+    subpasses[1] = { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr };
+    uint32_t viewMasks[] = { 0x1u, 0x2u };
+    uint32_t correlationMasks[] = { 0x1u, 0x2u };
     int32_t view_offset = 1;
-    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, viewMasks, 1u, &view_offset, 2u, correlationMasks);
+    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(
+        nullptr, 2u, viewMasks, 1u, &view_offset, 2u, correlationMasks);
 
     VkSubpassDependency dependency = {};
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 2u, subpasses, 1u, &dependency);
@@ -1049,14 +1106,18 @@ TEST_F(NegativeMultiview, RenderPassViewMasksLimit) {
         GTEST_SKIP() << "maxMultiviewViewCount too high";
     }
 
-    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
+    VkSubpassDescription subpass = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr
+    };
     uint32_t viewMask = 1 << render_pass_multiview_props.maxMultiviewViewCount;
     uint32_t correlationMask = 0x1u;
-    auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, &viewMask, 0u, nullptr, 1u, &correlationMask);
+    auto rpmvci =
+        vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 1u, &viewMask, 0u, nullptr, 1u, &correlationMask);
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpmvci, 0u, 0u, nullptr, 1u, &subpass, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697", nullptr);
+    TestRenderPassCreate(
+        m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassMultiviewCreateInfo-pViewMasks-06697", nullptr);
 }
 
 TEST_F(NegativeMultiview, FeaturesDisabled) {
@@ -1078,7 +1139,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
 
     // tessellationShader
     {
-        char const *tcsSource = R"glsl(
+        char const* tcsSource = R"glsl(
         #version 450
         layout(vertices=3) out;
         void main(){
@@ -1086,7 +1147,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
            gl_TessLevelInner[0] = 1;
         }
         )glsl";
-        char const *tesSource = R"glsl(
+        char const* tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         void main(){
@@ -1098,10 +1159,15 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         VkShaderObj tcs(this, tcsSource, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
         VkShaderObj tes(this, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
 
-        VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                     VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+        VkPipelineInputAssemblyStateCreateInfo iasci{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                                                      nullptr,
+                                                      0,
+                                                      VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+                                                      VK_FALSE };
 
-        VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+        VkPipelineTessellationStateCreateInfo tsci{
+            VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3
+        };
 
         CreatePipelineHelper pipe(*this);
         pipe.gp_ci_.renderPass = rp.Handle();
@@ -1118,7 +1184,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
     }
     // geometryShader
     {
-        static char const *gsSource = R"glsl(
+        static char const* gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;
@@ -1136,7 +1202,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         pipe.gp_ci_.renderPass = rp.Handle();
         pipe.gp_ci_.subpass = 0;
         pipe.cb_ci_.attachmentCount = 1;
-        pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+        pipe.shader_stages_ = { vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
         m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06048");
@@ -1178,7 +1244,7 @@ TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
     VkRenderingInfo renderingInfo = vku::InitStructHelper();
-    renderingInfo.renderArea = {{0, 0}, {100u, 100u}};
+    renderingInfo.renderArea = { { 0, 0 }, { 100u, 100u } };
     renderingInfo.layerCount = 1u;
     renderingInfo.colorAttachmentCount = 1u;
     renderingInfo.pColorAttachments = &color_attachment;

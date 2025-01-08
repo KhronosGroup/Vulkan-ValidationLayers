@@ -28,20 +28,21 @@
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "containers/custom_containers.h"
-#include "generated/vk_object_types.h"
 #include "error_message/log_message_type.h"
+#include "generated/vk_object_types.h"
 
 #if defined __ANDROID__
 #include <android/log.h>
-[[maybe_unused]] static const char *kForceDefaultCallbackKey = "debug.vvl.forcelayerlog";
+[[maybe_unused]] static const char* kForceDefaultCallbackKey = "debug.vvl.forcelayerlog";
 #endif
 
-extern const char *kVUIDUndefined;
+extern const char* kVUIDUndefined;
 
 typedef enum DebugCallbackStatusBits {
-    DEBUG_CALLBACK_UTILS = 0x00000001,     // This struct describes a VK_EXT_debug_utils callback
-    DEBUG_CALLBACK_DEFAULT = 0x00000002,   // An internally created callback, used if no user-defined callbacks are registered
-    DEBUG_CALLBACK_INSTANCE = 0x00000004,  // An internally created temporary instance callback
+    DEBUG_CALLBACK_UTILS = 0x00000001, // This struct describes a VK_EXT_debug_utils callback
+    DEBUG_CALLBACK_DEFAULT =
+        0x00000002, // An internally created callback, used if no user-defined callbacks are registered
+    DEBUG_CALLBACK_INSTANCE = 0x00000004, // An internally created temporary instance callback
 } DebugCallbackStatusBits;
 typedef VkFlags DebugCallbackStatusFlags;
 
@@ -92,7 +93,7 @@ typedef struct VkLayerDbgFunctionState {
     VkDebugUtilsMessageTypeFlagsEXT debug_utils_msg_type;
     PFN_vkDebugUtilsMessengerCallbackEXT debug_utils_callback_function_ptr;
 
-    void *pUserData;
+    void* pUserData;
 
     bool IsUtils() const { return ((callback_status & DEBUG_CALLBACK_UTILS) != 0); }
     bool IsDefault() const { return ((callback_status & DEBUG_CALLBACK_DEFAULT) != 0); }
@@ -105,7 +106,9 @@ static inline uint64_t HandleToUint64(HANDLE_T h) {
     return CastToUint64<HANDLE_T>(h);
 }
 
-static inline uint64_t HandleToUint64(uint64_t h) { return h; }
+static inline uint64_t HandleToUint64(uint64_t h) {
+    return h;
+}
 
 // Data we store per label for logging
 struct LoggingLabel {
@@ -122,21 +125,21 @@ struct LoggingLabel {
         return out;
     };
 
-    LoggingLabel() : name(), color({{0.f, 0.f, 0.f, 0.f}}) {}
-    LoggingLabel(const VkDebugUtilsLabelEXT *label_info) {
+    LoggingLabel() : name(), color({ { 0.f, 0.f, 0.f, 0.f } }) {}
+    LoggingLabel(const VkDebugUtilsLabelEXT* label_info) {
         if (label_info && label_info->pLabelName) {
             name = label_info->pLabelName;
             std::copy_n(std::begin(label_info->color), 4, color.begin());
         }
     }
 
-    LoggingLabel(const LoggingLabel &) = default;
-    LoggingLabel &operator=(const LoggingLabel &) = default;
-    LoggingLabel &operator=(LoggingLabel &&) = default;
-    LoggingLabel(LoggingLabel &&) = default;
+    LoggingLabel(const LoggingLabel&) = default;
+    LoggingLabel& operator=(const LoggingLabel&) = default;
+    LoggingLabel& operator=(LoggingLabel&&) = default;
+    LoggingLabel(LoggingLabel&&) = default;
 
     template <typename Name, typename Vec>
-    LoggingLabel(Name &&name_, Vec &&vec_) : name(std::forward<Name>(name_)), color(std::forward<Vec>(vec_)) {}
+    LoggingLabel(Name&& name_, Vec&& vec_) : name(std::forward<Name>(name_)), color(std::forward<Vec>(vec_)) {}
 };
 
 struct LoggingLabelState {
@@ -144,14 +147,14 @@ struct LoggingLabelState {
     LoggingLabel insert_label;
 
     // Export the labels, but in reverse order since we want the most recent at the top.
-    void Export(std::vector<VkDebugUtilsLabelEXT> &exported_labels) const {
+    void Export(std::vector<VkDebugUtilsLabelEXT>& exported_labels) const {
         exported_labels.reserve(exported_labels.size() + 1 + labels.size());
 
         if (!insert_label.Empty()) {
             exported_labels.emplace_back(insert_label.Export());
         }
 
-        std::for_each(labels.rbegin(), labels.rend(), [&exported_labels](const LoggingLabel &label) {
+        std::for_each(labels.rbegin(), labels.rend(), [&exported_labels](const LoggingLabel& label) {
             if (!label.Empty()) {
                 exported_labels.emplace_back(label.Export());
             }
@@ -164,7 +167,7 @@ class TypedHandleWrapper {
     template <typename Handle>
     TypedHandleWrapper(Handle h, VulkanObjectType t) : handle_(h, t) {}
 
-    const VulkanTypedHandle &Handle() const { return handle_; }
+    const VulkanTypedHandle& Handle() const { return handle_; }
     VulkanObjectType Type() const { return handle_.type; }
 
   protected:
@@ -181,7 +184,8 @@ struct MessageFormatSettings {
 #if defined(__clang__)
 #define DECORATE_PRINTF(_fmt_argnum, _first_param_num) __attribute__((format(printf, _fmt_argnum, _first_param_num)))
 #elif defined(__GNUC__)
-#define DECORATE_PRINTF(_fmt_argnum, _first_param_num) __attribute__((format(gnu_printf, _fmt_argnum, _first_param_num)))
+#define DECORATE_PRINTF(_fmt_argnum, _first_param_num) \
+    __attribute__((format(gnu_printf, _fmt_argnum, _first_param_num)))
 #else
 #define DECORATE_PRINTF(_fmt_num, _first_param_num)
 #endif
@@ -191,59 +195,65 @@ class DebugReport {
     std::vector<VkLayerDbgFunctionState> debug_callback_list;
     // We use unordered_set to use trivial hashing for filter_message_ids as we already store hashed values
     vvl::unordered_set<uint32_t> filter_message_ids{};
-    // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable keyword allows
-    // the layers to continue this pattern, but also allows them to use/change this specific member for synchronization purposes.
+    // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable
+    // keyword allows the layers to continue this pattern, but also allows them to use/change this specific member for
+    // synchronization purposes.
     mutable std::mutex debug_output_mutex;
-    uint32_t duplicate_message_limit = 0;  // zero will keep printing forever
-    const void *instance_pnext_chain{};
-    bool force_default_log_callback{false};
+    uint32_t duplicate_message_limit = 0; // zero will keep printing forever
+    const void* instance_pnext_chain{};
+    bool force_default_log_callback{ false };
     uint32_t device_created = 0;
     MessageFormatSettings message_format_settings;
 
-    void SetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo);
-    void SetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo);
+    void SetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT* pNameInfo);
+    void SetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT* pNameInfo);
     std::string GetUtilsObjectNameNoLock(const uint64_t object) const;
     std::string GetMarkerObjectNameNoLock(const uint64_t object) const;
 
-    void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &callbacks);
+    void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState>& callbacks);
     void RemoveDebugUtilsCallback(uint64_t callback);
 
-    std::string FormatHandle(const char *handle_type_name, uint64_t handle) const;
+    std::string FormatHandle(const char* handle_type_name, uint64_t handle) const;
 
-    std::string FormatHandle(const VulkanTypedHandle &handle) const {
+    std::string FormatHandle(const VulkanTypedHandle& handle) const {
         return FormatHandle(string_VulkanObjectType(handle.type), handle.handle);
     }
 
-    std::string FormatHandle(const TypedHandleWrapper &wrapper) const { return FormatHandle(wrapper.Handle()); }
+    std::string FormatHandle(const TypedHandleWrapper& wrapper) const { return FormatHandle(wrapper.Handle()); }
 
-    template <typename T, typename std::enable_if_t<!std::is_base_of<TypedHandleWrapper, T>::value, void *> = nullptr>
+    template <typename T, typename std::enable_if_t<!std::is_base_of<TypedHandleWrapper, T>::value, void*> = nullptr>
     std::string FormatHandle(T handle) const {
         return FormatHandle(VkHandleInfo<T>::Typename(), HandleToUint64(handle));
     }
 
     // Formats messages to be in the proper format, handles VUID logic, and any legacy issues
-    bool LogMsg(VkFlags msg_flags, const LogObjectList &objects, const Location &loc, std::string_view vuid_text,
-                const char *format, va_list argptr);
+    bool LogMsg(VkFlags msg_flags,
+                const LogObjectList& objects,
+                const Location& loc,
+                std::string_view vuid_text,
+                const char* format,
+                va_list argptr);
     // Core logging that interacts with the DebugCallbacks
-    bool DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, const char *msg, const char *text_vuid) const;
+    bool DebugLogMsg(VkFlags msg_flags, const LogObjectList& objects, const char* msg, const char* text_vuid) const;
 
-    void BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT *label_info);
+    void BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT* label_info);
     void EndQueueDebugUtilsLabel(VkQueue queue);
-    void InsertQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT *label_info);
+    void InsertQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT* label_info);
 
-    void BeginCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const VkDebugUtilsLabelEXT *label_info);
+    void BeginCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const VkDebugUtilsLabelEXT* label_info);
     void EndCmdDebugUtilsLabel(VkCommandBuffer command_buffer);
-    void InsertCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const VkDebugUtilsLabelEXT *label_info);
+    void InsertCmdDebugUtilsLabel(VkCommandBuffer command_buffer, const VkDebugUtilsLabelEXT* label_info);
     void ResetCmdDebugUtilsLabel(VkCommandBuffer command_buffer);
     void EraseCmdDebugUtilsLabel(VkCommandBuffer command_buffer);
 
   private:
     bool UpdateLogMsgCounts(int32_t vuid_hash) const;
-    bool LogMsgEnabled(std::string_view vuid_text, VkDebugUtilsMessageSeverityFlagsEXT msg_severity,
+    bool LogMsgEnabled(std::string_view vuid_text,
+                       VkDebugUtilsMessageSeverityFlagsEXT msg_severity,
                        VkDebugUtilsMessageTypeFlagsEXT msg_type);
 
-    VkDebugUtilsMessageSeverityFlagsEXT active_msg_severities{0};
-    VkDebugUtilsMessageTypeFlagsEXT active_msg_types{0};
+    VkDebugUtilsMessageSeverityFlagsEXT active_msg_severities{ 0 };
+    VkDebugUtilsMessageTypeFlagsEXT active_msg_types{ 0 };
     mutable vvl::unordered_map<uint32_t, uint32_t> duplicate_message_count_map{};
 
     vvl::unordered_map<VkQueue, std::unique_ptr<LoggingLabelState>> debug_utils_queue_labels;
@@ -254,15 +264,15 @@ class DebugReport {
 
 class Logger {
   public:
-    Logger(DebugReport *dr) : debug_report(dr) {}
+    Logger(DebugReport* dr) : debug_report(dr) {}
     template <typename T>
-    std::string FormatHandle(T &&h) const {
+    std::string FormatHandle(T&& h) const {
         return debug_report->FormatHandle(std::forward<T>(h));
     }
 
     // Debug Logging Helpers
-    bool DECORATE_PRINTF(5, 6)
-        LogError(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc, const char *format, ...) const {
+    bool DECORATE_PRINTF(5, 6) LogError(
+        std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
         const bool result = debug_report->LogMsg(kErrorBit, objlist, loc, vuid_text, format, argptr);
@@ -271,8 +281,8 @@ class Logger {
     }
 
     // Currently works like LogWarning, but allows developer to better categorize the warning
-    bool DECORATE_PRINTF(5, 6) LogUndefinedValue(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc,
-                                                 const char *format, ...) const {
+    bool DECORATE_PRINTF(5, 6) LogUndefinedValue(
+        std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
         const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
@@ -280,8 +290,8 @@ class Logger {
         return result;
     }
 
-    bool DECORATE_PRINTF(5, 6)
-        LogWarning(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc, const char *format, ...) const {
+    bool DECORATE_PRINTF(5, 6) LogWarning(
+        std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
         const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
@@ -289,8 +299,8 @@ class Logger {
         return result;
     }
 
-    bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc,
-                                                     const char *format, ...) const {
+    bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(
+        std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
         const bool result = debug_report->LogMsg(kPerformanceWarningBit, objlist, loc, vuid_text, format, argptr);
@@ -298,8 +308,8 @@ class Logger {
         return result;
     }
 
-    bool DECORATE_PRINTF(5, 6)
-        LogInfo(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc, const char *format, ...) const {
+    bool DECORATE_PRINTF(5, 6) LogInfo(
+        std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
         const bool result = debug_report->LogMsg(kInformationBit, objlist, loc, vuid_text, format, argptr);
@@ -307,8 +317,8 @@ class Logger {
         return result;
     }
 
-    bool DECORATE_PRINTF(5, 6)
-        LogVerbose(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc, const char *format, ...) const {
+    bool DECORATE_PRINTF(5, 6) LogVerbose(
+        std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
         va_list argptr;
         va_start(argptr, format);
         const bool result = debug_report->LogMsg(kVerboseBit, objlist, loc, vuid_text, format, argptr);
@@ -316,45 +326,57 @@ class Logger {
         return result;
     }
 
-    void LogInternalError(std::string_view failure_location, const LogObjectList &obj_list, const Location &loc,
-                          std::string_view entrypoint, VkResult err) const {
+    void LogInternalError(std::string_view failure_location,
+                          const LogObjectList& obj_list,
+                          const Location& loc,
+                          std::string_view entrypoint,
+                          VkResult err) const {
         const std::string_view err_string = string_VkResult(err);
         std::string vuid = "INTERNAL-ERROR-";
         vuid += entrypoint;
-        LogError(vuid, obj_list, loc, "at %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
-                 failure_location.data(), entrypoint.data(), err_string.data());
+        LogError(vuid,
+                 obj_list,
+                 loc,
+                 "at %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
+                 failure_location.data(),
+                 entrypoint.data(),
+                 err_string.data());
     }
 
-    DebugReport *debug_report{nullptr};
+    DebugReport* debug_report{ nullptr };
 };
 
-VKAPI_ATTR VkResult LayerCreateMessengerCallback(DebugReport *debug_report, bool default_callback,
-                                                 const VkDebugUtilsMessengerCreateInfoEXT *create_info,
-                                                 VkDebugUtilsMessengerEXT *messenger);
+VKAPI_ATTR VkResult LayerCreateMessengerCallback(DebugReport* debug_report,
+                                                 bool default_callback,
+                                                 const VkDebugUtilsMessengerCreateInfoEXT* create_info,
+                                                 VkDebugUtilsMessengerEXT* messenger);
 
-VKAPI_ATTR VkResult LayerCreateReportCallback(DebugReport *debug_report, bool default_callback,
-                                              const VkDebugReportCallbackCreateInfoEXT *create_info,
-                                              VkDebugReportCallbackEXT *callback);
+VKAPI_ATTR VkResult LayerCreateReportCallback(DebugReport* debug_report,
+                                              bool default_callback,
+                                              const VkDebugReportCallbackCreateInfoEXT* create_info,
+                                              VkDebugReportCallbackEXT* callback);
 
 template <typename T>
-static inline void LayerDestroyCallback(DebugReport *debug_report, T callback) {
+static inline void LayerDestroyCallback(DebugReport* debug_report, T callback) {
     std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
     debug_report->RemoveDebugUtilsCallback(CastToUint64(callback));
 }
 
-VKAPI_ATTR void ActivateInstanceDebugCallbacks(DebugReport *debug_report);
+VKAPI_ATTR void ActivateInstanceDebugCallbacks(DebugReport* debug_report);
 
-VKAPI_ATTR void DeactivateInstanceDebugCallbacks(DebugReport *debug_report);
+VKAPI_ATTR void DeactivateInstanceDebugCallbacks(DebugReport* debug_report);
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                       VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                                      const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data);
+                                                      const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+                                                      void* user_data);
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                     VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                                    const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data);
+                                                    const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+                                                    void* user_data);
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                             VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                                            const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
-                                                            void *user_data);
+                                                            const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+                                                            void* user_data);

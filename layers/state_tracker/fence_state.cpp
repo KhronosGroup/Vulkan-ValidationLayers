@@ -20,21 +20,18 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/state_tracker.h"
 
-static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo *info) {
+static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo* info) {
     auto export_info = vku::FindStructInPNextChain<VkExportFenceCreateInfo>(info->pNext);
     return export_info ? export_info->handleTypes : 0;
 }
 
-vvl::Fence::Fence(ValidationStateTracker &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
-    : RefcountedStateObject(handle, kVulkanObjectTypeFence),
-      flags(pCreateInfo->flags),
-      export_handle_types(GetExportHandleTypes(pCreateInfo)),
-      state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? kRetired : kUnsignaled),
-      completed_(),
-      waiter_(completed_.get_future()),
-      dev_data_(dev) {}
+vvl::Fence::Fence(ValidationStateTracker& dev, VkFence handle, const VkFenceCreateInfo* pCreateInfo) :
+    RefcountedStateObject(handle, kVulkanObjectTypeFence), flags(pCreateInfo->flags),
+    export_handle_types(GetExportHandleTypes(pCreateInfo)),
+    state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? kRetired : kUnsignaled), completed_(),
+    waiter_(completed_.get_future()), dev_data_(dev) {}
 
-const VulkanTypedHandle *vvl::Fence::InUse() const {
+const VulkanTypedHandle* vvl::Fence::InUse() const {
     auto guard = ReadLock();
     // Fence does not have a parent (in the sense of a VVL state object), and the value returned
     // by the base class InUse is not useful for reporting (it is the fence's own handle)
@@ -52,7 +49,7 @@ const VulkanTypedHandle *vvl::Fence::InUse() const {
     return &empty;
 }
 
-bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
+bool vvl::Fence::EnqueueSignal(vvl::Queue* queue_state, uint64_t next_seq) {
     auto guard = WriteLock();
     if (scope_ != kInternal) {
         return true;
@@ -65,7 +62,7 @@ bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
 }
 
 // Called from a non-queue operation, such as vkWaitForFences()|
-void vvl::Fence::NotifyAndWait(const Location &loc) {
+void vvl::Fence::NotifyAndWait(const Location& loc) {
     std::shared_future<void> waiter;
     AcquireFenceSync acquire_fence_sync;
     {
@@ -89,12 +86,14 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
     if (waiter.valid()) {
         auto result = waiter.wait_until(GetCondWaitTimeout());
         if (result != std::future_status::ready) {
-            dev_data_.LogError(
-                "INTERNAL-ERROR-VkFence-state-timeout", Handle(), loc,
-                "The Validation Layers hit a timeout waiting for fence state to update (this is most likely a validation bug).");
+            dev_data_.LogError("INTERNAL-ERROR-VkFence-state-timeout",
+                               Handle(),
+                               loc,
+                               "The Validation Layers hit a timeout waiting for fence state to update (this is most "
+                               "likely a validation bug).");
         }
     }
-    for (const auto &submission_ref : acquire_fence_sync.submission_refs) {
+    for (const auto& submission_ref : acquire_fence_sync.submission_refs) {
         submission_ref.queue->NotifyAndWait(loc, submission_ref.seq);
     }
 }
@@ -165,7 +164,7 @@ std::optional<VkExternalFenceHandleTypeFlagBits> vvl::Fence::ImportedHandleType(
     return imported_handle_type_;
 }
 
-void vvl::Fence::SetAcquireFenceSync(const AcquireFenceSync &acquire_fence_sync) {
+void vvl::Fence::SetAcquireFenceSync(const AcquireFenceSync& acquire_fence_sync) {
     auto guard = WriteLock();
 
     // An attempt to overwrite existing acquire fence sync is a bug

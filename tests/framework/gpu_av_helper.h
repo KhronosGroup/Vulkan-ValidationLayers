@@ -13,7 +13,7 @@
 #pragma once
 // This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
 template <typename Test>
-bool CanEnableGpuAV(Test &test) {
+bool CanEnableGpuAV(Test& test) {
     // Check version first before trying to call GetPhysicalDeviceFeatures2
     if (test.DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("At least Vulkan version 1.1 is required for GPU-AV\n");
@@ -24,8 +24,7 @@ bool CanEnableGpuAV(Test &test) {
     if (!features2.features.fragmentStoresAndAtomics || !features2.features.vertexPipelineStoresAndAtomics) {
         printf("fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics are required for GPU-AV\n");
         return false;
-    }
-    else if (test.IsPlatformMockICD()) {
+    } else if (test.IsPlatformMockICD()) {
         printf("Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw\n");
         return false;
     }

@@ -20,26 +20,32 @@
 
 #pragma once
 
-#include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
-#include "state_tracker/image_state.h"
-#include "state_tracker/device_state.h"
 #include "state_tracker/descriptor_sets.h"
+#include "state_tracker/device_state.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/state_tracker.h"
 
 class BestPractices;
 
 namespace bp_state {
 class Image : public vvl::Image {
   public:
-    Image(const ValidationStateTracker& dev_data, VkImage handle, const VkImageCreateInfo* create_info,
-          VkFormatFeatureFlags2 features)
-        : vvl::Image(dev_data, handle, create_info, features) {
+    Image(const ValidationStateTracker& dev_data,
+          VkImage handle,
+          const VkImageCreateInfo* create_info,
+          VkFormatFeatureFlags2 features) :
+        vvl::Image(dev_data, handle, create_info, features) {
         SetupUsages();
     }
 
-    Image(const ValidationStateTracker& dev_data, VkImage handle, const VkImageCreateInfo* create_info, VkSwapchainKHR swapchain,
-          uint32_t swapchain_index, VkFormatFeatureFlags2 features)
-        : vvl::Image(dev_data, handle, create_info, swapchain, swapchain_index, features) {
+    Image(const ValidationStateTracker& dev_data,
+          VkImage handle,
+          const VkImageCreateInfo* create_info,
+          VkSwapchainKHR swapchain,
+          uint32_t swapchain_index,
+          VkFormatFeatureFlags2 features) :
+        vvl::Image(dev_data, handle, create_info, swapchain, swapchain_index, features) {
         SetupUsages();
     }
 
@@ -48,7 +54,8 @@ class Image : public vvl::Image {
         uint32_t queue_family_index;
     };
 
-    Usage UpdateUsage(uint32_t array_layer, uint32_t mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t queue_family) {
+    Usage
+    UpdateUsage(uint32_t array_layer, uint32_t mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t queue_family) {
         auto last_usage = usages_[array_layer][mip_level];
         usages_[array_layer][mip_level].type = usage;
         usages_[array_layer][mip_level].queue_family_index = queue_family;
@@ -69,7 +76,7 @@ class Image : public vvl::Image {
     void SetupUsages() {
         usages_.resize(create_info.arrayLayers);
         for (auto& mip_vec : usages_) {
-            mip_vec.resize(create_info.mipLevels, {IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED});
+            mip_vec.resize(create_info.mipLevels, { IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED });
         }
     }
     // A 2d vector for all the array layers and mip levels.
@@ -88,8 +95,8 @@ class PhysicalDevice : public vvl::PhysicalDevice {
     CALL_STATE vkGetPhysicalDeviceQueueFamilyPropertiesState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceQueueFamilyProperties2State = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceQueueFamilyProperties2KHRState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceLayerPropertiesState = UNCALLED;      // Currently unused
-    CALL_STATE vkGetPhysicalDeviceExtensionPropertiesState = UNCALLED;  // Currently unused
+    CALL_STATE vkGetPhysicalDeviceLayerPropertiesState = UNCALLED;     // Currently unused
+    CALL_STATE vkGetPhysicalDeviceExtensionPropertiesState = UNCALLED; // Currently unused
     CALL_STATE vkGetPhysicalDeviceFeaturesState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceSurfacePresentModesKHRState = UNCALLED;
@@ -100,29 +107,38 @@ class PhysicalDevice : public vvl::PhysicalDevice {
 
 class Swapchain : public vvl::Swapchain {
   public:
-    Swapchain(ValidationStateTracker& dev_data, const VkSwapchainCreateInfoKHR* create_info, VkSwapchainKHR handle)
-        : vvl::Swapchain(dev_data, create_info, handle) {}
+    Swapchain(ValidationStateTracker& dev_data, const VkSwapchainCreateInfoKHR* create_info, VkSwapchainKHR handle) :
+        vvl::Swapchain(dev_data, create_info, handle) {}
 
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
 };
 
 class DeviceMemory : public vvl::DeviceMemory {
   public:
-    DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_info, uint64_t fake_address,
-                 const VkMemoryType& memory_type, const VkMemoryHeap& memory_heap,
-                 std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count)
-        : vvl::DeviceMemory(handle, allocate_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
-                            physical_device_count) {}
+    DeviceMemory(VkDeviceMemory handle,
+                 const VkMemoryAllocateInfo* allocate_info,
+                 uint64_t fake_address,
+                 const VkMemoryType& memory_type,
+                 const VkMemoryHeap& memory_heap,
+                 std::optional<vvl::DedicatedBinding>&& dedicated_binding,
+                 uint32_t physical_device_count) :
+        vvl::DeviceMemory(handle,
+                          allocate_info,
+                          fake_address,
+                          memory_type,
+                          memory_heap,
+                          std::move(dedicated_binding),
+                          physical_device_count) {}
 
-    std::optional<float> dynamic_priority;  // VK_EXT_pageable_device_local_memory priority
+    std::optional<float> dynamic_priority; // VK_EXT_pageable_device_local_memory priority
 };
 
 struct AttachmentInfo {
     uint32_t framebufferAttachment;
     VkImageAspectFlags aspects;
 
-    AttachmentInfo(uint32_t framebufferAttachment_, VkImageAspectFlags aspects_)
-        : framebufferAttachment(framebufferAttachment_), aspects(aspects_) {}
+    AttachmentInfo(uint32_t framebufferAttachment_, VkImageAspectFlags aspects_) :
+        framebufferAttachment(framebufferAttachment_), aspects(aspects_) {}
 };
 
 // used to track state regarding render pass heuristic checks
@@ -170,7 +186,9 @@ struct CommandBufferStateNV {
         uint32_t mip_levels = 0;
         uint32_t array_layers = 0;
 
-        const ZcullResourceState& GetState(uint32_t layer, uint32_t level) const { return states[layer * mip_levels + level]; }
+        const ZcullResourceState& GetState(uint32_t layer, uint32_t level) const {
+            return states[layer * mip_levels + level];
+        }
 
         ZcullResourceState& GetState(uint32_t layer, uint32_t level) { return states[layer * mip_levels + level]; }
     };
@@ -192,7 +210,9 @@ struct CommandBufferStateNV {
 
 class CommandBuffer : public vvl::CommandBuffer {
   public:
-    CommandBuffer(BestPractices& bp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* allocate_info,
+    CommandBuffer(BestPractices& bp,
+                  VkCommandBuffer handle,
+                  const VkCommandBufferAllocateInfo* allocate_info,
                   const vvl::CommandPool* pool);
 
     RenderPassState render_pass_state;
@@ -223,18 +243,22 @@ class CommandBuffer : public vvl::CommandBuffer {
 
 class DescriptorPool : public vvl::DescriptorPool {
   public:
-    DescriptorPool(ValidationStateTracker& dev, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo* create_info)
-        : vvl::DescriptorPool(dev, handle, create_info) {}
+    DescriptorPool(ValidationStateTracker& dev,
+                   const VkDescriptorPool handle,
+                   const VkDescriptorPoolCreateInfo* create_info) :
+        vvl::DescriptorPool(dev, handle, create_info) {}
 
-    uint32_t freed_count{0};
+    uint32_t freed_count{ 0 };
 };
 
 class Pipeline : public vvl::Pipeline {
   public:
-    Pipeline(const ValidationStateTracker& state_data, const VkGraphicsPipelineCreateInfo* create_info,
-             std::shared_ptr<const vvl::PipelineCache>&& pipe_cache, std::shared_ptr<const vvl::RenderPass>&& rpstate,
+    Pipeline(const ValidationStateTracker& state_data,
+             const VkGraphicsPipelineCreateInfo* create_info,
+             std::shared_ptr<const vvl::PipelineCache>&& pipe_cache,
+             std::shared_ptr<const vvl::RenderPass>&& rpstate,
              std::shared_ptr<const vvl::PipelineLayout>&& layout);
 
     const std::vector<AttachmentInfo> access_framebuffer_attachments;
 };
-}  // namespace bp_state
+} // namespace bp_state

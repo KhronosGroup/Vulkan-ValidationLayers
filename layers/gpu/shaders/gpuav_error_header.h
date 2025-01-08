@@ -62,7 +62,7 @@ const int kHeaderInstructionIdOffset = 2;
 
 // This is the stage which generated the validation error. This word is used
 // to determine the contents of the next two words in the record.
-const int kHeaderStageIdOffset = 3;  // Values come from SpvExecutionModel (See spirv.h):
+const int kHeaderStageIdOffset = 3; // Values come from SpvExecutionModel (See spirv.h):
 // Each stage will contain different values in the next set of words of the
 // record used to identify which instantiation of the shader generated the
 // validation error.
@@ -123,11 +123,12 @@ const int kPreActionParamOffset_3 = kHeaderSize + 3;
 // Sizes/Counts
 // -------------------
 const int kErrorRecordSize = kHeaderSize + 5;
-const int kErrorRecordCounts = 4096;  // Maximum number of errors a command buffer can hold. Arbitrary value
-const int kErrorBufferByteSize = 4 * kErrorRecordSize * kErrorRecordCounts + 2 * 4;  // 2 * 4 bytes to store flags and errors count
+const int kErrorRecordCounts = 4096; // Maximum number of errors a command buffer can hold. Arbitrary value
+const int kErrorBufferByteSize =
+    4 * kErrorRecordSize * kErrorRecordCounts + 2 * 4; // 2 * 4 bytes to store flags and errors count
 
 #ifdef __cplusplus
-}  // namespace glsl
+} // namespace glsl
 #endif
 
 // DebugPrintf
@@ -136,6 +137,6 @@ const int kDebugPrintfOutputBufferDWordsCount = 0;
 const int kDebugPrintfOutputBufferData = 1;
 
 #ifdef __cplusplus
-}  // namespace gpuav
+} // namespace gpuav
 #endif
 #endif

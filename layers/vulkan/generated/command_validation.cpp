@@ -21,8 +21,8 @@
 
 // NOLINTBEGIN
 
-#include "error_message/logging.h"
 #include "core_checks/core_validation.h"
+#include "error_message/logging.h"
 
 enum CMD_SCOPE_TYPE { CMD_SCOPE_INSIDE, CMD_SCOPE_OUTSIDE, CMD_SCOPE_BOTH };
 

@@ -22,33 +22,33 @@
 #pragma once
 #include <atomic>
 
-#include <vulkan/vulkan.h>
-#include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan.h>
 
 #include "containers/custom_containers.h"
 #include "error_message/logging.h"
-#include "utils/vk_layer_utils.h"
-#include "layer_options.h"
-#include "gpu/core/gpuav_settings.h"
-#include "sync/sync_settings.h"
 #include "generated/dispatch_vector.h"
 #include "generated/vk_api_version.h"
 #include "generated/vk_extension_helper.h"
 #include "generated/vk_layer_dispatch_table.h"
+#include "gpu/core/gpuav_settings.h"
+#include "layer_options.h"
+#include "sync/sync_settings.h"
+#include "utils/vk_layer_utils.h"
 
 class ValidationObject;
 
 // Layer object type identifiers
 enum LayerObjectTypeId {
-    LayerObjectTypeThreading,            // Instance or device threading layer object
-    LayerObjectTypeParameterValidation,  // Instance or device parameter validation layer object
-    LayerObjectTypeObjectTracker,        // Instance or device object tracker layer object
-    LayerObjectTypeCoreValidation,       // Instance or device core validation layer object
-    LayerObjectTypeBestPractices,        // Instance or device best practices layer object
-    LayerObjectTypeGpuAssisted,          // Instance or device gpu assisted validation layer object
-    LayerObjectTypeSyncValidation,       // Instance or device synchronization validation layer object
-    LayerObjectTypeMaxEnum,              // Max enum count
+    LayerObjectTypeThreading,           // Instance or device threading layer object
+    LayerObjectTypeParameterValidation, // Instance or device parameter validation layer object
+    LayerObjectTypeObjectTracker,       // Instance or device object tracker layer object
+    LayerObjectTypeCoreValidation,      // Instance or device core validation layer object
+    LayerObjectTypeBestPractices,       // Instance or device best practices layer object
+    LayerObjectTypeGpuAssisted,         // Instance or device gpu assisted validation layer object
+    LayerObjectTypeSyncValidation,      // Instance or device synchronization validation layer object
+    LayerObjectTypeMaxEnum,             // Max enum count
 };
 
 // To avoid re-hashing unique ids on each use, we precompute the hash and store the
@@ -87,8 +87,10 @@ struct TemplateState {
     vku::safe_VkDescriptorUpdateTemplateCreateInfo create_info;
     bool destroyed;
 
-    TemplateState(VkDescriptorUpdateTemplate update_template, vku::safe_VkDescriptorUpdateTemplateCreateInfo* pCreateInfo)
-        : desc_update_template(update_template), create_info(*pCreateInfo), destroyed(false) {}
+    TemplateState(VkDescriptorUpdateTemplate update_template,
+                  vku::safe_VkDescriptorUpdateTemplateCreateInfo* pCreateInfo) :
+        desc_update_template(update_template),
+        create_info(*pCreateInfo), destroyed(false) {}
 };
 
 struct Settings {
@@ -108,19 +110,22 @@ class HandleWrapper : public Logger {
     // Unwrap a handle.
     template <typename HandleType>
     HandleType Unwrap(HandleType wrapped_handle) {
-        if (wrapped_handle == (HandleType)VK_NULL_HANDLE) return wrapped_handle;
+        if (wrapped_handle == (HandleType)VK_NULL_HANDLE)
+            return wrapped_handle;
         auto iter = unique_id_mapping.find(CastToUint64(wrapped_handle));
-        if (iter == unique_id_mapping.end()) return (HandleType)0;
+        if (iter == unique_id_mapping.end())
+            return (HandleType)0;
         return (HandleType)iter->second;
     }
 
     // Wrap a newly created handle with a new unique ID, and return the new ID.
     template <typename HandleType>
     HandleType WrapNew(HandleType new_created_handle) {
-        if (new_created_handle == (HandleType)VK_NULL_HANDLE) return new_created_handle;
+        if (new_created_handle == (HandleType)VK_NULL_HANDLE)
+            return new_created_handle;
         auto unique_id = global_unique_id++;
         unique_id = HashedUint64::hash(unique_id);
-        assert(unique_id != 0);  // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
+        assert(unique_id != 0); // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
         unique_id_mapping.insert_or_assign(unique_id, CastToUint64(new_created_handle));
         return (HandleType)unique_id;
     }
@@ -167,7 +172,8 @@ class Instance : public HandleWrapper {
     VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle) {
         // See if this display is already known
         auto it = display_id_reverse_mapping.find(handle);
-        if (it != display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
+        if (it != display_id_reverse_mapping.end())
+            return (VkDisplayKHR)it->second;
 
         // First time see this VkDisplayKHR, so wrap
         const uint64_t unique_id = (uint64_t)WrapNew(handle);
@@ -232,8 +238,11 @@ class Device : public HandleWrapper {
     // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
     vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
 
-    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0> deferred_operation_post_completion;
-    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void(const std::vector<VkPipeline>&)>>, 0>
+    vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<std::function<void()>>, 0>
+        deferred_operation_post_completion;
+    vvl::concurrent_unordered_map<VkDeferredOperationKHR,
+                                  std::vector<std::function<void(const std::vector<VkPipeline>&)>>,
+                                  0>
         deferred_operation_post_check;
     vvl::concurrent_unordered_map<VkDeferredOperationKHR, std::vector<VkPipeline>, 0> deferred_operation_pipelines;
 
@@ -243,5 +252,5 @@ class Device : public HandleWrapper {
 
 #include "generated/dispatch_object_device_methods.h"
 };
-}  // namespace dispatch
-}  // namespace vvl
+} // namespace dispatch
+} // namespace vvl

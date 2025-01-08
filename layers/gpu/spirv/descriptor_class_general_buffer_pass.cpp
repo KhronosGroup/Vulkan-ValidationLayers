@@ -16,10 +16,10 @@
 #include "descriptor_class_general_buffer_pass.h"
 #include "generated/spirv_grammar_helper.h"
 #include "instruction.h"
-#include "utils/vk_layer_utils.h"
 #include "module.h"
-#include <spirv/unified1/spirv.hpp>
+#include "utils/vk_layer_utils.h"
 #include <iostream>
+#include <spirv/unified1/spirv.hpp>
 
 #include "generated/instrumentation_descriptor_class_general_buffer_comp.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
@@ -27,13 +27,16 @@
 namespace gpuav {
 namespace spirv {
 
-DescriptorClassGeneralBufferPass::DescriptorClassGeneralBufferPass(Module& module) : Pass(module) { module.use_bda_ = true; }
+DescriptorClassGeneralBufferPass::DescriptorClassGeneralBufferPass(Module& module) : Pass(module) {
+    module.use_bda_ = true;
+}
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId() {
-    static LinkInfo link_info = {instrumentation_descriptor_class_general_buffer_comp,
-                                 instrumentation_descriptor_class_general_buffer_comp_size, 0,
-                                 "inst_descriptor_class_general_buffer"};
+    static LinkInfo link_info = { instrumentation_descriptor_class_general_buffer_comp,
+                                  instrumentation_descriptor_class_general_buffer_comp_size,
+                                  0,
+                                  "inst_descriptor_class_general_buffer" };
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
@@ -43,14 +46,15 @@ uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block,
+                                                              InstructionIt* inst_it,
                                                               const InjectionData& injection_data) {
     assert(!access_chain_insts_.empty());
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it); // might be int32
 
-    descriptor_offset_id_ = GetLastByte(*descriptor_type_, access_chain_insts_, block, inst_it);  // Get Last Byte Index
+    descriptor_offset_id_ = GetLastByte(*descriptor_type_, access_chain_insts_, block, inst_it); // Get Last Byte Index
 
     BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
@@ -59,11 +63,18 @@ uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block,
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_, binding_layout_offset.Id()},
-        inst_it);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            { bool_type,
+                              function_result,
+                              function_def,
+                              injection_data.inst_position_id,
+                              injection_data.stage_info_id,
+                              set_constant.Id(),
+                              binding_constant.Id(),
+                              descriptor_index_id,
+                              descriptor_offset_id_,
+                              binding_layout_offset.Id() },
+                            inst_it);
 
     return function_result;
 }
@@ -80,7 +91,8 @@ void DescriptorClassGeneralBufferPass::Reset() {
 bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
 
-    if (!IsValueIn(spv::Op(opcode), {spv::OpLoad, spv::OpStore, spv::OpAtomicStore, spv::OpAtomicLoad, spv::OpAtomicExchange})) {
+    if (!IsValueIn(spv::Op(opcode),
+                   { spv::OpLoad, spv::OpStore, spv::OpAtomicStore, spv::OpAtomicLoad, spv::OpAtomicExchange })) {
         return false;
     }
 
@@ -88,7 +100,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     if (!next_access_chain || next_access_chain->Opcode() != spv::OpAccessChain) {
         return false;
     }
-    access_chain_insts_.clear();  // only clear right before we know we will need again
+    access_chain_insts_.clear(); // only clear right before we know we will need again
 
     const Variable* variable = nullptr;
     // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
@@ -97,7 +109,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         const uint32_t access_chain_base_id = next_access_chain->Operand(0);
         variable = module_.type_manager_.FindVariableById(access_chain_base_id);
         if (variable) {
-            break;  // found
+            break; // found
         }
         next_access_chain = function.FindInstruction(access_chain_base_id);
     }
@@ -112,7 +124,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
 
     const Type* pointer_type = variable->PointerType(module_.type_manager_);
     if (pointer_type->spv_type_ == SpvType::kRuntimeArray) {
-        return false;  // TODO - Currently we mark these as "bindless"
+        return false; // TODO - Currently we mark these as "bindless"
     }
 
     const bool is_descriptor_array = pointer_type->IsArray();
@@ -120,7 +132,8 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     // Check for deprecated storage block form
     if (storage_class == spv::StorageClassUniform) {
         const uint32_t block_type_id = is_descriptor_array ? pointer_type->inst_.Operand(0) : pointer_type->Id();
-        assert(module_.type_manager_.FindTypeById(block_type_id)->spv_type_ == SpvType::kStruct && "unexpected block type");
+        assert(module_.type_manager_.FindTypeById(block_type_id)->spv_type_ == SpvType::kStruct &&
+               "unexpected block type");
 
         const bool block_found = GetDecoration(block_type_id, spv::DecorationBlock) != nullptr;
 
@@ -133,10 +146,12 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
 
     // Grab front() as it will be the "final" type we access
     const Type* value_type = module_.type_manager_.FindValueTypeById(access_chain_insts_.front()->TypeId());
-    if (!value_type) return false;
+    if (!value_type)
+        return false;
 
     if (is_descriptor_array) {
-        // Because you can't have 2D array of descriptors, the first index of the last accessChain is the descriptor index
+        // Because you can't have 2D array of descriptors, the first index of the last accessChain is the descriptor
+        // index
         descriptor_index_id_ = access_chain_insts_.back()->Operand(1);
     } else {
         // There is no array of this descriptor, so we essentially have an array of 1
@@ -159,7 +174,8 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     }
 
     descriptor_type_ = variable->PointerType(module_.type_manager_);
-    if (!descriptor_type_) return false;
+    if (!descriptor_type_)
+        return false;
 
     // Save information to be used to make the Function
     target_instruction_ = &inst;
@@ -177,15 +193,18 @@ bool DescriptorClassGeneralBufferPass::Run() {
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             if ((*block_it)->loop_header_) {
-                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
+                continue; // Currently can't properly handle injecting CFG logic into a loop header block
             }
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
+                // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function
+                // or not
+                if (!RequiresInstrumentation(*function, *(inst_it->get())))
+                    continue;
 
-                if (module_.max_instrumentations_count_ != 0 && instrumentations_count_ >= module_.max_instrumentations_count_) {
-                    return true;  // hit limit
+                if (module_.max_instrumentations_count_ != 0 &&
+                    instrumentations_count_ >= module_.max_instrumentations_count_) {
+                    return true; // hit limit
                 }
                 instrumentations_count_++;
 
@@ -206,5 +225,5 @@ bool DescriptorClassGeneralBufferPass::Run() {
     return instrumentations_count_ != 0;
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

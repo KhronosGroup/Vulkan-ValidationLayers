@@ -11,9 +11,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 
 class PositivePipeline : public VkLayerTest {};
@@ -29,14 +29,21 @@ TEST_F(PositivePipeline, ComplexTypes) {
     VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
-    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+    VkPipelineInputAssemblyStateCreateInfo iasci{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                                                  nullptr,
+                                                  0,
+                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+                                                  VK_FALSE };
+    VkPipelineTessellationStateCreateInfo tsci{
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3
+    };
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pTessellationState = &tsci;
     pipe.gp_ci_.pInputAssemblyState = &iasci;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = {
+        vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()
+    };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -49,14 +56,15 @@ TEST_F(PositivePipeline, BasicUsage) {
 }
 
 TEST_F(PositivePipeline, MissingDescriptorUnused) {
-    TEST_DESCRIPTION(
-        "Test that pipeline validation accepts a compute pipeline which declares a descriptor-backed resource which is not "
-        "provided, but the shader does not statically use it. This is interesting because it requires compute pipelines to have a "
-        "proper descriptor use walk, which they didn't for some time.");
+    TEST_DESCRIPTION("Test that pipeline validation accepts a compute pipeline which declares a descriptor-backed "
+                     "resource which is not "
+                     "provided, but the shader does not statically use it. This is interesting because it requires "
+                     "compute pipelines to have a "
+                     "proper descriptor use walk, which they didn't for some time.");
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -71,7 +79,8 @@ TEST_F(PositivePipeline, MissingDescriptorUnused) {
 }
 
 TEST_F(PositivePipeline, FragmentShadingRate) {
-    TEST_DESCRIPTION("Verify that pipeline validation accepts a compute pipeline with fragment shading rate extension enabled");
+    TEST_DESCRIPTION(
+        "Verify that pipeline validation accepts a compute pipeline with fragment shading rate extension enabled");
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
@@ -79,7 +88,7 @@ TEST_F(PositivePipeline, FragmentShadingRate) {
     AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -94,12 +103,12 @@ TEST_F(PositivePipeline, FragmentShadingRate) {
 }
 
 TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsSampler) {
-    TEST_DESCRIPTION(
-        "Test that pipeline validation accepts a shader consuming only the sampler portion of a combined image + sampler");
+    TEST_DESCRIPTION("Test that pipeline validation accepts a shader consuming only the sampler portion of a combined "
+                     "image + sampler");
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) uniform sampler s;
@@ -111,21 +120,21 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsSampler) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
 TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsImage) {
-    TEST_DESCRIPTION(
-        "Test that pipeline validation accepts a shader consuming only the image portion of a combined image + sampler");
+    TEST_DESCRIPTION("Test that pipeline validation accepts a shader consuming only the image portion of a combined "
+                     "image + sampler");
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) uniform texture2D t;
@@ -137,22 +146,22 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsImage) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
 TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
-    TEST_DESCRIPTION(
-        "Test that pipeline validation accepts a shader consuming both the sampler and the image of a combined image+sampler but "
-        "via separate variables");
+    TEST_DESCRIPTION("Test that pipeline validation accepts a shader consuming both the sampler and the image of a "
+                     "combined image+sampler but "
+                     "via separate variables");
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) uniform texture2D t;
@@ -164,8 +173,8 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
     };
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
@@ -178,12 +187,13 @@ TEST_F(PositivePipeline, IgnoredMultisampleState) {
 
     const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
     const uint64_t fake_address_32 = 0xCDCDCDCD;
-    void *bad_pointer = sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
+    void* bad_pointer =
+        sizeof(void*) == 8 ? reinterpret_cast<void*>(fake_address_64) : reinterpret_cast<void*>(fake_address_32);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo() };
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.gp_ci_.pMultisampleState = reinterpret_cast<const VkPipelineMultisampleStateCreateInfo *>(bad_pointer);
+    pipe.gp_ci_.pMultisampleState = reinterpret_cast<const VkPipelineMultisampleStateCreateInfo*>(bad_pointer);
     pipe.CreateGraphicsPipeline();
 }
 
@@ -192,7 +202,7 @@ TEST_F(PositivePipeline, CreateComputePipelineWithDerivatives) {
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(local_size_x=2, local_size_y=4) in;
         void main(){
@@ -203,7 +213,7 @@ TEST_F(PositivePipeline, CreateComputePipelineWithDerivatives) {
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &pipeline_dsl });
 
     VkComputePipelineCreateInfo compute_create_infos[2];
     compute_create_infos[0] = vku::InitStructHelper();
@@ -249,76 +259,78 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
     RETURN_IF_SKIP(Init());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
     const uint64_t fake_address_32 = 0xCDCDCDCD;
-    void *hopefully_undereferencable_pointer =
-        sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
+    void* hopefully_undereferencable_pointer =
+        sizeof(void*) == 8 ? reinterpret_cast<void*>(fake_address_64) : reinterpret_cast<void*>(fake_address_32);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    VkPipelineShaderStageCreateInfo stages[2] = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
 
     const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        nullptr,  // pNext
-        0,        // flags
+        nullptr, // pNext
+        0,       // flags
         0,
-        nullptr,  // bindings
+        nullptr, // bindings
         0,
-        nullptr  // attributes
+        nullptr // attributes
     };
 
     const VkPipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_create_info{
         VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        nullptr,  // pNext
-        0,        // flags
+        nullptr, // pNext
+        0,       // flags
         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        VK_FALSE  // primitive restart
+        VK_FALSE // primitive restart
     };
 
     const VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info_template{
         VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        nullptr,   // pNext
-        0,         // flags
-        VK_FALSE,  // depthClamp
-        VK_FALSE,  // rasterizerDiscardEnable
+        nullptr,  // pNext
+        0,        // flags
+        VK_FALSE, // depthClamp
+        VK_FALSE, // rasterizerDiscardEnable
         VK_POLYGON_MODE_FILL,
         VK_CULL_MODE_NONE,
         VK_FRONT_FACE_COUNTER_CLOCKWISE,
-        VK_FALSE,  // depthBias
+        VK_FALSE, // depthBias
         0.0f,
         0.0f,
-        0.0f,  // depthBias params
-        1.0f   // lineWidth
+        0.0f, // depthBias params
+        1.0f  // lineWidth
     };
 
     const VkPipelineMultisampleStateCreateInfo pipeline_multisample_state_create_info{
         VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        nullptr,  // pNext
-        0,        // flags
+        nullptr, // pNext
+        0,       // flags
         VK_SAMPLE_COUNT_1_BIT,
-        VK_FALSE,  // sample shading
-        0.0f,      // minSampleShading
-        nullptr,   // pSampleMask
-        VK_FALSE,  // alphaToCoverageEnable
-        VK_FALSE   // alphaToOneEnable
+        VK_FALSE, // sample shading
+        0.0f,     // minSampleShading
+        nullptr,  // pSampleMask
+        VK_FALSE, // alphaToCoverageEnable
+        VK_FALSE  // alphaToOneEnable
     };
 
     vkt::PipelineLayout pipeline_layout;
     {
         VkPipelineLayoutCreateInfo pipeline_layout_create_info{
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            nullptr,  // pNext
-            0,        // flags
+            nullptr, // pNext
+            0,       // flags
             0,
-            nullptr,  // layouts
+            nullptr, // layouts
             0,
-            nullptr  // push constants
+            nullptr // push constants
         };
 
         pipeline_layout.init(*m_device, pipeline_layout_create_info, {});
@@ -333,24 +345,25 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
         // If rasterizer is disabled, fragment shader state must not be present.
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{
             VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            nullptr,  // pNext
-            0,        // flags
-            1,        // stageCount
+            nullptr, // pNext
+            0,       // flags
+            1,       // stageCount
             stages,
             &pipeline_vertex_input_state_create_info,
             &pipeline_input_assembly_state_create_info,
-            reinterpret_cast<const VkPipelineTessellationStateCreateInfo *>(hopefully_undereferencable_pointer),
-            reinterpret_cast<const VkPipelineViewportStateCreateInfo *>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkPipelineTessellationStateCreateInfo*>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkPipelineViewportStateCreateInfo*>(hopefully_undereferencable_pointer),
             &pipeline_rasterization_state_create_info,
             &pipeline_multisample_state_create_info,
-            reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo *>(hopefully_undereferencable_pointer),
-            reinterpret_cast<const VkPipelineColorBlendStateCreateInfo *>(hopefully_undereferencable_pointer),
-            nullptr,  // dynamic states
+            reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo*>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkPipelineColorBlendStateCreateInfo*>(hopefully_undereferencable_pointer),
+            nullptr, // dynamic states
             pipeline_layout.handle(),
             m_renderPass,
-            0,  // subpass
+            0, // subpass
             VK_NULL_HANDLE,
-            0};
+            0
+        };
 
         vkt::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
 
@@ -364,17 +377,18 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
             pipeline_rasterization_state_create_info_template;
         pipeline_rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
 
-        VkViewport viewport = {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
-        VkRect2D scissor = {{0, 0}, {m_width, m_height}};
+        VkViewport viewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
+        VkRect2D scissor = { { 0, 0 }, { m_width, m_height } };
 
         const VkPipelineViewportStateCreateInfo pipeline_viewport_state_create_info{
             VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-            nullptr,  // pNext
-            0,        // flags
+            nullptr, // pNext
+            0,       // flags
             1,
             &viewport,
             1,
-            &scissor};
+            &scissor
+        };
 
         vkt::RenderPass render_pass;
         {
@@ -382,14 +396,14 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
 
             VkRenderPassCreateInfo render_pass_create_info{
                 VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-                nullptr,  // pNext
-                0,        // flags
+                nullptr, // pNext
+                0,       // flags
                 0,
-                nullptr,  // attachments
+                nullptr, // attachments
                 1,
                 &subpass_desc,
                 0,
-                nullptr  // subpass dependencies
+                nullptr // subpass dependencies
             };
 
             render_pass.init(*m_device, render_pass_create_info);
@@ -397,9 +411,9 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
 
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{
             VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            nullptr,                              // pNext
-            0,                                    // flags
-            static_cast<uint32_t>(size(stages)),  // stageCount
+            nullptr,                             // pNext
+            0,                                   // flags
+            static_cast<uint32_t>(size(stages)), // stageCount
             stages,
             &pipeline_vertex_input_state_create_info,
             &pipeline_input_assembly_state_create_info,
@@ -407,14 +421,15 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
             &pipeline_viewport_state_create_info,
             &pipeline_rasterization_state_create_info,
             &pipeline_multisample_state_create_info,
-            reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo *>(hopefully_undereferencable_pointer),
-            reinterpret_cast<const VkPipelineColorBlendStateCreateInfo *>(hopefully_undereferencable_pointer),
-            nullptr,  // dynamic states
+            reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo*>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkPipelineColorBlendStateCreateInfo*>(hopefully_undereferencable_pointer),
+            nullptr, // dynamic states
             pipeline_layout.handle(),
             render_pass.handle(),
-            0,  // subpass
+            0, // subpass
             VK_NULL_HANDLE,
-            0};
+            0
+        };
 
         vkt::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
     }
@@ -427,58 +442,64 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
 
         const VkPipelineViewportStateCreateInfo pipeline_viewport_state_create_info{
             VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-            nullptr,  // pNext
-            0,        // flags
+            nullptr, // pNext
+            0,       // flags
             1,
-            reinterpret_cast<const VkViewport *>(hopefully_undereferencable_pointer),
+            reinterpret_cast<const VkViewport*>(hopefully_undereferencable_pointer),
             1,
-            reinterpret_cast<const VkRect2D *>(hopefully_undereferencable_pointer)};
+            reinterpret_cast<const VkRect2D*>(hopefully_undereferencable_pointer)
+        };
 
         const VkPipelineDepthStencilStateCreateInfo pipeline_depth_stencil_state_create_info{
             VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-            nullptr,  // pNext
-            0,        // flags
+            nullptr, // pNext
+            0,       // flags
         };
 
         const VkPipelineColorBlendAttachmentState pipeline_color_blend_attachment_state = {};
 
         const VkPipelineColorBlendStateCreateInfo pipeline_color_blend_state_create_info{
             VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-            nullptr,  // pNext
-            0,        // flags
+            nullptr, // pNext
+            0,       // flags
             VK_FALSE,
             VK_LOGIC_OP_CLEAR,
             1,
             &pipeline_color_blend_attachment_state,
-            {0.0f, 0.0f, 0.0f, 0.0f}};
+            { 0.0f, 0.0f, 0.0f, 0.0f }
+        };
 
-        const VkDynamicState dynamic_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+        const VkDynamicState dynamic_states[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
         const VkPipelineDynamicStateCreateInfo pipeline_dynamic_state_create_info{
             VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-            nullptr,  // pNext
-            0,        // flags
-            2, dynamic_states};
+            nullptr, // pNext
+            0,       // flags
+            2,
+            dynamic_states
+        };
 
-        VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-                                                                   nullptr,                              // pNext
-                                                                   0,                                    // flags
-                                                                   static_cast<uint32_t>(size(stages)),  // stageCount
-                                                                   stages,
-                                                                   &pipeline_vertex_input_state_create_info,
-                                                                   &pipeline_input_assembly_state_create_info,
-                                                                   nullptr,
-                                                                   &pipeline_viewport_state_create_info,
-                                                                   &pipeline_rasterization_state_create_info,
-                                                                   &pipeline_multisample_state_create_info,
-                                                                   &pipeline_depth_stencil_state_create_info,
-                                                                   &pipeline_color_blend_state_create_info,
-                                                                   &pipeline_dynamic_state_create_info,  // dynamic states
-                                                                   pipeline_layout.handle(),
-                                                                   m_renderPass,
-                                                                   0,  // subpass
-                                                                   VK_NULL_HANDLE,
-                                                                   0};
+        VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{
+            VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            nullptr,                             // pNext
+            0,                                   // flags
+            static_cast<uint32_t>(size(stages)), // stageCount
+            stages,
+            &pipeline_vertex_input_state_create_info,
+            &pipeline_input_assembly_state_create_info,
+            nullptr,
+            &pipeline_viewport_state_create_info,
+            &pipeline_rasterization_state_create_info,
+            &pipeline_multisample_state_create_info,
+            &pipeline_depth_stencil_state_create_info,
+            &pipeline_color_blend_state_create_info,
+            &pipeline_dynamic_state_create_info, // dynamic states
+            pipeline_layout.handle(),
+            m_renderPass,
+            0, // subpass
+            VK_NULL_HANDLE,
+            0
+        };
 
         vkt::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
     }
@@ -488,7 +509,7 @@ TEST_F(PositivePipeline, CoreChecksDisabled) {
     TEST_DESCRIPTION("Test CreatePipeline while the CoreChecks validation object is disabled");
 
     // Enable KHR validation features extension
-    VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+    VkValidationFeatureDisableEXT disables[] = { VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT };
     VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.disabledValidationFeatureCount = 1;
     features.pDisabledValidationFeatures = disables;
@@ -497,19 +518,21 @@ TEST_F(PositivePipeline, CoreChecksDisabled) {
     InitRenderTarget();
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                 VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
+    VkPipelineInputAssemblyStateCreateInfo iasci{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                                                  nullptr,
+                                                  0,
+                                                  VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                                                  VK_FALSE };
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pInputAssemblyState = &iasci;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositivePipeline, TessellationDomainOrigin) {
-    TEST_DESCRIPTION(
-        "Test CreatePipeline when VkPipelineTessellationStateCreateInfo.pNext include "
-        "VkPipelineTessellationDomainOriginStateCreateInfo");
+    TEST_DESCRIPTION("Test CreatePipeline when VkPipelineTessellationStateCreateInfo.pNext include "
+                     "VkPipelineTessellationDomainOriginStateCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -522,20 +545,28 @@ TEST_F(PositivePipeline, TessellationDomainOrigin) {
     VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+    VkPipelineInputAssemblyStateCreateInfo iasci{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                                                  nullptr,
+                                                  0,
+                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+                                                  VK_FALSE };
 
     VkPipelineTessellationDomainOriginStateCreateInfo tessellationDomainOriginStateInfo = {
-        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO, VK_NULL_HANDLE,
-        VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT};
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO,
+        VK_NULL_HANDLE,
+        VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT
+    };
 
-    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
-                                               &tessellationDomainOriginStateInfo, 0, 3};
+    VkPipelineTessellationStateCreateInfo tsci{
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, &tessellationDomainOriginStateInfo, 0, 3
+    };
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pTessellationState = &tsci;
     pipe.gp_ci_.pInputAssemblyState = &iasci;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = {
+        vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()
+    };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -571,12 +602,15 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
     const float fp_width = static_cast<float>(m_width);
     const float fp_height = static_cast<float>(m_height);
 
-    std::vector<VkViewport> vps = {{0.0f, 0.0f, fp_width / 2.0f, fp_height}, {fp_width / 2.0f, 0.0f, fp_width / 2.0f, fp_height}};
-    std::vector<VkRect2D> scs = {{{0, 0}, {m_width / 2, m_height}},
-                                 {{static_cast<int32_t>(m_width) / 2, 0}, {m_width / 2, m_height}}};
+    std::vector<VkViewport> vps = { { 0.0f, 0.0f, fp_width / 2.0f, fp_height },
+                                    { fp_width / 2.0f, 0.0f, fp_width / 2.0f, fp_height } };
+    std::vector<VkRect2D> scs = { { { 0, 0 }, { m_width / 2, m_height } },
+                                  { { static_cast<int32_t>(m_width) / 2, 0 }, { m_width / 2, m_height } } };
 
     enum class TestStage { VERTEX = 0, TESSELLATION_EVAL = 1, GEOMETRY = 2 };
-    std::array<TestStage, 3> vertex_stages = {{TestStage::VERTEX, TestStage::TESSELLATION_EVAL, TestStage::GEOMETRY}};
+    std::array<TestStage, 3> vertex_stages = {
+        { TestStage::VERTEX, TestStage::TESSELLATION_EVAL, TestStage::GEOMETRY }
+    };
 
     // Verify that the usage of gl_ViewportMask[] in the allowed vertex processing
     // stages does not cause any errors.
@@ -626,7 +660,8 @@ TEST_F(PositivePipeline, ViewportArray2NV) {
             }
             tes_src << "}";
 
-            tes = std::make_unique<VkShaderObj>(this, tes_src.str().c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+            tes =
+                std::make_unique<VkShaderObj>(this, tes_src.str().c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
             pipe.shader_stages_.push_back(tes.get()->GetStageCreateInfo());
             pipe.shader_stages_.push_back(tcs.GetStageCreateInfo());
             pipe.tess_ci_ = vku::InitStructHelper();
@@ -663,7 +698,7 @@ TEST_F(PositivePipeline, AttachmentUnused) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 x;
         void main(){
@@ -672,22 +707,36 @@ TEST_F(PositivePipeline, AttachmentUnused) {
     )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkAttachmentReference const color_attachments[1]{{VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
+    VkAttachmentReference const color_attachments[1]{ { VK_ATTACHMENT_UNUSED,
+                                                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL } };
 
     VkSubpassDescription const subpass_descriptions[1]{
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, color_attachments, nullptr, nullptr, 0, nullptr}};
+        { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, color_attachments, nullptr, nullptr, 0, nullptr }
+    };
 
-    VkAttachmentDescription const attachment_descriptions[1]{{0, VK_FORMAT_B8G8R8A8_UNORM, VK_SAMPLE_COUNT_1_BIT,
-                                                              VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE,
-                                                              VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                              VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
+    VkAttachmentDescription const attachment_descriptions[1]{ { 0,
+                                                                VK_FORMAT_B8G8R8A8_UNORM,
+                                                                VK_SAMPLE_COUNT_1_BIT,
+                                                                VK_ATTACHMENT_LOAD_OP_CLEAR,
+                                                                VK_ATTACHMENT_STORE_OP_STORE,
+                                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                                VK_IMAGE_LAYOUT_UNDEFINED,
+                                                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL } };
 
-    VkRenderPassCreateInfo const render_pass_info{
-        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachment_descriptions, 1, subpass_descriptions, 0, nullptr};
+    VkRenderPassCreateInfo const render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+                                                   nullptr,
+                                                   0,
+                                                   1,
+                                                   attachment_descriptions,
+                                                   1,
+                                                   subpass_descriptions,
+                                                   0,
+                                                   nullptr };
     vkt::RenderPass render_pass(*m_device, render_pass_info);
 
-    const auto override_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto override_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
         helper.gp_ci_.renderPass = render_pass.handle();
     };
     CreatePipelineHelper::OneshotTest(*this, override_info, kErrorBit);
@@ -733,9 +782,9 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
     const VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_8_BIT;
 
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, sampleCount, VK_IMAGE_LAYOUT_UNDEFINED,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentDescription(
+        VK_FORMAT_B8G8R8A8_UNORM, sampleCount, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
@@ -753,7 +802,7 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.layout = pl.handle();
     pipe.gp_ci_.renderPass = rp.Handle();
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.gp_ci_.pMultisampleState = &msaa;
 
     // Create pipeline and make sure that the usage of NV_sample_mask_override_coverage
@@ -767,9 +816,11 @@ TEST_F(PositivePipeline, RasterizationDiscardEnableTrue) {
     InitRenderTarget();
 
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_4_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM,
+                                VK_SAMPLE_COUNT_4_BIT,
+                                VK_IMAGE_LAYOUT_UNDEFINED,
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
@@ -781,10 +832,10 @@ TEST_F(PositivePipeline, RasterizationDiscardEnableTrue) {
     pipe.gp_ci_.renderPass = rp.Handle();
 
     // When rasterizer discard is enabled, fragment shader state must not be present.
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo() };
 
-    // Skip the test in NexusPlayer. The driver crashes when pViewportState, pMultisampleState, pDepthStencilState, pColorBlendState
-    // are NULL.
+    // Skip the test in NexusPlayer. The driver crashes when pViewportState, pMultisampleState, pDepthStencilState,
+    // pColorBlendState are NULL.
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 }
@@ -794,7 +845,7 @@ TEST_F(PositivePipeline, SamplerDataForCombinedImageSampler) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *fsSource = R"(
+    const char* fsSource = R"(
                    OpCapability Shader
                    OpMemoryModel Logical GLSL450
                    OpEntryPoint Fragment %main "main"
@@ -826,9 +877,9 @@ TEST_F(PositivePipeline, SamplerDataForCombinedImageSampler) {
 
     CreatePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
     };
-    pipe.shader_stages_ = {fs.GetStageCreateInfo(), pipe.vs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { fs.GetStageCreateInfo(), pipe.vs_->GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -837,14 +888,21 @@ TEST_F(PositivePipeline, SamplerDataForCombinedImageSampler) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(
+        0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, NULL);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe.descriptor_set_->set_,
+                              0,
+                              NULL);
 
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
@@ -862,11 +920,15 @@ TEST_F(PositivePipeline, ConditionalRendering) {
 
     // A renderpass with a single subpass that declared a self-dependency
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentDescription(
+        VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
     rp.AddColorAttachment(0);
-    rp.AddSubpassDependency(VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
-                            VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT, 0);
+    rp.AddSubpassDependency(VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+                            VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
+                            VK_ACCESS_SHADER_WRITE_BIT,
+                            VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT,
+                            0);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -892,8 +954,16 @@ TEST_F(PositivePipeline, ConditionalRendering) {
     imb.subresourceRange.baseArrayLayer = 0;
     imb.subresourceRange.layerCount = 1;
 
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-                           VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT, 0, 0, nullptr, 0, nullptr, 1, &imb);
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+                           VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &imb);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -927,7 +997,7 @@ TEST_F(PositivePipeline, ShaderTileImageColor) {
     ms_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
 
     CreatePipelineHelper ms_pipeline(*this, &pipeline_rendering_info);
-    ms_pipeline.shader_stages_ = {vs.GetStageCreateInfo(), fs->GetStageCreateInfo()};
+    ms_pipeline.shader_stages_ = { vs.GetStageCreateInfo(), fs->GetStageCreateInfo() };
     ms_pipeline.gp_ci_.renderPass = VK_NULL_HANDLE;
     ms_pipeline.gp_ci_.pDepthStencilState = &ds_ci;
     ms_pipeline.gp_ci_.pMultisampleState = &ms_ci;
@@ -958,7 +1028,7 @@ TEST_F(PositivePipeline, ShaderTileImageDepth) {
 
     ds_ci.depthWriteEnable = false;
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs->GetStageCreateInfo() };
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.gp_ci_.pDepthStencilState = &ds_ci;
     pipe.CreateGraphicsPipeline();
@@ -999,7 +1069,7 @@ TEST_F(PositivePipeline, ShaderTileImageStencil) {
     ds_ci.back = stencil_state;
 
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs->GetStageCreateInfo() };
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.gp_ci_.pDepthStencilState = &ds_ci;
     pipe.CreateGraphicsPipeline();
@@ -1011,15 +1081,14 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
     AddRequiredExtensions(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features =
-        vku::InitStructHelper();
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features = vku::InitStructHelper();
     fragment_shader_barycentric_features.fragmentShaderBarycentric = VK_TRUE;
     VkPhysicalDeviceFeatures2KHR features2 = vku::InitStructHelper(&fragment_shader_barycentric_features);
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
                 #version 450
 
                 layout(location = 0) out PerVertex {
@@ -1038,7 +1107,7 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
                 }
             )glsl";
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
                 #version 450
 
                 #extension GL_NV_fragment_shader_barycentric : enable
@@ -1067,7 +1136,7 @@ TEST_F(PositivePipeline, PervertexNVShaderAttributes) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -1083,7 +1152,8 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
 
     PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT fpvkGetOriginalPhysicalDeviceFormatProperties2EXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT, fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT,
+                                fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
         GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
@@ -1094,7 +1164,8 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     fmt_props.formatProperties.optimalTilingFeatures =
         (fmt_props.formatProperties.optimalTilingFeatures & ~VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT);
     fmt_props_3.optimalTilingFeatures = (fmt_props_3.optimalTilingFeatures & ~VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT);
-    fmt_props_3.optimalTilingFeatures = (fmt_props_3.optimalTilingFeatures & ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT);
+    fmt_props_3.optimalTilingFeatures =
+        (fmt_props_3.optimalTilingFeatures & ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT);
     fpvkSetPhysicalDeviceFormatProperties2EXT(Gpu(), image_format, fmt_props);
 
     fpvkGetOriginalPhysicalDeviceFormatProperties2EXT(Gpu(), image_view_format, &fmt_props);
@@ -1104,7 +1175,7 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     fpvkSetPhysicalDeviceFormatProperties2EXT(Gpu(), image_view_format, fmt_props);
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                   OpCapability Shader
                   OpCapability StorageImageWriteWithoutFormat
              %1 = OpExtInstImport "GLSL.std.450"
@@ -1141,22 +1212,27 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
                   OpFunctionEnd
                   )";
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+                           });
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &ds.layout_ });
     cs_pipeline.LateBindPipelineInfo();
-    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
+    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT; // override with wrong value
+    cs_pipeline.CreateComputePipeline(false);                     // need false to prevent late binding
 
     // Messing with format support, make sure device will handle the image combination
     VkImageFormatProperties format_props;
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
-                                                                 VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(Gpu(),
+                                                                 image_format,
+                                                                 VK_IMAGE_TYPE_2D,
+                                                                 VK_IMAGE_TILING_OPTIMAL,
+                                                                 VK_IMAGE_USAGE_STORAGE_BIT,
+                                                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
                                                                  &format_props)) {
         GTEST_SKIP() << "Device will not be able to initialize buffer view skipped";
     }
@@ -1165,7 +1241,7 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     image_create_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = image_format;
-    image_create_info.extent = {32, 32, 1};
+    image_create_info.extent = { 32, 32, 1 };
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -1185,7 +1261,7 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     img_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    img_barrier.image = image.handle();  // Image mis-matches with FB image
+    img_barrier.image = image.handle(); // Image mis-matches with FB image
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1193,11 +1269,25 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &img_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_HOST_BIT,
+                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &img_barrier);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0,
-                              1, &ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              cs_pipeline.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &ds.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 }
@@ -1209,7 +1299,8 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
     AddRequiredExtensions(VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 
-    VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM rasterization_order_features = vku::InitStructHelper();
+    VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM rasterization_order_features =
+        vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(rasterization_order_features);
 
     if (!rasterization_order_features.rasterizationOrderColorAttachmentAccess &&
@@ -1227,7 +1318,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
     cb_ci.pAttachments = &cb_as;
     VkRenderPass render_pass_handle = VK_NULL_HANDLE;
 
-    auto create_render_pass = [&](VkPipelineDepthStencilStateCreateFlags subpass_flags, vkt::RenderPass &render_pass) {
+    auto create_render_pass = [&](VkPipelineDepthStencilStateCreateFlags subpass_flags, vkt::RenderPass& render_pass) {
         VkAttachmentDescription attachments[2] = {};
         attachments[0].flags = 0;
         attachments[0].format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1264,7 +1355,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
         subpass.pDepthStencilAttachment = &dsAttachRef;
         subpass.flags = subpass_flags;
 
-        VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        VkRenderPassCreateInfo rpci = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
         rpci.attachmentCount = 2;
         rpci.pAttachments = attachments;
         rpci.subpassCount = 1;
@@ -1273,7 +1364,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
         render_pass.init(*this->m_device, rpci);
     };
 
-    auto set_flgas_pipeline_createinfo = [&](CreatePipelineHelper &helper) {
+    auto set_flgas_pipeline_createinfo = [&](CreatePipelineHelper& helper) {
         helper.gp_ci_.pDepthStencilState = &ds_ci;
         helper.gp_ci_.pColorBlendState = &cb_ci;
         helper.gp_ci_.renderPass = render_pass_handle;
@@ -1325,7 +1416,7 @@ TEST_F(PositivePipeline, AttachmentsDisableRasterization) {
     CreatePipelineHelper pipe(*this);
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     // Rasterization discard enable prohibits fragment shader.
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -1337,7 +1428,7 @@ TEST_F(PositivePipeline, DualBlendShader) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location = 0, index = 0) out vec4 c1;
         layout(location = 0, index = 1) out vec4 c2;
@@ -1351,7 +1442,7 @@ TEST_F(PositivePipeline, DualBlendShader) {
 
     VkPipelineColorBlendAttachmentState cb_attachments = {};
     cb_attachments.blendEnable = VK_TRUE;
-    cb_attachments.srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR;  // bad!
+    cb_attachments.srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR; // bad!
     cb_attachments.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
     cb_attachments.colorBlendOp = VK_BLEND_OP_ADD;
     cb_attachments.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
@@ -1360,7 +1451,7 @@ TEST_F(PositivePipeline, DualBlendShader) {
 
     CreatePipelineHelper pipe(*this);
     pipe.cb_attachments_ = cb_attachments;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -1391,7 +1482,7 @@ TEST_F(PositivePipeline, CreationFeedbackCount0) {
     feedback_info.pPipelineCreationFeedback = &feedbacks[0];
     feedback_info.pipelineStageCreationFeedbackCount = 0;
 
-    auto set_feedback = [&feedback_info](CreatePipelineHelper &helper) { helper.gp_ci_.pNext = &feedback_info; };
+    auto set_feedback = [&feedback_info](CreatePipelineHelper& helper) { helper.gp_ci_.pNext = &feedback_info; };
 
     CreatePipelineHelper::OneshotTest(*this, set_feedback, kErrorBit);
 }
@@ -1434,14 +1525,16 @@ TEST_F(PositivePipeline, ViewportSwizzleNV) {
 
     std::array<VkViewportSwizzleNV, 2> swizzle = {};
 
-    swizzle.fill({VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Y_NV,
-                  VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Z_NV, VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_W_NV});
+    swizzle.fill({ VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_X_NV,
+                   VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Y_NV,
+                   VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_Z_NV,
+                   VK_VIEWPORT_COORDINATE_SWIZZLE_POSITIVE_W_NV });
 
     std::array<VkViewport, 2> viewports = {};
     std::array<VkRect2D, 2> scissors = {};
 
-    viewports.fill({0, 0, 16, 16, 0, 1});
-    scissors.fill({{0, 0}, {16, 16}});
+    viewports.fill({ 0, 0, 16, 16, 0, 1 });
+    scissors.fill({ { 0, 0 }, { 16, 16 } });
 
     // Test case where VkPipelineViewportSwizzleStateCreateInfoNV::viewportCount is EQUAL TO viewportCount set in
     // VkPipelineViewportStateCreateInfo
@@ -1450,7 +1543,7 @@ TEST_F(PositivePipeline, ViewportSwizzleNV) {
         vp_swizzle_state.viewportCount = size32(viewports);
         vp_swizzle_state.pViewportSwizzles = swizzle.data();
 
-        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper &helper) {
+        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper& helper) {
             helper.vp_state_ci_.viewportCount = size32(viewports);
             helper.vp_state_ci_.pViewports = viewports.data();
             helper.vp_state_ci_.scissorCount = size32(scissors);
@@ -1469,7 +1562,7 @@ TEST_F(PositivePipeline, ViewportSwizzleNV) {
         vp_swizzle_state.viewportCount = size32(viewports);
         vp_swizzle_state.pViewportSwizzles = swizzle.data();
 
-        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper &helper) {
+        auto break_vp_count = [&vp_swizzle_state, &viewports, &scissors](CreatePipelineHelper& helper) {
             helper.vp_state_ci_.viewportCount = 1;
             helper.vp_state_ci_.pViewports = viewports.data();
             helper.vp_state_ci_.scissorCount = 1;
@@ -1490,21 +1583,23 @@ TEST_F(PositivePipeline, RasterStateWithDepthBiasRepresentationInfo) {
     AddRequiredFeature(vkt::Feature::leastRepresentableValueForceUnormRepresentation);
     AddRequiredFeature(vkt::Feature::floatRepresentation);
     AddRequiredFeature(vkt::Feature::depthBiasExact);
-    // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not rely on
-    // depthBiasClamp being enabled
+    // Make sure validation of VkDepthBiasRepresentationInfoEXT in VkPipelineRasterizationStateCreateInfo does not rely
+    // on depthBiasClamp being enabled
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const auto create_pipe_with_depth_bias_representation = [this](VkDepthBiasRepresentationInfoEXT &depth_bias_representation) {
-        CreatePipelineHelper pipe(*this);
-        pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
-        pipe.rs_state_ci_.pNext = &depth_bias_representation;
-        pipe.CreateGraphicsPipeline();
-    };
+    const auto create_pipe_with_depth_bias_representation =
+        [this](VkDepthBiasRepresentationInfoEXT& depth_bias_representation) {
+            CreatePipelineHelper pipe(*this);
+            pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BIAS);
+            pipe.rs_state_ci_.pNext = &depth_bias_representation;
+            pipe.CreateGraphicsPipeline();
+        };
 
     VkDepthBiasRepresentationInfoEXT depth_bias_representation = vku::InitStructHelper();
-    depth_bias_representation.depthBiasRepresentation = VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT;
+    depth_bias_representation.depthBiasRepresentation =
+        VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORCE_UNORM_EXT;
     depth_bias_representation.depthBiasExact = VK_TRUE;
     create_pipe_with_depth_bias_representation(depth_bias_representation);
 
@@ -1529,7 +1624,7 @@ TEST_F(PositivePipeline, DeviceGeneratedCommands) {
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    VkPipelineShaderStageCreateInfo stages[2] = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
 
     VkPipelineVertexInputStateCreateInfo vertex_input_state = vku::InitStructHelper();
     VkPipelineTessellationStateCreateInfo tessellation_state = vku::InitStructHelper();
@@ -1547,7 +1642,7 @@ TEST_F(PositivePipeline, DeviceGeneratedCommands) {
     shader_groups_ci.pPipelines = nullptr;
 
     CreatePipelineHelper pipe(*this, &shader_groups_ci);
-    pipe.shader_stages_ = {stages[0], stages[1]};
+    pipe.shader_stages_ = { stages[0], stages[1] };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -1560,10 +1655,12 @@ TEST_F(PositivePipeline, DepthStencilStateIgnored) {
     RETURN_IF_SKIP(Init());
 
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentDescription(VK_FORMAT_D16_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentDescription(
+        VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentDescription(
+        VK_FORMAT_D16_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+    rp.AddAttachmentReference({ 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL });
     rp.AddColorAttachment(0);
     rp.AddDepthStencilAttachment(1);
     rp.CreateRenderPass();
@@ -1571,7 +1668,7 @@ TEST_F(PositivePipeline, DepthStencilStateIgnored) {
     // disable with rasterizerDiscardEnable
     {
         CreatePipelineHelper pipe(*this);
-        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+        pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo() };
         pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
         pipe.gp_ci_.renderPass = rp.Handle();
         pipe.CreateGraphicsPipeline();
@@ -1635,7 +1732,7 @@ TEST_F(PositivePipeline, ViewportStateNotSetRasterizerDiscardEnabled) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     pipe.gp_ci_.pRasterizationState = &rasterization_state;
     pipe.gp_ci_.pViewportState = nullptr;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -1683,7 +1780,7 @@ TEST_F(PositivePipeline, InterpolateAtSample) {
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -1816,7 +1913,8 @@ TEST_F(PositivePipeline, NoRasterizationStateDynamicRendering) {
 }
 
 TEST_F(PositivePipeline, ColorBlendUnsupportedLogicOpDynamic) {
-    TEST_DESCRIPTION("VkPipelineColorBlendStateCreateInfo::logicOpEnable is ignored with VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT");
+    TEST_DESCRIPTION(
+        "VkPipelineColorBlendStateCreateInfo::logicOpEnable is ignored with VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT");
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3LogicOpEnable);
 
@@ -1825,7 +1923,7 @@ TEST_F(PositivePipeline, ColorBlendUnsupportedLogicOpDynamic) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT);
-    pipe.cb_ci_.logicOpEnable = VK_TRUE;  // ignored now
+    pipe.cb_ci_.logicOpEnable = VK_TRUE; // ignored now
     pipe.CreateGraphicsPipeline();
 }
 
@@ -1841,8 +1939,9 @@ TEST_F(PositivePipeline, PipelineMissingFeaturesDynamic) {
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(m_device->Physical().handle());
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentDescription(
+        ds_format, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL });
     rp.AddDepthStencilAttachment(0);
     rp.CreateRenderPass();
 
@@ -1867,7 +1966,7 @@ TEST_F(PositivePipeline, DepthClampControl) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDepthClampRangeEXT clamp_range = {0.0f, 1.0f};
+    VkDepthClampRangeEXT clamp_range = { 0.0f, 1.0f };
     VkPipelineViewportDepthClampControlCreateInfoEXT clamp_control = vku::InitStructHelper();
     clamp_control.depthClampMode = VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT;
     clamp_control.pDepthClampRange = &clamp_range;
@@ -1883,7 +1982,7 @@ TEST_F(PositivePipeline, DepthClampControlUnrestricted) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkDepthClampRangeEXT clamp_range = {-0.5f, 1.5f};
+    VkDepthClampRangeEXT clamp_range = { -0.5f, 1.5f };
     VkPipelineViewportDepthClampControlCreateInfoEXT clamp_control = vku::InitStructHelper();
     clamp_control.depthClampMode = VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT;
     clamp_control.pDepthClampRange = &clamp_range;

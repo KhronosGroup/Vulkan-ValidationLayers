@@ -26,29 +26,24 @@
 
 #include "generated/vk_extension_helper.h"
 #include "layer_validation_tests.h"
-#include "vk_layer_config.h"
 #include "shader_helper.h"
+#include "vk_layer_config.h"
 
 #if defined(VK_USE_PLATFORM_METAL_EXT)
 #include "apple_wsi.h"
 #endif
 
 template <typename C, typename F>
-typename C::iterator RemoveIf(C &container, F &&fn) {
+typename C::iterator RemoveIf(C& container, F&& fn) {
     return container.erase(std::remove_if(container.begin(), container.end(), std::forward<F>(fn)), container.end());
 }
 
-VkRenderFramework::VkRenderFramework()
-    : instance_(nullptr),
-      m_device(nullptr),
-      m_renderPass(VK_NULL_HANDLE),
-      m_vertex_buffer(nullptr),
-      m_width(256),   // default window width
-      m_height(256),  // default window height
-      m_render_target_fmt(VK_FORMAT_R8G8B8A8_UNORM),
-      m_depth_stencil_fmt(VK_FORMAT_UNDEFINED),
-      m_depthStencil(nullptr),
-      m_framebuffer(nullptr) {
+VkRenderFramework::VkRenderFramework() :
+    instance_(nullptr), m_device(nullptr), m_renderPass(VK_NULL_HANDLE), m_vertex_buffer(nullptr),
+    m_width(256),  // default window width
+    m_height(256), // default window height
+    m_render_target_fmt(VK_FORMAT_R8G8B8A8_UNORM), m_depth_stencil_fmt(VK_FORMAT_UNDEFINED), m_depthStencil(nullptr),
+    m_framebuffer(nullptr) {
     m_renderPassBeginInfo = vku::InitStructHelper();
 
     // clear the back buffer to dark grey
@@ -64,23 +59,24 @@ VkRenderFramework::~VkRenderFramework() {
 }
 
 VkPhysicalDevice VkRenderFramework::Gpu() const {
-    EXPECT_NE((VkInstance)0, instance_);  // Invalid to request gpu before instance exists
+    EXPECT_NE((VkInstance)0, instance_); // Invalid to request gpu before instance exists
     return gpu_;
 }
 
-const VkPhysicalDeviceProperties &VkRenderFramework::PhysicalDeviceProps() const {
-    EXPECT_NE((VkPhysicalDevice)0, gpu_);  // Invalid to request physical device properties before gpu
+const VkPhysicalDeviceProperties& VkRenderFramework::PhysicalDeviceProps() const {
+    EXPECT_NE((VkPhysicalDevice)0, gpu_); // Invalid to request physical device properties before gpu
     return physDevProps_;
 }
 
 // Return true if layer name is found and spec+implementation values are >= requested values
-bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, const uint32_t spec_version,
+bool VkRenderFramework::InstanceLayerSupported(const char* const layer_name,
+                                               const uint32_t spec_version,
                                                const uint32_t impl_version) {
     if (available_layers_.empty()) {
         available_layers_ = vkt::GetGlobalLayers();
     }
 
-    for (const auto &layer : available_layers_) {
+    for (const auto& layer : available_layers_) {
         if (0 == strncmp(layer_name, layer.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
             return layer.specVersion >= spec_version && layer.implementationVersion >= impl_version;
         }
@@ -90,17 +86,21 @@ bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, con
 
 // Return true if extension name is found and spec value is >= requested spec value
 // WARNING: for simplicity, does not cover layers' extensions
-bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_name, const uint32_t spec_version) {
-    // WARNING: assume debug and validation feature extensions are always supported, which are usually provided by layers
-    if (0 == strncmp(extension_name, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
-    if (0 == strncmp(extension_name, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
-    if (0 == strncmp(extension_name, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
+bool VkRenderFramework::InstanceExtensionSupported(const char* const extension_name, const uint32_t spec_version) {
+    // WARNING: assume debug and validation feature extensions are always supported, which are usually provided by
+    // layers
+    if (0 == strncmp(extension_name, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE))
+        return true;
+    if (0 == strncmp(extension_name, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE))
+        return true;
+    if (0 == strncmp(extension_name, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE))
+        return true;
 
     if (available_extensions_.empty()) {
         available_extensions_ = vkt::GetGlobalExtensions();
     }
 
-    const auto IsTheQueriedExtension = [extension_name, spec_version](const VkExtensionProperties &extension) {
+    const auto IsTheQueriedExtension = [extension_name, spec_version](const VkExtensionProperties& extension) {
         return strncmp(extension_name, extension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0 &&
                extension.specVersion >= spec_version;
     };
@@ -109,24 +109,24 @@ bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_n
 }
 
 // Return true if extension name is found and spec value is >= requested spec value
-bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, const uint32_t spec_version) const {
+bool VkRenderFramework::DeviceExtensionSupported(const char* extension_name, const uint32_t spec_version) const {
     if (!instance_ || !gpu_) {
-        EXPECT_NE((VkInstance)0, instance_);  // Complain, not cool without an instance
+        EXPECT_NE((VkInstance)0, instance_); // Complain, not cool without an instance
         EXPECT_NE((VkPhysicalDevice)0, gpu_);
         return false;
     }
 
     const vkt::PhysicalDevice device_obj(gpu_);
 
-    const auto enabled_layers = instance_layers_;  // assumes instance_layers_ contains enabled layers
+    const auto enabled_layers = instance_layers_; // assumes instance_layers_ contains enabled layers
 
     auto extensions = device_obj.Extensions();
-    for (const auto &layer : enabled_layers) {
+    for (const auto& layer : enabled_layers) {
         const auto layer_extensions = device_obj.Extensions(layer);
         extensions.insert(extensions.end(), layer_extensions.begin(), layer_extensions.end());
     }
 
-    const auto IsTheQueriedExtension = [extension_name, spec_version](const VkExtensionProperties &extension) {
+    const auto IsTheQueriedExtension = [extension_name, spec_version](const VkExtensionProperties& extension) {
         return strncmp(extension_name, extension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0 &&
                extension.specVersion >= spec_version;
     };
@@ -148,10 +148,10 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
     return info;
 }
 
-void VkRenderFramework::InitFramework(void *instance_pnext) {
+void VkRenderFramework::InitFramework(void* instance_pnext) {
     ASSERT_EQ((VkInstance)0, instance_);
 
-    const auto ExtensionIncludedInTargetVersion = [this](const char *extension) {
+    const auto ExtensionIncludedInTargetVersion = [this](const char* extension) {
         if (IsPromotedInstanceExtension(extension)) {
             // Replicate the core entry points into the extension entry points
             vk::InitExtensionFromCore(extension);
@@ -159,19 +159,21 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
         }
         return false;
     };
-    const auto LayerNotSupportedWithReporting = [this](const char *layer) {
+    const auto LayerNotSupportedWithReporting = [this](const char* layer) {
         if (InstanceLayerSupported(layer))
             return false;
         else {
-            ADD_FAILURE() << "InitFramework(): Requested layer \"" << layer << "\" is not supported. It will be disabled.";
+            ADD_FAILURE() << "InitFramework(): Requested layer \"" << layer
+                          << "\" is not supported. It will be disabled.";
             return true;
         }
     };
-    const auto ExtensionNotSupportedWithReporting = [this](const char *extension) {
+    const auto ExtensionNotSupportedWithReporting = [this](const char* extension) {
         if (InstanceExtensionSupported(extension))
             return false;
         else {
-            ADD_FAILURE() << "InitFramework(): Requested extension \"" << extension << "\" is not supported. It will be disabled.";
+            ADD_FAILURE() << "InitFramework(): Requested extension \"" << extension
+                          << "\" is not supported. It will be disabled.";
             return true;
         }
     };
@@ -203,21 +205,22 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     auto ici = GetInstanceCreateInfo();
 
     // concatenate pNexts
-    void *last_pnext = nullptr;
+    void* last_pnext = nullptr;
     if (instance_pnext) {
         last_pnext = instance_pnext;
-        while (reinterpret_cast<const VkBaseOutStructure *>(last_pnext)->pNext)
-            last_pnext = reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext;
+        while (reinterpret_cast<const VkBaseOutStructure*>(last_pnext)->pNext)
+            last_pnext = reinterpret_cast<VkBaseOutStructure*>(last_pnext)->pNext;
 
-        void *&link = reinterpret_cast<void *&>(reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext);
-        link = const_cast<void *>(ici.pNext);
+        void*& link = reinterpret_cast<void*&>(reinterpret_cast<VkBaseOutStructure*>(last_pnext)->pNext);
+        link = const_cast<void*>(ici.pNext);
         ici.pNext = instance_pnext;
     }
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &instance_));
-    if (instance_pnext) reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext = nullptr;  // reset back borrowed pNext chain
+    if (instance_pnext)
+        reinterpret_cast<VkBaseOutStructure*>(last_pnext)->pNext = nullptr; // reset back borrowed pNext chain
 
-    for (const char *instance_ext_name : m_instance_extension_names) {
+    for (const char* instance_ext_name : m_instance_extension_names) {
         vk::InitInstanceExtension(instance_, instance_ext_name);
     }
 
@@ -269,7 +272,7 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
     if (print_driver_info && !driver_printed) {
         bool phys_dev_props_2_enabled = m_target_api_version.Minor() >= 1;
         if (!phys_dev_props_2_enabled) {
-            for (const char *ext : vvl::make_span(ici.ppEnabledExtensionNames, ici.enabledExtensionCount)) {
+            for (const char* ext : vvl::make_span(ici.ppEnabledExtensionNames, ici.enabledExtensionCount)) {
                 if (strcmp(ext, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) == 0) {
                     phys_dev_props_2_enabled = true;
                     break;
@@ -277,7 +280,8 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
             }
         }
 
-        if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) && phys_dev_props_2_enabled) {
+        if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) &&
+            phys_dev_props_2_enabled) {
             VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
             VkPhysicalDeviceProperties2 physical_device_properties2 = vku::InitStructHelper(&driver_properties);
             vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
@@ -286,8 +290,8 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
 
             driver_printed = true;
         } else {
-            printf(
-                "Could not print driver info - VK_KHR_get_physical_device_properties2 is either not supported or not enabled.\n");
+            printf("Could not print driver info - VK_KHR_get_physical_device_properties2 is either not supported or "
+                   "not enabled.\n");
         }
     }
 
@@ -296,51 +300,53 @@ void VkRenderFramework::InitFramework(void *instance_pnext) {
         GTEST_SKIP() << "At least Vulkan version 1." << m_target_api_version.Minor() << " is required";
     }
 
-    for (const auto &ext : m_required_extensions) {
+    for (const auto& ext : m_required_extensions) {
         AddRequestedDeviceExtensions(ext);
     }
 
-    if (!std::all_of(m_required_extensions.begin(), m_required_extensions.end(),
-                     [&](const char *ext) -> bool { return IsExtensionsEnabled(ext); })) {
+    if (!std::all_of(m_required_extensions.begin(), m_required_extensions.end(), [&](const char* ext) -> bool {
+            return IsExtensionsEnabled(ext);
+        })) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     // If the user requested wsi extension(s), only 1 needs to be enabled.
     if (!m_wsi_extensions.empty()) {
-        if (!std::any_of(m_wsi_extensions.begin(), m_wsi_extensions.end(),
-                         [&](const char *ext) -> bool { return CanEnableInstanceExtension(ext); })) {
+        if (!std::any_of(m_wsi_extensions.begin(), m_wsi_extensions.end(), [&](const char* ext) -> bool {
+                return CanEnableInstanceExtension(ext);
+            })) {
             GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
         }
     }
 
-    for (const auto &ext : m_optional_extensions) {
+    for (const auto& ext : m_optional_extensions) {
         AddRequestedDeviceExtensions(ext);
     }
 }
 
-void VkRenderFramework::AddRequiredExtensions(const char *ext_name) {
+void VkRenderFramework::AddRequiredExtensions(const char* ext_name) {
     m_required_extensions.push_back(ext_name);
     AddRequestedInstanceExtensions(ext_name);
 }
 
-void VkRenderFramework::AddOptionalExtensions(const char *ext_name) {
+void VkRenderFramework::AddOptionalExtensions(const char* ext_name) {
     m_optional_extensions.push_back(ext_name);
     AddRequestedInstanceExtensions(ext_name);
 }
 
-void VkRenderFramework::AddWsiExtensions(const char *ext_name) {
+void VkRenderFramework::AddWsiExtensions(const char* ext_name) {
     m_wsi_extensions.push_back(ext_name);
     AddRequestedInstanceExtensions(ext_name);
 }
 
-bool VkRenderFramework::IsExtensionsEnabled(const char *ext_name) const {
+bool VkRenderFramework::IsExtensionsEnabled(const char* ext_name) const {
     return (CanEnableDeviceExtension(ext_name) || CanEnableInstanceExtension(ext_name));
 }
 
 std::string VkRenderFramework::RequiredExtensionsNotSupported() const {
     std::stringstream ss;
     bool first = true;
-    for (const auto &ext : m_required_extensions) {
+    for (const auto& ext : m_required_extensions) {
         if (!CanEnableDeviceExtension(ext) && !CanEnableInstanceExtension(ext)) {
             if (first) {
                 first = false;
@@ -365,12 +371,12 @@ void VkRenderFramework::AddOptionalFeature(vkt::Feature feature) {
     features_to_enable_.AddOptionalFeature(m_target_api_version, feature);
 }
 
-bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
+bool VkRenderFramework::AddRequestedInstanceExtensions(const char* ext_name) {
     if (CanEnableInstanceExtension(ext_name)) {
         return true;
     }
 
-    const auto &instance_exts_map = InstanceExtensions::GetInfoMap();
+    const auto& instance_exts_map = InstanceExtensions::GetInfoMap();
     bool is_instance_ext = false;
     vvl::Extension extension = GetExtension(ext_name);
     if (instance_exts_map.find(extension) != instance_exts_map.cend()) {
@@ -381,11 +387,11 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
         }
     }
 
-    // Different tables need to be used for extension dependency lookup depending on whether `ext_name` refers to a device or
-    // instance extension
+    // Different tables need to be used for extension dependency lookup depending on whether `ext_name` refers to a
+    // device or instance extension
     if (is_instance_ext) {
-        const auto &info = InstanceExtensions::GetInfo(extension);
-        for (const auto &req : info.requirements) {
+        const auto& info = InstanceExtensions::GetInfo(extension);
+        for (const auto& req : info.requirements) {
             if (0 == strncmp(req.name, "VK_VERSION", 10)) {
                 continue;
             }
@@ -395,8 +401,8 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
         }
         m_instance_extension_names.push_back(ext_name);
     } else {
-        const auto &info = DeviceExtensions::GetInfo(extension);
-        for (const auto &req : info.requirements) {
+        const auto& info = DeviceExtensions::GetInfo(extension);
+        for (const auto& req : info.requirements) {
             if (!AddRequestedInstanceExtensions(req.name)) {
                 return false;
             }
@@ -406,11 +412,12 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
     return true;
 }
 
-bool VkRenderFramework::IsPromotedInstanceExtension(const char *inst_ext_name) const {
-    if (!m_target_api_version.Valid()) return false;
+bool VkRenderFramework::IsPromotedInstanceExtension(const char* inst_ext_name) const {
+    if (!m_target_api_version.Valid())
+        return false;
 
     const auto promotion_info_map = GetInstancePromotionInfoMap();
-    for (const auto &version_it : promotion_info_map) {
+    for (const auto& version_it : promotion_info_map) {
         if (m_target_api_version >= version_it.first) {
             const auto promoted_exts = version_it.second.second;
             vvl::Extension extension = GetExtension(inst_ext_name);
@@ -423,13 +430,14 @@ bool VkRenderFramework::IsPromotedInstanceExtension(const char *inst_ext_name) c
     return false;
 }
 
-bool VkRenderFramework::CanEnableInstanceExtension(const std::string &inst_ext_name) const {
+bool VkRenderFramework::CanEnableInstanceExtension(const std::string& inst_ext_name) const {
     return (!allow_promoted_extensions_ && IsPromotedInstanceExtension(inst_ext_name.c_str())) ||
-           std::any_of(m_instance_extension_names.cbegin(), m_instance_extension_names.cend(),
-                       [&inst_ext_name](const char *ext) { return inst_ext_name == ext; });
+           std::any_of(m_instance_extension_names.cbegin(),
+                       m_instance_extension_names.cend(),
+                       [&inst_ext_name](const char* ext) { return inst_ext_name == ext; });
 }
 
-bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
+bool VkRenderFramework::AddRequestedDeviceExtensions(const char* dev_ext_name) {
     // Check if the extension has already been added
     if (CanEnableDeviceExtension(dev_ext_name)) {
         return true;
@@ -439,9 +447,9 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
         return true;
     }
 
-    // If this is an instance extension, just return true under the assumption instance extensions do not depend on any device
-    // extensions.
-    const auto &instance_exts_map = InstanceExtensions::GetInfoMap();
+    // If this is an instance extension, just return true under the assumption instance extensions do not depend on any
+    // device extensions.
+    const auto& instance_exts_map = InstanceExtensions::GetInfoMap();
     vvl::Extension extension = GetExtension(dev_ext_name);
     if (instance_exts_map.find(extension) != instance_exts_map.cend()) {
         return true;
@@ -452,8 +460,8 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
     }
     m_device_extension_names.push_back(dev_ext_name);
 
-    const auto &info = DeviceExtensions::GetInfo(extension);
-    for (const auto &req : info.requirements) {
+    const auto& info = DeviceExtensions::GetInfo(extension);
+    for (const auto& req : info.requirements) {
         if (!AddRequestedDeviceExtensions(req.name)) {
             return false;
         }
@@ -461,12 +469,13 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
     return true;
 }
 
-bool VkRenderFramework::IsPromotedDeviceExtension(const char *dev_ext_name) const {
+bool VkRenderFramework::IsPromotedDeviceExtension(const char* dev_ext_name) const {
     auto device_version = std::min(m_target_api_version, APIVersion(PhysicalDeviceProps().apiVersion));
-    if (!device_version.Valid()) return false;
+    if (!device_version.Valid())
+        return false;
 
     const auto promotion_info_map = GetDevicePromotionInfoMap();
-    for (const auto &version_it : promotion_info_map) {
+    for (const auto& version_it : promotion_info_map) {
         if (device_version >= version_it.first) {
             const auto promoted_exts = version_it.second.second;
             vvl::Extension extension = GetExtension(dev_ext_name);
@@ -479,15 +488,17 @@ bool VkRenderFramework::IsPromotedDeviceExtension(const char *dev_ext_name) cons
     return false;
 }
 
-bool VkRenderFramework::CanEnableDeviceExtension(const std::string &dev_ext_name) const {
+bool VkRenderFramework::CanEnableDeviceExtension(const std::string& dev_ext_name) const {
     return (!allow_promoted_extensions_ && IsPromotedDeviceExtension(dev_ext_name.c_str())) ||
-           std::any_of(m_device_extension_names.cbegin(), m_device_extension_names.cend(),
-                       [&dev_ext_name](const char *ext) { return dev_ext_name == ext; });
+           std::any_of(m_device_extension_names.cbegin(),
+                       m_device_extension_names.cend(),
+                       [&dev_ext_name](const char* ext) { return dev_ext_name == ext; });
 }
 
 void VkRenderFramework::ShutdownFramework() {
     // Nothing to shut down without a VkInstance
-    if (!instance_) return;
+    if (!instance_)
+        return;
 
     if (m_device && m_device->handle() != VK_NULL_HANDLE) {
         m_device->Wait();
@@ -506,7 +517,8 @@ void VkRenderFramework::ShutdownFramework() {
 
     delete m_framebuffer;
     m_framebuffer = nullptr;
-    if (m_renderPass) vk::DestroyRenderPass(device(), m_renderPass, NULL);
+    if (m_renderPass)
+        vk::DestroyRenderPass(device(), m_renderPass, NULL);
     m_renderPass = VK_NULL_HANDLE;
 
     m_render_target_views.clear();
@@ -527,13 +539,15 @@ void VkRenderFramework::ShutdownFramework() {
     m_surface_context.Destroy();
 
     vk::DestroyInstance(instance_, nullptr);
-    instance_ = NULL;  // In case we want to re-initialize
+    instance_ = NULL; // In case we want to re-initialize
     vk::ResetAllExtensions();
 }
 
-ErrorMonitor &VkRenderFramework::Monitor() { return monitor_; }
+ErrorMonitor& VkRenderFramework::Monitor() {
+    return monitor_;
+}
 
-void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features) {
+void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures* features) {
     vk::GetPhysicalDeviceFeatures(Gpu(), features);
 }
 
@@ -554,7 +568,9 @@ bool VkRenderFramework::IsPlatformMockICD() {
     }
 }
 
-void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props) { *props = physDevProps_; }
+void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties* props) {
+    *props = physDevProps_;
+}
 
 VkFormat VkRenderFramework::GetRenderTargetFormat() {
     VkFormatProperties format_props = {};
@@ -568,14 +584,16 @@ VkFormat VkRenderFramework::GetRenderTargetFormat() {
         format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
         return VK_FORMAT_R8G8B8A8_UNORM;
     }
-    // According to VulkanCapsViewer rgba8/bgra8 support with optimal tiling + color_attachment is 99.45% across all platforms
+    // According to VulkanCapsViewer rgba8/bgra8 support with optimal tiling + color_attachment is 99.45% across all
+    // platforms
     assert(false);
     return VK_FORMAT_UNDEFINED;
 }
 
-void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
+void VkRenderFramework::InitState(VkPhysicalDeviceFeatures* features,
+                                  void* create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
-    const auto ExtensionIncludedInDeviceApiVersion = [&](const char *extension) {
+    const auto ExtensionIncludedInDeviceApiVersion = [&](const char* extension) {
         if (IsPromotedDeviceExtension(extension)) {
             // Replicate the core entry points into the extension entry points
             vk::InitExtensionFromCore(extension);
@@ -583,12 +601,13 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
             // Handle special cases which did not have a feature flag in the extension
             // but do have one in their core promoted form
             static const std::unordered_map<std::string, std::vector<vkt::Feature>> vk12_ext_features = {
-                {VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME, {vkt::Feature::drawIndirectCount}},
-                {VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, {vkt::Feature::samplerFilterMinmax}},
-                {VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
-                 {vkt::Feature::shaderOutputViewportIndex, vkt::Feature::shaderOutputLayer}},
-                {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, {vkt::Feature::descriptorIndexing}},
-                {VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME, {vkt::Feature::scalarBlockLayout}}};
+                { VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME, { vkt::Feature::drawIndirectCount } },
+                { VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, { vkt::Feature::samplerFilterMinmax } },
+                { VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
+                  { vkt::Feature::shaderOutputViewportIndex, vkt::Feature::shaderOutputLayer } },
+                { VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, { vkt::Feature::descriptorIndexing } },
+                { VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME, { vkt::Feature::scalarBlockLayout } }
+            };
             auto it = vk12_ext_features.find(extension);
             if (it != vk12_ext_features.end()) {
                 for (const auto feature : it->second) {
@@ -600,7 +619,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
         }
         return false;
     };
-    const auto ExtensionNotSupportedWithReporting = [this](const char *extension) {
+    const auto ExtensionNotSupportedWithReporting = [this](const char* extension) {
         if (DeviceExtensionSupported(extension))
             return false;
         else {
@@ -631,7 +650,7 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
             GetPhysicalDeviceFeatures(required_features_.GetFeatures());
         }
 
-        if (const char *f = required_features_.AnyRequiredFeatureDisabled()) {
+        if (const char* f = required_features_.AnyRequiredFeatureDisabled()) {
             GTEST_SKIP() << "Required feature " << f << " is not available on device, skipping test";
         }
 
@@ -640,11 +659,11 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
         if (features_to_enable_.HasFeatures2()) {
             if (create_device_pnext) {
                 // Chain to the end of the list
-                VkBaseOutStructure *p = reinterpret_cast<VkBaseOutStructure *>(create_device_pnext);
+                VkBaseOutStructure* p = reinterpret_cast<VkBaseOutStructure*>(create_device_pnext);
                 while (p->pNext != nullptr) {
                     p = p->pNext;
                 }
-                p->pNext = reinterpret_cast<VkBaseOutStructure *>(features_to_enable_.GetFeatures2());
+                p->pNext = reinterpret_cast<VkBaseOutStructure*>(features_to_enable_.GetFeatures2());
             } else {
                 create_device_pnext = features_to_enable_.GetFeatures2();
             }
@@ -655,18 +674,18 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     m_device = new vkt::Device(gpu_, m_device_extension_names, features, create_device_pnext, all_queue_count_);
 
-    for (const char *device_ext_name : m_device_extension_names) {
+    for (const char* device_ext_name : m_device_extension_names) {
         vk::InitDeviceExtension(instance_, *m_device, device_ext_name);
     }
 
-    std::vector<vkt::Queue *> queues;
+    std::vector<vkt::Queue*> queues;
     vvl::Append(queues, m_device->QueuesWithGraphicsCapability());
-    for (vkt::Queue *queue_with_compute_caps : m_device->QueuesWithComputeCapability()) {
+    for (vkt::Queue* queue_with_compute_caps : m_device->QueuesWithComputeCapability()) {
         if (!vvl::Contains(queues, queue_with_compute_caps)) {
             queues.emplace_back(queue_with_compute_caps);
         }
     }
-    for (vkt::Queue *queue_with_transfer_caps : m_device->QueuesWithTransferCapability()) {
+    for (vkt::Queue* queue_with_transfer_caps : m_device->QueuesWithTransferCapability()) {
         if (!vvl::Contains(queues, queue_with_transfer_caps)) {
             queues.emplace_back(queue_with_transfer_caps);
         }
@@ -714,9 +733,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 void SurfaceContext::Resize(uint32_t width, uint32_t height) {
     ::SetWindowPos(m_win32Window, NULL, 0, 0, (int)width, (int)height, SWP_NOMOVE);
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, vkt::Surface &surface, VkInstance custom_instance) {
+VkResult
+VkRenderFramework::CreateSurface(SurfaceContext& surface_context, vkt::Surface& surface, VkInstance custom_instance) {
     const VkInstance surface_instance = (custom_instance != VK_NULL_HANDLE) ? custom_instance : instance();
     (void)surface_instance;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -728,7 +748,8 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, vkt::
         wc.hInstance = window_instance;
         wc.lpszClassName = class_name;
         RegisterClass(&wc);
-        HWND window = CreateWindowEx(0, class_name, nullptr, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
+        HWND window = CreateWindowEx(
+            0, class_name, nullptr, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
         surface_context.m_win32Window = window;
         ShowWindow(window, SW_HIDE);
 
@@ -760,9 +781,15 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, vkt::
         surface_context.m_surface_dpy = XOpenDisplay(nullptr);
         if (surface_context.m_surface_dpy) {
             int s = DefaultScreen(surface_context.m_surface_dpy);
-            surface_context.m_surface_window = XCreateSimpleWindow(
-                surface_context.m_surface_dpy, RootWindow(surface_context.m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
-                BlackPixel(surface_context.m_surface_dpy, s), WhitePixel(surface_context.m_surface_dpy, s));
+            surface_context.m_surface_window = XCreateSimpleWindow(surface_context.m_surface_dpy,
+                                                                   RootWindow(surface_context.m_surface_dpy, s),
+                                                                   0,
+                                                                   0,
+                                                                   (int)m_width,
+                                                                   (int)m_height,
+                                                                   1,
+                                                                   BlackPixel(surface_context.m_surface_dpy, s),
+                                                                   WhitePixel(surface_context.m_surface_dpy, s));
             VkXlibSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
             surface_create_info.dpy = surface_context.m_surface_dpy;
             surface_create_info.window = surface_context.m_surface_window;
@@ -789,7 +816,9 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, vkt::
 }
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-int IgnoreXErrors(Display *, XErrorEvent *) { return 0; }
+int IgnoreXErrors(Display*, XErrorEvent*) {
+    return 0;
+}
 #endif
 
 void SurfaceContext::Destroy() {
@@ -830,8 +859,8 @@ void VkRenderFramework::InitSwapchainInfo() {
     m_surface_composite_alpha = info.surface_composite_alpha;
 }
 
-// Makes query to get information about swapchain needed to create a valid swapchain object each test creating a swapchain will
-// need
+// Makes query to get information about swapchain needed to create a valid swapchain object each test creating a
+// swapchain will need
 SurfaceInformation VkRenderFramework::GetSwapchainInfo(const VkSurfaceKHR surface) {
     const VkPhysicalDevice physicalDevice = Gpu();
 
@@ -852,8 +881,8 @@ SurfaceInformation VkRenderFramework::GetSwapchainInfo(const VkSurfaceKHR surfac
     vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &present_mode_count, nullptr);
     if (present_mode_count != 0) {
         info.surface_present_modes.resize(present_mode_count);
-        vk::GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &present_mode_count,
-                                                    info.surface_present_modes.data());
+        vk::GetPhysicalDeviceSurfacePresentModesKHR(
+            physicalDevice, surface, &present_mode_count, info.surface_present_modes.data());
 
         // Shared Present mode has different requirements most tests won't actually want
         // Implementation required to support a non-shared present mode
@@ -882,8 +911,10 @@ void VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage, VkSurfaceTra
     ASSERT_TRUE(m_swapchain.initialized());
 }
 
-vkt::Swapchain VkRenderFramework::CreateSwapchain(VkSurfaceKHR surface, VkImageUsageFlags imageUsage,
-                                                  VkSurfaceTransformFlagBitsKHR preTransform, VkSwapchainKHR oldSwapchain) {
+vkt::Swapchain VkRenderFramework::CreateSwapchain(VkSurfaceKHR surface,
+                                                  VkImageUsageFlags imageUsage,
+                                                  VkSurfaceTransformFlagBitsKHR preTransform,
+                                                  VkSwapchainKHR oldSwapchain) {
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, surface, &supported);
     if (!supported) {
@@ -905,8 +936,8 @@ vkt::Swapchain VkRenderFramework::CreateSwapchain(VkSurfaceKHR surface, VkImageU
     swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
-                                         info.surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = { info.surface_capabilities.minImageExtent.width,
+                                          info.surface_capabilities.minImageExtent.height };
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = imageUsage;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -932,7 +963,7 @@ void VkRenderFramework::DestroySwapchain() {
 void VkRenderFramework::SupportMultiSwapchain() {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     GTEST_SKIP() << "Android currently doesn't support multiple swapchain on all devices";
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#endif // VK_USE_PLATFORM_ANDROID_KHR
 }
 
 void VkRenderFramework::SupportSurfaceResize() {
@@ -941,19 +972,25 @@ void VkRenderFramework::SupportSurfaceResize() {
     }
 }
 
-void VkRenderFramework::InitRenderTarget() { InitRenderTarget(1); }
+void VkRenderFramework::InitRenderTarget() {
+    InitRenderTarget(1);
+}
 
-void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(targets, NULL); }
+void VkRenderFramework::InitRenderTarget(uint32_t targets) {
+    InitRenderTarget(targets, NULL);
+}
 
-void VkRenderFramework::InitRenderTarget(const VkImageView *dsBinding) { InitRenderTarget(1, dsBinding); }
+void VkRenderFramework::InitRenderTarget(const VkImageView* dsBinding) {
+    InitRenderTarget(1, dsBinding);
+}
 
-void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *dsBinding) {
+void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView* dsBinding) {
     std::vector<VkAttachmentReference> color_references;
     std::vector<VkAttachmentDescription> attachment_descriptions;
 
-    attachment_descriptions.reserve(targets + 1);  // +1 for dsBinding
+    attachment_descriptions.reserve(targets + 1); // +1 for dsBinding
     color_references.reserve(targets);
-    m_framebuffer_attachments.reserve(targets + 1);  // +1 for dsBinding
+    m_framebuffer_attachments.reserve(targets + 1); // +1 for dsBinding
 
     VkAttachmentDescription att = {};
     att.format = m_render_target_fmt;
@@ -994,8 +1031,13 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
         }
 
         auto image_ci = vkt::Image::ImageCreateInfo2D(
-            m_width, m_height, 1, 1, m_render_target_fmt,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, tiling);
+            m_width,
+            m_height,
+            1,
+            1,
+            m_render_target_fmt,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+            tiling);
         std::unique_ptr<vkt::Image> img(new vkt::Image(*m_device, image_ci, vkt::set_layout));
 
         m_render_target_views.push_back(img->CreateView());
@@ -1049,8 +1091,8 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, const VkImageView *ds
 
     vk::CreateRenderPass(device(), &rp_info, NULL, &m_renderPass);
 
-    m_framebuffer = new vkt::Framebuffer(*m_device, m_renderPass, m_framebuffer_attachments.size(),
-                                         m_framebuffer_attachments.data(), m_width, m_height);
+    m_framebuffer = new vkt::Framebuffer(
+        *m_device, m_renderPass, m_framebuffer_attachments.size(), m_framebuffer_attachments.data(), m_width, m_height);
 
     m_renderPassBeginInfo.renderPass = m_renderPass;
     m_renderPassBeginInfo.framebuffer = m_framebuffer->handle();
@@ -1074,7 +1116,11 @@ void VkRenderFramework::InitDynamicRenderTarget(VkFormat format) {
     }
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(
-        m_width, m_height, 1, 1, m_render_target_fmt,
+        m_width,
+        m_height,
+        1,
+        1,
+        m_render_target_fmt,
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     std::unique_ptr<vkt::Image> img(new vkt::Image(*m_device, image_ci, vkt::set_layout));
 
@@ -1088,7 +1134,9 @@ VkImageView VkRenderFramework::GetDynamicRenderTarget() const {
     return m_framebuffer_attachments[0];
 }
 
-VkRect2D VkRenderFramework::GetRenderTargetArea() const { return {{0, 0}, {m_width, m_height}}; }
+VkRect2D VkRenderFramework::GetRenderTargetArea() const {
+    return { { 0, 0 }, { m_width, m_height } };
+}
 
 void VkRenderFramework::DestroyRenderTarget() {
     vk::DestroyRenderPass(device(), m_renderPass, nullptr);
@@ -1097,25 +1145,33 @@ void VkRenderFramework::DestroyRenderTarget() {
     m_framebuffer = nullptr;
 }
 
-void VkRenderFramework::SetDefaultDynamicStatesExclude(const std::vector<VkDynamicState> &exclude, bool tessellation,
+void VkRenderFramework::SetDefaultDynamicStatesExclude(const std::vector<VkDynamicState>& exclude,
+                                                       bool tessellation,
                                                        VkCommandBuffer commandBuffer) {
     const auto excluded = [&exclude](VkDynamicState state) {
         return std::find(exclude.begin(), exclude.end(), state) != exclude.end();
     };
     if (!m_vertex_buffer) {
-        m_vertex_buffer = new vkt::Buffer(*m_device, 32u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        m_vertex_buffer =
+            new vkt::Buffer(*m_device, 32u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     }
 
     VkCommandBuffer cmdBuffer = commandBuffer ? commandBuffer : m_command_buffer.handle();
-    VkViewport viewport = {0, 0, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 1.0f};
-    VkRect2D scissor = {{0, 0}, {m_width, m_height}};
-    if (!excluded(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)) vk::CmdSetViewportWithCountEXT(cmdBuffer, 1u, &viewport);
-    if (!excluded(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) vk::CmdSetScissorWithCountEXT(cmdBuffer, 1u, &scissor);
-    if (!excluded(VK_DYNAMIC_STATE_LINE_WIDTH)) vk::CmdSetLineWidth(cmdBuffer, 1.0f);
-    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BIAS)) vk::CmdSetDepthBias(cmdBuffer, 1.0f, 0.0f, 1.0f);
-    float blendConstants[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-    if (!excluded(VK_DYNAMIC_STATE_BLEND_CONSTANTS)) vk::CmdSetBlendConstants(cmdBuffer, blendConstants);
-    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BOUNDS)) vk::CmdSetDepthBounds(cmdBuffer, 0.0f, 1.0f);
+    VkViewport viewport = { 0, 0, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 1.0f };
+    VkRect2D scissor = { { 0, 0 }, { m_width, m_height } };
+    if (!excluded(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT))
+        vk::CmdSetViewportWithCountEXT(cmdBuffer, 1u, &viewport);
+    if (!excluded(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT))
+        vk::CmdSetScissorWithCountEXT(cmdBuffer, 1u, &scissor);
+    if (!excluded(VK_DYNAMIC_STATE_LINE_WIDTH))
+        vk::CmdSetLineWidth(cmdBuffer, 1.0f);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BIAS))
+        vk::CmdSetDepthBias(cmdBuffer, 1.0f, 0.0f, 1.0f);
+    float blendConstants[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    if (!excluded(VK_DYNAMIC_STATE_BLEND_CONSTANTS))
+        vk::CmdSetBlendConstants(cmdBuffer, blendConstants);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BOUNDS))
+        vk::CmdSetDepthBounds(cmdBuffer, 0.0f, 1.0f);
     if (!excluded(VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK))
         vk::CmdSetStencilCompareMask(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
     if (!excluded(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK))
@@ -1126,57 +1182,84 @@ void VkRenderFramework::SetDefaultDynamicStatesExclude(const std::vector<VkDynam
     VkDeviceSize size = sizeof(float);
     if (!excluded(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE))
         vk::CmdBindVertexBuffers2EXT(cmdBuffer, 0, 1, &m_vertex_buffer->handle(), &offset, &size, &size);
-    if (!excluded(VK_DYNAMIC_STATE_CULL_MODE)) vk::CmdSetCullModeEXT(cmdBuffer, VK_CULL_MODE_NONE);
-    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) vk::CmdSetDepthBoundsTestEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP)) vk::CmdSetDepthCompareOpEXT(cmdBuffer, VK_COMPARE_OP_NEVER);
-    if (!excluded(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) vk::CmdSetDepthTestEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)) vk::CmdSetDepthWriteEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_FRONT_FACE)) vk::CmdSetFrontFaceEXT(cmdBuffer, VK_FRONT_FACE_CLOCKWISE);
+    if (!excluded(VK_DYNAMIC_STATE_CULL_MODE))
+        vk::CmdSetCullModeEXT(cmdBuffer, VK_CULL_MODE_NONE);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE))
+        vk::CmdSetDepthBoundsTestEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP))
+        vk::CmdSetDepthCompareOpEXT(cmdBuffer, VK_COMPARE_OP_NEVER);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE))
+        vk::CmdSetDepthTestEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE))
+        vk::CmdSetDepthWriteEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_FRONT_FACE))
+        vk::CmdSetFrontFaceEXT(cmdBuffer, VK_FRONT_FACE_CLOCKWISE);
     if (!excluded(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY))
-        vk::CmdSetPrimitiveTopologyEXT(cmdBuffer,
-                                       tessellation ? VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+        vk::CmdSetPrimitiveTopologyEXT(
+            cmdBuffer, tessellation ? VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     if (!excluded(VK_DYNAMIC_STATE_STENCIL_OP))
-        vk::CmdSetStencilOpEXT(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP,
-                               VK_STENCIL_OP_KEEP, VK_COMPARE_OP_NEVER);
-    if (!excluded(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) vk::CmdSetStencilTestEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) vk::CmdSetDepthBiasEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) vk::CmdSetPrimitiveRestartEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) vk::CmdSetRasterizerDiscardEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) vk::CmdSetVertexInputEXT(cmdBuffer, 0u, nullptr, 0u, nullptr);
-    if (!excluded(VK_DYNAMIC_STATE_LOGIC_OP_EXT)) vk::CmdSetLogicOpEXT(cmdBuffer, VK_LOGIC_OP_COPY);
-    if (!excluded(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) vk::CmdSetPatchControlPointsEXT(cmdBuffer, 4u);
+        vk::CmdSetStencilOpEXT(cmdBuffer,
+                               VK_STENCIL_FACE_FRONT_AND_BACK,
+                               VK_STENCIL_OP_KEEP,
+                               VK_STENCIL_OP_KEEP,
+                               VK_STENCIL_OP_KEEP,
+                               VK_COMPARE_OP_NEVER);
+    if (!excluded(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE))
+        vk::CmdSetStencilTestEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE))
+        vk::CmdSetDepthBiasEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE))
+        vk::CmdSetPrimitiveRestartEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE))
+        vk::CmdSetRasterizerDiscardEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT))
+        vk::CmdSetVertexInputEXT(cmdBuffer, 0u, nullptr, 0u, nullptr);
+    if (!excluded(VK_DYNAMIC_STATE_LOGIC_OP_EXT))
+        vk::CmdSetLogicOpEXT(cmdBuffer, VK_LOGIC_OP_COPY);
+    if (!excluded(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT))
+        vk::CmdSetPatchControlPointsEXT(cmdBuffer, 4u);
     if (!excluded(VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT))
         vk::CmdSetTessellationDomainOriginEXT(cmdBuffer, VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
-    if (!excluded(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) vk::CmdSetDepthClampEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_POLYGON_MODE_EXT)) vk::CmdSetPolygonModeEXT(cmdBuffer, VK_POLYGON_MODE_FILL);
-    if (!excluded(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) vk::CmdSetRasterizationSamplesEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT);
+    if (!excluded(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT))
+        vk::CmdSetDepthClampEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_POLYGON_MODE_EXT))
+        vk::CmdSetPolygonModeEXT(cmdBuffer, VK_POLYGON_MODE_FILL);
+    if (!excluded(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT))
+        vk::CmdSetRasterizationSamplesEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT);
     VkSampleMask sampleMask = 0xFFFFFFFF;
-    if (!excluded(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT)) vk::CmdSetSampleMaskEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT, &sampleMask);
-    if (!excluded(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) vk::CmdSetAlphaToCoverageEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) vk::CmdSetAlphaToOneEnableEXT(cmdBuffer, VK_FALSE);
-    if (!excluded(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) vk::CmdSetLogicOpEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT))
+        vk::CmdSetSampleMaskEXT(cmdBuffer, VK_SAMPLE_COUNT_1_BIT, &sampleMask);
+    if (!excluded(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT))
+        vk::CmdSetAlphaToCoverageEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT))
+        vk::CmdSetAlphaToOneEnableEXT(cmdBuffer, VK_FALSE);
+    if (!excluded(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT))
+        vk::CmdSetLogicOpEnableEXT(cmdBuffer, VK_FALSE);
     VkBool32 colorBlendEnable = VK_FALSE;
-    if (!excluded(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) vk::CmdSetColorBlendEnableEXT(cmdBuffer, 0u, 1u, &colorBlendEnable);
+    if (!excluded(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT))
+        vk::CmdSetColorBlendEnableEXT(cmdBuffer, 0u, 1u, &colorBlendEnable);
     VkColorBlendEquationEXT colorBlendEquation = {
-        VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
+        VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
+        VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
     };
     if (!excluded(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT))
         vk::CmdSetColorBlendEquationEXT(cmdBuffer, 0u, 1u, &colorBlendEquation);
     VkColorComponentFlags colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    if (!excluded(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) vk::CmdSetColorWriteMaskEXT(cmdBuffer, 0u, 1u, &colorWriteMask);
+    if (!excluded(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT))
+        vk::CmdSetColorWriteMaskEXT(cmdBuffer, 0u, 1u, &colorWriteMask);
 }
 
 void VkRenderFramework::SetDefaultDynamicStatesAll(VkCommandBuffer cmdBuffer) {
     uint32_t width = 32;
     uint32_t height = 32;
-    VkViewport viewport = {0, 0, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f};
-    VkRect2D scissor = {{0, 0}, {width, height}};
+    VkViewport viewport = { 0, 0, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f };
+    VkRect2D scissor = { { 0, 0 }, { width, height } };
     vk::CmdSetViewportWithCountEXT(cmdBuffer, 1u, &viewport);
     vk::CmdSetScissorWithCountEXT(cmdBuffer, 1u, &scissor);
     vk::CmdSetLineWidth(cmdBuffer, 1.0f);
     vk::CmdSetDepthBias(cmdBuffer, 1.0f, 0.0f, 1.0f);
-    float blendConstants[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+    float blendConstants[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
     vk::CmdSetBlendConstants(cmdBuffer, blendConstants);
     vk::CmdSetDepthBounds(cmdBuffer, 0.0f, 1.0f);
     vk::CmdSetStencilCompareMask(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
@@ -1189,7 +1272,11 @@ void VkRenderFramework::SetDefaultDynamicStatesAll(VkCommandBuffer cmdBuffer) {
     vk::CmdSetDepthWriteEnableEXT(cmdBuffer, VK_FALSE);
     vk::CmdSetFrontFaceEXT(cmdBuffer, VK_FRONT_FACE_CLOCKWISE);
     vk::CmdSetPrimitiveTopologyEXT(cmdBuffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-    vk::CmdSetStencilOpEXT(cmdBuffer, VK_STENCIL_FACE_FRONT_AND_BACK, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP,
+    vk::CmdSetStencilOpEXT(cmdBuffer,
+                           VK_STENCIL_FACE_FRONT_AND_BACK,
+                           VK_STENCIL_OP_KEEP,
+                           VK_STENCIL_OP_KEEP,
+                           VK_STENCIL_OP_KEEP,
                            VK_COMPARE_OP_NEVER);
     vk::CmdSetStencilTestEnableEXT(cmdBuffer, VK_FALSE);
     vk::CmdSetDepthBiasEnableEXT(cmdBuffer, VK_FALSE);
@@ -1210,7 +1297,8 @@ void VkRenderFramework::SetDefaultDynamicStatesAll(VkCommandBuffer cmdBuffer) {
     VkBool32 colorBlendEnable = VK_FALSE;
     vk::CmdSetColorBlendEnableEXT(cmdBuffer, 0u, 1u, &colorBlendEnable);
     VkColorBlendEquationEXT colorBlendEquation = {
-        VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
+        VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
+        VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
     };
     vk::CmdSetColorBlendEquationEXT(cmdBuffer, 0u, 1u, &colorBlendEquation);
     VkColorComponentFlags colorWriteMask =
@@ -1218,7 +1306,8 @@ void VkRenderFramework::SetDefaultDynamicStatesAll(VkCommandBuffer cmdBuffer) {
     vk::CmdSetColorWriteMaskEXT(cmdBuffer, 0u, 1u, &colorWriteMask);
 }
 
-std::vector<uint32_t> VkRenderFramework::GLSLToSPV(VkShaderStageFlagBits stage, const char *code, const spv_target_env env) {
+std::vector<uint32_t>
+VkRenderFramework::GLSLToSPV(VkShaderStageFlagBits stage, const char* code, const spv_target_env env) {
     std::vector<uint32_t> spv;
     GLSLtoSPV(m_device->Physical().limits_, stage, code, spv, env);
     return spv;

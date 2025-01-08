@@ -17,13 +17,13 @@
  */
 
 #include "test_framework.h"
-#include "vk_layer_config.h"
 #include "generated/vk_function_pointers.h"
+#include "vk_layer_config.h"
 #include <glslang/Public/ShaderLang.h>
 #include CONFIG_HEADER_FILE
-#include <filesystem>
 #include <cmath>
 #include <cstdarg>
+#include <filesystem>
 
 struct SwapchainBuffers {
     VkImage image;
@@ -40,7 +40,7 @@ struct SwapchainBuffers {
 // EX input:
 //  export VK_DRIVER_FILES=/intel.json:/amd.json
 //  set VK_DRIVER_FILES=\nvidia.json;\mesa.json
-static std::vector<std::string> GetVkEnvironmentVariable(const char *env_var) {
+static std::vector<std::string> GetVkEnvironmentVariable(const char* env_var) {
     const std::string str = GetEnvironment(env_var);
     if (str.empty()) {
         return {};
@@ -75,9 +75,9 @@ static std::vector<std::string> GetVkEnvironmentVariable(const char *env_var) {
 }
 
 static void CheckAndSetEnvironmentVariables() {
-    for (const char *env_var : {"VK_DRIVER_FILES", "VK_ICD_FILENAMES"}) {
+    for (const char* env_var : { "VK_DRIVER_FILES", "VK_ICD_FILENAMES" }) {
         const std::vector<std::string> driver_files = GetVkEnvironmentVariable(env_var);
-        for (const std::string &driver_file : driver_files) {
+        for (const std::string& driver_file : driver_files) {
             const std::filesystem::path icd_file(driver_file);
             // TODO: Error check relative paths (platform dependent)
             if (icd_file.is_relative()) {
@@ -94,14 +94,14 @@ static void CheckAndSetEnvironmentVariables() {
                     std::exit(EXIT_FAILURE);
                 }
                 bool contains_json = false;
-                for (auto const &dir_entry : std::filesystem::directory_iterator{icd_file}) {
+                for (auto const& dir_entry : std::filesystem::directory_iterator{ icd_file }) {
                     if (dir_entry.path().extension() == ".json") {
                         contains_json = true;
                     }
                 }
                 if (!contains_json) {
-                    std::cerr << "Invalid " << env_var << "! " << env_var << " must contain a json file!" << user_provided
-                              << std::endl;
+                    std::cerr << "Invalid " << env_var << "! " << env_var << " must contain a json file!"
+                              << user_provided << std::endl;
                     std::exit(EXIT_FAILURE);
                 }
 
@@ -112,7 +112,8 @@ static void CheckAndSetEnvironmentVariables() {
                 }
 
                 if (icd_file.extension() != ".json") {
-                    std::cerr << "Invalid " << env_var << "! " << env_var << " must be a json file!" << user_provided << std::endl;
+                    std::cerr << "Invalid " << env_var << "! " << env_var << " must be a json file!" << user_provided
+                              << std::endl;
                     std::exit(EXIT_FAILURE);
                 }
             }
@@ -121,13 +122,13 @@ static void CheckAndSetEnvironmentVariables() {
 
     bool found_json = false;
     bool vk_layer_env_vars_present = false;
-    std::stringstream error_log;  // Build up error log in case the validation json cannot be found
-    for (const char *env_var : {"VK_LAYER_PATH", "VK_ADD_LAYER_PATH"}) {
+    std::stringstream error_log; // Build up error log in case the validation json cannot be found
+    for (const char* env_var : { "VK_LAYER_PATH", "VK_ADD_LAYER_PATH" }) {
         const std::vector<std::string> vk_layer_paths = GetVkEnvironmentVariable(env_var);
         if (!vk_layer_paths.empty()) {
             vk_layer_env_vars_present = true;
         }
-        for (const std::string &vk_layer_path : vk_layer_paths) {
+        for (const std::string& vk_layer_path : vk_layer_paths) {
             const std::filesystem::path layer_path(vk_layer_path);
 
             if (!std::filesystem::exists(layer_path)) {
@@ -136,7 +137,7 @@ static void CheckAndSetEnvironmentVariables() {
             }
 
             if (std::filesystem::is_directory(layer_path)) {
-                for (auto const &dir_entry : std::filesystem::directory_iterator{layer_path}) {
+                for (auto const& dir_entry : std::filesystem::directory_iterator{ layer_path }) {
                     if (dir_entry.path().filename() == "VkLayer_khronos_validation.json") {
                         if (std::filesystem::exists(dir_entry)) {
                             found_json = true;
@@ -148,7 +149,8 @@ static void CheckAndSetEnvironmentVariables() {
                 }
                 if (!found_json) {
                     error_log << "Invalid " << env_var << "! " << layer_path
-                              << " is a directory but doesn't contain a VkLayer_khronos_validation.json file!" << std::endl;
+                              << " is a directory but doesn't contain a VkLayer_khronos_validation.json file!"
+                              << std::endl;
                 }
             } else {
                 if (layer_path.filename() == "VkLayer_khronos_validation.json") {
@@ -189,9 +191,11 @@ void TestEnvironment::SetUp() {
     vk::InitCore("vulkan");
 }
 
-void TestEnvironment::TearDown() { glslang::FinalizeProcess(); }
+void TestEnvironment::TearDown() {
+    glslang::FinalizeProcess();
+}
 
-void VkTestFramework::InitArgs(int *argc, char *argv[]) {
+void VkTestFramework::InitArgs(int* argc, char* argv[]) {
     for (int i = 1; i < *argc; ++i) {
         const std::string_view current_argument = argv[i];
         if (current_argument == "--print-vu") {
@@ -204,17 +208,14 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
             m_phys_device_index = std::atoi(argv[++i]);
         } else if ((current_argument == "--help") || (current_argument == "-h")) {
             printf("\nOther options:\n");
-            printf(
-                "\t--print-vu\n"
-                "\t\tPrints all VUs - help see what new VU will look like.\n");
-            printf(
-                "\t--syncval-disable-core\n"
-                "\t\tDisable core validation when running syncval tests.\n"
-                "\t\tBy default both CoreChecks and syncval validation is enabled.\n");
-            printf(
-                "\t--gpuav-disable-core\n"
-                "\t\tDisable core validation when running gpu-av tests.\n"
-                "\t\tBy default both CoreChecks and gpu-av is enabled.\n");
+            printf("\t--print-vu\n"
+                   "\t\tPrints all VUs - help see what new VU will look like.\n");
+            printf("\t--syncval-disable-core\n"
+                   "\t\tDisable core validation when running syncval tests.\n"
+                   "\t\tBy default both CoreChecks and syncval validation is enabled.\n");
+            printf("\t--gpuav-disable-core\n"
+                   "\t\tDisable core validation when running gpu-av tests.\n"
+                   "\t\tBy default both CoreChecks and gpu-av is enabled.\n");
             printf(
                 "\t--device-index <physical device index>\n"
                 "\t\tIndex into VkPhysicalDevice array returned from vkEnumeratePhysicalDevices.\n"

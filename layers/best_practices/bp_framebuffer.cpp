@@ -21,8 +21,10 @@
 #include "best_practices/bp_state.h"
 #include "state_tracker/render_pass_state.h"
 
-bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachment_count,
-                                        const VkImageView* attachments, const Location& loc) const {
+bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci,
+                                        uint32_t attachment_count,
+                                        const VkImageView* attachments,
+                                        const Location& loc) const {
     bool skip = false;
 
     // Check for non-transient attachments that should be transient and vice versa
@@ -45,12 +47,14 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
 
         // The check for an image that should not be transient applies to all GPUs
         if (!attachment_should_be_transient && image_is_transient) {
-            skip |=
-                LogPerformanceWarning("BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient", device, loc,
-                                      "Attachment %u in VkFramebuffer uses loadOp/storeOps which need to access physical memory, "
-                                      "but the image backing the image view has VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
-                                      "Physical memory will need to be backed lazily to this image, potentially causing stalls.",
-                                      i);
+            skip |= LogPerformanceWarning(
+                "BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient",
+                device,
+                loc,
+                "Attachment %u in VkFramebuffer uses loadOp/storeOps which need to access physical memory, "
+                "but the image backing the image view has VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
+                "Physical memory will need to be backed lazily to this image, potentially causing stalls.",
+                i);
         }
 
         bool supports_lazy = false;
@@ -64,7 +68,9 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         // lazily allocated memory
         if (supports_lazy && attachment_should_be_transient && !image_is_transient) {
             skip |= LogPerformanceWarning(
-                "BestPractices-vkCreateFramebuffer-attachment-should-be-transient", device, loc,
+                "BestPractices-vkCreateFramebuffer-attachment-should-be-transient",
+                device,
+                loc,
                 "Attachment %u in VkFramebuffer uses loadOp/storeOps which never have to be backed by physical memory, "
                 "but the image backing the image view does not have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
                 "You can save physical memory by using transient attachment backed by lazily allocated memory here.",
@@ -74,16 +80,18 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
     return skip;
 }
 
-bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
-                                                     const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
+bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device,
+                                                     const VkFramebufferCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     VkFramebuffer* pFramebuffer,
                                                      const ErrorObject& error_obj) const {
     bool skip = false;
 
     auto rp_state = Get<vvl::RenderPass>(pCreateInfo->renderPass);
     ASSERT_AND_RETURN_SKIP(rp_state);
     if (!(pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
-        skip |= ValidateAttachments(rp_state->create_info.ptr(), pCreateInfo->attachmentCount, pCreateInfo->pAttachments,
-                                    error_obj.location);
+        skip |= ValidateAttachments(
+            rp_state->create_info.ptr(), pCreateInfo->attachmentCount, pCreateInfo->pAttachments, error_obj.location);
     }
 
     return skip;

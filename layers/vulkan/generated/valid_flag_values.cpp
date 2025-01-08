@@ -22,8 +22,9 @@
 
 // NOLINTBEGIN
 
-#include "stateless/stateless_validation.h"
 #include <vulkan/vk_enum_string_helper.h>
+
+#include "stateless/stateless_validation.h"
 
 // For flags, we can't use the VkFlag as it can't be templated (since it all resolves to a int).
 // It is simpler for the caller to already check for both

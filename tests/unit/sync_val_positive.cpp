@@ -11,25 +11,25 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include <thread>
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
+#include "../framework/queue_submit_context.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/thread_helper.h"
-#include "../framework/queue_submit_context.h"
 #include "../layers/sync/sync_settings.h"
+#include <thread>
 
 class PositiveSyncVal : public VkSyncValTest {};
 
-static const std::array syncval_enables = {VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
+static const std::array syncval_enables = { VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT };
 
-static const std::array syncval_disables = {
-    VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
-    VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+static const std::array syncval_disables = { VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
+                                             VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+                                             VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT,
+                                             VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT };
 
-
-void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings) {
+void VkSyncValTest::InitSyncValFramework(const SyncValSettings* p_sync_settings) {
     std::vector<VkLayerSettingEXT> settings;
 
     static const SyncValSettings test_default_sync_settings = [] {
@@ -41,15 +41,21 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings)
         settings.shader_accesses_heuristic = true;
         return settings;
     }();
-    const SyncValSettings &sync_settings = p_sync_settings ? *p_sync_settings : test_default_sync_settings;
+    const SyncValSettings& sync_settings = p_sync_settings ? *p_sync_settings : test_default_sync_settings;
 
     const auto submit_time_validation = static_cast<VkBool32>(sync_settings.submit_time_validation);
-    settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT,
-                                            1, &submit_time_validation});
+    settings.emplace_back(VkLayerSettingEXT{ OBJECT_LAYER_NAME,
+                                             "syncval_submit_time_validation",
+                                             VK_LAYER_SETTING_TYPE_BOOL32_EXT,
+                                             1,
+                                             &submit_time_validation });
 
     const auto shader_accesses_heuristic = static_cast<VkBool32>(sync_settings.shader_accesses_heuristic);
-    settings.emplace_back(VkLayerSettingEXT{OBJECT_LAYER_NAME, "syncval_shader_accesses_heuristic",
-                                            VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &shader_accesses_heuristic});
+    settings.emplace_back(VkLayerSettingEXT{ OBJECT_LAYER_NAME,
+                                             "syncval_shader_accesses_heuristic",
+                                             VK_LAYER_SETTING_TYPE_BOOL32_EXT,
+                                             1,
+                                             &shader_accesses_heuristic });
 
     VkLayerSettingsCreateInfoEXT settings_create_info = vku::InitStructHelper();
     settings_create_info.settingCount = size32(settings);
@@ -67,7 +73,7 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings)
     InitFramework(&validation_features);
 }
 
-void VkSyncValTest::InitSyncVal(const SyncValSettings *p_sync_settings) {
+void VkSyncValTest::InitSyncVal(const SyncValSettings* p_sync_settings) {
     RETURN_IF_SKIP(InitSyncValFramework(p_sync_settings));
     RETURN_IF_SKIP(InitState());
 }
@@ -80,9 +86,8 @@ void VkSyncValTest::InitTimelineSemaphore() {
 }
 
 TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
-    TEST_DESCRIPTION(
-        "Clear one attachment layer and copy to a different one."
-        "This checks for bug regression that produced a false-positive WAW hazard.");
+    TEST_DESCRIPTION("Clear one attachment layer and copy to a different one."
+                     "This checks for bug regression that produced a false-positive WAW hazard.");
 
     // VK_EXT_load_store_op_none is needed to disable render pass load/store accesses, so clearing
     // attachment inside a render pass can create hazards with the copy operations outside render pass.
@@ -117,7 +122,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
         return attachment;
     };
     const VkAttachmentDescription attachment = attachment_without_load_store(rt_format);
-    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+    const VkAttachmentReference color_ref = { 0, VK_IMAGE_LAYOUT_GENERAL };
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -147,18 +152,18 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     pipe.CreateGraphicsPipeline();
 
     VkImageCopy copy_region = {};
-    copy_region.srcSubresource = {VkImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT), 0, 0, 1};
-    copy_region.dstSubresource = {VkImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT), 0, 0 /* copy only to layer 0 */, 1};
-    copy_region.srcOffset = {0, 0, 0};
-    copy_region.dstOffset = {0, 0, 0};
-    copy_region.extent = {width, height, 1};
+    copy_region.srcSubresource = { VkImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT), 0, 0, 1 };
+    copy_region.dstSubresource = { VkImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT), 0, 0 /* copy only to layer 0 */, 1 };
+    copy_region.srcOffset = { 0, 0, 0 };
+    copy_region.dstOffset = { 0, 0, 0 };
+    copy_region.extent = { width, height, 1 };
 
     VkClearRect clear_rect = {};
-    clear_rect.rect.offset = {0, 0};
-    clear_rect.rect.extent = {width, height};
-    clear_rect.baseArrayLayer = 1;  // skip layer 0, clear only layer 1
+    clear_rect.rect.offset = { 0, 0 };
+    clear_rect.rect.extent = { width, height };
+    clear_rect.baseArrayLayer = 1; // skip layer 0, clear only layer 1
     clear_rect.layerCount = 1;
-    const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT};
+    const VkClearAttachment clear_attachment = { VK_IMAGE_ASPECT_COLOR_BIT };
 
     m_command_buffer.Begin();
     // Write 1: Copy to render target's layer 0
@@ -201,12 +206,20 @@ TEST_F(PositiveSyncVal, WriteToImageAfterTransition) {
     barrier.subresourceRange.layerCount = 1;
 
     VkBufferImageCopy region = {};
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageExtent = {width, height, 1};
+    region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.imageExtent = { width, height, 1 };
 
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
-                           1, &barrier);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_HOST_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &barrier);
     vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
     m_command_buffer.End();
 }
@@ -232,11 +245,11 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
     const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&semaphore_type_info);
     vkt::Semaphore semaphore(*m_device, create_info);
 
-    std::atomic<bool> bailout{false};
+    std::atomic<bool> bailout{ false };
     m_errorMonitor->SetBailout(&bailout);
 
     // Send signals
-    auto signaling_thread = std::thread{[&] {
+    auto signaling_thread = std::thread{ [&] {
         uint64_t last_signalled_value = 0;
         while (last_signalled_value != max_signal_value) {
             VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
@@ -247,7 +260,7 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOnHost) {
                 break;
             }
         }
-    }};
+    } };
     // Wait for each signal
     uint64_t wait_value = 1;
     while (wait_value <= max_signal_value) {
@@ -286,11 +299,11 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
     const VkSemaphoreCreateInfo create_info = vku::InitStructHelper(&semaphore_type_info);
     vkt::Semaphore semaphore(*m_device, create_info);
 
-    std::atomic<bool> bailout{false};
+    std::atomic<bool> bailout{ false };
     m_errorMonitor->SetBailout(&bailout);
 
     // Send signals
-    auto signaling_thread = std::thread{[&] {
+    auto signaling_thread = std::thread{ [&] {
         uint64_t last_signalled_value = 0;
         while (last_signalled_value != max_signal_value) {
             VkSemaphoreSignalInfo signal_info = vku::InitStructHelper();
@@ -301,7 +314,7 @@ TEST_F(PositiveSyncVal, SignalAndGetSemaphoreCounter) {
                 break;
             }
         }
-    }};
+    } };
     // Spin until semaphore payload value equals maximum signaled value
     uint64_t counter = 0;
     while (counter != max_signal_value) {
@@ -324,13 +337,13 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    constexpr uint64_t max_signal_value = 5'000;  // 15'000 in the original version for stress testing
-    constexpr int waiter_count = 8;               // 24 in the original version for stress testing
+    constexpr uint64_t max_signal_value = 5'000; // 15'000 in the original version for stress testing
+    constexpr int waiter_count = 8;              // 24 in the original version for stress testing
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     ThreadTimeoutHelper timeout_helper(waiter_count + 1 /* signaling thread*/);
 
-    std::atomic<bool> bailout{false};
+    std::atomic<bool> bailout{ false };
     m_errorMonitor->SetBailout(&bailout);
 
     // Start a bunch of waiter threads
@@ -365,25 +378,29 @@ TEST_F(PositiveSyncVal, GetSemaphoreCounterFromMultipleThreads) {
 
     constexpr int wait_time = 100;
     if (!timeout_helper.WaitForThreads(wait_time)) {
-        ADD_FAILURE() << "The waiting time for the worker threads exceeded the maximum limit: " << wait_time << " seconds.";
+        ADD_FAILURE() << "The waiting time for the worker threads exceeded the maximum limit: " << wait_time
+                      << " seconds.";
         bailout.store(true);
     }
-    for (auto &waiter : waiters) {
+    for (auto& waiter : waiters) {
         waiter.join();
     }
     signaling_thread.join();
 }
 
 TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
-    TEST_DESCRIPTION("Shader references a descriptor set that was not bound. SyncVal should not crash if core checks are disabled");
+    TEST_DESCRIPTION(
+        "Shader references a descriptor set that was not bound. SyncVal should not crash if core checks are disabled");
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
-    const vkt::DescriptorSetLayout set_layout(*m_device, {binding});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout, &set_layout});
-    OneOffDescriptorSet set(m_device, {binding});
+    const VkDescriptorSetLayoutBinding binding = {
+        0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr
+    };
+    const vkt::DescriptorSetLayout set_layout(*m_device, { binding });
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &set_layout, &set_layout });
+    OneOffDescriptorSet set(m_device, { binding });
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.layout = pipeline_layout.handle();
@@ -393,12 +410,14 @@ TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Bind set 0.
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(
+        m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &set.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // Core checks prevent SyncVal from running when error is found. This test has core checks disabled and also invalid
     // setup where a shader uses not bound set 1.
-    // Check that syncval does not cause out of bounds access (PerSet has single element (index 0), shader set index is 1).
+    // Check that syncval does not cause out of bounds access (PerSet has single element (index 0), shader set index is
+    // 1).
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     vk::CmdEndRenderPass(m_command_buffer);
@@ -427,17 +446,33 @@ TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
     barrier_a.dstAccessMask = 0;
     barrier_a.buffer = buffer;
     barrier_a.size = VK_WHOLE_SIZE;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
-                           &barrier_a, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           1,
+                           &barrier_a,
+                           0,
+                           nullptr);
 
     // Make writes visible
     VkBufferMemoryBarrier barrier_b = vku::InitStructHelper();
-    barrier_b.srcAccessMask = 0;  // already available
+    barrier_b.srcAccessMask = 0; // already available
     barrier_b.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier_b.buffer = buffer;
     barrier_b.size = VK_WHOLE_SIZE;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
-                           &barrier_b, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           1,
+                           &barrier_b,
+                           0,
+                           nullptr);
 
     // Perform one more copy. Should not generate WAW.
     vk::CmdCopyBuffer(m_command_buffer, staging_buffer, buffer, 1, &region);
@@ -445,16 +480,20 @@ TEST_F(PositiveSyncVal, SeparateAvailabilityAndVisibilityForBuffer) {
 }
 
 TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
-    TEST_DESCRIPTION(
-        "Image barrier makes image available but not visible. A subsequent layout transition barrier should not generate hazards. "
-        "Available memory is automatically made visible to a layout transition.");
+    TEST_DESCRIPTION("Image barrier makes image available but not visible. A subsequent layout transition barrier "
+                     "should not generate hazards. "
+                     "Available memory is automatically made visible to a layout transition.");
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
     constexpr VkDeviceSize buffer_size = 64 * 64 * 4;
     const vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    vkt::Image image(*m_device,
+                     64,
+                     64,
+                     1,
+                     VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -462,8 +501,8 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
 
     // Copy data from buffer to image
     VkBufferImageCopy region = {};
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageExtent = {64, 64, 1};
+    region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.imageExtent = { 64, 64, 1 };
     vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     // Make writes available
@@ -473,20 +512,36 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
     barrier_a.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier_a.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier_a.image = image;
-    barrier_a.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                           nullptr, 1, &barrier_a);
+    barrier_a.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &barrier_a);
 
     // Transition to new layout. Available memory should automatically be made visible to the layout transition.
     VkImageMemoryBarrier barrier_b = vku::InitStructHelper();
-    barrier_b.srcAccessMask = 0;  // already available
-    barrier_b.dstAccessMask = 0;  // for this test we don't care if the memory is visible after the transition or not
+    barrier_b.srcAccessMask = 0; // already available
+    barrier_b.dstAccessMask = 0; // for this test we don't care if the memory is visible after the transition or not
     barrier_b.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier_b.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     barrier_b.image = image;
-    barrier_b.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &barrier_b);
+    barrier_b.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &barrier_b);
     m_command_buffer.End();
 }
 
@@ -512,9 +567,10 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
         views[i] = images[i].CreateView();
     }
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, descriptor_type, 4, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           { 0, descriptor_type, 4, VK_SHADER_STAGE_ALL, nullptr },
+                                       });
     descriptor_set.WriteDescriptorImageInfo(0, views[0], VK_NULL_HANDLE, descriptor_type, image_layout, 0);
     descriptor_set.WriteDescriptorImageInfo(0, views[1], VK_NULL_HANDLE, descriptor_type, image_layout, 1);
     descriptor_set.WriteDescriptorImageInfo(0, views[2], VK_NULL_HANDLE, descriptor_type, image_layout, 2);
@@ -532,12 +588,12 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     )glsl";
     const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper gfx_pipe(*this);
-    gfx_pipe.shader_stages_ = {gfx_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    gfx_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    gfx_pipe.shader_stages_ = { gfx_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    gfx_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     gfx_pipe.CreateGraphicsPipeline();
 
     // Read from image 2 or 3
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set=0, binding=0, rgba8) uniform image2D image_array[];
@@ -547,21 +603,33 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
     cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     cs_pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     // Graphics pipeline writes
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              gfx_pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     // Compute pipeline reads
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              cs_pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -581,11 +649,14 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     const vkt::ImageView view = image.CreateView();
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
-    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 0);
-    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 1);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr },
+                                       });
+    descriptor_set.WriteDescriptorImageInfo(
+        0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(
+        0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL, 1);
     descriptor_set.UpdateDescriptorSets();
 
     // Write to image 0
@@ -598,12 +669,12 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     )glsl";
     const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper gfx_pipe(*this);
-    gfx_pipe.shader_stages_ = {gfx_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    gfx_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    gfx_pipe.shader_stages_ = { gfx_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    gfx_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     gfx_pipe.CreateGraphicsPipeline();
 
     // Read from image 1
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8) uniform image2D image_array[];
         void main() {
@@ -612,21 +683,33 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
     cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     cs_pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     // Graphics pipeline writes
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              gfx_pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     // Compute pipeline reads
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              cs_pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -635,7 +718,8 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
 }
 
 TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
-    TEST_DESCRIPTION("Access different elements of the texel buffer array using constant indices. There should be no hazards");
+    TEST_DESCRIPTION(
+        "Access different elements of the texel buffer array using constant indices. There should be no hazards");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitSyncValFramework());
@@ -647,9 +731,11 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     const vkt::BufferView buffer_view0(*m_device, vkt::BufferView::CreateInfo(buffer0, VK_FORMAT_R8G8B8A8_UINT));
     const vkt::BufferView buffer_view1(*m_device, vkt::BufferView::CreateInfo(buffer1, VK_FORMAT_R8G8B8A8_UINT));
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr },
+        });
     descriptor_set.WriteDescriptorBufferView(0, buffer_view0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 0);
     descriptor_set.WriteDescriptorBufferView(0, buffer_view1, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1);
     descriptor_set.UpdateDescriptorSets();
@@ -664,12 +750,12 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     )glsl";
     const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper gfx_pipe(*this);
-    gfx_pipe.shader_stages_ = {gfx_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    gfx_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    gfx_pipe.shader_stages_ = { gfx_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    gfx_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     gfx_pipe.CreateGraphicsPipeline();
 
     // Read from texel buffer 1
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8ui) uniform uimageBuffer texel_buffer_array[];
         void main() {
@@ -678,21 +764,33 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
     cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     cs_pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     // Graphics pipeline writes
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              gfx_pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     // Compute pipeline reads
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              cs_pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -716,7 +814,7 @@ TEST_F(PositiveSyncVal, QSBufferCopyHazardsDisabled) {
 
     VkSubmitInfo submit1 = vku::InitStructHelper();
     submit1.commandBufferCount = 2;
-    VkCommandBuffer two_cbs[2] = {test.h_cba, test.h_cbb};
+    VkCommandBuffer two_cbs[2] = { test.h_cba, test.h_cbb };
     submit1.pCommandBuffers = two_cbs;
 
     // This should be a hazard if we didn't disable it at InitSyncValFramework time
@@ -726,27 +824,30 @@ TEST_F(PositiveSyncVal, QSBufferCopyHazardsDisabled) {
 }
 
 TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
-    TEST_DESCRIPTION(
-        "Two submission batches synchronized with binary semaphore. Layout transition in the second batch should not interfere "
-        "with image read in the previous batch.");
+    TEST_DESCRIPTION("Two submission batches synchronized with binary semaphore. Layout transition in the second batch "
+                     "should not interfere "
+                     "with image read in the previous batch.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(
+        *m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     vkt::Semaphore semaphore(*m_device);
 
     // Submit 0: shader reads image data (read access)
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr } });
+    descriptor_set.WriteDescriptorImageInfo(
+        0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8) uniform image2D image;
         void main() {
@@ -755,13 +856,14 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
     cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     cs_pipe.CreateComputePipeline();
 
     vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.Begin();
     vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
-    vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(
+        cb, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(cb, 1, 1, 1);
     cb.End();
 
@@ -778,7 +880,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     layout_transition.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     layout_transition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     layout_transition.image = image;
-    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    layout_transition.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
@@ -794,16 +896,17 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
 }
 
 TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage2) {
-    TEST_DESCRIPTION(
-        "Two submission batches synchronized with binary semaphore. Layout transition in the second batch should not interfere "
-        "with image write in the first batch.");
+    TEST_DESCRIPTION("Two submission batches synchronized with binary semaphore. Layout transition in the second batch "
+                     "should not interfere "
+                     "with image write in the first batch.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(
+        *m_device, 64, 64, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
@@ -814,7 +917,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage2) {
     layout_transition.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     layout_transition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     layout_transition.image = image;
-    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    layout_transition.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
@@ -858,7 +961,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     layout_transition.image = image;
-    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    layout_transition.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
@@ -871,11 +974,13 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     m_default_queue->Submit2(cb, vkt::Signal(semaphore));
 
     // Submit1: wait for the semaphore and read image in the shader
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr } });
+    descriptor_set.WriteDescriptorImageInfo(
+        0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0, rgba8) uniform image2D image;
         void main() {
@@ -884,14 +989,14 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
     cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     cs_pipe.CreateComputePipeline();
 
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
     vk::CmdBindPipeline(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
-    vk::CmdBindDescriptorSets(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(
+        cb2, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDispatch(cb2, 1, 1, 1);
     cb2.End();
     m_default_queue->Submit2(cb2, vkt::Wait(semaphore));
@@ -912,7 +1017,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingColorResolve) {
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     auto color_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, color_format, usage);
-    color_ci.samples = VK_SAMPLE_COUNT_4_BIT;  // guaranteed by framebufferColorSampleCounts
+    color_ci.samples = VK_SAMPLE_COUNT_4_BIT; // guaranteed by framebufferColorSampleCounts
     vkt::Image color_image(*m_device, color_ci, vkt::set_layout);
     color_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     vkt::ImageView color_image_view = color_image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
@@ -933,7 +1038,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingColorResolve) {
     color_attachment.clearValue.color = m_clear_color;
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea.extent = {width, height};
+    rendering_info.renderArea.extent = { width, height };
     rendering_info.layerCount = 1;
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachments = &color_attachment;
@@ -964,7 +1069,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
     auto depth_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, depth_format, usage);
-    depth_ci.samples = VK_SAMPLE_COUNT_4_BIT;  // guaranteed by framebufferDepthSampleCounts
+    depth_ci.samples = VK_SAMPLE_COUNT_4_BIT; // guaranteed by framebufferDepthSampleCounts
     vkt::Image depth_image(*m_device, depth_ci, vkt::set_layout);
     depth_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -985,7 +1090,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
     depth_attachment.clearValue.depthStencil.depth = 1.0f;
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea.extent = {width, height};
+    rendering_info.renderArea.extent = { width, height };
     rendering_info.layerCount = 1;
     rendering_info.pDepthAttachment = &depth_attachment;
 
@@ -1064,16 +1169,17 @@ TEST_F(PositiveSyncVal, UpdateBuffer) {
 }
 
 TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
-    TEST_DESCRIPTION(
-        "Graphics queue: Image transition and subsequent image write are synchronized using a pipeline barrier. Transfer queue: "
-        "waits for the image layout transition using a semaphore. This should not affect pipeline barrier on the graphics queue");
+    TEST_DESCRIPTION("Graphics queue: Image transition and subsequent image write are synchronized using a pipeline "
+                     "barrier. Transfer queue: "
+                     "waits for the image layout transition using a semaphore. This should not affect pipeline barrier "
+                     "on the graphics queue");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Queue *transfer_queue = m_device->TransferOnlyQueue();
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
     if (!transfer_queue) {
         GTEST_SKIP() << "Transfer-only queue is not present";
     }
@@ -1082,8 +1188,8 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     vkt::Buffer buffer(*m_device, 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     VkBufferImageCopy region = {};
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageExtent = {64, 64, 1};
+    region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.imageExtent = { 64, 64, 1 };
 
     vkt::Semaphore semaphore(*m_device);
 
@@ -1099,7 +1205,7 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_barrier.image = image;
-    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    image_barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &image_barrier;
@@ -1110,7 +1216,8 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     // Submit 1: empty submit on Transfer queue that waits for Submit 0.
     transfer_queue->Submit2(vkt::no_cmd, vkt::Wait(semaphore));
 
-    // Submit 2: copy to image on Graphics queue. No synchronization is needed because of COPY+WRITE barrier from Submit 0.
+    // Submit 2: copy to image on Graphics queue. No synchronization is needed because of COPY+WRITE barrier from Submit
+    // 0.
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
     vk::CmdCopyBufferToImage(cb2, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
@@ -1139,9 +1246,12 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
     const VkImageLayout input_attachment_layout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
 
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(format, input_attachment_layout, input_attachment_layout, VK_ATTACHMENT_LOAD_OP_LOAD,
+    rp.AddAttachmentDescription(format,
+                                input_attachment_layout,
+                                input_attachment_layout,
+                                VK_ATTACHMENT_LOAD_OP_LOAD,
                                 VK_ATTACHMENT_STORE_OP_NONE);
-    rp.AddAttachmentReference({0, input_attachment_layout});
+    rp.AddAttachmentReference({ 0, input_attachment_layout });
     rp.AddInputAttachment(0);
     rp.CreateRenderPass();
 
@@ -1151,7 +1261,8 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
-    // Form an execution dependency with draw command (FRAGMENT_SHADER). Execution dependency is enough to sync with READ.
+    // Form an execution dependency with draw command (FRAGMENT_SHADER). Execution dependency is enough to sync with
+    // READ.
     layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     layout_transition.srcAccessMask = VK_ACCESS_2_NONE;
     layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
@@ -1159,19 +1270,21 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
     layout_transition.oldLayout = input_attachment_layout;
     layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     layout_transition.image = image;
-    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    layout_transition.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
     // Fragment shader READs input attachment.
     VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    OneOffDescriptorSet descriptor_set(m_device, {binding});
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-                                            input_attachment_layout);
+    const VkDescriptorSetLayoutBinding binding = {
+        0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr
+    };
+    OneOffDescriptorSet descriptor_set(m_device, { binding });
+    descriptor_set.WriteDescriptorImageInfo(
+        0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, input_attachment_layout);
     descriptor_set.UpdateDescriptorSets();
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
@@ -1182,8 +1295,8 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), fb);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(
+        m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
 
@@ -1271,25 +1384,28 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImage) {
     VkFormat mp_format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
     vk::GetPhysicalDeviceFormatProperties(Gpu(), mp_format, &format_properties);
     if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
-        GTEST_SKIP()
-            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
+        GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for "
+                        "VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
     }
 
-    const VkDeviceSize buffer_size = 32;  // enough for 8x8 BC1 region
-    vkt::Buffer src_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const VkDeviceSize buffer_size = 32; // enough for 8x8 BC1 region
+    vkt::Buffer src_buffer(
+        *m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vkt::Image dst_image(*m_device, 16, 16, 1, mp_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferImageCopy buffer_copy[2] = {};
-    buffer_copy[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    buffer_copy[0].imageOffset = {0, 0, 0};
-    buffer_copy[0].imageExtent = {8, 8, 1};
-    buffer_copy[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    buffer_copy[1].imageOffset = {8, 0, 0};
-    buffer_copy[1].imageExtent = {8, 8, 1};
+    buffer_copy[0].imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    buffer_copy[0].imageOffset = { 0, 0, 0 };
+    buffer_copy[0].imageExtent = { 8, 8, 1 };
+    buffer_copy[1].imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    buffer_copy[1].imageOffset = { 8, 0, 0 };
+    buffer_copy[1].imageExtent = { 8, 8, 1 };
 
     m_command_buffer.Begin();
-    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
-    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    vk::CmdCopyBufferToImage(
+        m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdCopyBufferToImage(
+        m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
     m_command_buffer.End();
 }
 
@@ -1303,25 +1419,28 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC) {
     VkFormat format = VK_FORMAT_ASTC_10x10_UNORM_BLOCK;
     vk::GetPhysicalDeviceFormatProperties(Gpu(), format, &format_properties);
     if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
-        GTEST_SKIP()
-            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_ASTC_10x10_UNORM_BLOCK, skipping test.\n";
+        GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for "
+                        "VK_FORMAT_ASTC_10x10_UNORM_BLOCK, skipping test.\n";
     }
 
-    const VkDeviceSize buffer_size = 32;  // enough for 20x10 ASTC_10x10 region
-    vkt::Buffer src_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const VkDeviceSize buffer_size = 32; // enough for 20x10 ASTC_10x10 region
+    vkt::Buffer src_buffer(
+        *m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vkt::Image dst_image(*m_device, 20, 10, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferImageCopy buffer_copy[2] = {};
-    buffer_copy[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    buffer_copy[0].imageOffset = {0, 0, 0};
-    buffer_copy[0].imageExtent = {10, 10, 1};
-    buffer_copy[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    buffer_copy[1].imageOffset = {10, 0, 0};
-    buffer_copy[1].imageExtent = {10, 10, 1};
+    buffer_copy[0].imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    buffer_copy[0].imageOffset = { 0, 0, 0 };
+    buffer_copy[0].imageExtent = { 10, 10, 1 };
+    buffer_copy[1].imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    buffer_copy[1].imageOffset = { 10, 0, 0 };
+    buffer_copy[1].imageExtent = { 10, 10, 1 };
 
     m_command_buffer.Begin();
-    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
-    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    vk::CmdCopyBufferToImage(
+        m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdCopyBufferToImage(
+        m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
     m_command_buffer.End();
 }
 
@@ -1335,25 +1454,28 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC2) {
     VkFormat format = VK_FORMAT_ASTC_10x10_UNORM_BLOCK;
     vk::GetPhysicalDeviceFormatProperties(Gpu(), format, &format_properties);
     if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
-        GTEST_SKIP()
-            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_ASTC_10x10_UNORM_BLOCK, skipping test.\n";
+        GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for "
+                        "VK_FORMAT_ASTC_10x10_UNORM_BLOCK, skipping test.\n";
     }
 
-    const VkDeviceSize buffer_size = 32;  // enough for 10x20 ASTC_10x10 region
-    vkt::Buffer src_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const VkDeviceSize buffer_size = 32; // enough for 10x20 ASTC_10x10 region
+    vkt::Buffer src_buffer(
+        *m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vkt::Image dst_image(*m_device, 10, 20, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferImageCopy buffer_copy[2] = {};
-    buffer_copy[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    buffer_copy[0].imageOffset = {0, 0, 0};
-    buffer_copy[0].imageExtent = {10, 10, 1};
-    buffer_copy[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    buffer_copy[1].imageOffset = {0, 10, 0};
-    buffer_copy[1].imageExtent = {10, 10, 1};
+    buffer_copy[0].imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    buffer_copy[0].imageOffset = { 0, 0, 0 };
+    buffer_copy[0].imageExtent = { 10, 10, 1 };
+    buffer_copy[1].imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    buffer_copy[1].imageOffset = { 0, 10, 0 };
+    buffer_copy[1].imageExtent = { 10, 10, 1 };
 
     m_command_buffer.Begin();
-    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
-    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    vk::CmdCopyBufferToImage(
+        m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdCopyBufferToImage(
+        m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
     m_command_buffer.End();
 }
 
@@ -1367,21 +1489,22 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC3) {
     VkFormat format = VK_FORMAT_ASTC_10x10_UNORM_BLOCK;
     vk::GetPhysicalDeviceFormatProperties(Gpu(), format, &format_properties);
     if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
-        GTEST_SKIP()
-            << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for VK_FORMAT_ASTC_10x10_UNORM_BLOCK, skipping test.\n";
+        GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_TRANSFER_DST_BIT for "
+                        "VK_FORMAT_ASTC_10x10_UNORM_BLOCK, skipping test.\n";
     }
 
-    const VkDeviceSize buffer_size = 64;  // enough for 20x20 ASTC_10x10 region
-    vkt::Buffer src_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const VkDeviceSize buffer_size = 64; // enough for 20x20 ASTC_10x10 region
+    vkt::Buffer src_buffer(
+        *m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vkt::Image dst_image(*m_device, 20, 20, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferImageCopy buffer_copy[2] = {};
-    buffer_copy[0].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    buffer_copy[0].imageOffset = {10, 10, 0};
-    buffer_copy[0].imageExtent = {10, 10, 1};
-    buffer_copy[1].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    buffer_copy[1].imageOffset = {10, 0, 0};
-    buffer_copy[1].imageExtent = {10, 20, 1};
+    buffer_copy[0].imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    buffer_copy[0].imageOffset = { 10, 10, 0 };
+    buffer_copy[0].imageExtent = { 10, 10, 1 };
+    buffer_copy[1].imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    buffer_copy[1].imageOffset = { 10, 0, 0 };
+    buffer_copy[1].imageExtent = { 10, 20, 1 };
 
     VkImageMemoryBarrier barrier = vku::InitStructHelper();
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1389,13 +1512,23 @@ TEST_F(PositiveSyncVal, CopyBufferToCompressedImageASTC3) {
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.image = dst_image;
-    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     m_command_buffer.Begin();
-    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                           nullptr, 1, &barrier);
-    vk::CmdCopyBufferToImage(m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
+    vk::CmdCopyBufferToImage(
+        m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[0]);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &barrier);
+    vk::CmdCopyBufferToImage(
+        m_command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy[1]);
     m_command_buffer.End();
 }
 
@@ -1426,7 +1559,8 @@ TEST_F(PositiveSyncVal, SignalAndWaitSemaphoreOneQueueSubmit) {
 }
 
 TEST_F(PositiveSyncVal, SignalUnsignalSignalMultipleSubmits) {
-    TEST_DESCRIPTION("Create a sequence that at some point unsignals and then signals a semaphore through separate submit calls");
+    TEST_DESCRIPTION(
+        "Create a sequence that at some point unsignals and then signals a semaphore through separate submit calls");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncVal());
@@ -1452,7 +1586,8 @@ TEST_F(PositiveSyncVal, SignalUnsignalSignalMultipleSubmits) {
 }
 
 TEST_F(PositiveSyncVal, SignalUnsignalSignalSingleSubmit) {
-    TEST_DESCRIPTION("Create a sequence that at some point unsignals and then signals a semaphore using a single submit call");
+    TEST_DESCRIPTION(
+        "Create a sequence that at some point unsignals and then signals a semaphore using a single submit call");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncVal());
@@ -1521,16 +1656,17 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedUniformBufferRegions) {
     vkt::Buffer buffer_a(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     vkt::Buffer buffer_b(*m_device, copy_dst_area_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        });
     // copy_dst_area_size offset ensures uniform region does not overlap with copy destination.
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), copy_dst_area_size, uniform_data_size,
-                                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(
+        0, buffer_a.handle(), copy_dst_area_size, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform buffer_a { uint x[8]; } constants;
         void main(){
@@ -1539,13 +1675,19 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedUniformBufferRegions) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
-                              0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     // Writes into region [0..127]
     VkBufferCopy region{};
@@ -1576,16 +1718,18 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
     vkt::Buffer buffer_a(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     vkt::Buffer buffer_b(*m_device, copy_dst_area_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        });
 
     // Specify 0 base offset, but dynamic offset will ensure that uniform data does not overlap with copy destination.
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+    descriptor_set.WriteDescriptorBufferInfo(
+        0, buffer_a.handle(), 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform buffer_a { uint x[8]; } constants;
         void main(){
@@ -1594,7 +1738,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     // this ensures copy region does not overlap with uniform data region
@@ -1602,8 +1746,14 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
-                              1, &dynamic_offset);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              1,
+                              &dynamic_offset);
 
     // Writes into region [0..127]
     VkBufferCopy region{};
@@ -1636,16 +1786,18 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions2) {
     vkt::Buffer buffer_a(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     vkt::Buffer buffer_b(*m_device, copy_dst_area_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        });
 
     // Specify 0 base offset, but dynamic offset will ensure that uniform data does not overlap with copy destination.
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+    descriptor_set.WriteDescriptorBufferInfo(
+        0, buffer_a.handle(), 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform buffer_a { uint x[8]; } constants;
         void main(){
@@ -1654,7 +1806,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions2) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     // this ensures copy region does not overlap with uniform data region
@@ -1662,8 +1814,14 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions2) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
-                              1, &dynamic_offset);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              1,
+                              &dynamic_offset);
 
     // Reads from region [128..159]
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1680,17 +1838,21 @@ TEST_F(PositiveSyncVal, ImageUsedInShaderWithoutAccess) {
     TEST_DESCRIPTION("Test that imageSize() query is not classified as image access");
     RETURN_IF_SKIP(InitSyncVal());
 
-    vkt::Buffer copy_source(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer copy_source(
+        *m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(
+        *m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT}});
-    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT } });
+    descriptor_set.WriteDescriptorImageInfo(
+        0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0, rgba8) uniform image2D image;
         void main(){
@@ -1699,17 +1861,23 @@ TEST_F(PositiveSyncVal, ImageUsedInShaderWithoutAccess) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     VkBufferImageCopy region{};
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageExtent = {32, 32, 1};
+    region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.imageExtent = { 32, 32, 1 };
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     // this should not cause WRITE-AFTER-READ because previous dispatch reads only image descriptor
     vk::CmdCopyBufferToImage(m_command_buffer.handle(), copy_source, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
@@ -1735,11 +1903,12 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches) {
 
     vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT}});
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT } });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer ssbo { uint data[]; };
         void main(){
@@ -1748,13 +1917,19 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
@@ -1767,11 +1942,12 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits) {
 
     vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT}});
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT } });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer ssbo { uint data[]; };
         void main(){
@@ -1780,13 +1956,19 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
@@ -1807,13 +1989,14 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches2) {
     vkt::Buffer counter_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     vkt::Buffer data_buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT},
-                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT}});
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT },
+                                         { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT } });
     descriptor_set.WriteDescriptorBufferInfo(0, counter_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(1, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer i_am_counter { uint counter[]; };
         layout(set=0, binding=1) buffer i_am_data { uint data[]; };
@@ -1824,13 +2007,19 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches2) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
@@ -1844,13 +2033,14 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits2) {
     vkt::Buffer counter_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     vkt::Buffer data_buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT},
-                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT}});
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT },
+                                         { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT } });
     descriptor_set.WriteDescriptorBufferInfo(0, counter_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(1, data_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer i_am_counter { uint counter[]; };
         layout(set=0, binding=1) buffer i_am_data { uint data[]; };
@@ -1861,13 +2051,19 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits2) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
@@ -1890,7 +2086,7 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitSyncVal());
 
-    vkt::Queue *transfer_queue = m_device->TransferOnlyQueue();
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
     if (!transfer_queue) {
         GTEST_SKIP() << "Transfer-only queue is needed";
     }
@@ -1908,8 +2104,8 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
     // Tranfer queue: copy to image and issue release operation
     {
         VkBufferImageCopy2 region = vku::InitStructHelper();
-        region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        region.imageExtent = {64, 64, 1};
+        region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+        region.imageExtent = { 64, 64, 1 };
 
         VkCopyBufferToImageInfo2 copy_info = vku::InitStructHelper();
         copy_info.srcBuffer = buffer;
@@ -1933,7 +2129,7 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
         release_barrier.srcQueueFamilyIndex = transfer_queue->family_index;
         release_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
         release_barrier.image = image;
-        release_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        release_barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
         VkDependencyInfo release_dependency = vku::InitStructHelper();
         release_dependency.imageMemoryBarrierCount = 1;
@@ -1963,7 +2159,7 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
         acquire_barrier.srcQueueFamilyIndex = transfer_queue->family_index;
         acquire_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
         acquire_barrier.image = image;
-        acquire_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        acquire_barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
         VkDependencyInfo acquire_dependency = vku::InitStructHelper();
         acquire_dependency.imageMemoryBarrierCount = 1;
@@ -1979,22 +2175,24 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
 }
 
 TEST_F(PositiveSyncVal, IndirectDrawAndSuballocatedVertexBuffer) {
-    TEST_DESCRIPTION("Indirect draw reads suballocated vertex buffer. CmdFillBuffer writes to another non-overlapped region");
+    TEST_DESCRIPTION(
+        "Indirect draw reads suballocated vertex buffer. CmdFillBuffer writes to another non-overlapped region");
     RETURN_IF_SKIP(InitSyncVal());
     InitRenderTarget();
 
     VkDrawIndirectCommand indirect_command = {};
     indirect_command.vertexCount = 3;
     indirect_command.instanceCount = 1;
-    vkt::Buffer indirect_buffer(*m_device, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, &indirect_command, sizeof(VkDrawIndirectCommand));
+    vkt::Buffer indirect_buffer(
+        *m_device, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, &indirect_command, sizeof(VkDrawIndirectCommand));
 
-    const size_t vertices_size = 3 * 3 * sizeof(float);  // 3 VK_FORMAT_R32G32B32_SFLOAT vertices
+    const size_t vertices_size = 3 * 3 * sizeof(float); // 3 VK_FORMAT_R32G32B32_SFLOAT vertices
     const size_t fill_region_size = 32;
     const VkDeviceSize buffer_size = vertices_size + fill_region_size;
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-    const VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
-    const VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    const VkVertexInputBindingDescription input_binding = { 0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX };
+    const VkVertexInputAttributeDescription input_attrib = { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0 };
 
     CreatePipelineHelper pipe(*this);
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
@@ -2020,7 +2218,8 @@ TEST_F(PositiveSyncVal, IndirectDrawAndSuballocatedVertexBuffer) {
 }
 
 TEST_F(PositiveSyncVal, IndirectDrawAndSuballocatedIndexBuffer) {
-    TEST_DESCRIPTION("Indirect draw reads suballocated index buffer. CmdFillBuffer writes to another non-overlapped region");
+    TEST_DESCRIPTION(
+        "Indirect draw reads suballocated index buffer. CmdFillBuffer writes to another non-overlapped region");
     RETURN_IF_SKIP(InitSyncVal());
     InitRenderTarget();
 
@@ -2028,20 +2227,21 @@ TEST_F(PositiveSyncVal, IndirectDrawAndSuballocatedIndexBuffer) {
     indirect_command.indexCount = 3;
     indirect_command.instanceCount = 1;
 
-    vkt::Buffer indirect_buffer(*m_device, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, &indirect_command,
-                                sizeof(VkDrawIndexedIndirectCommand));
+    vkt::Buffer indirect_buffer(
+        *m_device, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, &indirect_command, sizeof(VkDrawIndexedIndirectCommand));
 
-    const size_t vertices_size = 3 * 3 * sizeof(float);  // 3 VK_FORMAT_R32G32B32_SFLOAT vertices
+    const size_t vertices_size = 3 * 3 * sizeof(float); // 3 VK_FORMAT_R32G32B32_SFLOAT vertices
     vkt::Buffer vertex_buffer(*m_device, vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     constexpr size_t indices_size = 3 * sizeof(uint32_t);
     constexpr size_t fill_region_size = 12;
     constexpr VkDeviceSize buffer_size = indices_size + fill_region_size;
-    uint32_t buffer_data[buffer_size / sizeof(uint32_t)] = {0, 1, 2};  // initialize index region
-    vkt::Buffer buffer(*m_device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, buffer_data, buffer_size);
+    uint32_t buffer_data[buffer_size / sizeof(uint32_t)] = { 0, 1, 2 }; // initialize index region
+    vkt::Buffer buffer(
+        *m_device, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, buffer_data, buffer_size);
 
-    const VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
-    const VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    const VkVertexInputBindingDescription input_binding = { 0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX };
+    const VkVertexInputAttributeDescription input_attrib = { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0 };
 
     CreatePipelineHelper pipe(*this);
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
@@ -2077,21 +2277,23 @@ TEST_F(PositiveSyncVal, DynamicRenderingDSWithOnlyStencilAspect) {
     vkt::Image color_image(*m_device, 32u, 32u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView color_image_view = color_image.CreateView();
 
-    vkt::Image depth_image(*m_device, 32u, 32u, 1u, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image depth_image(
+        *m_device, 32u, 32u, 1u, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
 
     {
         RenderPassSingleSubpass rp(*this);
-        rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+        rp.AddAttachmentDescription(
+            VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
         rp.AddColorAttachment(0);
-        rp.AddAttachmentDescription(VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_LAYOUT_UNDEFINED,
-                                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+        rp.AddAttachmentDescription(
+            VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        rp.AddAttachmentReference({ 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL });
         rp.AddDepthStencilAttachment(1);
         rp.CreateRenderPass();
 
-        VkImageView image_views[] = {color_image_view, depth_image_view};
+        VkImageView image_views[] = { color_image_view, depth_image_view };
         vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2u, image_views);
 
         VkClearValue color_clear_value;
@@ -2103,7 +2305,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingDSWithOnlyStencilAspect) {
         VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
         render_pass_begin_info.renderPass = rp.Handle();
         render_pass_begin_info.framebuffer = framebuffer.handle();
-        render_pass_begin_info.renderArea = {{0, 0}, {32u, 32u}};
+        render_pass_begin_info.renderArea = { { 0, 0 }, { 32u, 32u } };
         render_pass_begin_info.clearValueCount = 1u;
         render_pass_begin_info.pClearValues = &color_clear_value;
 
@@ -2122,7 +2324,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingDSWithOnlyStencilAspect) {
     depth_stencil_attachment.imageView = depth_image_view.handle();
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.renderArea = { { 0, 0 }, { 32u, 32u } };
     rendering_info.layerCount = 1u;
     rendering_info.colorAttachmentCount = 1u;
     rendering_info.pColorAttachments = &color_attachment;

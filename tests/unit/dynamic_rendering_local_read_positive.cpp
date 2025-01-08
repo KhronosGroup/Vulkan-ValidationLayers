@@ -31,24 +31,31 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
 
-    vkt::Image image1(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image1(*m_device,
+                      32,
+                      32,
+                      1,
+                      VK_FORMAT_R8G8B8A8_UNORM,
+                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
+                          VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
-    vkt::Image image2(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image2(*m_device,
+                      32,
+                      32,
+                      1,
+                      VK_FORMAT_R8G8B8A8_UNORM,
+                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
+                          VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
     CreatePipelineHelper pipe1(*this);
     CreatePipelineHelper pipe2(*this);
-    for (uint32_t i = 0; i < 2; i++)
-    {
+    for (uint32_t i = 0; i < 2; i++) {
         CreatePipelineHelper* pipe = (i == 0) ? &pipe1 : &pipe2;
-        VkFormat color_formats[] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
+        VkFormat color_formats[] = { VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED };
 
         // Images mapped differently in pipe1 and pipe2
-        uint32_t locations[] = {i, 1 - i};
-        uint32_t inputs[] = {i, 1 - i};
+        uint32_t locations[] = { i, 1 - i };
+        uint32_t inputs[] = { i, 1 - i };
 
         VkRenderingInputAttachmentIndexInfo inputs_info = vku::InitStructHelper();
         inputs_info.colorAttachmentCount = 2;
@@ -71,7 +78,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
         pipe->CreateGraphicsPipeline();
     }
 
-    VkRenderingAttachmentInfo color_attachments[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    VkRenderingAttachmentInfo color_attachments[2] = { vku::InitStructHelper(), vku::InitStructHelper() };
     color_attachments[0].imageLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
     color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
 
@@ -79,23 +86,23 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
     begin_rendering_info.colorAttachmentCount = 2;
     begin_rendering_info.pColorAttachments = &color_attachments[0];
     begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    begin_rendering_info.renderArea = { { 0, 0 }, { 1, 1 } };
 
     m_command_buffer.Begin();
 
-    VkImageMemoryBarrier pre_barriers[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    VkImageMemoryBarrier pre_barriers[2] = { vku::InitStructHelper(), vku::InitStructHelper() };
     pre_barriers[0].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     pre_barriers[0].srcAccessMask = 0;
     pre_barriers[0].newLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
     pre_barriers[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     pre_barriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     pre_barriers[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    pre_barriers[0].subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u};
+    pre_barriers[0].subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u };
     pre_barriers[1] = pre_barriers[0];
     pre_barriers[0].image = image1.handle();
     pre_barriers[1].image = image2.handle();
 
-    VkImageMemoryBarrier post_barriers[2] = {pre_barriers[0], pre_barriers[1]};
+    VkImageMemoryBarrier post_barriers[2] = { pre_barriers[0], pre_barriers[1] };
 
     post_barriers[0].oldLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
     post_barriers[0].newLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
@@ -106,17 +113,33 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
     post_barriers[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     post_barriers[1].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
 
-    vk::CmdPipelineBarrier(m_command_buffer, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0,
-                           nullptr, 0, nullptr, 2, &pre_barriers[0]);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           0,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           2,
+                           &pre_barriers[0]);
 
     m_command_buffer.BeginRendering(begin_rendering_info);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 2, &post_barriers[0]);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           2,
+                           &post_barriers[0]);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
 
-    uint32_t locations[] = {1, 0};
+    uint32_t locations[] = { 1, 0 };
     VkRenderingAttachmentLocationInfo location_info = vku::InitStructHelper();
     location_info.colorAttachmentCount = 2;
     location_info.pColorAttachmentLocations = locations;
@@ -155,14 +178,14 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdClearAttachments) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea = {{0, 0}, {m_width, m_height}};
+    rendering_info.renderArea = { { 0, 0 }, { m_width, m_height } };
     rendering_info.layerCount = 1;
     rendering_info.colorAttachmentCount = 2;
     rendering_info.pColorAttachments = color_attachments;
 
     m_command_buffer.BeginRendering(rendering_info);
 
-    uint32_t locations[2] = {0, VK_ATTACHMENT_UNUSED};
+    uint32_t locations[2] = { 0, VK_ATTACHMENT_UNUSED };
     VkRenderingAttachmentLocationInfo location_info = vku::InitStructHelper();
     location_info.colorAttachmentCount = 2;
     location_info.pColorAttachmentLocations = locations;
@@ -176,7 +199,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdClearAttachments) {
     clear_attachment.clearValue.color.float32[2] = 1.0;
     clear_attachment.clearValue.color.float32[3] = 1.0;
     clear_attachment.colorAttachment = 0;
-    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
+    VkClearRect clear_rect = { { { 0, 0 }, { m_width, m_height } }, 0, 1 };
 
     vk::CmdClearAttachments(m_command_buffer.handle(), 1, &clear_attachment, 1, &clear_rect);
 }
@@ -203,7 +226,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdClearDepthAttachment) {
     depthAttachment.clearValue = clearValue;
 
     VkRenderingInfo renderingInfo = vku::InitStructHelper();
-    renderingInfo.renderArea = {{0, 0}, {32u, 32u}};
+    renderingInfo.renderArea = { { 0, 0 }, { 32u, 32u } };
     renderingInfo.layerCount = 1u;
     renderingInfo.pDepthAttachment = &depthAttachment;
 
@@ -217,7 +240,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdClearDepthAttachment) {
     attachment.clearValue = clearValue;
 
     VkClearRect rect;
-    rect.rect = {{0, 0}, {32u, 32u}};
+    rect.rect = { { 0, 0 }, { 32u, 32u } };
     rect.baseArrayLayer = 0u;
     rect.layerCount = 1u;
 

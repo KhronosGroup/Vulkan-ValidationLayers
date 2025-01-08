@@ -22,13 +22,14 @@
  *
  ****************************************************************************/
 // NOLINTBEGIN
-#include <string>
-#include <string_view>
 #include <functional>
 #include <spirv/unified1/spirv.hpp>
-#include "vk_extension_helper.h"
-#include "state_tracker/shader_instruction.h"
+#include <string>
+#include <string_view>
+
 #include "core_checks/core_validation.h"
+#include "state_tracker/shader_instruction.h"
+#include "vk_extension_helper.h"
 
 struct FeaturePointer {
     // Callable object to test if this feature is enabled in the given aggregate feature struct

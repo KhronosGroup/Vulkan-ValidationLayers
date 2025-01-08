@@ -10,9 +10,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 
 class NegativePortabilitySubset : public VkLayerTest {};
 
@@ -43,7 +43,7 @@ TEST_F(NegativePortabilitySubset, Device) {
     dev_info.ppEnabledLayerNames = NULL;
     dev_info.enabledExtensionCount = 0;
     dev_info.ppEnabledExtensionNames =
-        nullptr;  // VK_KHR_portability_subset not included in enabled extensions should trigger 04451
+        nullptr; // VK_KHR_portability_subset not included in enabled extensions should trigger 04451
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pProperties-04451");
     VkDevice device;
@@ -58,7 +58,7 @@ TEST_F(NegativePortabilitySubset, Event) {
 
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_feature = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(portability_feature);
-    portability_feature.events = VK_FALSE;  // Make sure events are disabled
+    portability_feature.events = VK_FALSE; // Make sure events are disabled
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
@@ -140,7 +140,7 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatSwizzle) {
     ci.components.g = VK_COMPONENT_SWIZZLE_G;
     ci.components.b = VK_COMPONENT_SWIZZLE_R;
     ci.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    ci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     CreateImageViewTest(*this, &ci, "VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465");
 
     // Verify using VK_COMPONENT_SWIZZLE_R/G/B/A works when imageViewFormatSwizzle == VK_FALSE
@@ -187,7 +187,7 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatReinterpretationComponentCount)
     ci.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
     ci.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
     ci.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    ci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     // Format might not be supported
     // TODO - Need to figure out which format is supported that hits 04466
     m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-None-02273");
@@ -223,16 +223,21 @@ TEST_F(NegativePortabilitySubset, TriangleFans) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
-    pipe.ia_ci_ = VkPipelineInputAssemblyStateCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, VK_FALSE};
+    pipe.ia_ci_ = VkPipelineInputAssemblyStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                                                          nullptr,
+                                                          0,
+                                                          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+                                                          VK_FALSE };
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo() };
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452");
     pipe.CreateGraphicsPipeline();
@@ -256,23 +261,29 @@ TEST_F(NegativePortabilitySubset, VertexInputStride) {
     auto vertex_stride = portability_properties.minVertexInputBindingStrideAlignment - 1;
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription vertex_desc{
-        0,                            // binding
-        vertex_stride,                // stride
-        VK_VERTEX_INPUT_RATE_VERTEX,  // inputRate
+        0,                           // binding
+        vertex_stride,               // stride
+        VK_VERTEX_INPUT_RATE_VERTEX, // inputRate
     };
     pipe.vi_ci_ = VkPipelineVertexInputStateCreateInfo{
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 1, &vertex_desc, 0, nullptr};
-    pipe.ia_ci_ = VkPipelineInputAssemblyStateCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 1, &vertex_desc, 0, nullptr
+    };
+    pipe.ia_ci_ = VkPipelineInputAssemblyStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                                                          nullptr,
+                                                          0,
+                                                          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                                                          VK_FALSE };
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo() };
 
     m_errorMonitor->SetDesiredError("VUID-VkVertexInputBindingDescription-stride-04456");
     pipe.CreateGraphicsPipeline();
@@ -290,27 +301,30 @@ TEST_F(NegativePortabilitySubset, VertexAttributes) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     VkVertexInputBindingDescription vertex_desc{
-        0,                            // binding
-        4,                            // stride
-        VK_VERTEX_INPUT_RATE_VERTEX,  // inputRate
+        0,                           // binding
+        4,                           // stride
+        VK_VERTEX_INPUT_RATE_VERTEX, // inputRate
     };
     VkVertexInputAttributeDescription vertex_attrib{
-        0,                     // location
-        0,                     // binding
-        VK_FORMAT_R32_SFLOAT,  // format; size == 4
-        4,                     // offset; size(format) + offset > description.stride, so this should trigger 04457
+        0,                    // location
+        0,                    // binding
+        VK_FORMAT_R32_SFLOAT, // format; size == 4
+        4,                    // offset; size(format) + offset > description.stride, so this should trigger 04457
     };
     pipe.vi_ci_ = VkPipelineVertexInputStateCreateInfo{
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 1, &vertex_desc, 1, &vertex_attrib};
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 1, &vertex_desc, 1, &vertex_attrib
+    };
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo() };
 
     m_errorMonitor->SetDesiredError("VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457");
     pipe.CreateGraphicsPipeline();
@@ -371,9 +385,11 @@ TEST_F(NegativePortabilitySubset, DepthStencilState) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil_ci = vku::InitStructHelper();
@@ -385,7 +401,7 @@ TEST_F(NegativePortabilitySubset, DepthStencilState) {
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
     pipe.rs_state_ci_.cullMode = VK_CULL_MODE_NONE;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo() };
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453");
     pipe.CreateGraphicsPipeline();
@@ -393,8 +409,8 @@ TEST_F(NegativePortabilitySubset, DepthStencilState) {
 
     // Ensure using without depth-stencil works
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    // pDepthStencilState should be ignored if rasterization is disabled or if the referenced subpass does not use a depth/stencil
-    // attachment
+    // pDepthStencilState should be ignored if rasterization is disabled or if the referenced subpass does not use a
+    // depth/stencil attachment
     pipe.gp_ci_.pDepthStencilState = nullptr;
     pipe.CreateGraphicsPipeline();
 }
@@ -446,17 +462,18 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    sampler_info.compareEnable = VK_TRUE;  // Incompatible with portability setting
+    sampler_info.compareEnable = VK_TRUE; // Incompatible with portability setting
     vkt::Sampler sampler(*m_device, sampler_info);
 
     constexpr VkFormat img_format = VK_FORMAT_R8G8B8A8_UNORM;
     vkt::Image image(*m_device, 32, 32, 1, img_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.Layout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+        });
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
     auto image_view_create_info = image.BasicViewCreatInfo();
     vkt::ImageView view(*m_device, image_view_create_info);
 
@@ -485,18 +502,24 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_feature = vku::InitStructHelper();
     auto features2 = GetPhysicalDeviceFeatures2(portability_feature);
-    portability_feature.tessellationIsolines = VK_FALSE;                    // Make sure IsoLines are disabled
-    portability_feature.tessellationPointMode = VK_FALSE;                   // Make sure PointMode is disabled
-    portability_feature.shaderSampleRateInterpolationFunctions = VK_FALSE;  // Make sure interpolation functions are disabled
+    portability_feature.tessellationIsolines = VK_FALSE;  // Make sure IsoLines are disabled
+    portability_feature.tessellationPointMode = VK_FALSE; // Make sure PointMode is disabled
+    portability_feature.shaderSampleRateInterpolationFunctions =
+        VK_FALSE; // Make sure interpolation functions are disabled
 
     RETURN_IF_SKIP(InitState(nullptr, &features2));
     InitRenderTarget();
 
     VkShaderObj tsc_obj(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
 
-    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
-    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+    VkPipelineInputAssemblyStateCreateInfo iasci{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                                                  nullptr,
+                                                  0,
+                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+                                                  VK_FALSE };
+    VkPipelineTessellationStateCreateInfo tsci{
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3
+    };
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
@@ -504,11 +527,11 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
     pipe.ia_ci_ = iasci;
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.tess_ci_ = tsci;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), tsc_obj.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), tsc_obj.GetStageCreateInfo() };
 
     // Attempt to use isolines in the TES shader when not available
     {
-        static const char *tes_source = R"glsl(
+        static const char* tes_source = R"glsl(
             #version 450
             layout(isolines, equal_spacing, cw) in;
             void main() {
@@ -524,7 +547,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     // Attempt to use point_mode in the TES shader when not available
     {
-        static const char *tes_source = R"glsl(
+        static const char* tes_source = R"glsl(
             #version 450
             layout(triangles, point_mode) in;
             void main() {
@@ -536,7 +559,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         // Reset TES shader stage
         pipe.InitShaderInfo();
         VkShaderObj tes_obj(this, tes_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-        pipe.shader_stages_ = {vs.GetStageCreateInfo(), tsc_obj.GetStageCreateInfo(), tes_obj.GetStageCreateInfo()};
+        pipe.shader_stages_ = { vs.GetStageCreateInfo(), tsc_obj.GetStageCreateInfo(), tes_obj.GetStageCreateInfo() };
 
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-tessellationShader-06327");
         pipe.CreateGraphicsPipeline();
@@ -545,7 +568,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     // Attempt to use interpolation functions when not supported
     {
-        static const char *vs_source = R"glsl(
+        static const char* vs_source = R"glsl(
             #version 450
             layout(location = 0) out vec4 c;
             void main() {
@@ -555,7 +578,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         )glsl";
         VkShaderObj vs_obj(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-        static const char *fs_source = R"glsl(
+        static const char* fs_source = R"glsl(
             #version 450
             layout(location = 0) in vec4 c;
             layout(location = 0) out vec4 frag_out;
@@ -570,7 +593,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
         raster_pipe.ia_ci_ = iasci;
         raster_pipe.ia_ci_ = iasci;
         raster_pipe.tess_ci_ = tsci;
-        raster_pipe.shader_stages_ = {vs_obj.GetStageCreateInfo(), fs_obj.GetStageCreateInfo()};
+        raster_pipe.shader_stages_ = { vs_obj.GetStageCreateInfo(), fs_obj.GetStageCreateInfo() };
         m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325");
         raster_pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
@@ -620,8 +643,8 @@ TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
     m_errorMonitor->VerifyFound();
 
     if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
-        std::vector<const char *> enabled_extensions = {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
-                                                        VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
+        std::vector<const char*> enabled_extensions = { VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+                                                        VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
         ici.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
         ici.ppEnabledExtensionNames = enabled_extensions.data();
 

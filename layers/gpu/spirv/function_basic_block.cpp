@@ -40,15 +40,17 @@ void Function::ToBinary(std::vector<uint32_t>& out) {
 
 BasicBlock::BasicBlock(std::unique_ptr<Instruction> label, Function& function) : function_(function) {
     // Used when loading initial SPIR-V
-    instructions_.emplace_back(std::move(label));  // OpLabel
+    instructions_.emplace_back(std::move(label)); // OpLabel
 }
 
 BasicBlock::BasicBlock(Module& module, Function& function) : function_(function) {
     uint32_t new_label_id = module.TakeNextId();
-    CreateInstruction(spv::OpLabel, {new_label_id});
+    CreateInstruction(spv::OpLabel, { new_label_id });
 }
 
-uint32_t BasicBlock::GetLabelId() { return (*(instructions_[0])).ResultId(); }
+uint32_t BasicBlock::GetLabelId() {
+    return (*(instructions_[0])).ResultId();
+}
 
 InstructionIt BasicBlock::GetFirstInjectableInstrution() {
     InstructionIt inst_it;
@@ -73,7 +75,8 @@ InstructionIt BasicBlock::GetLastInjectableInstrution() {
             case spv::OpTerminateInvocation:
                 break;
             default:
-                // this works because we know we are not at rend() and there MUST be at least one termination instruction
+                // this works because we know we are not at rend() and there MUST be at least one termination
+                // instruction
                 return (inst_it).base();
         }
     }
@@ -106,12 +109,12 @@ void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& 
 
 Function::Function(Module& module, std::unique_ptr<Instruction> function_inst) : module_(module) {
     // Used when loading initial SPIR-V
-    pre_block_inst_.emplace_back(std::move(function_inst));  // OpFunction
+    pre_block_inst_.emplace_back(std::move(function_inst)); // OpFunction
 }
 
 BasicBlockIt Function::InsertNewBlock(BasicBlockIt it) {
     auto new_block = std::make_unique<BasicBlock>(module_, (*it)->function_);
-    it++;  // make sure it inserted after
+    it++; // make sure it inserted after
     BasicBlockIt new_block_it = blocks_.insert(it, std::move(new_block));
 
     return new_block_it;
@@ -134,7 +137,7 @@ void Function::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& wo
     for (auto& block : blocks_) {
         for (auto inst_it = block->instructions_.begin(); inst_it != block->instructions_.end(); ++inst_it) {
             if ((*inst_it)->ResultId() == id) {
-                inst_it++;  // insert after
+                inst_it++; // insert after
                 block->CreateInstruction(opcode, words, &inst_it);
                 return;
             }
@@ -146,8 +149,8 @@ void Function::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& wo
 void Function::ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word) {
     // Shouldn't have to replace anything outside the IDs in function blocks.
     //
-    // This call only needed at a Function block level when not dealing with OpVariable as other instructions won't have to worry
-    // about decorations/types/etc from pre-Function blocks (such as OpEntryPoint)
+    // This call only needed at a Function block level when not dealing with OpVariable as other instructions won't have
+    // to worry about decorations/types/etc from pre-Function blocks (such as OpEntryPoint)
     assert(FindInstruction(old_word)->Opcode() != spv::OpVariable);
 
     // Because the caller might still be moving around blocks, need to just search all blocks currently
@@ -158,5 +161,5 @@ void Function::ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word) {
     }
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

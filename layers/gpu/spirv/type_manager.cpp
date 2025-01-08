@@ -100,7 +100,7 @@ const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType 
             function_types_.push_back(new_type);
             break;
         case SpvType::kStruct:
-            break;  // don't track structs currently
+            break; // don't track structs currently
         default:
             assert(false && "unsupported SpvType");
             break;
@@ -162,7 +162,7 @@ const Type& TypeManager::GetTypeVoid() {
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(2, spv::OpTypeVoid);
-    new_inst->Fill({type_id});
+    new_inst->Fill({ type_id });
     return AddType(std::move(new_inst), SpvType::kVoid);
 }
 
@@ -173,7 +173,7 @@ const Type& TypeManager::GetTypeBool() {
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(2, spv::OpTypeBool);
-    new_inst->Fill({type_id});
+    new_inst->Fill({ type_id });
     return AddType(std::move(new_inst), SpvType::kBool);
 }
 
@@ -184,7 +184,7 @@ const Type& TypeManager::GetTypeSampler() {
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(2, spv::OpTypeSampler);
-    new_inst->Fill({type_id});
+    new_inst->Fill({ type_id });
     return AddType(std::move(new_inst), SpvType::kSampler);
 }
 
@@ -195,7 +195,7 @@ const Type& TypeManager::GetTypeRayQuery() {
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(2, spv::OpTypeRayQueryKHR);
-    new_inst->Fill({type_id});
+    new_inst->Fill({ type_id });
     return AddType(std::move(new_inst), SpvType::kRayQueryKHR);
 }
 
@@ -206,7 +206,7 @@ const Type& TypeManager::GetTypeAccelerationStructure() {
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(2, spv::OpTypeAccelerationStructureKHR);
-    new_inst->Fill({type_id});
+    new_inst->Fill({ type_id });
     return AddType(std::move(new_inst), SpvType::kAccelerationStructureKHR);
 }
 
@@ -222,7 +222,7 @@ const Type& TypeManager::GetTypeInt(uint32_t bit_width, bool is_signed) {
     const uint32_t type_id = module_.TakeNextId();
     const uint32_t signed_word = is_signed ? 1 : 0;
     auto new_inst = std::make_unique<Instruction>(4, spv::OpTypeInt);
-    new_inst->Fill({type_id, bit_width, signed_word});
+    new_inst->Fill({ type_id, bit_width, signed_word });
     return AddType(std::move(new_inst), SpvType::kInt);
 }
 
@@ -236,7 +236,7 @@ const Type& TypeManager::GetTypeFloat(uint32_t bit_width) {
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(3, spv::OpTypeFloat);
-    new_inst->Fill({type_id, bit_width});
+    new_inst->Fill({ type_id, bit_width });
     return AddType(std::move(new_inst), SpvType::kFloat);
 }
 
@@ -252,7 +252,7 @@ const Type& TypeManager::GetTypeArray(const Type& element_type, const Constant& 
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(4, spv::OpTypeArray);
-    new_inst->Fill({type_id, element_type.Id(), length.Id()});
+    new_inst->Fill({ type_id, element_type.Id(), length.Id() });
     return AddType(std::move(new_inst), SpvType::kArray);
 }
 
@@ -266,7 +266,7 @@ const Type& TypeManager::GetTypeRuntimeArray(const Type& element_type) {
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(3, spv::OpTypeRuntimeArray);
-    new_inst->Fill({type_id, element_type.Id()});
+    new_inst->Fill({ type_id, element_type.Id() });
     return AddType(std::move(new_inst), SpvType::kRuntimeArray);
 }
 
@@ -285,7 +285,7 @@ const Type& TypeManager::GetTypeVector(const Type& component_type, uint32_t comp
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(4, spv::OpTypeVector);
-    new_inst->Fill({type_id, component_type.Id(), component_count});
+    new_inst->Fill({ type_id, component_type.Id(), component_count });
     return AddType(std::move(new_inst), SpvType::kVector);
 }
 
@@ -304,7 +304,7 @@ const Type& TypeManager::GetTypeMatrix(const Type& column_type, uint32_t column_
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(4, spv::OpTypeMatrix);
-    new_inst->Fill({type_id, column_type.Id(), column_count});
+    new_inst->Fill({ type_id, column_type.Id(), column_count });
     return AddType(std::move(new_inst), SpvType::kMatrix);
 }
 
@@ -319,7 +319,7 @@ const Type& TypeManager::GetTypeSampledImage(const Type& image_type) {
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(3, spv::OpTypeSampledImage);
-    new_inst->Fill({type_id, image_type.Id()});
+    new_inst->Fill({ type_id, image_type.Id() });
     return AddType(std::move(new_inst), SpvType::kSampledImage);
 }
 
@@ -338,7 +338,7 @@ const Type& TypeManager::GetTypePointer(spv::StorageClass storage_class, const T
 
     const uint32_t type_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(4, spv::OpTypePointer);
-    new_inst->Fill({type_id, uint32_t(storage_class), pointer_type.Id()});
+    new_inst->Fill({ type_id, uint32_t(storage_class), pointer_type.Id() });
     return AddType(std::move(new_inst), SpvType::kPointer);
 }
 
@@ -480,7 +480,7 @@ const Constant& TypeManager::CreateConstantUInt32(uint32_t value) {
     const Type& type = GetTypeInt(32, 0);
     const uint32_t constant_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(4, spv::OpConstant);
-    new_inst->Fill({type.Id(), constant_id, value});
+    new_inst->Fill({ type.Id(), constant_id, value });
     return AddConstant(std::move(new_inst), type);
 }
 
@@ -517,7 +517,7 @@ const Constant& TypeManager::GetConstantZeroFloat32() {
         if (!float_32bit_zero_constants_) {
             const uint32_t constant_id = module_.TakeNextId();
             auto new_inst = std::make_unique<Instruction>(4, spv::OpConstant);
-            new_inst->Fill({float_32_type.Id(), constant_id, 0});
+            new_inst->Fill({ float_32_type.Id(), constant_id, 0 });
             float_32bit_zero_constants_ = &AddConstant(std::move(new_inst), float_32_type);
         }
     }
@@ -531,7 +531,7 @@ const Constant& TypeManager::GetConstantZeroVec3() {
 
     const uint32_t constant_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(6, spv::OpConstantComposite);
-    new_inst->Fill({vec3_type.Id(), constant_id, float32_0_id, float32_0_id, float32_0_id});
+    new_inst->Fill({ vec3_type.Id(), constant_id, float32_0_id, float32_0_id, float32_0_id });
     return AddConstant(std::move(new_inst), vec3_type);
 }
 
@@ -544,7 +544,7 @@ const Constant& TypeManager::GetConstantNull(const Type& type) {
 
     const uint32_t constant_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(3, spv::OpConstantNull);
-    new_inst->Fill({type.Id(), constant_id});
+    new_inst->Fill({ type.Id(), constant_id });
     return AddConstant(std::move(new_inst), type);
 }
 
@@ -568,5 +568,5 @@ const Variable* TypeManager::FindVariableById(uint32_t id) const {
     return (variable == id_to_variable_.end()) ? nullptr : variable->second.get();
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

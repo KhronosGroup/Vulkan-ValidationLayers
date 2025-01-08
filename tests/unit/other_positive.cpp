@@ -21,15 +21,15 @@ class VkPositiveLayerTest : public VkLayerTest {};
 TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     TEST_DESCRIPTION("Specify a non-zero value for a reserved parameter with stateless validation disabled");
 
-    VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT};
+    VkValidationFeatureDisableEXT disables[] = { VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT };
     VkValidationFeaturesEXT features = {};
     features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
     features.disabledValidationFeatureCount = 1;
     features.pDisabledValidationFeatures = disables;
     RETURN_IF_SKIP(Init(nullptr, nullptr, &features));
 
-    // Specify 0 for a reserved VkFlags parameter. Normally this is expected to trigger an stateless validation error, but this
-    // validation was disabled via the features extension, so no errors should be forthcoming.
+    // Specify 0 for a reserved VkFlags parameter. Normally this is expected to trigger an stateless validation error,
+    // but this validation was disabled via the features extension, so no errors should be forthcoming.
     VkEventCreateInfo event_info = vku::InitStructHelper();
     event_info.flags = 1;
     vkt::Event event(*m_device, event_info);
@@ -43,7 +43,7 @@ TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
     vkt::CommandBuffer cmd_buf(*m_device, m_command_pool);
     cmd_buf.Begin();
     // Set Negative height, should give error if Maintenance 1 is not enabled
-    VkViewport viewport = {0, 0, 16, -16, 0, 1};
+    VkViewport viewport = { 0, 0, 16, -16, 0, 1 };
     vk::CmdSetViewport(cmd_buf.handle(), 0, 1, &viewport);
     cmd_buf.End();
 }
@@ -188,11 +188,12 @@ TEST_F(VkPositiveLayerTest, ModifyPnext) {
 }
 
 TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
-    TEST_DESCRIPTION("Use first queue family and one queue without first querying with vkGetPhysicalDeviceQueueFamilyProperties");
+    TEST_DESCRIPTION(
+        "Use first queue family and one queue without first querying with vkGetPhysicalDeviceQueueFamilyProperties");
 
     RETURN_IF_SKIP(InitFramework());
 
-    const float q_priority[] = {1.0f};
+    const float q_priority[] = { 1.0f };
     VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
     queue_ci.queueFamilyIndex = 0;
     queue_ci.queueCount = 1;
@@ -227,11 +228,13 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     RETURN_IF_SKIP(Init());
     auto vkTrimCommandPool = vk::GetDeviceProcAddr(device(), "vkTrimCommandPool");
     auto vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(device(), "vkTrimCommandPoolKHR");
-    if (nullptr == vkTrimCommandPool) m_errorMonitor->SetError("Unexpected null pointer");
-    if (nullptr != vkTrimCommandPoolKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
+    if (nullptr == vkTrimCommandPool)
+        m_errorMonitor->SetError("Unexpected null pointer");
+    if (nullptr != vkTrimCommandPoolKHR)
+        m_errorMonitor->SetError("Didn't receive expected null pointer");
 
-    const char *const extension = {VK_KHR_MAINTENANCE_1_EXTENSION_NAME};
-    const float q_priority[] = {1.0f};
+    const char* const extension = { VK_KHR_MAINTENANCE_1_EXTENSION_NAME };
+    const float q_priority[] = { 1.0f };
     VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
     queue_ci.queueFamilyIndex = 0;
     queue_ci.queueCount = 1;
@@ -247,7 +250,8 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     vk::CreateDevice(Gpu(), &device_ci, NULL, &device);
 
     vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(device, "vkTrimCommandPoolKHR");
-    if (nullptr == vkTrimCommandPoolKHR) m_errorMonitor->SetError("Unexpected null pointer");
+    if (nullptr == vkTrimCommandPoolKHR)
+        m_errorMonitor->SetError("Unexpected null pointer");
     vk::DestroyDevice(device, nullptr);
 }
 #endif
@@ -269,22 +273,22 @@ TEST_F(VkPositiveLayerTest, Vulkan12FeaturesBufferDeviceAddress) {
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                       &alloc_flags);
+    vkt::Buffer buffer(
+        *m_device, 1024, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
     (void)buffer.Address();
 
     // Also verify that we don't get the KHR extension address without enabling the KHR extension
     auto vkGetBufferDeviceAddressKHR =
         (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
-    if (nullptr != vkGetBufferDeviceAddressKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
+    if (nullptr != vkGetBufferDeviceAddressKHR)
+        m_errorMonitor->SetError("Didn't receive expected null pointer");
 }
 
 TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
     TEST_DESCRIPTION("Test using VkPhysicalDevice handles obtained with vkEnumeratePhysicalDeviceGroups");
 
 #ifdef __linux__
-    if (std::getenv("NODEVICE_SELECT") == nullptr)
-    {
+    if (std::getenv("NODEVICE_SELECT") == nullptr) {
         // Currently due to a bug in MESA this test will fail.
         // https://gitlab.freedesktop.org/mesa/mesa/-/commit/4588453815c58ec848b0ff6f18a08836e70f55df
         //
@@ -304,7 +308,7 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
 
     VkInstance test_instance = VK_NULL_HANDLE;
     ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &test_instance));
-    for (const char *instance_ext_name : m_instance_extension_names) {
+    for (const char* instance_ext_name : m_instance_extension_names) {
         vk::InitInstanceExtension(test_instance, instance_ext_name);
     }
 
@@ -368,7 +372,8 @@ TEST_F(VkPositiveLayerTest, GDPAWithMultiCmdExt) {
     TEST_DESCRIPTION("Use GetDeviceProcAddr on a function which is provided by multiple extensions");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    auto vkCmdSetColorBlendAdvancedEXT = GetDeviceProcAddr<PFN_vkCmdSetColorBlendAdvancedEXT>("vkCmdSetColorBlendAdvancedEXT");
+    auto vkCmdSetColorBlendAdvancedEXT =
+        GetDeviceProcAddr<PFN_vkCmdSetColorBlendAdvancedEXT>("vkCmdSetColorBlendAdvancedEXT");
     ASSERT_NE(vkCmdSetColorBlendAdvancedEXT, nullptr);
 }
 
@@ -406,8 +411,8 @@ TEST_F(VkPositiveLayerTest, UseInteractionApi2) {
 }
 
 TEST_F(VkPositiveLayerTest, ExtensionExpressions) {
-    TEST_DESCRIPTION(
-        "Enable an extension (e.g., VK_KHR_fragment_shading_rate) that depends on multiple core versions _or_ regular extensions");
+    TEST_DESCRIPTION("Enable an extension (e.g., VK_KHR_fragment_shading_rate) that depends on multiple core versions "
+                     "_or_ regular extensions");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -415,8 +420,9 @@ TEST_F(VkPositiveLayerTest, ExtensionExpressions) {
     AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
     RETURN_IF_SKIP(Init());
 
-    VkExtent2D fragment_size = {1, 1};
-    std::array combiner_ops = {VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR, VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR};
+    VkExtent2D fragment_size = { 1, 1 };
+    std::array combiner_ops = { VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR,
+                                VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR };
 
     m_command_buffer.Begin();
     vk::CmdSetFragmentShadingRateKHR(m_command_buffer, &fragment_size, combiner_ops.data());
@@ -452,11 +458,11 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
     //       So, this test will only catch an erroneous extension _if_ run on HW/a driver that crashes in this use
     //       case.
 
-    for (const auto &ext : InstanceExtensions::GetInfoMap()) {
+    for (const auto& ext : InstanceExtensions::GetInfoMap()) {
         // Add all "real" instance extensions
         if (InstanceExtensionSupported(String(ext.first))) {
             bool version_required = false;
-            for (const auto &req : ext.second.requirements) {
+            for (const auto& req : ext.second.requirements) {
                 std::string name(req.name);
                 if (name.find("VK_VERSION") != std::string::npos) {
                     version_required = true;
@@ -482,7 +488,7 @@ TEST_F(VkPositiveLayerTest, ExclusiveScissorVersionCount) {
     std::vector<VkExtensionProperties> properties(propertyCount);
     vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &propertyCount, properties.data());
     bool exclusiveScissor2 = false;
-    for (const auto &prop : properties) {
+    for (const auto& prop : properties) {
         if (strcmp(prop.extensionName, VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME) == 0) {
             if (prop.specVersion >= 2) {
                 exclusiveScissor2 = true;
@@ -578,8 +584,8 @@ TEST_F(VkPositiveLayerTest, NoExtensionFromInstanceFunction) {
 }
 
 TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct0) {
-    TEST_DESCRIPTION(
-        "Use VkImageFormatListCreateInfo with VkPhysicalDeviceImageFormatInfo2 if VK_KHR_image_format_list is available");
+    TEST_DESCRIPTION("Use VkImageFormatListCreateInfo with VkPhysicalDeviceImageFormatInfo2 if "
+                     "VK_KHR_image_format_list is available");
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -605,8 +611,8 @@ TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct0) {
 }
 
 TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct1) {
-    TEST_DESCRIPTION(
-        "Use VkBufferUsageFlags2CreateInfo with VkPhysicalDeviceExternalBufferInfo if VK_KHR_maintenance5 is available");
+    TEST_DESCRIPTION("Use VkBufferUsageFlags2CreateInfo with VkPhysicalDeviceExternalBufferInfo if VK_KHR_maintenance5 "
+                     "is available");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
     if (!DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
@@ -668,8 +674,13 @@ TEST_F(VkPositiveLayerTest, UnrecognizedFlagOutOfRange) {
     }
 
     VkImageFormatProperties format_properties;
-    vk::GetPhysicalDeviceImageFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_1D, VK_IMAGE_TILING_OPTIMAL,
-                                               static_cast<VkImageUsageFlags>(0xffffffff), 0, &format_properties);
+    vk::GetPhysicalDeviceImageFormatProperties(Gpu(),
+                                               VK_FORMAT_R8G8B8A8_UNORM,
+                                               VK_IMAGE_TYPE_1D,
+                                               VK_IMAGE_TILING_OPTIMAL,
+                                               static_cast<VkImageUsageFlags>(0xffffffff),
+                                               0,
+                                               &format_properties);
 }
 
 TEST_F(VkPositiveLayerTest, UnrecognizedFlagOutOfRange2) {

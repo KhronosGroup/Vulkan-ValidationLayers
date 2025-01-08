@@ -109,7 +109,8 @@ TEST_F(PositiveTooling, PrivateDataExt) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     static const uint64_t data_value = 0x70AD;
-    vk::SetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    vk::SetPrivateDataEXT(
+        m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
 
     uint64_t data;
     vk::GetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);

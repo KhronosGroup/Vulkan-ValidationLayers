@@ -48,7 +48,8 @@ TEST_F(NegativeDeviceQueue, FamilyIndex) {
 
 TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
     TEST_DESCRIPTION("Using device queue with invalid queue family index.");
-    bool get_physical_device_properties2 = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    bool get_physical_device_properties2 =
+        InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (get_physical_device_properties2) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
@@ -65,7 +66,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
     qfi[1] = 0;
 
     buffCI.pQueueFamilyIndices = qfi;
-    buffCI.sharingMode = VK_SHARING_MODE_CONCURRENT;  // qfi only matters in CONCURRENT mode
+    buffCI.sharingMode = VK_SHARING_MODE_CONCURRENT; // qfi only matters in CONCURRENT mode
 
     // Test for queue family index out of range
     CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-sharingMode-01419");
@@ -136,7 +137,7 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUnique) {
 
     // use first queue family with at least 2 queues in it
     bool found_queue = false;
-    VkQueueFamilyProperties queue_properties;  // selected queue family used
+    VkQueueFamilyProperties queue_properties; // selected queue family used
     uint32_t queue_family_index = 0;
     uint32_t queue_family_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
@@ -212,7 +213,7 @@ TEST_F(NegativeDeviceQueue, MismatchedGlobalPriority) {
     queue_global_priority_ci[1] = vku::InitStructHelper();
     queue_global_priority_ci[1].globalPriority = VK_QUEUE_GLOBAL_PRIORITY_MEDIUM;
 
-    float priorities[] = {1.0f, 1.0f};
+    float priorities[] = { 1.0f, 1.0f };
     VkDeviceQueueCreateInfo device_queue_ci[2] = {};
     device_queue_ci[0] = vku::InitStructHelper(&queue_global_priority_ci[0]);
     device_queue_ci[0].queueFamilyIndex = queue_family_index;
@@ -400,17 +401,18 @@ TEST_F(NegativeDeviceQueue, QueuesSameQueueFamily) {
 }
 
 TEST_F(NegativeDeviceQueue, MismatchedQueueFamiliesOnSubmit) {
-    TEST_DESCRIPTION(
-        "Submit command buffer created using one queue family and attempt to submit them on a queue created in a different queue "
-        "family.");
+    TEST_DESCRIPTION("Submit command buffer created using one queue family and attempt to submit them on a queue "
+                     "created in a different queue "
+                     "family.");
 
-    RETURN_IF_SKIP(Init());  // assumes it initializes all queue families on vk::CreateDevice
+    RETURN_IF_SKIP(Init()); // assumes it initializes all queue families on vk::CreateDevice
 
     // This test is meaningless unless we have multiple queue families
     auto queue_family_properties = m_device->Physical().queue_properties_;
     std::vector<uint32_t> queue_families;
     for (uint32_t i = 0; i < queue_family_properties.size(); ++i)
-        if (queue_family_properties[i].queueCount > 0) queue_families.push_back(i);
+        if (queue_family_properties[i].queueCount > 0)
+            queue_families.push_back(i);
 
     if (queue_families.size() < 2) {
         GTEST_SKIP() << "Device only has one queue family";

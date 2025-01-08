@@ -11,9 +11,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 
 class PositivePushDescriptor : public VkLayerTest {};
 
@@ -31,13 +31,14 @@ TEST_F(PositivePushDescriptor, NullDstSet) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, { dsl_binding });
     // Create push descriptor set layout
-    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    const vkt::DescriptorSetLayout push_ds_layout(
+        *m_device, { dsl_binding }, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
     // Use helper to create graphics pipeline
     CreatePipelineHelper helper(*this);
-    helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &ds_layout});
+    helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &push_ds_layout, &ds_layout });
     helper.CreateGraphicsPipeline();
 
     const uint32_t data_size = sizeof(float) * 3;
@@ -54,13 +55,17 @@ TEST_F(PositivePushDescriptor, NullDstSet) {
     descriptor_write.pBufferInfo = &buff_info;
     descriptor_write.pImageInfo = nullptr;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_write.dstSet = 0;  // Should not cause a validation error
+    descriptor_write.dstSet = 0; // Should not cause a validation error
 
     m_command_buffer.Begin();
 
     // In Intel GPU, it needs to bind pipeline before push descriptor set.
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(),
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                helper.pipeline_layout_.handle(),
+                                0,
+                                1,
                                 &descriptor_write);
 }
 
@@ -79,13 +84,14 @@ TEST_F(PositivePushDescriptor, NullDstSet14) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, { dsl_binding });
     // Create push descriptor set layout
-    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    const vkt::DescriptorSetLayout push_ds_layout(
+        *m_device, { dsl_binding }, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
     // Use helper to create graphics pipeline
     CreatePipelineHelper helper(*this);
-    helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &ds_layout});
+    helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &push_ds_layout, &ds_layout });
     helper.CreateGraphicsPipeline();
 
     const uint32_t data_size = sizeof(float) * 3;
@@ -102,13 +108,17 @@ TEST_F(PositivePushDescriptor, NullDstSet14) {
     descriptor_write.pBufferInfo = &buff_info;
     descriptor_write.pImageInfo = nullptr;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_write.dstSet = 0;  // Should not cause a validation error
+    descriptor_write.dstSet = 0; // Should not cause a validation error
 
     m_command_buffer.Begin();
 
     // In Intel GPU, it needs to bind pipeline before push descriptor set.
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
-    vk::CmdPushDescriptorSet(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
+    vk::CmdPushDescriptorSet(m_command_buffer.handle(),
+                             VK_PIPELINE_BIND_POINT_GRAPHICS,
+                             helper.pipeline_layout_.handle(),
+                             0,
+                             1,
                              &descriptor_write);
 }
 
@@ -127,11 +137,12 @@ TEST_F(PositivePushDescriptor, UnboundSet) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    OneOffDescriptorSet descriptor_set(m_device, {dsl_binding}, 0, nullptr, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
-                                       nullptr);
+    OneOffDescriptorSet descriptor_set(
+        m_device, { dsl_binding }, 0, nullptr, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, nullptr);
 
     // Create push descriptor set layout
-    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    const vkt::DescriptorSetLayout push_ds_layout(
+        *m_device, { dsl_binding }, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
     // Create PSO
     char const fsSource[] = R"glsl(
@@ -146,9 +157,9 @@ TEST_F(PositivePushDescriptor, UnboundSet) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     // Now use the descriptor layouts to create a pipeline layout
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &push_ds_layout, &descriptor_set.layout_ });
     pipe.CreateGraphicsPipeline();
 
     const uint32_t data_size = sizeof(float);
@@ -163,10 +174,20 @@ TEST_F(PositivePushDescriptor, UnboundSet) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // Push descriptors and bind descriptor set
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(),
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipe.pipeline_layout_.handle(),
+                                0,
+                                1,
                                 descriptor_set.descriptor_writes.data());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 1, 1,
-                              &descriptor_set.set_, 0, NULL);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              1,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              NULL);
 
     // No errors should be generated.
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
@@ -176,31 +197,35 @@ TEST_F(PositivePushDescriptor, UnboundSet) {
 }
 
 TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
-    TEST_DESCRIPTION(
-        "Ensure that no validation errors are produced when the push descriptor set number changes "
-        "between two vk::CmdPushDescriptorSetKHR calls.");
+    TEST_DESCRIPTION("Ensure that no validation errors are produced when the push descriptor set number changes "
+                     "between two vk::CmdPushDescriptorSetKHR calls.");
 
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     // Create a descriptor to push
-    vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4,
-                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device,
+                       sizeof(uint32_t) * 4,
+                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo buffer_info = { buffer.handle(), 0, VK_WHOLE_SIZE };
 
-    const VkDescriptorSetLayoutBinding ds_binding_0 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                                       nullptr};
-    const VkDescriptorSetLayoutBinding ds_binding_1 = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                                       nullptr};
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {ds_binding_0, ds_binding_1});
+    const VkDescriptorSetLayoutBinding ds_binding_0 = {
+        0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr
+    };
+    const VkDescriptorSetLayoutBinding ds_binding_1 = {
+        1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr
+    };
+    const vkt::DescriptorSetLayout ds_layout(*m_device, { ds_binding_0, ds_binding_1 });
     ASSERT_TRUE(ds_layout.initialized());
 
-    const VkDescriptorSetLayoutBinding push_ds_binding_0 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                                            nullptr};
-    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {push_ds_binding_0},
-                                                  VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    const VkDescriptorSetLayoutBinding push_ds_binding_0 = {
+        0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr
+    };
+    const vkt::DescriptorSetLayout push_ds_layout(
+        *m_device, { push_ds_binding_0 }, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     ASSERT_TRUE(push_ds_layout.initialized());
 
     m_command_buffer.Begin();
@@ -210,10 +235,10 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
     CreatePipelineHelper pipe1(*this);
     {
         // Note: the push descriptor set is set number 2.
-        const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout, &ds_layout, &push_ds_layout, &ds_layout});
+        const vkt::PipelineLayout pipeline_layout(*m_device, { &ds_layout, &ds_layout, &push_ds_layout, &ds_layout });
         ASSERT_TRUE(pipeline_layout.initialized());
 
-        char const *fsSource = R"glsl(
+        char const* fsSource = R"glsl(
             #version 450
             layout(location=0) out vec4 x;
             layout(set=2) layout(binding=0) uniform foo { vec4 y; } bar;
@@ -229,24 +254,28 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
 
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.Handle());
 
-        const VkWriteDescriptorSet descriptor_write =
-            vkt::Device::WriteDescriptorSet(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+        const VkWriteDescriptorSet descriptor_write = vkt::Device::WriteDescriptorSet(
+            vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
         // Note: pushing to desciptor set number 2.
-        vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1,
+        vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(),
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    pipeline_layout.handle(),
+                                    2,
+                                    1,
                                     &descriptor_write);
         vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     }
 
     {
         // Note: the push descriptor set is now set number 3.
-        const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout, &ds_layout, &ds_layout, &push_ds_layout});
+        const vkt::PipelineLayout pipeline_layout(*m_device, { &ds_layout, &ds_layout, &ds_layout, &push_ds_layout });
         ASSERT_TRUE(pipeline_layout.initialized());
 
-        const VkWriteDescriptorSet descriptor_write =
-            vkt::Device::WriteDescriptorSet(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+        const VkWriteDescriptorSet descriptor_write = vkt::Device::WriteDescriptorSet(
+            vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
-        char const *fsSource = R"glsl(
+        char const* fsSource = R"glsl(
             #version 450
             layout(location=0) out vec4 x;
             layout(set=3) layout(binding=0) uniform foo { vec4 y; } bar;
@@ -263,7 +292,11 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
 
         // Note: now pushing to desciptor set number 3.
-        vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 3, 1,
+        vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(),
+                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    pipeline_layout.handle(),
+                                    3,
+                                    1,
                                     &descriptor_write);
         vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     }
@@ -279,42 +312,108 @@ TEST_F(PositivePushDescriptor, CreateDescriptorSetBindingWithIgnoredSamplers) {
     RETURN_IF_SKIP(Init());
     const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
     const uint64_t fake_address_32 = 0xCDCDCDCD;
-    const void *fake_pointer =
-        sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
-    const VkSampler *hopefully_undereferencable_pointer = reinterpret_cast<const VkSampler *>(fake_pointer);
+    const void* fake_pointer =
+        sizeof(void*) == 8 ? reinterpret_cast<void*>(fake_address_64) : reinterpret_cast<void*>(fake_address_32);
+    const VkSampler* hopefully_undereferencable_pointer = reinterpret_cast<const VkSampler*>(fake_pointer);
 
     // regular descriptors
     {
         const VkDescriptorSetLayoutBinding non_sampler_bindings[] = {
-            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {2, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {6, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {8, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
+            { 0,
+              VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 1,
+              VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 2,
+              VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 3,
+              VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 4,
+              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 5,
+              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 6,
+              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 7,
+              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 8,
+              VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
         };
-        const auto dslci =
-            vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, 0u, size32(non_sampler_bindings), non_sampler_bindings);
+        const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(
+            nullptr, 0u, size32(non_sampler_bindings), non_sampler_bindings);
         vkt::DescriptorSetLayout dsl(*m_device, dslci);
     }
 
     // push descriptors
     {
         const VkDescriptorSetLayoutBinding non_sampler_bindings[] = {
-            {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {2, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
-            {6, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
+            { 0,
+              VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 1,
+              VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 2,
+              VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 3,
+              VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 4,
+              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 5,
+              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
+            { 6,
+              VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+              1,
+              VK_SHADER_STAGE_FRAGMENT_BIT,
+              hopefully_undereferencable_pointer },
         };
         const auto dslci = vku::InitStruct<VkDescriptorSetLayoutCreateInfo>(
-            nullptr, static_cast<VkDescriptorSetLayoutCreateFlags>(VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT),
-            size32(non_sampler_bindings), non_sampler_bindings);
+            nullptr,
+            static_cast<VkDescriptorSetLayoutCreateFlags>(VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT),
+            size32(non_sampler_bindings),
+            non_sampler_bindings);
         vkt::DescriptorSetLayout dsl(*m_device, dslci);
     }
 }
@@ -332,12 +431,13 @@ TEST_F(PositivePushDescriptor, ImmutableSampler) {
     vkt::ImageView imageView = image.CreateView();
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler_handle}};
+        { 0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler_handle }
+    };
     OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
 
     vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
-    vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
+    vkt::PipelineLayout pipeline_layout(*m_device, { &push_dsl });
 
     VkDescriptorImageInfo img_info = {};
     img_info.sampler = sampler_handle;
@@ -354,8 +454,8 @@ TEST_F(PositivePushDescriptor, ImmutableSampler) {
     descriptor_write.dstSet = descriptor_set.set_;
 
     m_command_buffer.Begin();
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                &descriptor_write);
+    vk::CmdPushDescriptorSetKHR(
+        m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &descriptor_write);
     m_command_buffer.End();
 }
 
@@ -369,12 +469,13 @@ TEST_F(PositivePushDescriptor, TemplateBasic) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
-        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+        { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr }
+    };
     OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
 
     vkt::DescriptorSetLayout push_dsl(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
-    vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl});
+    vkt::PipelineLayout pipeline_layout(*m_device, { &push_dsl });
 
     struct SimpleTemplateData {
         VkDescriptorBufferInfo buff_info;
@@ -399,11 +500,11 @@ TEST_F(PositivePushDescriptor, TemplateBasic) {
     vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;
-    update_template_data.buff_info = {buffer.handle(), 0, 32};
+    update_template_data.buff_info = { buffer.handle(), 0, 32 };
 
     m_command_buffer.Begin();
-    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout.handle(), 0,
-                                            &update_template_data);
+    vk::CmdPushDescriptorSetWithTemplateKHR(
+        m_command_buffer.handle(), update_template, pipeline_layout.handle(), 0, &update_template_data);
     m_command_buffer.End();
 }
 
@@ -415,7 +516,7 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkDescriptorSetLayoutBinding ds_binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    VkDescriptorSetLayoutBinding ds_binding = { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr };
     VkDescriptorSetLayoutCreateInfo dsl_ci = vku::InitStructHelper();
     dsl_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
     dsl_ci.bindingCount = 1;
@@ -429,10 +530,11 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
     // Valid, from spec:
-    // "Each element of pDescriptorWrites is interpreted as in VkWriteDescriptorSet, except the dstSet member is ignored"
+    // "Each element of pDescriptorWrites is interpreted as in VkWriteDescriptorSet, except the dstSet member is
+    // ignored"
     VkDescriptorSet bad_set = CastFromUint64<VkDescriptorSet>(0xcadecade);
 
-    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, 32};
+    VkDescriptorBufferInfo buffer_info = { buffer.handle(), 0, 32 };
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = bad_set;
     descriptor_write.dstBinding = 0;
@@ -443,13 +545,13 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
     m_command_buffer.Begin();
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                &descriptor_write);
+    vk::CmdPushDescriptorSetKHR(
+        m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &descriptor_write);
 
     VkDescriptorSet null_set = CastFromUint64<VkDescriptorSet>(0);
     descriptor_write.dstSet = null_set;
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                &descriptor_write);
+    vk::CmdPushDescriptorSetKHR(
+        m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &descriptor_write);
     m_command_buffer.End();
 }
 
@@ -463,16 +565,17 @@ TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
-        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+        { 2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
     };
     OneOffDescriptorSet descriptor_set(m_device, ds_bindings);
 
-    vkt::DescriptorSetLayout push_dsl1(*m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    vkt::DescriptorSetLayout push_dsl1(*m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } });
     vkt::DescriptorSetLayout push_dsl2(*m_device, ds_bindings, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
-    vkt::PipelineLayout pipeline_layout(*m_device, {&push_dsl1, &push_dsl2});
+    vkt::PipelineLayout pipeline_layout(*m_device, { &push_dsl1, &push_dsl2 });
 
     struct SimpleTemplateData {
         VkDescriptorBufferInfo buff_info;
@@ -498,10 +601,10 @@ TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
     vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;
-    update_template_data.buff_info = {buffer.handle(), 0, 32};
+    update_template_data.buff_info = { buffer.handle(), 0, 32 };
 
     m_command_buffer.Begin();
-    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout.handle(), 1,
-                                            &update_template_data);
+    vk::CmdPushDescriptorSetWithTemplateKHR(
+        m_command_buffer.handle(), update_template, pipeline_layout.handle(), 1, &update_template_data);
     m_command_buffer.End();
 }

@@ -37,7 +37,7 @@ const int kErrorGroupGpuCopyBufferToImage = 7;
 const int kErrorGroupInstDescriptorClass = 8;
 
 // Used for MultiEntry and there is no single stage set
-const int kHeaderStageIdMultiEntryPoint = 0x7fffffff;  // same as spv::ExecutionModelMax
+const int kHeaderStageIdMultiEntryPoint = 0x7fffffff; // same as spv::ExecutionModelMax
 
 // Descriptor Indexing
 //
@@ -107,7 +107,7 @@ const int kErrorSubCodePreTraceRaysLimitVolume = 4;
 const int kErrorSubCodePreCopyBufferToImageBufferTexel = 1;
 
 #ifdef __cplusplus
-}  // namespace glsl
-}  // namespace gpuav
+} // namespace glsl
+} // namespace gpuav
 #endif
 #endif

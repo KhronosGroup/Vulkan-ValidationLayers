@@ -20,14 +20,14 @@
 
 #include <cmath>
 
+#include <algorithm>
 #include <cassert>
+#include <iterator>
 #include <limits>
 #include <memory>
-#include <unordered_map>
-#include <algorithm>
-#include <iterator>
-#include <type_traits>
 #include <optional>
+#include <type_traits>
+#include <unordered_map>
 #include <utility>
 
 #ifdef USE_ROBIN_HOOD_HASHING
@@ -65,32 +65,32 @@ struct insert_iterator {
     using iterator = typename T::iterator;
     using difference_type = void;
     using pointer = void;
-    using reference = T &;
+    using reference = T&;
 
     insert_iterator(reference t, iterator i) : container(&t), iter(i) {}
 
-    insert_iterator &operator=(const value_type &value) {
+    insert_iterator& operator=(const value_type& value) {
         auto result = container->insert(value);
         iter = result.first;
         ++iter;
         return *this;
     }
 
-    insert_iterator &operator=(value_type &&value) {
+    insert_iterator& operator=(value_type&& value) {
         auto result = container->insert(std::move(value));
         iter = result.first;
         ++iter;
         return *this;
     }
 
-    insert_iterator &operator*() { return *this; }
+    insert_iterator& operator*() { return *this; }
 
-    insert_iterator &operator++() { return *this; }
+    insert_iterator& operator++() { return *this; }
 
-    insert_iterator &operator++(int) { return *this; }
+    insert_iterator& operator++(int) { return *this; }
 
   private:
-    T *container;
+    T* container;
     iterator iter;
 };
 #else
@@ -118,13 +118,14 @@ template <typename Key, typename T, int BucketsLog2 = 2>
 using concurrent_unordered_map = vku::concurrent_unordered_map<Key, T, BucketsLog2, vvl::unordered_map<Key, T>>;
 #endif
 
-}  // namespace vvl
+} // namespace vvl
 
-// A vector class with "small string optimization" -- meaning that the class contains a fixed working store for N elements.
-// Useful in in situations where the needed size is unknown, but the typical size is known  If size increases beyond the
-// fixed capacity, a dynamically allocated working store is created.
+// A vector class with "small string optimization" -- meaning that the class contains a fixed working store for N
+// elements. Useful in in situations where the needed size is unknown, but the typical size is known  If size increases
+// beyond the fixed capacity, a dynamically allocated working store is created.
 //
-// NOTE: Unlike std::vector which only requires T to be CopyAssignable and CopyConstructable, small_vector requires T to be
+// NOTE: Unlike std::vector which only requires T to be CopyAssignable and CopyConstructable, small_vector requires T to
+// be
 //       MoveAssignable and MoveConstructable
 // NOTE: Unlike std::vector, iterators are invalidated by move assignment between small_vector objects effectively the
 //       "small string" allocation functions as an incompatible allocator.
@@ -132,10 +133,10 @@ template <typename T, size_t N, typename SizeType = uint32_t>
 class small_vector {
   public:
     using value_type = T;
-    using reference = value_type &;
-    using const_reference = const value_type &;
-    using pointer = value_type *;
-    using const_pointer = const value_type *;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using pointer = value_type*;
+    using const_pointer = const value_type*;
     using iterator = pointer;
     using const_iterator = const_pointer;
     using size_type = SizeType;
@@ -145,11 +146,15 @@ class small_vector {
 
     small_vector() : size_(0), capacity_(N), working_store_(GetSmallStore()) {}
 
-    small_vector(std::initializer_list<T> list) : size_(0), capacity_(N), working_store_(GetSmallStore()) { PushBackFrom(list); }
+    small_vector(std::initializer_list<T> list) : size_(0), capacity_(N), working_store_(GetSmallStore()) {
+        PushBackFrom(list);
+    }
 
-    small_vector(const small_vector &other) : size_(0), capacity_(N), working_store_(GetSmallStore()) { PushBackFrom(other); }
+    small_vector(const small_vector& other) : size_(0), capacity_(N), working_store_(GetSmallStore()) {
+        PushBackFrom(other);
+    }
 
-    small_vector(small_vector &&other) : size_(0), capacity_(N), working_store_(GetSmallStore()) {
+    small_vector(small_vector&& other) : size_(0), capacity_(N), working_store_(GetSmallStore()) {
         if (other.large_store_) {
             MoveLargeStore(other);
         } else {
@@ -159,7 +164,8 @@ class small_vector {
         other.clear();
     }
 
-    small_vector(size_type size, const value_type &value = value_type()) : size_(0), capacity_(N), working_store_(GetSmallStore()) {
+    small_vector(size_type size, const value_type& value = value_type()) :
+        size_(0), capacity_(N), working_store_(GetSmallStore()) {
         reserve(size);
         auto dest = GetWorkingStore();
         for (size_type i = 0; i < size; i++) {
@@ -171,10 +177,11 @@ class small_vector {
 
     ~small_vector() { clear(); }
 
-    bool operator==(const small_vector &rhs) const {
-        if (size_ != rhs.size_) return false;
+    bool operator==(const small_vector& rhs) const {
+        if (size_ != rhs.size_)
+            return false;
         auto value = begin();
-        for (const auto &rh_value : rhs) {
+        for (const auto& rh_value : rhs) {
             if (!(*value == rh_value)) {
                 return false;
             }
@@ -183,13 +190,13 @@ class small_vector {
         return true;
     }
 
-    bool operator!=(const small_vector &rhs) const { return !(*this == rhs); }
+    bool operator!=(const small_vector& rhs) const { return !(*this == rhs); }
 
-    small_vector &operator=(const small_vector &other) {
+    small_vector& operator=(const small_vector& other) {
         if (this != &other) {
             if (other.size_ > capacity_) {
-                // Calling reserve would move construct and destroy all current contents, so just clear them before calling
-                // PushBackFrom (which does a reserve vs. the now empty this)
+                // Calling reserve would move construct and destroy all current contents, so just clear them before
+                // calling PushBackFrom (which does a reserve vs. the now empty this)
                 clear();
                 PushBackFrom(other);
             } else {
@@ -219,7 +226,7 @@ class small_vector {
         return *this;
     }
 
-    small_vector &operator=(small_vector &&other) {
+    small_vector& operator=(small_vector&& other) {
         if (this != &other) {
             // Note: move assign doesn't require other to become empty (as does move construction)
             //       so we'll leave other alone except in the large store case, while moving the object
@@ -290,7 +297,7 @@ class small_vector {
     bool empty() const { return size_ == 0; }
 
     template <class... Args>
-    void emplace_back(Args &&...args) {
+    void emplace_back(Args&&... args) {
         assert(size_ < kMaxCapacity);
         reserve(size_ + 1);
         new (GetWorkingStore() + size_) value_type(args...);
@@ -299,14 +306,14 @@ class small_vector {
 
     // Note: probably should update this to reflect C++23 ranges
     template <typename Container>
-    void PushBackFrom(const Container &from) {
+    void PushBackFrom(const Container& from) {
         assert(from.size() <= kMaxCapacity);
         assert(size_ <= kMaxCapacity - from.size());
         const size_type new_size = size_ + static_cast<size_type>(from.size());
         reserve(new_size);
 
         auto dest = GetWorkingStore() + size_;
-        for (const auto &element : from) {
+        for (const auto& element : from) {
             new (dest) value_type(element);
             ++dest;
         }
@@ -314,13 +321,13 @@ class small_vector {
     }
 
     template <typename Container>
-    void PushBackFrom(Container &&from) {
+    void PushBackFrom(Container&& from) {
         assert(from.size() < kMaxCapacity);
         const size_type new_size = size_ + static_cast<size_type>(from.size());
         reserve(new_size);
 
         auto dest = GetWorkingStore() + size_;
-        for (auto &element : from) {
+        for (auto& element : from) {
             new (dest) value_type(std::move(element));
             ++dest;
         }
@@ -358,13 +365,13 @@ class small_vector {
     }
 
     void resize(size_type count) {
-        struct ValueInitTag {  // tag to request value-initialization
+        struct ValueInitTag { // tag to request value-initialization
             explicit ValueInitTag() = default;
         };
         Resize(count, ValueInitTag{});
     }
 
-    void resize(size_type count, const value_type &value) { Resize(count, value); }
+    void resize(size_type count, const value_type& value) { Resize(count, value); }
 
     void shrink_to_fit() {
         if (size_ == 0) {
@@ -409,13 +416,13 @@ class small_vector {
     inline const_pointer ComputeWorkingStore() const {
         assert(large_store_ || (capacity_ == kSmallCapacity));
 
-        const BackingStore *store = large_store_ ? large_store_.get() : small_store_;
+        const BackingStore* store = large_store_ ? large_store_.get() : small_store_;
         return &store->object;
     }
     inline pointer ComputeWorkingStore() {
         assert(large_store_ || (capacity_ == kSmallCapacity));
 
-        BackingStore *store = large_store_ ? large_store_.get() : small_store_;
+        BackingStore* store = large_store_ ? large_store_.get() : small_store_;
         return &store->object;
     }
 
@@ -443,7 +450,7 @@ class small_vector {
     size_type capacity_;
     BackingStore small_store_[N];
     std::unique_ptr<BackingStore[]> large_store_;
-    value_type *working_store_;
+    value_type* working_store_;
 
 #ifndef NDEBUG
     void DbgWorkingStoreCheck() const { assert(ComputeWorkingStore() == working_store_); };
@@ -452,7 +459,7 @@ class small_vector {
 #endif
 
   private:
-    void MoveLargeStore(small_vector &other) {
+    void MoveLargeStore(small_vector& other) {
         assert(other.large_store_);
         assert(other.capacity_ > kSmallCapacity);
         // In move operations, from a small vector with a large store, we can move from it
@@ -468,7 +475,7 @@ class small_vector {
     }
 
     template <typename T2>
-    void Resize(size_type new_size, const T2 &value) {
+    void Resize(size_type new_size, const T2& value) {
         if (new_size < size_) {
             auto working_store = GetWorkingStore();
             for (size_type i = new_size; i < size_; i++) {
@@ -519,7 +526,7 @@ class small_container {
         typedef typename inner_container_type::iterator inner_iterator;
         friend class small_container<Key, value_type, inner_container_type, value_type_helper, N>;
 
-        small_container<Key, value_type, inner_container_type, value_type_helper, N> *parent;
+        small_container<Key, value_type, inner_container_type, value_type_helper, N>* parent;
         int index;
         inner_iterator it;
 
@@ -542,7 +549,7 @@ class small_container {
             return *this;
         }
 
-        bool operator==(const iterator &other) const {
+        bool operator==(const iterator& other) const {
             if ((index < N) != (other.index < N)) {
                 return false;
             }
@@ -552,15 +559,15 @@ class small_container {
             return it == other.it;
         }
 
-        bool operator!=(const iterator &other) const { return !(*this == other); }
+        bool operator!=(const iterator& other) const { return !(*this == other); }
 
-        value_type &operator*() const {
+        value_type& operator*() const {
             if (index < N) {
                 return parent->small_data[index];
             }
             return *it;
         }
-        value_type *operator->() const {
+        value_type* operator->() const {
             if (index < N) {
                 return &parent->small_data[index];
             }
@@ -572,7 +579,7 @@ class small_container {
         typedef typename inner_container_type::const_iterator inner_iterator;
         friend class small_container<Key, value_type, inner_container_type, value_type_helper, N>;
 
-        const small_container<Key, value_type, inner_container_type, value_type_helper, N> *parent;
+        const small_container<Key, value_type, inner_container_type, value_type_helper, N>* parent;
         int index;
         inner_iterator it;
 
@@ -595,7 +602,7 @@ class small_container {
             return *this;
         }
 
-        bool operator==(const const_iterator &other) const {
+        bool operator==(const const_iterator& other) const {
             if ((index < N) != (other.index < N)) {
                 return false;
             }
@@ -605,15 +612,15 @@ class small_container {
             return it == other.it;
         }
 
-        bool operator!=(const const_iterator &other) const { return !(*this == other); }
+        bool operator!=(const const_iterator& other) const { return !(*this == other); }
 
-        const value_type &operator*() const {
+        const value_type& operator*() const {
             if (index < N) {
                 return parent->small_data[index];
             }
             return *it;
         }
-        const value_type *operator->() const {
+        const value_type* operator->() const {
             if (index < N) {
                 return &parent->small_data[index];
             }
@@ -663,7 +670,7 @@ class small_container {
         return it;
     }
 
-    bool contains(const Key &key) const {
+    bool contains(const Key& key) const {
         for (int i = 0; i < N; ++i) {
             if (small_data_allocated[i] && helper.compare_equal(small_data[i], key)) {
                 return true;
@@ -676,9 +683,9 @@ class small_container {
         return inner_cont.find(key) != inner_cont.end();
     }
 
-    typename inner_container_type::size_type count(const Key &key) const { return contains(key) ? 1 : 0; }
+    typename inner_container_type::size_type count(const Key& key) const { return contains(key) ? 1 : 0; }
 
-    std::pair<iterator, bool> insert(const value_type &value) {
+    std::pair<iterator, bool> insert(const value_type& value) {
         for (int i = 0; i < N; ++i) {
             if (small_data_allocated[i] && helper.compare_equal(small_data[i], value)) {
                 iterator it;
@@ -715,7 +722,7 @@ class small_container {
         }
     }
 
-    typename inner_container_type::size_type erase(const Key &key) {
+    typename inner_container_type::size_type erase(const Key& key) {
         for (int i = 0; i < N; ++i) {
             if (small_data_allocated[i] && helper.compare_equal(small_data[i], key)) {
                 small_data_allocated[i] = false;
@@ -760,35 +767,38 @@ class value_type_helper_map {
     using Key = typename std::remove_const<typename PairType::first_type>::type;
 
   public:
-    bool compare_equal(const PairType &lhs, const Key &rhs) const { return lhs.first == rhs; }
-    bool compare_equal(const PairType &lhs, const PairType &rhs) const { return lhs.first == rhs.first; }
+    bool compare_equal(const PairType& lhs, const Key& rhs) const { return lhs.first == rhs; }
+    bool compare_equal(const PairType& lhs, const PairType& rhs) const { return lhs.first == rhs.first; }
 
-    void assign(PairType &lhs, const PairType &rhs) const {
+    void assign(PairType& lhs, const PairType& rhs) const {
         // While the const_cast may be unsatisfactory, we are using small_data as
         // stand-in for placement new and a small-block allocator, so the const_cast
         // is minimal, contained, valid, and allows operators * and -> to avoid copies
-        const_cast<Key &>(lhs.first) = rhs.first;
+        const_cast<Key&>(lhs.first) = rhs.first;
         lhs.second = rhs.second;
     }
 
-    Key get_key(const PairType &value) const { return value.first; }
+    Key get_key(const PairType& value) const { return value.first; }
 };
 
 template <typename Key>
 class value_type_helper_set {
   public:
-    bool compare_equal(const Key &lhs, const Key &rhs) const { return lhs == rhs; }
+    bool compare_equal(const Key& lhs, const Key& rhs) const { return lhs == rhs; }
 
-    void assign(Key &lhs, const Key &rhs) const { lhs = rhs; }
+    void assign(Key& lhs, const Key& rhs) const { lhs = rhs; }
 
-    Key get_key(const Key &value) const { return value; }
+    Key get_key(const Key& value) const { return value; }
 };
 
 template <typename Key, typename T, int N = 1>
-class small_unordered_map : public small_container<Key, typename vvl::unordered_map<Key, T>::value_type, vvl::unordered_map<Key, T>,
-                                                   value_type_helper_map<vvl::unordered_map<Key, T>>, N> {
+class small_unordered_map : public small_container<Key,
+                                                   typename vvl::unordered_map<Key, T>::value_type,
+                                                   vvl::unordered_map<Key, T>,
+                                                   value_type_helper_map<vvl::unordered_map<Key, T>>,
+                                                   N> {
   public:
-    T &operator[](const Key &key) {
+    T& operator[](const Key& key) {
         for (int i = 0; i < N; ++i) {
             if (this->small_data_allocated[i] && this->helper.compare_equal(this->small_data[i], key)) {
                 return this->small_data[i].second;
@@ -801,7 +811,7 @@ class small_unordered_map : public small_container<Key, typename vvl::unordered_
             for (int i = 0; i < N; ++i) {
                 if (!this->small_data_allocated[i]) {
                     this->small_data_allocated[i] = true;
-                    this->helper.assign(this->small_data[i], {key, T()});
+                    this->helper.assign(this->small_data[i], { key, T() });
 
                     return this->small_data[i].second;
                 }
@@ -822,8 +832,8 @@ inline constexpr std::in_place_t in_place{};
 template <typename T, typename Iterator>
 class enumeration {
   public:
-    using pointer = T *;
-    using const_pointer = T const *;
+    using pointer = T*;
+    using const_pointer = T const*;
     using iterator = Iterator;
     using const_iterator = const Iterator;
 
@@ -832,7 +842,7 @@ class enumeration {
     template <typename Position>
     enumeration(Position start, Position end) : data_(&(*start)), count_(end - start) {}
     template <typename Container>
-    enumeration(Container &c) : data_(c.data()), count_(c.size()) {}
+    enumeration(Container& c) : data_(c.data()), count_(c.size()) {}
 
     iterator begin() { return data_; }
     const_iterator begin() const { return data_; }
@@ -840,14 +850,14 @@ class enumeration {
     iterator end() { return data_ + count_; }
     const_iterator end() const { return data_ + count_; }
 
-    T &operator[](size_t i) { return data_[i]; }
-    const T &operator[](size_t i) const { return data_[i]; }
+    T& operator[](size_t i) { return data_[i]; }
+    const T& operator[](size_t i) const { return data_[i]; }
 
-    T &front() { return *data_; }
-    const T &front() const { return *data_; }
+    T& front() { return *data_; }
+    const T& front() const { return *data_; }
 
-    T &back() { return *(data_ + (count_ - 1)); }
-    const T &back() const { return *(data_ + (count_ - 1)); }
+    T& back() { return *(data_ + (count_ - 1)); }
+    const T& back() const { return *(data_ + (count_ - 1)); }
 
     size_t size() const { return count_; }
     bool empty() const { return count_ == 0; }
@@ -862,13 +872,13 @@ class enumeration {
 template <typename T, typename IndexType = size_t>
 class IndexedIterator {
   public:
-    IndexedIterator(T *data, IndexType index = 0) : index_(index), data_(data) {}
+    IndexedIterator(T* data, IndexType index = 0) : index_(index), data_(data) {}
 
-    IndexedIterator<T, IndexType> &operator*() { return *this; }
-    const IndexedIterator<T, IndexType> &operator*() const { return *this; }
+    IndexedIterator<T, IndexType>& operator*() { return *this; }
+    const IndexedIterator<T, IndexType>& operator*() const { return *this; }
 
     // prefix increment
-    IndexedIterator<T, IndexType> &operator++() {
+    IndexedIterator<T, IndexType>& operator++() {
         ++data_;
         ++index_;
         return *this;
@@ -881,54 +891,55 @@ class IndexedIterator {
         return old;
     }
 
-    bool operator==(const IndexedIterator<T, IndexType> &rhs) const {
+    bool operator==(const IndexedIterator<T, IndexType>& rhs) const {
         // No need to compare indices, just compare pointers
         // And given the implementation of enumeration::end(),
         // where no index is given when constructing an iterator,
         // index_ will default to 0 for end(), which is wrong, but we can live with it for now
         return data_ == rhs.data_;
     }
-    bool operator!=(const IndexedIterator<T, IndexType> &rhs) const { return data_ != rhs.data_; }
+    bool operator!=(const IndexedIterator<T, IndexType>& rhs) const { return data_ != rhs.data_; }
 
   public:
     IndexType index_ = 0;
-    T *data_;
+    T* data_;
 };
 
 template <typename T>
-using span = enumeration<T, T *>;
+using span = enumeration<T, T*>;
 
 //
 // Allow type inference that using the constructor doesn't allow in C++11
 template <typename T>
-span<T> make_span(T *begin, size_t count) {
+span<T> make_span(T* begin, size_t count) {
     return span<T>(begin, count);
 }
 template <typename T>
-span<T> make_span(T *begin, T *end) {
+span<T> make_span(T* begin, T* end) {
     return make_span<T>(begin, end);
 }
 
 template <typename T, typename IndexType>
-enumeration<T, IndexedIterator<T, IndexType>> enumerate(T *begin, IndexType count) {
+enumeration<T, IndexedIterator<T, IndexType>> enumerate(T* begin, IndexType count) {
     return enumeration<T, IndexedIterator<T, IndexType>>(begin, count);
 }
 template <typename T>
-enumeration<T, IndexedIterator<T>> enumerate(T *begin, T *end) {
+enumeration<T, IndexedIterator<T>> enumerate(T* begin, T* end) {
     return enumeration<T, IndexedIterator<T>>(begin, end);
 }
 
 template <typename Container>
-enumeration<typename Container::value_type, IndexedIterator<typename Container::value_type, typename Container::size_type>>
-enumerate(Container &container) {
+enumeration<typename Container::value_type,
+            IndexedIterator<typename Container::value_type, typename Container::size_type>>
+enumerate(Container& container) {
     return enumeration<typename Container::value_type,
-                       IndexedIterator<typename Container::value_type, typename Container::size_type>>(container.data(),
-                                                                                                       container.size());
+                       IndexedIterator<typename Container::value_type, typename Container::size_type>>(
+        container.data(), container.size());
 }
 
 template <typename BaseType>
-using base_type =
-    typename std::remove_reference<typename std::remove_const<typename std::remove_pointer<BaseType>::type>::type>::type;
+using base_type = typename std::remove_reference<
+    typename std::remove_const<typename std::remove_pointer<BaseType>::type>::type>::type;
 
 // Helper for thread local Validate -> Record phase data
 // Define T unique to each entrypoint which will persist data
@@ -958,47 +969,48 @@ class TlsGuard {
   public:
     // For use on inital references -- Validate phase
     template <typename... Args>
-    TlsGuard(bool *skip, Args &&...args) : skip_(skip), persist_(false) {
+    TlsGuard(bool* skip, Args&&... args) : skip_(skip), persist_(false) {
         // Record phase calls are required to clean up payload
         assert(!payload_);
         payload_.emplace(std::forward<Args>(args)...);
     }
     // For use on non-terminal persistent references (PreRecord phase IFF PostRecord is also present.
-    TlsGuard(const TlsGuardPersist &) : skip_(nullptr), persist_(true) { assert(payload_); }
+    TlsGuard(const TlsGuardPersist&) : skip_(nullptr), persist_(true) { assert(payload_); }
     // For use on terminal persistent references
     // Validate phase calls are required to setup payload
     // PreCallRecord calls are required to preserve (persist_) payload, if PostCallRecord calls will use
     TlsGuard() : skip_(nullptr), persist_(false) { assert(payload_); }
     ~TlsGuard() {
         assert(payload_);
-        if (!persist_ && (!skip_ || *skip_)) payload_.reset();
+        if (!persist_ && (!skip_ || *skip_))
+            payload_.reset();
     }
 
-    T &operator*() & {
+    T& operator*() & {
         assert(payload_);
         return *payload_;
     }
-    const T &operator*() const & {
+    const T& operator*() const& {
         assert(payload_);
         return *payload_;
     }
-    T &&operator*() && {
+    T&& operator*() && {
         assert(payload_);
         return std::move(*payload_);
     }
-    T *operator->() { return &(*payload_); }
+    T* operator->() { return &(*payload_); }
 
     operator bool() { return payload_.has_value(); }
 
   private:
     inline thread_local static std::optional<T> payload_{};
-    bool *skip_;
+    bool* skip_;
     bool persist_;
 };
 
 // Only use this if you aren't planning to use what you would have gotten from a find.
 template <typename Container, typename Key = typename Container::key_type>
-bool Contains(const Container &container, const Key &key) {
+bool Contains(const Container& container, const Key& key) {
     return container.find(key) != container.cend();
 }
 
@@ -1006,26 +1018,30 @@ bool Contains(const Container &container, const Key &key) {
 // if (vvl::Contains(objects_vector, candidate)) { candidate->jump(); }
 //
 template <typename T>
-bool Contains(const std::vector<T> &v, const T &value) {
+bool Contains(const std::vector<T>& v, const T& value) {
     return std::find(v.cbegin(), v.cend(), value) != v.cend();
 }
 // Overload for the case of shared_ptr<const T> and shared_ptr<T>.
 // They are convertible but conversion is not performed during template type deduction.
 template <typename T>
-bool Contains(const std::vector<std::shared_ptr<const T>> &v, const std::shared_ptr<T> &value) {
+bool Contains(const std::vector<std::shared_ptr<const T>>& v, const std::shared_ptr<T>& value) {
     return std::find(v.cbegin(), v.cend(), value) != v.cend();
 }
 
 //
 // if (auto* thing = vvl::Find(map, key)) { thing->jump(); }
 //
-template <typename Container, typename Key = typename Container::key_type, typename Value = typename Container::mapped_type>
-Value *Find(Container &container, const Key &key) {
+template <typename Container,
+          typename Key = typename Container::key_type,
+          typename Value = typename Container::mapped_type>
+Value* Find(Container& container, const Key& key) {
     auto it = container.find(key);
     return (it != container.end()) ? &it->second : nullptr;
 }
-template <typename Container, typename Key = typename Container::key_type, typename Value = typename Container::mapped_type>
-const Value *Find(const Container &container, const Key &key) {
+template <typename Container,
+          typename Key = typename Container::key_type,
+          typename Value = typename Container::mapped_type>
+const Value* Find(const Container& container, const Key& key) {
     auto it = container.find(key);
     return (it != container.cend()) ? &it->second : nullptr;
 }
@@ -1033,22 +1049,26 @@ const Value *Find(const Container &container, const Key &key) {
 //
 // auto& thing = vvl::FindExisting(map, key);
 //
-template <typename Container, typename Key = typename Container::key_type, typename Value = typename Container::mapped_type>
-Value &FindExisting(Container &container, const Key &key) {
+template <typename Container,
+          typename Key = typename Container::key_type,
+          typename Value = typename Container::mapped_type>
+Value& FindExisting(Container& container, const Key& key) {
     auto it = container.find(key);
     assert(it != container.end());
     return it->second;
 }
 
-template <typename Container, typename Key = typename Container::key_type, typename Value = typename Container::mapped_type>
-const Value &FindExisting(const Container &container, const Key &key) {
+template <typename Container,
+          typename Key = typename Container::key_type,
+          typename Value = typename Container::mapped_type>
+const Value& FindExisting(const Container& container, const Key& key) {
     auto it = container.find(key);
     assert(it != container.end());
     return it->second;
 }
 
 template <typename T>
-void Append(std::vector<T> &dst, const std::vector<T> &src) {
+void Append(std::vector<T>& dst, const std::vector<T>& src) {
     dst.insert(dst.end(), src.begin(), src.end());
 }
 
@@ -1056,7 +1076,7 @@ void Append(std::vector<T> &dst, const std::vector<T> &src) {
 //   1) Robin Hood containers don't support two-argument erase functions
 //   2) STL remove_if requires the predicate to be const w.r.t the value-type, and std::erase_if doesn't AFAICT
 template <typename Container, typename Predicate>
-typename Container::size_type EraseIf(Container &c, Predicate &&p) {
+typename Container::size_type EraseIf(Container& c, Predicate&& p) {
     const auto before_size = c.size();
     auto pos = c.begin();
     while (pos != c.end()) {
@@ -1072,7 +1092,7 @@ typename Container::size_type EraseIf(Container &c, Predicate &&p) {
 // Replace with the std version after VVL switches to C++20.
 // https://en.cppreference.com/w/cpp/container/vector/erase2
 template <typename T, typename Pred>
-typename std::vector<T>::size_type erase_if(std::vector<T> &c, Pred pred) {
+typename std::vector<T>::size_type erase_if(std::vector<T>& c, Pred pred) {
     auto it = std::remove_if(c.begin(), c.end(), pred);
     auto r = c.end() - it;
     c.erase(it, c.end());
@@ -1104,8 +1124,8 @@ constexpr auto kNoIndex64 = kU64Max;
 
 template <typename T>
 T GetQuotientCeil(T numerator, T denominator) {
-    denominator = std::max(denominator, T{1});
+    denominator = std::max(denominator, T{ 1 });
     return static_cast<T>(std::ceil(static_cast<double>(numerator) / static_cast<double>(denominator)));
 }
 
-}  // namespace vvl
+} // namespace vvl

@@ -14,11 +14,11 @@
  */
 #pragma once
 
-#include <stdint.h>
-#include <stddef.h>
-#include <vector>
 #include "containers/custom_containers.h"
 #include <spirv/unified1/spirv.hpp>
+#include <stddef.h>
+#include <stdint.h>
+#include <vector>
 
 struct OperandInfo;
 
@@ -108,5 +108,5 @@ struct Instruction {
 #endif
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

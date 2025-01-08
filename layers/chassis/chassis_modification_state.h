@@ -19,29 +19,29 @@
  */
 
 #pragma once
-#include <vector>
 #include "state_tracker/shader_module.h"
+#include <vector>
 
 namespace vvl {
 class Pipeline;
-}  // namespace vvl
+} // namespace vvl
 
 // These structure are here as a way to bridge information down the chassis.
 // This allows the 4 different calls (PreCallValidate, PreCallRecord, Dispatch, PostCallRecord) to share information
 //
-// The "reason" lots of things are here and not in GPU-AV code is there is no stack memory that GPU-AV can use between PreCall (when
-// instrumentation occurs) and PostCall (when we can save it into the state object) to pass information between. While using only
-// core checks, there is a small memory overhead cost, but it is small and all on the stack.
+// The "reason" lots of things are here and not in GPU-AV code is there is no stack memory that GPU-AV can use between
+// PreCall (when instrumentation occurs) and PostCall (when we can save it into the state object) to pass information
+// between. While using only core checks, there is a small memory overhead cost, but it is small and all on the stack.
 namespace chassis {
 
 struct CreateShaderModule {
     // allows PreCallRecord to return a value like PreCallValidate
     bool skip = false;
 
-    // We build a spirv::Module at PreCallRecord time were we can do basic validation of the SPIR-V (which can crash drivers
-    // if passed in the Dispatch). It is then passed to PostCallRecord to save in state tracking so it can be used at Pipeline
-    // creation time where the rest of the information is needed to do the remaining SPIR-V validation.
-    std::shared_ptr<spirv::Module> module_state;  // contains SPIR-V to validate
+    // We build a spirv::Module at PreCallRecord time were we can do basic validation of the SPIR-V (which can crash
+    // drivers if passed in the Dispatch). It is then passed to PostCallRecord to save in state tracking so it can be
+    // used at Pipeline creation time where the rest of the information is needed to do the remaining SPIR-V validation.
+    std::shared_ptr<spirv::Module> module_state; // contains SPIR-V to validate
     spirv::StatelessData stateless_data;
 };
 
@@ -60,7 +60,7 @@ struct ShaderObject {
     // allows PreCallRecord to return a value like PreCallValidate
     bool skip = false;
 
-    std::vector<std::shared_ptr<spirv::Module>> module_states;  // contains SPIR-V to validate
+    std::vector<std::shared_ptr<spirv::Module>> module_states; // contains SPIR-V to validate
     std::vector<spirv::StatelessData> stateless_data;
 
     std::vector<VkShaderCreateInfoEXT> modified_create_infos;
@@ -135,4 +135,4 @@ struct CreateBuffer {
     VkBufferCreateInfo modified_create_info;
 };
 
-}  // namespace chassis
+} // namespace chassis

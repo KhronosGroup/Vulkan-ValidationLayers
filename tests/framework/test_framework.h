@@ -17,8 +17,8 @@
  */
 #pragma once
 
-#include <spirv-tools/libspirv.hpp>
 #include "test_common.h"
+#include <spirv-tools/libspirv.hpp>
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -32,7 +32,7 @@
 
 class VkTestFramework : public ::testing::Test {
   public:
-    static void InitArgs(int *argc, char *argv[]);
+    static void InitArgs(int* argc, char* argv[]);
     static void Finish();
 
     static inline bool m_print_vu = false;
@@ -41,7 +41,7 @@ class VkTestFramework : public ::testing::Test {
     static inline int m_phys_device_index = -1;
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    static inline ANativeWindow *window = nullptr;
+    static inline ANativeWindow* window = nullptr;
 #endif
 
   private:

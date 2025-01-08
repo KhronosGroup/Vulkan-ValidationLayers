@@ -18,8 +18,8 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
-#include <vulkan/utility/vk_safe_struct.hpp>
 #include <vector>
+#include <vulkan/utility/vk_safe_struct.hpp>
 
 class QueueFamilyPerfCounters {
   public:
@@ -37,7 +37,7 @@ namespace vvl {
 
 class PhysicalDevice : public StateObject {
   public:
-    uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
+    uint32_t queue_family_known_count = 1; // spec implies one QF must always be supported
     const std::vector<VkQueueFamilyProperties> queue_family_properties;
     const VkQueueFlags supported_queues;
     // TODO These are currently used by CoreChecks, but should probably be refactored
@@ -63,10 +63,10 @@ class DisplayMode : public StateObject {
   public:
     const VkPhysicalDevice physical_device;
 
-    DisplayMode(VkDisplayModeKHR handle, VkPhysicalDevice phys_dev)
-        : StateObject(handle, kVulkanObjectTypeDisplayModeKHR), physical_device(phys_dev) {}
+    DisplayMode(VkDisplayModeKHR handle, VkPhysicalDevice phys_dev) :
+        StateObject(handle, kVulkanObjectTypeDisplayModeKHR), physical_device(phys_dev) {}
 
     VkDisplayModeKHR VkHandle() const { return handle_.Cast<VkDisplayModeKHR>(); }
 };
 
-}  // namespace vvl
+} // namespace vvl

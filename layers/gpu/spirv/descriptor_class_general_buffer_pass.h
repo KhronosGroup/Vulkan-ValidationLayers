@@ -14,14 +14,14 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "pass.h"
+#include <stdint.h>
 
 namespace gpuav {
 namespace spirv {
 
-// Will make sure Buffers (Storage and Uniform Buffers) that are non bindless are not OOB Uses robustBufferAccess to ensure if we
-// are OOB that it won't crash and we will return the error safely
+// Will make sure Buffers (Storage and Uniform Buffers) that are non bindless are not OOB Uses robustBufferAccess to
+// ensure if we are OOB that it won't crash and we will return the error safely
 class DescriptorClassGeneralBufferPass : public Pass {
   public:
     DescriptorClassGeneralBufferPass(Module& module);
@@ -47,9 +47,9 @@ class DescriptorClassGeneralBufferPass : public Pass {
 
     uint32_t descriptor_set_ = 0;
     uint32_t descriptor_binding_ = 0;
-    uint32_t descriptor_index_id_ = 0;  // index input the descriptor array
+    uint32_t descriptor_index_id_ = 0; // index input the descriptor array
     uint32_t descriptor_offset_id_ = 0;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

@@ -11,17 +11,17 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/buffer_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/buffer_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
 class PositiveGpuAVIndirectBuffer : public GpuAVTest {};
 
 TEST_F(PositiveGpuAVIndirectBuffer, BasicTraceRaysMultipleStages) {
-    TEST_DESCRIPTION(
-        "Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration structure, and trace one "
-        "ray");
+    TEST_DESCRIPTION("Setup a ray tracing pipeline (ray generation, miss and closest hit shaders) and acceleration "
+                     "structure, and trace one "
+                     "ray");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     // TODO: Refacto ray tracing extensions listing.
@@ -46,7 +46,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, BasicTraceRaysMultipleStages) {
 
     // Set shaders
 
-    const char *ray_gen = R"glsl(
+    const char* ray_gen = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require // Requires SPIR-V 1.5 (Vulkan 1.2)
 
@@ -60,7 +60,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, BasicTraceRaysMultipleStages) {
     )glsl";
     pipeline.SetGlslRayGenShader(ray_gen);
 
-    const char *miss = R"glsl(
+    const char* miss = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require
 
@@ -74,7 +74,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, BasicTraceRaysMultipleStages) {
     )glsl";
     pipeline.AddGlslMissShader(miss);
 
-    const char *closest_hit = R"glsl(
+    const char* closest_hit = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require
 
@@ -93,7 +93,8 @@ TEST_F(PositiveGpuAVIndirectBuffer, BasicTraceRaysMultipleStages) {
     // Descriptor set
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     pipeline.CreateDescriptorSet();
-    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    vkt::as::BuildGeometryInfoKHR tlas(
+        vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
     pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -101,12 +102,24 @@ TEST_F(PositiveGpuAVIndirectBuffer, BasicTraceRaysMultipleStages) {
 
     // Bind descriptor set, pipeline, and trace rays
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                              pipeline.GetPipelineLayout(),
+                              0,
+                              1,
+                              &pipeline.GetDescriptorSet().set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
-    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
-                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    vk::CmdTraceRaysKHR(m_command_buffer,
+                        &trace_rays_sbt.ray_gen_sbt,
+                        &trace_rays_sbt.miss_sbt,
+                        &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt,
+                        1,
+                        1,
+                        1);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
@@ -132,10 +145,11 @@ TEST_F(PositiveGpuAVIndirectBuffer, Mesh) {
         GTEST_SKIP() << "MeshWorkGroupTotalCount too high for this test";
     }
     const uint32_t mesh_commands = 3;
-    uint32_t buffer_size = mesh_commands * (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4);  // 4 byte pad between commands
+    uint32_t buffer_size =
+        mesh_commands * (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4); // 4 byte pad between commands
 
     vkt::Buffer draw_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *draw_ptr = static_cast<uint32_t *>(draw_buffer.Memory().Map());
+    uint32_t* draw_ptr = static_cast<uint32_t*>(draw_buffer.Memory().Map());
     // Set all mesh group counts to 1
     for (uint32_t i = 0; i < mesh_commands * 4; ++i) {
         draw_ptr[i] = 1;
@@ -143,10 +157,10 @@ TEST_F(PositiveGpuAVIndirectBuffer, Mesh) {
     draw_buffer.Memory().Unmap();
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());
     *count_ptr = 3;
     count_buffer.Memory().Unmap();
-    char const *mesh_shader_source = R"glsl(
+    char const* mesh_shader_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -168,8 +182,8 @@ TEST_F(PositiveGpuAVIndirectBuffer, Mesh) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
 
-    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer.handle(), draw_buffer.handle(), 0, 3,
-                                    (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4));
+    vk::CmdDrawMeshTasksIndirectEXT(
+        m_command_buffer.handle(), draw_buffer.handle(), 0, 3, (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -197,10 +211,11 @@ TEST_F(PositiveGpuAVIndirectBuffer, MeshSingleCommand) {
         GTEST_SKIP() << "MeshWorkGroupTotalCount too high for this test";
     }
     const uint32_t mesh_commands = 1;
-    uint32_t buffer_size = mesh_commands * (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4);  // 4 byte pad between commands
+    uint32_t buffer_size =
+        mesh_commands * (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4); // 4 byte pad between commands
 
     vkt::Buffer draw_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *draw_ptr = static_cast<uint32_t *>(draw_buffer.Memory().Map());
+    uint32_t* draw_ptr = static_cast<uint32_t*>(draw_buffer.Memory().Map());
     // Set all mesh group counts to 1
     for (uint32_t i = 0; i < mesh_commands * 4; ++i) {
         draw_ptr[i] = 1;
@@ -208,10 +223,10 @@ TEST_F(PositiveGpuAVIndirectBuffer, MeshSingleCommand) {
     draw_buffer.Memory().Unmap();
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+    uint32_t* count_ptr = static_cast<uint32_t*>(count_buffer.Memory().Map());
     *count_ptr = 3;
     count_buffer.Memory().Unmap();
-    char const *mesh_shader_source = R"glsl(
+    char const* mesh_shader_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
         layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -259,7 +274,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, FirstInstanceSingleDrawIndirectCommand) {
     draw_params.instanceCount = 1;
     draw_params.firstVertex = 0;
     draw_params.firstInstance = 0;
-    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndirectCommand>(*m_device, {draw_params});
+    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndirectCommand>(*m_device, { draw_params });
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);

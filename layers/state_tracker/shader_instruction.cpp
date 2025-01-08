@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include <sstream>
 #include "state_tracker/shader_instruction.h"
 #include "generated/spirv_grammar_helper.h"
+#include <sstream>
 
 namespace spirv {
 
@@ -71,7 +71,7 @@ std::string Instruction::Describe() const {
     const uint32_t length = Length();
     const bool has_result = ResultId() != 0;
     const bool has_type = TypeId() != 0;
-    uint32_t operand_offset = 1;  // where to start printing operands
+    uint32_t operand_offset = 1; // where to start printing operands
     // common disassembled for SPIR-V is
     // %result = Opcode %result_type %operands
     if (has_result) {
@@ -108,13 +108,14 @@ std::string Instruction::Describe() const {
 
 // While simple, function name provides a more human readable description why Word(3) is used.
 //
-// The current various uses for constant values (OpAccessChain, OpTypeArray, LocalSize, etc) all have spec langauge making sure they
-// are scalar ints. It is also not valid for any of these use cases to have a negative value. While it is valid SPIR-V to use 64-bit
-// int, found writting test there is no way to create something valid that also calls this function. So until a use-case is found,
-// we can safely assume returning a uint32_t is ok.
+// The current various uses for constant values (OpAccessChain, OpTypeArray, LocalSize, etc) all have spec langauge
+// making sure they are scalar ints. It is also not valid for any of these use cases to have a negative value. While it
+// is valid SPIR-V to use 64-bit int, found writting test there is no way to create something valid that also calls this
+// function. So until a use-case is found, we can safely assume returning a uint32_t is ok.
 uint32_t Instruction::GetConstantValue() const {
     // This should be a OpConstant (not a OpSpecConstant), if this asserts then 2 things are happening
-    // 1. This function is being used where we don't actually know it is a constant and is a bug in the validation layers
+    // 1. This function is being used where we don't actually know it is a constant and is a bug in the validation
+    // layers
     // 2. The CreateFoldSpecConstantOpAndCompositePass didn't fully fold everything and is a bug in spirv-opt
     assert(Opcode() == spv::OpConstant);
     return Word(3);
@@ -151,16 +152,22 @@ spv::BuiltIn Instruction::GetBuiltIn() const {
     } else if (Opcode() == spv::OpMemberDecorate) {
         return static_cast<spv::BuiltIn>(Word(4));
     } else {
-        assert(false);  // non valid Opcode
+        assert(false); // non valid Opcode
         return spv::BuiltInMax;
     }
 }
 
-bool Instruction::IsArray() const { return (Opcode() == spv::OpTypeArray || Opcode() == spv::OpTypeRuntimeArray); }
+bool Instruction::IsArray() const {
+    return (Opcode() == spv::OpTypeArray || Opcode() == spv::OpTypeRuntimeArray);
+}
 
-spv::Dim Instruction::FindImageDim() const { return (Opcode() == spv::OpTypeImage) ? (spv::Dim(Word(3))) : spv::DimMax; }
+spv::Dim Instruction::FindImageDim() const {
+    return (Opcode() == spv::OpTypeImage) ? (spv::Dim(Word(3))) : spv::DimMax;
+}
 
-bool Instruction::IsImageArray() const { return (Opcode() == spv::OpTypeImage) && (Word(5) != 0); }
+bool Instruction::IsImageArray() const {
+    return (Opcode() == spv::OpTypeImage) && (Word(5) != 0);
+}
 
 bool Instruction::IsImageMultisampled() const {
     // spirv-val makes sure that the MS operand is only non-zero when possible to be Multisampled
@@ -186,16 +193,16 @@ spv::StorageClass Instruction::StorageClass() const {
     return storage_class;
 }
 
-// When logging from things such as GPU-AV, we need to do some SPIR-V processing, but is just to inspect single instructions without
-// knowledge of the rest of the module. This function just turns the saved vector of uint32_t into the Instruction class to make it
-// easier to use.
+// When logging from things such as GPU-AV, we need to do some SPIR-V processing, but is just to inspect single
+// instructions without knowledge of the rest of the module. This function just turns the saved vector of uint32_t into
+// the Instruction class to make it easier to use.
 void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<Instruction>& instructions) {
     // Need to use until we have native std::span in c++20
     using spirv_iterator = vvl::enumeration<const uint32_t, const uint32_t*>::iterator;
 
     assert(instructions.empty());
     spirv_iterator it = spirv.begin();
-    it += 5;  // skip first 5 word of header
+    it += 5; // skip first 5 word of header
     instructions.reserve(spirv.size() * 4);
 
     while (it != spirv.end()) {
@@ -204,4 +211,4 @@ void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<In
     }
 }
 
-}  // namespace spirv
+} // namespace spirv

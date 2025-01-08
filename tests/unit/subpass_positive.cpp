@@ -27,24 +27,26 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    const VkAttachmentDescription attachment = {0,
-                                                VK_FORMAT_R8G8B8A8_UNORM,
-                                                VK_SAMPLE_COUNT_1_BIT,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                                VK_IMAGE_LAYOUT_GENERAL};
-    const VkSubpassDependency dependency = {0,
-                                            0,
-                                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                            VK_DEPENDENCY_BY_REGION_BIT};
-    const VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_GENERAL};
-    const VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 1, &ref, nullptr, nullptr, 0, nullptr};
+    const VkAttachmentDescription attachment = { 0,
+                                                 VK_FORMAT_R8G8B8A8_UNORM,
+                                                 VK_SAMPLE_COUNT_1_BIT,
+                                                 VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                 VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                 VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                 VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                 VK_IMAGE_LAYOUT_UNDEFINED,
+                                                 VK_IMAGE_LAYOUT_GENERAL };
+    const VkSubpassDependency dependency = { 0,
+                                             0,
+                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                             VK_DEPENDENCY_BY_REGION_BIT };
+    const VkAttachmentReference ref = { 0, VK_IMAGE_LAYOUT_GENERAL };
+    const VkSubpassDescription subpass = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 1, &ref, nullptr, nullptr, 0, nullptr
+    };
 
     VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.attachmentCount = 1;
@@ -54,7 +56,11 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dependency;
     vkt::RenderPass render_pass(*m_device, rpci);
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    vkt::Image image(*m_device,
+                     32,
+                     32,
+                     1,
+                     VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle());
@@ -75,8 +81,8 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     barrier.subresourceRange.levelCount = 1;
 
     // VkDependencyInfo with VkImageMemoryBarrier2
-    const auto safe_barrier2 = ConvertVkImageMemoryBarrierToV2(barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    const auto safe_barrier2 = ConvertVkImageMemoryBarrierToV2(
+        barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     VkDependencyInfo dependency_info = vku::InitStructHelper();
     dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
     dependency_info.imageMemoryBarrierCount = 1;
@@ -85,8 +91,15 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     // Test vkCmdPipelineBarrier subpass barrier
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
                            &barrier);
     vk::CmdEndRenderPass(m_command_buffer);
     m_command_buffer.End();
@@ -105,24 +118,26 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    const VkAttachmentDescription attachment = {0,
-                                                VK_FORMAT_R8G8B8A8_UNORM,
-                                                VK_SAMPLE_COUNT_1_BIT,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                                VK_IMAGE_LAYOUT_GENERAL};
-    const VkSubpassDependency dependency = {VK_SUBPASS_EXTERNAL,
-                                            0,
-                                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                            0};
-    const VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_GENERAL};
-    const VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 1, &ref, nullptr, nullptr, 0, nullptr};
+    const VkAttachmentDescription attachment = { 0,
+                                                 VK_FORMAT_R8G8B8A8_UNORM,
+                                                 VK_SAMPLE_COUNT_1_BIT,
+                                                 VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                 VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                 VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                 VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                 VK_IMAGE_LAYOUT_UNDEFINED,
+                                                 VK_IMAGE_LAYOUT_GENERAL };
+    const VkSubpassDependency dependency = { VK_SUBPASS_EXTERNAL,
+                                             0,
+                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                             0 };
+    const VkAttachmentReference ref = { 0, VK_IMAGE_LAYOUT_GENERAL };
+    const VkSubpassDescription subpass = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 1, &ref, nullptr, nullptr, 0, nullptr
+    };
 
     VkRenderPassCreateInfo rpci = vku::InitStructHelper();
     rpci.attachmentCount = 1;
@@ -132,7 +147,11 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dependency;
     vkt::RenderPass render_pass(*m_device, rpci);
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    vkt::Image image(*m_device,
+                     32,
+                     32,
+                     1,
+                     VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle());
@@ -153,8 +172,8 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     barrier.subresourceRange.levelCount = 1;
 
     // VkDependencyInfo with VkImageMemoryBarrier2
-    const auto safe_barrier2 = ConvertVkImageMemoryBarrierToV2(barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    const auto safe_barrier2 = ConvertVkImageMemoryBarrierToV2(
+        barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     VkDependencyInfo dependency_info = vku::InitStructHelper();
     dependency_info.dependencyFlags = 0;
     dependency_info.imageMemoryBarrierCount = 1;
@@ -166,8 +185,17 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
         m_command_buffer.Begin();
         vk::CmdSetEvent(m_command_buffer, event, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
         m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
-        vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+        vk::CmdWaitEvents(m_command_buffer,
+                          1,
+                          &event.handle(),
+                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                          0,
+                          nullptr,
+                          0,
+                          nullptr,
+                          1,
+                          &barrier);
         vk::CmdEndRenderPass(m_command_buffer);
         m_command_buffer.End();
     }
@@ -191,7 +219,7 @@ TEST_F(PositiveSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout (constant_id = 0) const int index = 4; // over VkDescriptorSetLayoutBinding::descriptorCount
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[index];
@@ -202,13 +230,14 @@ TEST_F(PositiveSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
     )glsl";
 
     uint32_t data = 2;
-    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
-    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
-    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+    VkSpecializationMapEntry entry = { 0, 0, sizeof(uint32_t) };
+    VkSpecializationInfo specialization_info = { 1, &entry, sizeof(uint32_t), &data };
+    const VkShaderObj fs(
+        this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }

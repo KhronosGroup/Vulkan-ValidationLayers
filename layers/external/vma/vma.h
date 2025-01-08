@@ -19,19 +19,19 @@
 
 #include <vulkan/vulkan.h>
 
-#define VMA_STATIC_VULKAN_FUNCTIONS 0  // We will supply Vulkan function pointers at initialization
-#define VMA_VULKAN_VERSION 1001000  // Vulkan 1.1
+#define VMA_STATIC_VULKAN_FUNCTIONS 0 // We will supply Vulkan function pointers at initialization
+#define VMA_VULKAN_VERSION 1001000    // Vulkan 1.1
 
 #ifdef _MSVC_LANG
 
 #pragma warning(push, 4)
-#pragma warning(disable : 4127)  // conditional expression is constant
-#pragma warning(disable : 4100)  // unreferenced formal parameter
-#pragma warning(disable : 4189)  // local variable is initialized but not referenced
-#pragma warning(disable : 4324)  // structure was padded due to alignment specifier
-#pragma warning(disable : 4820)  // 'X': 'N' bytes padding added after data member 'X'
+#pragma warning(disable : 4127) // conditional expression is constant
+#pragma warning(disable : 4100) // unreferenced formal parameter
+#pragma warning(disable : 4189) // local variable is initialized but not referenced
+#pragma warning(disable : 4324) // structure was padded due to alignment specifier
+#pragma warning(disable : 4820) // 'X': 'N' bytes padding added after data member 'X'
 
-#endif  // #ifdef _MSVC_LANG
+#endif // #ifdef _MSVC_LANG
 
 // https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
 // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/

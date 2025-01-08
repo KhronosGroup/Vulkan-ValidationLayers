@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "layer_validation_tests.h"
 #include "descriptor_helper.h"
+#include "layer_validation_tests.h"
 #include "shader_helper.h"
 
 // Helper class for tersely creating create pipeline tests
@@ -43,52 +43,53 @@ class CreatePipelineHelper {
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
     std::unique_ptr<VkShaderObj> vs_;
     std::unique_ptr<VkShaderObj> fs_;
-    VkLayerTest &layer_test_;
-    vkt::Device *device_;
+    VkLayerTest& layer_test_;
+    vkt::Device* device_;
     std::optional<VkGraphicsPipelineLibraryCreateInfoEXT> gpl_info;
     // advantage of taking a VkLayerTest over vkt::Device is we can get the default renderpass from InitRenderTarget
-    CreatePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
+    CreatePipelineHelper(VkLayerTest& test, void* pNext = nullptr);
     ~CreatePipelineHelper();
 
-    const VkPipeline &Handle() const { return pipeline_; }
+    const VkPipeline& Handle() const { return pipeline_; }
     void InitShaderInfo();
-    void ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text);
+    void ResetShaderInfo(const char* vertex_shader_text, const char* fragment_shader_text);
     void Destroy();
 
     void LateBindPipelineInfo();
     VkResult CreateGraphicsPipeline(bool do_late_bind = true, bool no_cache = false);
 
-    void InitVertexInputLibInfo(void *p_next = nullptr);
+    void InitVertexInputLibInfo(void* p_next = nullptr);
 
     template <typename StageContainer>
-    void InitPreRasterLibInfoFromContainer(const StageContainer &stages, void *p_next = nullptr) {
+    void InitPreRasterLibInfoFromContainer(const StageContainer& stages, void* p_next = nullptr) {
         InitPreRasterLibInfo(stages.data(), p_next);
         gp_ci_.stageCount = static_cast<uint32_t>(stages.size());
     }
-    void InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next = nullptr);
+    void InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo* info, void* p_next = nullptr);
 
     template <typename StageContainer>
-    void InitFragmentLibInfoFromContainer(const StageContainer &stages, void *p_next = nullptr) {
+    void InitFragmentLibInfoFromContainer(const StageContainer& stages, void* p_next = nullptr) {
         InitFragmentLibInfo(stages.data(), p_next);
         gp_ci_.stageCount = static_cast<uint32_t>(stages.size());
     }
-    void InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next = nullptr);
+    void InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo* info, void* p_next = nullptr);
 
-    void InitFragmentOutputLibInfo(void *p_next = nullptr);
+    void InitFragmentOutputLibInfo(void* p_next = nullptr);
 
     // Both Pre-Rasterization and Fragment Shader
-    void InitShaderLibInfo(std::vector<VkPipelineShaderStageCreateInfo> &info, void *p_next = nullptr);
+    void InitShaderLibInfo(std::vector<VkPipelineShaderStageCreateInfo>& info, void* p_next = nullptr);
 
     // Helper function to create a simple test case (positive or negative)
     //
     // info_override can be any callable that takes a CreatePipelineHeper &
     // flags, error can be any args accepted by "SetDesiredFailure".
     template <typename Test, typename OverrideFunc, typename ErrorContainer>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const ErrorContainer &errors) {
+    static void
+    OneshotTest(Test& test, const OverrideFunc& info_override, const VkFlags flags, const ErrorContainer& errors) {
         CreatePipelineHelper helper(test);
         info_override(helper);
 
-        for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
+        for (const auto& error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
         helper.CreateGraphicsPipeline();
 
         if (!errors.empty()) {
@@ -97,20 +98,21 @@ class CreatePipelineHelper {
     }
 
     template <typename Test, typename OverrideFunc>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const char *error) {
-        std::array errors = {error};
+    static void OneshotTest(Test& test, const OverrideFunc& info_override, const VkFlags flags, const char* error) {
+        std::array errors = { error };
         OneshotTest(test, info_override, flags, errors);
     }
 
     template <typename Test, typename OverrideFunc>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const std::string &error) {
-        std::array errors = {error};
+    static void
+    OneshotTest(Test& test, const OverrideFunc& info_override, const VkFlags flags, const std::string& error) {
+        std::array errors = { error };
         OneshotTest(test, info_override, flags, errors);
     }
 
     template <typename Test, typename OverrideFunc>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags) {
-        std::array<const char *, 0> errors;
+    static void OneshotTest(Test& test, const OverrideFunc& info_override, const VkFlags flags) {
+        std::array<const char*, 0> errors;
         OneshotTest(test, info_override, flags, errors);
     }
 
@@ -137,12 +139,12 @@ class CreateComputePipelineHelper {
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
     std::unique_ptr<VkShaderObj> cs_;
     bool override_skip_ = false;
-    VkLayerTest &layer_test_;
-    vkt::Device *device_;
-    CreateComputePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
+    VkLayerTest& layer_test_;
+    vkt::Device* device_;
+    CreateComputePipelineHelper(VkLayerTest& test, void* pNext = nullptr);
     ~CreateComputePipelineHelper();
 
-    const VkPipeline &Handle() const { return pipeline_; }
+    const VkPipeline& Handle() const { return pipeline_; }
     void InitShaderInfo();
     void Destroy();
 
@@ -154,17 +156,20 @@ class CreateComputePipelineHelper {
     // info_override can be any callable that takes a CreatePipelineHeper &
     // flags, error can be any args accepted by "SetDesiredFailure".
     template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const std::vector<Error> &errors,
+    static void OneshotTest(Test& test,
+                            const OverrideFunc& info_override,
+                            const VkFlags flags,
+                            const std::vector<Error>& errors,
                             bool positive_test = false) {
         CreateComputePipelineHelper helper(test);
         info_override(helper);
         // Allow lambda to decide if to skip trying to compile pipeline to prevent crashing
         if (helper.override_skip_) {
-            helper.override_skip_ = false;  // reset
+            helper.override_skip_ = false; // reset
             return;
         }
 
-        for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
+        for (const auto& error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
         helper.CreateComputePipeline();
 
         if (!errors.empty()) {
@@ -173,12 +178,12 @@ class CreateComputePipelineHelper {
     }
 
     template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, Error error) {
+    static void OneshotTest(Test& test, const OverrideFunc& info_override, const VkFlags flags, Error error) {
         OneshotTest(test, info_override, flags, std::vector<Error>(1, error));
     }
 
     template <typename Test, typename OverrideFunc>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags) {
+    static void OneshotTest(Test& test, const OverrideFunc& info_override, const VkFlags flags) {
         OneshotTest(test, info_override, flags, std::vector<std::string>{});
     }
 
@@ -201,10 +206,12 @@ struct GraphicsPipelineLibraryStage {
 // For GPU-AV tests, this will only run a single fragment pixel
 class SimpleGPL {
   public:
-    SimpleGPL(VkLayerTest &test, VkPipelineLayout layout, const char *vertex_shader = nullptr,
-              const char *fragment_shader = nullptr);
+    SimpleGPL(VkLayerTest& test,
+              VkPipelineLayout layout,
+              const char* vertex_shader = nullptr,
+              const char* fragment_shader = nullptr);
 
-    const VkPipeline &Handle() const { return pipe_.handle(); }
+    const VkPipeline& Handle() const { return pipe_.handle(); }
 
   private:
     CreatePipelineHelper vertex_input_lib_;
@@ -214,7 +221,7 @@ class SimpleGPL {
     vkt::Pipeline pipe_;
 };
 
-}  // namespace vkt
+} // namespace vkt
 
 static inline VkPipelineColorBlendAttachmentState DefaultColorBlendAttachmentState() {
     VkPipelineColorBlendAttachmentState state = {};

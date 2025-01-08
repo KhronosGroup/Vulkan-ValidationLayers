@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#include <thread>
-#include "../framework/layer_validation_tests.h"
 #include "../framework/external_memory_sync.h"
+#include "../framework/layer_validation_tests.h"
+#include <thread>
 
 struct PositiveSyncValTimelineSemaphore : public VkSyncValTest {};
 
@@ -281,7 +281,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitBeforeSignalNonDefaultStage2) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 1, VK_PIPELINE_STAGE_2_COPY_BIT));
-    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineSignal(semaphore, 3, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT));
+    m_second_queue->Submit2(m_second_command_buffer,
+                            vkt::TimelineSignal(semaphore, 3, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT));
     m_device->Wait();
 }
 
@@ -297,7 +298,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitLatestSignal) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT));
-    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));  // includes all stages
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2)); // includes all stages
 
     // If due to regression signal=1 resolves this wait then it should generate a WAW hazard due to stage mask mismatch
     m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, 2));
@@ -322,7 +323,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitLatestSignalTwoQueues) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT));
-    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2));  // includes all stages
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 2)); // includes all stages
 
     // If due to regression signal=1 resolves this wait then it should generate a WAW hazard due to stage mask mismatch
     m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 2));
@@ -395,7 +396,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, SyncSubmitsWithSingleSemaphore) {
 
     vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
     for (int i = 1; i <= N; i++) {
-        m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(semaphore, i - 1), vkt::TimelineSignal(semaphore, i));
+        m_default_queue->Submit2(
+            m_command_buffer, vkt::TimelineWait(semaphore, i - 1), vkt::TimelineSignal(semaphore, i));
     }
     m_device->Wait();
 }
@@ -542,7 +544,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, KhronosTimelineSemaphoreExample) {
     }
 
     vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
+    vkt::Buffer buffer_b(
+        *m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, kHostVisibleMemProps);
     if (!buffer_b.Memory().initialized()) {
         GTEST_SKIP() << "Can't allocate host visible/coherent memory";
     }
@@ -558,10 +561,10 @@ TEST_F(PositiveSyncValTimelineSemaphore, KhronosTimelineSemaphoreExample) {
     vkt::Semaphore timeline(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
 
     auto thread1 = [this, &timeline]() {
-        const uint64_t wait_value_1 = 0;    // No-op wait. Value is always >= 0.
-        const uint64_t signal_value_1 = 5;  // Unblock thread2's CPU work.
-        m_default_queue->Submit2(m_command_buffer, vkt::TimelineWait(timeline, wait_value_1),
-                                 vkt::TimelineSignal(timeline, signal_value_1));
+        const uint64_t wait_value_1 = 0;   // No-op wait. Value is always >= 0.
+        const uint64_t signal_value_1 = 5; // Unblock thread2's CPU work.
+        m_default_queue->Submit2(
+            m_command_buffer, vkt::TimelineWait(timeline, wait_value_1), vkt::TimelineSignal(timeline, signal_value_1));
     };
     auto thread2 = [&timeline, &bytes]() {
         // Wait for thread1's device work to complete.
@@ -575,9 +578,10 @@ TEST_F(PositiveSyncValTimelineSemaphore, KhronosTimelineSemaphoreExample) {
         timeline.Signal(7);
     };
     auto thread3 = [this, &timeline]() {
-        const uint64_t wait_value_3 = 7;    // Wait for thread2's CPU work to complete.
-        const uint64_t signal_value_3 = 8;  // Signal completion of all work.
-        m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(timeline, wait_value_3),
+        const uint64_t wait_value_3 = 7;   // Wait for thread2's CPU work to complete.
+        const uint64_t signal_value_3 = 8; // Signal completion of all work.
+        m_second_queue->Submit2(m_second_command_buffer,
+                                vkt::TimelineWait(timeline, wait_value_3),
                                 vkt::TimelineSignal(timeline, signal_value_3));
     };
 
@@ -653,7 +657,7 @@ TEST_F(PositiveSyncValTimelineSemaphore, ExternalSemaphoreWaitBeforeSignal) {
         m_device->Wait();
     }
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
 TEST_F(PositiveSyncValTimelineSemaphore, QueueWaitIdleRemovesSignals) {
     TEST_DESCRIPTION("Test for manual inspection of registered signals (VK_SYNCVAL_SHOW_STATS can be used)");
@@ -754,7 +758,8 @@ TEST_F(PositiveSyncValTimelineSemaphore, WaitForFencesWithTimelineSignalBatches)
 
     // The first batch context.
     // Specify VERTEX_SHADER signal scope, so waiting for timeline signal does not protect buffer copy
-    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1, VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT), fence);
+    m_default_queue->Submit2(
+        m_command_buffer, vkt::TimelineSignal(semaphore, 1, VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT), fence);
 
     // The second batch context which imports the first one.
     // The timeline signal in the first submit still references the first batch.

@@ -25,7 +25,9 @@
 
 namespace syncval_stats {
 
-void Value32::Update(uint32_t new_value) { u32.store(new_value); }
+void Value32::Update(uint32_t new_value) {
+    u32.store(new_value);
+}
 
 uint32_t Value32::Add(uint32_t n) {
     // fetch_add returns value before increment; add one to get new value
@@ -47,7 +49,9 @@ void ValueMax32::Add(uint32_t n) {
     vvl::atomic_fetch_max(max_value.u32, new_value);
 }
 
-void ValueMax32::Sub(uint32_t n) { value.Sub(n); }
+void ValueMax32::Sub(uint32_t n) {
+    value.Sub(n);
+}
 
 Stats::~Stats() {
     if (report_on_destruction) {
@@ -56,22 +60,44 @@ Stats::~Stats() {
     }
 }
 
-void Stats::AddCommandBufferContext() { command_buffer_context_counter.Add(1); }
-void Stats::RemoveCommandBufferContext() { command_buffer_context_counter.Sub(1); }
+void Stats::AddCommandBufferContext() {
+    command_buffer_context_counter.Add(1);
+}
+void Stats::RemoveCommandBufferContext() {
+    command_buffer_context_counter.Sub(1);
+}
 
-void Stats::AddQueueBatchContext() { queue_batch_context_counter.Add(1); }
-void Stats::RemoveQueueBatchContext() { queue_batch_context_counter.Sub(1); }
+void Stats::AddQueueBatchContext() {
+    queue_batch_context_counter.Add(1);
+}
+void Stats::RemoveQueueBatchContext() {
+    queue_batch_context_counter.Sub(1);
+}
 
-void Stats::AddTimelineSignals(uint32_t count) { timeline_signal_counter.Add(count); }
-void Stats::RemoveTimelineSignals(uint32_t count) { timeline_signal_counter.Sub(count); }
+void Stats::AddTimelineSignals(uint32_t count) {
+    timeline_signal_counter.Add(count);
+}
+void Stats::RemoveTimelineSignals(uint32_t count) {
+    timeline_signal_counter.Sub(count);
+}
 
-void Stats::AddUnresolvedBatch() { unresolved_batch_counter.Add(1); }
-void Stats::RemoveUnresolvedBatch() { unresolved_batch_counter.Sub(1); }
+void Stats::AddUnresolvedBatch() {
+    unresolved_batch_counter.Add(1);
+}
+void Stats::RemoveUnresolvedBatch() {
+    unresolved_batch_counter.Sub(1);
+}
 
-void Stats::AddHandleRecord(uint32_t count) { handle_record_counter.Add(count); }
-void Stats::RemoveHandleRecord(uint32_t count) { handle_record_counter.Sub(count); }
+void Stats::AddHandleRecord(uint32_t count) {
+    handle_record_counter.Add(count);
+}
+void Stats::RemoveHandleRecord(uint32_t count) {
+    handle_record_counter.Sub(count);
+}
 
-void Stats::ReportOnDestruction() { report_on_destruction = true; }
+void Stats::ReportOnDestruction() {
+    report_on_destruction = true;
+}
 
 std::string Stats::CreateReport() {
     std::ostringstream str;
@@ -117,5 +143,5 @@ std::string Stats::CreateReport() {
     return str.str();
 }
 
-}  // namespace syncval_stats
-#endif  // VVL_ENABLE_SYNCVAL_STATS != 0
+} // namespace syncval_stats
+#endif // VVL_ENABLE_SYNCVAL_STATS != 0

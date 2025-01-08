@@ -18,7 +18,7 @@
 
 #include <string>
 
-std::string GetEnvironment(const char *variable);
+std::string GetEnvironment(const char* variable);
 
 // Not supported on Android
-void SetEnvironment(const char *variable, const char *value);
+void SetEnvironment(const char* variable, const char* value);

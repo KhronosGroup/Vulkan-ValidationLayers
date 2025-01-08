@@ -27,10 +27,11 @@ struct VendorSpecificInfo {
 
 const auto& GetVendorInfo() {
     static const std::map<BPVendorFlagBits, VendorSpecificInfo> kVendorInfo = {
-        {kBPVendorArm, {vendor_specific_arm, "Arm"}},
-        {kBPVendorAMD, {vendor_specific_amd, "AMD"}},
-        {kBPVendorIMG, {vendor_specific_img, "IMG"}},
-        {kBPVendorNVIDIA, {vendor_specific_nvidia, "NVIDIA"}}};
+        { kBPVendorArm, { vendor_specific_arm, "Arm" } },
+        { kBPVendorAMD, { vendor_specific_amd, "AMD" } },
+        { kBPVendorIMG, { vendor_specific_img, "IMG" } },
+        { kBPVendorNVIDIA, { vendor_specific_nvidia, "NVIDIA" } }
+    };
 
     return kVendorInfo;
 }
@@ -51,16 +52,17 @@ WriteLockGuard BestPractices::WriteLock() {
     }
 }
 
-std::shared_ptr<vvl::CommandBuffer> BestPractices::CreateCmdBufferState(VkCommandBuffer handle,
-                                                                        const VkCommandBufferAllocateInfo* allocate_info,
-                                                                        const vvl::CommandPool* pool) {
+std::shared_ptr<vvl::CommandBuffer> BestPractices::CreateCmdBufferState(
+    VkCommandBuffer handle, const VkCommandBufferAllocateInfo* allocate_info, const vvl::CommandPool* pool) {
     return std::static_pointer_cast<vvl::CommandBuffer>(
         std::make_shared<bp_state::CommandBuffer>(*this, handle, allocate_info, pool));
 }
 
-bp_state::CommandBuffer::CommandBuffer(BestPractices& bp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* allocate_info,
-                                       const vvl::CommandPool* pool)
-    : vvl::CommandBuffer(bp, handle, allocate_info, pool) {}
+bp_state::CommandBuffer::CommandBuffer(BestPractices& bp,
+                                       VkCommandBuffer handle,
+                                       const VkCommandBufferAllocateInfo* allocate_info,
+                                       const vvl::CommandPool* pool) :
+    vvl::CommandBuffer(bp, handle, allocate_info, pool) {}
 
 bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
     for (const auto& vendor : GetVendorInfo()) {
@@ -100,21 +102,26 @@ const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
     return res->second.c_str();
 }
 
-// Despite the return code being successful this can be a useful utility for some developers in niche debugging situation.
+// Despite the return code being successful this can be a useful utility for some developers in niche debugging
+// situation.
 void BestPractices::LogPositiveSuccessCode(const RecordObject& record_obj) const {
     assert(record_obj.result > VK_SUCCESS);
 
-    LogVerbose("BestPractices-Verbose-Success-Logging", instance, record_obj.location, "Returned %s.",
+    LogVerbose("BestPractices-Verbose-Success-Logging",
+               instance,
+               record_obj.location,
+               "Returned %s.",
                string_VkResult(record_obj.result));
 }
 
 void BestPractices::LogErrorCode(const RecordObject& record_obj) const {
-    assert(record_obj.result < VK_SUCCESS);  // Anything less than VK_SUCCESS is an error.
+    assert(record_obj.result < VK_SUCCESS); // Anything less than VK_SUCCESS is an error.
 
     // Despite being error codes log these results as informational.
     // That is because they are returned frequently during window resizing.
     // They are expected to occur during the normal application lifecycle.
-    constexpr std::array common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
+    constexpr std::array common_failure_codes = { VK_ERROR_OUT_OF_DATE_KHR,
+                                                  VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT };
     const auto result_string = string_VkResult(record_obj.result);
 
     if (IsValueIn(record_obj.result, common_failure_codes)) {

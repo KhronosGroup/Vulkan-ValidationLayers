@@ -17,9 +17,9 @@
 
 #pragma once
 
-#include "state_tracker/buffer_state.h"
 #include "containers/custom_containers.h"
 #include "error_message/logging.h"
+#include "state_tracker/buffer_state.h"
 
 #include <array>
 #include <functional>
@@ -30,18 +30,18 @@
    For example, take those VUIDs for VkDescriptorBufferBindingInfoEXT:
 
    VUID-VkDescriptorBufferBindingInfoEXT-usage-08122:
-   If usage includes VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, address must be an address within a valid buffer that was
-   created with VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT
+   If usage includes VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, address must be an address within a valid buffer
+   that was created with VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT
    VUID-VkDescriptorBufferBindingInfoEXT-usage-08123:
-   If usage includes VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, address must be an address within a valid buffer that was
-   created with VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT
+   If usage includes VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, address must be an address within a valid
+   buffer that was created with VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT
    VUID-VkDescriptorBufferBindingInfoEXT-usage-08124:
-   If usage includes VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT, address must be an address within a valid buffer
-   that was created with VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT
+   If usage includes VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT, address must be an address within a
+   valid buffer that was created with VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT
 
-   For usage to be valid, since the mentioned address can refer to multiple buffers, one must find a buffer that satisfies *all*
-   of them. One must *not* consider those VUIDs independantly, each time trying to find a buffer that satisfies the considered VUID
-   but not necessarily the others in the family.
+   For usage to be valid, since the mentioned address can refer to multiple buffers, one must find a buffer that
+   satisfies *all* of them. One must *not* consider those VUIDs independantly, each time trying to find a buffer that
+   satisfies the considered VUID but not necessarily the others in the family.
 
    The VVL heuristic wants that the vast majority of the time, functions calls and structures are valid, thus validation
    should be fast and avoid to do things related to error logging unless necessary. To comply with that, buffer address
@@ -50,11 +50,12 @@
    violating it. Outputting for each buffer every VUID it violates would lead to unnecessary log clutter.
    This two pass process is tedious to do without an helper class, hence BufferAddressValidation was created.
    The idea is to ask for user to provide the only necessary data:
-   a VUID, how it is validated, what to log when a buffer violates it, and a snippet of text appended to the error message header.
-   Then, just a call to LogErrorsIfNoValidBuffer is needed to do validation and, eventually, error logging.
+   a VUID, how it is validated, what to log when a buffer violates it, and a snippet of text appended to the error
+   message header. Then, just a call to LogErrorsIfNoValidBuffer is needed to do validation and, eventually, error
+   logging.
 
-   For an example of how to use BufferAddressValidation, see for instance how "VUID-VkDescriptorBufferBindingInfoEXT-usage-08122"
-   and friends are validated.
+   For an example of how to use BufferAddressValidation, see for instance how
+   "VUID-VkDescriptorBufferBindingInfoEXT-usage-08122" and friends are validated.
  */
 
 template <size_t ChecksCount = 1>
@@ -67,7 +68,9 @@ class BufferAddressValidation {
     struct VuidAndValidation {
         std::string_view vuid{};
         ValidationFunction validation_func = [](vvl::Buffer* const, std::string* out_error_msg) { return true; };
-        ErrorMsgHeaderSuffixFunction error_msg_header_suffix_func = []() { return "\n"; };  // text appended to error message header
+        ErrorMsgHeaderSuffixFunction error_msg_header_suffix_func = []() {
+            return "\n";
+        }; // text appended to error message header
     };
 
     // Look for a buffer that satisfies all VUIDs
@@ -76,12 +79,16 @@ class BufferAddressValidation {
     [[nodiscard]] bool HasInvalidBuffer(vvl::span<vvl::Buffer* const> buffer_list) const noexcept;
     // For every vuid, build an error mentioning every buffer from buffer_list that violates it, then log this error
     // using details provided by the other parameters.
-    [[nodiscard]] bool LogInvalidBuffers(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
-                                         const Location& device_address_loc, const LogObjectList& objlist,
+    [[nodiscard]] bool LogInvalidBuffers(const CoreChecks& checker,
+                                         vvl::span<vvl::Buffer* const> buffer_list,
+                                         const Location& device_address_loc,
+                                         const LogObjectList& objlist,
                                          VkDeviceAddress device_address) const noexcept;
 
-    [[nodiscard]] bool LogErrorsIfNoValidBuffer(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
-                                                const Location& device_address_loc, const LogObjectList& objlist,
+    [[nodiscard]] bool LogErrorsIfNoValidBuffer(const CoreChecks& checker,
+                                                vvl::span<vvl::Buffer* const> buffer_list,
+                                                const Location& device_address_loc,
+                                                const LogObjectList& objlist,
                                                 VkDeviceAddress device_address) const noexcept {
         bool skip = false;
         if (!HasValidBuffer(buffer_list)) {
@@ -89,8 +96,10 @@ class BufferAddressValidation {
         }
         return skip;
     }
-    [[nodiscard]] bool LogErrorsIfInvalidBufferFound(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
-                                                     const Location& device_address_loc, const LogObjectList& objlist,
+    [[nodiscard]] bool LogErrorsIfInvalidBufferFound(const CoreChecks& checker,
+                                                     vvl::span<vvl::Buffer* const> buffer_list,
+                                                     const Location& device_address_loc,
+                                                     const LogObjectList& objlist,
                                                      VkDeviceAddress device_address) const noexcept {
         bool skip = false;
         if (HasInvalidBuffer(buffer_list)) {
@@ -109,13 +118,14 @@ class BufferAddressValidation {
         return false;
     }
 
-    static bool ValidateMemoryBoundToBuffer(const CoreChecks& validator, vvl::Buffer const* const buffer_state,
+    static bool ValidateMemoryBoundToBuffer(const CoreChecks& validator,
+                                            vvl::Buffer const* const buffer_state,
                                             std::string* out_error_msg) {
         if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
             if (out_error_msg) {
                 if (const auto mem_state = buffer_state->MemState(); mem_state && mem_state->Destroyed()) {
-                    *out_error_msg +=
-                        "buffer is bound to memory (" + validator.FormatHandle(mem_state->Handle()) + ") but it has been freed";
+                    *out_error_msg += "buffer is bound to memory (" + validator.FormatHandle(mem_state->Handle()) +
+                                      ") but it has been freed";
                 } else {
                     *out_error_msg += "buffer has not been bound to memory";
                 }
@@ -153,7 +163,8 @@ bool BufferAddressValidation<ChecksCount>::HasValidBuffer(vvl::span<vvl::Buffer*
                 break;
             }
         }
-        if (valid_buffer_found) return true;
+        if (valid_buffer_found)
+            return true;
     }
 
     return false;
@@ -175,8 +186,10 @@ bool BufferAddressValidation<ChecksCount>::HasInvalidBuffer(vvl::span<vvl::Buffe
 }
 
 template <size_t ChecksCount>
-bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& checker, vvl::span<vvl::Buffer* const> buffer_list,
-                                                             const Location& device_address_loc, const LogObjectList& objlist,
+bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& checker,
+                                                             vvl::span<vvl::Buffer* const> buffer_list,
+                                                             const Location& device_address_loc,
+                                                             const LogObjectList& objlist,
                                                              VkDeviceAddress device_address) const noexcept {
     std::array<Error, ChecksCount> errors;
 
@@ -190,9 +203,8 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& c
         }();
         error_msg_beginning += "(";
         error_msg_beginning += address_string;
-        error_msg_beginning +=
-            ") has no buffer(s) associated to it such that valid usage passes. "
-            "At least one buffer associated to this device address must be valid.\n";
+        error_msg_beginning += ") has no buffer(s) associated to it such that valid usage passes. "
+                               "At least one buffer associated to this device address must be valid.\n";
     }
 
     // For each buffer, and for each violated VUID, build an error message
@@ -200,7 +212,8 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& c
         ASSERT_AND_CONTINUE(buffer);
 
         for (size_t i = 0; i < ChecksCount; ++i) {
-            [[maybe_unused]] const auto& [vuid, validation_func, error_msg_header_suffix_func] = vuidsAndValidationFunctions[i];
+            [[maybe_unused]] const auto& [vuid, validation_func, error_msg_header_suffix_func] =
+                vuidsAndValidationFunctions[i];
 
             // Fill buffer_error with error if there is one, and if validation function did fill a buffer error message
             if (std::string buffer_error; !validation_func(buffer, &buffer_error) && !buffer_error.empty()) {
@@ -236,8 +249,8 @@ bool BufferAddressValidation<ChecksCount>::LogInvalidBuffers(const CoreChecks& c
         const auto& vuidAndValidation = vuidsAndValidationFunctions[i];
         const auto& error = errors[i];
         if (!error.Empty()) {
-            skip |=
-                checker.LogError(vuidAndValidation.vuid.data(), error.objlist, device_address_loc, "%s\n", error.error_msg.c_str());
+            skip |= checker.LogError(
+                vuidAndValidation.vuid.data(), error.objlist, device_address_loc, "%s\n", error.error_msg.c_str());
         }
     }
 

@@ -16,32 +16,42 @@
  */
 #pragma once
 
-#include "sync/sync_submit.h"
 #include "state_tracker/image_state.h"
+#include "sync/sync_submit.h"
 
 namespace syncval_state {
 
 class ImageState : public vvl::Image {
   public:
-    ImageState(const ValidationStateTracker &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo,
-               VkFormatFeatureFlags2 features)
-        : vvl::Image(dev_data, handle, pCreateInfo, features), opaque_base_address_(0U) {}
+    ImageState(const ValidationStateTracker& dev_data,
+               VkImage handle,
+               const VkImageCreateInfo* pCreateInfo,
+               VkFormatFeatureFlags2 features) :
+        vvl::Image(dev_data, handle, pCreateInfo, features),
+        opaque_base_address_(0U) {}
 
-    ImageState(const ValidationStateTracker &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo,
-               VkSwapchainKHR swapchain, uint32_t swapchain_index, VkFormatFeatureFlags2 features)
-        : vvl::Image(dev_data, handle, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
+    ImageState(const ValidationStateTracker& dev_data,
+               VkImage handle,
+               const VkImageCreateInfo* pCreateInfo,
+               VkSwapchainKHR swapchain,
+               uint32_t swapchain_index,
+               VkFormatFeatureFlags2 features) :
+        vvl::Image(dev_data, handle, pCreateInfo, swapchain, swapchain_index, features),
+        opaque_base_address_(0U) {}
     bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
     bool IsTiled() const { return !IsLinear(); }
     bool IsSimplyBound() const;
 
-    void SetOpaqueBaseAddress(ValidationStateTracker &dev_data);
+    void SetOpaqueBaseAddress(ValidationStateTracker& dev_data);
 
     VkDeviceSize GetOpaqueBaseAddress() const { return opaque_base_address_; }
     bool HasOpaqueMapping() const { return 0U != opaque_base_address_; }
     VkDeviceSize GetResourceBaseAddress() const;
-    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
-    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
-                                    const VkExtent3D &extent, bool is_depth_sliced) const;
+    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange& subresource_range, bool is_depth_sliced) const;
+    ImageRangeGen MakeImageRangeGen(const VkImageSubresourceRange& subresource_range,
+                                    const VkOffset3D& offset,
+                                    const VkExtent3D& extent,
+                                    bool is_depth_sliced) const;
 
   protected:
     VkDeviceSize opaque_base_address_ = 0U;
@@ -49,29 +59,34 @@ class ImageState : public vvl::Image {
 
 class ImageViewState : public vvl::ImageView {
   public:
-    ImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *ci,
-                   VkFormatFeatureFlags2 ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
-    const ImageState *GetImageState() const { return static_cast<const syncval_state::ImageState *>(image_state.get()); }
-    ImageRangeGen MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0) const;
-    const ImageRangeGen &GetFullViewImageRangeGen() const { return view_range_gen; }
+    ImageViewState(const std::shared_ptr<vvl::Image>& image_state,
+                   VkImageView handle,
+                   const VkImageViewCreateInfo* ci,
+                   VkFormatFeatureFlags2 ff,
+                   const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props);
+    const ImageState* GetImageState() const { return static_cast<const syncval_state::ImageState*>(image_state.get()); }
+    ImageRangeGen
+    MakeImageRangeGen(const VkOffset3D& offset, const VkExtent3D& extent, VkImageAspectFlags aspect_mask = 0) const;
+    const ImageRangeGen& GetFullViewImageRangeGen() const { return view_range_gen; }
 
   protected:
     ImageRangeGen MakeImageRangeGen() const;
-    // All data members needs for MakeImageRangeGen() must be set before initializing view_range_gen... i.e. above this line.
+    // All data members needs for MakeImageRangeGen() must be set before initializing view_range_gen... i.e. above this
+    // line.
     const ImageRangeGen view_range_gen;
 };
 
 class Swapchain : public vvl::Swapchain {
   public:
-    Swapchain(ValidationStateTracker &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
+    Swapchain(ValidationStateTracker& dev_data, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR handle);
     ~Swapchain() { Destroy(); }
-    void RecordPresentedImage(PresentedImage &&presented_images);
+    void RecordPresentedImage(PresentedImage&& presented_images);
     PresentedImage MovePresentedImage(uint32_t image_index);
-    void GetPresentBatches(std::vector<QueueBatchContext::Ptr> &batches) const;
+    void GetPresentBatches(std::vector<QueueBatchContext::Ptr>& batches) const;
     std::shared_ptr<const Swapchain> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<Swapchain> shared_from_this() { return SharedFromThisImpl(this); }
 
   private:
-    PresentedImages presented;  // Build this on demand
+    PresentedImages presented; // Build this on demand
 };
-}  // namespace syncval_state
+} // namespace syncval_state

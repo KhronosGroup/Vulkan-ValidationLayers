@@ -18,20 +18,22 @@
 //   Instanceless tests
 // Tests of validation of vkCreateInstance and vkDestroyInstance via the pNext debug callback.
 //
-// This set of test should ideally be as complete as possible. Most of the VUs are Implicit (i.e. automatically generated), but any
-// of the parameters could expose a bug or inadequacy in the Loader or the debug extension.
+// This set of test should ideally be as complete as possible. Most of the VUs are Implicit (i.e. automatically
+// generated), but any of the parameters could expose a bug or inadequacy in the Loader or the debug extension.
 //
-// Note: testing pCreateInfo pointer, the sType of a debug struct, the debug callback pointer, the ppEnabledLayerNames pointer, and
+// Note: testing pCreateInfo pointer, the sType of a debug struct, the debug callback pointer, the ppEnabledLayerNames
+// pointer, and
 //       the ppEnabledExtensionNames would require extenally enabled debug layers, so this is currently not performed.
 //
-// TODO: VkDebugReportCallbackCreateInfoEXT::flags and VkDebugUtilsMessengerCreateInfoEXT various Flags could theoretically be
+// TODO: VkDebugReportCallbackCreateInfoEXT::flags and VkDebugUtilsMessengerCreateInfoEXT various Flags could
+// theoretically be
 //       tested if the debug extensions are made robust enough
 
 #include <memory>
 #include <vector>
 
-#include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
+#include "utils/cast_utils.h"
 
 static VkInstance dummy_instance;
 
@@ -43,7 +45,7 @@ TEST_F(NegativeInstanceless, InstanceExtensionDependencies) {
     if (!InstanceExtensionSupported(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
         GTEST_SKIP() << "Did not find required instance extension";
     }
-    ASSERT_TRUE(InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME));  // Driver should always provide dependencies
+    ASSERT_TRUE(InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)); // Driver should always provide dependencies
 
     Monitor().SetDesiredError("VUID-vkCreateInstance-ppEnabledExtensionNames-01388");
     m_instance_extension_names.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
@@ -98,8 +100,8 @@ TEST_F(NegativeInstanceless, InstanceDuplicatePnextStype) {
     auto ici = GetInstanceCreateInfo();
 
     Monitor().SetDesiredError("VUID-VkInstanceCreateInfo-sType-unique");
-    const VkValidationFeaturesEXT duplicate_pnext = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, ici.pNext};
-    const VkValidationFeaturesEXT first_pnext = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, &duplicate_pnext};
+    const VkValidationFeaturesEXT duplicate_pnext = { VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, ici.pNext };
+    const VkValidationFeaturesEXT first_pnext = { VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, &duplicate_pnext };
     ici.pNext = &first_pnext;
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
     Monitor().VerifyFound();
@@ -111,7 +113,8 @@ TEST_F(NegativeInstanceless, InstanceAppInfoBadStype) {
     auto ici = GetInstanceCreateInfo();
 
     VkApplicationInfo bad_app_info = {};
-    if (ici.pApplicationInfo) bad_app_info = *ici.pApplicationInfo;
+    if (ici.pApplicationInfo)
+        bad_app_info = *ici.pApplicationInfo;
     bad_app_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     ici.pApplicationInfo = &bad_app_info;
 
@@ -227,8 +230,8 @@ void VKAPI_PTR DummyFree(void*, void* pMemory) {
     std::free(pMemory);
 #endif
 }
-void* VKAPI_PTR DummyRealloc(void* pUserData, void* pOriginal, size_t size, size_t alignment,
-                             VkSystemAllocationScope allocationScope) {
+void* VKAPI_PTR
+DummyRealloc(void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope) {
     DummyFree(pUserData, pOriginal);
     return DummyAlloc(pUserData, size, alignment, allocationScope);
 }
@@ -239,8 +242,8 @@ TEST_F(NegativeInstanceless, DestroyInstanceAllocationCallbacksCompatibility) {
     TEST_DESCRIPTION("Test vkDestroyInstance with incompatible allocation callbacks.");
 
     const auto ici = GetInstanceCreateInfo();
-    const VkAllocationCallbacks alloc_callbacks = {nullptr,    &DummyAlloc,     &DummyRealloc,
-                                                   &DummyFree, &DummyInfoAlloc, &DummyInfoFree};
+    const VkAllocationCallbacks alloc_callbacks = { nullptr,    &DummyAlloc,     &DummyRealloc,
+                                                    &DummyFree, &DummyInfoAlloc, &DummyInfoFree };
 
     {
         VkInstance instance;
@@ -270,7 +273,7 @@ TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << string_VkResult(err);
     ASSERT_EQ(physical_device_count, 1);
 
-    float dqci_priorities[] = {1.0};
+    float dqci_priorities[] = { 1.0 };
     VkDeviceQueueCreateInfo dqci = vku::InitStructHelper();
     dqci.queueFamilyIndex = 0;
     dqci.queueCount = 1;
@@ -288,13 +291,15 @@ TEST_F(NegativeInstanceless, DISABLED_DestroyInstanceHandleLeak) {
     Monitor().VerifyFound();
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL callback(VkDebugReportFlagsEXT, VkDebugReportObjectTypeEXT, uint64_t, size_t, int32_t, const char*,
-                                        const char*, void*) {
+VKAPI_ATTR VkBool32 VKAPI_CALL callback(
+    VkDebugReportFlagsEXT, VkDebugReportObjectTypeEXT, uint64_t, size_t, int32_t, const char*, const char*, void*) {
     return VK_FALSE;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_PTR utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT,
-                                             const VkDebugUtilsMessengerCallbackDataEXT*, void*) {
+VKAPI_ATTR VkBool32 VKAPI_PTR utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT,
+                                             VkDebugUtilsMessageTypeFlagsEXT,
+                                             const VkDebugUtilsMessengerCallbackDataEXT*,
+                                             void*) {
     return VK_FALSE;
 }
 
@@ -330,7 +335,8 @@ TEST_F(NegativeInstanceless, ExtensionStructsWithoutExtensions) {
     VkDirectDriverLoadingInfoLUNARG driver = vku::InitStructHelper();
 
     VkDirectDriverLoadingListLUNARG direct_driver_loading_list = vku::InitStructHelper();
-    direct_driver_loading_list.pNext = const_cast<VkDebugUtilsMessengerCreateInfoEXT*>(m_errorMonitor->GetDebugCreateInfo());
+    direct_driver_loading_list.pNext =
+        const_cast<VkDebugUtilsMessengerCreateInfoEXT*>(m_errorMonitor->GetDebugCreateInfo());
     direct_driver_loading_list.driverCount = 1u;
     direct_driver_loading_list.pDrivers = &driver;
     ici.pNext = &direct_driver_loading_list;
@@ -355,11 +361,11 @@ TEST_F(NegativeInstanceless, ExtensionStructsWithoutExtensions) {
 }
 #endif
 
-// The test works, you will see the errors, but the test framework is not setup to hook into the debug callback before the create
-// instance so no way to detect it
+// The test works, you will see the errors, but the test framework is not setup to hook into the debug callback before
+// the create instance so no way to detect it
 TEST_F(NegativeInstanceless, DISABLED_VkLayerSettingEXT) {
-    const char* ids[] = {"something"};
-    VkLayerSettingEXT setting = {nullptr, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
+    const char* ids[] = { "something" };
+    VkLayerSettingEXT setting = { nullptr, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids };
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = vku::InitStructHelper();
     layer_settings_create_info.settingCount = 1;
     layer_settings_create_info.pSettings = &setting;
@@ -374,14 +380,14 @@ TEST_F(NegativeInstanceless, DISABLED_VkLayerSettingEXT) {
     }
 
     {
-        setting = {OBJECT_LAYER_NAME, nullptr, VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids};
+        setting = { OBJECT_LAYER_NAME, nullptr, VK_LAYER_SETTING_TYPE_STRING_EXT, 1, ids };
         Monitor().SetDesiredError("VUID-VkLayerSettingEXT-pSettingName-parameter");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
     }
 
     {
-        setting = {OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, nullptr};
+        setting = { OBJECT_LAYER_NAME, "message_id_filter", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, nullptr };
         Monitor().SetDesiredError("VUID-VkLayerSettingEXT-valueCount-10070");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();

@@ -23,17 +23,17 @@
 #include <spirv/unified1/spirv.hpp>
 
 struct SpirvLoggingInfo {
-    uint32_t file_string_id = 0;  // OpString with filename
+    uint32_t file_string_id = 0; // OpString with filename
     uint32_t line_number_start = 0;
     uint32_t line_number_end = 0;
-    uint32_t column_number = 0;            // most compiler will just give zero here, so just try and get a start column
-    bool using_shader_debug_info = false;  // NonSemantic.Shader.DebugInfo.100
+    uint32_t column_number = 0;           // most compiler will just give zero here, so just try and get a start column
+    bool using_shader_debug_info = false; // NonSemantic.Shader.DebugInfo.100
     std::string reported_filename;
 };
 
-static const spirv::Instruction *FindOpString(const std::vector<spirv::Instruction> &instructions, uint32_t string_id) {
-    const spirv::Instruction *string_insn = nullptr;
-    for (const auto &insn : instructions) {
+static const spirv::Instruction* FindOpString(const std::vector<spirv::Instruction>& instructions, uint32_t string_id) {
+    const spirv::Instruction* string_insn = nullptr;
+    for (const auto& insn : instructions) {
         if (insn.Opcode() == spv::OpString && insn.Length() >= 3 && insn.Word(1) == string_id) {
             string_insn = &insn;
             break;
@@ -49,10 +49,11 @@ static const spirv::Instruction *FindOpString(const std::vector<spirv::Instructi
 
 // Read the contents of the SPIR-V OpSource instruction and any following continuation instructions.
 // Split the single string into a vector of strings, one for each line, for easier processing.
-static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, const uint32_t reported_file_id,
-                         std::vector<std::string> &out_source_lines) {
+static void ReadOpSource(const std::vector<spirv::Instruction>& instructions,
+                         const uint32_t reported_file_id,
+                         std::vector<std::string>& out_source_lines) {
     for (size_t i = 0; i < instructions.size(); i++) {
-        const auto &insn = instructions[i];
+        const auto& insn = instructions[i];
         if ((insn.Opcode() != spv::OpSource) || (insn.Length() < 5) || (insn.Word(3) != reported_file_id)) {
             continue;
         }
@@ -65,11 +66,11 @@ static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, co
         }
 
         for (size_t k = i + 1; k < instructions.size(); k++) {
-            const auto &continue_insn = instructions[k];
+            const auto& continue_insn = instructions[k];
             if (continue_insn.Opcode() != spv::OpSourceContinued) {
                 return;
             }
-            in_stream.clear();  // without, will fail getline
+            in_stream.clear(); // without, will fail getline
             in_stream.str(continue_insn.GetAsString(1));
             while (std::getline(in_stream, current_line)) {
                 out_source_lines.emplace_back(current_line);
@@ -79,23 +80,25 @@ static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, co
     }
 }
 
-static void ReadDebugSource(const std::vector<spirv::Instruction> &instructions, const uint32_t debug_source_id,
-                            uint32_t &out_file_string_id, std::vector<std::string> &out_source_lines) {
+static void ReadDebugSource(const std::vector<spirv::Instruction>& instructions,
+                            const uint32_t debug_source_id,
+                            uint32_t& out_file_string_id,
+                            std::vector<std::string>& out_source_lines) {
     for (size_t i = 0; i < instructions.size(); i++) {
-        const auto &insn = instructions[i];
+        const auto& insn = instructions[i];
         if (insn.ResultId() != debug_source_id) {
             continue;
         }
         out_file_string_id = insn.Word(5);
 
         if (insn.Length() < 7) {
-            return;  // Optional source Text not provided
+            return; // Optional source Text not provided
         }
 
         uint32_t string_id = insn.Word(6);
         auto string_inst = FindOpString(instructions, string_id);
         if (!string_inst) {
-            return;  // error should be caught in spirv-val, but don't crash here
+            return; // error should be caught in spirv-val, but don't crash here
         }
 
         std::istringstream in_stream;
@@ -106,7 +109,7 @@ static void ReadDebugSource(const std::vector<spirv::Instruction> &instructions,
         }
 
         for (size_t k = i + 1; k < instructions.size(); k++) {
-            const auto &continue_insn = instructions[k];
+            const auto& continue_insn = instructions[k];
             if (continue_insn.Opcode() != spv::OpExtInst ||
                 continue_insn.Word(4) != NonSemanticShaderDebugInfo100DebugSourceContinued) {
                 return;
@@ -114,10 +117,10 @@ static void ReadDebugSource(const std::vector<spirv::Instruction> &instructions,
             string_id = continue_insn.Word(5);
             string_inst = FindOpString(instructions, string_id);
             if (!string_inst) {
-                return;  // error should be caught in spirv-val, but don't crash here
+                return; // error should be caught in spirv-val, but don't crash here
             }
 
-            in_stream.clear();  // without, will fail getline
+            in_stream.clear(); // without, will fail getline
             in_stream.str(string_inst->GetAsString(2));
             while (std::getline(in_stream, current_line)) {
                 out_source_lines.emplace_back(current_line);
@@ -144,23 +147,24 @@ static void ReadDebugSource(const std::vector<spirv::Instruction> &instructions,
 //   is why we need to examine the entire contents of the source, instead of leaving early
 //   when finding a #line line number larger than the reported error line number.
 //
-static bool GetLineFromDirective(const std::string &string, uint32_t *linenumber, std::string &filename) {
-    static const std::regex line_regex(  // matches #line directives
-        "^"                              // beginning of line
-        "\\s*"                           // optional whitespace
-        "#"                              // required text
-        "\\s*"                           // optional whitespace
-        "line"                           // required text
-        "\\s+"                           // required whitespace
-        "([0-9]+)"                       // required first capture - line number
-        "(\\s+)?"                        // optional second capture - whitespace
-        "(\".+\")?"                      // optional third capture - quoted filename with at least one char inside
-        ".*");                           // rest of line (needed when using std::regex_match since the entire line is tested)
+static bool GetLineFromDirective(const std::string& string, uint32_t* linenumber, std::string& filename) {
+    static const std::regex line_regex( // matches #line directives
+        "^"                             // beginning of line
+        "\\s*"                          // optional whitespace
+        "#"                             // required text
+        "\\s*"                          // optional whitespace
+        "line"                          // required text
+        "\\s+"                          // required whitespace
+        "([0-9]+)"                      // required first capture - line number
+        "(\\s+)?"                       // optional second capture - whitespace
+        "(\".+\")?"                     // optional third capture - quoted filename with at least one char inside
+        ".*"); // rest of line (needed when using std::regex_match since the entire line is tested)
 
     std::smatch captures;
 
     const bool found_line = std::regex_match(string, captures, line_regex);
-    if (!found_line) return false;
+    if (!found_line)
+        return false;
 
     // filename is optional and considered found only if the whitespace and the filename are captured
     if (captures[2].matched && captures[3].matched) {
@@ -172,8 +176,9 @@ static bool GetLineFromDirective(const std::string &string, uint32_t *linenumber
 }
 
 // Return false if any error arise
-static bool GetLineAndFilename(std::ostringstream &ss, const std::vector<spirv::Instruction> &instructions,
-                               SpirvLoggingInfo &logging_info) {
+static bool GetLineAndFilename(std::ostringstream& ss,
+                               const std::vector<spirv::Instruction>& instructions,
+                               SpirvLoggingInfo& logging_info) {
     const std::string debug_info_type = (logging_info.using_shader_debug_info) ? "DebugSource" : "OpLine";
     if (logging_info.file_string_id == 0) {
         // This error should be caught in spirv-val
@@ -207,8 +212,9 @@ static bool GetLineAndFilename(std::ostringstream &ss, const std::vector<spirv::
     return true;
 }
 
-static void GetSourceLines(std::ostringstream &ss, const std::vector<std::string> &source_lines,
-                           const SpirvLoggingInfo &logging_info) {
+static void GetSourceLines(std::ostringstream& ss,
+                           const std::vector<std::string>& source_lines,
+                           const SpirvLoggingInfo& logging_info) {
     if (source_lines.empty()) {
         if (logging_info.using_shader_debug_info) {
             ss << "No Text operand found in DebugSource\n";
@@ -220,7 +226,7 @@ static void GetSourceLines(std::ostringstream &ss, const std::vector<std::string
 
     // Find the line in the OpSource content that corresponds to the reported error file and line.
     uint32_t saved_line_number = 0;
-    std::string current_filename = logging_info.reported_filename;  // current "preprocessor" filename state.
+    std::string current_filename = logging_info.reported_filename; // current "preprocessor" filename state.
     std::vector<std::string>::size_type saved_opsource_offset = 0;
 
     // This was designed to fine the best line if using #line in GLSL
@@ -230,7 +236,8 @@ static void GetSourceLines(std::ostringstream &ss, const std::vector<std::string
             uint32_t parsed_line_number;
             std::string parsed_filename;
             const bool found_line = GetLineFromDirective(*it, &parsed_line_number, parsed_filename);
-            if (!found_line) continue;
+            if (!found_line)
+                continue;
 
             const bool found_filename = parsed_filename.size() > 0;
             if (found_filename) {
@@ -253,7 +260,8 @@ static void GetSourceLines(std::ostringstream &ss, const std::vector<std::string
     if (logging_info.using_shader_debug_info) {
         // For Shader Debug Info, we should have all the information we need
         ss << '\n';
-        for (uint32_t line_index = logging_info.line_number_start; line_index <= logging_info.line_number_end; line_index++) {
+        for (uint32_t line_index = logging_info.line_number_start; line_index <= logging_info.line_number_end;
+             line_index++) {
             if (line_index > source_lines.size()) {
                 ss << line_index << ": [No line found in source]";
                 break;
@@ -265,15 +273,14 @@ static void GetSourceLines(std::ostringstream &ss, const std::vector<std::string
             std::string spaces(logging_info.column_number - 1, ' ');
             ss << spaces << '^';
         }
-
     } else if (found_best_line) {
         assert(logging_info.line_number_start >= saved_line_number);
         const size_t opsource_index = (logging_info.line_number_start - saved_line_number) + 1 + saved_opsource_offset;
         if (opsource_index < source_lines.size()) {
             ss << '\n' << logging_info.line_number_start << ": " << source_lines[opsource_index] << '\n';
         } else {
-            ss << "Internal error: calculated source line of " << opsource_index << " for source size of " << source_lines.size()
-               << " lines\n";
+            ss << "Internal error: calculated source line of " << opsource_index << " for source size of "
+               << source_lines.size() << " lines\n";
         }
     } else if (logging_info.line_number_start < source_lines.size() && logging_info.line_number_start != 0) {
         // file lines normally start at 1 index
@@ -287,12 +294,13 @@ static void GetSourceLines(std::ostringstream &ss, const std::vector<std::string
     }
 }
 
-void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<spirv::Instruction> &instructions,
-                         const spirv::Instruction &last_line_insn) {
+void GetShaderSourceInfo(std::ostringstream& ss,
+                         const std::vector<spirv::Instruction>& instructions,
+                         const spirv::Instruction& last_line_insn) {
     // Instead of building up hash map that might not be used, reloop the constants to find the value.
     // Non Semantic instructions are validated to have 32-bit integer constants (not spec constants).
     auto get_constant_value = [&instructions](uint32_t id) {
-        for (const auto &insn : instructions) {
+        for (const auto& insn : instructions) {
             if (insn.Opcode() == spv::OpConstant && insn.ResultId() == id) {
                 return insn.Word(3);
             } else if (insn.Opcode() == spv::OpFunction) {
@@ -316,7 +324,7 @@ void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<spirv::Instru
         logging_info.using_shader_debug_info = false;
         logging_info.file_string_id = last_line_insn.Word(1);
         logging_info.line_number_start = last_line_insn.Word(2);
-        logging_info.line_number_end = logging_info.line_number_start;  // OpLine only give a single line granularity
+        logging_info.line_number_end = logging_info.line_number_start; // OpLine only give a single line granularity
         logging_info.column_number = last_line_insn.Word(3);
     } else {
         // NonSemanticShaderDebugInfo100DebugLine

@@ -11,14 +11,15 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 
 class PositiveSparseImage : public VkLayerTest {};
 
 TEST_F(PositiveSparseImage, MultipleBinds) {
-    TEST_DESCRIPTION("Bind 2 memory ranges to one image using vkQueueBindSparse, destroy the image and then free the memory");
+    TEST_DESCRIPTION(
+        "Bind 2 memory ranges to one image using vkQueueBindSparse, destroy the image and then free the memory");
 
     AddRequiredFeature(vkt::Feature::sparseBinding);
     RETURN_IF_SKIP(Init());
@@ -166,11 +167,19 @@ TEST_F(PositiveSparseImage, BindFreeMemory) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &img_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &img_barrier);
 
-    const VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-    VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    const VkClearColorValue clear_color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    VkImageSubresourceRange range = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     vk::CmdClearColorImage(m_command_buffer.handle(), image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
@@ -216,8 +225,8 @@ TEST_F(PositiveSparseImage, BindMetadata) {
     vk::GetImageSparseMemoryRequirements(device(), image, &sparse_reqs_count, sparse_reqs.data());
 
     // Find requirements for metadata aspect
-    const VkSparseImageMemoryRequirements *metadata_reqs = nullptr;
-    for (auto const &aspect_sparse_reqs : sparse_reqs) {
+    const VkSparseImageMemoryRequirements* metadata_reqs = nullptr;
+    for (auto const& aspect_sparse_reqs : sparse_reqs) {
         if ((aspect_sparse_reqs.formatProperties.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) != 0) {
             metadata_reqs = &aspect_sparse_reqs;
         }
@@ -287,13 +296,15 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet ds(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+        });
     ds.WriteDescriptorImageInfo(0, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     ds.UpdateDescriptorSets();
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         #extension GL_ARB_sparse_texture2 : enable
 
@@ -316,15 +327,15 @@ TEST_F(PositiveSparseImage, OpImageSparse) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &ds.layout_ });
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &ds.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(
+        m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &ds.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -343,7 +354,7 @@ TEST_F(PositiveSparseImage, BindImage) {
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {512, 64, 1};
+    image_create_info.extent = { 512, 64, 1 };
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -365,7 +376,7 @@ TEST_F(PositiveSparseImage, BindImage) {
     bind_info.imageBindCount = 1;
     bind_info.pImageBinds = &image_memory_bind_info;
 
-    vkt::Queue *sparse_queue = m_device->QueuesWithSparseCapability()[0];
+    vkt::Queue* sparse_queue = m_device->QueuesWithSparseCapability()[0];
     vk::QueueBindSparse(sparse_queue->handle(), 1, &bind_info, VK_NULL_HANDLE);
     sparse_queue->Wait();
 }

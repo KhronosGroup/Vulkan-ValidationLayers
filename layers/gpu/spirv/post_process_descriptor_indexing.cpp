@@ -23,12 +23,16 @@
 namespace gpuav {
 namespace spirv {
 
-PostProcessDescriptorIndexingPass::PostProcessDescriptorIndexingPass(Module& module) : Pass(module) { module.use_bda_ = true; }
+PostProcessDescriptorIndexingPass::PostProcessDescriptorIndexingPass(Module& module) : Pass(module) {
+    module.use_bda_ = true;
+}
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t PostProcessDescriptorIndexingPass::GetLinkFunctionId() {
-    static LinkInfo link_info = {instrumentation_post_process_descriptor_index_comp,
-                                 instrumentation_post_process_descriptor_index_comp_size, 0, "inst_post_process_descriptor_index"};
+    static LinkInfo link_info = { instrumentation_post_process_descriptor_index_comp,
+                                  instrumentation_post_process_descriptor_index_comp_size,
+                                  0,
+                                  "inst_post_process_descriptor_index" };
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
@@ -43,7 +47,7 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it
 
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it); // might be int32
 
     BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
@@ -54,8 +58,14 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it
     const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
-                            {void_type, function_result, function_def, set_constant.Id(), binding_constant.Id(),
-                             descriptor_index_id, binding_layout_offset.Id(), variable_id_constant.Id()},
+                            { void_type,
+                              function_result,
+                              function_def,
+                              set_constant.Id(),
+                              binding_constant.Id(),
+                              descriptor_index_id,
+                              binding_layout_offset.Id(),
+                              variable_id_constant.Id() },
                             inst_it);
 }
 
@@ -71,7 +81,7 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
             const uint32_t access_chain_base_id = access_chain_inst->Operand(0);
             variable = module_.type_manager_.FindVariableById(access_chain_base_id);
             if (variable) {
-                break;  // found
+                break; // found
             }
             access_chain_inst = function.FindInstruction(access_chain_base_id);
         }
@@ -92,7 +102,6 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
             // There is no array of this descriptor, so we essentially have an array of 1
             descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
         }
-
     } else {
         // Reference is not load or store, so if it isn't a image-based reference, move on
         const uint32_t image_word = OpcodeImageAccessPosition(opcode);
@@ -100,7 +109,7 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
             return false;
         }
         if (opcode == spv::OpImageTexelPointer || opcode == spv::OpImage) {
-            return false;  // need to test if we can support these
+            return false; // need to test if we can support these
         }
 
         const Instruction* load_inst = function.FindInstruction(inst.Word(image_word));
@@ -109,7 +118,7 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
             load_inst = function.FindInstruction(load_inst->Operand(0));
         }
         if (!load_inst || load_inst->Opcode() != spv::OpLoad) {
-            return false;  // TODO: Handle additional possibilities?
+            return false; // TODO: Handle additional possibilities?
         }
 
         var_inst = function.FindInstruction(load_inst->Operand(0));
@@ -176,10 +185,12 @@ bool PostProcessDescriptorIndexingPass::Run() {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get())))
+                    continue;
 
-                if (module_.max_instrumentations_count_ != 0 && instrumentations_count_ >= module_.max_instrumentations_count_) {
-                    return true;  // hit limit
+                if (module_.max_instrumentations_count_ != 0 &&
+                    instrumentations_count_ >= module_.max_instrumentations_count_) {
+                    return true; // hit limit
                 }
                 instrumentations_count_++;
 
@@ -196,5 +207,5 @@ void PostProcessDescriptorIndexingPass::PrintDebugInfo() {
     std::cout << "PostProcessDescriptorIndexingPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

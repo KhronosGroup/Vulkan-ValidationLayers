@@ -1,8 +1,44 @@
 ---
-# Use defaults from the Google style with the following exceptions:
-BasedOnStyle: Google
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: true
+AlignOperands: true
+AlignTrailingComments: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: true
+AlwaysBreakTemplateDeclarations: true
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterExternBlock: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BreakConstructorInitializers: AfterColon
+# Not supported in 6
+#BreakInheritanceList: BeforeColon
+Cpp11BracedListStyle: false
+ColumnLimit: 120
+IndentCaseLabels: true
 IndentWidth: 4
-AccessModifierOffset: -2
-ColumnLimit: 132
+PointerAlignment: Left
+ReflowComments: true
 SortIncludes: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeParens: ControlStatements
 ...

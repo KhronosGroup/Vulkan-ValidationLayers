@@ -27,15 +27,15 @@ TEST_F(PositivePipelineTopology, PointSizeWriteInFunction) {
     VkShaderObj ps(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     {
         CreatePipelineHelper pipe(*this);
-        pipe.shader_stages_ = {vs.GetStageCreateInfo(), ps.GetStageCreateInfo()};
+        pipe.shader_stages_ = { vs.GetStageCreateInfo(), ps.GetStageCreateInfo() };
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         pipe.CreateGraphicsPipeline();
     }
 }
 
 TEST_F(PositivePipelineTopology, PointSizeGeomShaderSuccess) {
-    TEST_DESCRIPTION(
-        "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, and write in the final geometry stage.");
+    TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, and write in the final "
+                     "geometry stage.");
 
     AddRequiredFeature(vkt::Feature::geometryShader);
     AddRequiredFeature(vkt::Feature::shaderTessellationAndGeometryPointSize);
@@ -48,7 +48,7 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderSuccess) {
     VkShaderObj ps(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), ps.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), ps.GetStageCreateInfo() };
     // Set Input Assembly to TOPOLOGY POINT LIST
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     pipe.CreateGraphicsPipeline();
@@ -63,7 +63,7 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderDontEmit) {
     InitRenderTarget();
 
     // Never calls OpEmitVertex
-    static char const *gsSource = R"glsl(
+    static char const* gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (points) out;
@@ -76,9 +76,9 @@ TEST_F(PositivePipelineTopology, PointSizeGeomShaderDontEmit) {
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -89,7 +89,7 @@ TEST_F(PositivePipelineTopology, LoosePointSizeWrite) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *LoosePointSizeWrite = R"(
+    const char* LoosePointSizeWrite = R"(
                                        OpCapability Shader
                                   %1 = OpExtInstImport "GLSL.std.450"
                                        OpMemoryModel Logical GLSL450
@@ -161,7 +161,7 @@ TEST_F(PositivePipelineTopology, LoosePointSizeWrite) {
 
     {
         CreatePipelineHelper pipe(*this);
-        pipe.shader_stages_ = {vs.GetStageCreateInfo(), ps.GetStageCreateInfo()};
+        pipe.shader_stages_ = { vs.GetStageCreateInfo(), ps.GetStageCreateInfo() };
         // Set Input Assembly to TOPOLOGY POINT LIST
         pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         pipe.CreateGraphicsPipeline();
@@ -281,22 +281,23 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemberWritten) {
     //     vec4
     // }
     // but std140 padding so the vec4 is offset 80
-    VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_VERTEX_BIT, 0, 96}};
+    VkPushConstantRange push_constant_ranges[1]{ { VK_SHADER_STAGE_VERTEX_BIT, 0, 96 } };
 
     VkPipelineLayoutCreateInfo const pipeline_layout_info{
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges};
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges
+    };
 
     VkVertexInputBindingDescription input_binding[2] = {
-        {0, 16, VK_VERTEX_INPUT_RATE_VERTEX},
-        {1, 16, VK_VERTEX_INPUT_RATE_VERTEX},
+        { 0, 16, VK_VERTEX_INPUT_RATE_VERTEX },
+        { 1, 16, VK_VERTEX_INPUT_RATE_VERTEX },
     };
     VkVertexInputAttributeDescription input_attribs[2] = {
-        {0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-        {1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
+        { 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0 },
+        { 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0 },
     };
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.pipeline_layout_ci_ = pipeline_layout_info;
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     pipe.vi_ci_.pVertexBindingDescriptions = input_binding;
@@ -312,7 +313,7 @@ TEST_F(PositivePipelineTopology, PolygonModeValid) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    std::vector<const char *> device_extension_names;
+    std::vector<const char*> device_extension_names;
     auto features = m_device->Physical().Features();
     // Artificially disable support for non-solid fill modes
     features.fillModeNonSolid = false;
@@ -357,7 +358,7 @@ TEST_F(PositivePipelineTopology, PolygonModeValid) {
     {
         CreatePipelineHelper pipe(*this);
         pipe.device_ = &test_device;
-        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
         pipe.gp_ci_.layout = pipeline_layout.handle();
         pipe.gp_ci_.renderPass = render_pass.handle();
         // Set polygonMode to a good value
@@ -387,7 +388,7 @@ TEST_F(PositivePipelineTopology, NotPointSizeGeometry) {
     VkShaderObj gs(this, geom_src, VK_SHADER_STAGE_GEOMETRY_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
     pipe.CreateGraphicsPipeline();
@@ -402,7 +403,7 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
 
     InitRenderTarget();
 
-    char const *tcsSource = R"glsl(
+    char const* tcsSource = R"glsl(
         #version 450
         layout(vertices = 3) out;
         void main(){
@@ -410,7 +411,7 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
            gl_TessLevelInner[0] = 1;
         }
     )glsl";
-    char const *tesSource = R"glsl(
+    char const* tesSource = R"glsl(
         #version 450
         layout(triangles, equal_spacing, cw) in;
         void main(){
@@ -418,7 +419,7 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
            gl_Position.w = 1.0f;
         }
     )glsl";
-    static char const *gsSource = R"glsl(
+    static char const* gsSource = R"glsl(
         #version 450
         layout (triangles) in;
         layout (triangle_strip) out;
@@ -432,10 +433,15 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
     VkShaderObj tes(this, tesSource, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
-    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+    VkPipelineInputAssemblyStateCreateInfo iasci{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                                                  nullptr,
+                                                  0,
+                                                  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+                                                  VK_FALSE };
 
-    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+    VkPipelineTessellationStateCreateInfo tsci{
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3
+    };
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pTessellationState = &tsci;
@@ -447,8 +453,8 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(RenderPass(), Framebuffer(), 32, 32, m_renderPassClearValues.size(),
-                                     m_renderPassClearValues.data());
+    m_command_buffer.BeginRenderPass(
+        RenderPass(), Framebuffer(), 32, 32, m_renderPassClearValues.size(), m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_command_buffer.EndRenderPass();
@@ -469,10 +475,10 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
-    VkVertexInputBindingDescription inputBinding = {0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputBindingDescription inputBinding = { 0, sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX };
     pipe.vi_ci_.pVertexBindingDescriptions = &inputBinding;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    VkVertexInputAttributeDescription attribute = {0, 0, VK_FORMAT_R32_SFLOAT, 0};
+    VkVertexInputAttributeDescription attribute = { 0, 0, VK_FORMAT_R32_SFLOAT, 0 };
     pipe.vi_ci_.pVertexAttributeDescriptions = &attribute;
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     pipe.CreateGraphicsPipeline();
@@ -494,9 +500,9 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
 }
 
 TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {
-    TEST_DESCRIPTION(
-        "Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, but it is valid with both dynamic "
-        "state and dynamicPrimitiveTopologyUnrestricted is true.");
+    TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, but it is "
+                     "valid with both dynamic "
+                     "state and dynamicPrimitiveTopologyUnrestricted is true.");
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
@@ -510,7 +516,7 @@ TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {
         GTEST_SKIP() << "dynamicPrimitiveTopologyUnrestricted is VK_TRUE";
     }
 
-    static const char *vs_source = R"glsl(
+    static const char* vs_source = R"glsl(
         #version 450
         void main() {
             gl_PointSize = 1.0;
@@ -523,17 +529,17 @@ TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnestricted) {
     dyn_state_ci.dynamicStateCount = 1;
     dyn_state_ci.pDynamicStates = &dyn_state;
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         helper.dyn_state_ci_ = dyn_state_ci;
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 TEST_F(PositivePipelineTopology, PointSizeMaintenance5) {
-    TEST_DESCRIPTION(
-        "Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, but have maintenance5.");
+    TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST but do not set PointSize in vertex shader, but have "
+                     "maintenance5.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
@@ -541,7 +547,7 @@ TEST_F(PositivePipelineTopology, PointSizeMaintenance5) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *source = R"glsl(
+    const char* source = R"glsl(
         #version 450
         vec2 vertices[3];
         out gl_PerVertex
@@ -559,9 +565,9 @@ TEST_F(PositivePipelineTopology, PointSizeMaintenance5) {
 
     VkShaderObj vs(this, source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -582,6 +588,6 @@ TEST_F(PositivePipelineTopology, PrimitiveTopologyListRestartDynamic) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE);
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }

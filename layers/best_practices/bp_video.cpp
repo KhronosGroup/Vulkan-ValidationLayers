@@ -20,14 +20,17 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
 
-bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                                        uint32_t* pMemoryRequirementsCount,
-                                                                        VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
-                                                                        const ErrorObject& error_obj) const {
+bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(
+    VkDevice device,
+    VkVideoSessionKHR videoSession,
+    uint32_t* pMemoryRequirementsCount,
+    VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
+    const ErrorObject& error_obj) const {
     bool skip = false;
     if (auto vs_state = Get<vvl::VideoSession>(videoSession)) {
         if (pMemoryRequirements != nullptr && !vs_state->memory_binding_count_queried) {
-            skip |= LogWarning("BestPractices-vkGetVideoSessionMemoryRequirementsKHR-count-not-retrieved", videoSession,
+            skip |= LogWarning("BestPractices-vkGetVideoSessionMemoryRequirementsKHR-count-not-retrieved",
+                               videoSession,
                                error_obj.location,
                                "querying list of memory requirements of %s "
                                "but the number of memory requirements has not been queried before by calling this "
@@ -39,22 +42,26 @@ bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice
     return skip;
 }
 
-bool BestPractices::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                             uint32_t bindSessionMemoryInfoCount,
-                                                             const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
-                                                             const ErrorObject& error_obj) const {
+bool BestPractices::PreCallValidateBindVideoSessionMemoryKHR(
+    VkDevice device,
+    VkVideoSessionKHR videoSession,
+    uint32_t bindSessionMemoryInfoCount,
+    const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
+    const ErrorObject& error_obj) const {
     bool skip = false;
 
     if (auto vs_state = Get<vvl::VideoSession>(videoSession)) {
         if (!vs_state->memory_binding_count_queried) {
-            skip |= LogWarning("BestPractices-vkBindVideoSessionMemoryKHR-requirements-count-not-retrieved", videoSession,
+            skip |= LogWarning("BestPractices-vkBindVideoSessionMemoryKHR-requirements-count-not-retrieved",
+                               videoSession,
                                error_obj.location,
                                "binding memory to %s but "
                                "vkGetVideoSessionMemoryRequirementsKHR() has not been called to retrieve the "
                                "number of memory requirements for the video session.",
                                FormatHandle(videoSession).c_str());
         } else if (vs_state->memory_bindings_queried < vs_state->GetMemoryBindingCount()) {
-            skip |= LogWarning("BestPractices-vkBindVideoSessionMemoryKHR-requirements-not-all-retrieved", videoSession,
+            skip |= LogWarning("BestPractices-vkBindVideoSessionMemoryKHR-requirements-not-all-retrieved",
+                               videoSession,
                                error_obj.location,
                                "binding memory to %s but "
                                "not all memory requirements for the video session have been queried using "

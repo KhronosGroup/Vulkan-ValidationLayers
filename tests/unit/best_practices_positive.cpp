@@ -11,9 +11,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 
 class VkPositiveBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
@@ -85,7 +85,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, { dsl_binding });
 
     VkDescriptorSet descriptor_sets[3] = {};
     VkDescriptorSetAllocateInfo alloc_info = {};
@@ -101,10 +101,10 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
 }
 
 TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
-    TEST_DESCRIPTION(
-        "Test issuing draw command with pipeline layout that has 2 descriptor sets with first descriptor set begin unused and "
-        "unbound. Its purpose is to catch regression of this bug: "
-        "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4597.");
+    TEST_DESCRIPTION("Test issuing draw command with pipeline layout that has 2 descriptor sets with first descriptor "
+                     "set begin unused and "
+                     "unbound. Its purpose is to catch regression of this bug: "
+                     "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4597.");
 
     RETURN_IF_SKIP(InitBestPracticesFramework());
     RETURN_IF_SKIP(InitState());
@@ -116,12 +116,18 @@ TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
     pipe.CreateGraphicsPipeline();
 
     OneOffDescriptorSet empty_ds(m_device, {});
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&empty_ds.layout_, &empty_ds.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &empty_ds.layout_, &empty_ds.layout_ });
 
     m_command_buffer.Begin();
 
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
-                              &empty_ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              1,
+                              1,
+                              &empty_ds.set_,
+                              0,
+                              nullptr);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -154,8 +160,10 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     // pAttachments should be ignored with these four states set
-    VkDynamicState dynamic_states[4] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT,
-                                        VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT};
+    VkDynamicState dynamic_states[4] = { VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT,
+                                         VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT,
+                                         VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
+                                         VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT };
     VkPipelineDynamicStateCreateInfo dynamic_create_info = vku::InitStructHelper();
     dynamic_create_info.pDynamicStates = dynamic_states;
     dynamic_create_info.dynamicStateCount = 4;
@@ -197,7 +205,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
 
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
-    char const *const vsSource = R"glsl(
+    char const* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { uint x[4]; } constants;
         void main(){
@@ -220,19 +228,21 @@ TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
     VkShaderObj const fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     uint32_t data[5];
-    std::vector<VkPushConstantRange> push_constant_ranges = {{VK_SHADER_STAGE_VERTEX_BIT, 0, 16},
-                                                             {VK_SHADER_STAGE_FRAGMENT_BIT, 16, 4}};
+    std::vector<VkPushConstantRange> push_constant_ranges = { { VK_SHADER_STAGE_VERTEX_BIT, 0, 16 },
+                                                              { VK_SHADER_STAGE_FRAGMENT_BIT, 16, 4 } };
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, push_constant_ranges);
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16, data);
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 16, 4, data);
+    vk::CmdPushConstants(
+        m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16, data);
+    vk::CmdPushConstants(
+        m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 16, 4, data);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -247,7 +257,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, VertexBufferNotForAllDraws) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    VkVertexInputBindingDescription input_binding = {0, 32, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputBindingDescription input_binding = { 0, 32, VK_VERTEX_INPUT_RATE_VERTEX };
     VkVertexInputAttributeDescription input_attrib;
     memset(&input_attrib, 0, sizeof(input_attrib));
     input_attrib.format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -282,7 +292,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, VertexBufferNotForAllDraws) {
 TEST_F(VkPositiveBestPracticesLayerTest, SetDifferentEvents) {
     TEST_DESCRIPTION("Signal different events");
     RETURN_IF_SKIP(InitBestPractices());
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit); // TODO: should be part of BP config
 
     vkt::Event event(*m_device);
     vkt::Event event2(*m_device);
@@ -296,7 +306,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, SetDifferentEvents) {
 TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSet) {
     TEST_DESCRIPTION("Set event two times with reset in between");
     RETURN_IF_SKIP(InitBestPractices());
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit); // TODO: should be part of BP config
 
     vkt::Event event(*m_device);
 
@@ -310,7 +320,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSet) {
 TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSetMultipleSubmits) {
     TEST_DESCRIPTION("Set event two times with reset in between from multiple submits");
     RETURN_IF_SKIP(InitBestPractices());
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit); // TODO: should be part of BP config
 
     vkt::Event event(*m_device);
 
@@ -331,7 +341,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSetMultipleSubmits) {
 TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSetMultipleSubmits2) {
     TEST_DESCRIPTION("Set event two times with reset in between using single submit with two batches");
     RETURN_IF_SKIP(InitBestPractices());
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit); // TODO: should be part of BP config
 
     vkt::Event event(*m_device);
 
@@ -360,7 +370,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetEventBeforeSetMultipleSubmits2) {
 TEST_F(VkPositiveBestPracticesLayerTest, ResetEventFromSecondary) {
     TEST_DESCRIPTION("Set event two times with reset in between executed from a secondary command buffer");
     RETURN_IF_SKIP(InitBestPractices());
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);  // TODO: should be part of BP config
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit); // TODO: should be part of BP config
 
     vkt::Event event(*m_device);
 
@@ -392,7 +402,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     }
 
     bool fifo_relaxed = false;
-    for (const auto &present_mode : m_surface_present_modes) {
+    for (const auto& present_mode : m_surface_present_modes) {
         if (present_mode == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
             fifo_relaxed = true;
             break;
@@ -410,7 +420,8 @@ TEST_F(VkPositiveBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     swapchain_create_info.minImageCount = 2;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = { m_surface_capabilities.minImageExtent.width,
+                                          m_surface_capabilities.minImageExtent.height };
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = imageUsage;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;

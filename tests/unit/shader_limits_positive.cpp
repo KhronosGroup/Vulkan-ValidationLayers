@@ -23,7 +23,7 @@ TEST_F(PositiveShaderLimits, MaxSampleMaskWords) {
     InitRenderTarget();
 
     // Valid input of sample mask
-    char const *fs_source = R"glsl(
+    char const* fs_source = R"glsl(
         #version 450
         layout(location = 0) out vec4 uFragColor;
         void main(){
@@ -33,19 +33,18 @@ TEST_F(PositiveShaderLimits, MaxSampleMaskWords) {
     )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto validPipeline = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    const auto validPipeline = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, validPipeline, kErrorBit);
 }
 
 TEST_F(PositiveShaderLimits, ComputeSharedMemoryWorkgroupMemoryExplicitLayout) {
-    TEST_DESCRIPTION(
-        "Validate compute shader shared memory does not exceed maxComputeSharedMemorySize when using "
-        "VK_KHR_workgroup_memory_explicit_layout");
+    TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize when using "
+                     "VK_KHR_workgroup_memory_explicit_layout");
     // More background: When workgroupMemoryExplicitLayout is enabled and there are 2 or more structs, the
-    // maxComputeSharedMemorySize is the MAX of the structs since they share the same WorkGroup memory. Test makes sure validation
-    // is not doing an ADD and correctly doing a MAX operation in this case.
+    // maxComputeSharedMemorySize is the MAX of the structs since they share the same WorkGroup memory. Test makes sure
+    // validation is not doing an ADD and correctly doing a MAX operation in this case.
 
     // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -75,7 +74,8 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryWorkgroupMemoryExplicitLayout) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 }
 
@@ -102,7 +102,8 @@ TEST_F(PositiveShaderLimits, ComputeSharedMemoryAtLimit) {
 }
 
 TEST_F(PositiveShaderLimits, ComputeSharedMemoryBooleanAtLimit) {
-    TEST_DESCRIPTION("Validate compute shader shared memory is valid at the exact maxComputeSharedMemorySize using Booleans");
+    TEST_DESCRIPTION(
+        "Validate compute shader shared memory is valid at the exact maxComputeSharedMemorySize using Booleans");
 
     RETURN_IF_SKIP(Init());
 
@@ -154,8 +155,8 @@ TEST_F(PositiveShaderLimits, MeshSharedMemoryAtLimit) {
 
     VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -192,8 +193,8 @@ TEST_F(PositiveShaderLimits, TaskSharedMemoryAtLimit) {
     VkShaderObj task(this, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
     VkShaderObj mesh(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { task.GetStageCreateInfo(), mesh.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -211,7 +212,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachments) {
     }
     InitRenderTarget(count);
 
-    const char *fs_src = R"glsl(
+    const char* fs_src = R"glsl(
         #version 460
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
@@ -225,13 +226,13 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachments) {
     VkPipelineColorBlendAttachmentState color_blend[2] = {};
     color_blend[0] = DefaultColorBlendAttachmentState();
     color_blend[1] = DefaultColorBlendAttachmentState();
-    color_blend[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR;  // bad!
-    color_blend[0].blendEnable = false;                               // but ignored
+    color_blend[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR; // bad!
+    color_blend[0].blendEnable = false;                              // but ignored
 
     CreatePipelineHelper pipe(*this);
     pipe.cb_ci_.attachmentCount = 2;
     pipe.cb_ci_.pAttachments = color_blend;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -257,7 +258,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
     }
     InitRenderTarget(count);
 
-    const char *fs_src = R"glsl(
+    const char* fs_src = R"glsl(
         #version 460
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
@@ -271,18 +272,18 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
     VkPipelineColorBlendAttachmentState color_blend[2] = {};
     color_blend[0] = DefaultColorBlendAttachmentState();
     color_blend[1] = DefaultColorBlendAttachmentState();
-    color_blend[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR;  // bad!
+    color_blend[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR; // bad!
 
     CreatePipelineHelper pipe(*this);
     pipe.cb_ci_.attachmentCount = 2;
     pipe.cb_ci_.pAttachments = color_blend;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    VkBool32 color_blend_enabled[2] = {VK_FALSE, VK_FALSE};  // disable any blending
+    VkBool32 color_blend_enabled[2] = { VK_FALSE, VK_FALSE }; // disable any blending
     vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 0, 2, color_blend_enabled);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -298,7 +299,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachments) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 c0;
         layout(location=1) out vec4 c1;
@@ -314,7 +315,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachments) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -326,7 +327,7 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachmentsArray) {
         GTEST_SKIP() << "maxFragmentOutputAttachments is not 4";
     }
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0) out vec4 c[4];
         void main(){
@@ -337,6 +338,6 @@ TEST_F(PositiveShaderLimits, MaxFragmentOutputAttachmentsArray) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }

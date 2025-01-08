@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 
-#include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
+#include "../../layers/gpu/shaders/gpuav_shaders_constants.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
-#include "../../layers/gpu/shaders/gpuav_shaders_constants.h"
+#include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 
 class PositiveGpuAV : public GpuAVTest {};
 
-static const std::array gpu_av_enables = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
-                                          VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
-static const std::array gpu_av_disables = {VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
-                                           VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+static const std::array gpu_av_enables = { VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+                                           VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT };
+static const std::array gpu_av_disables = { VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
+                                            VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT };
 
 // All GpuAVTest should use this for setup as a single access point to more easily toggle which validation features are
 // enabled/disabled
@@ -43,7 +43,7 @@ VkValidationFeaturesEXT GpuAVTest::GetGpuAvValidationFeatures() {
 }
 
 // This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
-void GpuAVTest::InitGpuAvFramework(void *p_next) {
+void GpuAVTest::InitGpuAvFramework(void* p_next) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     validation_features.pNext = p_next;
@@ -54,8 +54,8 @@ void GpuAVTest::InitGpuAvFramework(void *p_next) {
 }
 
 TEST_F(PositiveGpuAV, ReserveBinding) {
-    TEST_DESCRIPTION(
-        "verify that VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT is properly reserving a descriptor slot");
+    TEST_DESCRIPTION("verify that VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT is properly "
+                     "reserving a descriptor slot");
     AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -75,7 +75,8 @@ TEST_F(PositiveGpuAV, ReserveBinding) {
     VkPhysicalDeviceProperties properties;
     vk::GetPhysicalDeviceProperties(phys_devices[m_gpu_index], &properties);
     if (m_device->Physical().limits_.maxBoundDescriptorSets != properties.limits.maxBoundDescriptorSets - 1) {
-        m_errorMonitor->SetError("VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT not functioning as expected");
+        m_errorMonitor->SetError(
+            "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT not functioning as expected");
     }
     vk::DestroyInstance(test_inst, nullptr);
 }
@@ -102,13 +103,18 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
     pool_inline_info.maxInlineUniformBlockBindings = 32;
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 32, VK_SHADER_STAGE_ALL, nullptr},
-                                       },
-                                       0, layout_createinfo_binding_flags, 0, nullptr, &pool_inline_info);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 32, VK_SHADER_STAGE_ALL, nullptr },
+        },
+        0,
+        layout_createinfo_binding_flags,
+        0,
+        nullptr,
+        &pool_inline_info);
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     VkDescriptorBufferInfo buffer_info[1] = {};
     buffer_info[0].buffer = buffer.handle();
@@ -131,12 +137,12 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     descriptor_writes[1] = vku::InitStructHelper(&write_inline_uniform);
     descriptor_writes[1].dstSet = descriptor_set.set_;
     descriptor_writes[1].dstBinding = 1;
-    descriptor_writes[1].dstArrayElement = 16;  // Skip first 16 bytes (dummy)
-    descriptor_writes[1].descriptorCount = 4;   // Write 4 bytes to val
+    descriptor_writes[1].dstArrayElement = 16; // Skip first 16 bytes (dummy)
+    descriptor_writes[1].descriptorCount = 4;  // Write 4 bytes to val
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, NULL);
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;
@@ -154,24 +160,30 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe1.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    uint32_t *data = (uint32_t *)buffer.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer.Memory().Map();
     ASSERT_TRUE(*data = test_data);
     *data = 0;
     buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
-    TEST_DESCRIPTION(
-        "GPU validation: Make sure inline uniform blocks don't generate false validation errors, verify reserved descriptor slot "
-        "and verify pipeline recovery");
+    TEST_DESCRIPTION("GPU validation: Make sure inline uniform blocks don't generate false validation errors, verify "
+                     "reserved descriptor slot "
+                     "and verify pipeline recovery");
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
@@ -192,12 +204,17 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
     pool_inline_info.maxInlineUniformBlockBindings = 32;
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 32, VK_SHADER_STAGE_ALL, nullptr},
-                                       },
-                                       0, layout_createinfo_binding_flags, 0, nullptr, &pool_inline_info);
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 32, VK_SHADER_STAGE_ALL, nullptr },
+        },
+        0,
+        layout_createinfo_binding_flags,
+        0,
+        nullptr,
+        &pool_inline_info);
 
     VkDescriptorBufferInfo buffer_info[1] = {};
     buffer_info[0].buffer = buffer.handle();
@@ -220,12 +237,12 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     descriptor_writes[1] = vku::InitStructHelper(&write_inline_uniform);
     descriptor_writes[1].dstSet = descriptor_set.set_;
     descriptor_writes[1].dstBinding = 1;
-    descriptor_writes[1].dstArrayElement = 16;  // Skip first 16 bytes (dummy)
-    descriptor_writes[1].descriptorCount = 4;   // Write 4 bytes to val
+    descriptor_writes[1].dstArrayElement = 16; // Skip first 16 bytes (dummy)
+    descriptor_writes[1].descriptorCount = 4;  // Write 4 bytes to val
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     vk::UpdateDescriptorSets(device(), 2, descriptor_writes, 0, nullptr);
 
-    const uint32_t set_count = m_device->Physical().limits_.maxBoundDescriptorSets + 1;  // account for reserved set
+    const uint32_t set_count = m_device->Physical().limits_.maxBoundDescriptorSets + 1; // account for reserved set
     VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(inline_uniform_props);
     if (inline_uniform_props.maxPerStageDescriptorInlineUniformBlocks < set_count) {
@@ -233,18 +250,18 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
     }
 
     // Now be sure that recovery from an unavailable descriptor set works and that uninstrumented shaders are used
-    std::vector<const vkt::DescriptorSetLayout *> layouts(set_count);
+    std::vector<const vkt::DescriptorSetLayout*> layouts(set_count);
     for (uint32_t i = 0; i < set_count; i++) {
         layouts[i] = &descriptor_set.layout_;
     }
     // Expect warning since GPU-AV cannot add debug descriptor to layout
-    m_errorMonitor->SetDesiredWarning(
-        "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup for "
-        "pipelines created with it");
+    m_errorMonitor->SetDesiredWarning("This Pipeline Layout has too many descriptor sets that will not allow GPU "
+                                      "shader instrumentation to be setup for "
+                                      "pipelines created with it");
     vkt::PipelineLayout pl_layout(*m_device, layouts);
     m_errorMonitor->VerifyFound();
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;
@@ -264,8 +281,14 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
 
         m_command_buffer.Begin();
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pl_layout.handle(), 0, 1,
-                                  &descriptor_set.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_COMPUTE,
+                                  pl_layout.handle(),
+                                  0,
+                                  1,
+                                  &descriptor_set.set_,
+                                  0,
+                                  nullptr);
         vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
         m_command_buffer.End();
         m_default_queue->Submit(m_command_buffer);
@@ -273,7 +296,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
 
         pl_layout.destroy();
 
-        uint32_t *data = (uint32_t *)buffer.Memory().Map();
+        uint32_t* data = (uint32_t*)buffer.Memory().Map();
         if (*data != test_data)
             m_errorMonitor->SetError("Pipeline recovery when resources unavailable not functioning as expected");
         *data = 0;
@@ -282,7 +305,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
 
     // Now make sure we can still use the shader with instrumentation
     {
-        const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+        const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
         CreateComputePipelineHelper pipe(*this);
         pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         pipe.cp_ci_.layout = pipeline_layout.handle();
@@ -290,31 +313,38 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
 
         m_command_buffer.Begin();
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                                  &descriptor_set.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_COMPUTE,
+                                  pipeline_layout.handle(),
+                                  0,
+                                  1,
+                                  &descriptor_set.set_,
+                                  0,
+                                  nullptr);
         vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
         m_command_buffer.End();
         m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
-        uint32_t *data = (uint32_t *)buffer.Memory().Map();
-        if (*data != test_data) m_errorMonitor->SetError("Using shader after pipeline recovery not functioning as expected");
+        uint32_t* data = (uint32_t*)buffer.Memory().Map();
+        if (*data != test_data)
+            m_errorMonitor->SetError("Using shader after pipeline recovery not functioning as expected");
         *data = 0;
         buffer.Memory().Unmap();
     }
 }
 
-// TODO - This test "could" trigger a warning, but we would have to allocate 4k buffer and track each DWORD updated/written to it,
-// so currently we just make sure we don't generate false positives.
+// TODO - This test "could" trigger a warning, but we would have to allocate 4k buffer and track each DWORD
+// updated/written to it, so currently we just make sure we don't generate false positives.
 TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
-    TEST_DESCRIPTION(
-        "If you don't update an inline uniform block and accessed it, you get undefined values, but it is not invalid and we "
-        "should not crash or trigger an error.");
+    TEST_DESCRIPTION("If you don't update an inline uniform block and accessed it, you get undefined values, but it is "
+                     "not invalid and we "
+                     "should not crash or trigger an error.");
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::inlineUniformBlock);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO { uint out_buffer; };
         layout(set = 0, binding = 1) uniform InlineUBO {
@@ -331,13 +361,18 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
     VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
     pool_inline_info.maxInlineUniformBlockBindings = 1;
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr},
-                                       },
-                                       0, nullptr, 0, nullptr, &pool_inline_info);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr },
+        },
+        0,
+        nullptr,
+        0,
+        nullptr,
+        &pool_inline_info);
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
@@ -360,8 +395,14 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
@@ -370,9 +411,9 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
 }
 
 TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
-    TEST_DESCRIPTION(
-        "If you don't update an inline uniform block and accessed it, you get undefined values, but it is not invalid and we "
-        "should not crash or trigger an error.");
+    TEST_DESCRIPTION("If you don't update an inline uniform block and accessed it, you get undefined values, but it is "
+                     "not invalid and we "
+                     "should not crash or trigger an error.");
     AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::inlineUniformBlock);
@@ -380,7 +421,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer SSBO { uint out_buffer; };
         layout(set = 0, binding = 1) uniform InlineUBO {
@@ -397,19 +438,23 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
     VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
     pool_inline_info.maxInlineUniformBlockBindings = 1;
 
-    VkDescriptorBindingFlags ds_binding_flags[2] = {0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT};
+    VkDescriptorBindingFlags ds_binding_flags[2] = { 0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT };
     VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
     flags_create_info.bindingCount = 2;
     flags_create_info.pBindingFlags = ds_binding_flags;
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr},
-                                       },
-                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT, &flags_create_info,
-                                       VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT, nullptr, &pool_inline_info);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr },
+        },
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
+        &flags_create_info,
+        VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+        nullptr,
+        &pool_inline_info);
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
@@ -420,8 +465,14 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
@@ -453,7 +504,7 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(constant_id=0) const uint _const_2_0 = 1;
         layout(constant_id=1) const uint _const_3_0 = 1;
@@ -477,8 +528,8 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipe.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+                           { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } };
     pipe.CreateComputePipeline();
 
     VkBufferUsageFlags buffer_usage =
@@ -493,8 +544,14 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
@@ -515,7 +572,7 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(constant_id=0) const uint _const_2_0 = 1;
         layout(constant_id=1) const uint _const_3_0 = 1;
@@ -537,11 +594,12 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
 
     VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
-    OneOffDescriptorSet descriptor_set_0(m_device,
-                                         {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
-                                         VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
+    OneOffDescriptorSet descriptor_set_0(
+        m_device,
+        { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+          { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } },
+        VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set_0.layout_ });
 
     VkComputePipelineCreateInfo pipeline_info = vku::InitStructHelper();
     pipeline_info.flags = 0;
@@ -552,7 +610,8 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
     vkt::Pipeline pipeline(*m_device, pipeline_info);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_ci.usage =
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     buffer_ci.size = 262144;
     vkt::Buffer buffer_0(*m_device, buffer_ci);
     vkt::Buffer buffer_1(*m_device, buffer_ci);
@@ -564,18 +623,18 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
     descriptor_writes[0].dstArrayElement = 0;
     descriptor_writes[0].descriptorCount = 1;
     descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    VkDescriptorBufferInfo buffer_info_0 = {buffer_0.handle(), 0, 1024};
+    VkDescriptorBufferInfo buffer_info_0 = { buffer_0.handle(), 0, 1024 };
     descriptor_writes[0].pBufferInfo = &buffer_info_0;
 
     descriptor_writes[1] = descriptor_writes[0];
     descriptor_writes[1].dstBinding = 1;
-    VkDescriptorBufferInfo buffer_info_1 = {buffer_1.handle(), 0, 1024};
+    VkDescriptorBufferInfo buffer_info_1 = { buffer_1.handle(), 0, 1024 };
     descriptor_writes[1].pBufferInfo = &buffer_info_1;
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 2,
-                                descriptor_writes);
+    vk::CmdPushDescriptorSetKHR(
+        m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 2, descriptor_writes);
 
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
@@ -611,7 +670,7 @@ TEST_F(PositiveGpuAV, GetCounterFromSignaledSemaphoreAfterSubmit) {
 
     std::uint64_t counter = 0;
     ASSERT_EQ(VK_SUCCESS, vk::GetSemaphoreCounterValue(*m_device, semaphore, &counter));
-    m_device->Wait();  // so vkDestroySemaphore doesn't call while semaphore is active
+    m_device->Wait(); // so vkDestroySemaphore doesn't call while semaphore is active
 }
 
 TEST_F(PositiveGpuAV, MutableBuffer) {
@@ -628,7 +687,7 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
         GTEST_SKIP() << "maxBoundDescriptorSets is too low";
     }
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(constant_id=0) const uint _const_2_0 = 1;
         layout(constant_id=1) const uint _const_3_0 = 1;
@@ -664,12 +723,14 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
 
     VkShaderObj cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
 
-    OneOffDescriptorSet descriptor_set_0(m_device,
-                                         {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                          {1, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}},
-                                         0, &mdtci);
+    OneOffDescriptorSet descriptor_set_0(
+        m_device,
+        { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+          { 1, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } },
+        0,
+        &mdtci);
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set_0.layout_ });
 
     VkComputePipelineCreateInfo pipeline_info = vku::InitStructHelper();
     pipeline_info.flags = 0;
@@ -691,7 +752,7 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    VkDescriptorBufferInfo buffer_info_0 = {buffer_0.handle(), 0, 1024};
+    VkDescriptorBufferInfo buffer_info_0 = { buffer_0.handle(), 0, 1024 };
     descriptor_write.pBufferInfo = &buffer_info_0;
 
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
@@ -715,8 +776,14 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set_0.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set_0.set_,
+                              0,
+                              nullptr);
 
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
@@ -735,7 +802,8 @@ TEST_F(PositiveGpuAV, MaxDescriptorsClamp) {
 
     vk::GetPhysicalDeviceProperties2(Gpu(), &props2);
 
-    ASSERT_GE(gpuav::glsl::kDebugInputBindlessMaxDescriptors, desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools);
+    ASSERT_GE(gpuav::glsl::kDebugInputBindlessMaxDescriptors,
+              desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools);
 }
 
 TEST_F(PositiveGpuAV, MaxDescriptorsClamp13) {
@@ -753,14 +821,17 @@ TEST_F(PositiveGpuAV, MaxDescriptorsClamp13) {
 }
 
 TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
-    TEST_DESCRIPTION("Use a bad vertex shader, but don't select it for validation and make sure we don't get a buffer oob warning");
+    TEST_DESCRIPTION(
+        "Use a bad vertex shader, but don't select it for validation and make sure we don't get a buffer oob warning");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::robustBufferAccess);
     const VkBool32 value = true;
-    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                       &value};
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                               &setting};
+    const VkLayerSettingEXT setting = {
+        OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value
+    };
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {
+        VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting
+    };
     RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
 
     // Robust buffer access will be on by default
@@ -769,9 +840,10 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     InitRenderTarget();
 
     vkt::Buffer write_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } });
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
     descriptor_set.WriteDescriptorBufferInfo(0, write_buffer.handle(), 0, 4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
     static const char vertshader[] = R"glsl(
@@ -784,11 +856,18 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     // Don't instrument buggy vertex shader
     VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
     // Instrument non-buggy fragment shader
-    VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+    VkValidationFeatureEnableEXT enabled[] = { VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT };
     VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures = enabled;
-    VkShaderObj fs(this, vertshader, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", &features);
+    VkShaderObj fs(this,
+                   vertshader,
+                   VK_SHADER_STAGE_FRAGMENT_BIT,
+                   SPV_ENV_VULKAN_1_0,
+                   SPV_SOURCE_GLSL,
+                   nullptr,
+                   "main",
+                   &features);
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_.clear();
     pipe.shader_stages_.push_back(vs.GetStageCreateInfo());
@@ -799,8 +878,14 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -811,9 +896,9 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
 }
 
 TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
-    TEST_DESCRIPTION(
-        "Test issuing draw command with pipeline layout that has 2 descriptor sets with first descriptor set begin unused and "
-        "unbound.");
+    TEST_DESCRIPTION("Test issuing draw command with pipeline layout that has 2 descriptor sets with first descriptor "
+                     "set begin unused and "
+                     "unbound.");
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
 
@@ -823,7 +908,7 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
         GTEST_SKIP() << "Tests requires Vulkan 1.1 exactly";
     }
 
-    char const *fs_source = R"glsl(
+    char const* fs_source = R"glsl(
         #version 450
         layout (set = 1, binding = 0) uniform sampler2D samplerColor;
         layout(location = 0) out vec4 color;
@@ -840,35 +925,53 @@ TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+        });
     descriptor_set.WriteDescriptorImageInfo(0, imageView, sampler.handle());
     descriptor_set.UpdateDescriptorSets();
 
-    vkt::Buffer indirect_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+    vkt::Buffer indirect_buffer(*m_device,
+                                sizeof(VkDrawIndirectCommand),
+                                VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkt::Buffer indexed_indirect_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+    vkt::Buffer indexed_indirect_buffer(*m_device,
+                                        sizeof(VkDrawIndexedIndirectCommand),
+                                        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer count_buffer(
+        *m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer index_buffer(
+        *m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_, &descriptor_set.layout_});
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_, &descriptor_set.layout_ });
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 1, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              1,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+    vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(),
+                                       indexed_indirect_buffer.handle(),
+                                       0,
+                                       count_buffer.handle(),
+                                       0,
+                                       1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -882,9 +985,9 @@ TEST_F(PositiveGpuAV, FirstInstance) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                            kHostVisibleMemProps);
-    auto draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
+    vkt::Buffer draw_buffer(
+        *m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    auto draw_ptr = static_cast<VkDrawIndirectCommand*>(draw_buffer.Memory().Map());
     for (uint32_t i = 0; i < 4; i++) {
         draw_ptr->vertexCount = 3;
         draw_ptr->instanceCount = 1;
@@ -908,9 +1011,9 @@ TEST_F(PositiveGpuAV, FirstInstance) {
     m_default_queue->Wait();
 
     // Now with an offset and indexed draw
-    vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                    kHostVisibleMemProps);
-    auto indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.Memory().Map();
+    vkt::Buffer indexed_draw_buffer(
+        *m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    auto indexed_draw_ptr = (VkDrawIndexedIndirectCommand*)indexed_draw_buffer.Memory().Map();
     for (uint32_t i = 0; i < 4; i++) {
         indexed_draw_ptr->indexCount = 3;
         indexed_draw_ptr->instanceCount = 1;
@@ -926,7 +1029,10 @@ TEST_F(PositiveGpuAV, FirstInstance) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), indexed_draw_buffer.handle(), sizeof(VkDrawIndexedIndirectCommand), 3,
+    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(),
+                               indexed_draw_buffer.handle(),
+                               sizeof(VkDrawIndexedIndirectCommand),
+                               3,
                                sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -943,10 +1049,12 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Buffer copy_src_buffer(*m_device, sizeof(float) * 64 * 64,
-                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, kHostVisibleMemProps);
+    vkt::Buffer copy_src_buffer(*m_device,
+                                sizeof(float) * 64 * 64,
+                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                kHostVisibleMemProps);
 
-    float *ptr = static_cast<float *>(copy_src_buffer.Memory().Map());
+    float* ptr = static_cast<float*>(copy_src_buffer.Memory().Map());
     for (size_t i = 0; i < 64 * 64; ++i) {
         if (i % 2) {
             ptr[i] = 1.0f;
@@ -956,7 +1064,11 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
     }
     copy_src_buffer.Memory().Unmap();
 
-    vkt::Image copy_dst_image(*m_device, 64, 64, 1, VK_FORMAT_D32_SFLOAT,
+    vkt::Image copy_dst_image(*m_device,
+                              64,
+                              64,
+                              1,
+                              VK_FORMAT_D32_SFLOAT,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -966,18 +1078,26 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
     buffer_image_copy_1.bufferOffset = 0;
     buffer_image_copy_1.bufferRowLength = 0;
     buffer_image_copy_1.bufferImageHeight = 0;
-    buffer_image_copy_1.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
-    buffer_image_copy_1.imageOffset = {0, 0, 0};
-    buffer_image_copy_1.imageExtent = {64, 64, 1};
+    buffer_image_copy_1.imageSubresource = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1 };
+    buffer_image_copy_1.imageOffset = { 0, 0, 0 };
+    buffer_image_copy_1.imageExtent = { 64, 64, 1 };
 
-    vk::CmdCopyBufferToImage(m_command_buffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+    vk::CmdCopyBufferToImage(m_command_buffer,
+                             copy_src_buffer,
+                             copy_dst_image,
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                             1,
                              &buffer_image_copy_1);
 
     VkBufferImageCopy buffer_image_copy_2 = buffer_image_copy_1;
-    buffer_image_copy_2.imageOffset = {32, 32, 0};
-    buffer_image_copy_2.imageExtent = {32, 32, 1};
+    buffer_image_copy_2.imageOffset = { 32, 32, 0 };
+    buffer_image_copy_2.imageExtent = { 32, 32, 1 };
 
-    vk::CmdCopyBufferToImage(m_command_buffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+    vk::CmdCopyBufferToImage(m_command_buffer,
+                             copy_src_buffer,
+                             copy_dst_image,
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                             1,
                              &buffer_image_copy_2);
 
     m_command_buffer.End();
@@ -994,13 +1114,15 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Buffer copy_src_buffer(*m_device, 5 * 64 * 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    vkt::Buffer copy_src_buffer(*m_device,
+                                5 * 64 * 64,
+                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                 kHostVisibleMemProps);
 
-    auto ptr = static_cast<uint8_t *>(copy_src_buffer.Memory().Map());
+    auto ptr = static_cast<uint8_t*>(copy_src_buffer.Memory().Map());
     std::memset(ptr, 0, static_cast<size_t>(copy_src_buffer.CreateInfo().size));
     for (size_t i = 0; i < 64 * 64; ++i) {
-        auto ptr_float = reinterpret_cast<float *>(ptr + 5 * i);
+        auto ptr_float = reinterpret_cast<float*>(ptr + 5 * i);
         if (i % 2) {
             *ptr_float = 1.0f;
         } else {
@@ -1010,7 +1132,11 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
 
     copy_src_buffer.Memory().Unmap();
 
-    vkt::Image copy_dst_image(*m_device, 64, 64, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
+    vkt::Image copy_dst_image(*m_device,
+                              64,
+                              64,
+                              1,
+                              VK_FORMAT_D32_SFLOAT_S8_UINT,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -1020,12 +1146,12 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
     buffer_image_copy.bufferOffset = 0;
     buffer_image_copy.bufferRowLength = 0;
     buffer_image_copy.bufferImageHeight = 0;
-    buffer_image_copy.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
-    buffer_image_copy.imageOffset = {33, 33, 0};
-    buffer_image_copy.imageExtent = {31, 31, 1};
+    buffer_image_copy.imageSubresource = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1 };
+    buffer_image_copy.imageOffset = { 33, 33, 0 };
+    buffer_image_copy.imageExtent = { 31, 31, 1 };
 
-    vk::CmdCopyBufferToImage(m_command_buffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
-                             &buffer_image_copy);
+    vk::CmdCopyBufferToImage(
+        m_command_buffer, copy_src_buffer, copy_dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_image_copy);
 
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
@@ -1040,16 +1166,17 @@ TEST_F(PositiveGpuAV, CopyBufferToImageTwoSubmit) {
     vkt::CommandBuffer cb_0(*m_device, m_command_pool);
     vkt::CommandBuffer cb_1(*m_device, m_command_pool);
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::Buffer buffer(*m_device, 4096, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
     VkBufferImageCopy region = {};
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {32, 32, 1};
+    region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.imageOffset = { 0, 0, 0 };
+    region.imageExtent = { 32, 32, 1 };
     region.bufferOffset = 0;
 
     cb_0.Begin();
@@ -1085,29 +1212,30 @@ TEST_F(PositiveGpuAV, SwapchainImage) {
     ivci.image = swapchain_images[image_index];
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = m_surface_formats[0].format;
-    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    ivci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     vkt::ImageView view(*m_device, ivci);
 }
 
-class PositiveGpuAVParameterized : public GpuAVTest,
-                                   public ::testing::WithParamInterface<std::tuple<std::vector<const char *>, uint32_t>> {};
+class PositiveGpuAVParameterized
+    : public GpuAVTest,
+      public ::testing::WithParamInterface<std::tuple<std::vector<const char*>, uint32_t>> {};
 
 TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
     AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     AddRequiredFeature(vkt::Feature::drawIndirectFirstInstance);
 
-    std::vector<const char *> setting_names = std::get<0>(GetParam());
+    std::vector<const char*> setting_names = std::get<0>(GetParam());
     const uint32_t setting_values = std::get<1>(GetParam());
 
     std::vector<VkLayerSettingEXT> layer_settings(setting_names.size());
     std::vector<VkBool32> layer_settings_values(setting_names.size());
     for (const auto [setting_name_i, setting_name] : vvl::enumerate(setting_names)) {
-        VkLayerSettingEXT &layer_setting = layer_settings[setting_name_i];
-        VkBool32 &layer_setting_value = layer_settings_values[setting_name_i];
+        VkLayerSettingEXT& layer_setting = layer_settings[setting_name_i];
+        VkBool32& layer_setting_value = layer_settings_values[setting_name_i];
 
         layer_setting_value = (setting_values & (1u << setting_name_i)) ? VK_TRUE : VK_FALSE;
-        layer_setting = {OBJECT_LAYER_NAME, *setting_name, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &layer_setting_value};
+        layer_setting = { OBJECT_LAYER_NAME, *setting_name, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &layer_setting_value };
     }
 
     VkLayerSettingsCreateInfoEXT layer_settings_create_info = vku::InitStructHelper();
@@ -1118,9 +1246,9 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    vkt::Buffer draw_buffer(*m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                            kHostVisibleMemProps);
-    VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
+    vkt::Buffer draw_buffer(
+        *m_device, 4 * sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    VkDrawIndirectCommand* draw_ptr = static_cast<VkDrawIndirectCommand*>(draw_buffer.Memory().Map());
     for (uint32_t i = 0; i < 4; i++) {
         draw_ptr->vertexCount = 3;
         draw_ptr->instanceCount = 1;
@@ -1145,9 +1273,9 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     m_default_queue->Wait();
 
     // Now with an offset and indexed draw
-    vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                    kHostVisibleMemProps);
-    VkDrawIndexedIndirectCommand *indexed_draw_ptr = (VkDrawIndexedIndirectCommand *)indexed_draw_buffer.Memory().Map();
+    vkt::Buffer indexed_draw_buffer(
+        *m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    VkDrawIndexedIndirectCommand* indexed_draw_ptr = (VkDrawIndexedIndirectCommand*)indexed_draw_buffer.Memory().Map();
     for (uint32_t i = 0; i < 4; i++) {
         indexed_draw_ptr->indexCount = 3;
         indexed_draw_ptr->instanceCount = 1;
@@ -1163,7 +1291,10 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vkt::Buffer index_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), indexed_draw_buffer.handle(), sizeof(VkDrawIndexedIndirectCommand), 3,
+    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(),
+                               indexed_draw_buffer.handle(),
+                               sizeof(VkDrawIndexedIndirectCommand),
+                               3,
                                sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -1171,12 +1302,13 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     m_default_queue->Wait();
 }
 
-static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
-    std::vector<const char *> setting_names = std::get<0>(info.param);
+static std::string
+GetGpuAvSettingsCombinationTestName(const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType>& info) {
+    std::vector<const char*> setting_names = std::get<0>(info.param);
     const uint32_t setting_values = std::get<1>(info.param);
     std::stringstream test_name;
     for (auto [setting_name_i, setting_name] : vvl::enumerate(setting_names)) {
-        const char *enabled_str = (setting_values & (1u << setting_name_i)) ? "_1" : "_0";
+        const char* enabled_str = (setting_values & (1u << setting_name_i)) ? "_1" : "_0";
         if (setting_name_i != 0) {
             test_name << "_";
         }
@@ -1188,50 +1320,61 @@ static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamI
 
 // /!\ Note when copy pasting this:
 // Be mindful that the constant number specified as the end range parameter in ::testing::Range
-// is based on the number of settings in the settings list. If you have N settings, you want your range end to be uint32_t(1) << N
-INSTANTIATE_TEST_SUITE_P(GpuAvShaderInstrumentationMainSettings, PositiveGpuAVParameterized,
+// is based on the number of settings in the settings list. If you have N settings, you want your range end to be
+// uint32_t(1) << N
+INSTANTIATE_TEST_SUITE_P(
+    GpuAvShaderInstrumentationMainSettings,
+    PositiveGpuAVParameterized,
 
-                         ::testing::Combine(::testing::Values(std::vector<const char *>(
-                                                {"gpuav_descriptor_checks", "gpuav_buffer_address_oob", "gpuav_vma_linear_output",
-                                                 "gpuav_validate_ray_query", "gpuav_select_instrumented_shaders"})),
-                                            ::testing::Range(uint32_t(0), uint32_t(1) << 5)),
+    ::testing::Combine(::testing::Values(std::vector<const char*>({ "gpuav_descriptor_checks",
+                                                                    "gpuav_buffer_address_oob",
+                                                                    "gpuav_vma_linear_output",
+                                                                    "gpuav_validate_ray_query",
+                                                                    "gpuav_select_instrumented_shaders" })),
+                       ::testing::Range(uint32_t(0), uint32_t(1) << 5)),
 
-                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
-                             return GetGpuAvSettingsCombinationTestName(info);
-                         });
+    [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType>& info) {
+        return GetGpuAvSettingsCombinationTestName(info);
+    });
 
-INSTANTIATE_TEST_SUITE_P(GpuAvMainSettings, PositiveGpuAVParameterized,
+INSTANTIATE_TEST_SUITE_P(GpuAvMainSettings,
+                         PositiveGpuAVParameterized,
 
-                         ::testing::Combine(::testing::Values(std::vector<const char *>({"gpuav_shader_instrumentation",
+                         ::testing::Combine(::testing::Values(std::vector<const char*>({ "gpuav_shader_instrumentation",
                                                                                          "gpuav_buffers_validation",
-                                                                                         "gpuav_vma_linear_output"})),
+                                                                                         "gpuav_vma_linear_output" })),
                                             ::testing::Range(uint32_t(0), uint32_t(1) << 3)),
 
-                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
+                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType>& info) {
                              return GetGpuAvSettingsCombinationTestName(info);
                          });
 
-INSTANTIATE_TEST_SUITE_P(GpuAvBufferContentValidationSettings, PositiveGpuAVParameterized,
-                         ::testing::Combine(::testing::Values(std::vector<const char *>(
-                                                {"gpuav_indirect_draws_buffers", "gpuav_indirect_dispatches_buffers",
-                                                 "gpuav_indirect_trace_rays_buffers", "gpuav_buffer_copies"})),
-                                            ::testing::Range(uint32_t(0), uint32_t(1) << 4)),
+INSTANTIATE_TEST_SUITE_P(
+    GpuAvBufferContentValidationSettings,
+    PositiveGpuAVParameterized,
+    ::testing::Combine(::testing::Values(std::vector<const char*>({ "gpuav_indirect_draws_buffers",
+                                                                    "gpuav_indirect_dispatches_buffers",
+                                                                    "gpuav_indirect_trace_rays_buffers",
+                                                                    "gpuav_buffer_copies" })),
+                       ::testing::Range(uint32_t(0), uint32_t(1) << 4)),
 
-                         [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
-                             return GetGpuAvSettingsCombinationTestName(info);
-                         });
+    [](const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType>& info) {
+        return GetGpuAvSettingsCombinationTestName(info);
+    });
 
 TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
-    TEST_DESCRIPTION("Test that user supplied push constants are correctly restored. One graphics pipeline, indirect draw.");
+    TEST_DESCRIPTION(
+        "Test that user supplied push constants are correctly restored. One graphics pipeline, indirect draw.");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                kHostVisibleMemProps);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
+    vkt::Buffer indirect_draw_parameters_buffer(
+        *m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    auto& indirect_draw_parameters =
+        *static_cast<VkDrawIndirectCommand*>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
@@ -1240,7 +1383,8 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     indirect_draw_parameters_buffer.Memory().Unmap();
 
     constexpr int32_t int_count = 16;
-    vkt::Buffer storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer storage_buffer(
+        *m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     // Use different push constant ranges for vertex and fragment shader.
     // The underlying storage buffer is the same.
@@ -1261,17 +1405,18 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
         push_constants.integers_2[i] = (int_count / 2) + i;
     }
 
-    constexpr uint32_t shader_pcr_byte_size = uint32_t(sizeof(VkDeviceAddress)) + uint32_t(sizeof(int32_t)) * (int_count / 2);
-    std::array<VkPushConstantRange, 2> push_constant_ranges = {{
-        {VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size},
-        {VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size, shader_pcr_byte_size},
-    }};
+    constexpr uint32_t shader_pcr_byte_size =
+        uint32_t(sizeof(VkDeviceAddress)) + uint32_t(sizeof(int32_t)) * (int_count / 2);
+    std::array<VkPushConstantRange, 2> push_constant_ranges = { {
+        { VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size },
+        { VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size, shader_pcr_byte_size },
+    } };
     VkPipelineLayoutCreateInfo plci = vku::InitStructHelper();
     plci.pushConstantRangeCount = size32(push_constant_ranges);
     plci.pPushConstantRanges = push_constant_ranges.data();
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
-    char const *vs_source = R"glsl(
+    char const* vs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1299,7 +1444,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
         )glsl";
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    char const *fs_source = R"glsl(
+    char const* fs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1323,7 +1468,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
@@ -1332,23 +1477,40 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipeline_layout.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT,
+                         0,
+                         shader_pcr_byte_size,
                          &push_constants);
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
-                         shader_pcr_byte_size, &push_constants.storage_buffer__ptr_2);
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipeline_layout.handle(),
+                         VK_SHADER_STAGE_FRAGMENT_BIT,
+                         shader_pcr_byte_size,
+                         shader_pcr_byte_size,
+                         &push_constants.storage_buffer__ptr_2);
     // Make sure pushing the same push constants twice does not break internal management
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipeline_layout.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT,
+                         0,
+                         shader_pcr_byte_size,
                          &push_constants);
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
-                         shader_pcr_byte_size, &push_constants.storage_buffer__ptr_2);
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipeline_layout.handle(),
+                         VK_SHADER_STAGE_FRAGMENT_BIT,
+                         shader_pcr_byte_size,
+                         shader_pcr_byte_size,
+                         &push_constants.storage_buffer__ptr_2);
     // Vertex shader will write 8 values to storage buffer, fragment shader another 8
-    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirect(
+        m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.Memory().Map());
+    auto storage_buffer_ptr = static_cast<int32_t*>(storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], i);
     }
@@ -1356,9 +1518,9 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
 }
 
 TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
-    TEST_DESCRIPTION(
-        "Test that user supplied push constants are correctly restored. One graphics pipeline, one compute pipeline, indirect draw "
-        "and dispatch.");
+    TEST_DESCRIPTION("Test that user supplied push constants are correctly restored. One graphics pipeline, one "
+                     "compute pipeline, indirect draw "
+                     "and dispatch.");
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitGpuAvFramework());
@@ -1375,7 +1537,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     // Graphics pipeline
     // ---
 
-    char const *vs_source = R"glsl(
+    char const* vs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1403,7 +1565,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
         )glsl";
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    char const *fs_source = R"glsl(
+    char const* fs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1426,15 +1588,16 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
         )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPushConstantRange graphics_push_constant_ranges = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                                         sizeof(PushConstants)};
+    VkPushConstantRange graphics_push_constant_ranges = { VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                          0,
+                                                          sizeof(PushConstants) };
     VkPipelineLayoutCreateInfo graphics_plci = vku::InitStructHelper();
     graphics_plci.pushConstantRangeCount = 1;
     graphics_plci.pPushConstantRanges = &graphics_push_constant_ranges;
     vkt::PipelineLayout graphics_pipeline_layout(*m_device, graphics_plci);
 
-    vkt::Buffer graphics_storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                        vkt::device_address);
+    vkt::Buffer graphics_storage_buffer(
+        *m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     PushConstants graphics_push_constants;
     graphics_push_constants.storage_buffer = graphics_storage_buffer.Address();
@@ -1442,9 +1605,10 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
         graphics_push_constants.integers[i] = i;
     }
 
-    vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                kHostVisibleMemProps);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
+    vkt::Buffer indirect_draw_parameters_buffer(
+        *m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    auto& indirect_draw_parameters =
+        *static_cast<VkDrawIndirectCommand*>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
@@ -1452,14 +1616,14 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     indirect_draw_parameters_buffer.Memory().Unmap();
 
     CreatePipelineHelper graphics_pipe(*this);
-    graphics_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    graphics_pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     graphics_pipe.gp_ci_.layout = graphics_pipeline_layout.handle();
     graphics_pipe.CreateGraphicsPipeline();
 
     // Compute pipeline
     // ---
 
-    char const *compute_source = R"glsl(
+    char const* compute_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -1482,14 +1646,14 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
         )glsl";
     VkShaderObj compute(this, compute_source, VK_SHADER_STAGE_COMPUTE_BIT);
 
-    VkPushConstantRange compute_push_constant_ranges = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants)};
+    VkPushConstantRange compute_push_constant_ranges = { VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants) };
     VkPipelineLayoutCreateInfo compute_plci = vku::InitStructHelper();
     compute_plci.pushConstantRangeCount = 1;
     compute_plci.pPushConstantRanges = &compute_push_constant_ranges;
     vkt::PipelineLayout compute_pipeline_layout(*m_device, compute_plci);
 
-    vkt::Buffer compute_storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                       vkt::device_address);
+    vkt::Buffer compute_storage_buffer(
+        *m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     PushConstants compute_push_constants;
     compute_push_constants.storage_buffer = compute_storage_buffer.Address();
@@ -1502,10 +1666,10 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     compute_pipe.cp_ci_.layout = compute_pipeline_layout.handle();
     compute_pipe.CreateComputePipeline();
 
-    vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                    kHostVisibleMemProps);
-    auto &indirect_dispatch_parameters =
-        *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.Memory().Map());
+    vkt::Buffer indirect_dispatch_parameters_buffer(
+        *m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    auto& indirect_dispatch_parameters =
+        *static_cast<VkDispatchIndirectCommand*>(indirect_dispatch_parameters_buffer.Memory().Map());
     indirect_dispatch_parameters.x = 1;
     indirect_dispatch_parameters.y = 1;
     indirect_dispatch_parameters.z = 1;
@@ -1521,29 +1685,37 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipe.Handle());
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.Handle());
 
-    vk::CmdPushConstants(m_command_buffer.handle(), graphics_pipeline_layout.handle(),
-                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(graphics_push_constants),
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         graphics_pipeline_layout.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                         0,
+                         sizeof(graphics_push_constants),
                          &graphics_push_constants);
 
     // Vertex shader will write 4 values to graphics storage buffer, fragment shader another 4
-    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirect(
+        m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
 
-    vk::CmdPushConstants(m_command_buffer.handle(), compute_pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                         sizeof(compute_push_constants), &compute_push_constants);
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         compute_pipeline_layout.handle(),
+                         VK_SHADER_STAGE_COMPUTE_BIT,
+                         0,
+                         sizeof(compute_push_constants),
+                         &compute_push_constants);
     // Compute shaders will write 8 values to compute storage buffer
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_dispatch_parameters_buffer.handle(), 0);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.Memory().Map());
+    auto compute_storage_buffer_ptr = static_cast<int32_t*>(compute_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(compute_storage_buffer_ptr[i], int_count + i);
     }
     compute_storage_buffer.Memory().Unmap();
 
-    auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.Memory().Map());
+    auto graphics_storage_buffer_ptr = static_cast<int32_t*>(graphics_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(graphics_storage_buffer_ptr[i], i);
     }
@@ -1557,9 +1729,10 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                kHostVisibleMemProps);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
+    vkt::Buffer indirect_draw_parameters_buffer(
+        *m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    auto& indirect_draw_parameters =
+        *static_cast<VkDrawIndirectCommand*>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
@@ -1567,7 +1740,7 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
 
     indirect_draw_parameters_buffer.Memory().Unmap();
 
-    VkPushConstantRange push_constant_ranges = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(int)};
+    VkPushConstantRange push_constant_ranges = { VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(int) };
     VkPipelineLayoutCreateInfo pipe_layout_ci_1 = vku::InitStructHelper();
     pipe_layout_ci_1.pushConstantRangeCount = 1;
     pipe_layout_ci_1.pPushConstantRanges = &push_constant_ranges;
@@ -1578,15 +1751,15 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
     pipe_1.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_2(*this);
-    pipe_2.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
+    pipe_2.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr } };
     pipe_2.CreateGraphicsPipeline();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    pipe_2.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    pipe_2.descriptor_set_->WriteDescriptorImageInfo(
+        0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     pipe_2.descriptor_set_->UpdateDescriptorSets();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -1595,18 +1768,27 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
 
     // CmdPushConstants with layout 1 (is associated to pipeline 1, only has a push constant range)
     int dummy = 0;
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe_layout_1.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(int), &dummy);
-    // CmdBindDescriptorSets with layout 2 (is associated to pipeline 2, only has a descriptor set, so is incompatible with layout
-    // 1)
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2.pipeline_layout_.handle(), 0, 1,
-                              &pipe_2.descriptor_set_->set_, 0, nullptr);
+    vk::CmdPushConstants(
+        m_command_buffer.handle(), pipe_layout_1.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(int), &dummy);
+    // CmdBindDescriptorSets with layout 2 (is associated to pipeline 2, only has a descriptor set, so is incompatible
+    // with layout 1)
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe_2.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe_2.descriptor_set_->set_,
+                              0,
+                              nullptr);
 
     // Bind pipeline 1, draw
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_1.Handle());
-    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirect(
+        m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     // Bind pipeline 2, draw
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2.Handle());
-    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirect(
+        m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -1620,10 +1802,10 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    const VkDescriptorSetLayoutBinding binding{ 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr };
     vkt::DescriptorSetLayout dsl1(*m_device, binding);
     vkt::DescriptorSetLayout dsl2(*m_device, binding);
-    VkDescriptorSetLayout set_layouts[2] = {dsl1.handle(), dsl2.handle()};
+    VkDescriptorSetLayout set_layouts[2] = { dsl1.handle(), dsl2.handle() };
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.pSetLayouts = set_layouts;
@@ -1633,7 +1815,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
     pipeline_layout_ci.setLayoutCount = 2;
     const vkt::PipelineLayout pipeline_layout_2(*m_device, pipeline_layout_ci);
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo_0 { int a; int b;};
         void main() {
@@ -1645,7 +1827,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
     pipe.cp_ci_.layout = pipeline_layout_1.handle();
     pipe.CreateComputePipeline();
 
-    VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2};
+    VkDescriptorPoolSize pool_size = { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2 };
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 2;
     ds_pool_ci.poolSizeCount = 1;
@@ -1661,7 +1843,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
     vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo buffer_info = { buffer.handle(), 0, VK_WHOLE_SIZE };
 
     VkWriteDescriptorSet descriptor_writes[2];
     descriptor_writes[0] = vku::InitStructHelper();
@@ -1681,8 +1863,14 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
 
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_2.handle(), 0, 2,
-                              descriptor_sets, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout_2.handle(),
+                              0,
+                              2,
+                              descriptor_sets,
+                              0,
+                              nullptr);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
@@ -1697,9 +1885,9 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    const VkDescriptorSetLayoutBinding binding{ 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr };
     vkt::DescriptorSetLayout dsl1(*m_device, binding);
-    VkDescriptorSetLayout set_layouts[3] = {dsl1.handle(), dsl1.handle(), dsl1.handle()};
+    VkDescriptorSetLayout set_layouts[3] = { dsl1.handle(), dsl1.handle(), dsl1.handle() };
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.pSetLayouts = set_layouts;
@@ -1710,7 +1898,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
     pipeline_layout_ci.setLayoutCount = 3;
     const vkt::PipelineLayout pipeline_layout_2(*m_device, pipeline_layout_ci);
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo_0 {
             int a;
@@ -1725,7 +1913,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
     pipe.cp_ci_.layout = pipeline_layout_1.handle();
     pipe.CreateComputePipeline();
 
-    VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2};
+    VkDescriptorPoolSize pool_size = { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2 };
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 2;
     ds_pool_ci.poolSizeCount = 1;
@@ -1741,7 +1929,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
     vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo buffer_info = { buffer.handle(), 0, VK_WHOLE_SIZE };
 
     VkWriteDescriptorSet descriptor_writes[2];
     descriptor_writes[0] = vku::InitStructHelper();
@@ -1762,10 +1950,22 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
     m_command_buffer.Begin(&begin_info);
 
     // Only bind descriptor sets at indices 0 and 2
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_2.handle(), 0, 1,
-                              &descriptor_sets[0], 0, nullptr);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_2.handle(), 2, 1,
-                              &descriptor_sets[1], 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout_2.handle(),
+                              0,
+                              1,
+                              &descriptor_sets[0],
+                              0,
+                              nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout_2.handle(),
+                              2,
+                              1,
+                              &descriptor_sets[1],
+                              0,
+                              nullptr);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
@@ -1813,23 +2013,30 @@ TEST_F(PositiveGpuAV, DestroyedPipelineLayout2) {
     VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     // Destroy pipeline layout after creating pipeline
     CreatePipelineHelper pipe(*this);
     {
-        const vkt::PipelineLayout doomed_pipeline_layout(*m_device, {&descriptor_set.layout_});
+        const vkt::PipelineLayout doomed_pipeline_layout(*m_device, { &descriptor_set.layout_ });
         pipe.shader_stages_[0] = vs.GetStageCreateInfo();
         pipe.gp_ci_.layout = doomed_pipeline_layout.handle();
         pipe.CreateGraphicsPipeline();
     }
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
@@ -1855,8 +2062,8 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
         GTEST_SKIP() << "VK_SHADER_STAGE_COMPUTE_BIT is not supported.";
     }
 
-    VkIndirectCommandsExecutionSetTokenEXT exe_set_token = {VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT,
-                                                            VK_SHADER_STAGE_COMPUTE_BIT};
+    VkIndirectCommandsExecutionSetTokenEXT exe_set_token = { VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT,
+                                                             VK_SHADER_STAGE_COMPUTE_BIT };
     VkIndirectCommandsLayoutTokenEXT tokens[2];
     tokens[0] = vku::InitStructHelper();
     tokens[0].type = VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT;
@@ -1873,7 +2080,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     command_layout_ci.pTokens = tokens;
     vkt::IndirectCommandsLayout command_layout(*m_device, command_layout_ci);
 
-    char const *shader_source_1 = R"glsl(
+    char const* shader_source_1 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo {
             uint x[];
@@ -1882,7 +2089,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
             x[48] = 0; // invalid!
         }
     )glsl";
-    char const *shader_source_2 = R"glsl(
+    char const* shader_source_2 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo {
             uint x[];
@@ -1891,7 +2098,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
             x[24] = 0; // invalid!
         }
     )glsl";
-    char const *shader_source_3 = R"glsl(
+    char const* shader_source_3 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer ssbo {
             uint x[];
@@ -1904,17 +2111,18 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
     CreateComputePipelineHelper init_pipe(*this, &pipe_flags2);
-    init_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
-    init_pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    init_pipe.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } };
+    init_pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, shader_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     init_pipe.CreateComputePipeline();
 
     CreateComputePipelineHelper pipe_1(*this, &pipe_flags2);
-    pipe_1.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe_1.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } };
     pipe_1.cs_ = std::make_unique<VkShaderObj>(this, shader_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe_1.CreateComputePipeline();
 
     CreateComputePipelineHelper pipe_2(*this, &pipe_flags2);
-    pipe_2.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe_2.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } };
     pipe_2.cs_ = std::make_unique<VkShaderObj>(this, shader_source_3, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe_2.CreateComputePipeline();
 
@@ -1929,13 +2137,14 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     vk::UpdateIndirectExecutionSetPipelineEXT(device(), exe_set.handle(), 2, write_exe_sets);
 
     vkt::Buffer ssbo_buffer(*m_device, 8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    init_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, ssbo_buffer.handle(), 0, VK_WHOLE_SIZE,
-                                                         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    init_pipe.descriptor_set_->WriteDescriptorBufferInfo(
+        0, ssbo_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     init_pipe.descriptor_set_->UpdateDescriptorSets();
 
     VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer block_buffer(*m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
+    vkt::Buffer block_buffer(
+        *m_device, 64, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, kHostVisibleMemProps, &allocate_flag_info);
 
     VkDeviceSize pre_process_size = 0;
     {
@@ -1954,9 +2163,9 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     buffer_ci.size = pre_process_size;
     vkt::Buffer pre_process_buffer(*m_device, buffer_ci, 0, &allocate_flag_info);
 
-    uint32_t *block_buffer_ptr = (uint32_t *)block_buffer.Memory().Map();
-    block_buffer_ptr[0] = 2;  // pick pipeline 2
-    VkDispatchIndirectCommand *indirect_command_ptr = (VkDispatchIndirectCommand *)(block_buffer_ptr + 1);
+    uint32_t* block_buffer_ptr = (uint32_t*)block_buffer.Memory().Map();
+    block_buffer_ptr[0] = 2; // pick pipeline 2
+    VkDispatchIndirectCommand* indirect_command_ptr = (VkDispatchIndirectCommand*)(block_buffer_ptr + 1);
     indirect_command_ptr->x = 1;
     indirect_command_ptr->y = 1;
     indirect_command_ptr->z = 1;
@@ -1975,8 +2184,14 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, init_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, init_pipe.pipeline_layout_.handle(), 0, 1,
-                              &init_pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              init_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &init_pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
     m_command_buffer.End();
 

@@ -17,10 +17,12 @@ class NegativeDebugPrintfShaderDebugInfo : public DebugPrintfTests {};
 
 // These tests print out the verbose info to make sure that info is correct
 static const VkBool32 verbose_value = true;
-static const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "printf_verbose", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                                &verbose_value};
-static VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                                  &layer_setting};
+static const VkLayerSettingEXT layer_setting = {
+    OBJECT_LAYER_NAME, "printf_verbose", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &verbose_value
+};
+static VkLayerSettingsCreateInfoEXT layer_settings_create_info = {
+    VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting
+};
 
 TEST_F(NegativeDebugPrintfShaderDebugInfo, PipelineHandle) {
     TEST_DESCRIPTION("Make sure we are printing out which pipeline the error is from");
@@ -28,7 +30,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, PipelineHandle) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -41,7 +43,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, PipelineHandle) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    const char *object_name = "bad_pipeline";
+    const char* object_name = "bad_pipeline";
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     name_info.objectHandle = (uint64_t)pipe.Handle();
@@ -67,7 +69,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderObjectHandle) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -76,10 +78,10 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderObjectHandle) {
         }
     )glsl";
 
-    VkShaderStageFlagBits shader_stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
+    VkShaderStageFlagBits shader_stages[] = { VK_SHADER_STAGE_COMPUTE_BIT };
     const vkt::Shader comp_shader(*m_device, shader_stages[0], GLSLToSPV(shader_stages[0], shader_source));
 
-    const char *object_name = "bad_shader_object";
+    const char* object_name = "bad_shader_object";
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_SHADER_EXT;
     name_info.objectHandle = (uint64_t)comp_shader.handle();
@@ -102,7 +104,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, OpLine) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"(
+    char const* shader_source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %2 = OpExtInstImport "GLSL.std.450"
@@ -141,7 +143,8 @@ void main() {
     )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
@@ -149,9 +152,9 @@ void main() {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kInformationBit,
-        "Debug shader printf message generated in file a.comp at line 5\n\n5:     debugPrintfEXT(\"float == %f\", myfloat);");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
+                                         "Debug shader printf message generated in file a.comp at line 5\n\n5:     "
+                                         "debugPrintfEXT(\"float == %f\", myfloat);");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -164,7 +167,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderDebugInfoDebugLine) {
 
     // Manually ran:
     //   glslangValidator -V -gVS in.comp -o out.spv --target-env vulkan1.0
-    char const *shader_source = R"(
+    char const* shader_source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %1 = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
@@ -230,7 +233,8 @@ void main() {
     )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
@@ -238,9 +242,9 @@ void main() {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kInformationBit,
-        "Debug shader printf message generated in file a.comp at line 5\n\n5:     debugPrintfEXT(\"float == %f\", myfloat);");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
+                                         "Debug shader printf message generated in file a.comp at line 5\n\n5:     "
+                                         "debugPrintfEXT(\"float == %f\", myfloat);");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -251,7 +255,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndex) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -287,7 +291,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndexMulti) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(push_constant) uniform PushConstants { int x; } pc;
@@ -298,7 +302,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndexMulti) {
         }
     )glsl";
 
-    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t)};
+    VkPushConstantRange pc_range = { VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t) };
     VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
     pipe_layout_ci.pushConstantRangeCount = 1;
     pipe_layout_ci.pPushConstantRanges = &pc_range;
@@ -316,28 +320,33 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndexMulti) {
     uint32_t good = 4;
     cb0.Begin();
     vk::CmdBindPipeline(cb0.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdPushConstants(cb0.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &skip);
+    vk::CmdPushConstants(
+        cb0.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &skip);
     vk::CmdDispatch(cb0.handle(), 1, 1, 1);
     vk::CmdDispatch(cb0.handle(), 1, 1, 1);
     vk::CmdDispatch(cb0.handle(), 1, 1, 1);
-    vk::CmdPushConstants(cb0.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &good);
+    vk::CmdPushConstants(
+        cb0.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &good);
     vk::CmdDispatch(cb0.handle(), 1, 1, 1);
-    vk::CmdPushConstants(cb0.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &skip);
+    vk::CmdPushConstants(
+        cb0.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &skip);
     vk::CmdDispatch(cb0.handle(), 1, 1, 1);
     cb0.End();
 
     cb1.Begin();
     vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdPushConstants(cb1.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &good);
+    vk::CmdPushConstants(
+        cb1.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &good);
     vk::CmdDispatch(cb1.handle(), 1, 1, 1);
-    vk::CmdPushConstants(cb1.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &skip);
+    vk::CmdPushConstants(
+        cb1.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &skip);
     vk::CmdDispatch(cb1.handle(), 1, 1, 1);
     cb1.End();
 
-    m_errorMonitor->SetDesiredInfo("Compute Dispatch Index 3");  // cb0
-    m_errorMonitor->SetDesiredInfo("Compute Dispatch Index 0");  // cb1
+    m_errorMonitor->SetDesiredInfo("Compute Dispatch Index 3"); // cb0
+    m_errorMonitor->SetDesiredInfo("Compute Dispatch Index 0"); // cb1
 
-    VkCommandBuffer cbs[2] = {cb0.handle(), cb1.handle()};
+    VkCommandBuffer cbs[2] = { cb0.handle(), cb1.handle() };
     VkSubmitInfo submit = vku::InitStructHelper();
     submit.commandBufferCount = 2;
     submit.pCommandBuffers = cbs;
@@ -351,7 +360,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, StageInfo) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -384,7 +393,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, Fragment) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(location = 0) out vec4 outColor;
@@ -402,7 +411,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, Fragment) {
     VkShaderObj fs(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -432,7 +441,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, VertexFragmentMultiEntrypoint) {
     //     debugPrintfEXT("Fragment value is %i", 8);
     //     c_out = vec4(0.0);
     // }
-    const char *shader_source = R"(
+    const char* shader_source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_non_semantic_info"
           %9 = OpExtInstImport "NonSemantic.DebugPrintf"
@@ -501,13 +510,15 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, VertexFragmentMultiEntrypoint) {
                OpReturn
                OpFunctionEnd
         )";
-    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "vert_main");
-    VkShaderObj fs(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "frag_main");
+    VkShaderObj vs(
+        this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "vert_main");
+    VkShaderObj fs(
+        this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "frag_main");
 
-    VkViewport viewport = {0, 0, 1, 1, 0, 1};
-    VkRect2D scissor = {{0, 0}, {1, 1}};
+    VkViewport viewport = { 0, 0, 1, 1, 0, 1 };
+    VkRect2D scissor = { { 0, 0 }, { 1, 1 } };
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.vp_state_ci_.pViewports = &viewport;
     pipe.vp_state_ci_.pScissors = &scissor;
     pipe.CreateGraphicsPipeline();
@@ -519,8 +530,8 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, VertexFragmentMultiEntrypoint) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
-                                         "Stage has multiple OpEntryPoint (Fragment, Vertex) and could not detect stage");
+    m_errorMonitor->SetDesiredFailureMsg(
+        kInformationBit, "Stage has multiple OpEntryPoint (Fragment, Vertex) and could not detect stage");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -535,7 +546,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_DebugLabelRegion1) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {
@@ -570,7 +581,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_DebugLabelRegion2) {
     RETURN_IF_SKIP(InitDebugPrintfFramework(&layer_settings_create_info));
     RETURN_IF_SKIP(InitState());
 
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         void main() {

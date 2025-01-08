@@ -71,7 +71,8 @@ TEST_F(NegativeVideo, VideoCodingScope) {
 }
 
 TEST_F(NegativeVideo, VideoProfileInvalidLumaChromaSubsampling) {
-    TEST_DESCRIPTION("Test single bit set in VkVideoProfileInfoKHR chromaSubsampling, lumaBitDepth, and chromaBitDepth");
+    TEST_DESCRIPTION(
+        "Test single bit set in VkVideoProfileInfoKHR chromaSubsampling, lumaBitDepth, and chromaBitDepth");
 
     RETURN_IF_SKIP(Init());
 
@@ -350,7 +351,8 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsUnsupportedProfile) {
     quality_level_info.pVideoProfile = config.Profile();
 
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-pVideoProfile-08259");
-    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+        Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
     m_errorMonitor->VerifyFound();
 }
 
@@ -368,7 +370,8 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsProfileNotEncode) {
     quality_level_info.pVideoProfile = config.Profile();
 
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-pVideoProfile-08260");
-    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+        Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
     m_errorMonitor->VerifyFound();
 }
 
@@ -387,7 +390,8 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsInvalidQualityLevel) {
     quality_level_info.qualityLevel = config.EncodeCaps()->maxQualityLevels;
 
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-qualityLevel-08261");
-    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+    vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+        Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
     m_errorMonitor->VerifyFound();
 }
 
@@ -409,7 +413,8 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingCodecInfo) {
         // Missing codec-specific info for H.264 encode profile
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-pVideoProfile-08259");
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07181");
-        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+            Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
         m_errorMonitor->VerifyFound();
     }
 
@@ -422,7 +427,8 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingCodecInfo) {
         // Missing codec-specific info for H.265 encode profile
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-pVideoProfile-08259");
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07182");
-        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+            Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
         m_errorMonitor->VerifyFound();
     }
 
@@ -435,7 +441,8 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingCodecInfo) {
         // Missing codec-specific info for AV1 encode profile
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR-pVideoProfile-08259");
         m_errorMonitor->SetDesiredError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-10262");
-        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
+        vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+            Gpu(), &quality_level_info, config.EncodeQualityLevelProps());
         m_errorMonitor->VerifyFound();
     }
 }
@@ -453,7 +460,8 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingChain) {
         quality_level_info.pVideoProfile = config.Profile();
 
         // Missing codec-specific output structure for H.264 encode profile
-        m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-pQualityLevelInfo-08257");
+        m_errorMonitor->SetDesiredError(
+            "VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-pQualityLevelInfo-08257");
         vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, &quality_level_props);
         m_errorMonitor->VerifyFound();
     }
@@ -463,7 +471,8 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingChain) {
         quality_level_info.pVideoProfile = config.Profile();
 
         // Missing codec-specific output structure for H.265 encode profile
-        m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-pQualityLevelInfo-08258");
+        m_errorMonitor->SetDesiredError(
+            "VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-pQualityLevelInfo-08258");
         vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, &quality_level_props);
         m_errorMonitor->VerifyFound();
     }
@@ -473,7 +482,8 @@ TEST_F(NegativeVideo, EncodeQualityLevelPropsMissingChain) {
         quality_level_info.pVideoProfile = config.Profile();
 
         // Missing codec-specific output structure for AV1 encode profile
-        m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-pQualityLevelInfo-10305");
+        m_errorMonitor->SetDesiredError(
+            "VUID-vkGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR-pQualityLevelInfo-10305");
         vk::GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(Gpu(), &quality_level_info, &quality_level_props);
         m_errorMonitor->VerifyFound();
     }
@@ -520,7 +530,8 @@ TEST_F(NegativeVideo, InUseDestroyed) {
 }
 
 TEST_F(NegativeVideo, CreateSessionVideoQuantizationMapNotEnabled) {
-    TEST_DESCRIPTION("vkCreateVideoSessionKHR - quantization map flag is specified but videoEncodeQuantizationMap was not enabled");
+    TEST_DESCRIPTION(
+        "vkCreateVideoSessionKHR - quantization map flag is specified but videoEncodeQuantizationMap was not enabled");
 
     AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
     ForceDisableFeature(vkt::Feature::videoEncodeQuantizationMap);
@@ -536,8 +547,8 @@ TEST_F(NegativeVideo, CreateSessionVideoQuantizationMapNotEnabled) {
     create_info.pVideoProfile = config.Profile();
     create_info.pStdHeaderVersion = config.StdVersion();
 
-    for (VkVideoSessionCreateFlagBitsKHR flag : {VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                                 VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR}) {
+    for (VkVideoSessionCreateFlagBitsKHR flag : { VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                                  VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR }) {
         create_info.flags = flag;
 
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoSessionCreateInfoKHR-flags-10267");
@@ -565,8 +576,8 @@ TEST_F(NegativeVideo, CreateSessionQuantMapWithoutEncodeProfile) {
     create_info.pVideoProfile = config.Profile();
     create_info.pStdHeaderVersion = config.StdVersion();
 
-    for (VkVideoSessionCreateFlagBitsKHR flag : {VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                                 VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR}) {
+    for (VkVideoSessionCreateFlagBitsKHR flag : { VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                                  VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR }) {
         create_info.flags = flag;
 
         m_errorMonitor->SetDesiredError("VUID-VkVideoSessionCreateInfoKHR-flags-10265");
@@ -576,7 +587,8 @@ TEST_F(NegativeVideo, CreateSessionQuantMapWithoutEncodeProfile) {
 }
 
 TEST_F(NegativeVideo, CreateSessionQuantMapFlagsMutuallyExclusive) {
-    TEST_DESCRIPTION("vkCreateVideoSessionKHR - cannot allow both QUANTIZATION_DELTA and EMPHASIS maps at the same time");
+    TEST_DESCRIPTION(
+        "vkCreateVideoSessionKHR - cannot allow both QUANTIZATION_DELTA and EMPHASIS maps at the same time");
 
     AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::videoEncodeQuantizationMap);
@@ -603,9 +615,8 @@ TEST_F(NegativeVideo, CreateSessionQuantMapFlagsMutuallyExclusive) {
 }
 
 TEST_F(NegativeVideo, CreateSessionQuantDeltaMapUnsupported) {
-    TEST_DESCRIPTION(
-        "vkCreateVideoSessionKHR - VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR "
-        "requires VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR");
+    TEST_DESCRIPTION("vkCreateVideoSessionKHR - VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR "
+                     "requires VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR");
 
     AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::videoEncodeQuantizationMap);
@@ -630,9 +641,8 @@ TEST_F(NegativeVideo, CreateSessionQuantDeltaMapUnsupported) {
 }
 
 TEST_F(NegativeVideo, CreateSessionEmphasisMapUnsupported) {
-    TEST_DESCRIPTION(
-        "vkCreateVideoSessionKHR - VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR "
-        "requires VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR");
+    TEST_DESCRIPTION("vkCreateVideoSessionKHR - VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR "
+                     "requires VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR");
 
     AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::videoEncodeQuantizationMap);
@@ -1072,16 +1082,20 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
     VideoContext context(m_device, config);
 
     uint32_t mem_req_count;
-    ASSERT_EQ(VK_SUCCESS, vk::GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, nullptr));
+    ASSERT_EQ(VK_SUCCESS,
+              vk::GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, nullptr));
     if (mem_req_count == 0) {
         GTEST_SKIP() << "Test can only run if video session needs memory bindings";
     }
 
-    std::vector<VkVideoSessionMemoryRequirementsKHR> mem_reqs(mem_req_count, vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
-    ASSERT_EQ(VK_SUCCESS, vk::GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, mem_reqs.data()));
+    std::vector<VkVideoSessionMemoryRequirementsKHR> mem_reqs(mem_req_count,
+                                                              vku::InitStruct<VkVideoSessionMemoryRequirementsKHR>());
+    ASSERT_EQ(VK_SUCCESS,
+              vk::GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, mem_reqs.data()));
 
     std::vector<VkDeviceMemory> session_memory;
-    std::vector<VkBindVideoSessionMemoryInfoKHR> bind_info(mem_req_count, vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>());
+    std::vector<VkBindVideoSessionMemoryInfoKHR> bind_info(mem_req_count,
+                                                           vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>());
     for (uint32_t i = 0; i < mem_req_count; ++i) {
         VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
         ASSERT_TRUE(m_device->Physical().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0));
@@ -1138,7 +1152,8 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
                 break;
             }
         }
-        if (invalid_mem_type_index != vvl::kU32Max) break;
+        if (invalid_mem_type_index != vvl::kU32Max)
+            break;
     }
     if (invalid_mem_type_index != vvl::kU32Max) {
         auto& mem_req = mem_reqs[invalid_mem_type_req_index].memoryRequirements;
@@ -1237,8 +1252,8 @@ TEST_F(NegativeVideo, BindVideoSessionMemory) {
 }
 
 TEST_F(NegativeVideo, CreateSessionParamsQuantMapIncompatSession) {
-    TEST_DESCRIPTION(
-        "vkCreateVideoSessionParametersKHR - QUANTIZATION_MAP_COMPATIBLE_BIT requires session allowing quantization maps");
+    TEST_DESCRIPTION("vkCreateVideoSessionParametersKHR - QUANTIZATION_MAP_COMPATIBLE_BIT requires session allowing "
+                     "quantization maps");
 
     AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::videoEncodeQuantizationMap);
@@ -1268,8 +1283,8 @@ TEST_F(NegativeVideo, CreateSessionParamsQuantMapTexelSize) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
     struct TestConfig {
         VkVideoSessionCreateFlagBitsKHR flag;
@@ -1280,12 +1295,16 @@ TEST_F(NegativeVideo, CreateSessionParamsQuantMapTexelSize) {
 
     std::vector<TestConfig> tests;
     if (delta_config) {
-        tests.push_back({VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR, delta_config,
-                         delta_config.SupportedQuantDeltaMapProps(), "VUID-VkVideoSessionParametersCreateInfoKHR-flags-10273"});
+        tests.push_back({ VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                          delta_config,
+                          delta_config.SupportedQuantDeltaMapProps(),
+                          "VUID-VkVideoSessionParametersCreateInfoKHR-flags-10273" });
     }
     if (emphasis_config) {
-        tests.push_back({VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR, emphasis_config,
-                         emphasis_config.SupportedQuantDeltaMapProps(), "VUID-VkVideoSessionParametersCreateInfoKHR-flags-10274"});
+        tests.push_back({ VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                          emphasis_config,
+                          emphasis_config.SupportedQuantDeltaMapProps(),
+                          "VUID-VkVideoSessionParametersCreateInfoKHR-flags-10274" });
     }
 
     for (const auto& test : tests) {
@@ -1308,7 +1327,7 @@ TEST_F(NegativeVideo, CreateSessionParamsQuantMapTexelSize) {
 
         {
             // Find an invalid quantizaitonMapTexelSize by using the maximum width + 1
-            VkExtent2D invalid_texel_size = {0, 0};
+            VkExtent2D invalid_texel_size = { 0, 0 };
             for (const auto& map_props : test.map_props) {
                 auto texel_size = config.GetQuantMapTexelSize(map_props);
                 if (invalid_texel_size.width < texel_size.width) {
@@ -1347,16 +1366,18 @@ TEST_F(NegativeVideo, CreateSessionParamsIncompatibleTemplateQuantMap) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
     std::vector<std::tuple<VideoConfig, VkVideoSessionCreateFlagBitsKHR, const VkVideoFormatPropertiesKHR*>> tests = {};
     if (delta_config) {
-        tests.emplace_back(delta_config, VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+        tests.emplace_back(delta_config,
+                           VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
                            delta_config.QuantDeltaMapProps());
     }
     if (emphasis_config) {
-        tests.emplace_back(emphasis_config, VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+        tests.emplace_back(emphasis_config,
+                           VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
                            emphasis_config.EmphasisMapProps());
     }
 
@@ -1380,7 +1401,8 @@ TEST_F(NegativeVideo, CreateSessionParamsIncompatibleTemplateQuantMap) {
             create_info.videoSession = context.Session();
 
             VkVideoSessionParametersKHR params2 = VK_NULL_HANDLE;
-            m_errorMonitor->SetDesiredError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSessionParametersTemplate-10275");
+            m_errorMonitor->SetDesiredError(
+                "VUID-VkVideoSessionParametersCreateInfoKHR-videoSessionParametersTemplate-10275");
             vk::CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params2);
             m_errorMonitor->VerifyFound();
         }
@@ -1394,7 +1416,8 @@ TEST_F(NegativeVideo, CreateSessionParamsIncompatibleTemplateQuantMap) {
             create_info.videoSession = context.Session();
 
             VkVideoSessionParametersKHR params2 = VK_NULL_HANDLE;
-            m_errorMonitor->SetDesiredError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSessionParametersTemplate-10277");
+            m_errorMonitor->SetDesiredError(
+                "VUID-VkVideoSessionParametersCreateInfoKHR-videoSessionParametersTemplate-10277");
             vk::CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params2);
             m_errorMonitor->VerifyFound();
         }
@@ -1452,8 +1475,9 @@ TEST_F(NegativeVideo, CreateSessionParamsIncompatibleTemplateQuantMapTexelSize) 
     }));
 
     if (!delta_config && !emphasis_config) {
-        GTEST_SKIP() << "Test requires a video profile that has QUANTIZATION_DELTA or EMPHASIS support, with more than two "
-                        "supported texel sizes";
+        GTEST_SKIP()
+            << "Test requires a video profile that has QUANTIZATION_DELTA or EMPHASIS support, with more than two "
+               "supported texel sizes";
     }
 
     struct TestConfig {
@@ -1465,21 +1489,21 @@ TEST_F(NegativeVideo, CreateSessionParamsIncompatibleTemplateQuantMapTexelSize) 
     std::vector<TestConfig> tests;
     if (delta_config) {
         const auto& map_props = delta_config.SupportedQuantDeltaMapProps();
-        tests.emplace_back(TestConfig{delta_config,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      {
-                                          delta_config.GetQuantMapTexelSize(map_props[0]),
-                                          delta_config.GetQuantMapTexelSize(map_props[delta_alt_format_index]),
-                                      }});
+        tests.emplace_back(TestConfig{ delta_config,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       {
+                                           delta_config.GetQuantMapTexelSize(map_props[0]),
+                                           delta_config.GetQuantMapTexelSize(map_props[delta_alt_format_index]),
+                                       } });
     }
     if (emphasis_config) {
         const auto& map_props = emphasis_config.SupportedEmphasisMapProps();
-        tests.emplace_back(TestConfig{emphasis_config,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                      {
-                                          delta_config.GetQuantMapTexelSize(map_props[0]),
-                                          delta_config.GetQuantMapTexelSize(map_props[emphasis_alt_format_index]),
-                                      }});
+        tests.emplace_back(TestConfig{ emphasis_config,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                                       {
+                                           delta_config.GetQuantMapTexelSize(map_props[0]),
+                                           delta_config.GetQuantMapTexelSize(map_props[emphasis_alt_format_index]),
+                                       } });
     }
 
     for (auto& [config, flag, texel_sizes] : tests) {
@@ -1498,7 +1522,8 @@ TEST_F(NegativeVideo, CreateSessionParamsIncompatibleTemplateQuantMapTexelSize) 
         create_info2.videoSession = context.Session();
 
         VkVideoSessionParametersKHR params2 = VK_NULL_HANDLE;
-        m_errorMonitor->SetDesiredError("VUID-VkVideoSessionParametersCreateInfoKHR-videoSessionParametersTemplate-10276");
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkVideoSessionParametersCreateInfoKHR-videoSessionParametersTemplate-10276");
         vk::CreateVideoSessionParametersKHR(device(), &create_info2, nullptr, &params2);
         m_errorMonitor->VerifyFound();
     }
@@ -1538,7 +1563,8 @@ TEST_F(NegativeVideo, CreateSessionParamsIncompatibleTemplateEncodeQualityLevel)
 
     VideoConfig config = GetConfigWithMultiEncodeQualityLevelParams(GetConfigsEncode());
     if (!config) {
-        GTEST_SKIP() << "Test requires an encode profile with support for parameters objects and at least two quality levels";
+        GTEST_SKIP()
+            << "Test requires an encode profile with support for parameters objects and at least two quality levels";
     }
 
     VideoContext context(m_device, config);
@@ -1744,8 +1770,9 @@ TEST_F(NegativeVideo, CreateSessionParamsDecodeH264ExceededCapacity) {
 
     h264_ci.pParametersAddInfo = &h264_ai;
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list{context.CreateH264SPS(1), context.CreateH264SPS(2),
-                                                           context.CreateH264SPS(3)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list{ context.CreateH264SPS(1),
+                                                            context.CreateH264SPS(2),
+                                                            context.CreateH264SPS(3) };
 
     std::vector<StdVideoH264PictureParameterSet> pps_list{
         context.CreateH264PPS(1, 1), context.CreateH264PPS(1, 4), context.CreateH264PPS(2, 1),
@@ -1986,8 +2013,9 @@ TEST_F(NegativeVideo, CreateSessionParamsEncodeH264ExceededCapacity) {
 
     h264_ci.pParametersAddInfo = &h264_ai;
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list{context.CreateH264SPS(1), context.CreateH264SPS(2),
-                                                           context.CreateH264SPS(3)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list{ context.CreateH264SPS(1),
+                                                            context.CreateH264SPS(2),
+                                                            context.CreateH264SPS(3) };
 
     std::vector<StdVideoH264PictureParameterSet> pps_list{
         context.CreateH264PPS(1, 1), context.CreateH264PPS(1, 4), context.CreateH264PPS(2, 1),
@@ -2200,9 +2228,10 @@ TEST_F(NegativeVideo, CreateUpdateSessionParamsEncodeH265InvalidTileColumnsRows)
     auto h265_vps = context.CreateH265VPS(1);
     auto h265_sps = context.CreateH265SPS(1, 1);
 
-    std::vector<StdVideoH265PictureParameterSet> h265_pps_list{context.CreateH265PPS(1, 1, 1), context.CreateH265PPS(1, 1, 2),
-                                                               context.CreateH265PPS(1, 1, 3), context.CreateH265PPS(1, 1, 4),
-                                                               context.CreateH265PPS(1, 1, 5), context.CreateH265PPS(1, 1, 6)};
+    std::vector<StdVideoH265PictureParameterSet> h265_pps_list{
+        context.CreateH265PPS(1, 1, 1), context.CreateH265PPS(1, 1, 2), context.CreateH265PPS(1, 1, 3),
+        context.CreateH265PPS(1, 1, 4), context.CreateH265PPS(1, 1, 5), context.CreateH265PPS(1, 1, 6)
+    };
 
     h265_ci.maxStdVPSCount = 1;
     h265_ci.maxStdSPSCount = 1;
@@ -2409,8 +2438,9 @@ TEST_F(NegativeVideo, DecodeH264ParametersAddInfoUniqueness) {
     update_info.pNext = &h264_ai;
     update_info.updateSequenceCount = 1;
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list{context.CreateH264SPS(1), context.CreateH264SPS(2),
-                                                           context.CreateH264SPS(3)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list{ context.CreateH264SPS(1),
+                                                            context.CreateH264SPS(2),
+                                                            context.CreateH264SPS(3) };
 
     std::vector<StdVideoH264PictureParameterSet> pps_list{
         context.CreateH264PPS(1, 1), context.CreateH264PPS(1, 4), context.CreateH264PPS(2, 1),
@@ -2575,8 +2605,9 @@ TEST_F(NegativeVideo, EncodeH264ParametersAddInfoUniqueness) {
     update_info.pNext = &h264_ai;
     update_info.updateSequenceCount = 1;
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list{context.CreateH264SPS(1), context.CreateH264SPS(2),
-                                                           context.CreateH264SPS(3)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list{ context.CreateH264SPS(1),
+                                                            context.CreateH264SPS(2),
+                                                            context.CreateH264SPS(3) };
 
     std::vector<StdVideoH264PictureParameterSet> pps_list{
         context.CreateH264PPS(1, 1), context.CreateH264PPS(1, 4), context.CreateH264PPS(2, 1),
@@ -2776,8 +2807,9 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH264ConflictingKeys) {
     update_info.pNext = &h264_ai;
     update_info.updateSequenceCount = 1;
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list{context.CreateH264SPS(1), context.CreateH264SPS(2),
-                                                           context.CreateH264SPS(3)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list{ context.CreateH264SPS(1),
+                                                            context.CreateH264SPS(2),
+                                                            context.CreateH264SPS(3) };
 
     std::vector<StdVideoH264PictureParameterSet> pps_list{
         context.CreateH264PPS(1, 1), context.CreateH264PPS(1, 4), context.CreateH264PPS(2, 1),
@@ -2791,10 +2823,12 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH264ConflictingKeys) {
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list2{context.CreateH264SPS(4), context.CreateH264SPS(5)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list2{ context.CreateH264SPS(4), context.CreateH264SPS(5) };
 
-    std::vector<StdVideoH264PictureParameterSet> pps_list2{context.CreateH264PPS(1, 3), context.CreateH264PPS(3, 2),
-                                                           context.CreateH264PPS(4, 1), context.CreateH264PPS(5, 2)};
+    std::vector<StdVideoH264PictureParameterSet> pps_list2{ context.CreateH264PPS(1, 3),
+                                                            context.CreateH264PPS(3, 2),
+                                                            context.CreateH264PPS(4, 1),
+                                                            context.CreateH264PPS(5, 2) };
 
     h264_ai.stdSPSCount = (uint32_t)sps_list2.size();
     h264_ai.pStdSPSs = sps_list2.data();
@@ -2872,12 +2906,13 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH265ConflictingKeys) {
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
 
-    std::vector<StdVideoH265VideoParameterSet> vps_list2{context.CreateH265VPS(3)};
+    std::vector<StdVideoH265VideoParameterSet> vps_list2{ context.CreateH265VPS(3) };
 
-    std::vector<StdVideoH265SequenceParameterSet> sps_list2{context.CreateH265SPS(2, 2), context.CreateH265SPS(3, 1)};
+    std::vector<StdVideoH265SequenceParameterSet> sps_list2{ context.CreateH265SPS(2, 2), context.CreateH265SPS(3, 1) };
 
-    std::vector<StdVideoH265PictureParameterSet> pps_list2{context.CreateH265PPS(1, 2, 3), context.CreateH265PPS(2, 3, 4),
-                                                           context.CreateH265PPS(3, 1, 2)};
+    std::vector<StdVideoH265PictureParameterSet> pps_list2{ context.CreateH265PPS(1, 2, 3),
+                                                            context.CreateH265PPS(2, 3, 4),
+                                                            context.CreateH265PPS(3, 1, 2) };
 
     h265_ai.stdVPSCount = (uint32_t)vps_list2.size();
     h265_ai.pStdVPSs = vps_list2.data();
@@ -2953,8 +2988,9 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH264ConflictingKeys) {
     update_info.pNext = &h264_ai;
     update_info.updateSequenceCount = 1;
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list{context.CreateH264SPS(1), context.CreateH264SPS(2),
-                                                           context.CreateH264SPS(3)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list{ context.CreateH264SPS(1),
+                                                            context.CreateH264SPS(2),
+                                                            context.CreateH264SPS(3) };
 
     std::vector<StdVideoH264PictureParameterSet> pps_list{
         context.CreateH264PPS(1, 1), context.CreateH264PPS(1, 4), context.CreateH264PPS(2, 1),
@@ -2968,10 +3004,12 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH264ConflictingKeys) {
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list2{context.CreateH264SPS(4), context.CreateH264SPS(5)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list2{ context.CreateH264SPS(4), context.CreateH264SPS(5) };
 
-    std::vector<StdVideoH264PictureParameterSet> pps_list2{context.CreateH264PPS(1, 3), context.CreateH264PPS(3, 2),
-                                                           context.CreateH264PPS(4, 1), context.CreateH264PPS(5, 2)};
+    std::vector<StdVideoH264PictureParameterSet> pps_list2{ context.CreateH264PPS(1, 3),
+                                                            context.CreateH264PPS(3, 2),
+                                                            context.CreateH264PPS(4, 1),
+                                                            context.CreateH264PPS(5, 2) };
 
     h264_ai.stdSPSCount = (uint32_t)sps_list2.size();
     h264_ai.pStdSPSs = sps_list2.data();
@@ -3049,12 +3087,13 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH265ConflictingKeys) {
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
 
-    std::vector<StdVideoH265VideoParameterSet> vps_list2{context.CreateH265VPS(3)};
+    std::vector<StdVideoH265VideoParameterSet> vps_list2{ context.CreateH265VPS(3) };
 
-    std::vector<StdVideoH265SequenceParameterSet> sps_list2{context.CreateH265SPS(2, 2), context.CreateH265SPS(3, 1)};
+    std::vector<StdVideoH265SequenceParameterSet> sps_list2{ context.CreateH265SPS(2, 2), context.CreateH265SPS(3, 1) };
 
-    std::vector<StdVideoH265PictureParameterSet> pps_list2{context.CreateH265PPS(1, 2, 3), context.CreateH265PPS(2, 3, 4),
-                                                           context.CreateH265PPS(3, 1, 2)};
+    std::vector<StdVideoH265PictureParameterSet> pps_list2{ context.CreateH265PPS(1, 2, 3),
+                                                            context.CreateH265PPS(2, 3, 4),
+                                                            context.CreateH265PPS(3, 1, 2) };
 
     h265_ai.stdVPSCount = (uint32_t)vps_list2.size();
     h265_ai.pStdVPSs = vps_list2.data();
@@ -3111,8 +3150,9 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH264ExceededCapacity) {
     update_info.pNext = &h264_ai;
     update_info.updateSequenceCount = 1;
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list{context.CreateH264SPS(1), context.CreateH264SPS(2),
-                                                           context.CreateH264SPS(3)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list{ context.CreateH264SPS(1),
+                                                            context.CreateH264SPS(2),
+                                                            context.CreateH264SPS(3) };
 
     std::vector<StdVideoH264PictureParameterSet> pps_list{
         context.CreateH264PPS(1, 1), context.CreateH264PPS(1, 4), context.CreateH264PPS(2, 1),
@@ -3126,10 +3166,12 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH264ExceededCapacity) {
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list2{context.CreateH264SPS(4), context.CreateH264SPS(5)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list2{ context.CreateH264SPS(4), context.CreateH264SPS(5) };
 
-    std::vector<StdVideoH264PictureParameterSet> pps_list2{context.CreateH264PPS(1, 3), context.CreateH264PPS(3, 2),
-                                                           context.CreateH264PPS(4, 1), context.CreateH264PPS(5, 2)};
+    std::vector<StdVideoH264PictureParameterSet> pps_list2{ context.CreateH264PPS(1, 3),
+                                                            context.CreateH264PPS(3, 2),
+                                                            context.CreateH264PPS(4, 1),
+                                                            context.CreateH264PPS(5, 2) };
 
     h264_ai.pStdSPSs = sps_list2.data();
     h264_ai.pStdPPSs = pps_list2.data();
@@ -3205,12 +3247,13 @@ TEST_F(NegativeVideo, UpdateSessionParamsDecodeH265ExceededCapacity) {
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
 
-    std::vector<StdVideoH265VideoParameterSet> vps_list2{context.CreateH265VPS(3)};
+    std::vector<StdVideoH265VideoParameterSet> vps_list2{ context.CreateH265VPS(3) };
 
-    std::vector<StdVideoH265SequenceParameterSet> sps_list2{context.CreateH265SPS(2, 2), context.CreateH265SPS(3, 1)};
+    std::vector<StdVideoH265SequenceParameterSet> sps_list2{ context.CreateH265SPS(2, 2), context.CreateH265SPS(3, 1) };
 
-    std::vector<StdVideoH265PictureParameterSet> pps_list2{context.CreateH265PPS(1, 2, 3), context.CreateH265PPS(2, 3, 4),
-                                                           context.CreateH265PPS(3, 1, 2)};
+    std::vector<StdVideoH265PictureParameterSet> pps_list2{ context.CreateH265PPS(1, 2, 3),
+                                                            context.CreateH265PPS(2, 3, 4),
+                                                            context.CreateH265PPS(3, 1, 2) };
 
     h265_ai.stdVPSCount = (uint32_t)vps_list2.size();
     h265_ai.pStdVPSs = vps_list2.data();
@@ -3270,8 +3313,9 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH264ExceededCapacity) {
     update_info.pNext = &h264_ai;
     update_info.updateSequenceCount = 1;
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list{context.CreateH264SPS(1), context.CreateH264SPS(2),
-                                                           context.CreateH264SPS(3)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list{ context.CreateH264SPS(1),
+                                                            context.CreateH264SPS(2),
+                                                            context.CreateH264SPS(3) };
 
     std::vector<StdVideoH264PictureParameterSet> pps_list{
         context.CreateH264PPS(1, 1), context.CreateH264PPS(1, 4), context.CreateH264PPS(2, 1),
@@ -3285,10 +3329,12 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH264ExceededCapacity) {
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
 
-    std::vector<StdVideoH264SequenceParameterSet> sps_list2{context.CreateH264SPS(4), context.CreateH264SPS(5)};
+    std::vector<StdVideoH264SequenceParameterSet> sps_list2{ context.CreateH264SPS(4), context.CreateH264SPS(5) };
 
-    std::vector<StdVideoH264PictureParameterSet> pps_list2{context.CreateH264PPS(1, 3), context.CreateH264PPS(3, 2),
-                                                           context.CreateH264PPS(4, 1), context.CreateH264PPS(5, 2)};
+    std::vector<StdVideoH264PictureParameterSet> pps_list2{ context.CreateH264PPS(1, 3),
+                                                            context.CreateH264PPS(3, 2),
+                                                            context.CreateH264PPS(4, 1),
+                                                            context.CreateH264PPS(5, 2) };
 
     h264_ai.pStdSPSs = sps_list2.data();
     h264_ai.pStdPPSs = pps_list2.data();
@@ -3364,12 +3410,13 @@ TEST_F(NegativeVideo, UpdateSessionParamsEncodeH265ExceededCapacity) {
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateVideoSessionParametersKHR(device(), &create_info, nullptr, &params));
 
-    std::vector<StdVideoH265VideoParameterSet> vps_list2{context.CreateH265VPS(3)};
+    std::vector<StdVideoH265VideoParameterSet> vps_list2{ context.CreateH265VPS(3) };
 
-    std::vector<StdVideoH265SequenceParameterSet> sps_list2{context.CreateH265SPS(2, 2), context.CreateH265SPS(3, 1)};
+    std::vector<StdVideoH265SequenceParameterSet> sps_list2{ context.CreateH265SPS(2, 2), context.CreateH265SPS(3, 1) };
 
-    std::vector<StdVideoH265PictureParameterSet> pps_list2{context.CreateH265PPS(1, 2, 3), context.CreateH265PPS(2, 3, 4),
-                                                           context.CreateH265PPS(3, 1, 2)};
+    std::vector<StdVideoH265PictureParameterSet> pps_list2{ context.CreateH265PPS(1, 2, 3),
+                                                            context.CreateH265PPS(2, 3, 4),
+                                                            context.CreateH265PPS(3, 1, 2) };
 
     h265_ai.stdVPSCount = (uint32_t)vps_list2.size();
     h265_ai.pStdVPSs = vps_list2.data();
@@ -3719,7 +3766,8 @@ TEST_F(NegativeVideo, BeginCodingProtectedNoFaultSession) {
 
     VideoContext protected_context(m_device, config, use_protected);
     protected_context.CreateAndBindSessionMemory();
-    protected_context.CreateResources(use_protected /* bitstream */, use_protected /* DPB */, use_protected /* src/dst image */);
+    protected_context.CreateResources(
+        use_protected /* bitstream */, use_protected /* DPB */, use_protected /* src/dst image */);
 
     vkt::CommandBuffer& protected_cb = protected_context.CmdBuffer();
 
@@ -3763,7 +3811,8 @@ TEST_F(NegativeVideo, BeginCodingProtectedNoFaultSlots) {
 
     VideoContext protected_context(m_device, config, use_protected);
     protected_context.CreateAndBindSessionMemory();
-    protected_context.CreateResources(use_protected /* bitstream */, false /* DPB */, use_protected /* src/dst image */);
+    protected_context.CreateResources(
+        use_protected /* bitstream */, false /* DPB */, use_protected /* src/dst image */);
 
     vkt::CommandBuffer& protected_cb = protected_context.CmdBuffer();
 
@@ -3805,7 +3854,8 @@ TEST_F(NegativeVideo, BeginCodingSessionMemoryNotBound) {
     std::vector<VkDeviceMemory> session_memory;
     for (uint32_t i = 0; i < mem_req_count; ++i) {
         // Skip binding one of the memory bindings
-        if (i == mem_req_count / 2) continue;
+        if (i == mem_req_count / 2)
+            continue;
 
         VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
         m_device->Physical().SetMemoryType(mem_reqs[i].memoryRequirements.memoryTypeBits, &alloc_info, 0);
@@ -4029,8 +4079,9 @@ TEST_F(NegativeVideo, BeginCodingIncompatRefPicProfile) {
             const auto& dpb_format1 = *all_configs[i].DpbFormatProps();
             const auto& dpb_format2 = *all_configs[j].DpbFormatProps();
             if ((coded_extent1.width == coded_extent2.width) && (coded_extent1.height == coded_extent2.height) &&
-                (dpb_format1.imageType == dpb_format2.imageType) && (dpb_format1.imageTiling == dpb_format2.imageTiling) &&
-                (dpb_format1.format == dpb_format2.format) && (dpb_format1.imageUsageFlags == dpb_format2.imageUsageFlags)) {
+                (dpb_format1.imageType == dpb_format2.imageType) &&
+                (dpb_format1.imageTiling == dpb_format2.imageTiling) && (dpb_format1.format == dpb_format2.format) &&
+                (dpb_format1.imageUsageFlags == dpb_format2.imageUsageFlags)) {
                 configs[0] = all_configs[i];
                 configs[1] = all_configs[j];
             }
@@ -4125,8 +4176,10 @@ TEST_F(NegativeVideo, BeginCodingDecodeSlotInactive) {
     cb.Begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
     cb.ControlVideoCoding(context.Control().Reset());
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
     cb.EndVideoCoding(context.End());
     cb.End();
@@ -4173,8 +4226,10 @@ TEST_F(NegativeVideo, BeginCodingDecodeInvalidSlotResourceAssociation) {
     cb.Begin();
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0));
     cb.ControlVideoCoding(context.Control().Reset());
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
     cb.EndVideoCoding(context.End());
 
@@ -4250,8 +4305,8 @@ TEST_F(NegativeVideo, BeginCodingReferenceFormatMismatch) {
     RETURN_IF_SKIP(Init());
 
     uint32_t alt_ref_format_index = 0;
-    VideoConfig config =
-        GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigs()), [&alt_ref_format_index](const VideoConfig& config) {
+    VideoConfig config = GetConfig(
+        FilterConfigs(GetConfigsWithReferences(GetConfigs()), [&alt_ref_format_index](const VideoConfig& config) {
             const auto& format_props = config.SupportedDpbFormatProps();
             for (size_t i = 0; i < format_props.size(); ++i) {
                 if (format_props[i].format != format_props[0].format && alt_ref_format_index == 0) {
@@ -4273,7 +4328,8 @@ TEST_F(NegativeVideo, BeginCodingReferenceFormatMismatch) {
     context.CreateResources();
 
     VideoConfig config2 = config;
-    config2.SetFormatProps(config.SupportedPictureFormatProps(), {config.SupportedDpbFormatProps()[alt_ref_format_index]});
+    config2.SetFormatProps(config.SupportedPictureFormatProps(),
+                           { config.SupportedDpbFormatProps()[alt_ref_format_index] });
     VideoDPB dpb(m_device, config2);
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -4413,7 +4469,8 @@ TEST_F(NegativeVideo, BeginCodingInvalidSeparateReferenceImages) {
     cb.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkVideoBeginCodingInfoKHR-flags-07244");
-    cb.BeginVideoCoding(context.Begin().AddResource(-1, context.Dpb()->Picture(0)).AddResource(-1, separate_dpb.Picture(1)));
+    cb.BeginVideoCoding(
+        context.Begin().AddResource(-1, context.Dpb()->Picture(0)).AddResource(-1, separate_dpb.Picture(1)));
     m_errorMonitor->VerifyFound();
 
     cb.End();
@@ -4452,7 +4509,7 @@ TEST_F(NegativeVideo, BeginCodingMissingDecodeDpbUsage) {
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     image_view_ci.format = config.DpbFormatProps()->format;
     image_view_ci.components = config.DpbFormatProps()->componentMapping;
-    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    image_view_ci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     vkt::ImageView image_view(*m_device, image_view_ci);
 
@@ -4500,7 +4557,7 @@ TEST_F(NegativeVideo, BeginCodingMissingEncodeDpbUsage) {
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     image_view_ci.format = config.DpbFormatProps()->format;
     image_view_ci.components = config.DpbFormatProps()->componentMapping;
-    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    image_view_ci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     vkt::ImageView image_view(*m_device, image_view_ci);
 
@@ -4520,11 +4577,13 @@ TEST_F(NegativeVideo, BeginCodingEncodeH264MissingGopRemainingFrames) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH264()), [](const VideoConfig& config) {
-        return config.EncodeCapsH264()->requiresGopRemainingFrames == VK_TRUE;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH264()), [](const VideoConfig& config) {
+            return config.EncodeCapsH264()->requiresGopRemainingFrames == VK_TRUE;
+        }));
     if (!config) {
-        GTEST_SKIP() << "Test requires an H.264 encode profile with rate control and requiresGopRemainingFrames == VK_TRUE";
+        GTEST_SKIP()
+            << "Test requires an H.264 encode profile with rate control and requiresGopRemainingFrames == VK_TRUE";
     }
 
     VideoContext context(m_device, config);
@@ -4578,11 +4637,13 @@ TEST_F(NegativeVideo, BeginCodingEncodeH265MissingGopRemainingFrames) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH265()), [](const VideoConfig& config) {
-        return config.EncodeCapsH265()->requiresGopRemainingFrames == VK_TRUE;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH265()), [](const VideoConfig& config) {
+            return config.EncodeCapsH265()->requiresGopRemainingFrames == VK_TRUE;
+        }));
     if (!config) {
-        GTEST_SKIP() << "Test requires an H.265 encode profile with rate control and requiresGopRemainingFrames == VK_TRUE";
+        GTEST_SKIP()
+            << "Test requires an H.265 encode profile with rate control and requiresGopRemainingFrames == VK_TRUE";
     }
 
     VideoContext context(m_device, config);
@@ -4636,11 +4697,13 @@ TEST_F(NegativeVideo, BeginCodingEncodeAV1MissingGopRemainingFrames) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeAV1()), [](const VideoConfig& config) {
-        return config.EncodeCapsAV1()->requiresGopRemainingFrames == VK_TRUE;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeAV1()), [](const VideoConfig& config) {
+            return config.EncodeCapsAV1()->requiresGopRemainingFrames == VK_TRUE;
+        }));
     if (!config) {
-        GTEST_SKIP() << "Test requires an AV1 encode profile with rate control and requiresGopRemainingFrames == VK_TRUE";
+        GTEST_SKIP()
+            << "Test requires an AV1 encode profile with rate control and requiresGopRemainingFrames == VK_TRUE";
     }
 
     VideoContext context(m_device, config);
@@ -4845,13 +4908,15 @@ TEST_F(NegativeVideo, EncodeQualityLevelControlMissingChain) {
 }
 
 TEST_F(NegativeVideo, EncodeParamsQualityLevelMismatch) {
-    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - quality level of bound parameters object does not match current quality level");
+    TEST_DESCRIPTION(
+        "vkCmdEncodeVideoKHR - quality level of bound parameters object does not match current quality level");
 
     RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfigWithMultiEncodeQualityLevelParams(GetConfigsEncode());
     if (!config) {
-        GTEST_SKIP() << "Test requires an encode profile with support for parameters objects and at least two quality levels";
+        GTEST_SKIP()
+            << "Test requires an encode profile with support for parameters objects and at least two quality levels";
     }
 
     VideoContext context(m_device, config);
@@ -4938,7 +5003,7 @@ TEST_F(NegativeVideo, EncodeParamsQualityLevelMismatch) {
     cb.EndVideoCoding(context.End());
 
     cb.BeginVideoCoding(context.Begin().SetSessionParams(params_quality_level_1));
-    cb.EncodeVideo(context.EncodeFrame());  // This would only generate an error at submit time
+    cb.EncodeVideo(context.EncodeFrame()); // This would only generate an error at submit time
     cb.ControlVideoCoding(context.Control().EncodeQualityLevel(1));
     cb.EncodeVideo(context.EncodeFrame());
     cb.ControlVideoCoding(context.Control().EncodeQualityLevel(0));
@@ -4965,7 +5030,8 @@ TEST_F(NegativeVideo, EncodeParamsQualityLevelMismatch) {
 }
 
 TEST_F(NegativeVideo, EncodeQuantMapTypeMismatch) {
-    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - quantization map type specified at encode time does not match video session");
+    TEST_DESCRIPTION(
+        "vkCmdEncodeVideoKHR - quantization map type specified at encode time does not match video session");
 
     AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::videoEncodeQuantizationMap);
@@ -4995,8 +5061,10 @@ TEST_F(NegativeVideo, EncodeQuantMapTypeMismatch) {
             base_config.EmphasisMapProps(),
             "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10311",
         },
-        {VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR, VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
-         base_config.QuantDeltaMapProps(), "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10312"},
+        { VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+          VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+          base_config.QuantDeltaMapProps(),
+          "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10312" },
     };
 
     for (const auto& test : tests) {
@@ -5039,11 +5107,12 @@ TEST_F(NegativeVideo, EncodeMissingQuantMapUsage) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    if ((!delta_config ||
-         delta_config.QuantDeltaMapProps()->imageUsageFlags == VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR) &&
+    if ((!delta_config || delta_config.QuantDeltaMapProps()->imageUsageFlags ==
+                              VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR) &&
         (!emphasis_config ||
          emphasis_config.EmphasisMapProps()->imageUsageFlags == VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR)) {
-        GTEST_SKIP() << "Test requires quantization map format to support at least one more usage besides quantization map";
+        GTEST_SKIP()
+            << "Test requires quantization map format to support at least one more usage besides quantization map";
     }
 
     struct TestConfig {
@@ -5056,19 +5125,23 @@ TEST_F(NegativeVideo, EncodeMissingQuantMapUsage) {
     };
 
     std::vector<TestConfig> tests = {};
-    if (delta_config &&
-        delta_config.QuantDeltaMapProps()->imageUsageFlags != VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR) {
-        tests.push_back({delta_config, VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                         VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                         VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR, delta_config.QuantDeltaMapProps(),
-                         "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10311"});
+    if (delta_config && delta_config.QuantDeltaMapProps()->imageUsageFlags !=
+                            VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR) {
+        tests.push_back({ delta_config,
+                          VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                          VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                          VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                          delta_config.QuantDeltaMapProps(),
+                          "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10311" });
     }
     if (emphasis_config &&
         emphasis_config.EmphasisMapProps()->imageUsageFlags != VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR) {
-        tests.push_back({delta_config, VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
-                         VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                         VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR, delta_config.EmphasisMapProps(),
-                         "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10312"});
+        tests.push_back({ delta_config,
+                          VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+                          VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                          VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                          delta_config.EmphasisMapProps(),
+                          "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10312" });
     }
 
     for (const auto& test : tests) {
@@ -5092,7 +5165,7 @@ TEST_F(NegativeVideo, EncodeMissingQuantMapUsage) {
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         image_view_ci.format = test.map_props->format;
         image_view_ci.components = test.map_props->componentMapping;
-        image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        image_view_ci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
         vkt::ImageView image_view(*m_device, image_view_ci);
 
@@ -5115,7 +5188,8 @@ TEST_F(NegativeVideo, EncodeMissingQuantMapUsage) {
     }
 
     if (!delta_config ||
-        delta_config.QuantDeltaMapProps()->imageUsageFlags == VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR ||
+        delta_config.QuantDeltaMapProps()->imageUsageFlags ==
+            VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR ||
         !emphasis_config ||
         emphasis_config.EmphasisMapProps()->imageUsageFlags == VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR) {
         GTEST_SKIP() << "Not all quantization map types could be tested";
@@ -5139,8 +5213,8 @@ TEST_F(NegativeVideo, EncodeIncompatQuantMapProfile) {
     });
 
     if (delta_configs.size() < 2 && emphasis_configs.size() < 2) {
-        GTEST_SKIP()
-            << "Test requires at least two profiles that support QUANTIZATION_DELTA, or two profiles that support EMPHASIS";
+        GTEST_SKIP() << "Test requires at least two profiles that support QUANTIZATION_DELTA, or two profiles that "
+                        "support EMPHASIS";
     }
 
     struct TestConfig {
@@ -5152,22 +5226,22 @@ TEST_F(NegativeVideo, EncodeIncompatQuantMapProfile) {
 
     std::vector<TestConfig> tests;
     if (delta_configs.size() >= 2) {
-        tests.emplace_back(TestConfig{{delta_configs[0], delta_configs[1]},
-                                      {
-                                          delta_configs[0].QuantDeltaMapProps(),
-                                          delta_configs[1].QuantDeltaMapProps(),
-                                      },
-                                      VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR});
+        tests.emplace_back(TestConfig{ { delta_configs[0], delta_configs[1] },
+                                       {
+                                           delta_configs[0].QuantDeltaMapProps(),
+                                           delta_configs[1].QuantDeltaMapProps(),
+                                       },
+                                       VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR });
     }
     if (emphasis_configs.size() >= 2) {
-        tests.emplace_back(TestConfig{{emphasis_configs[0], emphasis_configs[1]},
-                                      {
-                                          emphasis_configs[0].EmphasisMapProps(),
-                                          emphasis_configs[1].EmphasisMapProps(),
-                                      },
-                                      VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR});
+        tests.emplace_back(TestConfig{ { emphasis_configs[0], emphasis_configs[1] },
+                                       {
+                                           emphasis_configs[0].EmphasisMapProps(),
+                                           emphasis_configs[1].EmphasisMapProps(),
+                                       },
+                                       VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR });
     }
 
     for (auto& [configs, map_props, encode_flag, session_create_flag] : tests) {
@@ -5176,8 +5250,8 @@ TEST_F(NegativeVideo, EncodeIncompatQuantMapProfile) {
         context.CreateAndBindSessionMemory();
         context.CreateResources();
 
-        const VkExtent2D texel_sizes[2] = {configs[0].GetQuantMapTexelSize(*map_props[0]),
-                                           configs[1].GetQuantMapTexelSize(*map_props[1])};
+        const VkExtent2D texel_sizes[2] = { configs[0].GetQuantMapTexelSize(*map_props[0]),
+                                            configs[1].GetQuantMapTexelSize(*map_props[1]) };
         auto params = context.CreateSessionParamsWithQuantMapTexelSize(texel_sizes[0]);
 
         VideoEncodeQuantizationMap quantization_map(m_device, configs[1], *map_props[1]);
@@ -5196,8 +5270,10 @@ TEST_F(NegativeVideo, EncodeIncompatQuantMapProfile) {
             // If the two profile's texel sizes do not match, then we may have additional VUs triggered
             // related to the texel sizes and extents of the quantization map
             m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdEncodeVideoKHR-pNext-10316");
-            m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoEncodeQuantizationMapInfoKHR-quantizationMapExtent-10352");
-            m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoEncodeQuantizationMapInfoKHR-quantizationMapExtent-10353");
+            m_errorMonitor->SetAllowedFailureMsg(
+                "VUID-VkVideoEncodeQuantizationMapInfoKHR-quantizationMapExtent-10352");
+            m_errorMonitor->SetAllowedFailureMsg(
+                "VUID-VkVideoEncodeQuantizationMapInfoKHR-quantizationMapExtent-10353");
         }
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10310");
@@ -5214,7 +5290,8 @@ TEST_F(NegativeVideo, EncodeIncompatQuantMapProfile) {
 }
 
 TEST_F(NegativeVideo, EncodeQuantMapNotAllowed) {
-    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - quantization map flag is passed against session that was not created to allow it");
+    TEST_DESCRIPTION(
+        "vkCmdEncodeVideoKHR - quantization map flag is passed against session that was not created to allow it");
 
     AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::videoEncodeQuantizationMap);
@@ -5222,8 +5299,8 @@ TEST_F(NegativeVideo, EncodeQuantMapNotAllowed) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
     struct TestConfig {
         VideoConfig config;
@@ -5233,12 +5310,13 @@ TEST_F(NegativeVideo, EncodeQuantMapNotAllowed) {
 
     std::vector<TestConfig> tests;
     if (delta_config) {
-        tests.emplace_back(TestConfig{delta_config, VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10306"});
+        tests.emplace_back(TestConfig{ delta_config,
+                                       VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10306" });
     }
     if (emphasis_config) {
-        tests.emplace_back(
-            TestConfig{emphasis_config, VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR, "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10307"});
+        tests.emplace_back(TestConfig{
+            emphasis_config, VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR, "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10307" });
     }
 
     for (const auto& [config, encode_flag, vuid] : tests) {
@@ -5285,8 +5363,8 @@ TEST_F(NegativeVideo, EncodeQuantMapMissing) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
     struct TestConfig {
         VideoConfig config;
@@ -5297,14 +5375,16 @@ TEST_F(NegativeVideo, EncodeQuantMapMissing) {
 
     std::vector<TestConfig> tests;
     if (delta_config) {
-        tests.emplace_back(TestConfig{delta_config, VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      delta_config.QuantDeltaMapProps()});
+        tests.emplace_back(TestConfig{ delta_config,
+                                       VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       delta_config.QuantDeltaMapProps() });
     }
     if (emphasis_config) {
-        tests.emplace_back(TestConfig{emphasis_config, VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                      emphasis_config.EmphasisMapProps()});
+        tests.emplace_back(TestConfig{ emphasis_config,
+                                       VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                                       emphasis_config.EmphasisMapProps() });
     }
 
     for (auto& [config, encode_flag, session_create_flag, map_props] : tests) {
@@ -5372,8 +5452,8 @@ TEST_F(NegativeVideo, EncodeParamsNotQuantMapCompatible) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
     struct TestConfig {
         VideoConfig config;
@@ -5384,14 +5464,16 @@ TEST_F(NegativeVideo, EncodeParamsNotQuantMapCompatible) {
 
     std::vector<TestConfig> tests;
     if (delta_config) {
-        tests.emplace_back(TestConfig{delta_config, VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      delta_config.QuantDeltaMapProps()});
+        tests.emplace_back(TestConfig{ delta_config,
+                                       VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       delta_config.QuantDeltaMapProps() });
     }
     if (emphasis_config) {
-        tests.emplace_back(TestConfig{emphasis_config, VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                      emphasis_config.EmphasisMapProps()});
+        tests.emplace_back(TestConfig{ emphasis_config,
+                                       VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                                       emphasis_config.EmphasisMapProps() });
     }
 
     for (auto& [config, encode_flag, session_create_flag, map_props] : tests) {
@@ -5413,8 +5495,8 @@ TEST_F(NegativeVideo, EncodeParamsNotQuantMapCompatible) {
         }
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pNext-10315");
-        cb.EncodeVideo(
-            context.EncodeFrame().QuantizationMap(encode_flag, config.GetQuantMapTexelSize(*map_props), quantization_map));
+        cb.EncodeVideo(context.EncodeFrame().QuantizationMap(
+            encode_flag, config.GetQuantMapTexelSize(*map_props), quantization_map));
         m_errorMonitor->VerifyFound();
 
         cb.EndVideoCoding(context.End());
@@ -5435,8 +5517,8 @@ TEST_F(NegativeVideo, EncodeQuantMapExtentCodedExtentMismatch) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
     struct TestConfig {
         VideoConfig config;
@@ -5447,14 +5529,16 @@ TEST_F(NegativeVideo, EncodeQuantMapExtentCodedExtentMismatch) {
 
     std::vector<TestConfig> tests;
     if (delta_config) {
-        tests.emplace_back(TestConfig{delta_config, VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      delta_config.QuantDeltaMapProps()});
+        tests.emplace_back(TestConfig{ delta_config,
+                                       VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       delta_config.QuantDeltaMapProps() });
     }
     if (emphasis_config) {
-        tests.emplace_back(TestConfig{emphasis_config, VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                      emphasis_config.EmphasisMapProps()});
+        tests.emplace_back(TestConfig{ emphasis_config,
+                                       VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                                       emphasis_config.EmphasisMapProps() });
     }
 
     for (auto& [config, encode_flag, session_create_flag, map_props] : tests) {
@@ -5514,8 +5598,8 @@ TEST_F(NegativeVideo, EncodeQuantMapExtentViewExtentMismatch) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
     struct TestConfig {
         VideoConfig config;
@@ -5526,14 +5610,16 @@ TEST_F(NegativeVideo, EncodeQuantMapExtentViewExtentMismatch) {
 
     std::vector<TestConfig> tests;
     if (delta_config) {
-        tests.emplace_back(TestConfig{delta_config, VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      delta_config.QuantDeltaMapProps()});
+        tests.emplace_back(TestConfig{ delta_config,
+                                       VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       delta_config.QuantDeltaMapProps() });
     }
     if (emphasis_config) {
-        tests.emplace_back(TestConfig{emphasis_config, VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                      emphasis_config.EmphasisMapProps()});
+        tests.emplace_back(TestConfig{ emphasis_config,
+                                       VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                                       emphasis_config.EmphasisMapProps() });
     }
 
     for (auto& [config, encode_flag, session_create_flag, map_props] : tests) {
@@ -5598,8 +5684,8 @@ TEST_F(NegativeVideo, EncodeWithEmphasisMapIncompatibleRateControlMode) {
     AddRequiredFeature(vkt::Feature::videoEncodeQuantizationMap);
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config =
-        GetConfigWithEmphasisMap(GetConfigsWithRateControl(GetConfigsEncode(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR));
+    VideoConfig config = GetConfigWithEmphasisMap(
+        GetConfigsWithRateControl(GetConfigsEncode(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR));
     if (!config) {
         // If DISABLED is not supported, just use any encode config with emphasis map support available
         config = GetConfigWithEmphasisMap(GetConfigsEncode());
@@ -5626,7 +5712,8 @@ TEST_F(NegativeVideo, EncodeWithEmphasisMapIncompatibleRateControlMode) {
 
     // Test with DEFAULT rate control mode
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10308");
-    cb.EncodeVideo(context.EncodeFrame().QuantizationMap(VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR, texel_size, quantization_map));
+    cb.EncodeVideo(
+        context.EncodeFrame().QuantizationMap(VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR, texel_size, quantization_map));
     m_errorMonitor->VerifyFound();
 
     // If supported, also test with DISABLED rate control mode
@@ -5636,8 +5723,8 @@ TEST_F(NegativeVideo, EncodeWithEmphasisMapIncompatibleRateControlMode) {
         cb.ControlVideoCoding(context.Control().RateControl(rc_info));
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10308");
-        cb.EncodeVideo(
-            context.EncodeFrame().QuantizationMap(VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR, texel_size, quantization_map));
+        cb.EncodeVideo(context.EncodeFrame().QuantizationMap(
+            VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR, texel_size, quantization_map));
         m_errorMonitor->VerifyFound();
     }
 
@@ -5654,8 +5741,8 @@ TEST_F(NegativeVideo, EncodeQuantMapImageLayout) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
     struct TestConfig {
         VkVideoEncodeFlagBitsKHR encode_flag;
@@ -5666,14 +5753,16 @@ TEST_F(NegativeVideo, EncodeQuantMapImageLayout) {
 
     std::vector<TestConfig> tests;
     if (delta_config) {
-        tests.emplace_back(TestConfig{VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR, delta_config,
-                                      delta_config.QuantDeltaMapProps()});
+        tests.emplace_back(TestConfig{ VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       delta_config,
+                                       delta_config.QuantDeltaMapProps() });
     }
     if (emphasis_config) {
-        tests.emplace_back(TestConfig{VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR, emphasis_config,
-                                      emphasis_config.EmphasisMapProps()});
+        tests.emplace_back(TestConfig{ VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                                       emphasis_config,
+                                       emphasis_config.EmphasisMapProps() });
     }
 
     for (const auto& test : tests) {
@@ -5830,9 +5919,8 @@ TEST_F(NegativeVideo, EncodeRateControlTooManyLayers) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlNoLayers) {
-    TEST_DESCRIPTION(
-        "vkCmdBegin/ControlVideoCodingKHR - no rate control layers are allowed when "
-        "rate control mode is DEFAULT or DISABLED");
+    TEST_DESCRIPTION("vkCmdBegin/ControlVideoCodingKHR - no rate control layers are allowed when "
+                     "rate control mode is DEFAULT or DISABLED");
 
     RETURN_IF_SKIP(Init());
 
@@ -5855,8 +5943,9 @@ TEST_F(NegativeVideo, EncodeRateControlNoLayers) {
     auto rc_info = VideoEncodeRateControlInfo(config);
     rc_info.AddLayer(VideoEncodeRateControlLayerInfo(config));
 
-    std::vector<VkVideoEncodeRateControlModeFlagBitsKHR> rate_control_modes = {VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR,
-                                                                               VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR};
+    std::vector<VkVideoEncodeRateControlModeFlagBitsKHR> rate_control_modes = {
+        VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR, VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR
+    };
 
     for (auto rate_control_mode : rate_control_modes) {
         if (config.SupportsRateControlMode(rate_control_mode)) {
@@ -5881,9 +5970,8 @@ TEST_F(NegativeVideo, EncodeRateControlNoLayers) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlMissingLayers) {
-    TEST_DESCRIPTION(
-        "vkCmdBegin/ControlVideoCodingKHR - rate control layers are required when "
-        "rate control mode is CBR or VBR");
+    TEST_DESCRIPTION("vkCmdBegin/ControlVideoCodingKHR - rate control layers are required when "
+                     "rate control mode is CBR or VBR");
 
     RETURN_IF_SKIP(Init());
 
@@ -5900,8 +5988,9 @@ TEST_F(NegativeVideo, EncodeRateControlMissingLayers) {
 
     auto rc_info = VideoEncodeRateControlInfo(config);
 
-    std::vector<VkVideoEncodeRateControlModeFlagBitsKHR> rate_control_modes = {VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR,
-                                                                               VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR};
+    std::vector<VkVideoEncodeRateControlModeFlagBitsKHR> rate_control_modes = {
+        VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR, VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR
+    };
 
     for (auto rate_control_mode : rate_control_modes) {
         if (config.SupportsRateControlMode(rate_control_mode)) {
@@ -6002,7 +6091,8 @@ TEST_F(NegativeVideo, EncodeRateControlLayerBitrateCBR) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(GetConfigsWithRateControl(GetConfigsEncode(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR));
+    VideoConfig config =
+        GetConfig(GetConfigsWithRateControl(GetConfigsEncode(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR));
     if (!config) {
         GTEST_SKIP() << "Test requires video encode support with CBR rate control mode";
     }
@@ -6044,7 +6134,8 @@ TEST_F(NegativeVideo, EncodeRateControlLayerBitrateVBR) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(GetConfigsWithRateControl(GetConfigsEncode(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR));
+    VideoConfig config =
+        GetConfig(GetConfigsWithRateControl(GetConfigsEncode(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR));
     if (!config) {
         GTEST_SKIP() << "Test requires video encode support with VBR rate control mode";
     }
@@ -6076,7 +6167,8 @@ TEST_F(NegativeVideo, EncodeRateControlLayerBitrateVBR) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlLayerFrameRate) {
-    TEST_DESCRIPTION("vkCmdControlVideoCodingKHR - test incorrect values for frameRateNumerator and frameRateDenominator");
+    TEST_DESCRIPTION(
+        "vkCmdControlVideoCodingKHR - test incorrect values for frameRateNumerator and frameRateDenominator");
 
     RETURN_IF_SKIP(Init());
 
@@ -6119,8 +6211,8 @@ TEST_F(NegativeVideo, EncodeRateControlLayerFrameRate) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlVirtualBufferSize) {
-    TEST_DESCRIPTION(
-        "vkCmdControlVideoCodingKHR - test incorrect values for virtualBufferSizeInMs and initialVirtualBufferSizeInMs");
+    TEST_DESCRIPTION("vkCmdControlVideoCodingKHR - test incorrect values for virtualBufferSizeInMs and "
+                     "initialVirtualBufferSizeInMs");
 
     RETURN_IF_SKIP(Init());
 
@@ -6199,8 +6291,8 @@ TEST_F(NegativeVideo, EncodeRateControlH264ConstantQpNotInCapRange) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config =
-        GetConfig(GetConfigsWithRateControl(GetConfigsEncodeH264(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR));
+    VideoConfig config = GetConfig(
+        GetConfigsWithRateControl(GetConfigsEncodeH264(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR));
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 encode support with DISABLED rate control";
     }
@@ -6237,9 +6329,8 @@ TEST_F(NegativeVideo, EncodeRateControlH264ConstantQpNotInCapRange) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlH264ConstantQpPerSliceMismatch) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - constantQp must match across H.264 slices "
-        "if VK_VIDEO_ENCODE_H264_CAPABILITY_PER_SLICE_CONSTANT_QP_BIT_KHR is not supported");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - constantQp must match across H.264 slices "
+                     "if VK_VIDEO_ENCODE_H264_CAPABILITY_PER_SLICE_CONSTANT_QP_BIT_KHR is not supported");
 
     RETURN_IF_SKIP(Init());
 
@@ -6247,7 +6338,8 @@ TEST_F(NegativeVideo, EncodeRateControlH264ConstantQpPerSliceMismatch) {
         GetConfigsWithRateControl(GetConfigsEncodeH264(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR),
         [](const VideoConfig& config) {
             return config.EncodeCapsH264()->maxSliceCount > 1 &&
-                   (config.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_PER_SLICE_CONSTANT_QP_BIT_KHR) == 0;
+                   (config.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_PER_SLICE_CONSTANT_QP_BIT_KHR) ==
+                       0;
         }));
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 encode support with DISABLED rate control, "
@@ -6332,8 +6424,8 @@ TEST_F(NegativeVideo, EncodeRateControlH265ConstantQpNotInCapRange) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config =
-        GetConfig(GetConfigsWithRateControl(GetConfigsEncodeH265(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR));
+    VideoConfig config = GetConfig(
+        GetConfigsWithRateControl(GetConfigsEncodeH265(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR));
     if (!config) {
         GTEST_SKIP() << "Test requires H.265 encode support with DISABLED rate control";
     }
@@ -6370,9 +6462,8 @@ TEST_F(NegativeVideo, EncodeRateControlH265ConstantQpNotInCapRange) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlH265ConstantQpPerSliceSegmentMismatch) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - constantQp must match across H.265 slice segments "
-        "if VK_VIDEO_ENCODE_H265_CAPABILITY_PER_SLICE_SEGMENT_CONSTANT_QP_BIT_KHR is not supported");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - constantQp must match across H.265 slice segments "
+                     "if VK_VIDEO_ENCODE_H265_CAPABILITY_PER_SLICE_SEGMENT_CONSTANT_QP_BIT_KHR is not supported");
 
     RETURN_IF_SKIP(Init());
 
@@ -6380,7 +6471,8 @@ TEST_F(NegativeVideo, EncodeRateControlH265ConstantQpPerSliceSegmentMismatch) {
         GetConfigsWithRateControl(GetConfigsEncodeH265(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR),
         [](const VideoConfig& config) {
             return config.EncodeCapsH265()->maxSliceSegmentCount > 1 &&
-                   (config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_PER_SLICE_SEGMENT_CONSTANT_QP_BIT_KHR) == 0;
+                   (config.EncodeCapsH265()->flags &
+                    VK_VIDEO_ENCODE_H265_CAPABILITY_PER_SLICE_SEGMENT_CONSTANT_QP_BIT_KHR) == 0;
         }));
     if (!config) {
         GTEST_SKIP() << "Test requires H.265 encode support with DISABLED rate control, "
@@ -6401,7 +6493,8 @@ TEST_F(NegativeVideo, EncodeRateControlH265ConstantQpPerSliceSegmentMismatch) {
     cb.ControlVideoCoding(context.Control().RateControl(rc_info));
 
     VideoEncodeInfo encode_info = context.EncodeFrame();
-    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(2, encode_info.CodecInfo().encode_h265.slice_segment_info);
+    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(
+        2, encode_info.CodecInfo().encode_h265.slice_segment_info);
     encode_info.CodecInfo().encode_h265.picture_info.naluSliceSegmentEntryCount = 2;
     encode_info.CodecInfo().encode_h265.picture_info.pNaluSliceSegmentEntries = slice_segments.data();
 
@@ -6467,12 +6560,13 @@ TEST_F(NegativeVideo, EncodeRateControlAV1ConstantQIndexNotInCapRange) {
     RETURN_IF_SKIP(Init());
 
     // Find an AV1 encode config with a non-zero minQIndex, if possible
-    VideoConfig config = GetConfig(
-        FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeAV1(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR),
-                      [](const VideoConfig& config) { return config.EncodeCapsAV1()->minQIndex > 0; }));
+    VideoConfig config = GetConfig(FilterConfigs(
+        GetConfigsWithRateControl(GetConfigsEncodeAV1(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR),
+        [](const VideoConfig& config) { return config.EncodeCapsAV1()->minQIndex > 0; }));
     // If couldn't find any config with a non-zero minQIndex, settle with any config that supports DISABLED rate control
     if (!config) {
-        config = GetConfig(GetConfigsWithRateControl(GetConfigsEncodeAV1(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR));
+        config = GetConfig(
+            GetConfigsWithRateControl(GetConfigsEncodeAV1(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR));
     }
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support with DISABLED rate control";
@@ -6512,9 +6606,8 @@ TEST_F(NegativeVideo, EncodeRateControlAV1ConstantQIndexNotInCapRange) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlH264LayerCountMismatch) {
-    TEST_DESCRIPTION(
-        "vkCmdBegin/ControlVideoCodingKHR - when using more than one rate control layer "
-        "the layer count must match the H.264 temporal layer count");
+    TEST_DESCRIPTION("vkCmdBegin/ControlVideoCodingKHR - when using more than one rate control layer "
+                     "the layer count must match the H.264 temporal layer count");
 
     RETURN_IF_SKIP(Init());
 
@@ -6566,9 +6659,8 @@ TEST_F(NegativeVideo, EncodeRateControlH264LayerCountMismatch) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlH265LayerCountMismatch) {
-    TEST_DESCRIPTION(
-        "vkCmdBegin/ControlVideoCodingKHR - when using more than one rate control layer "
-        "the layer count must match the H.265 sub-layer count");
+    TEST_DESCRIPTION("vkCmdBegin/ControlVideoCodingKHR - when using more than one rate control layer "
+                     "the layer count must match the H.265 sub-layer count");
 
     RETURN_IF_SKIP(Init());
 
@@ -6620,9 +6712,8 @@ TEST_F(NegativeVideo, EncodeRateControlH265LayerCountMismatch) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlAV1LayerCountMismatch) {
-    TEST_DESCRIPTION(
-        "vkCmdBegin/ControlVideoCodingKHR - when using more than one rate control layer "
-        "the layer count must match the AV1 temporal layer count");
+    TEST_DESCRIPTION("vkCmdBegin/ControlVideoCodingKHR - when using more than one rate control layer "
+                     "the layer count must match the AV1 temporal layer count");
 
     RETURN_IF_SKIP(Init());
 
@@ -6714,9 +6805,10 @@ TEST_F(NegativeVideo, EncodeRateControlH264HrdCompliance) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH264()), [](const VideoConfig& config) {
-        return (config.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_HRD_COMPLIANCE_BIT_KHR) == 0;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH264()), [](const VideoConfig& config) {
+            return (config.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_HRD_COMPLIANCE_BIT_KHR) == 0;
+        }));
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 encode without HRD compliance support";
     }
@@ -6751,9 +6843,10 @@ TEST_F(NegativeVideo, EncodeRateControlH265HrdCompliance) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH265()), [](const VideoConfig& config) {
-        return (config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_HRD_COMPLIANCE_BIT_KHR) == 0;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH265()), [](const VideoConfig& config) {
+            return (config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_HRD_COMPLIANCE_BIT_KHR) == 0;
+        }));
     if (!config) {
         GTEST_SKIP() << "Test requires H.265 encode without HRD compliance support";
     }
@@ -7088,21 +7181,21 @@ TEST_F(NegativeVideo, EncodeRateControlH264QpRange) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.minQp.qpI -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // minQp.qpP not in supported range
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.minQp.qpP -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // minQp.qpB not in supported range
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.minQp.qpB -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // out of bounds minQp should be ignored if useMinQp is not set
@@ -7122,21 +7215,21 @@ TEST_F(NegativeVideo, EncodeRateControlH264QpRange) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.maxQp.qpI += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // maxQp.qpP not in supported range
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.maxQp.qpP += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // maxQp.qpB not in supported range
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.maxQp.qpB += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // out of bounds maxQp should be ignored if useMaxQp is not set
@@ -7173,21 +7266,21 @@ TEST_F(NegativeVideo, EncodeRateControlH265QpRange) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.minQp.qpI -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // minQp.qpP not in supported range
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.minQp.qpP -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // minQp.qpB not in supported range
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.minQp.qpB -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // out of bounds minQp should be ignored if useMinQp is not set
@@ -7207,21 +7300,21 @@ TEST_F(NegativeVideo, EncodeRateControlH265QpRange) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.maxQp.qpI += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // maxQp.qpP not in supported range
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.maxQp.qpP += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // maxQp.qpB not in supported range
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.maxQp.qpB += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // out of bounds maxQp should be ignored if useMaxQp is not set
@@ -7241,8 +7334,9 @@ TEST_F(NegativeVideo, EncodeRateControlAV1QIndexRange) {
     RETURN_IF_SKIP(Init());
 
     // Find an AV1 encode config with a non-zero minQIndex, if possible
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeAV1()),
-                                                 [](const VideoConfig& config) { return config.EncodeCapsAV1()->minQIndex > 0; }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeAV1()),
+                                [](const VideoConfig& config) { return config.EncodeCapsAV1()->minQIndex > 0; }));
     // If couldn't find any config with a non-zero minQIndex, settle with any config that supports DISABLED rate control
     if (!config) {
         config = GetConfig(GetConfigsWithRateControl(GetConfigsEncodeAV1()));
@@ -7265,21 +7359,21 @@ TEST_F(NegativeVideo, EncodeRateControlAV1QIndexRange) {
         {
             auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
             rc_layer.CodecInfo().encode_av1.minQIndex.intraQIndex -= 1;
-            rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, {allowed_min_qi_vuid});
+            rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, { allowed_min_qi_vuid });
         }
 
         // minQIndex.predictiveQIndex not in supported range
         {
             auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
             rc_layer.CodecInfo().encode_av1.minQIndex.predictiveQIndex -= 1;
-            rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, {allowed_min_qi_vuid});
+            rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, { allowed_min_qi_vuid });
         }
 
         // minQIndex.bipredictiveQIndex not in supported range
         {
             auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
             rc_layer.CodecInfo().encode_av1.minQIndex.bipredictiveQIndex -= 1;
-            rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, {allowed_min_qi_vuid});
+            rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, { allowed_min_qi_vuid });
         }
     }
 
@@ -7300,21 +7394,21 @@ TEST_F(NegativeVideo, EncodeRateControlAV1QIndexRange) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
         rc_layer.CodecInfo().encode_av1.maxQIndex.intraQIndex += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, {allowed_max_qi_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, { allowed_max_qi_vuid });
     }
 
     // maxQIndex.predictiveQIndex not in supported range
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
         rc_layer.CodecInfo().encode_av1.maxQIndex.predictiveQIndex += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, {allowed_max_qi_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, { allowed_max_qi_vuid });
     }
 
     // maxQIndex.bipredictiveQIndex not in supported range
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
         rc_layer.CodecInfo().encode_av1.maxQIndex.bipredictiveQIndex += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, {allowed_max_qi_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, { allowed_max_qi_vuid });
     }
 
     // out of bounds maxQIndex should be ignored if useMaxQIndex is not set
@@ -7333,9 +7427,11 @@ TEST_F(NegativeVideo, EncodeRateControlH264PerPicTypeQp) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH264()), [](const VideoConfig& config) {
-        return (config.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR) == 0;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH264()), [](const VideoConfig& config) {
+            return (config.EncodeCapsH264()->flags &
+                    VK_VIDEO_ENCODE_H264_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR) == 0;
+        }));
     if (!config) {
         GTEST_SKIP() << "Test requires H.264 encode without per picture type min/max QP support";
     }
@@ -7353,21 +7449,21 @@ TEST_F(NegativeVideo, EncodeRateControlH264PerPicTypeQp) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.minQp.qpI += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // minQp.qpP does not match the other QP values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.minQp.qpP += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // minQp.qpB does not match the other QP values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.minQp.qpB += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // non-matching QP values in minQp should be ignored if useMinQp is not set
@@ -7386,21 +7482,21 @@ TEST_F(NegativeVideo, EncodeRateControlH264PerPicTypeQp) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.maxQp.qpI -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // maxQp.qpP does not match the other QP values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.maxQp.qpP -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // maxQp.qpB does not match the other QP values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h264.maxQp.qpB -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // non-matching QP values in maxQp should be ignored if useMaxQp is not set
@@ -7418,9 +7514,11 @@ TEST_F(NegativeVideo, EncodeRateControlH265PerPicTypeQp) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH265()), [](const VideoConfig& config) {
-        return (config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR) == 0;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeH265()), [](const VideoConfig& config) {
+            return (config.EncodeCapsH265()->flags &
+                    VK_VIDEO_ENCODE_H265_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR) == 0;
+        }));
     if (!config) {
         GTEST_SKIP() << "Test requires H.265 encode without per picture type min/max QP support";
     }
@@ -7438,21 +7536,21 @@ TEST_F(NegativeVideo, EncodeRateControlH265PerPicTypeQp) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.minQp.qpI += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // minQp.qpP does not match the other QP values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.minQp.qpP += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // minQp.qpB does not match the other QP values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.minQp.qpB += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, {allowed_min_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qp_vuid, { allowed_min_qp_vuid });
     }
 
     // non-matching QP values in minQp should be ignored if useMinQp is not set
@@ -7471,21 +7569,21 @@ TEST_F(NegativeVideo, EncodeRateControlH265PerPicTypeQp) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.maxQp.qpI -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // maxQp.qpP does not match the other QP values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.maxQp.qpP -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // maxQp.qpB does not match the other QP values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQp();
         rc_layer.CodecInfo().encode_h265.maxQp.qpB -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, {allowed_max_qp_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qp_vuid, { allowed_max_qp_vuid });
     }
 
     // non-matching QP values in maxQp should be ignored if useMaxQp is not set
@@ -7499,13 +7597,16 @@ TEST_F(NegativeVideo, EncodeRateControlH265PerPicTypeQp) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlAV1PerRcGroupQIndex) {
-    TEST_DESCRIPTION("vkCmdBegin/ControlVideoCodingKHR - AV1 per rate control group min/max quantizer index depends on capability");
+    TEST_DESCRIPTION(
+        "vkCmdBegin/ControlVideoCodingKHR - AV1 per rate control group min/max quantizer index depends on capability");
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeAV1()), [](const VideoConfig& config) {
-        return (config.EncodeCapsAV1()->flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_PER_RATE_CONTROL_GROUP_MIN_MAX_Q_INDEX_BIT_KHR) == 0;
-    }));
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsWithRateControl(GetConfigsEncodeAV1()), [](const VideoConfig& config) {
+            return (config.EncodeCapsAV1()->flags &
+                    VK_VIDEO_ENCODE_AV1_CAPABILITY_PER_RATE_CONTROL_GROUP_MIN_MAX_Q_INDEX_BIT_KHR) == 0;
+        }));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode without per rate control group min/max quantizer index support";
     }
@@ -7523,21 +7624,21 @@ TEST_F(NegativeVideo, EncodeRateControlAV1PerRcGroupQIndex) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
         rc_layer.CodecInfo().encode_av1.minQIndex.intraQIndex += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, {allowed_min_qi_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, { allowed_min_qi_vuid });
     }
 
     // minQIndex.predictiveQIndex does not match the other quantizer index values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
         rc_layer.CodecInfo().encode_av1.minQIndex.predictiveQIndex += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, {allowed_min_qi_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, { allowed_min_qi_vuid });
     }
 
     // minQIndex.bipredictiveQIndex does not match the other quantizer index values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
         rc_layer.CodecInfo().encode_av1.minQIndex.bipredictiveQIndex += 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, {allowed_min_qi_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_min_qi_vuid, { allowed_min_qi_vuid });
     }
 
     // non-matching quantizer index values in minQIndex should be ignored if useMinQIndex is not set
@@ -7556,21 +7657,21 @@ TEST_F(NegativeVideo, EncodeRateControlAV1PerRcGroupQIndex) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
         rc_layer.CodecInfo().encode_av1.maxQIndex.intraQIndex -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, {allowed_max_qi_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, { allowed_max_qi_vuid });
     }
 
     // maxQIndex.predictiveQIndex does not match the other quantizer index values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
         rc_layer.CodecInfo().encode_av1.maxQIndex.predictiveQIndex -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, {allowed_max_qi_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, { allowed_max_qi_vuid });
     }
 
     // maxQIndex.bipredictiveQIndex does not match the other quantizer index values
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
         rc_layer.CodecInfo().encode_av1.maxQIndex.bipredictiveQIndex -= 1;
-        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, {allowed_max_qi_vuid});
+        rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_max_qi_vuid, { allowed_max_qi_vuid });
     }
 
     // non-matching quantizer index values in maxQIndex should be ignored if useMaxQIndex is not set
@@ -7759,7 +7860,8 @@ TEST_F(NegativeVideo, EncodeRateControlAV1MinQIndexGreaterThanMaxQIndex) {
     // minQIndex.predictiveQIndex > maxQIndex.predictiveQIndex
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
-        rc_layer.CodecInfo().encode_av1.minQIndex.predictiveQIndex = rc_layer.CodecInfo().encode_av1.maxQIndex.predictiveQIndex;
+        rc_layer.CodecInfo().encode_av1.minQIndex.predictiveQIndex =
+            rc_layer.CodecInfo().encode_av1.maxQIndex.predictiveQIndex;
         rc_layer.CodecInfo().encode_av1.maxQIndex.predictiveQIndex -= 1;
         rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_vuid, allowed_vuids);
     }
@@ -7767,7 +7869,8 @@ TEST_F(NegativeVideo, EncodeRateControlAV1MinQIndexGreaterThanMaxQIndex) {
     // minQIndex.bipredictiveQIndex > maxQIndex.bipredictiveQIndex
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
-        rc_layer.CodecInfo().encode_av1.minQIndex.bipredictiveQIndex = rc_layer.CodecInfo().encode_av1.maxQIndex.bipredictiveQIndex;
+        rc_layer.CodecInfo().encode_av1.minQIndex.bipredictiveQIndex =
+            rc_layer.CodecInfo().encode_av1.maxQIndex.bipredictiveQIndex;
         rc_layer.CodecInfo().encode_av1.maxQIndex.bipredictiveQIndex -= 1;
         rc_test_utils.TestRateControlLayerInfo(rc_layer, expected_vuid, allowed_vuids);
     }
@@ -7776,8 +7879,10 @@ TEST_F(NegativeVideo, EncodeRateControlAV1MinQIndexGreaterThanMaxQIndex) {
     {
         auto rc_layer = rc_test_utils.CreateRateControlLayerWithMinMaxQIndex();
         rc_layer.CodecInfo().encode_av1.minQIndex.intraQIndex = rc_layer.CodecInfo().encode_av1.maxQIndex.intraQIndex;
-        rc_layer.CodecInfo().encode_av1.minQIndex.predictiveQIndex = rc_layer.CodecInfo().encode_av1.maxQIndex.predictiveQIndex;
-        rc_layer.CodecInfo().encode_av1.minQIndex.bipredictiveQIndex = rc_layer.CodecInfo().encode_av1.maxQIndex.bipredictiveQIndex;
+        rc_layer.CodecInfo().encode_av1.minQIndex.predictiveQIndex =
+            rc_layer.CodecInfo().encode_av1.maxQIndex.predictiveQIndex;
+        rc_layer.CodecInfo().encode_av1.minQIndex.bipredictiveQIndex =
+            rc_layer.CodecInfo().encode_av1.maxQIndex.bipredictiveQIndex;
         rc_test_utils.TestRateControlLayerInfo(rc_layer);
     }
 
@@ -7825,7 +7930,8 @@ TEST_F(NegativeVideo, EncodeRateControlMissingChain) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlStateMismatchNotDefault) {
-    TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - rate control state not specified but rate control mode is not DEFAULT");
+    TEST_DESCRIPTION(
+        "vkCmdBeginVideoCodingKHR - rate control state not specified but rate control mode is not DEFAULT");
 
     RETURN_IF_SKIP(Init());
 
@@ -7958,7 +8064,8 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatch) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlStateMismatchH264) {
-    TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - H.264 rate control state specified does not match current configuration");
+    TEST_DESCRIPTION(
+        "vkCmdBeginVideoCodingKHR - H.264 rate control state specified does not match current configuration");
 
     RETURN_IF_SKIP(Init());
 
@@ -8004,7 +8111,8 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH264) {
         rc_layer.CodecInfo().encode_h264.minQp.qpP = config.ClampH264Qp(5 + i);
         rc_layer.CodecInfo().encode_h264.minQp.qpB = config.ClampH264Qp(10 + i);
 
-        if ((config.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR) == 0) {
+        if ((config.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR) ==
+            0) {
             rc_layer.CodecInfo().encode_h264.minQp.qpP = rc_layer.CodecInfo().encode_h264.minQp.qpI;
             rc_layer.CodecInfo().encode_h264.minQp.qpB = rc_layer.CodecInfo().encode_h264.minQp.qpI;
         }
@@ -8029,7 +8137,8 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH264) {
     VideoEncodeRateControlTestUtils rc_test_utils(this, context);
 
     // flags mismatch
-    VkVideoEncodeH264RateControlFlagsKHR flags = VK_VIDEO_ENCODE_H264_RATE_CONTROL_TEMPORAL_LAYER_PATTERN_DYADIC_BIT_KHR;
+    VkVideoEncodeH264RateControlFlagsKHR flags =
+        VK_VIDEO_ENCODE_H264_RATE_CONTROL_TEMPORAL_LAYER_PATTERN_DYADIC_BIT_KHR;
     std::swap(rc_info.CodecInfo().encode_h264.flags, flags);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info.CodecInfo().encode_h264.flags, flags);
@@ -8092,7 +8201,8 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH264) {
 }
 
 TEST_F(NegativeVideo, EncodeRateControlStateMismatchH265) {
-    TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - H.265 rate control state specified does not match current configuration");
+    TEST_DESCRIPTION(
+        "vkCmdBeginVideoCodingKHR - H.265 rate control state specified does not match current configuration");
 
     RETURN_IF_SKIP(Init());
 
@@ -8138,7 +8248,8 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH265) {
         rc_layer.CodecInfo().encode_h265.minQp.qpP = config.ClampH265Qp(5 + i);
         rc_layer.CodecInfo().encode_h265.minQp.qpB = config.ClampH265Qp(10 + i);
 
-        if ((config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR) == 0) {
+        if ((config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR) ==
+            0) {
             rc_layer.CodecInfo().encode_h265.minQp.qpP = rc_layer.CodecInfo().encode_h265.minQp.qpI;
             rc_layer.CodecInfo().encode_h265.minQp.qpB = rc_layer.CodecInfo().encode_h265.minQp.qpI;
         }
@@ -8163,7 +8274,8 @@ TEST_F(NegativeVideo, EncodeRateControlStateMismatchH265) {
     VideoEncodeRateControlTestUtils rc_test_utils(this, context);
 
     // flags mismatch
-    VkVideoEncodeH265RateControlFlagsKHR flags = VK_VIDEO_ENCODE_H265_RATE_CONTROL_TEMPORAL_SUB_LAYER_PATTERN_DYADIC_BIT_KHR;
+    VkVideoEncodeH265RateControlFlagsKHR flags =
+        VK_VIDEO_ENCODE_H265_RATE_CONTROL_TEMPORAL_SUB_LAYER_PATTERN_DYADIC_BIT_KHR;
     std::swap(rc_info.CodecInfo().encode_h265.flags, flags);
     rc_test_utils.TestRateControlStateMismatch(rc_info);
     std::swap(rc_info.CodecInfo().encode_h265.flags, flags);
@@ -8575,14 +8687,16 @@ TEST_F(NegativeVideo, EncodeProtectedNoFaultQuantizationMap) {
 
     std::vector<TestConfig> tests;
     if (delta_config) {
-        tests.emplace_back(TestConfig{delta_config, VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      delta_config.QuantDeltaMapProps()});
+        tests.emplace_back(TestConfig{ delta_config,
+                                       VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       delta_config.QuantDeltaMapProps() });
     }
     if (emphasis_config) {
-        tests.emplace_back(TestConfig{emphasis_config, VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                      emphasis_config.EmphasisMapProps()});
+        tests.emplace_back(TestConfig{ emphasis_config,
+                                       VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                                       emphasis_config.EmphasisMapProps() });
     }
 
     for (auto& [config, encode_flag, session_create_flag, map_props] : tests) {
@@ -8596,7 +8710,8 @@ TEST_F(NegativeVideo, EncodeProtectedNoFaultQuantizationMap) {
 
         VideoContext protected_context(m_device, config, use_protected);
         protected_context.CreateAndBindSessionMemory();
-        protected_context.CreateResources(use_protected /* bitstream */, use_protected /* DPB */, use_protected /* src_image */);
+        protected_context.CreateResources(
+            use_protected /* bitstream */, use_protected /* DPB */, use_protected /* src_image */);
 
         vkt::CommandBuffer& protected_cb = protected_context.CmdBuffer();
 
@@ -8667,7 +8782,8 @@ TEST_F(NegativeVideo, DecodeImageLayouts) {
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1));
 
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
 
     cb.DecodeVideo(context.DecodeFrame(0));
 
@@ -8677,16 +8793,19 @@ TEST_F(NegativeVideo, DecodeImageLayouts) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07252");
         cb.DecodeVideo(context.DecodeFrame(0));
         m_errorMonitor->VerifyFound();
-        vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+        vk::CmdPipelineBarrier2KHR(cb.handle(),
+                                   context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
     }
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
 
     // Decode output must be in DECODE_DPB layout if it coincides with reconstructed
     if (config.SupportsDecodeOutputCoincide()) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07254");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07253");
-        vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, 0, 1));
+        vk::CmdPipelineBarrier2KHR(cb.handle(),
+                                   context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, 0, 1));
         cb.DecodeVideo(context.DecodeFrame(0).SetDecodeOutput(context.Dpb()->Picture(0)));
         m_errorMonitor->VerifyFound();
     }
@@ -8697,7 +8816,8 @@ TEST_F(NegativeVideo, DecodeImageLayouts) {
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
     cb.DecodeVideo(context.DecodeFrame(0));
     m_errorMonitor->VerifyFound();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
 
     // Reference must be in DECODE_DPB layout
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
@@ -8733,7 +8853,8 @@ TEST_F(NegativeVideo, EncodeImageLayouts) {
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1));
 
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
 
     cb.EncodeVideo(context.EncodeFrame(0));
 
@@ -8742,14 +8863,16 @@ TEST_F(NegativeVideo, EncodeImageLayouts) {
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL));
     cb.EncodeVideo(context.EncodeFrame(0));
     m_errorMonitor->VerifyFound();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
 
     // Reconstructed must be in ENCODE_DPB layout
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08223");
     vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
     cb.EncodeVideo(context.EncodeFrame(0));
     m_errorMonitor->VerifyFound();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, 0, 1));
 
     // Reference must be in ENCODE_DPB layout
     cb.EncodeVideo(context.EncodeReferenceFrame(0));
@@ -9113,8 +9236,9 @@ TEST_F(NegativeVideo, DecodeBufferOffsetAlignment) {
 
     RETURN_IF_SKIP(Init());
 
-    auto config = GetConfig(FilterConfigs(
-        GetConfigsDecode(), [](const VideoConfig& config) { return config.Caps()->minBitstreamBufferOffsetAlignment > 1; }));
+    auto config = GetConfig(FilterConfigs(GetConfigsDecode(), [](const VideoConfig& config) {
+        return config.Caps()->minBitstreamBufferOffsetAlignment > 1;
+    }));
     if (!config) {
         GTEST_SKIP() << "Test requires a video decode profile with minBitstreamBufferOffsetAlignment > 1";
     }
@@ -9145,8 +9269,9 @@ TEST_F(NegativeVideo, EncodeBufferOffsetAlignment) {
 
     RETURN_IF_SKIP(Init());
 
-    auto config = GetConfig(FilterConfigs(
-        GetConfigsEncode(), [](const VideoConfig& config) { return config.Caps()->minBitstreamBufferOffsetAlignment > 1; }));
+    auto config = GetConfig(FilterConfigs(GetConfigsEncode(), [](const VideoConfig& config) {
+        return config.Caps()->minBitstreamBufferOffsetAlignment > 1;
+    }));
     if (!config) {
         GTEST_SKIP() << "Test requires a video encode profile with minBitstreamBufferOffsetAlignment > 1";
     }
@@ -9249,8 +9374,9 @@ TEST_F(NegativeVideo, DecodeBufferRangeAlignment) {
 
     RETURN_IF_SKIP(Init());
 
-    auto config = GetConfig(FilterConfigs(
-        GetConfigsDecode(), [](const VideoConfig& config) { return config.Caps()->minBitstreamBufferSizeAlignment > 1; }));
+    auto config = GetConfig(FilterConfigs(GetConfigsDecode(), [](const VideoConfig& config) {
+        return config.Caps()->minBitstreamBufferSizeAlignment > 1;
+    }));
     if (!config) {
         GTEST_SKIP() << "Test requires a video decode profile with minBitstreamBufferSizeAlignment > 1";
     }
@@ -9280,8 +9406,9 @@ TEST_F(NegativeVideo, EncodeBufferRangeAlignment) {
 
     RETURN_IF_SKIP(Init());
 
-    auto config = GetConfig(FilterConfigs(
-        GetConfigsEncode(), [](const VideoConfig& config) { return config.Caps()->minBitstreamBufferSizeAlignment > 1; }));
+    auto config = GetConfig(FilterConfigs(GetConfigsEncode(), [](const VideoConfig& config) {
+        return config.Caps()->minBitstreamBufferSizeAlignment > 1;
+    }));
     if (!config) {
         GTEST_SKIP() << "Test requires a video encode profile with minBitstreamBufferSizeAlignment > 1";
     }
@@ -9307,14 +9434,14 @@ TEST_F(NegativeVideo, EncodeBufferRangeAlignment) {
 }
 
 TEST_F(NegativeVideo, DecodeInvalidOutputAndSetupCoincide) {
-    TEST_DESCRIPTION(
-        "vkCmdDecodeVideoKHR - decode output and reconstructed pictures must not match "
-        "if VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR is not supported");
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - decode output and reconstructed pictures must not match "
+                     "if VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR is not supported");
 
     RETURN_IF_SKIP(Init());
 
-    auto config = GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecode()),
-                                          [](const VideoConfig& config) { return !config.SupportsDecodeOutputCoincide(); }));
+    auto config = GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecode()), [](const VideoConfig& config) {
+        return !config.SupportsDecodeOutputCoincide();
+    }));
     if (!config) {
         GTEST_SKIP() << "Test requires video decode support with reference pictures and no support "
                         "for VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR";
@@ -9345,14 +9472,14 @@ TEST_F(NegativeVideo, DecodeInvalidOutputAndSetupCoincide) {
 }
 
 TEST_F(NegativeVideo, DecodeInvalidOutputAndSetupDistinct) {
-    TEST_DESCRIPTION(
-        "vkCmdDecodeVideoKHR - decode output and reconstructed pictures must match "
-        "if VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR is not supported");
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - decode output and reconstructed pictures must match "
+                     "if VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR is not supported");
 
     RETURN_IF_SKIP(Init());
 
-    auto config = GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecode()),
-                                          [](const VideoConfig& config) { return !config.SupportsDecodeOutputDistinct(); }));
+    auto config = GetConfig(FilterConfigs(GetConfigsWithReferences(GetConfigsDecode()), [](const VideoConfig& config) {
+        return !config.SupportsDecodeOutputDistinct();
+    }));
     if (!config) {
         GTEST_SKIP() << "Test requires video decode support with reference pictures and no support "
                         "for VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR";
@@ -9738,8 +9865,9 @@ TEST_F(NegativeVideo, DecodeIncompatOutputPicProfile) {
             const auto& pic_format1 = *all_configs[i].DpbFormatProps();
             const auto& pic_format2 = *all_configs[j].DpbFormatProps();
             if ((coded_extent1.width == coded_extent2.width) && (coded_extent1.height == coded_extent2.height) &&
-                (pic_format1.imageType == pic_format2.imageType) && (pic_format1.imageTiling == pic_format2.imageTiling) &&
-                (pic_format1.format == pic_format2.format) && (pic_format1.imageUsageFlags == pic_format2.imageUsageFlags)) {
+                (pic_format1.imageType == pic_format2.imageType) &&
+                (pic_format1.imageTiling == pic_format2.imageTiling) && (pic_format1.format == pic_format2.format) &&
+                (pic_format1.imageUsageFlags == pic_format2.imageUsageFlags)) {
                 configs[0] = all_configs[i];
                 configs[1] = all_configs[j];
             }
@@ -9783,8 +9911,9 @@ TEST_F(NegativeVideo, EncodeIncompatInputPicProfile) {
             const auto& pic_format1 = *all_configs[i].DpbFormatProps();
             const auto& pic_format2 = *all_configs[j].DpbFormatProps();
             if ((coded_extent1.width == coded_extent2.width) && (coded_extent1.height == coded_extent2.height) &&
-                (pic_format1.imageType == pic_format2.imageType) && (pic_format1.imageTiling == pic_format2.imageTiling) &&
-                (pic_format1.format == pic_format2.format) && (pic_format1.imageUsageFlags == pic_format2.imageUsageFlags)) {
+                (pic_format1.imageType == pic_format2.imageType) &&
+                (pic_format1.imageTiling == pic_format2.imageTiling) && (pic_format1.format == pic_format2.format) &&
+                (pic_format1.imageUsageFlags == pic_format2.imageUsageFlags)) {
                 configs[0] = all_configs[i];
                 configs[1] = all_configs[j];
             }
@@ -9820,16 +9949,17 @@ TEST_F(NegativeVideo, DecodeOutputFormatMismatch) {
     RETURN_IF_SKIP(Init());
 
     uint32_t alt_pic_format_index = 0;
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsDecode(), [&alt_pic_format_index](const VideoConfig& config) {
-        const auto& format_props = config.SupportedPictureFormatProps();
-        for (size_t i = 0; i < format_props.size(); ++i) {
-            if (format_props[i].format != format_props[0].format && alt_pic_format_index == 0) {
-                alt_pic_format_index = i;
-                return true;
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsDecode(), [&alt_pic_format_index](const VideoConfig& config) {
+            const auto& format_props = config.SupportedPictureFormatProps();
+            for (size_t i = 0; i < format_props.size(); ++i) {
+                if (format_props[i].format != format_props[0].format && alt_pic_format_index == 0) {
+                    alt_pic_format_index = i;
+                    return true;
+                }
             }
-        }
-        return false;
-    }));
+            return false;
+        }));
     if (!config) {
         GTEST_SKIP() << "Test requires a video decode profile with support for two output picture formats";
     }
@@ -9839,7 +9969,8 @@ TEST_F(NegativeVideo, DecodeOutputFormatMismatch) {
     context.CreateResources();
 
     VideoConfig config2 = config;
-    config2.SetFormatProps({config.SupportedPictureFormatProps()[alt_pic_format_index]}, config.SupportedDpbFormatProps());
+    config2.SetFormatProps({ config.SupportedPictureFormatProps()[alt_pic_format_index] },
+                           config.SupportedDpbFormatProps());
     VideoDecodeOutput output(m_device, config2);
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -9861,16 +9992,17 @@ TEST_F(NegativeVideo, EncodeInputFormatMismatch) {
     RETURN_IF_SKIP(Init());
 
     uint32_t alt_pic_format_index = 0;
-    VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncode(), [&alt_pic_format_index](const VideoConfig& config) {
-        const auto& format_props = config.SupportedPictureFormatProps();
-        for (size_t i = 0; i < format_props.size(); ++i) {
-            if (format_props[i].format != format_props[0].format && alt_pic_format_index == 0) {
-                alt_pic_format_index = i;
-                return true;
+    VideoConfig config =
+        GetConfig(FilterConfigs(GetConfigsEncode(), [&alt_pic_format_index](const VideoConfig& config) {
+            const auto& format_props = config.SupportedPictureFormatProps();
+            for (size_t i = 0; i < format_props.size(); ++i) {
+                if (format_props[i].format != format_props[0].format && alt_pic_format_index == 0) {
+                    alt_pic_format_index = i;
+                    return true;
+                }
             }
-        }
-        return false;
-    }));
+            return false;
+        }));
     if (!config) {
         GTEST_SKIP() << "Test requires a video encode profile with support for two input picture formats";
     }
@@ -9880,7 +10012,8 @@ TEST_F(NegativeVideo, EncodeInputFormatMismatch) {
     context.CreateResources();
 
     VideoConfig config2 = config;
-    config2.SetFormatProps({config.SupportedPictureFormatProps()[alt_pic_format_index]}, config.SupportedDpbFormatProps());
+    config2.SetFormatProps({ config.SupportedPictureFormatProps()[alt_pic_format_index] },
+                           config.SupportedDpbFormatProps());
     VideoEncodeInput output(m_device, config2);
 
     vkt::CommandBuffer& cb = context.CmdBuffer();
@@ -9924,7 +10057,7 @@ TEST_F(NegativeVideo, DecodeOutputMissingDecodeDstUsage) {
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     image_view_ci.format = config.PictureFormatProps()->format;
     image_view_ci.components = config.PictureFormatProps()->componentMapping;
-    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    image_view_ci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     vkt::ImageView image_view(*m_device, image_view_ci);
 
@@ -9970,7 +10103,7 @@ TEST_F(NegativeVideo, EncodeInputMissingEncodeSrcUsage) {
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     image_view_ci.format = config.PictureFormatProps()->format;
     image_view_ci.components = config.PictureFormatProps()->componentMapping;
-    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    image_view_ci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     vkt::ImageView image_view(*m_device, image_view_ci);
 
@@ -10265,9 +10398,8 @@ TEST_F(NegativeVideo, EncodeSetupResourceNotBound) {
 }
 
 TEST_F(NegativeVideo, DecodeRefResourceNotBoundToDPBSlot) {
-    TEST_DESCRIPTION(
-        "vkCmdDecodeVideoKHR - used reference picture resource is not bound as a resource "
-        "currently associated with the corresponding DPB slot");
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - used reference picture resource is not bound as a resource "
+                     "currently associated with the corresponding DPB slot");
 
     RETURN_IF_SKIP(Init());
 
@@ -10298,8 +10430,10 @@ TEST_F(NegativeVideo, DecodeRefResourceNotBoundToDPBSlot) {
     cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(1, 0));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
     cb.DecodeVideo(context.DecodeReferenceFrame(1, 0));
     cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(1, 0));
 
@@ -10321,9 +10455,8 @@ TEST_F(NegativeVideo, DecodeRefResourceNotBoundToDPBSlot) {
 }
 
 TEST_F(NegativeVideo, EncodeRefResourceNotBoundToDPBSlot) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - used reference picture resource is not bound as a resource "
-        "currently associated with the corresponding DPB slot");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - used reference picture resource is not bound as a resource "
+                     "currently associated with the corresponding DPB slot");
 
     RETURN_IF_SKIP(Init());
 
@@ -10354,8 +10487,10 @@ TEST_F(NegativeVideo, EncodeRefResourceNotBoundToDPBSlot) {
     cb.EncodeVideo(context.EncodeFrame(2).AddReferenceFrame(1, 0));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, 0, 1));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
+    vk::CmdPipelineBarrier2KHR(cb.handle(),
+                               context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, 0, 1));
     cb.EncodeVideo(context.EncodeReferenceFrame(1, 0));
     cb.EncodeVideo(context.EncodeFrame(2).AddReferenceFrame(1, 0));
 
@@ -10437,9 +10572,8 @@ TEST_F(NegativeVideo, EncodeTooManyReferences) {
 }
 
 TEST_F(NegativeVideo, DecodeTooManyReferencesH264Interlaced) {
-    TEST_DESCRIPTION(
-        "vkCmdDecodeVideoKHR - reference picture count exceeds maxActiveReferencePictures"
-        " (specific test for H.264 interlaced with both top and bottom field referenced)");
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - reference picture count exceeds maxActiveReferencePictures"
+                     " (specific test for H.264 interlaced with both top and bottom field referenced)");
 
     RETURN_IF_SKIP(Init());
 
@@ -10511,9 +10645,8 @@ TEST_F(NegativeVideo, DecodeDuplicateRefResource) {
 }
 
 TEST_F(NegativeVideo, DecodeDuplicateRefResourceH264Interlaced) {
-    TEST_DESCRIPTION(
-        "vkCmdDecodeVideoKHR - same reference picture resource is used twice "
-        "with one referring to the top field and another referring to the bottom field");
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - same reference picture resource is used twice "
+                     "with one referring to the top field and another referring to the bottom field");
 
     RETURN_IF_SKIP(Init());
 
@@ -10735,13 +10868,16 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivation) {
 }
 
 TEST_F(NegativeVideo, DecodeImplicitDeactivationH264Interlaced) {
-    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - test DPB slot deactivation caused by H.264 interlaced reference invalidation");
+    TEST_DESCRIPTION(
+        "vkCmdDecodeVideoKHR - test DPB slot deactivation caused by H.264 interlaced reference invalidation");
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()), 2));
+    VideoConfig config =
+        GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()), 2));
     if (!config) {
-        GTEST_SKIP() << "Test requires an H.264 interlaced decode profile with reference picture support and 2 DPB slots";
+        GTEST_SKIP()
+            << "Test requires an H.264 interlaced decode profile with reference picture support and 2 DPB slots";
     }
 
     config.SessionCreateInfo()->maxDpbSlots = 2;
@@ -10893,15 +11029,16 @@ TEST_F(NegativeVideo, DecodeImplicitDeactivationH264Interlaced) {
 }
 
 TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
-    TEST_DESCRIPTION(
-        "vkCmdDecodeVideoKHR - H.264 reference picture kind (frame, top field, bottom field) mismatch "
-        "between actual DPB slot contents and specified reference pictures");
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - H.264 reference picture kind (frame, top field, bottom field) mismatch "
+                     "between actual DPB slot contents and specified reference pictures");
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()), 2));
+    VideoConfig config =
+        GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()), 2));
     if (!config) {
-        GTEST_SKIP() << "Test requires an H.264 interlaced decode profile with reference picture support and 2 DPB slots";
+        GTEST_SKIP()
+            << "Test requires an H.264 interlaced decode profile with reference picture support and 2 DPB slots";
     }
 
     config.SessionCreateInfo()->maxDpbSlots = 2;
@@ -11017,13 +11154,16 @@ TEST_F(NegativeVideo, DecodeRefPictureKindMismatchH264) {
 }
 
 TEST_F(NegativeVideo, DecodeInvalidationOnlyH264Interlaced) {
-    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - test H.264 interlaced reference invalidation without implicit DPB slot deactivation");
+    TEST_DESCRIPTION(
+        "vkCmdDecodeVideoKHR - test H.264 interlaced reference invalidation without implicit DPB slot deactivation");
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()), 2));
+    VideoConfig config =
+        GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecodeH264Interlaced()), 2));
     if (!config) {
-        GTEST_SKIP() << "Test requires an H.264 interlaced decode profile with reference picture support and 2 DPB slots";
+        GTEST_SKIP()
+            << "Test requires an H.264 interlaced decode profile with reference picture support and 2 DPB slots";
     }
 
     config.SessionCreateInfo()->maxDpbSlots = 2;
@@ -11238,9 +11378,8 @@ TEST_F(NegativeVideo, DecodeInvalidCodecInfoH264) {
 }
 
 TEST_F(NegativeVideo, DecodeFieldFrameMismatchH264) {
-    TEST_DESCRIPTION(
-        "vkCmdDecodeVideoKHR - H.264 interlaced field/frame mismatch between "
-        "decode output picture and reconstructed picture");
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - H.264 interlaced field/frame mismatch between "
+                     "decode output picture and reconstructed picture");
 
     RETURN_IF_SKIP(Init());
 
@@ -12230,9 +12369,8 @@ TEST_F(NegativeVideo, EncodeCapsH264MaxSliceCount) {
 }
 
 TEST_F(NegativeVideo, EncodeCapsH264MoreSlicesThanMBs) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - more H.264 slices are requested than MBs "
-        "when VK_VIDEO_ENCODE_H264_CAPABILITY_ROW_UNALIGNED_SLICE_BIT_KHR is supported");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - more H.264 slices are requested than MBs "
+                     "when VK_VIDEO_ENCODE_H264_CAPABILITY_ROW_UNALIGNED_SLICE_BIT_KHR is supported");
 
     RETURN_IF_SKIP(Init());
 
@@ -12280,9 +12418,8 @@ TEST_F(NegativeVideo, EncodeCapsH264MoreSlicesThanMBs) {
 }
 
 TEST_F(NegativeVideo, EncodeCapsH264MoreSlicesThanMBRows) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - more H.264 slices are requested than MB rows "
-        "when VK_VIDEO_ENCODE_H264_CAPABILITY_ROW_UNALIGNED_SLICE_BIT_KHR is not supported");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - more H.264 slices are requested than MB rows "
+                     "when VK_VIDEO_ENCODE_H264_CAPABILITY_ROW_UNALIGNED_SLICE_BIT_KHR is not supported");
 
     RETURN_IF_SKIP(Init());
 
@@ -12355,7 +12492,8 @@ TEST_F(NegativeVideo, EncodeCapsH264DifferentSliceTypes) {
 
     const uint32_t slice_count = 2;
     std::vector<VkVideoEncodeH264NaluSliceInfoKHR> slices(slice_count, encode_info.CodecInfo().encode_h264.slice_info);
-    std::vector<StdVideoEncodeH264SliceHeader> slice_headers(slice_count, encode_info.CodecInfo().encode_h264.std_slice_header);
+    std::vector<StdVideoEncodeH264SliceHeader> slice_headers(slice_count,
+                                                             encode_info.CodecInfo().encode_h264.std_slice_header);
     encode_info.CodecInfo().encode_h264.picture_info.naluSliceEntryCount = slice_count;
     encode_info.CodecInfo().encode_h264.picture_info.pNaluSliceEntries = slices.data();
 
@@ -12379,12 +12517,13 @@ TEST_F(NegativeVideo, EncodeCapsH265DifferentSliceSegmentTypes) {
     RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeH265(), [](const VideoConfig& config) {
-        return (config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_DIFFERENT_SLICE_SEGMENT_TYPE_BIT_KHR) == 0 &&
+        return (config.EncodeCapsH265()->flags &
+                VK_VIDEO_ENCODE_H265_CAPABILITY_DIFFERENT_SLICE_SEGMENT_TYPE_BIT_KHR) == 0 &&
                config.EncodeCapsH265()->maxSliceSegmentCount > 1;
     }));
     if (!config) {
-        GTEST_SKIP()
-            << "Test requires H.265 encode support with multiple slice segment support but no different slice segment types";
+        GTEST_SKIP() << "Test requires H.265 encode support with multiple slice segment support but no different slice "
+                        "segment types";
     }
 
     VideoContext context(m_device, config);
@@ -12399,8 +12538,8 @@ TEST_F(NegativeVideo, EncodeCapsH265DifferentSliceSegmentTypes) {
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
     const uint32_t slice_segment_count = 2;
-    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(slice_segment_count,
-                                                                         encode_info.CodecInfo().encode_h265.slice_segment_info);
+    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(
+        slice_segment_count, encode_info.CodecInfo().encode_h265.slice_segment_info);
     std::vector<StdVideoEncodeH265SliceSegmentHeader> slice_segment_headers(
         slice_segment_count, encode_info.CodecInfo().encode_h265.std_slice_segment_header);
     encode_info.CodecInfo().encode_h265.picture_info.naluSliceSegmentEntryCount = slice_segment_count;
@@ -12429,11 +12568,13 @@ TEST_F(NegativeVideo, EncodeCapsH265MultipleTilesPerSliceSegment) {
     RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeH265(), [](const VideoConfig& config) {
-        return (config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_MULTIPLE_TILES_PER_SLICE_SEGMENT_BIT_KHR) == 0 &&
+        return (config.EncodeCapsH265()->flags &
+                VK_VIDEO_ENCODE_H265_CAPABILITY_MULTIPLE_TILES_PER_SLICE_SEGMENT_BIT_KHR) == 0 &&
                (config.EncodeCapsH265()->maxTiles.width > 1 || config.EncodeCapsH265()->maxTiles.height > 1);
     }));
     if (!config) {
-        GTEST_SKIP() << "Test requires H.265 encode support with multiple tile but no multiple tiles per slice segment support";
+        GTEST_SKIP()
+            << "Test requires H.265 encode support with multiple tile but no multiple tiles per slice segment support";
     }
 
     auto pps = config.EncodeH265PPS();
@@ -12463,12 +12604,13 @@ TEST_F(NegativeVideo, EncodeCapsH265MultipleSliceSegmentsPerTile) {
     RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeH265(), [](const VideoConfig& config) {
-        return (config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_MULTIPLE_SLICE_SEGMENTS_PER_TILE_BIT_KHR) == 0 &&
+        return (config.EncodeCapsH265()->flags &
+                VK_VIDEO_ENCODE_H265_CAPABILITY_MULTIPLE_SLICE_SEGMENTS_PER_TILE_BIT_KHR) == 0 &&
                config.EncodeCapsH265()->maxSliceSegmentCount > 1;
     }));
     if (!config) {
-        GTEST_SKIP()
-            << "Test requires H.265 encode support with multiple slice segment but no multiple slice segments per tile support";
+        GTEST_SKIP() << "Test requires H.265 encode support with multiple slice segment but no multiple slice segments "
+                        "per tile support";
     }
 
     VideoContext context(m_device, config);
@@ -12483,8 +12625,8 @@ TEST_F(NegativeVideo, EncodeCapsH265MultipleSliceSegmentsPerTile) {
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
     const uint32_t slice_segment_count = 2;
-    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(slice_segment_count,
-                                                                         encode_info.CodecInfo().encode_h265.slice_segment_info);
+    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(
+        slice_segment_count, encode_info.CodecInfo().encode_h265.slice_segment_info);
     encode_info.CodecInfo().encode_h265.picture_info.naluSliceSegmentEntryCount = slice_segment_count;
     encode_info.CodecInfo().encode_h265.picture_info.pNaluSliceSegmentEntries = slice_segments.data();
 
@@ -12530,8 +12672,8 @@ TEST_F(NegativeVideo, EncodeCapsH265MaxSliceSegmentCount) {
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
     const uint32_t slice_segment_count = max_slice_segment_count + 1;
-    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(slice_segment_count,
-                                                                         encode_info.CodecInfo().encode_h265.slice_segment_info);
+    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(
+        slice_segment_count, encode_info.CodecInfo().encode_h265.slice_segment_info);
     encode_info.CodecInfo().encode_h265.picture_info.naluSliceSegmentEntryCount = slice_segment_count;
     encode_info.CodecInfo().encode_h265.picture_info.pNaluSliceSegmentEntries = slice_segments.data();
 
@@ -12547,9 +12689,8 @@ TEST_F(NegativeVideo, EncodeCapsH265MaxSliceSegmentCount) {
 }
 
 TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBs) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - more H.265 slice segments are requested than CTBs "
-        "when VK_VIDEO_ENCODE_H265_CAPABILITY_ROW_UNALIGNED_SLICE_SEGMENT_BIT_KHR is supported");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - more H.265 slice segments are requested than CTBs "
+                     "when VK_VIDEO_ENCODE_H265_CAPABILITY_ROW_UNALIGNED_SLICE_SEGMENT_BIT_KHR is supported");
 
     RETURN_IF_SKIP(Init());
 
@@ -12581,8 +12722,8 @@ TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBs) {
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
     const uint32_t slice_segment_count = config.MaxEncodeH265CTBCount() + 1;
-    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(slice_segment_count,
-                                                                         encode_info.CodecInfo().encode_h265.slice_segment_info);
+    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(
+        slice_segment_count, encode_info.CodecInfo().encode_h265.slice_segment_info);
     encode_info.CodecInfo().encode_h265.picture_info.naluSliceSegmentEntryCount = slice_segment_count;
     encode_info.CodecInfo().encode_h265.picture_info.pNaluSliceSegmentEntries = slice_segments.data();
 
@@ -12599,9 +12740,8 @@ TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBs) {
 }
 
 TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBRows) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - more H.265 slice segments are requested than CTB rows "
-        "when VK_VIDEO_ENCODE_H265_CAPABILITY_ROW_UNALIGNED_SLICE_SEGMENT_BIT_KHR is not supported");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - more H.265 slice segments are requested than CTB rows "
+                     "when VK_VIDEO_ENCODE_H265_CAPABILITY_ROW_UNALIGNED_SLICE_SEGMENT_BIT_KHR is not supported");
 
     RETURN_IF_SKIP(Init());
 
@@ -12633,8 +12773,8 @@ TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBRows) {
     VideoEncodeInfo encode_info = context.EncodeFrame();
 
     const uint32_t slice_segment_count = config.MaxEncodeH265CTBRowCount() + 1;
-    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(slice_segment_count,
-                                                                         encode_info.CodecInfo().encode_h265.slice_segment_info);
+    std::vector<VkVideoEncodeH265NaluSliceSegmentInfoKHR> slice_segments(
+        slice_segment_count, encode_info.CodecInfo().encode_h265.slice_segment_info);
     encode_info.CodecInfo().encode_h265.picture_info.naluSliceSegmentEntryCount = slice_segment_count;
     encode_info.CodecInfo().encode_h265.picture_info.pNaluSliceSegmentEntries = slice_segments.data();
 
@@ -12651,19 +12791,21 @@ TEST_F(NegativeVideo, EncodeCapsH265MoreSliceSegmentsThanCTBRows) {
 }
 
 TEST_F(NegativeVideo, EncodeCapsH264WeightTable) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - H.264 weight table is required for explicit sample prediction if "
-        "VK_VIDEO_ENCODE_H264_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR is not supported");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - H.264 weight table is required for explicit sample prediction if "
+                     "VK_VIDEO_ENCODE_H264_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR is not supported");
 
     RETURN_IF_SKIP(Init());
 
     VideoConfig config_p = GetConfig(FilterConfigs(GetConfigsEncodeH264(), [](const VideoConfig& config) {
-        return (config.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR) == 0 &&
+        return (config.EncodeCapsH264()->flags &
+                VK_VIDEO_ENCODE_H264_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR) == 0 &&
                config.EncodeCapsH264()->maxPPictureL0ReferenceCount > 0;
     }));
     VideoConfig config_b = GetConfig(FilterConfigs(GetConfigsEncodeH264(), [](const VideoConfig& config) {
-        return (config.EncodeCapsH264()->flags & VK_VIDEO_ENCODE_H264_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR) == 0 &&
-               config.EncodeCapsH264()->maxBPictureL0ReferenceCount > 0 && config.EncodeCapsH264()->maxL1ReferenceCount > 0;
+        return (config.EncodeCapsH264()->flags &
+                VK_VIDEO_ENCODE_H264_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR) == 0 &&
+               config.EncodeCapsH264()->maxBPictureL0ReferenceCount > 0 &&
+               config.EncodeCapsH264()->maxL1ReferenceCount > 0;
     }));
     if (!config_p && !config_b) {
         GTEST_SKIP() << "Test requires an H.264 encode profile without generated weight table support";
@@ -12727,19 +12869,21 @@ TEST_F(NegativeVideo, EncodeCapsH264WeightTable) {
 }
 
 TEST_F(NegativeVideo, EncodeCapsH265WeightTable) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - H.265 weight table is required for explicit sample prediction if "
-        "VK_VIDEO_ENCODE_H265_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR is not supported");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - H.265 weight table is required for explicit sample prediction if "
+                     "VK_VIDEO_ENCODE_H265_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR is not supported");
 
     RETURN_IF_SKIP(Init());
 
     VideoConfig config_p = GetConfig(FilterConfigs(GetConfigsEncodeH265(), [](const VideoConfig& config) {
-        return (config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR) == 0 &&
+        return (config.EncodeCapsH265()->flags &
+                VK_VIDEO_ENCODE_H265_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR) == 0 &&
                config.EncodeCapsH265()->maxPPictureL0ReferenceCount > 0;
     }));
     VideoConfig config_b = GetConfig(FilterConfigs(GetConfigsEncodeH265(), [](const VideoConfig& config) {
-        return (config.EncodeCapsH265()->flags & VK_VIDEO_ENCODE_H265_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR) == 0 &&
-               config.EncodeCapsH265()->maxBPictureL0ReferenceCount > 0 && config.EncodeCapsH265()->maxL1ReferenceCount > 0;
+        return (config.EncodeCapsH265()->flags &
+                VK_VIDEO_ENCODE_H265_CAPABILITY_PREDICTION_WEIGHT_TABLE_GENERATED_BIT_KHR) == 0 &&
+               config.EncodeCapsH265()->maxBPictureL0ReferenceCount > 0 &&
+               config.EncodeCapsH265()->maxL1ReferenceCount > 0;
     }));
     if (!config_p && !config_b) {
         GTEST_SKIP() << "Test requires an H.265 encode profile without generated weight table support";
@@ -12813,7 +12957,8 @@ TEST_F(NegativeVideo, EncodeCapsH264PicType) {
         return config.EncodeCapsH264()->maxPPictureL0ReferenceCount == 0;
     }));
     VideoConfig config_no_b = GetConfig(FilterConfigs(GetConfigsEncodeH264(), [](const VideoConfig& config) {
-        return config.EncodeCapsH264()->maxBPictureL0ReferenceCount == 0 && config.EncodeCapsH264()->maxL1ReferenceCount == 0;
+        return config.EncodeCapsH264()->maxBPictureL0ReferenceCount == 0 &&
+               config.EncodeCapsH264()->maxL1ReferenceCount == 0;
     }));
     if (!config_no_p && !config_no_b) {
         GTEST_SKIP() << "Test requires an H.264 encode profile without P or B frame support";
@@ -12877,7 +13022,8 @@ TEST_F(NegativeVideo, EncodeCapsH264RefPicType) {
     }));
     VideoConfig config_no_b = GetConfig(FilterConfigs(GetConfigsEncodeH264(), [](const VideoConfig& config) {
         return config.Caps()->maxDpbSlots > 1 && config.Caps()->maxActiveReferencePictures > 0 &&
-               config.EncodeCapsH264()->maxBPictureL0ReferenceCount == 0 && config.EncodeCapsH264()->maxL1ReferenceCount == 0;
+               config.EncodeCapsH264()->maxBPictureL0ReferenceCount == 0 &&
+               config.EncodeCapsH264()->maxL1ReferenceCount == 0;
     }));
     if (!config_no_p && !config_no_b) {
         GTEST_SKIP() << "Test requires an H.264 encode profile without P or B frame support";
@@ -12942,7 +13088,8 @@ TEST_F(NegativeVideo, EncodeCapsH264RefPicType) {
 }
 
 TEST_F(NegativeVideo, EncodeCapsH264BPicInRefList) {
-    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - Cannot reference H.264 B pictures in L0/L1 without capability prerequisites");
+    TEST_DESCRIPTION(
+        "vkCmdEncodeVideoKHR - Cannot reference H.264 B pictures in L0/L1 without capability prerequisites");
 
     RETURN_IF_SKIP(Init());
 
@@ -13020,7 +13167,8 @@ TEST_F(NegativeVideo, EncodeCapsH265PicType) {
         return config.EncodeCapsH265()->maxPPictureL0ReferenceCount == 0;
     }));
     VideoConfig config_no_b = GetConfig(FilterConfigs(GetConfigsEncodeH265(), [](const VideoConfig& config) {
-        return config.EncodeCapsH265()->maxBPictureL0ReferenceCount == 0 && config.EncodeCapsH265()->maxL1ReferenceCount == 0;
+        return config.EncodeCapsH265()->maxBPictureL0ReferenceCount == 0 &&
+               config.EncodeCapsH265()->maxL1ReferenceCount == 0;
     }));
     if (!config_no_p && !config_no_b) {
         GTEST_SKIP() << "Test requires an H.265 encode profile without P or B frame support";
@@ -13084,7 +13232,8 @@ TEST_F(NegativeVideo, EncodeCapsH265RefPicType) {
     }));
     VideoConfig config_no_b = GetConfig(FilterConfigs(GetConfigsEncodeH265(), [](const VideoConfig& config) {
         return config.Caps()->maxDpbSlots > 1 && config.Caps()->maxActiveReferencePictures > 0 &&
-               config.EncodeCapsH265()->maxBPictureL0ReferenceCount == 0 && config.EncodeCapsH265()->maxL1ReferenceCount == 0;
+               config.EncodeCapsH265()->maxBPictureL0ReferenceCount == 0 &&
+               config.EncodeCapsH265()->maxL1ReferenceCount == 0;
     }));
     if (!config_no_p && !config_no_b) {
         GTEST_SKIP() << "Test requires an H.265 encode profile without P or B frame support";
@@ -13149,7 +13298,8 @@ TEST_F(NegativeVideo, EncodeCapsH265RefPicType) {
 }
 
 TEST_F(NegativeVideo, EncodeCapsH265BPicInRefList) {
-    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - Cannot reference H.265 B pictures in L0/L1 without capability prerequisites");
+    TEST_DESCRIPTION(
+        "vkCmdEncodeVideoKHR - Cannot reference H.265 B pictures in L0/L1 without capability prerequisites");
 
     RETURN_IF_SKIP(Init());
 
@@ -13223,13 +13373,14 @@ TEST_F(NegativeVideo, EncodeCapsAV1PrimaryRefCdfOnly) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(
-        GetConfigsWithReferences(FilterConfigs(GetConfigsEncodeAV1(),
-                                               [](const VideoConfig& config) {
-                                                   return (config.EncodeCapsAV1()->flags &
-                                                           VK_VIDEO_ENCODE_AV1_CAPABILITY_PRIMARY_REFERENCE_CDF_ONLY_BIT_KHR) == 0;
-                                               })),
-        2));
+    VideoConfig config = GetConfig(
+        GetConfigsWithDpbSlots(GetConfigsWithReferences(FilterConfigs(
+                                   GetConfigsEncodeAV1(),
+                                   [](const VideoConfig& config) {
+                                       return (config.EncodeCapsAV1()->flags &
+                                               VK_VIDEO_ENCODE_AV1_CAPABILITY_PRIMARY_REFERENCE_CDF_ONLY_BIT_KHR) == 0;
+                                   })),
+                               2));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support without CDF-only primary reference support";
     }
@@ -13269,7 +13420,8 @@ TEST_F(NegativeVideo, EncodeCapsAV1GenObuExtHeader) {
     RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [](const VideoConfig& config) {
-        return (config.EncodeCapsAV1()->flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_GENERATE_OBU_EXTENSION_HEADER_BIT_KHR) == 0;
+        return (config.EncodeCapsAV1()->flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_GENERATE_OBU_EXTENSION_HEADER_BIT_KHR) ==
+               0;
     }));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support without OBU extension header generation support";
@@ -13360,13 +13512,14 @@ TEST_F(NegativeVideo, EncodeCapsAV1MotionVectorScaling) {
     RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(GetConfigsWithDpbSlots(
-        GetConfigsWithReferences(FilterConfigs(
-            GetConfigsEncodeAV1(),
-            [](const VideoConfig& config) {
-                return ((config.Caps()->minCodedExtent.width < config.Caps()->maxCodedExtent.width) ||
-                        (config.Caps()->minCodedExtent.height < config.Caps()->maxCodedExtent.height)) &&
-                       (config.EncodeCapsAV1()->flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_MOTION_VECTOR_SCALING_BIT_KHR) == 0;
-            })),
+        GetConfigsWithReferences(
+            FilterConfigs(GetConfigsEncodeAV1(),
+                          [](const VideoConfig& config) {
+                              return ((config.Caps()->minCodedExtent.width < config.Caps()->maxCodedExtent.width) ||
+                                      (config.Caps()->minCodedExtent.height < config.Caps()->maxCodedExtent.height)) &&
+                                     (config.EncodeCapsAV1()->flags &
+                                      VK_VIDEO_ENCODE_AV1_CAPABILITY_MOTION_VECTOR_SCALING_BIT_KHR) == 0;
+                          })),
         2));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support with references but no motion vector scaling support";
@@ -13483,7 +13636,8 @@ TEST_F(NegativeVideo, EncodeCapsAV1MaxTiles) {
 }
 
 TEST_F(NegativeVideo, EncodeCapsAV1MinMaxTileSize) {
-    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - ceil(codedExtent / (TileCols,TileRows)) must be between minTileSize and maxTileSize");
+    TEST_DESCRIPTION(
+        "vkCmdEncodeVideoKHR - ceil(codedExtent / (TileCols,TileRows)) must be between minTileSize and maxTileSize");
 
     RETURN_IF_SKIP(Init());
 
@@ -13586,10 +13740,12 @@ TEST_F(NegativeVideo, EncodeCapsAV1MinMaxTileSize) {
         config.UpdateMaxCodedExtent(coded_extent);
 
         // Use less tile columns than what would be the minimum to have a tile width <= maxTileSize.width
-        tile_info.TileCols = static_cast<uint8_t>(
-            (coded_extent.width + config.EncodeCapsAV1()->maxTileSize.width - 1) / config.EncodeCapsAV1()->maxTileSize.width - 1);
-        tile_info.TileRows = static_cast<uint8_t>((coded_extent.height + config.EncodeCapsAV1()->maxTileSize.height - 1) /
-                                                  config.EncodeCapsAV1()->maxTileSize.height);
+        tile_info.TileCols = static_cast<uint8_t>((coded_extent.width + config.EncodeCapsAV1()->maxTileSize.width - 1) /
+                                                      config.EncodeCapsAV1()->maxTileSize.width -
+                                                  1);
+        tile_info.TileRows =
+            static_cast<uint8_t>((coded_extent.height + config.EncodeCapsAV1()->maxTileSize.height - 1) /
+                                 config.EncodeCapsAV1()->maxTileSize.height);
 
         // We can only test this if the determined TileCols is not zero
         if (tile_info.TileCols > 0) {
@@ -13616,9 +13772,10 @@ TEST_F(NegativeVideo, EncodeCapsAV1MinMaxTileSize) {
         // Use less tile rows than what would be the minimum to have a tile height <= maxTileSize.height
         tile_info.TileCols = static_cast<uint8_t>((coded_extent.width + config.EncodeCapsAV1()->maxTileSize.width - 1) /
                                                   config.EncodeCapsAV1()->maxTileSize.width);
-        tile_info.TileRows = static_cast<uint8_t>((coded_extent.height + config.EncodeCapsAV1()->maxTileSize.height - 1) /
-                                                      config.EncodeCapsAV1()->maxTileSize.height -
-                                                  1);
+        tile_info.TileRows =
+            static_cast<uint8_t>((coded_extent.height + config.EncodeCapsAV1()->maxTileSize.height - 1) /
+                                     config.EncodeCapsAV1()->maxTileSize.height -
+                                 1);
 
         // We can only test this if the determined TileRows is not zero
         if (tile_info.TileRows > 0) {
@@ -14015,7 +14172,8 @@ TEST_F(NegativeVideo, EncodeInvalidCodecInfoAV1) {
     {
         auto encode_info = context.EncodeFrame(1).AddReferenceFrame(0);
 
-        encode_info.CodecInfo().encode_av1.picture_info.predictionMode = VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_INTRA_ONLY_KHR;
+        encode_info.CodecInfo().encode_av1.picture_info.predictionMode =
+            VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_INTRA_ONLY_KHR;
         encode_info.CodecInfo().encode_av1.std_picture_info.frame_type = STD_VIDEO_AV1_FRAME_TYPE_INTER;
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-predictionMode-10326");
@@ -14133,19 +14291,19 @@ TEST_F(NegativeVideo, EncodeInvalidCodecInfoAV1) {
 }
 
 TEST_F(NegativeVideo, EncodeInvalidCodecInfoAV1PrimaryRefCdfOnly) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - invalid/missing AV1 codec-specific information "
-        "when primary reference is used only as CDF reference");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - invalid/missing AV1 codec-specific information "
+                     "when primary reference is used only as CDF reference");
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(
-        GetConfigsWithReferences(FilterConfigs(GetConfigsEncodeAV1(),
-                                               [](const VideoConfig& config) {
-                                                   return (config.EncodeCapsAV1()->flags &
-                                                           VK_VIDEO_ENCODE_AV1_CAPABILITY_PRIMARY_REFERENCE_CDF_ONLY_BIT_KHR) != 0;
-                                               })),
-        2));
+    VideoConfig config = GetConfig(
+        GetConfigsWithDpbSlots(GetConfigsWithReferences(FilterConfigs(
+                                   GetConfigsEncodeAV1(),
+                                   [](const VideoConfig& config) {
+                                       return (config.EncodeCapsAV1()->flags &
+                                               VK_VIDEO_ENCODE_AV1_CAPABILITY_PRIMARY_REFERENCE_CDF_ONLY_BIT_KHR) != 0;
+                                   })),
+                               2));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support with reference pictures, 2 DPB slots, "
                         "and CDF-only primary reference support";
@@ -14167,7 +14325,8 @@ TEST_F(NegativeVideo, EncodeInvalidCodecInfoAV1PrimaryRefCdfOnly) {
     {
         VideoEncodeInfo encode_info = context.EncodeFrame(0).AddReferenceFrame(1);
         encode_info.CodecInfo().encode_av1.picture_info.primaryReferenceCdfOnly = VK_TRUE;
-        encode_info.CodecInfo().encode_av1.std_picture_info.primary_ref_frame = VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR;
+        encode_info.CodecInfo().encode_av1.std_picture_info.primary_ref_frame =
+            VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR;
 
         m_errorMonitor->SetDesiredError("VUID-VkVideoEncodeAV1PictureInfoKHR-primaryReferenceCdfOnly-10290");
         cb.EncodeVideo(encode_info);
@@ -14191,8 +14350,8 @@ TEST_F(NegativeVideo, EncodeInvalidCodecInfoAV1PrimaryRefCdfOnly) {
 }
 
 TEST_F(NegativeVideo, EncodeAV1InvalidPrimaryRefFrameDpbSlotIndex) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - AV1 primary_ref_frame specifies a valid reference name with no associated DPB slot index");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - AV1 primary_ref_frame specifies a valid reference name with no associated "
+                     "DPB slot index");
 
     RETURN_IF_SKIP(Init());
 
@@ -14232,14 +14391,14 @@ TEST_F(NegativeVideo, EncodeAV1InvalidPrimaryRefFrameDpbSlotIndex) {
 }
 
 TEST_F(NegativeVideo, EncodeInvalidCodecInfoAV1GenObuExtHeader) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - invalid/missing AV1 codec-specific information "
-        "when OBU extension header generation is requested");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - invalid/missing AV1 codec-specific information "
+                     "when OBU extension header generation is requested");
 
     RETURN_IF_SKIP(Init());
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [](const VideoConfig& config) {
-        return (config.EncodeCapsAV1()->flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_GENERATE_OBU_EXTENSION_HEADER_BIT_KHR) != 0;
+        return (config.EncodeCapsAV1()->flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_GENERATE_OBU_EXTENSION_HEADER_BIT_KHR) !=
+               0;
     }));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support with OBU extension header generation support";
@@ -14275,7 +14434,8 @@ TEST_F(NegativeVideo, EncodeAV1SingleReferenceNotSupported) {
     const uint32_t min_ref_count = 1;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxSingleReferenceCount == 0;
     }));
     if (!config) {
@@ -14295,7 +14455,8 @@ TEST_F(NegativeVideo, EncodeAV1SingleReferenceNotSupported) {
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(1, 1));
 
     VideoEncodeInfo encode_info = context.EncodeFrame(0).AddReferenceFrame(1);
-    encode_info.CodecInfo().encode_av1.picture_info.predictionMode = VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_SINGLE_REFERENCE_KHR;
+    encode_info.CodecInfo().encode_av1.picture_info.predictionMode =
+        VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_SINGLE_REFERENCE_KHR;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-maxSingleReferenceCount-10328");
     cb.EncodeVideo(encode_info);
@@ -14317,7 +14478,8 @@ TEST_F(NegativeVideo, EncodeAV1InvalidSingleReference) {
     const uint32_t ref_name_mask = 0x7F;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxSingleReferenceCount > 0 &&
                (config.EncodeCapsAV1()->singleReferenceNameMask & ref_name_mask) != ref_name_mask;
     }));
@@ -14338,7 +14500,8 @@ TEST_F(NegativeVideo, EncodeAV1InvalidSingleReference) {
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(1, 1));
 
     VideoEncodeInfo encode_info = context.EncodeFrame(0).AddReferenceFrame(1);
-    encode_info.CodecInfo().encode_av1.picture_info.predictionMode = VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_SINGLE_REFERENCE_KHR;
+    encode_info.CodecInfo().encode_av1.picture_info.predictionMode =
+        VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_SINGLE_REFERENCE_KHR;
 
     // Clear all supported reference name indices, leaving only the unsupported ones on
     for (uint32_t i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
@@ -14368,7 +14531,8 @@ TEST_F(NegativeVideo, EncodeAV1InvalidSingleReferenceCdfOnly) {
     const uint32_t min_ref_count = 1;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxSingleReferenceCount > 0 &&
                (config.EncodeCapsAV1()->flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_PRIMARY_REFERENCE_CDF_ONLY_BIT_KHR) != 0;
     }));
@@ -14390,7 +14554,8 @@ TEST_F(NegativeVideo, EncodeAV1InvalidSingleReferenceCdfOnly) {
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(1, 1));
 
     VideoEncodeInfo encode_info = context.EncodeFrame(0).AddReferenceFrame(1);
-    encode_info.CodecInfo().encode_av1.picture_info.predictionMode = VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_SINGLE_REFERENCE_KHR;
+    encode_info.CodecInfo().encode_av1.picture_info.predictionMode =
+        VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_SINGLE_REFERENCE_KHR;
 
     // Clear all supported reference name indices, leaving only the unsupported ones on
     uint8_t supported_ref_idx = 0;
@@ -14430,7 +14595,8 @@ TEST_F(NegativeVideo, EncodeAV1UnidirectionalCompoundNotSupported) {
     const uint32_t ref_name_mask = 0x5F;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxUnidirectionalCompoundReferenceCount == 0 &&
                (config.EncodeCapsAV1()->unidirectionalCompoundReferenceNameMask & ref_name_mask) != ref_name_mask;
     }));
@@ -14472,7 +14638,8 @@ TEST_F(NegativeVideo, EncodeAV1InvalidUnidirectionalCompound) {
     const uint32_t min_ref_count = 1;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxUnidirectionalCompoundReferenceCount > 0;
     }));
     if (!config) {
@@ -14502,10 +14669,10 @@ TEST_F(NegativeVideo, EncodeAV1InvalidUnidirectionalCompound) {
     //   (4,6) - BWDREF_FRAME + ALTREF_FRAME
     // Test with cases that fail these conditions in some way
     std::vector<uint32_t> clear_masks = {
-        0x11,  // No LAST_FRAME or BWDREF_FRAME
-        0x41,  // No LAST_FRAME or ALTREF_FRAME
-        0x1E,  // No LAST2_FRAME, LAST3_FRAME, GOLDEN_FRAME, or BWDREF_FRAME
-        0x4E,  // No LAST2_FRAME, LAST3_FRAME, GOLDEN_FRAME, or ALTREF_FRAME
+        0x11, // No LAST_FRAME or BWDREF_FRAME
+        0x41, // No LAST_FRAME or ALTREF_FRAME
+        0x1E, // No LAST2_FRAME, LAST3_FRAME, GOLDEN_FRAME, or BWDREF_FRAME
+        0x4E, // No LAST2_FRAME, LAST3_FRAME, GOLDEN_FRAME, or ALTREF_FRAME
     };
     for (auto clear_mask : clear_masks) {
         for (uint32_t i = 0; i < VK_MAX_VIDEO_AV1_REFERENCES_PER_FRAME_KHR; ++i) {
@@ -14537,7 +14704,8 @@ TEST_F(NegativeVideo, EncodeAV1InvalidUnidirectionalCompoundCdfOnly) {
     const uint32_t min_ref_count = 1;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxUnidirectionalCompoundReferenceCount > 0 &&
                (config.EncodeCapsAV1()->flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_PRIMARY_REFERENCE_CDF_ONLY_BIT_KHR) != 0;
     }));
@@ -14565,9 +14733,9 @@ TEST_F(NegativeVideo, EncodeAV1InvalidUnidirectionalCompoundCdfOnly) {
     //   (4,6) - BWDREF_FRAME + ALTREF_FRAME
 
     const uint8_t last_frame_idx = STD_VIDEO_AV1_REFERENCE_NAME_LAST_FRAME - 1;
-    const std::array<uint8_t, 3> last_frame_pair_indices = {STD_VIDEO_AV1_REFERENCE_NAME_LAST2_FRAME - 1,
-                                                            STD_VIDEO_AV1_REFERENCE_NAME_LAST3_FRAME - 1,
-                                                            STD_VIDEO_AV1_REFERENCE_NAME_GOLDEN_FRAME - 1};
+    const std::array<uint8_t, 3> last_frame_pair_indices = { STD_VIDEO_AV1_REFERENCE_NAME_LAST2_FRAME - 1,
+                                                             STD_VIDEO_AV1_REFERENCE_NAME_LAST3_FRAME - 1,
+                                                             STD_VIDEO_AV1_REFERENCE_NAME_GOLDEN_FRAME - 1 };
     const uint8_t bwdref_frame_idx = STD_VIDEO_AV1_REFERENCE_NAME_BWDREF_FRAME - 1;
     const uint8_t altref_frame_idx = STD_VIDEO_AV1_REFERENCE_NAME_ALTREF_FRAME - 1;
 
@@ -14658,7 +14826,8 @@ TEST_F(NegativeVideo, EncodeAV1BidirectionalCompoundNotSupported) {
     const uint32_t min_ref_count = 1;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxBidirectionalCompoundReferenceCount == 0;
     }));
     if (!config) {
@@ -14678,7 +14847,8 @@ TEST_F(NegativeVideo, EncodeAV1BidirectionalCompoundNotSupported) {
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(1, 1));
 
     VideoEncodeInfo encode_info = context.EncodeFrame(0).AddReferenceFrame(1);
-    encode_info.CodecInfo().encode_av1.picture_info.predictionMode = VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_BIDIRECTIONAL_COMPOUND_KHR;
+    encode_info.CodecInfo().encode_av1.picture_info.predictionMode =
+        VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_BIDIRECTIONAL_COMPOUND_KHR;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-maxBidirectionalCompoundReferenceCount-10332");
     cb.EncodeVideo(encode_info);
@@ -14701,7 +14871,8 @@ TEST_F(NegativeVideo, EncodeAV1InvalidBidirectionalCompound) {
     const uint32_t ref_name_mask = 0x7F;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxBidirectionalCompoundReferenceCount > 0 &&
                (config.EncodeCapsAV1()->bidirectionalCompoundReferenceNameMask & ref_name_mask) != ref_name_mask;
     }));
@@ -14778,7 +14949,8 @@ TEST_F(NegativeVideo, EncodeAV1InvalidBidirectionalCompoundCdfOnly) {
     const uint32_t min_ref_count = 1;
 
     VideoConfig config = GetConfig(FilterConfigs(GetConfigsEncodeAV1(), [&](const VideoConfig& config) {
-        return config.Caps()->maxDpbSlots > min_ref_count && config.Caps()->maxActiveReferencePictures >= min_ref_count &&
+        return config.Caps()->maxDpbSlots > min_ref_count &&
+               config.Caps()->maxActiveReferencePictures >= min_ref_count &&
                config.EncodeCapsAV1()->maxBidirectionalCompoundReferenceCount > 0 &&
                (config.EncodeCapsAV1()->flags & VK_VIDEO_ENCODE_AV1_CAPABILITY_PRIMARY_REFERENCE_CDF_ONLY_BIT_KHR) != 0;
     }));
@@ -14858,8 +15030,8 @@ TEST_F(NegativeVideo, EncodeAV1InvalidBidirectionalCompoundCdfOnly) {
 }
 
 TEST_F(NegativeVideo, EncodeAV1ObuExtHeaderPictureSetupMismatch) {
-    TEST_DESCRIPTION(
-        "vkCmdEncodeVideoKHR - AV1 OBU extension header must be specified for both or neither of picture and setup info");
+    TEST_DESCRIPTION("vkCmdEncodeVideoKHR - AV1 OBU extension header must be specified for both or neither of picture "
+                     "and setup info");
 
     RETURN_IF_SKIP(Init());
 
@@ -14978,8 +15150,10 @@ TEST_F(NegativeVideo, EncodeAV1PictureSetupTemporalIdMismatch) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(FilterConfigs(
-        GetConfigsEncodeAV1(), [](const VideoConfig& config) { return config.EncodeCapsAV1()->maxTemporalLayerCount > 1; }))));
+    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(
+        GetConfigsWithReferences(FilterConfigs(GetConfigsEncodeAV1(), [](const VideoConfig& config) {
+            return config.EncodeCapsAV1()->maxTemporalLayerCount > 1;
+        }))));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support with DPB slots and multiple temporal layers";
     }
@@ -15085,8 +15259,10 @@ TEST_F(NegativeVideo, EncodeAV1PictureSetupSpatialIdMismatch) {
 
     RETURN_IF_SKIP(Init());
 
-    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(FilterConfigs(
-        GetConfigsEncodeAV1(), [](const VideoConfig& config) { return config.EncodeCapsAV1()->maxSpatialLayerCount > 1; }))));
+    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(
+        GetConfigsWithReferences(FilterConfigs(GetConfigsEncodeAV1(), [](const VideoConfig& config) {
+            return config.EncodeCapsAV1()->maxSpatialLayerCount > 1;
+        }))));
     if (!config) {
         GTEST_SKIP() << "Test requires AV1 encode support with DPB slots and multiple spatial layers";
     }
@@ -15145,7 +15321,7 @@ TEST_F(NegativeVideo, CreateBufferInvalidProfileList) {
         vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
         m_errorMonitor->VerifyFound();
 
-        VkVideoProfileInfoKHR profiles[] = {*decode_config.Profile(), *decode_config.Profile()};
+        VkVideoProfileInfoKHR profiles[] = { *decode_config.Profile(), *decode_config.Profile() };
         video_profiles.profileCount = 2;
         video_profiles.pProfiles = profiles;
         buffer_ci.pNext = &video_profiles;
@@ -15261,7 +15437,7 @@ TEST_F(NegativeVideo, CreateBufferProfileIndependent) {
         vk::DestroyBuffer(device(), buffer, nullptr);
 
         // An invalid profile list, however, should still cause a validation failure
-        VkVideoProfileInfoKHR profiles[] = {*decode_config.Profile(), *decode_config.Profile()};
+        VkVideoProfileInfoKHR profiles[] = { *decode_config.Profile(), *decode_config.Profile() };
         video_profiles.profileCount = 2;
         video_profiles.pProfiles = profiles;
         buffer_ci.pNext = &video_profiles;
@@ -15301,14 +15477,15 @@ TEST_F(NegativeVideo, CreateImageInvalidProfileList) {
         GTEST_SKIP() << "Test requires video decode or encode support";
     }
 
-    for (auto config : {decode_config, encode_config}) {
-        if (!config) continue;
+    for (auto config : { decode_config, encode_config }) {
+        if (!config)
+            continue;
 
         VkImage image = VK_NULL_HANDLE;
         VkImageCreateInfo image_ci = vku::InitStructHelper();
         image_ci.imageType = config.PictureFormatProps()->imageType;
         image_ci.format = config.PictureFormatProps()->format;
-        image_ci.extent = {config.MaxCodedExtent().width, config.MaxCodedExtent().height, 1};
+        image_ci.extent = { config.MaxCodedExtent().width, config.MaxCodedExtent().height, 1 };
         image_ci.mipLevels = 1;
         image_ci.arrayLayers = 1;
         image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -15327,7 +15504,7 @@ TEST_F(NegativeVideo, CreateImageInvalidProfileList) {
 
         if (config.IsDecode()) {
             VkVideoProfileListInfoKHR video_profiles = vku::InitStructHelper();
-            VkVideoProfileInfoKHR profiles[] = {*config.Profile(), *config.Profile()};
+            VkVideoProfileInfoKHR profiles[] = { *config.Profile(), *config.Profile() };
             video_profiles.profileCount = 2;
             video_profiles.pProfiles = profiles;
             image_ci.pNext = &video_profiles;
@@ -15355,7 +15532,7 @@ TEST_F(NegativeVideo, CreateImageVideoEncodeAV1NotEnabled) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = config.PictureFormatProps()->imageType;
     image_ci.format = config.PictureFormatProps()->format;
-    image_ci.extent = {config.MaxCodedExtent().width, config.MaxCodedExtent().height, 1};
+    image_ci.extent = { config.MaxCodedExtent().width, config.MaxCodedExtent().height, 1 };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -15388,7 +15565,7 @@ TEST_F(NegativeVideo, CreateImageProfileIndependentNotSupported) {
     image_ci.flags = VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
     image_ci.imageType = config.PictureFormatProps()->imageType;
     image_ci.format = config.PictureFormatProps()->format;
-    image_ci.extent = {config.MaxCodedExtent().width, config.MaxCodedExtent().height, 1};
+    image_ci.extent = { config.MaxCodedExtent().width, config.MaxCodedExtent().height, 1 };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -15422,15 +15599,16 @@ TEST_F(NegativeVideo, CreateImageProfileIndependent) {
         GTEST_SKIP() << "Test requires video decode or encode support";
     }
 
-    for (auto config : {decode_config, encode_config}) {
-        if (!config) continue;
+    for (auto config : { decode_config, encode_config }) {
+        if (!config)
+            continue;
 
         VkImage image = VK_NULL_HANDLE;
         VkImageCreateInfo image_ci = vku::InitStructHelper();
         image_ci.flags = VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
         image_ci.imageType = config.PictureFormatProps()->imageType;
         image_ci.format = config.PictureFormatProps()->format;
-        image_ci.extent = {config.MaxCodedExtent().width, config.MaxCodedExtent().height, 1};
+        image_ci.extent = { config.MaxCodedExtent().width, config.MaxCodedExtent().height, 1 };
         image_ci.mipLevels = 1;
         image_ci.arrayLayers = 1;
         image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -15452,7 +15630,7 @@ TEST_F(NegativeVideo, CreateImageProfileIndependent) {
 
             // Profile list is still validated though
             VkVideoProfileListInfoKHR video_profiles = vku::InitStructHelper();
-            VkVideoProfileInfoKHR profiles[] = {*config.Profile(), *config.Profile()};
+            VkVideoProfileInfoKHR profiles[] = { *config.Profile(), *config.Profile() };
             video_profiles.profileCount = 2;
             video_profiles.pProfiles = profiles;
             image_ci.pNext = &video_profiles;
@@ -15496,7 +15674,7 @@ TEST_F(NegativeVideo, CreateImageIncompatibleProfile) {
     image_ci.pNext = &profile_list;
     image_ci.imageType = format_props->imageType;
     image_ci.format = format_props->format;
-    image_ci.extent = {1024, 1024, 1};
+    image_ci.extent = { 1024, 1024, 1 };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 6;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -15515,7 +15693,8 @@ TEST_F(NegativeVideo, CreateImageIncompatibleProfile) {
 }
 
 TEST_F(NegativeVideo, CreateImageVideoEncodeQuantizationMapNotEnabled) {
-    TEST_DESCRIPTION("vkCreateImage - quantization map usage is specified but videoEncodeQuantizationMap was not enabled");
+    TEST_DESCRIPTION(
+        "vkCreateImage - quantization map usage is specified but videoEncodeQuantizationMap was not enabled");
 
     AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
     ForceDisableFeature(vkt::Feature::videoEncodeQuantizationMap);
@@ -15523,17 +15702,19 @@ TEST_F(NegativeVideo, CreateImageVideoEncodeQuantizationMapNotEnabled) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
-    std::vector<std::tuple<VideoConfig, VkImageUsageFlagBits, const VkVideoFormatPropertiesKHR*>> quantization_map_usages;
+    std::vector<std::tuple<VideoConfig, VkImageUsageFlagBits, const VkVideoFormatPropertiesKHR*>>
+        quantization_map_usages;
     if (delta_config) {
-        quantization_map_usages.emplace_back(delta_config, VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+        quantization_map_usages.emplace_back(delta_config,
+                                             VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
                                              delta_config.QuantDeltaMapProps());
     }
     if (emphasis_config) {
-        quantization_map_usages.emplace_back(emphasis_config, VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                             emphasis_config.EmphasisMapProps());
+        quantization_map_usages.emplace_back(
+            emphasis_config, VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR, emphasis_config.EmphasisMapProps());
     }
 
     for (const auto& [config, usage, props] : quantization_map_usages) {
@@ -15597,7 +15778,7 @@ TEST_F(NegativeVideo, CreateImageQuantDeltaMapUnsupportedProfile) {
     image_ci.pNext = &profile_list;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = format_props->format;
-    image_ci.extent = {1, 1, 1};
+    image_ci.extent = { 1, 1, 1 };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -15642,7 +15823,7 @@ TEST_F(NegativeVideo, CreateImageEmphasisMapUnsupportedProfile) {
     image_ci.pNext = &profile_list;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = format_props->format;
-    image_ci.extent = {1, 1, 1};
+    image_ci.extent = { 1, 1, 1 };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -15670,17 +15851,19 @@ TEST_F(NegativeVideo, CreateImageQuantMapProfileIndependent) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
-    std::vector<std::tuple<VideoConfig, VkImageUsageFlagBits, const VkVideoFormatPropertiesKHR*>> quantization_map_usages;
+    std::vector<std::tuple<VideoConfig, VkImageUsageFlagBits, const VkVideoFormatPropertiesKHR*>>
+        quantization_map_usages;
     if (delta_config) {
-        quantization_map_usages.emplace_back(delta_config, VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+        quantization_map_usages.emplace_back(delta_config,
+                                             VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
                                              delta_config.QuantDeltaMapProps());
     }
     if (emphasis_config) {
-        quantization_map_usages.emplace_back(emphasis_config, VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                             emphasis_config.EmphasisMapProps());
+        quantization_map_usages.emplace_back(
+            emphasis_config, VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR, emphasis_config.EmphasisMapProps());
     }
 
     for (const auto& [config, usage, props] : quantization_map_usages) {
@@ -15726,24 +15909,26 @@ TEST_F(NegativeVideo, CreateImageQuantMapInvalidParameters) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
     VideoConfig decode_config = GetConfigDecode();
 
-    std::vector<std::tuple<VideoConfig, VkImageUsageFlagBits, const VkVideoFormatPropertiesKHR*>> quantization_map_usages;
+    std::vector<std::tuple<VideoConfig, VkImageUsageFlagBits, const VkVideoFormatPropertiesKHR*>>
+        quantization_map_usages;
     if (delta_config) {
-        quantization_map_usages.emplace_back(delta_config, VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+        quantization_map_usages.emplace_back(delta_config,
+                                             VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
                                              delta_config.QuantDeltaMapProps());
     }
     if (emphasis_config) {
-        quantization_map_usages.emplace_back(emphasis_config, VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                             emphasis_config.EmphasisMapProps());
+        quantization_map_usages.emplace_back(
+            emphasis_config, VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR, emphasis_config.EmphasisMapProps());
     }
 
     for (const auto& [config, usage, props] : quantization_map_usages) {
         VkVideoProfileListInfoKHR profile_list = vku::InitStructHelper();
-        VkVideoProfileInfoKHR profiles[] = {*config.Profile(), *config.Profile()};
+        VkVideoProfileInfoKHR profiles[] = { *config.Profile(), *config.Profile() };
         profile_list.profileCount = 1;
         profile_list.pProfiles = profiles;
 
@@ -15752,7 +15937,7 @@ TEST_F(NegativeVideo, CreateImageQuantMapInvalidParameters) {
         image_ci.flags = 0;
         image_ci.imageType = VK_IMAGE_TYPE_2D;
         image_ci.format = props->format;
-        image_ci.extent = {1, 1, 1};
+        image_ci.extent = { 1, 1, 1 };
         image_ci.mipLevels = 1;
         image_ci.arrayLayers = 1;
         image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -15836,17 +16021,19 @@ TEST_F(NegativeVideo, CreateImageViewQuantMapInvalidViewType) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
-    std::vector<std::tuple<VideoConfig, VkImageUsageFlagBits, const VkVideoFormatPropertiesKHR*>> quantization_map_usages;
+    std::vector<std::tuple<VideoConfig, VkImageUsageFlagBits, const VkVideoFormatPropertiesKHR*>>
+        quantization_map_usages;
     if (delta_config) {
-        quantization_map_usages.emplace_back(delta_config, VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+        quantization_map_usages.emplace_back(delta_config,
+                                             VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
                                              delta_config.QuantDeltaMapProps());
     }
     if (emphasis_config) {
-        quantization_map_usages.emplace_back(emphasis_config, VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                             emphasis_config.EmphasisMapProps());
+        quantization_map_usages.emplace_back(
+            emphasis_config, VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR, emphasis_config.EmphasisMapProps());
     }
 
     for (const auto& [config, usage, props] : quantization_map_usages) {
@@ -15858,7 +16045,7 @@ TEST_F(NegativeVideo, CreateImageViewQuantMapInvalidViewType) {
         image_ci.pNext = &profile_list;
         image_ci.imageType = props->imageType;
         image_ci.format = props->format;
-        image_ci.extent = {1, 1, 1};
+        image_ci.extent = { 1, 1, 1 };
         image_ci.mipLevels = 1;
         image_ci.arrayLayers = 1;
         image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -15897,18 +16084,22 @@ TEST_F(NegativeVideo, CreateImageViewQuantMapUnsupportedFormatFeatures) {
 
     VideoConfig delta_config = GetConfigWithQuantDeltaMap(GetConfigsEncode());
     VideoConfig emphasis_config = GetConfigWithEmphasisMap(GetConfigsEncode());
-    ASSERT_TRUE(delta_config || emphasis_config)
-        << "Support for videoEncodeQuantizationMap implies at least one encode profile should support some quantization map type";
+    ASSERT_TRUE(delta_config || emphasis_config) << "Support for videoEncodeQuantizationMap implies at least one "
+                                                    "encode profile should support some quantization map type";
 
     std::vector<std::tuple<VideoConfig, VkImageUsageFlagBits, const VkVideoFormatPropertiesKHR*, const char*>>
         quantization_map_usages;
     if (delta_config) {
-        quantization_map_usages.emplace_back(delta_config, VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                             delta_config.QuantDeltaMapProps(), "VUID-VkImageViewCreateInfo-usage-10259");
+        quantization_map_usages.emplace_back(delta_config,
+                                             VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                             delta_config.QuantDeltaMapProps(),
+                                             "VUID-VkImageViewCreateInfo-usage-10259");
     }
     if (emphasis_config) {
-        quantization_map_usages.emplace_back(emphasis_config, VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                             emphasis_config.EmphasisMapProps(), "VUID-VkImageViewCreateInfo-usage-10260");
+        quantization_map_usages.emplace_back(emphasis_config,
+                                             VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                                             emphasis_config.EmphasisMapProps(),
+                                             "VUID-VkImageViewCreateInfo-usage-10260");
     }
 
     for (auto& [config, usage, props, vuid] : quantization_map_usages) {
@@ -15921,7 +16112,7 @@ TEST_F(NegativeVideo, CreateImageViewQuantMapUnsupportedFormatFeatures) {
         image_ci.flags = 0;
         image_ci.imageType = props->imageType;
         image_ci.format = props->format;
-        image_ci.extent = {1, 1, 1};
+        image_ci.extent = { 1, 1, 1 };
         image_ci.mipLevels = 1;
         image_ci.arrayLayers = 1;
         image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -15966,8 +16157,9 @@ TEST_F(NegativeVideo, CreateImageViewInvalidViewType) {
         GTEST_SKIP() << "Test requires a video profile with reference picture support";
     }
 
-    for (auto config : {decode_config, encode_config}) {
-        if (!config) continue;
+    for (auto config : { decode_config, encode_config }) {
+        if (!config)
+            continue;
 
         config.SessionCreateInfo()->maxDpbSlots = 1;
         config.SessionCreateInfo()->maxActiveReferencePictures = 1;
@@ -15981,7 +16173,7 @@ TEST_F(NegativeVideo, CreateImageViewInvalidViewType) {
         image_ci.pNext = &profile_list;
         image_ci.imageType = format_props->imageType;
         image_ci.format = format_props->format;
-        image_ci.extent = {1024, 1024, 1};
+        image_ci.extent = { 1024, 1024, 1 };
         image_ci.mipLevels = 1;
         image_ci.arrayLayers = 6;
         image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -16014,7 +16206,8 @@ TEST_F(NegativeVideo, CreateImageViewInvalidViewType) {
 }
 
 TEST_F(NegativeVideo, CreateImageViewProfileIndependent) {
-    TEST_DESCRIPTION("vkCreateImageView - video usage not supported in view created from video profile independent image");
+    TEST_DESCRIPTION(
+        "vkCreateImageView - video usage not supported in view created from video profile independent image");
 
     AddRequiredExtensions(VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::videoMaintenance1);
@@ -16033,12 +16226,12 @@ TEST_F(NegativeVideo, CreateImageViewProfileIndependent) {
     };
 
     std::vector<TestCase> test_cases = {
-        {decode_config, VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08333"},
-        {decode_config, VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08334"},
-        {decode_config, VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08335"},
-        {encode_config, VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08336"},
-        {encode_config, VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08337"},
-        {encode_config, VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08338"},
+        { decode_config, VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08333" },
+        { decode_config, VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08334" },
+        { decode_config, VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08335" },
+        { encode_config, VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08336" },
+        { encode_config, VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08337" },
+        { encode_config, VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR, "VUID-VkImageViewCreateInfo-image-08338" },
     };
 
     // We choose a format that is not expected to support video usage
@@ -16061,7 +16254,7 @@ TEST_F(NegativeVideo, CreateImageViewProfileIndependent) {
         image_ci.flags = VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
         image_ci.imageType = VK_IMAGE_TYPE_2D;
         image_ci.format = format;
-        image_ci.extent = {1024, 1024, 1};
+        image_ci.extent = { 1024, 1024, 1 };
         image_ci.mipLevels = 1;
         image_ci.arrayLayers = 1;
         image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -16365,7 +16558,8 @@ TEST_F(NegativeVideo, BeginQueryVideoCodingScopeIncompatibleQueryType) {
 }
 
 TEST_F(NegativeVideo, BeginQueryInlineQueries) {
-    TEST_DESCRIPTION("vkCmdBeginQuery - bound video session was created with VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR");
+    TEST_DESCRIPTION(
+        "vkCmdBeginQuery - bound video session was created with VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR");
 
     AddRequiredExtensions(VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::videoMaintenance1);
@@ -16424,46 +16618,78 @@ TEST_F(NegativeVideo, GetQueryPoolResultsVideoQueryDataSize) {
         // Test 32-bit no availability/status
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint32_t) * (total_feedback_count - 1), results.data(),
-                                sizeof(uint32_t) * (total_feedback_count - 1), 0);
+        vk::GetQueryPoolResults(device(),
+                                query_pool,
+                                0,
+                                query_count,
+                                sizeof(uint32_t) * (total_feedback_count - 1),
+                                results.data(),
+                                sizeof(uint32_t) * (total_feedback_count - 1),
+                                0);
         m_errorMonitor->VerifyFound();
 
         // Test 32-bit with availability
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint32_t) * (total_feedback_count + query_count - 1),
-                                results.data(), sizeof(uint32_t) * (total_feedback_count + query_count - 1),
+        vk::GetQueryPoolResults(device(),
+                                query_pool,
+                                0,
+                                query_count,
+                                sizeof(uint32_t) * (total_feedback_count + query_count - 1),
+                                results.data(),
+                                sizeof(uint32_t) * (total_feedback_count + query_count - 1),
                                 VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
         m_errorMonitor->VerifyFound();
 
         // Test 32-bit with status
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint32_t) * (total_feedback_count + query_count - 1),
-                                results.data(), sizeof(uint32_t) * (total_feedback_count + query_count - 1),
+        vk::GetQueryPoolResults(device(),
+                                query_pool,
+                                0,
+                                query_count,
+                                sizeof(uint32_t) * (total_feedback_count + query_count - 1),
+                                results.data(),
+                                sizeof(uint32_t) * (total_feedback_count + query_count - 1),
                                 VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
         m_errorMonitor->VerifyFound();
 
         // Test 64-bit no availability/status
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint64_t) * (total_feedback_count - 1), results.data(),
-                                sizeof(uint64_t) * (total_feedback_count - 1), VK_QUERY_RESULT_64_BIT);
+        vk::GetQueryPoolResults(device(),
+                                query_pool,
+                                0,
+                                query_count,
+                                sizeof(uint64_t) * (total_feedback_count - 1),
+                                results.data(),
+                                sizeof(uint64_t) * (total_feedback_count - 1),
+                                VK_QUERY_RESULT_64_BIT);
         m_errorMonitor->VerifyFound();
 
         // Test 64-bit with availability
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint64_t) * (total_feedback_count + query_count - 1),
-                                results.data(), sizeof(uint64_t) * (total_feedback_count + query_count - 1),
+        vk::GetQueryPoolResults(device(),
+                                query_pool,
+                                0,
+                                query_count,
+                                sizeof(uint64_t) * (total_feedback_count + query_count - 1),
+                                results.data(),
+                                sizeof(uint64_t) * (total_feedback_count + query_count - 1),
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
         m_errorMonitor->VerifyFound();
 
         // Test 64-bit with status
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkGetQueryPoolResults-None-09401");
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool, 0, query_count, sizeof(uint64_t) * (total_feedback_count + query_count - 1),
-                                results.data(), sizeof(uint64_t) * (total_feedback_count + query_count - 1),
+        vk::GetQueryPoolResults(device(),
+                                query_pool,
+                                0,
+                                query_count,
+                                sizeof(uint64_t) * (total_feedback_count + query_count - 1),
+                                results.data(),
+                                sizeof(uint64_t) * (total_feedback_count + query_count - 1),
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
         m_errorMonitor->VerifyFound();
     }
@@ -16513,12 +16739,14 @@ TEST_F(NegativeVideo, CopyQueryPoolResultsStatusBit) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-09442");
     flags = 0;
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
+    vk::CmdCopyQueryPoolResults(
+        m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-flags-09443");
     flags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
+    vk::CmdCopyQueryPoolResults(
+        m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -16570,19 +16798,28 @@ TEST_F(NegativeVideo, ImageLayoutUsageMismatch) {
         const char* vuid2;
     };
 
-    std::vector<TestParams> test_params = {
-        {context.DecodeOutput()->Image(), VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,
-         "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120", "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"},
-        {context.Dpb()->Image(), VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,
-         "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120", "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"}};
+    std::vector<TestParams> test_params = { { context.DecodeOutput()->Image(),
+                                              VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,
+                                              VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,
+                                              "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120",
+                                              "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120" },
+                                            { context.Dpb()->Image(),
+                                              VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,
+                                              VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,
+                                              "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120",
+                                              "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120" } };
 
     if (config.SupportsDecodeOutputDistinct()) {
-        test_params.emplace_back(TestParams{
-            context.Dpb()->Image(), VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,
-            "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121", "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"});
-        test_params.emplace_back(TestParams{
-            context.DecodeOutput()->Image(), VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,
-            "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122", "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"});
+        test_params.emplace_back(TestParams{ context.Dpb()->Image(),
+                                             VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,
+                                             VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,
+                                             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121",
+                                             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121" });
+        test_params.emplace_back(TestParams{ context.DecodeOutput()->Image(),
+                                             VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,
+                                             VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,
+                                             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122",
+                                             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122" });
     }
 
     cb.Begin();
@@ -16593,15 +16830,31 @@ TEST_F(NegativeVideo, ImageLayoutUsageMismatch) {
         m_errorMonitor->SetDesiredError(params.vuid);
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         image_barrier.newLayout = params.invalid_layout;
-        vk::CmdPipelineBarrier(cb.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                               0, nullptr, 1, &image_barrier);
+        vk::CmdPipelineBarrier(cb.handle(),
+                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               0,
+                               0,
+                               nullptr,
+                               0,
+                               nullptr,
+                               1,
+                               &image_barrier);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError(params.vuid);
         image_barrier.oldLayout = params.invalid_layout;
         image_barrier.newLayout = params.valid_layout;
-        vk::CmdPipelineBarrier(cb.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                               0, nullptr, 1, &image_barrier);
+        vk::CmdPipelineBarrier(cb.handle(),
+                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               0,
+                               0,
+                               nullptr,
+                               0,
+                               nullptr,
+                               1,
+                               &image_barrier);
         m_errorMonitor->VerifyFound();
 
         image_barrier2.image = params.image;
@@ -16657,8 +16910,9 @@ TEST_F(NegativeSyncValVideo, DecodeReconstructedPicture) {
 
     RETURN_IF_SKIP(Init());
 
-    auto config = GetConfig(FilterConfigs(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 2),
-                                          [](const VideoConfig& config) { return config.SupportsDecodeOutputDistinct(); }));
+    auto config =
+        GetConfig(FilterConfigs(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 2),
+                                [](const VideoConfig& config) { return config.SupportsDecodeOutputDistinct(); }));
     if (!config) {
         GTEST_SKIP() << "Test requires video decode support with references, 2 DPB slots, and distinct mode support";
     }
@@ -16915,14 +17169,16 @@ TEST_F(NegativeSyncValVideo, EncodeQuantizationMap) {
 
     std::vector<TestConfig> tests;
     if (delta_config) {
-        tests.emplace_back(TestConfig{delta_config, VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
-                                      delta_config.QuantDeltaMapProps()});
+        tests.emplace_back(TestConfig{ delta_config,
+                                       VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR,
+                                       delta_config.QuantDeltaMapProps() });
     }
     if (emphasis_config) {
-        tests.emplace_back(TestConfig{emphasis_config, VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
-                                      VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
-                                      emphasis_config.EmphasisMapProps()});
+        tests.emplace_back(TestConfig{ emphasis_config,
+                                       VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR,
+                                       VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR,
+                                       emphasis_config.EmphasisMapProps() });
     }
 
     for (auto& [config, encode_flag, session_create_flag, map_props] : tests) {
@@ -16941,8 +17197,12 @@ TEST_F(NegativeSyncValVideo, EncodeQuantizationMap) {
         cb.Begin();
 
         VkClearColorValue clear_value{};
-        VkImageSubresourceRange subres_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        vk::CmdClearColorImage(cb.handle(), quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
+        VkImageSubresourceRange subres_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+        vk::CmdClearColorImage(cb.handle(),
+                               quantization_map.Image(),
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                               &clear_value,
+                               1,
                                &subres_range);
 
         cb.BeginVideoCoding(context.Begin().SetSessionParams(params));
@@ -16965,15 +17225,19 @@ TEST_F(NegativeSyncValVideo, EncodeQuantizationMap) {
         cb.EndVideoCoding(context.End());
 
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-        vk::CmdClearColorImage(cb.handle(), quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
+        vk::CmdClearColorImage(cb.handle(),
+                               quantization_map.Image(),
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                               &clear_value,
+                               1,
                                &subres_range);
         m_errorMonitor->VerifyFound();
 
         cb.End();
     }
 
-    if (!delta_config || (QueueFamilyFlags(delta_config.QueueFamilyIndex()) & VK_QUEUE_TRANSFER_BIT) == 0 || !emphasis_config ||
-        (QueueFamilyFlags(emphasis_config.QueueFamilyIndex()) & VK_QUEUE_TRANSFER_BIT) == 0) {
+    if (!delta_config || (QueueFamilyFlags(delta_config.QueueFamilyIndex()) & VK_QUEUE_TRANSFER_BIT) == 0 ||
+        !emphasis_config || (QueueFamilyFlags(emphasis_config.QueueFamilyIndex()) & VK_QUEUE_TRANSFER_BIT) == 0) {
         GTEST_SKIP() << "Not all quantization map types could be tested";
     }
 }
@@ -17012,8 +17276,10 @@ TEST_F(NegativeVideoBestPractices, BindVideoSessionMemory) {
 
     // Create a buffer to get non-video-related memory requirements
     VkBufferCreateInfo buffer_create_info =
-        vku::InitStruct<VkBufferCreateInfo>(nullptr, static_cast<VkBufferCreateFlags>(0), static_cast<VkDeviceSize>(4096),
-                                          static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
+        vku::InitStruct<VkBufferCreateInfo>(nullptr,
+                                            static_cast<VkBufferCreateFlags>(0),
+                                            static_cast<VkDeviceSize>(4096),
+                                            static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
     vkt::Buffer buffer(*m_device, buffer_create_info);
     VkMemoryRequirements buf_mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &buf_mem_reqs);
@@ -17021,10 +17287,12 @@ TEST_F(NegativeVideoBestPractices, BindVideoSessionMemory) {
     // Create non-video-related DeviceMemory
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = buf_mem_reqs.size;
-    ASSERT_TRUE(m_device->Physical().SetMemoryType(buf_mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+    ASSERT_TRUE(m_device->Physical().SetMemoryType(
+        buf_mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory memory(*m_device, alloc_info);
 
-    // Set VkBindVideoSessionMemoryInfoKHR::memory to an allocation created before GetVideoSessionMemoryRequirementsKHR was called
+    // Set VkBindVideoSessionMemoryInfoKHR::memory to an allocation created before GetVideoSessionMemoryRequirementsKHR
+    // was called
     auto bind_info = vku::InitStruct<VkBindVideoSessionMemoryInfoKHR>();
     bind_info.memory = memory;
     bind_info.memoryOffset = 0;
@@ -17048,7 +17316,8 @@ TEST_F(NegativeVideoBestPractices, BindVideoSessionMemory) {
 
             vk::GetVideoSessionMemoryRequirementsKHR(device(), context.Session(), &mem_req_count, &mem_req);
 
-            m_errorMonitor->SetDesiredWarning("BestPractices-vkBindVideoSessionMemoryKHR-requirements-not-all-retrieved");
+            m_errorMonitor->SetDesiredWarning(
+                "BestPractices-vkBindVideoSessionMemoryKHR-requirements-not-all-retrieved");
             vk::BindVideoSessionMemoryKHR(device(), context.Session(), 1, &bind_info);
             m_errorMonitor->VerifyFound();
         }

@@ -37,12 +37,12 @@ struct GpuAVSettings {
 
     bool debug_validate_instrumented_shaders = false;
     bool debug_dump_instrumented_shaders = false;
-    uint32_t debug_max_instrumentations_count = 0;  // zero is same as "unlimited"
+    uint32_t debug_max_instrumentations_count = 0; // zero is same as "unlimited"
     bool debug_print_instrumentation_info = false;
 
-    // Note - even though DebugPrintf basically fits in here, from the user point of view they are different and that is reflected
-    // in the settings (which are reflected in VkConfig). To make our lives easier, we just make these settings with the hierarchy
-    // of the settings exposed
+    // Note - even though DebugPrintf basically fits in here, from the user point of view they are different and that is
+    // reflected in the settings (which are reflected in VkConfig). To make our lives easier, we just make these
+    // settings with the hierarchy of the settings exposed
     struct ShaderInstrumentation {
         bool descriptor_checks = true;
         bool buffer_device_address = true;
@@ -66,8 +66,8 @@ struct GpuAVSettings {
         select_instrumented_shaders = false;
     }
     bool IsBufferValidationEnabled() const {
-        return validate_indirect_draws_buffers || validate_indirect_dispatches_buffers || validate_indirect_trace_rays_buffers ||
-               validate_buffer_copies || validate_index_buffers;
+        return validate_indirect_draws_buffers || validate_indirect_dispatches_buffers ||
+               validate_indirect_trace_rays_buffers || validate_buffer_copies || validate_index_buffers;
     }
     void SetBufferValidationEnabled(bool enabled) {
         validate_indirect_draws_buffers = enabled;

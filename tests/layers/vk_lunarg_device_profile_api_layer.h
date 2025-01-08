@@ -22,7 +22,7 @@
 #include "vulkan/vulkan.h"
 #ifdef __cplusplus
 extern "C" {
-#endif  // __cplusplus
+#endif // __cplusplus
 
 // Device Profile Api Vulkan Extension API
 
@@ -30,23 +30,28 @@ extern "C" {
 
 // API functions
 
-typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceLimitsEXT)(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceLimits *newLimits);
-typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceLimitsEXT)(VkPhysicalDevice physicalDevice,
-                                                                  const VkPhysicalDeviceLimits *orgLimits);
-typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT)(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                            const VkFormatProperties *properties);
-typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceFormatPropertiesEXT)(VkPhysicalDevice physicalDevice, VkFormat format,
+typedef void(VKAPI_PTR* PFN_vkSetPhysicalDeviceLimitsEXT)(VkPhysicalDevice physicalDevice,
+                                                          const VkPhysicalDeviceLimits* newLimits);
+typedef void(VKAPI_PTR* PFN_vkGetOriginalPhysicalDeviceLimitsEXT)(VkPhysicalDevice physicalDevice,
+                                                                  const VkPhysicalDeviceLimits* orgLimits);
+typedef void(VKAPI_PTR* PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT)(VkPhysicalDevice physicalDevice,
+                                                                            VkFormat format,
+                                                                            const VkFormatProperties* properties);
+typedef void(VKAPI_PTR* PFN_vkSetPhysicalDeviceFormatPropertiesEXT)(VkPhysicalDevice physicalDevice,
+                                                                    VkFormat format,
                                                                     const VkFormatProperties newProperties);
-typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT)(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                             const VkFormatProperties2 *properties);
-typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceFormatProperties2EXT)(VkPhysicalDevice physicalDevice, VkFormat format,
+typedef void(VKAPI_PTR* PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT)(VkPhysicalDevice physicalDevice,
+                                                                             VkFormat format,
+                                                                             const VkFormatProperties2* properties);
+typedef void(VKAPI_PTR* PFN_vkSetPhysicalDeviceFormatProperties2EXT)(VkPhysicalDevice physicalDevice,
+                                                                     VkFormat format,
                                                                      const VkFormatProperties2 newProperties);
-typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceFeaturesEXT)(VkPhysicalDevice physicalDevice,
-                                                                    const VkPhysicalDeviceFeatures *features);
-typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceFeaturesEXT)(VkPhysicalDevice physicalDevice,
+typedef void(VKAPI_PTR* PFN_vkGetOriginalPhysicalDeviceFeaturesEXT)(VkPhysicalDevice physicalDevice,
+                                                                    const VkPhysicalDeviceFeatures* features);
+typedef void(VKAPI_PTR* PFN_vkSetPhysicalDeviceFeaturesEXT)(VkPhysicalDevice physicalDevice,
                                                             const VkPhysicalDeviceFeatures newFeatures);
-typedef void(VKAPI_PTR *PFN_VkSetPhysicalDeviceProperties2EXT)(VkPhysicalDevice physicalDevice,
+typedef void(VKAPI_PTR* PFN_VkSetPhysicalDeviceProperties2EXT)(VkPhysicalDevice physicalDevice,
                                                                const VkPhysicalDeviceProperties2 newProperties);
 #ifdef __cplusplus
-}  // extern "C"
-#endif  // __cplusplus
+} // extern "C"
+#endif // __cplusplus

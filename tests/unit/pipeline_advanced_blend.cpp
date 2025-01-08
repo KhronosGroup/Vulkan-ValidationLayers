@@ -37,7 +37,7 @@ TEST_F(NegativePipelineAdvancedBlend, BlendOps) {
     memset(attachment_states, 0, sizeof(VkPipelineColorBlendAttachmentState) * 2);
 
     // only 1 attachment state, different blend op values
-    const auto set_info_different = [&](CreatePipelineHelper &helper) {
+    const auto set_info_different = [&](CreatePipelineHelper& helper) {
         attachment_states[0].blendEnable = VK_TRUE;
         attachment_states[0].colorBlendOp = VK_BLEND_OP_HSL_COLOR_EXT;
         attachment_states[0].alphaBlendOp = VK_BLEND_OP_MULTIPLY_EXT;
@@ -48,14 +48,15 @@ TEST_F(NegativePipelineAdvancedBlend, BlendOps) {
     };
 
     {
-        constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-renderPass-07609",
-                                      "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01406"};
+        constexpr std::array vuids = { "VUID-VkGraphicsPipelineCreateInfo-renderPass-07609",
+                                       "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01406" };
         CreatePipelineHelper::OneshotTest(*this, set_info_different, kErrorBit, vuids);
     }
 
     // Test is if independent blend is not supported
-    if (!blend_operation_advanced.advancedBlendIndependentBlend && blend_operation_advanced.advancedBlendMaxColorAttachments > 1) {
-        const auto set_info_color = [&](CreatePipelineHelper &helper) {
+    if (!blend_operation_advanced.advancedBlendIndependentBlend &&
+        blend_operation_advanced.advancedBlendMaxColorAttachments > 1) {
+        const auto set_info_color = [&](CreatePipelineHelper& helper) {
             attachment_states[0].blendEnable = VK_TRUE;
             attachment_states[0].colorBlendOp = VK_BLEND_OP_MIN;
             attachment_states[0].alphaBlendOp = VK_BLEND_OP_MIN;
@@ -67,8 +68,8 @@ TEST_F(NegativePipelineAdvancedBlend, BlendOps) {
             color_blend_state.pAttachments = attachment_states;
             helper.gp_ci_.pColorBlendState = &color_blend_state;
         };
-        constexpr std::array vuids = {"VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01407",
-                                      "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01408"};
+        constexpr std::array vuids = { "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01407",
+                                       "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01408" };
         CreatePipelineHelper::OneshotTest(*this, set_info_color, kErrorBit, vuids);
     }
 }
@@ -119,7 +120,7 @@ TEST_F(NegativePipelineAdvancedBlend, MaxBlendAttachmentDynamicRendering) {
         GTEST_SKIP() << "advancedBlendMaxColorAttachments is too high";
     }
 
-    VkFormat color_formats[3] = {VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM};
+    VkFormat color_formats[3] = { VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM };
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
     pipeline_rendering_info.colorAttachmentCount = 3;
     pipeline_rendering_info.pColorAttachmentFormats = color_formats;
@@ -156,7 +157,8 @@ TEST_F(NegativePipelineAdvancedBlend, Properties) {
     if (blend_operation_advanced_props.advancedBlendCorrelatedOverlap &&
         blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor &&
         blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
-        GTEST_SKIP() << "All VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT properties are enabled; nothing to test";
+        GTEST_SKIP()
+            << "All VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT properties are enabled; nothing to test";
     }
 
     VkPipelineColorBlendAdvancedStateCreateInfoEXT color_blend_advanced = vku::InitStructHelper();

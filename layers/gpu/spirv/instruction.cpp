@@ -47,8 +47,8 @@ void Instruction::SetResultTypeIndex() {
     }
 }
 
-Instruction::Instruction(spirv_iterator it, uint32_t position)
-    : position_index_(position), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
+Instruction::Instruction(spirv_iterator it, uint32_t position) :
+    position_index_(position), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
     words_.emplace_back(*it++);
     words_.reserve(Length());
     for (uint32_t i = 1; i < Length(); i++) {
@@ -228,7 +228,7 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
             break;
         case spv::OpReturnValue:
         case spv::OpFunctionParameter:
-        case spv::OpVariable:  // never use optional initializer
+        case spv::OpVariable: // never use optional initializer
         case spv::OpConstantTrue:
         case spv::OpSpecConstantTrue:
         case spv::OpConstantFalse:
@@ -286,7 +286,7 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
         case spv::OpFunctionEnd:
         case spv::OpExtInstImport:
         case spv::OpString:
-            break;  // Instructions aware of, but nothing to swap
+            break; // Instructions aware of, but nothing to swap
         default:
             assert(false && "Need to add support for new instruction");
     }
@@ -294,5 +294,5 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
     UpdateDebugInfo();
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

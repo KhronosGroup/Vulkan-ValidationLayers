@@ -42,11 +42,13 @@ bool MaxCmdErrorsCountReached() {
 }
 
 void GpuavLogError4(uint error_group, uint error_sub_code, uint param_0, uint param_1, uint param_2, uint param_3) {
-    if (MaxCmdErrorsCountReached()) return;
+    if (MaxCmdErrorsCountReached())
+        return;
 
     uint vo_idx = atomicAdd(errors_count, kErrorRecordSize);
     const bool errors_buffer_filled = (vo_idx + kErrorRecordSize) > errors_buffer.length();
-    if (errors_buffer_filled) return;
+    if (errors_buffer_filled)
+        return;
 
     errors_buffer[vo_idx + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
     errors_buffer[vo_idx + kHeaderActionIdOffset] = action_index[0];

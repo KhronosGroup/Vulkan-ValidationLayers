@@ -16,13 +16,15 @@
 #pragma once
 #include <stdint.h>
 
-// The goal is to keep instrumentation a standalone executable for testing, but it will need runtime information interfaced with it.
-// We declare all types that either the running instance of GPU-AV or the standalone executable testing will need.
+// The goal is to keep instrumentation a standalone executable for testing, but it will need runtime information
+// interfaced with it. We declare all types that either the running instance of GPU-AV or the standalone executable
+// testing will need.
 
 namespace gpuav {
 namespace spirv {
 
-// Each descriptor set can be tought as a linear, single buffer of descriptors (ignoring binding and arrays for the moment)
+// Each descriptor set can be tought as a linear, single buffer of descriptors (ignoring binding and arrays for the
+// moment)
 //
 // Example:
 //    layout(binding = 0) buffer a[4];
@@ -32,12 +34,12 @@ namespace spirv {
 // We can think of this as being in a buffer as
 //    [ a0, a1, a2, a3, b0, c0, c1]
 //
-// In order to do this, we need some sort of LUT, per BINDING, to know where in this LAYOUT of descriptors the binding starts.
-// This means given the index into any binding, we can locate the exact descriptor in the entire descriptor set.
+// In order to do this, we need some sort of LUT, per BINDING, to know where in this LAYOUT of descriptors the binding
+// starts. This means given the index into any binding, we can locate the exact descriptor in the entire descriptor set.
 //
-// This information used to be in a BDA buffer that the GPU would do a look-up and produced slow SPIR-V to compile/execute.
-// Now that we do instrumentation at Pipeline creation time, we can just view the DescriptorSetLayout and inject this offset into
-// the instrumentation.
+// This information used to be in a BDA buffer that the GPU would do a look-up and produced slow SPIR-V to
+// compile/execute. Now that we do instrumentation at Pipeline creation time, we can just view the DescriptorSetLayout
+// and inject this offset into the instrumentation.
 //
 // ** With Variable Descriptor Count, the buffer will only get smaller from the end.
 //    We will still validate as being "uninitialized" in that case.
@@ -46,5 +48,5 @@ struct BindingLayout {
     uint32_t count;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

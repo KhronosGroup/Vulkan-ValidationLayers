@@ -4,4 +4,4 @@
 
 namespace vkt {
 VkMetalSurfaceCreateInfoEXT CreateMetalSurfaceInfoEXT();
-}  // namespace vkt
+} // namespace vkt

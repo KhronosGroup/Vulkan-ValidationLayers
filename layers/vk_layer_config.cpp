@@ -19,23 +19,23 @@
  **************************************************************************/
 #include "vk_layer_config.h"
 
+#include <cstdlib>
 #include <cstring>
 #include <string>
-#include <cstdlib>
 #include <sys/stat.h>
 
 #include <vulkan/vk_layer.h>
 
 #if defined(_WIN32)
-#include <windows.h>
 #include <direct.h>
+#include <windows.h>
 #define GetCurrentDir _getcwd
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include "error_message/logging.h"
+#include "utils/android_ndk_types.h"
 #include <charconv>
 #include <sys/system_properties.h>
 #include <unistd.h>
-#include "utils/android_ndk_types.h"
 #define GetCurrentDir getcwd
 #else
 #include <unistd.h>
@@ -43,22 +43,23 @@
 #endif
 
 #if defined(__ANDROID__)
-static void PropCallback(void *cookie, [[maybe_unused]] const char *name, const char *value, [[maybe_unused]] uint32_t serial) {
-    std::string *property = static_cast<std::string *>(cookie);
+static void
+PropCallback(void* cookie, [[maybe_unused]] const char* name, const char* value, [[maybe_unused]] uint32_t serial) {
+    std::string* property = static_cast<std::string*>(cookie);
     *property = value;
 }
 #endif
 
-std::string GetEnvironment(const char *variable) {
+std::string GetEnvironment(const char* variable) {
 #if !defined(__ANDROID__) && !defined(_WIN32)
-    const char *output = getenv(variable);
+    const char* output = getenv(variable);
     return output == NULL ? "" : output;
 #elif defined(_WIN32)
     int size = GetEnvironmentVariable(variable, NULL, 0);
     if (size == 0) {
         return "";
     }
-    char *buffer = new char[size];
+    char* buffer = new char[size];
     GetEnvironmentVariable(variable, buffer, size);
     std::string output = buffer;
     delete[] buffer;
@@ -66,14 +67,14 @@ std::string GetEnvironment(const char *variable) {
 #elif defined(__ANDROID__)
     std::string var = variable;
 
-    if (std::string_view{variable} != kForceDefaultCallbackKey) {
+    if (std::string_view{ variable } != kForceDefaultCallbackKey) {
         // kForceDefaultCallbackKey is a special key that needs to be recognized for backwards compatibilty.
-        // For all other strings, prefix the requested variable with "debug.vvl." so that desktop environment settings can be used
-        // on Android.
+        // For all other strings, prefix the requested variable with "debug.vvl." so that desktop environment settings
+        // can be used on Android.
         var = "debug.vvl." + var;
     }
 
-    const prop_info *prop_info = __system_property_find(var.data());
+    const prop_info* prop_info = __system_property_find(var.data());
 
     if (prop_info) {
         std::string property;
@@ -87,7 +88,7 @@ std::string GetEnvironment(const char *variable) {
 #endif
 }
 
-void SetEnvironment(const char *variable, const char *value) {
+void SetEnvironment(const char* variable, const char* value) {
 #if !defined(__ANDROID__) && !defined(_WIN32)
     setenv(variable, value, 1);
 #elif defined(_WIN32)
@@ -107,9 +108,12 @@ static inline bool IsHighIntegrity() {
         // Maximum possible size of SID_AND_ATTRIBUTES is maximum size of a SID + size of attributes DWORD.
         uint8_t mandatory_label_buffer[SECURITY_MAX_SID_SIZE + sizeof(DWORD)];
         DWORD buffer_size;
-        if (GetTokenInformation(process_token, TokenIntegrityLevel, mandatory_label_buffer, sizeof(mandatory_label_buffer),
+        if (GetTokenInformation(process_token,
+                                TokenIntegrityLevel,
+                                mandatory_label_buffer,
+                                sizeof(mandatory_label_buffer),
                                 &buffer_size) != 0) {
-            const TOKEN_MANDATORY_LABEL *mandatory_label = (const TOKEN_MANDATORY_LABEL *)mandatory_label_buffer;
+            const TOKEN_MANDATORY_LABEL* mandatory_label = (const TOKEN_MANDATORY_LABEL*)mandatory_label_buffer;
             const DWORD sub_authority_count = *GetSidSubAuthorityCount(mandatory_label->Label.Sid);
             const DWORD integrity_level = *GetSidSubAuthority(mandatory_label->Label.Sid, sub_authority_count - 1);
 
@@ -139,7 +143,7 @@ static inline bool IsHighIntegrity() {
 #error "VK_USE_PLATFORM_IOS_MVK not defined!"
 #endif
 
-#endif  //  TARGET_OS_IOS
+#endif //  TARGET_OS_IOS
 
 #if TARGET_OS_OSX
 
@@ -147,14 +151,14 @@ static inline bool IsHighIntegrity() {
 #error "VK_USE_PLATFORM_MACOS_MVK not defined!"
 #endif
 
-#endif  // TARGET_OS_OSX
+#endif // TARGET_OS_OSX
 
-#endif  // __APPLE__
+#endif // __APPLE__
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-// Require at least NDK 25 to build Validation Layers. Makes everything simpler to just have people building the layers to use a
-// recent version of the NDK.
+// Require at least NDK 25 to build Validation Layers. Makes everything simpler to just have people building the layers
+// to use a recent version of the NDK.
 //
 // This avoids issues with older NDKs which complicate correct CMake builds:
 // Example:
@@ -165,7 +169,8 @@ static inline bool IsHighIntegrity() {
 #error "Validation Layers require at least NDK r25 or greater to build"
 #endif
 
-// This catches before dlopen fails if the default Android-26 layers are being used and attempted to be ran on Android 25 or below
+// This catches before dlopen fails if the default Android-26 layers are being used and attempted to be ran on Android
+// 25 or below
 void __attribute__((constructor)) CheckAndroidVersion() {
     const std::string version = GetEnvironment("ro.build.version.sdk");
 
@@ -176,7 +181,8 @@ void __attribute__((constructor)) CheckAndroidVersion() {
     constexpr uint32_t target_android_api = 26;
     constexpr uint32_t android_api = __ANDROID_API__;
 
-    static_assert(android_api >= target_android_api, "Vulkan-ValidationLayers is not supported on Android 25 and below");
+    static_assert(android_api >= target_android_api,
+                  "Vulkan-ValidationLayers is not supported on Android 25 and below");
 
     uint32_t queried_version{};
 
@@ -185,7 +191,9 @@ void __attribute__((constructor)) CheckAndroidVersion() {
     }
 
     if (queried_version < target_android_api) {
-        __android_log_print(ANDROID_LOG_FATAL, "VALIDATION", "ERROR - Android version is %d and needs to be 26 or above.",
+        __android_log_print(ANDROID_LOG_FATAL,
+                            "VALIDATION",
+                            "ERROR - Android version is %d and needs to be 26 or above.",
                             queried_version);
     }
 }

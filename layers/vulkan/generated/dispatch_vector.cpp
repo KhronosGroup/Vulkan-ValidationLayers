@@ -31,18 +31,19 @@
 // functions saved about 5% in multithreaded applications.
 
 #include "generated/dispatch_vector.h"
+
 #include "chassis/dispatch_object.h"
 
 // Include layer validation object definitions
-#include "generated/dispatch_vector.h"
-#include "chassis/dispatch_object.h"
-#include "thread_tracker/thread_safety_validation.h"
-#include "stateless/stateless_validation.h"
-#include "object_tracker/object_lifetime_validation.h"
-#include "core_checks/core_validation.h"
 #include "best_practices/best_practices_validation.h"
+#include "chassis/dispatch_object.h"
+#include "core_checks/core_validation.h"
+#include "generated/dispatch_vector.h"
 #include "gpu/core/gpuav.h"
+#include "object_tracker/object_lifetime_validation.h"
+#include "stateless/stateless_validation.h"
 #include "sync/sync_validation.h"
+#include "thread_tracker/thread_safety_validation.h"
 
 namespace vvl {
 namespace dispatch {

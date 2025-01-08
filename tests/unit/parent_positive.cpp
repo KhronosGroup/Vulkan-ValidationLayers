@@ -25,7 +25,7 @@ TEST_F(PositiveParent, ImagelessFramebuffer) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::imagelessFramebuffer);
     RETURN_IF_SKIP(Init());
-    InitRenderTarget();  // Renderpass created on first device
+    InitRenderTarget(); // Renderpass created on first device
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 

@@ -14,37 +14,35 @@
  */
 
 #include "module.h"
-#include <spirv/unified1/spirv.hpp>
-#include "gpu/shaders/gpuav_shaders_constants.h"
-#include "error_message/logging.h"
 #include "error_message/log_message_type.h"
+#include "error_message/logging.h"
+#include "gpu/shaders/gpuav_shaders_constants.h"
+#include <spirv/unified1/spirv.hpp>
 
 #include "buffer_device_address_pass.h"
-#include "descriptor_indexing_oob_pass.h"
+#include "debug_printf_pass.h"
 #include "descriptor_class_general_buffer_pass.h"
 #include "descriptor_class_texel_buffer_pass.h"
-#include "ray_query_pass.h"
-#include "debug_printf_pass.h"
+#include "descriptor_indexing_oob_pass.h"
 #include "post_process_descriptor_indexing.h"
+#include "ray_query_pass.h"
 
 #include <iostream>
 
 namespace gpuav {
 namespace spirv {
 
-Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
-               const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut)
-    : type_manager_(*this),
-      max_instrumentations_count_(settings.max_instrumentations_count),
-      shader_id_(settings.shader_id),
-      output_buffer_descriptor_set_(settings.output_buffer_descriptor_set),
-      support_non_semantic_info_(settings.support_non_semantic_info),
-      support_int64_(settings.support_int64),
-      support_memory_model_device_scope_(settings.support_memory_model_device_scope),
-      has_bindless_descriptors_(settings.has_bindless_descriptors),
-      print_debug_info_(settings.print_debug_info),
-      debug_report_(debug_report),
-      set_index_to_bindings_layout_lut_(set_index_to_bindings_layout_lut) {
+Module::Module(vvl::span<const uint32_t> words,
+               DebugReport* debug_report,
+               const Settings& settings,
+               const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut) :
+    type_manager_(*this),
+    max_instrumentations_count_(settings.max_instrumentations_count), shader_id_(settings.shader_id),
+    output_buffer_descriptor_set_(settings.output_buffer_descriptor_set),
+    support_non_semantic_info_(settings.support_non_semantic_info), support_int64_(settings.support_int64),
+    support_memory_model_device_scope_(settings.support_memory_model_device_scope),
+    has_bindless_descriptors_(settings.has_bindless_descriptors), print_debug_info_(settings.print_debug_info),
+    debug_report_(debug_report), set_index_to_bindings_layout_lut_(set_index_to_bindings_layout_lut) {
     uint32_t instruction_count = 0;
     spirv_iterator it = words.begin();
     header_.magic_number = *it++;
@@ -227,7 +225,8 @@ static void StringToSpirv(const char* input, std::vector<uint32_t>& output) {
     while (*input != '\0') {
         uint32_t new_word = 0;
         for (i = 0; i < 4; i++) {
-            if (*input == '\0') break;
+            if (*input == '\0')
+                break;
             uint32_t value = static_cast<uint32_t>(*input);
             new_word |= value << (8 * i);
             input++;
@@ -244,7 +243,7 @@ static void StringToSpirv(const char* input, std::vector<uint32_t>& output) {
 void Module::AddCapability(spv::Capability capability) {
     if (!HasCapability(capability)) {
         auto new_inst = std::make_unique<Instruction>(2, spv::OpCapability);
-        new_inst->Fill({(uint32_t)capability});
+        new_inst->Fill({ (uint32_t)capability });
         capabilities_.emplace_back(std::move(new_inst));
     }
 }
@@ -258,7 +257,7 @@ void Module::AddExtension(const char* extension) {
 }
 
 void Module::AddDebugName(const char* name, uint32_t id) {
-    std::vector<uint32_t> words = {id};
+    std::vector<uint32_t> words = { id };
     StringToSpirv(name, words);
     auto new_inst = std::make_unique<Instruction>((uint32_t)(words.size() + 1), spv::OpName);
     new_inst->Fill(words);
@@ -267,17 +266,19 @@ void Module::AddDebugName(const char* name, uint32_t id) {
 
 void Module::AddDecoration(uint32_t target_id, spv::Decoration decoration, const std::vector<uint32_t>& operands) {
     auto new_inst = std::make_unique<Instruction>((uint32_t)(operands.size() + 3), spv::OpDecorate);
-    new_inst->Fill({target_id, (uint32_t)decoration});
+    new_inst->Fill({ target_id, (uint32_t)decoration });
     if (!operands.empty()) {
         new_inst->Fill(operands);
     }
     annotations_.emplace_back(std::move(new_inst));
 }
 
-void Module::AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decoration decoration,
+void Module::AddMemberDecoration(uint32_t target_id,
+                                 uint32_t index,
+                                 spv::Decoration decoration,
                                  const std::vector<uint32_t>& operands) {
     auto new_inst = std::make_unique<Instruction>((uint32_t)(operands.size() + 4), spv::OpMemberDecorate);
-    new_inst->Fill({target_id, index, (uint32_t)decoration});
+    new_inst->Fill({ target_id, index, (uint32_t)decoration });
     if (!operands.empty()) {
         new_inst->Fill(operands);
     }
@@ -406,8 +407,8 @@ void Module::AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class)
     const uint32_t spirv_version_1_4 = 0x00010400;
     if (header_.version >= spirv_version_1_4 || storage_class == spv::StorageClassInput ||
         storage_class == spv::StorageClassOutput) {
-        // Currently just apply to all Entrypoint as it should be ok to have a global variable in there even if it can't dynamically
-        // touch the new function
+        // Currently just apply to all Entrypoint as it should be ok to have a global variable in there even if it can't
+        // dynamically touch the new function
         for (auto& entry_point : entry_points_) {
             entry_point->AppendWord(id);
         }
@@ -426,7 +427,7 @@ void Module::LinkFunction(const LinkInfo& info) {
     InstructionList decorations;
 
     // find all constant and types, add any the module doesn't have
-    uint32_t offset = 5;  // skip header
+    uint32_t offset = 5; // skip header
     while (offset < info.word_count) {
         const uint32_t* inst_word = &info.words[offset];
         const uint32_t opcode = *inst_word & 0x0ffffu;
@@ -501,7 +502,7 @@ void Module::LinkFunction(const LinkInfo& info) {
                     auto it = id_swap_map.find(new_inst->ResultId());
                     if (it != id_swap_map.end()) {
                         // already had a OpTypeForwardPointer, so will automatically need a new a new OpTypePointer
-                        type_id = it->second;  // id_swap_map will just update with same value
+                        type_id = it->second; // id_swap_map will just update with same value
                         new_inst->ReplaceResultId(type_id);
                         new_inst->ReplaceLinkedId(id_swap_map);
                         type_manager_.AddType(std::move(new_inst), spv_type).Id();
@@ -521,8 +522,8 @@ void Module::LinkFunction(const LinkInfo& info) {
                     break;
                 }
                 case SpvType::kStruct: {
-                    // For OpTypeStruct, we just add it regardless since low chance to find for the amount of time to search all
-                    // struct (which there can be quite a bit of)
+                    // For OpTypeStruct, we just add it regardless since low chance to find for the amount of time to
+                    // search all struct (which there can be quite a bit of)
                     type_id = TakeNextId();
                     new_inst->ReplaceResultId(type_id);
                     new_inst->ReplaceLinkedId(id_swap_map);
@@ -530,7 +531,8 @@ void Module::LinkFunction(const LinkInfo& info) {
                     break;
                 }
                 case SpvType::kFunction: {
-                    // It is not valid to have duplicate OpTypeFunction and some linked in functions will have the same signature
+                    // It is not valid to have duplicate OpTypeFunction and some linked in functions will have the same
+                    // signature
                     new_inst->ReplaceLinkedId(id_swap_map);
                     // First swap out IDs so comparison will be the same
                     const Type* function_type = type_manager_.FindFunctionType(*new_inst.get());
@@ -550,13 +552,12 @@ void Module::LinkFunction(const LinkInfo& info) {
             }
 
             id_swap_map[old_result_id] = type_id;
-
         } else if (ConstantOperation(opcode)) {
             const Type& type = *type_manager_.FindTypeById(id_swap_map[new_inst->TypeId()]);
             const Constant* constant = nullptr;
-            // for simplicity, just create a new constant for things other than 32-bit OpConstant as there are rarely-to-none
-            // composite/null/true/false constants in linked functions. The extra logic to try and find them is much larger and cost
-            // time failing most the searches.
+            // for simplicity, just create a new constant for things other than 32-bit OpConstant as there are
+            // rarely-to-none composite/null/true/false constants in linked functions. The extra logic to try and find
+            // them is much larger and cost time failing most the searches.
             if (opcode == spv::OpConstant) {
                 const uint32_t constant_value = new_inst->Word(3);
                 if (type.inst_.Opcode() == spv::OpTypeInt && type.inst_.Word(2) == 32) {
@@ -614,8 +615,8 @@ void Module::LinkFunction(const LinkInfo& info) {
         offset += length;
     }
 
-    // because flow-control instructions (ex. OpBranch) do forward references to IDs, do an initial loop to get all OpLabel to have
-    // in id_swap_map
+    // because flow-control instructions (ex. OpBranch) do forward references to IDs, do an initial loop to get all
+    // OpLabel to have in id_swap_map
     uint32_t offset_copy = offset;
     while (offset_copy < info.word_count) {
         const uint32_t* inst_word = &info.words[offset_copy];
@@ -661,8 +662,8 @@ void Module::LinkFunction(const LinkInfo& info) {
             new_inst->ReplaceLinkedId(id_swap_map);
         }
 
-        // To make simpler, just put everything in a single list as we have no need to do any modifications to the CFG logic for the
-        // linked function
+        // To make simpler, just put everything in a single list as we have no need to do any modifications to the CFG
+        // logic for the linked function
         new_function->pre_block_inst_.emplace_back(std::move(new_inst));
         offset += length;
     }
@@ -677,7 +678,7 @@ void Module::LinkFunction(const LinkInfo& info) {
 
     for (auto& decoration : decorations) {
         if (decoration->Word(2) == spv::DecorationLinkageAttributes) {
-            continue;  // remove linkage info
+            continue; // remove linkage info
         } else if (decoration->Word(2) == spv::DecorationDescriptorSet) {
             // only should be one DescriptorSet to update
             decoration->words_[3] = output_buffer_descriptor_set_;
@@ -710,13 +711,14 @@ void Module::PostProcess() {
     // The instrumentation code has atomicAdd() to update the output buffer
     // If the incoming code only has VulkanMemoryModel it will need to support device scope
     //
-    // Found that QueueFamily was added to mostly solve this, if a device doesn't support Device scope we could use QueueFamily, the
-    // issue is that the GLSL we have is static and if we use QueueFamily then we "need" the MemoryModel enabled
+    // Found that QueueFamily was added to mostly solve this, if a device doesn't support Device scope we could use
+    // QueueFamily, the issue is that the GLSL we have is static and if we use QueueFamily then we "need" the
+    // MemoryModel enabled
     if (HasCapability(spv::CapabilityVulkanMemoryModel)) {
         if (!support_memory_model_device_scope_) {
-            InternalError(
-                "GPU-SHADER-INSTRUMENT-SUPPORT",
-                "vulkanMemoryModelDeviceScope feature is not supported, but need to let us call atomicAdd to the output buffer");
+            InternalError("GPU-SHADER-INSTRUMENT-SUPPORT",
+                          "vulkanMemoryModelDeviceScope feature is not supported, but need to let us call atomicAdd to "
+                          "the output buffer");
         }
         AddCapability(spv::CapabilityVulkanMemoryModelDeviceScope);
     }
@@ -745,5 +747,5 @@ void Module::InternalError(const char* tag, const char* message) {
     }
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

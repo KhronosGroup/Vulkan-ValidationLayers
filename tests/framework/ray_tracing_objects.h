@@ -27,14 +27,14 @@ namespace as {
 // - VkAccelerationStructureCreateInfoKHR
 // - VkAccelerationStructureBuildGeometryInfoKHR
 
-// The vkt::as::blueprint namespace (bottom of file) contains functions to readily create a valid instance of those classes.
-// Those instances are typically modified using the available public methods.
-// When done with modifications, call the Build() method to build the internal Vulkan objects.
-// Access them using relevant methods, eg: handle(), GetVkObj()...
+// The vkt::as::blueprint namespace (bottom of file) contains functions to readily create a valid instance of those
+// classes. Those instances are typically modified using the available public methods. When done with modifications,
+// call the Build() method to build the internal Vulkan objects. Access them using relevant methods, eg: handle(),
+// GetVkObj()...
 
-// 3 types of geometry handled: Triangle, AABB and VkAccelerationStructureInstanceKHR (used in top level acceleration structures)
-// Those objects can be managed on the device, using the ***Device*** methods,
-// or on the host using the ***Host*** methods
+// 3 types of geometry handled: Triangle, AABB and VkAccelerationStructureInstanceKHR (used in top level acceleration
+// structures) Those objects can be managed on the device, using the ***Device*** methods, or on the host using the
+// ***Host*** methods
 class GeometryKHR {
   public:
     enum class Type { Triangle, AABB, Instance, _INTERNAL_UNSPECIFIED };
@@ -68,12 +68,15 @@ class GeometryKHR {
     GeometryKHR& SetPrimitiveCount(uint32_t primitiveCount);
     GeometryKHR& SetStride(VkDeviceSize stride);
     // Triangle
-    GeometryKHR& SetTrianglesDeviceVertexBuffer(vkt::Buffer&& vertex_buffer, uint32_t max_vertex,
+    GeometryKHR& SetTrianglesDeviceVertexBuffer(vkt::Buffer&& vertex_buffer,
+                                                uint32_t max_vertex,
                                                 VkFormat vertex_format = VK_FORMAT_R32G32B32_SFLOAT,
                                                 VkDeviceSize stride = 3 * sizeof(float));
-    GeometryKHR& SetTrianglesHostVertexBuffer(std::unique_ptr<float[]>&& vertex_buffer, uint32_t max_vertex,
+    GeometryKHR& SetTrianglesHostVertexBuffer(std::unique_ptr<float[]>&& vertex_buffer,
+                                              uint32_t max_vertex,
                                               VkDeviceSize stride = 3 * sizeof(float));
-    GeometryKHR& SetTrianglesDeviceIndexBuffer(vkt::Buffer&& index_buffer, VkIndexType index_type = VK_INDEX_TYPE_UINT32);
+    GeometryKHR& SetTrianglesDeviceIndexBuffer(vkt::Buffer&& index_buffer,
+                                               VkIndexType index_type = VK_INDEX_TYPE_UINT32);
     GeometryKHR& SetTrianglesHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer);
     GeometryKHR& SetTrianglesIndexType(VkIndexType index_type);
     GeometryKHR& SetTrianglesVertexFormat(VkFormat vertex_format);
@@ -84,35 +87,37 @@ class GeometryKHR {
     GeometryKHR& SetTrianglesIndexBufferDeviceAddress(VkDeviceAddress address);
     // AABB
     GeometryKHR& SetAABBsDeviceBuffer(vkt::Buffer&& buffer, VkDeviceSize stride = sizeof(VkAabbPositionsKHR));
-    GeometryKHR& SetAABBsHostBuffer(std::unique_ptr<VkAabbPositionsKHR[]> buffer, VkDeviceSize stride = sizeof(VkAabbPositionsKHR));
+    GeometryKHR& SetAABBsHostBuffer(std::unique_ptr<VkAabbPositionsKHR[]> buffer,
+                                    VkDeviceSize stride = sizeof(VkAabbPositionsKHR));
     GeometryKHR& SetAABBsStride(VkDeviceSize stride);
     GeometryKHR& SetAABBsDeviceAddress(VkDeviceAddress address);
 
     // Instance
-    GeometryKHR& AddInstanceDeviceAccelStructRef(const vkt::Device& device, VkAccelerationStructureKHR blas,
+    GeometryKHR& AddInstanceDeviceAccelStructRef(const vkt::Device& device,
+                                                 VkAccelerationStructureKHR blas,
                                                  const VkAccelerationStructureInstanceKHR& instance);
     GeometryKHR& AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas);
     GeometryKHR& SetInstancesDeviceAddress(VkDeviceAddress address);
     GeometryKHR& SetInstanceHostAccelStructRef(VkAccelerationStructureKHR blas, uint32_t instance_i);
-	GeometryKHR& SetInstanceHostAddress(void* address);
-        GeometryKHR& SetInstanceShaderBindingTableRecordOffset(uint32_t instance_i, uint32_t instance_sbt_record_offset);
+    GeometryKHR& SetInstanceHostAddress(void* address);
+    GeometryKHR& SetInstanceShaderBindingTableRecordOffset(uint32_t instance_i, uint32_t instance_sbt_record_offset);
 
-        GeometryKHR& Build();
+    GeometryKHR& Build();
 
-        const auto& GetVkObj() const { return vk_obj_; }
-        VkAccelerationStructureBuildRangeInfoKHR GetFullBuildRange() const;
-        const auto& GetTriangles() const { return triangles_; }
-        const auto& GetAABBs() const { return aabbs_; }
-        auto& GetInstance() { return instances_; }
-        VkGeometryFlagsKHR GetFlags() { return vk_obj_.flags; };
+    const auto& GetVkObj() const { return vk_obj_; }
+    VkAccelerationStructureBuildRangeInfoKHR GetFullBuildRange() const;
+    const auto& GetTriangles() const { return triangles_; }
+    const auto& GetAABBs() const { return aabbs_; }
+    auto& GetInstance() { return instances_; }
+    VkGeometryFlagsKHR GetFlags() { return vk_obj_.flags; };
 
-      private:
-        VkAccelerationStructureGeometryKHR vk_obj_;
-        Type type_ = Type::_INTERNAL_UNSPECIFIED;
-        uint32_t primitive_count_ = 0;
-        Triangles triangles_;
-        AABBs aabbs_;
-        Instances instances_;
+  private:
+    VkAccelerationStructureGeometryKHR vk_obj_;
+    Type type_ = Type::_INTERNAL_UNSPECIFIED;
+    uint32_t primitive_count_ = 0;
+    Triangles triangles_;
+    AABBs aabbs_;
+    Instances instances_;
 };
 
 class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerationStructureKHR> {
@@ -189,8 +194,8 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& SetIndirectStride(uint32_t indirect_stride);
     BuildGeometryInfoKHR& SetIndirectDeviceAddress(std::optional<VkDeviceAddress> indirect_buffer_address);
 
-    // Those functions call Build() on internal resources (geometries, src and dst acceleration structures, scratch buffer),
-    // then will build/update an acceleration structure.
+    // Those functions call Build() on internal resources (geometries, src and dst acceleration structures, scratch
+    // buffer), then will build/update an acceleration structure.
     void BuildCmdBuffer(VkCommandBuffer cmd_buffer, bool use_ppGeometries = true);
     void BuildCmdBufferIndirect(VkCommandBuffer cmd_buffer);
     void BuildHost();
@@ -269,16 +274,21 @@ GeometryKHR GeometrySimpleDeviceInstance(const vkt::Device& device, VkAccelerati
 GeometryKHR GeometrySimpleHostInstance(VkAccelerationStructureKHR host_instance);
 
 std::shared_ptr<AccelerationStructureKHR> AccelStructNull(const vkt::Device& device);
-std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceBottomLevel(const vkt::Device& device, VkDeviceSize size);
-std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnHostBottomLevel(const vkt::Device& device, VkDeviceSize size);
-std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceTopLevel(const vkt::Device& device, VkDeviceSize size);
+std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceBottomLevel(const vkt::Device& device,
+                                                                               VkDeviceSize size);
+std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnHostBottomLevel(const vkt::Device& device,
+                                                                             VkDeviceSize size);
+std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceTopLevel(const vkt::Device& device,
+                                                                            VkDeviceSize size);
 
-BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Device& device,
-                                                                GeometryKHR::Type geometry_type = GeometryKHR::Type::Triangle);
+BuildGeometryInfoKHR
+BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Device& device,
+                                           GeometryKHR::Type geometry_type = GeometryKHR::Type::Triangle);
 BuildGeometryInfoKHR BuildGeometryInfoOnDeviceBottomLevel(const vkt::Device& device, GeometryKHR&& geometry);
 
-BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device& device,
-                                                              GeometryKHR::Type geometry_type = GeometryKHR::Type::Triangle);
+BuildGeometryInfoKHR
+BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device& device,
+                                         GeometryKHR::Type geometry_type = GeometryKHR::Type::Triangle);
 
 // Create an on device TLAS pointing to one BLAS
 // on_device_bottom_level_geometry must have been built previously, and on the device
@@ -290,9 +300,10 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::Device& de
                                                            std::shared_ptr<BuildGeometryInfoKHR> on_host_blas);
 
 // Create and build a top level acceleration structure
-BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device& device, vkt::Queue& queue, vkt::CommandBuffer& cmd_buffer);
-}  // namespace blueprint
-}  // namespace as
+BuildGeometryInfoKHR
+BuildOnDeviceTopLevel(const vkt::Device& device, vkt::Queue& queue, vkt::CommandBuffer& cmd_buffer);
+} // namespace blueprint
+} // namespace as
 
 namespace rt {
 
@@ -342,7 +353,8 @@ class Pipeline {
         return *desc_set_;
     }
     TraceRaysSbt GetTraceRaysSbt(uint32_t ray_gen_shader_i = 0);
-    vkt::Buffer GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, uint32_t width, uint32_t height, uint32_t depth);
+    vkt::Buffer
+    GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, uint32_t width, uint32_t height, uint32_t depth);
     uint32_t GetShaderGroupsCount();
     std::vector<uint8_t> GetRayTracingShaderGroupHandles();
     std::vector<uint8_t> GetRayTracingCaptureReplayShaderGroupHandles();
@@ -358,7 +370,7 @@ class Pipeline {
     std::vector<VkDynamicState> dynamic_states{};
     std::vector<std::unique_ptr<VkShaderObj>> ray_gen_shaders_{};
     std::vector<std::unique_ptr<VkShaderObj>> miss_shaders_{};
-    std::vector<std::unique_ptr<VkShaderObj>> closest_hit_shaders_ {};
+    std::vector<std::unique_ptr<VkShaderObj>> closest_hit_shaders_{};
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> shader_group_cis_{};
     vkt::Pipeline rt_pipeline_{};
     VkDeferredOperationKHR deferred_op_ = VK_NULL_HANDLE;
@@ -367,6 +379,6 @@ class Pipeline {
     VkPipelineLibraryCreateInfoKHR pipeline_lib_info_{};
     std::vector<VkPipeline> libraries_{};
 };
-}  // namespace rt
+} // namespace rt
 
-}  // namespace vkt
+} // namespace vkt

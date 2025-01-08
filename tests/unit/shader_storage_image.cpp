@@ -12,9 +12,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 
 class NegativeShaderStorageImage : public VkLayerTest {};
 
@@ -34,7 +34,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatRead) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                OpCapability Shader
                OpCapability StorageImageReadWithoutFormat
           %1 = OpExtInstImport "GLSL.std.450"
@@ -97,7 +97,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWrite) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                   OpCapability Shader
                   OpCapability StorageImageWriteWithoutFormat
              %1 = OpExtInstImport "GLSL.std.450"
@@ -153,8 +153,10 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
 
     // Find storage formats with & without read without format support
     for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
-        if (has_without_format_test && has_with_format_test) break;
-        if (!vkuFormatIsSampledFloat((VkFormat)fmt)) continue;
+        if (has_without_format_test && has_with_format_test)
+            break;
+        if (!vkuFormatIsSampledFloat((VkFormat)fmt))
+            continue;
 
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
@@ -165,17 +167,20 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
         const bool has_read_without_format =
             (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR) != 0;
 
-        if (!has_storage) continue;
+        if (!has_storage)
+            continue;
 
         if (has_read_without_format) {
-            if (has_without_format_test) continue;
+            if (has_without_format_test)
+                continue;
 
             tests[n_tests].format = (VkFormat)fmt;
             tests[n_tests].props = fmt_props_3;
             has_without_format_test = true;
             n_tests++;
         } else {
-            if (has_with_format_test) continue;
+            if (has_with_format_test)
+                continue;
 
             tests[n_tests].format = (VkFormat)fmt;
             tests[n_tests].props = fmt_props_3;
@@ -189,7 +194,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                OpCapability Shader
                OpCapability StorageImageReadWithoutFormat
           %1 = OpExtInstImport "GLSL.std.450"
@@ -230,17 +235,18 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
                OpFunctionEnd
               )";
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+                           });
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &ds.layout_ });
     cs_pipeline.LateBindPipelineInfo();
-    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
+    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT; // override with wrong value
+    cs_pipeline.CreateComputePipeline(false);                     // need false to prevent late binding
 
     for (int t = 0; t < n_tests; t++) {
         VkFormat format = tests[t].format;
@@ -262,7 +268,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
             img_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
             img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            img_barrier.image = image.handle();  // Image mis-matches with FB image
+            img_barrier.image = image.handle(); // Image mis-matches with FB image
             img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -270,13 +276,27 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
             img_barrier.subresourceRange.baseMipLevel = 0;
             img_barrier.subresourceRange.layerCount = 1;
             img_barrier.subresourceRange.levelCount = 1;
-            vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
-                                   0, nullptr, 0, nullptr, 1, &img_barrier);
+            vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                                   VK_PIPELINE_STAGE_HOST_BIT,
+                                   VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                   0,
+                                   0,
+                                   nullptr,
+                                   0,
+                                   nullptr,
+                                   1,
+                                   &img_barrier);
         }
 
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(),
-                                  0, 1, &ds.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_COMPUTE,
+                                  cs_pipeline.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &ds.set_,
+                                  0,
+                                  nullptr);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeImage-07028");
         vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
@@ -303,8 +323,10 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
 
     // Find storage formats with & without write without format support
     for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
-        if (has_without_format_test && has_with_format_test) break;
-        if (!vkuFormatIsSampledFloat((VkFormat)fmt)) continue;
+        if (has_without_format_test && has_with_format_test)
+            break;
+        if (!vkuFormatIsSampledFloat((VkFormat)fmt))
+            continue;
 
         VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
         VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
@@ -315,17 +337,20 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         const bool has_write_without_format =
             (fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) != 0;
 
-        if (!has_storage) continue;
+        if (!has_storage)
+            continue;
 
         if (has_write_without_format) {
-            if (has_without_format_test) continue;
+            if (has_without_format_test)
+                continue;
 
             tests[n_tests].format = (VkFormat)fmt;
             tests[n_tests].props = fmt_props_3;
             has_without_format_test = true;
             n_tests++;
         } else {
-            if (has_with_format_test) continue;
+            if (has_with_format_test)
+                continue;
 
             tests[n_tests].format = (VkFormat)fmt;
             tests[n_tests].props = fmt_props_3;
@@ -339,7 +364,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                   OpCapability Shader
                   OpCapability StorageImageWriteWithoutFormat
              %1 = OpExtInstImport "GLSL.std.450"
@@ -376,17 +401,18 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
                   OpFunctionEnd
                   )";
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+                           });
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.cs_ =
         std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
+    cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &ds.layout_ });
     cs_pipeline.LateBindPipelineInfo();
-    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
+    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT; // override with wrong value
+    cs_pipeline.CreateComputePipeline(false);                     // need false to prevent late binding
 
     for (int t = 0; t < n_tests; t++) {
         VkFormat format = tests[t].format;
@@ -408,7 +434,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
             img_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
             img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            img_barrier.image = image.handle();  // Image mis-matches with FB image
+            img_barrier.image = image.handle(); // Image mis-matches with FB image
             img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -416,13 +442,27 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
             img_barrier.subresourceRange.baseMipLevel = 0;
             img_barrier.subresourceRange.layerCount = 1;
             img_barrier.subresourceRange.levelCount = 1;
-            vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
-                                   0, nullptr, 0, nullptr, 1, &img_barrier);
+            vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                                   VK_PIPELINE_STAGE_HOST_BIT,
+                                   VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                   0,
+                                   0,
+                                   nullptr,
+                                   0,
+                                   nullptr,
+                                   1,
+                                   &img_barrier);
         }
 
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(),
-                                  0, 1, &ds.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_COMPUTE,
+                                  cs_pipeline.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &ds.set_,
+                                  0,
+                                  nullptr);
 
         if ((tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
             m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeImage-07027");
@@ -451,7 +491,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonReadableDecorationFormatRead) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -508,7 +548,7 @@ TEST_F(NegativeShaderStorageImage, MissingNonWritableDecorationFormatWrite) {
     }
 
     // Make sure compute pipeline has a compute shader stage set
-    const char *csSource = R"(
+    const char* csSource = R"(
                   OpCapability Shader
              %1 = OpExtInstImport "GLSL.std.450"
                   OpMemoryModel Logical GLSL450
@@ -555,7 +595,7 @@ TEST_F(NegativeShaderStorageImage, WriteLessComponent) {
     // imageStore(storageImage, ivec2(1, 1), uvec3(1, 1, 1));
     //
     // Rgba8ui == 4-component but only writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %var
@@ -583,13 +623,14 @@ TEST_F(NegativeShaderStorageImage, WriteLessComponent) {
                OpFunctionEnd
         )";
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT; // Rgba8ui
     if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
         GTEST_SKIP() << "Format doesn't support storage image";
     }
-    const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    const auto set_info = [&](CreateComputePipelineHelper& helper) {
+        helper.cs_ = std::make_unique<VkShaderObj>(
+            this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } };
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
 }
@@ -605,7 +646,7 @@ TEST_F(NegativeShaderStorageImage, WriteLessComponentCopyObject) {
     // imageStore(storageImage, ivec2(1, 1), uvec3(1, 1, 1));
     //
     // Rgba8ui == 4-component but only writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %var
@@ -637,13 +678,14 @@ TEST_F(NegativeShaderStorageImage, WriteLessComponentCopyObject) {
                OpFunctionEnd
         )";
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT; // Rgba8ui
     if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
         GTEST_SKIP() << "Format doesn't support storage image";
     }
-    const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    const auto set_info = [&](CreateComputePipelineHelper& helper) {
+        helper.cs_ = std::make_unique<VkShaderObj>(
+            this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } };
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
 }
@@ -660,7 +702,7 @@ TEST_F(NegativeShaderStorageImage, WriteSpecConstantLessComponent) {
     // imageStore(storageImage, ivec2(1, 1), uvec3(1, sc, sc + 1));
     //
     // Rgba8ui == 4-component but only writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main" %var
@@ -690,7 +732,7 @@ TEST_F(NegativeShaderStorageImage, WriteSpecConstantLessComponent) {
                OpFunctionEnd
         )";
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT; // Rgba8ui
     if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
         GTEST_SKIP() << "Format doesn't support storage image";
     }
@@ -706,10 +748,10 @@ TEST_F(NegativeShaderStorageImage, WriteSpecConstantLessComponent) {
     specialization_info.dataSize = sizeof(uint32_t);
     specialization_info.pData = &data;
 
-    const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM,
-                                                   &specialization_info);
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    const auto set_info = [&](CreateComputePipelineHelper& helper) {
+        helper.cs_ = std::make_unique<VkShaderObj>(
+            this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, &specialization_info);
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } };
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
 }
@@ -726,7 +768,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     // imageStore(storageImage, ivec2(1, 1), uvec3(1, 1, 1));
     //
     // Unknown will become a 4-component but writing 3 texels to it
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpCapability StorageImageWriteWithoutFormat
                OpMemoryModel Logical GLSL450
@@ -755,9 +797,10 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
                OpReturn
                OpFunctionEnd
         )";
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+                           });
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;
     if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
@@ -779,14 +822,21 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     ds.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &ds.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &ds.set_,
+                              0,
+                              nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageWrite-08795");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
@@ -806,7 +856,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
     // imageStore(storageImage, ivec2(1, 1), vec3(1, 1, 1));
     //
     // only have 3 components
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpCapability StorageImageWriteWithoutFormat
                OpMemoryModel Logical GLSL450
@@ -835,9 +885,10 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
                OpReturn
                OpFunctionEnd
         )";
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                     });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+                           });
 
     const VkFormat format = VK_FORMAT_A8_UNORM;
     if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
@@ -852,14 +903,21 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
     ds.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &ds.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &ds.set_,
+                              0,
+                              nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageWrite-08796");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();

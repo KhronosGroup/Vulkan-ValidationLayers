@@ -41,4 +41,4 @@ class FeatureRequirements {
     std::vector<FeatureAndName> required_features_{};
 };
 
-}  // namespace vkt
+} // namespace vkt

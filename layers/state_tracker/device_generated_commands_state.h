@@ -29,18 +29,19 @@ struct ShaderObject;
 class IndirectExecutionSet : public StateObject {
   public:
     const vku::safe_VkIndirectExecutionSetCreateInfoEXT safe_create_info;
-    const VkIndirectExecutionSetCreateInfoEXT &create_info;
+    const VkIndirectExecutionSetCreateInfoEXT& create_info;
 
-    IndirectExecutionSet(ValidationStateTracker &dev, VkIndirectExecutionSetEXT handle,
-                         const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo);
+    IndirectExecutionSet(ValidationStateTracker& dev,
+                         VkIndirectExecutionSetEXT handle,
+                         const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo);
     VkIndirectExecutionSetEXT VkHandle() const { return handle_.Cast<VkIndirectExecutionSetEXT>(); }
 
     const bool is_pipeline;
     const bool is_shader_objects;
 
     // Need to keep a smart pointer around because from spec:
-    // "The characteristics of initialPipeline will be used to validate all pipelines added to the set even if they are removed from
-    // the set or destroyed"
+    // "The characteristics of initialPipeline will be used to validate all pipelines added to the set even if they are
+    // removed from the set or destroyed"
     std::shared_ptr<Pipeline> initial_pipeline;
     std::shared_ptr<ShaderObject> initial_fragment_shader_object;
 
@@ -52,20 +53,21 @@ class IndirectExecutionSet : public StateObject {
 class IndirectCommandsLayout : public StateObject {
   public:
     const vku::safe_VkIndirectCommandsLayoutCreateInfoEXT safe_create_info;
-    const VkIndirectCommandsLayoutCreateInfoEXT &create_info;
+    const VkIndirectCommandsLayoutCreateInfoEXT& create_info;
 
-    IndirectCommandsLayout(ValidationStateTracker &dev, VkIndirectCommandsLayoutEXT handle,
-                           const VkIndirectCommandsLayoutCreateInfoEXT *pCreateInfo);
+    IndirectCommandsLayout(ValidationStateTracker& dev,
+                           VkIndirectCommandsLayoutEXT handle,
+                           const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo);
     VkIndirectCommandsLayoutEXT VkHandle() const { return handle_.Cast<VkIndirectCommandsLayoutEXT>(); }
 
     VkPipelineBindPoint bind_point;
 
-    bool has_execution_set_token = false;     // VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT
-    bool has_vertex_buffer_token = false;     // VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT
-    bool has_draw_token = false;              // VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_*
-    bool has_multi_draw_count_token = false;  // VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_*_COUNT_*
+    bool has_execution_set_token = false;    // VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT
+    bool has_vertex_buffer_token = false;    // VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT
+    bool has_draw_token = false;             // VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_*
+    bool has_multi_draw_count_token = false; // VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_*_COUNT_*
 
     VkShaderStageFlags execution_set_token_shader_stage_flags = 0;
 };
 
-}  // namespace vvl
+} // namespace vvl

@@ -16,18 +16,18 @@
  */
 #pragma once
 
+#include "containers/custom_containers.h"
 #include <cassert>
 #include <cstdint>
+#include <spirv/unified1/spirv.hpp>
 #include <string>
 #include <vector>
-#include "containers/custom_containers.h"
-#include <spirv/unified1/spirv.hpp>
 
 namespace spirv {
 
 // Holds information about a single SPIR-V instruction
-// Provides easy access to len, opcode, and content words without the caller needing to care too much about the physical SPIRV
-// module layout.
+// Provides easy access to len, opcode, and content words without the caller needing to care too much about the physical
+// SPIRV module layout.
 //
 // For more information of the physical module layout to help understand this struct:
 // https://github.com/KhronosGroup/SPIRV-Guide/blob/main/chapters/parsing_instructions.md
@@ -106,4 +106,4 @@ class Instruction {
 
 void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<Instruction>& instructions);
 
-}  // namespace spirv
+} // namespace spirv

@@ -18,8 +18,8 @@
 class PositiveGeometryTessellation : public VkLayerTest {};
 
 TEST_F(PositiveGeometryTessellation, PointSizeGeomShaderDontWriteMaintenance5) {
-    TEST_DESCRIPTION(
-        "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final geometry stage, but have maintenance5.");
+    TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final "
+                     "geometry stage, but have maintenance5.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
@@ -30,7 +30,7 @@ TEST_F(PositiveGeometryTessellation, PointSizeGeomShaderDontWriteMaintenance5) {
     InitRenderTarget();
 
     // Create GS declaring PointSize and writing to it
-    static char const *gsSource = R"glsl(
+    static char const* gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (points) out;
@@ -44,16 +44,17 @@ TEST_F(PositiveGeometryTessellation, PointSizeGeomShaderDontWriteMaintenance5) {
     VkShaderObj vs(this, kVertexPointSizeGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
-    auto set_info = [&](CreatePipelineHelper &helper) {
+    auto set_info = [&](CreatePipelineHelper& helper) {
         helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_ = { vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
 
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 TEST_F(PositiveGeometryTessellation, IncompatibleDynamicPrimitiveTopology) {
-    TEST_DESCRIPTION("Create pipeline with primitive topology incompatible with shaders, but use VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY.");
+    TEST_DESCRIPTION("Create pipeline with primitive topology incompatible with shaders, but use "
+                     "VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
@@ -63,7 +64,7 @@ TEST_F(PositiveGeometryTessellation, IncompatibleDynamicPrimitiveTopology) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char *gsSource = R"glsl(
+    static const char* gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;
@@ -87,7 +88,7 @@ TEST_F(PositiveGeometryTessellation, IncompatibleDynamicPrimitiveTopology) {
     CreatePipelineHelper pipe(*this);
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -102,7 +103,7 @@ TEST_F(PositiveGeometryTessellation, DrawDynamicPrimitiveTopology) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    static const char *gsSource = R"glsl(
+    static const char* gsSource = R"glsl(
         #version 450
         layout (points) in;
         layout (triangle_strip) out;
@@ -126,7 +127,7 @@ TEST_F(PositiveGeometryTessellation, DrawDynamicPrimitiveTopology) {
     CreatePipelineHelper pipe(*this);
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -190,8 +191,11 @@ TEST_F(PositiveGeometryTessellation, TessellationPointMode) {
     tess_ci.patchControlPoints = 4u;
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(),
-                           gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(),
+                            tcs.GetStageCreateInfo(),
+                            tes.GetStageCreateInfo(),
+                            gs.GetStageCreateInfo(),
+                            pipe.fs_->GetStageCreateInfo() };
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
     pipe.tess_ci_ = tess_ci;
     pipe.CreateGraphicsPipeline();
@@ -203,7 +207,7 @@ TEST_F(PositiveGeometryTessellation, InterfaceComponents) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
+    char const* vs_source = R"glsl(
         #version 450
         layout(location = 0) out ivec4 a;
         void main() {
@@ -211,7 +215,7 @@ TEST_F(PositiveGeometryTessellation, InterfaceComponents) {
         }
     )glsl";
 
-    char const *geom_source = R"glsl(
+    char const* geom_source = R"glsl(
         #version 450
         layout(triangles) in;
         layout(triangle_strip) out;
@@ -236,7 +240,7 @@ TEST_F(PositiveGeometryTessellation, InterfaceComponents) {
         }
     )glsl";
 
-    char const *fs_source = R"glsl(
+    char const* fs_source = R"glsl(
         #version 450
         layout(location = 0) in vec4 b;
         layout(location = 0) out vec4 c;
@@ -250,6 +254,6 @@ TEST_F(PositiveGeometryTessellation, InterfaceComponents) {
     VkShaderObj frag(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vert.GetStageCreateInfo(), frag.GetStageCreateInfo(), geom.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vert.GetStageCreateInfo(), frag.GetStageCreateInfo(), geom.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }

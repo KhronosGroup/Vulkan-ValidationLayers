@@ -23,12 +23,12 @@ namespace as {
 
 GeometryKHR::GeometryKHR() : vk_obj_(vku::InitStructHelper()) {}
 
-GeometryKHR &GeometryKHR::SetFlags(VkGeometryFlagsKHR flags) {
+GeometryKHR& GeometryKHR::SetFlags(VkGeometryFlagsKHR flags) {
     vk_obj_.flags = flags;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetType(Type type) {
+GeometryKHR& GeometryKHR::SetType(Type type) {
     type_ = type;
     vk_obj_.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     vk_obj_.pNext = nullptr;
@@ -37,7 +37,7 @@ GeometryKHR &GeometryKHR::SetType(Type type) {
             vk_obj_.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
             vk_obj_.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
             vk_obj_.geometry.triangles.pNext = nullptr;
-            vk_obj_.geometry.triangles.transformData = {0};
+            vk_obj_.geometry.triangles.transformData = { 0 };
             break;
         case Type::AABB:
             vk_obj_.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
@@ -58,12 +58,12 @@ GeometryKHR &GeometryKHR::SetType(Type type) {
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetPrimitiveCount(uint32_t primitiveCount) {
+GeometryKHR& GeometryKHR::SetPrimitiveCount(uint32_t primitiveCount) {
     primitive_count_ = primitiveCount;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetStride(VkDeviceSize stride) {
+GeometryKHR& GeometryKHR::SetStride(VkDeviceSize stride) {
     switch (type_) {
         case Type::Triangle:
             vk_obj_.geometry.triangles.vertexStride = stride;
@@ -82,7 +82,8 @@ GeometryKHR &GeometryKHR::SetStride(VkDeviceSize stride) {
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesDeviceVertexBuffer(vkt::Buffer &&vertex_buffer, uint32_t max_vertex,
+GeometryKHR& GeometryKHR::SetTrianglesDeviceVertexBuffer(vkt::Buffer&& vertex_buffer,
+                                                         uint32_t max_vertex,
                                                          VkFormat vertex_format /*= VK_FORMAT_R32G32B32_SFLOAT*/,
                                                          VkDeviceSize stride /*= 3 * sizeof(float)*/) {
     triangles_.device_vertex_buffer = std::move(vertex_buffer);
@@ -93,7 +94,8 @@ GeometryKHR &GeometryKHR::SetTrianglesDeviceVertexBuffer(vkt::Buffer &&vertex_bu
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesHostVertexBuffer(std::unique_ptr<float[]> &&vertex_buffer, uint32_t max_vertex,
+GeometryKHR& GeometryKHR::SetTrianglesHostVertexBuffer(std::unique_ptr<float[]>&& vertex_buffer,
+                                                       uint32_t max_vertex,
                                                        VkDeviceSize stride /*= 3 * sizeof(float)*/) {
     triangles_.host_vertex_buffer = std::move(vertex_buffer);
     vk_obj_.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
@@ -103,7 +105,7 @@ GeometryKHR &GeometryKHR::SetTrianglesHostVertexBuffer(std::unique_ptr<float[]> 
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesDeviceIndexBuffer(vkt::Buffer &&index_buffer,
+GeometryKHR& GeometryKHR::SetTrianglesDeviceIndexBuffer(vkt::Buffer&& index_buffer,
                                                         VkIndexType index_type /*= VK_INDEX_TYPE_UINT32*/) {
     triangles_.device_index_buffer = std::move(index_buffer);
     vk_obj_.geometry.triangles.indexType = index_type;
@@ -111,57 +113,58 @@ GeometryKHR &GeometryKHR::SetTrianglesDeviceIndexBuffer(vkt::Buffer &&index_buff
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer) {
+GeometryKHR& GeometryKHR::SetTrianglesHostIndexBuffer(std::unique_ptr<uint32_t[]> index_buffer) {
     triangles_.host_index_buffer = std::move(index_buffer);
     vk_obj_.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
     vk_obj_.geometry.triangles.indexData.hostAddress = triangles_.host_index_buffer.get();
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesIndexType(VkIndexType index_type) {
+GeometryKHR& GeometryKHR::SetTrianglesIndexType(VkIndexType index_type) {
     vk_obj_.geometry.triangles.indexType = index_type;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesVertexFormat(VkFormat vertex_format) {
+GeometryKHR& GeometryKHR::SetTrianglesVertexFormat(VkFormat vertex_format) {
     vk_obj_.geometry.triangles.vertexFormat = vertex_format;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesMaxVertex(uint32_t max_vertex) {
+GeometryKHR& GeometryKHR::SetTrianglesMaxVertex(uint32_t max_vertex) {
     vk_obj_.geometry.triangles.maxVertex = max_vertex;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesTransformBuffer(vkt::Buffer &&transform_buffer) {
+GeometryKHR& GeometryKHR::SetTrianglesTransformBuffer(vkt::Buffer&& transform_buffer) {
     triangles_.device_transform_buffer = std::move(transform_buffer);
     vk_obj_.geometry.triangles.transformData.deviceAddress = triangles_.device_transform_buffer.Address();
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesTransformatData(VkDeviceAddress address) {
+GeometryKHR& GeometryKHR::SetTrianglesTransformatData(VkDeviceAddress address) {
     vk_obj_.geometry.triangles.transformData.deviceAddress = address;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesVertexBufferDeviceAddress(VkDeviceAddress address) {
+GeometryKHR& GeometryKHR::SetTrianglesVertexBufferDeviceAddress(VkDeviceAddress address) {
     vk_obj_.geometry.triangles.vertexData.deviceAddress = address;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetTrianglesIndexBufferDeviceAddress(VkDeviceAddress address) {
+GeometryKHR& GeometryKHR::SetTrianglesIndexBufferDeviceAddress(VkDeviceAddress address) {
     vk_obj_.geometry.triangles.indexData.deviceAddress = address;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetAABBsDeviceBuffer(vkt::Buffer &&buffer, VkDeviceSize stride /*= sizeof(VkAabbPositionsKHR)*/) {
+GeometryKHR& GeometryKHR::SetAABBsDeviceBuffer(vkt::Buffer&& buffer,
+                                               VkDeviceSize stride /*= sizeof(VkAabbPositionsKHR)*/) {
     aabbs_.device_buffer = std::move(buffer);
     vk_obj_.geometry.aabbs.data.deviceAddress = aabbs_.device_buffer.Address();
     vk_obj_.geometry.aabbs.stride = stride;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetAABBsHostBuffer(std::unique_ptr<VkAabbPositionsKHR[]> buffer,
+GeometryKHR& GeometryKHR::SetAABBsHostBuffer(std::unique_ptr<VkAabbPositionsKHR[]> buffer,
                                              VkDeviceSize stride /*= sizeof(VkAabbPositionsKHR)*/) {
     aabbs_.host_buffer = std::move(buffer);
     vk_obj_.geometry.aabbs.data.hostAddress = aabbs_.host_buffer.get();
@@ -169,18 +172,19 @@ GeometryKHR &GeometryKHR::SetAABBsHostBuffer(std::unique_ptr<VkAabbPositionsKHR[
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetAABBsStride(VkDeviceSize stride) {
+GeometryKHR& GeometryKHR::SetAABBsStride(VkDeviceSize stride) {
     vk_obj_.geometry.aabbs.stride = stride;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetAABBsDeviceAddress(VkDeviceAddress address) {
+GeometryKHR& GeometryKHR::SetAABBsDeviceAddress(VkDeviceAddress address) {
     vk_obj_.geometry.aabbs.data.deviceAddress = address;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &device, VkAccelerationStructureKHR blas,
-                                                          const VkAccelerationStructureInstanceKHR &instance) {
+GeometryKHR& GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device& device,
+                                                          VkAccelerationStructureKHR blas,
+                                                          const VkAccelerationStructureInstanceKHR& instance) {
     auto vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
         vk::GetDeviceProcAddr(device.handle(), "vkGetAccelerationStructureDeviceAddressKHR"));
     assert(vkGetAccelerationStructureDeviceAddressKHR);
@@ -201,12 +205,14 @@ GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &dev
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    vkt::Buffer instances_buffer(
-        device, instances_.vk_instances.size() * sizeof(VkAccelerationStructureInstanceKHR),
-        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-        kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer instances_buffer(device,
+                                 instances_.vk_instances.size() * sizeof(VkAccelerationStructureInstanceKHR),
+                                 VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                     VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+                                 kHostVisibleMemProps,
+                                 &alloc_flags);
 
-    auto instance_buffer_ptr = static_cast<VkAccelerationStructureInstanceKHR *>(instances_buffer.Memory().Map());
+    auto instance_buffer_ptr = static_cast<VkAccelerationStructureInstanceKHR*>(instances_buffer.Memory().Map());
     for (size_t vk_instance_i = 0; vk_instance_i < instances_.vk_instances.size(); ++vk_instance_i) {
         instance_buffer_ptr[vk_instance_i] = instances_.vk_instances[vk_instance_i];
     }
@@ -219,7 +225,7 @@ GeometryKHR &GeometryKHR::AddInstanceDeviceAccelStructRef(const vkt::Device &dev
     return *this;
 }
 
-GeometryKHR &GeometryKHR::AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas) {
+GeometryKHR& GeometryKHR::AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas) {
     instances_.vk_instances.emplace_back(VkAccelerationStructureInstanceKHR{});
     ++primitive_count_;
     instances_.vk_instances.back().accelerationStructureReference = (uint64_t)(blas);
@@ -230,27 +236,30 @@ GeometryKHR &GeometryKHR::AddInstanceHostAccelStructRef(VkAccelerationStructureK
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetInstancesDeviceAddress(VkDeviceAddress address) {
+GeometryKHR& GeometryKHR::SetInstancesDeviceAddress(VkDeviceAddress address) {
     vk_obj_.geometry.instances.data.deviceAddress = address;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetInstanceHostAccelStructRef(VkAccelerationStructureKHR blas, uint32_t instance_i) {
+GeometryKHR& GeometryKHR::SetInstanceHostAccelStructRef(VkAccelerationStructureKHR blas, uint32_t instance_i) {
     instances_.vk_instances[instance_i].accelerationStructureReference = (uint64_t)(blas);
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetInstanceHostAddress(void *address) {
+GeometryKHR& GeometryKHR::SetInstanceHostAddress(void* address) {
     vk_obj_.geometry.instances.data.hostAddress = address;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::SetInstanceShaderBindingTableRecordOffset(uint32_t instance_i, uint32_t instance_sbt_record_offset) {
+GeometryKHR& GeometryKHR::SetInstanceShaderBindingTableRecordOffset(uint32_t instance_i,
+                                                                    uint32_t instance_sbt_record_offset) {
     instances_.vk_instances[instance_i].instanceShaderBindingTableRecordOffset = instance_sbt_record_offset;
     return *this;
 }
 
-GeometryKHR &GeometryKHR::Build() { return *this; }
+GeometryKHR& GeometryKHR::Build() {
+    return *this;
+}
 
 VkAccelerationStructureBuildRangeInfoKHR GeometryKHR::GetFullBuildRange() const {
     VkAccelerationStructureBuildRangeInfoKHR range_info{};
@@ -258,56 +267,56 @@ VkAccelerationStructureBuildRangeInfoKHR GeometryKHR::GetFullBuildRange() const 
     range_info.primitiveOffset = 0;
     range_info.firstVertex = 0;
     range_info.transformOffset = 0;
-    assert(range_info.primitiveCount > 0);  // 0 could be a valid value, as of writing it is considered invalid
+    assert(range_info.primitiveCount > 0); // 0 could be a valid value, as of writing it is considered invalid
     return range_info;
 }
 
-AccelerationStructureKHR::AccelerationStructureKHR(const vkt::Device *device)
-    : device_(device), vk_info_(vku::InitStructHelper()), device_buffer_() {}
+AccelerationStructureKHR::AccelerationStructureKHR(const vkt::Device* device) :
+    device_(device), vk_info_(vku::InitStructHelper()), device_buffer_() {}
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetSize(VkDeviceSize size) {
+AccelerationStructureKHR& AccelerationStructureKHR::SetSize(VkDeviceSize size) {
     vk_info_.size = size;
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetOffset(VkDeviceSize offset) {
+AccelerationStructureKHR& AccelerationStructureKHR::SetOffset(VkDeviceSize offset) {
     vk_info_.offset = offset;
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetType(VkAccelerationStructureTypeKHR type) {
+AccelerationStructureKHR& AccelerationStructureKHR::SetType(VkAccelerationStructureTypeKHR type) {
     vk_info_.type = type;
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetFlags(VkAccelerationStructureCreateFlagsKHR flags) {
+AccelerationStructureKHR& AccelerationStructureKHR::SetFlags(VkAccelerationStructureCreateFlagsKHR flags) {
     vk_info_.createFlags = flags;
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBuffer(vkt::Buffer &&buffer) {
+AccelerationStructureKHR& AccelerationStructureKHR::SetDeviceBuffer(vkt::Buffer&& buffer) {
     device_buffer_ = std::move(buffer);
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferMemoryAllocateFlags(
-    VkMemoryAllocateFlags memory_allocate_flags) {
+AccelerationStructureKHR&
+AccelerationStructureKHR::SetDeviceBufferMemoryAllocateFlags(VkMemoryAllocateFlags memory_allocate_flags) {
     buffer_memory_allocate_flags_ = memory_allocate_flags;
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferMemoryPropertyFlags(
-    VkMemoryPropertyFlags memory_property_flags) {
+AccelerationStructureKHR&
+AccelerationStructureKHR::SetDeviceBufferMemoryPropertyFlags(VkMemoryPropertyFlags memory_property_flags) {
     buffer_memory_property_flags_ = memory_property_flags;
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetDeviceBufferInitNoMem(bool buffer_init_no_me) {
+AccelerationStructureKHR& AccelerationStructureKHR::SetDeviceBufferInitNoMem(bool buffer_init_no_me) {
     buffer_init_no_mem_ = buffer_init_no_me;
     return *this;
 }
 
-AccelerationStructureKHR &AccelerationStructureKHR::SetBufferUsageFlags(VkBufferUsageFlags usage_flags) {
+AccelerationStructureKHR& AccelerationStructureKHR::SetBufferUsageFlags(VkBufferUsageFlags usage_flags) {
     buffer_usage_flags_ = usage_flags;
     return *this;
 }
@@ -364,70 +373,67 @@ void AccelerationStructureKHR::Destroy() {
     device_buffer_.destroy();
 }
 
-BuildGeometryInfoKHR::BuildGeometryInfoKHR(const vkt::Device *device)
-    : device_(device),
-      vk_info_(vku::InitStructHelper()),
-      geometries_(),
-      src_as_(std::make_shared<AccelerationStructureKHR>(device)),
-      dst_as_(std::make_shared<AccelerationStructureKHR>(device)),
-      device_scratch_(std::make_shared<vkt::Buffer>()) {}
+BuildGeometryInfoKHR::BuildGeometryInfoKHR(const vkt::Device* device) :
+    device_(device), vk_info_(vku::InitStructHelper()), geometries_(),
+    src_as_(std::make_shared<AccelerationStructureKHR>(device)),
+    dst_as_(std::make_shared<AccelerationStructureKHR>(device)), device_scratch_(std::make_shared<vkt::Buffer>()) {}
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetGeometries(std::vector<GeometryKHR> &&geometries) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetGeometries(std::vector<GeometryKHR>&& geometries) {
     geometries_ = std::move(geometries);
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetBuildRanges(
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos) {
+BuildGeometryInfoKHR&
+BuildGeometryInfoKHR::SetBuildRanges(std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos) {
     build_range_infos_ = std::move(build_range_infos);
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetType(VkAccelerationStructureTypeKHR type) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetType(VkAccelerationStructureTypeKHR type) {
     src_as_->SetType(type);
     dst_as_->SetType(type);
     vk_info_.type = type;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetBuildType(VkAccelerationStructureBuildTypeKHR build_type) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetBuildType(VkAccelerationStructureBuildTypeKHR build_type) {
     build_type_ = build_type;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetMode(VkBuildAccelerationStructureModeKHR mode) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetMode(VkBuildAccelerationStructureModeKHR mode) {
     vk_info_.mode = mode;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetFlags(VkBuildAccelerationStructureFlagsKHR flags) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetFlags(VkBuildAccelerationStructureFlagsKHR flags) {
     vk_info_.flags = flags;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::AddFlags(VkBuildAccelerationStructureFlagsKHR flags) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::AddFlags(VkBuildAccelerationStructureFlagsKHR flags) {
     vk_info_.flags |= flags;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetSrcAS(std::shared_ptr<AccelerationStructureKHR> src_as) {
-    assert(src_as);  // nullptr not supported
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetSrcAS(std::shared_ptr<AccelerationStructureKHR> src_as) {
+    assert(src_as); // nullptr not supported
     src_as_ = std::move(src_as);
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetDstAS(std::shared_ptr<AccelerationStructureKHR> dst_as) {
-    assert(dst_as);  // nullptr not supported
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetDstAS(std::shared_ptr<AccelerationStructureKHR> dst_as) {
+    assert(dst_as); // nullptr not supported
     dst_as_ = std::move(dst_as);
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetScratchBuffer(std::shared_ptr<vkt::Buffer> scratch_buffer) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetScratchBuffer(std::shared_ptr<vkt::Buffer> scratch_buffer) {
     device_scratch_ = std::move(scratch_buffer);
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetHostScratchBuffer(std::shared_ptr<std::vector<uint8_t>> host_scratch) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetHostScratchBuffer(std::shared_ptr<std::vector<uint8_t>> host_scratch) {
     host_scratch_ = std::move(host_scratch);
     if (host_scratch_) {
         vk_info_.scratchData.hostAddress = host_scratch_->data();
@@ -435,53 +441,54 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetHostScratchBuffer(std::shared_ptr
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetDeviceScratchOffset(VkDeviceAddress offset) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetDeviceScratchOffset(VkDeviceAddress offset) {
     device_scratch_offset_ = offset;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetEnableScratchBuild(bool build_scratch) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetEnableScratchBuild(bool build_scratch) {
     build_scratch_ = build_scratch;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetInfoCount(uint32_t info_count) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetInfoCount(uint32_t info_count) {
     assert(info_count <= 1);
     vk_info_count_ = info_count;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetNullInfos(bool use_null_infos) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetNullInfos(bool use_null_infos) {
     use_null_infos_ = use_null_infos;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetNullGeometries(bool use_null_geometries) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetNullGeometries(bool use_null_geometries) {
     use_null_geometries_ = use_null_geometries;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetNullBuildRangeInfos(bool use_null_build_range_infos) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetNullBuildRangeInfos(bool use_null_build_range_infos) {
     use_null_build_range_infos_ = use_null_build_range_infos;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetDeferredOp(VkDeferredOperationKHR deferred_op) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetDeferredOp(VkDeferredOperationKHR deferred_op) {
     deferred_op_ = deferred_op;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetUpdateDstAccelStructSizeBeforeBuild(bool update_before_build) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetUpdateDstAccelStructSizeBeforeBuild(bool update_before_build) {
     update_dst_as_size_before_build_ = update_before_build;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetIndirectStride(uint32_t indirect_stride) {
+BuildGeometryInfoKHR& BuildGeometryInfoKHR::SetIndirectStride(uint32_t indirect_stride) {
     indirect_stride_ = indirect_stride;
     return *this;
 }
 
-BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetIndirectDeviceAddress(std::optional<VkDeviceAddress> indirect_buffer_address) {
+BuildGeometryInfoKHR&
+BuildGeometryInfoKHR::SetIndirectDeviceAddress(std::optional<VkDeviceAddress> indirect_buffer_address) {
     indirect_buffer_address_ = indirect_buffer_address;
     return *this;
 }
@@ -508,7 +515,7 @@ void BuildGeometryInfoKHR::UpdateDstAccelStructSize() {
 
 void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeometries /*= true*/) {
     // Build geometries
-    for (auto &geometry : geometries_) {
+    for (auto& geometry : geometries_) {
         geometry.Build();
     }
 
@@ -539,15 +546,18 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
             VkPhysicalDeviceProperties2 phys_dev_props = vku::InitStructHelper(&as_props);
             vk::GetPhysicalDeviceProperties2(device_->Physical(), &phys_dev_props);
 
-            assert(device_scratch_);  // So far null pointers are not supported
+            assert(device_scratch_); // So far null pointers are not supported
             if (!device_scratch_->initialized()) {
                 VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
                 alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
                 if (scratch_size > 0) {
-                    device_scratch_->init(*device_, scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
-                                          VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
+                    device_scratch_->init(*device_,
+                                          scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
+                                          VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                          &alloc_flags);
                 }
             }
             if (device_scratch_->CreateInfo().size != 0 &&
@@ -556,11 +566,12 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
                 const auto aligned_scratch_address =
                     Align<VkDeviceAddress>(scratch_address, as_props.minAccelerationStructureScratchOffsetAlignment);
                 assert(aligned_scratch_address >= scratch_address);
-                assert(aligned_scratch_address < (scratch_address + as_props.minAccelerationStructureScratchOffsetAlignment));
+                assert(aligned_scratch_address <
+                       (scratch_address + as_props.minAccelerationStructureScratchOffsetAlignment));
                 vk_info_.scratchData.deviceAddress = aligned_scratch_address + device_scratch_offset_;
                 assert(vk_info_.scratchData.deviceAddress <
-                       (scratch_address +
-                        device_scratch_->CreateInfo().size));  // Note: This assert may prove overly conservative in the future
+                       (scratch_address + device_scratch_->CreateInfo()
+                                              .size)); // Note: This assert may prove overly conservative in the future
             } else {
                 vk_info_.scratchData.deviceAddress = 0;
             }
@@ -576,9 +587,10 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
     }
 }
 
-void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, bool use_ppGeometries /*= true*/) {
+void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer,
+                                                               bool use_ppGeometries /*= true*/) {
     // fill vk_info_ with geometry data, and get build ranges
-    std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries;
+    std::vector<const VkAccelerationStructureGeometryKHR*> pGeometries;
     std::vector<VkAccelerationStructureGeometryKHR> geometries;
     if (use_ppGeometries) {
         pGeometries.resize(geometries_.size());
@@ -587,9 +599,9 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer c
     }
 
     assert(build_range_infos_.size() >= geometries_.size());
-    std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> pRange_infos(geometries_.size());
+    std::vector<const VkAccelerationStructureBuildRangeInfoKHR*> pRange_infos(geometries_.size());
     for (size_t i = 0; i < geometries_.size(); ++i) {
-        const auto &geometry = geometries_[i];
+        const auto& geometry = geometries_[i];
         if (use_ppGeometries) {
             pGeometries[i] = &geometry.GetVkObj();
         } else {
@@ -608,8 +620,8 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresKHR(VkCommandBuffer c
     }
 
     // Build acceleration structure
-    const VkAccelerationStructureBuildGeometryInfoKHR *pInfos = use_null_infos_ ? nullptr : &vk_info_;
-    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos =
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos = use_null_infos_ ? nullptr : &vk_info_;
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos =
         use_null_build_range_infos_ ? nullptr : pRange_infos.data();
     vk::CmdBuildAccelerationStructuresKHR(cmd_buffer, vk_info_count_, pInfos, ppBuildRangeInfos);
 
@@ -629,14 +641,16 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
-    indirect_buffer_->init(*device_, 1 * vk_info_.geometryCount * sizeof(VkAccelerationStructureBuildRangeInfoKHR),
-                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps,
+    indirect_buffer_->init(*device_,
+                           1 * vk_info_.geometryCount * sizeof(VkAccelerationStructureBuildRangeInfoKHR),
+                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                           kHostVisibleMemProps,
                            &alloc_flags);
 
-    auto *ranges_info = static_cast<VkAccelerationStructureBuildRangeInfoKHR *>(indirect_buffer_->Memory().Map());
+    auto* ranges_info = static_cast<VkAccelerationStructureBuildRangeInfoKHR*>(indirect_buffer_->Memory().Map());
 
     // fill vk_info_ with geometry data, and get build ranges
-    std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries(geometries_.size());
+    std::vector<const VkAccelerationStructureGeometryKHR*> pGeometries(geometries_.size());
 
     pGeometries.reserve(geometries_.size());
     for (const auto [i, geometry] : vvl::enumerate(geometries_)) {
@@ -652,12 +666,13 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
     indirect_buffer_->Memory().Unmap();
 
     std::vector<uint32_t> p_max_primitive_counts(vk_info_.geometryCount, 1);
-    const uint32_t *pp_max_primitive_counts = p_max_primitive_counts.data();
+    const uint32_t* pp_max_primitive_counts = p_max_primitive_counts.data();
 
-    const VkDeviceAddress indirect_address = indirect_buffer_address_ ? *indirect_buffer_address_ : indirect_buffer_->Address();
+    const VkDeviceAddress indirect_address =
+        indirect_buffer_address_ ? *indirect_buffer_address_ : indirect_buffer_->Address();
 
-    vk::CmdBuildAccelerationStructuresIndirectKHR(cmd_buffer, vk_info_count_, &vk_info_, &indirect_address, &indirect_stride_,
-                                                  &pp_max_primitive_counts);
+    vk::CmdBuildAccelerationStructuresIndirectKHR(
+        cmd_buffer, vk_info_count_, &vk_info_, &indirect_address, &indirect_stride_, &pp_max_primitive_counts);
 
     // pGeometries and geometries are going to be destroyed
     vk_info_.geometryCount = 0;
@@ -667,12 +682,12 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
 
 void BuildGeometryInfoKHR::VkBuildAccelerationStructuresKHR() {
     // fill vk_info_ with geometry data, and get build ranges
-    std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries(geometries_.size());
+    std::vector<const VkAccelerationStructureGeometryKHR*> pGeometries(geometries_.size());
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> range_infos(geometries_.size());
-    std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> pRange_infos(geometries_.size());
+    std::vector<const VkAccelerationStructureBuildRangeInfoKHR*> pRange_infos(geometries_.size());
     pGeometries.reserve(geometries_.size());
     for (size_t i = 0; i < geometries_.size(); ++i) {
-        const auto &geometry = geometries_[i];
+        const auto& geometry = geometries_[i];
         pGeometries[i] = &geometry.GetVkObj();
         range_infos[i] = geometry.GetFullBuildRange();
         pRange_infos[i] = &range_infos[i];
@@ -685,8 +700,8 @@ void BuildGeometryInfoKHR::VkBuildAccelerationStructuresKHR() {
         vk_info_.ppGeometries = pGeometries.data();
     }
     // Build acceleration structure
-    const VkAccelerationStructureBuildGeometryInfoKHR *pInfos = use_null_infos_ ? nullptr : &vk_info_;
-    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos =
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos = use_null_infos_ ? nullptr : &vk_info_;
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos =
         use_null_build_range_infos_ ? nullptr : pRange_infos.data();
     vk::BuildAccelerationStructuresKHR(device_->handle(), deferred_op_, vk_info_count_, pInfos, ppBuildRangeInfos);
 
@@ -698,7 +713,7 @@ void BuildGeometryInfoKHR::VkBuildAccelerationStructuresKHR() {
 VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool use_ppGeometries /*= true*/) {
     // Computer total primitives count, and get pointers to geometries
     std::vector<uint32_t> primitives_count(geometries_.size());
-    std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries;
+    std::vector<const VkAccelerationStructureGeometryKHR*> pGeometries;
     std::vector<VkAccelerationStructureGeometryKHR> geometries;
 
     if (use_ppGeometries) {
@@ -707,7 +722,7 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
         geometries.reserve(geometries_.size());
     }
 
-    for (const auto &[geometry_i, geometry] : vvl::enumerate(geometries_)) {
+    for (const auto& [geometry_i, geometry] : vvl::enumerate(geometries_)) {
         primitives_count[geometry_i] = geometry->GetFullBuildRange().primitiveCount;
         if (use_ppGeometries) {
             pGeometries.emplace_back(&geometry->GetVkObj());
@@ -727,7 +742,8 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
 
     // Get VkAccelerationStructureBuildSizesInfoKHR using this->vk_info_
     VkAccelerationStructureBuildSizesInfoKHR size_info = vku::InitStructHelper();
-    vk::GetAccelerationStructureBuildSizesKHR(device_->handle(), build_type_, &vk_info_, primitives_count.data(), &size_info);
+    vk::GetAccelerationStructureBuildSizesKHR(
+        device_->handle(), build_type_, &vk_info_, primitives_count.data(), &size_info);
 
     // pGeometries and geometries are going to be destroyed
     vk_info_.geometryCount = 0;
@@ -746,18 +762,18 @@ std::vector<VkAccelerationStructureBuildRangeInfoKHR> BuildGeometryInfoKHR::GetB
     return range_infos;
 }
 
-void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<BuildGeometryInfoKHR> &infos) {
+void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<BuildGeometryInfoKHR>& infos) {
     size_t total_geomertry_count = 0;
 
-    for (auto &build_info : infos) {
+    for (auto& build_info : infos) {
         total_geomertry_count += build_info.geometries_.size();
     }
 
     // Those vectors will be used to contiguously store the "raw vulkan data" for each element of `infos`
     // To do that, total memory needed needs to be know upfront
-    std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries(total_geomertry_count);
+    std::vector<const VkAccelerationStructureGeometryKHR*> pGeometries(total_geomertry_count);
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> range_infos(total_geomertry_count);
-    std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> pRange_infos(total_geomertry_count);
+    std::vector<const VkAccelerationStructureBuildRangeInfoKHR*> pRange_infos(total_geomertry_count);
 
     std::vector<VkAccelerationStructureBuildGeometryInfoKHR> vk_infos;
     vk_infos.reserve(infos.size());
@@ -766,12 +782,12 @@ void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<Buil
     size_t range_infos_offset = 0;
     size_t pRange_infos_offset = 0;
 
-    for (auto &build_info : infos) {
+    for (auto& build_info : infos) {
         build_info.SetupBuild(true);
 
         // Fill current vk_info_ with geometry data in ppGeometries, and get build ranges
         for (size_t i = 0; i < build_info.geometries_.size(); ++i) {
-            const auto &geometry = build_info.geometries_[i];
+            const auto& geometry = build_info.geometries_[i];
             pGeometries[pGeometries_offset + i] = &geometry.GetVkObj();
             range_infos[range_infos_offset + i] = geometry.GetFullBuildRange();
             pRange_infos[pRange_infos_offset + i] = &range_infos[range_infos_offset + i];
@@ -788,28 +804,29 @@ void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<Buil
     }
 
     // Build list of acceleration structures
-    vk::CmdBuildAccelerationStructuresKHR(cmd_buffer, static_cast<uint32_t>(vk_infos.size()), vk_infos.data(), pRange_infos.data());
+    vk::CmdBuildAccelerationStructuresKHR(
+        cmd_buffer, static_cast<uint32_t>(vk_infos.size()), vk_infos.data(), pRange_infos.data());
 
     // Clean
-    for (auto &build_info : infos) {
+    for (auto& build_info : infos) {
         // pGeometries is going to be destroyed
         build_info.vk_info_.geometryCount = 0;
         build_info.vk_info_.ppGeometries = nullptr;
     }
 }
 
-void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeometryInfoKHR> &infos) {
+void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeometryInfoKHR>& infos) {
     size_t total_geomertry_count = 0;
 
-    for (auto &build_info : infos) {
+    for (auto& build_info : infos) {
         total_geomertry_count += build_info.geometries_.size();
     }
 
     // Those vectors will be used to contiguously store the "raw vulkan data" for each element of `infos`
     // To do that, total memory needed needs to be know upfront
-    std::vector<const VkAccelerationStructureGeometryKHR *> pGeometries(total_geomertry_count);
+    std::vector<const VkAccelerationStructureGeometryKHR*> pGeometries(total_geomertry_count);
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> range_infos(total_geomertry_count);
-    std::vector<const VkAccelerationStructureBuildRangeInfoKHR *> pRange_infos(total_geomertry_count);
+    std::vector<const VkAccelerationStructureBuildRangeInfoKHR*> pRange_infos(total_geomertry_count);
 
     std::vector<VkAccelerationStructureBuildGeometryInfoKHR> vk_infos;
     vk_infos.reserve(infos.size());
@@ -818,12 +835,12 @@ void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeomet
     size_t range_infos_offset = 0;
     size_t pRange_infos_offset = 0;
 
-    for (auto &build_info : infos) {
+    for (auto& build_info : infos) {
         build_info.SetupBuild(false);
 
         // Fill current vk_info_ with geometry data in ppGeometries, and get build ranges
         for (size_t i = 0; i < build_info.geometries_.size(); ++i) {
-            const auto &geometry = build_info.geometries_[i];
+            const auto& geometry = build_info.geometries_[i];
             pGeometries[pGeometries_offset + i] = &geometry.GetVkObj();
             range_infos[range_infos_offset + i] = geometry.GetFullBuildRange();
             pRange_infos[pRange_infos_offset + i] = &range_infos[range_infos_offset + i];
@@ -840,11 +857,11 @@ void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeomet
     }
 
     // Build list of acceleration structures
-    vk::BuildAccelerationStructuresKHR(device, VK_NULL_HANDLE, static_cast<uint32_t>(vk_infos.size()), vk_infos.data(),
-                                       pRange_infos.data());
+    vk::BuildAccelerationStructuresKHR(
+        device, VK_NULL_HANDLE, static_cast<uint32_t>(vk_infos.size()), vk_infos.data(), pRange_infos.data());
 
     // Clean
-    for (auto &build_info : infos) {
+    for (auto& build_info : infos) {
         // pGeometries is going to be destroyed
         build_info.vk_info_.geometryCount = 0;
         build_info.vk_info_.ppGeometries = nullptr;
@@ -852,7 +869,7 @@ void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeomet
 }
 
 namespace blueprint {
-GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t triangles_count) {
+GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device& device, size_t triangles_count) {
     assert(triangles_count > 0);
     GeometryKHR triangle_geometry;
 
@@ -866,18 +883,26 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     vkt::Buffer vertex_buffer(device, 1024, buffer_usage, kHostVisibleMemProps, &alloc_flags);
-    vkt::Buffer index_buffer(device, 1024 + 3 * triangles_count * sizeof(uint32_t), buffer_usage, kHostVisibleMemProps,
-                             &alloc_flags);
-    vkt::Buffer transform_buffer(device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer index_buffer(
+        device, 1024 + 3 * triangles_count * sizeof(uint32_t), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer transform_buffer(
+        device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
     // Fill vertex and index buffers with one triangle
     triangle_geometry.SetPrimitiveCount(triangles_count);
-    constexpr std::array vertices = {// Vertex 0
-                                     10.0f, 10.0f, 0.0f,
-                                     // Vertex 1
-                                     -10.0f, 10.0f, 0.0f,
-                                     // Vertex 2
-                                     0.0f, -10.0f, 0.0f};
+    constexpr std::array vertices = { // Vertex 0
+                                      10.0f,
+                                      10.0f,
+                                      0.0f,
+                                      // Vertex 1
+                                      -10.0f,
+                                      10.0f,
+                                      0.0f,
+                                      // Vertex 2
+                                      0.0f,
+                                      -10.0f,
+                                      0.0f
+    };
     std::vector<uint32_t> indices(triangles_count * 3);
     for (size_t triangle_i = 0; triangle_i < triangles_count; ++triangle_i) {
         indices[3 * triangle_i + 0] = 0;
@@ -885,11 +910,11 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
         indices[3 * triangle_i + 2] = 2;
     }
 
-    auto vertex_buffer_ptr = static_cast<float *>(vertex_buffer.Memory().Map());
+    auto vertex_buffer_ptr = static_cast<float*>(vertex_buffer.Memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
     vertex_buffer.Memory().Unmap();
 
-    auto index_buffer_ptr = static_cast<uint32_t *>(index_buffer.Memory().Map());
+    auto index_buffer_ptr = static_cast<uint32_t*>(index_buffer.Memory().Map());
     std::copy(indices.begin(), indices.end(), index_buffer_ptr);
     index_buffer.Memory().Unmap();
 
@@ -901,7 +926,7 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
     }};
     // clang-format on
 
-    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.Memory().Map());
+    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR*>(transform_buffer.Memory().Map());
     std::memcpy(transform_buffer_ptr, &transform_matrix, sizeof(transform_matrix));
     transform_buffer.Memory().Unmap();
 
@@ -921,8 +946,8 @@ GeometryKHR GeometrySimpleOnHostTriangleInfo() {
     triangle_geometry.SetType(GeometryKHR::Type::Triangle);
     // Fill vertex and index buffers with one triangle
     triangle_geometry.SetPrimitiveCount(1);
-    constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
-    constexpr std::array<uint32_t, 3> indices = {{0, 1, 2}};
+    constexpr std::array vertices = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f };
+    constexpr std::array<uint32_t, 3> indices = { { 0, 1, 2 } };
 
     auto vertex_buffer = std::make_unique<float[]>(vertices.size());
     std::copy(vertices.data(), vertices.data() + vertices.size(), vertex_buffer.get());
@@ -937,7 +962,7 @@ GeometryKHR GeometrySimpleOnHostTriangleInfo() {
     return triangle_geometry;
 }
 
-GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device &device) {
+GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device& device) {
     GeometryKHR cube_geometry;
 
     cube_geometry.SetType(GeometryKHR::Type::Triangle);
@@ -969,34 +994,40 @@ GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device &device) {
     struct Vertex {
         float x, y, z;
     };
-    constexpr std::array<Vertex, 8> vertices = {{
-        {1.0f, 1.0f, -1.0f},
-        {-1.0f, 1.0f, -1.0f},
-        {-1.0f, -1.0f, -1.0f},
-        {1.0f, -1.0f, -1.0f},
+    constexpr std::array<Vertex, 8> vertices = { {
+        { 1.0f, 1.0f, -1.0f },
+        { -1.0f, 1.0f, -1.0f },
+        { -1.0f, -1.0f, -1.0f },
+        { 1.0f, -1.0f, -1.0f },
 
-        {1.0f, 1.0f, 1.0f},
-        {-1.0f, 1.0f, 1.0f},
-        {-1.0f, -1.0f, 1.0f},
-        {1.0f, -1.0f, 1.0f},
-    }};
+        { 1.0f, 1.0f, 1.0f },
+        { -1.0f, 1.0f, 1.0f },
+        { -1.0f, -1.0f, 1.0f },
+        { 1.0f, -1.0f, 1.0f },
+    } };
 
     struct TriangleIndices {
         uint32_t i0, i1, i2;
     };
-    constexpr std::array<TriangleIndices, 2 * 6> indices = {{// face oriented by +X
-                                                             TriangleIndices{3, 0, 4}, TriangleIndices{4, 7, 3},
-                                                             // face oriented by +Y
-                                                             TriangleIndices{0, 4, 5}, TriangleIndices{0, 5, 1},
-                                                             // face oriented by +Z
-                                                             TriangleIndices{4, 5, 6}, TriangleIndices{4, 6, 7},
+    constexpr std::array<TriangleIndices, 2 * 6> indices = { { // face oriented by +X
+                                                               TriangleIndices{ 3, 0, 4 },
+                                                               TriangleIndices{ 4, 7, 3 },
+                                                               // face oriented by +Y
+                                                               TriangleIndices{ 0, 4, 5 },
+                                                               TriangleIndices{ 0, 5, 1 },
+                                                               // face oriented by +Z
+                                                               TriangleIndices{ 4, 5, 6 },
+                                                               TriangleIndices{ 4, 6, 7 },
 
-                                                             // face oriented by -X
-                                                             TriangleIndices{1, 6, 5}, TriangleIndices{1, 2, 6},
-                                                             // face oriented bye -Y
-                                                             TriangleIndices{2, 6, 7}, TriangleIndices{2, 7, 3},
-                                                             // face oriented by -z
-                                                             TriangleIndices{0, 1, 3}, TriangleIndices{1, 3, 2}}};
+                                                               // face oriented by -X
+                                                               TriangleIndices{ 1, 6, 5 },
+                                                               TriangleIndices{ 1, 2, 6 },
+                                                               // face oriented bye -Y
+                                                               TriangleIndices{ 2, 6, 7 },
+                                                               TriangleIndices{ 2, 7, 3 },
+                                                               // face oriented by -z
+                                                               TriangleIndices{ 0, 1, 3 },
+                                                               TriangleIndices{ 1, 3, 2 } } };
 
     // clang-format off
     VkTransformMatrixKHR transform_matrix = {{
@@ -1013,19 +1044,22 @@ GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device &device) {
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    vkt::Buffer vertex_buffer(device, sizeof(vertices[0]) * vertices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
-    vkt::Buffer index_buffer(device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
-    vkt::Buffer transform_buffer(device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer vertex_buffer(
+        device, sizeof(vertices[0]) * vertices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer index_buffer(
+        device, sizeof(indices[0]) * indices.size(), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer transform_buffer(
+        device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
-    auto vertex_buffer_ptr = static_cast<Vertex *>(vertex_buffer.Memory().Map());
+    auto vertex_buffer_ptr = static_cast<Vertex*>(vertex_buffer.Memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
     vertex_buffer.Memory().Unmap();
 
-    auto index_buffer_ptr = static_cast<TriangleIndices *>(index_buffer.Memory().Map());
+    auto index_buffer_ptr = static_cast<TriangleIndices*>(index_buffer.Memory().Map());
     std::copy(indices.begin(), indices.end(), index_buffer_ptr);
     index_buffer.Memory().Unmap();
 
-    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.Memory().Map());
+    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR*>(transform_buffer.Memory().Map());
     std::memcpy(transform_buffer_ptr, &transform_matrix, sizeof(transform_matrix));
     transform_buffer.Memory().Unmap();
 
@@ -1039,13 +1073,13 @@ GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device &device) {
     return cube_geometry;
 }
 
-GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device &device) {
+GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device& device) {
     GeometryKHR aabb_geometry;
 
     aabb_geometry.SetType(GeometryKHR::Type::AABB);
 
     // Allocate buffer
-    const std::array<VkAabbPositionsKHR, 1> aabbs = {{{-10.0f, -10.0f, -10.0f, +10.0f, +10.0f, +10.0f}}};
+    const std::array<VkAabbPositionsKHR, 1> aabbs = { { { -10.0f, -10.0f, -10.0f, +10.0f, +10.0f, +10.0f } } };
 
     const VkDeviceSize aabb_buffer_size = sizeof(aabbs[0]) * aabbs.size();
     vkt::Buffer aabb_buffer;
@@ -1059,7 +1093,7 @@ GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device &device) {
 
     // Fill buffer with one AABB
     aabb_geometry.SetPrimitiveCount(static_cast<uint32_t>(aabbs.size()));
-    auto mapped_aabb_buffer_data = static_cast<VkAabbPositionsKHR *>(aabb_buffer.Memory().Map());
+    auto mapped_aabb_buffer_data = static_cast<VkAabbPositionsKHR*>(aabb_buffer.Memory().Map());
     std::copy(aabbs.begin(), aabbs.end(), mapped_aabb_buffer_data);
     aabb_buffer.Memory().Unmap();
 
@@ -1074,7 +1108,7 @@ GeometryKHR GeometrySimpleOnHostAABBInfo() {
     aabb_geometry.SetType(GeometryKHR::Type::AABB);
 
     // Fill buffer with one aabb
-    const std::array<VkAabbPositionsKHR, 1> aabbs = {{{-1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f}}};
+    const std::array<VkAabbPositionsKHR, 1> aabbs = { { { -1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f } } };
 
     auto aabb_buffer = std::make_unique<VkAabbPositionsKHR[]>(aabbs.size());
     std::copy(aabbs.data(), aabbs.data() + aabbs.size(), aabb_buffer.get());
@@ -1086,7 +1120,7 @@ GeometryKHR GeometrySimpleOnHostAABBInfo() {
     return aabb_geometry;
 }
 
-GeometryKHR GeometrySimpleDeviceInstance(const vkt::Device &device, VkAccelerationStructureKHR device_blas) {
+GeometryKHR GeometrySimpleDeviceInstance(const vkt::Device& device, VkAccelerationStructureKHR device_blas) {
     GeometryKHR instance_geometry;
 
     instance_geometry.SetType(GeometryKHR::Type::Instance);
@@ -1109,50 +1143,54 @@ GeometryKHR GeometrySimpleHostInstance(VkAccelerationStructureKHR host_instance)
     return instance_geometry;
 }
 
-std::shared_ptr<AccelerationStructureKHR> AccelStructNull(const vkt::Device &device) {
+std::shared_ptr<AccelerationStructureKHR> AccelStructNull(const vkt::Device& device) {
     auto as = std::make_shared<AccelerationStructureKHR>(&device);
     as->SetNull(true);
     return as;
 }
 
-std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceBottomLevel(const vkt::Device &device, VkDeviceSize size) {
+std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceBottomLevel(const vkt::Device& device,
+                                                                               VkDeviceSize size) {
     auto as = std::make_shared<AccelerationStructureKHR>(&device);
     as->SetSize(size);
     as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
     as->SetDeviceBufferMemoryAllocateFlags(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
     as->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     as->SetDeviceBufferInitNoMem(false);
     return as;
 }
 
-std::shared_ptr<vkt::as::AccelerationStructureKHR> AccelStructSimpleOnHostBottomLevel(const vkt::Device &device,
+std::shared_ptr<vkt::as::AccelerationStructureKHR> AccelStructSimpleOnHostBottomLevel(const vkt::Device& device,
                                                                                       VkDeviceSize size) {
     auto as = std::make_shared<AccelerationStructureKHR>(&device);
     as->SetSize(size);
     as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
     as->SetDeviceBufferMemoryAllocateFlags(0);
     as->SetDeviceBufferMemoryPropertyFlags(kHostVisibleMemProps);
-    as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    as->SetDeviceBufferInitNoMem(false);
-    return as;
-}
-
-std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceTopLevel(const vkt::Device &device, VkDeviceSize size) {
-    auto as = std::make_shared<AccelerationStructureKHR>(&device);
-    as->SetSize(size);
-    as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
-    as->SetDeviceBufferMemoryAllocateFlags(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
-    as->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+    as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     as->SetDeviceBufferInitNoMem(false);
     return as;
 }
 
-BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Device &device,
-                                                                GeometryKHR::Type geometry_type /*= GeometryKHR::Type::Triangle*/) {
+std::shared_ptr<AccelerationStructureKHR> AccelStructSimpleOnDeviceTopLevel(const vkt::Device& device,
+                                                                            VkDeviceSize size) {
+    auto as = std::make_shared<AccelerationStructureKHR>(&device);
+    as->SetSize(size);
+    as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
+    as->SetDeviceBufferMemoryAllocateFlags(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+    as->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    as->SetDeviceBufferInitNoMem(false);
+    return as;
+}
+
+BuildGeometryInfoKHR
+BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Device& device,
+                                           GeometryKHR::Type geometry_type /*= GeometryKHR::Type::Triangle*/) {
     // Set geometry
     GeometryKHR geometry;
     switch (geometry_type) {
@@ -1172,7 +1210,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Devic
     return BuildGeometryInfoOnDeviceBottomLevel(device, std::move(geometry));
 }
 
-BuildGeometryInfoKHR BuildGeometryInfoOnDeviceBottomLevel(const vkt::Device &device, GeometryKHR &&geometry) {
+BuildGeometryInfoKHR BuildGeometryInfoOnDeviceBottomLevel(const vkt::Device& device, GeometryKHR&& geometry) {
     BuildGeometryInfoKHR out_build_info(&device);
 
     out_build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
@@ -1198,8 +1236,9 @@ BuildGeometryInfoKHR BuildGeometryInfoOnDeviceBottomLevel(const vkt::Device &dev
     return out_build_info;
 }
 
-BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device &device,
-                                                              GeometryKHR::Type geometry_type /*= GeometryKHR::Type::Triangle*/) {
+BuildGeometryInfoKHR
+BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device& device,
+                                         GeometryKHR::Type geometry_type /*= GeometryKHR::Type::Triangle*/) {
     BuildGeometryInfoKHR out_build_info(&device);
 
     out_build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
@@ -1237,8 +1276,9 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device 
     return out_build_info;
 }
 
-vkt::as::BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(const vkt::Device &device,
-                                                                      std::shared_ptr<BuildGeometryInfoKHR> on_device_blas) {
+vkt::as::BuildGeometryInfoKHR
+BuildGeometryInfoSimpleOnDeviceTopLevel(const vkt::Device& device,
+                                        std::shared_ptr<BuildGeometryInfoKHR> on_device_blas) {
     assert(on_device_blas->GetDstAS()->IsBuilt());
 
     BuildGeometryInfoKHR out_build_info(&device);
@@ -1268,8 +1308,8 @@ vkt::as::BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(const vkt:
     return out_build_info;
 }
 
-vkt::as::BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::Device &device,
-                                                                    std::shared_ptr<BuildGeometryInfoKHR> on_host_blas) {
+vkt::as::BuildGeometryInfoKHR
+BuildGeometryInfoSimpleOnHostTopLevel(const vkt::Device& device, std::shared_ptr<BuildGeometryInfoKHR> on_host_blas) {
     assert(on_host_blas->GetDstAS()->IsBuilt());
 
     BuildGeometryInfoKHR out_build_info(&device);
@@ -1299,12 +1339,13 @@ vkt::as::BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::D
     return out_build_info;
 }
 
-BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Queue &queue, vkt::CommandBuffer &cmd_buffer) {
+BuildGeometryInfoKHR
+BuildOnDeviceTopLevel(const vkt::Device& device, vkt::Queue& queue, vkt::CommandBuffer& cmd_buffer) {
     // Create acceleration structure
     cmd_buffer.Begin();
     // Build Bottom Level Acceleration Structure
-    auto bot_level_accel_struct =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(device));
+    auto bot_level_accel_struct = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(device));
     bot_level_accel_struct->BuildCmdBuffer(cmd_buffer);
     cmd_buffer.End();
 
@@ -1324,13 +1365,13 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Queue
     return top_level_accel_struct;
 }
 
-}  // namespace blueprint
+} // namespace blueprint
 
-}  // namespace as
+} // namespace as
 
 namespace rt {
 
-Pipeline::Pipeline(VkLayerTest &test, vkt::Device *device) : test_(test), device_(device) {}
+Pipeline::Pipeline(VkLayerTest& test, vkt::Device* device) : test_(test), device_(device) {}
 
 Pipeline::~Pipeline() {
     if (deferred_op_ != VK_NULL_HANDLE) {
@@ -1338,13 +1379,16 @@ Pipeline::~Pipeline() {
     }
 }
 
-void Pipeline::AddCreateInfoFlags(VkPipelineCreateFlags flags) { vk_info_.flags |= flags; }
+void Pipeline::AddCreateInfoFlags(VkPipelineCreateFlags flags) {
+    vk_info_.flags |= flags;
+}
 
 void Pipeline::InitLibraryInfo() {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
     test_.GetPhysicalDeviceProperties2(rt_pipeline_props);
     rt_pipeline_interface_info_ = vku::InitStructHelper();
-    rt_pipeline_interface_info_.maxPipelineRayPayloadSize = sizeof(float);  // Set according to payload defined in kRayGenShaderText
+    rt_pipeline_interface_info_.maxPipelineRayPayloadSize =
+        sizeof(float); // Set according to payload defined in kRayGenShaderText
     rt_pipeline_interface_info_.maxPipelineRayHitAttributeSize = rt_pipeline_props.maxRayHitAttributeSize;
     AddCreateInfoFlags(VK_PIPELINE_CREATE_LIBRARY_BIT_KHR);
     vk_info_.pLibraryInterface = &rt_pipeline_interface_info_;
@@ -1355,43 +1399,50 @@ void Pipeline::AddBinding(VkDescriptorType descriptor_type, uint32_t binding, ui
     binding_layout.binding = binding;
     binding_layout.descriptorType = descriptor_type;
     binding_layout.descriptorCount = descriptor_count;
-    binding_layout.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+    binding_layout.stageFlags =
+        VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
     bindings_.emplace_back(binding_layout);
 }
 
-void Pipeline::CreateDescriptorSet() { desc_set_ = std::make_unique<OneOffDescriptorSet>(device_, bindings_); }
-
-void Pipeline::SetPushConstantRangeSize(uint32_t byte_size) { push_constant_range_size_ = byte_size; }
-
-void Pipeline::SetGlslRayGenShader(const char *glsl) {
-    ray_gen_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2));
+void Pipeline::CreateDescriptorSet() {
+    desc_set_ = std::make_unique<OneOffDescriptorSet>(device_, bindings_);
 }
 
-void Pipeline::AddSpirvRayGenShader(const char *spirv, const char *entry_point) {
-    ray_gen_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, spirv, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2,
-                                                                SPV_SOURCE_ASM, nullptr, entry_point));
+void Pipeline::SetPushConstantRangeSize(uint32_t byte_size) {
+    push_constant_range_size_ = byte_size;
 }
 
-void Pipeline::AddGlslMissShader(const char *glsl) {
-    miss_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2));
+void Pipeline::SetGlslRayGenShader(const char* glsl) {
+    ray_gen_shaders_.emplace_back(
+        std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2));
 }
 
-void Pipeline::AddSpirvMissShader(const char *spirv, const char *entry_point) {
-    miss_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, spirv, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2,
-                                                             SPV_SOURCE_ASM, nullptr, entry_point));
+void Pipeline::AddSpirvRayGenShader(const char* spirv, const char* entry_point) {
+    ray_gen_shaders_.emplace_back(std::make_unique<VkShaderObj>(
+        &test_, spirv, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, nullptr, entry_point));
 }
 
-void Pipeline::AddGlslClosestHitShader(const char *glsl) {
+void Pipeline::AddGlslMissShader(const char* glsl) {
+    miss_shaders_.emplace_back(
+        std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2));
+}
+
+void Pipeline::AddSpirvMissShader(const char* spirv, const char* entry_point) {
+    miss_shaders_.emplace_back(std::make_unique<VkShaderObj>(
+        &test_, spirv, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, nullptr, entry_point));
+}
+
+void Pipeline::AddGlslClosestHitShader(const char* glsl) {
     closest_hit_shaders_.emplace_back(
         std::make_unique<VkShaderObj>(&test_, glsl, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2));
 }
 
-void Pipeline::AddSpirvClosestHitShader(const char *spirv, const char *entry_point) {
-    closest_hit_shaders_.emplace_back(std::make_unique<VkShaderObj>(&test_, spirv, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
-                                                                    SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, nullptr, entry_point));
+void Pipeline::AddSpirvClosestHitShader(const char* spirv, const char* entry_point) {
+    closest_hit_shaders_.emplace_back(std::make_unique<VkShaderObj>(
+        &test_, spirv, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, nullptr, entry_point));
 }
 
-void Pipeline::AddLibrary(const Pipeline &library) {
+void Pipeline::AddLibrary(const Pipeline& library) {
     libraries_.emplace_back(library.rt_pipeline_);
     pipeline_lib_info_ = vku::InitStructHelper();
     pipeline_lib_info_.libraryCount = size32(libraries_);
@@ -1399,7 +1450,9 @@ void Pipeline::AddLibrary(const Pipeline &library) {
     vk_info_.pLibraryInfo = &pipeline_lib_info_;
 }
 
-void Pipeline::AddDynamicState(VkDynamicState dynamic_state) { dynamic_states.emplace_back(dynamic_state); }
+void Pipeline::AddDynamicState(VkDynamicState dynamic_state) {
+    dynamic_states.emplace_back(dynamic_state);
+}
 
 void Pipeline::Build() {
     BuildPipeline();
@@ -1435,8 +1488,8 @@ void Pipeline::BuildPipeline() {
     // ---------
     // ----
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_stage_cis;
-    assert(shader_group_cis_.empty());  // For now this list is expected to be empty at this point
-    for (const auto &ray_gen_shader : ray_gen_shaders_) {
+    assert(shader_group_cis_.empty()); // For now this list is expected to be empty at this point
+    for (const auto& ray_gen_shader : ray_gen_shaders_) {
         VkPipelineShaderStageCreateInfo raygen_stage_ci = vku::InitStructHelper();
         raygen_stage_ci.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         raygen_stage_ci.module = ray_gen_shader->handle();
@@ -1451,7 +1504,7 @@ void Pipeline::BuildPipeline() {
         raygen_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
         shader_group_cis_.emplace_back(raygen_group_ci);
     }
-    for (const auto &miss_shader : miss_shaders_) {
+    for (const auto& miss_shader : miss_shaders_) {
         VkPipelineShaderStageCreateInfo miss_stage_ci = vku::InitStructHelper();
         miss_stage_ci.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
         miss_stage_ci.module = miss_shader->handle();
@@ -1466,7 +1519,7 @@ void Pipeline::BuildPipeline() {
         miss_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
         shader_group_cis_.emplace_back(miss_group_ci);
     }
-    for (const auto &closest_hit : closest_hit_shaders_) {
+    for (const auto& closest_hit : closest_hit_shaders_) {
         VkPipelineShaderStageCreateInfo closest_hit_stage_ci = vku::InitStructHelper();
         closest_hit_stage_ci.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         closest_hit_stage_ci.module = closest_hit->handle();
@@ -1528,8 +1581,10 @@ void Pipeline::BuildSbt() {
 
     // Since every ray generation entry in the ray tracing shader headers buffer can be the start of the ray gen SBT,
     // they all have to be aligned to shaderGroupBaseAlignment
-    const VkDeviceSize ray_gen_shaders_sbt_entry_byte_size = ray_gen_shaders_.size() * rt_pipeline_props.shaderGroupBaseAlignment;
-    // For miss and closest hit shaders, we consider that the corresponding SBTs always start at the first miss/closest hit entry
+    const VkDeviceSize ray_gen_shaders_sbt_entry_byte_size =
+        ray_gen_shaders_.size() * rt_pipeline_props.shaderGroupBaseAlignment;
+    // For miss and closest hit shaders, we consider that the corresponding SBTs always start at the first miss/closest
+    // hit entry
     // => only it needs to be aligned to shaderGroupBaseAlignment,
     // and within miss/closes hit entries alignment is shaderGroupHandleAlignment
     const VkDeviceSize miss_shaders_sbt_entry_byte_size = miss_shaders_.size() * handle_size_aligned;
@@ -1544,8 +1599,8 @@ void Pipeline::BuildSbt() {
     VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();
 
     sbt_buffer_info.size = sbt_buffer_size;
-    sbt_buffer_info.usage =
-        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    sbt_buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |
+                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     sbt_buffer_.init(*device_, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
@@ -1554,25 +1609,28 @@ void Pipeline::BuildSbt() {
     std::cout << "SBT buffer fill:\n";
 #endif
 
-    void *const sbt_buffer_base_ptr = sbt_buffer_.Memory().Map();
-    void *sbt_buffer_ptr = sbt_buffer_base_ptr;
+    void* const sbt_buffer_base_ptr = sbt_buffer_.Memory().Map();
+    void* sbt_buffer_ptr = sbt_buffer_base_ptr;
     (void)sbt_buffer_base_ptr;
     size_t sbt_buffer_space_left = static_cast<size_t>(sbt_buffer_info.size);
-    uint8_t *sbt_host_storage_ptr = sbt_host_storage.data();
+    uint8_t* sbt_host_storage_ptr = sbt_host_storage.data();
 
     // Fill Ray Generation shaders headers
     // ---
     {
-        void *ray_gen_sbt = nullptr;
+        void* ray_gen_sbt = nullptr;
         for (size_t ray_gen_i = 0; ray_gen_i < ray_gen_shaders_.size(); ++ray_gen_i) {
-            if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
+            if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment,
+                            rt_pipeline_props.shaderGroupHandleSize,
+                            sbt_buffer_ptr,
                             sbt_buffer_space_left)) {
                 assert(false);
                 return;
             }
-            if (!ray_gen_sbt) ray_gen_sbt = sbt_buffer_ptr;
+            if (!ray_gen_sbt)
+                ray_gen_sbt = sbt_buffer_ptr;
             std::memcpy(sbt_buffer_ptr, sbt_host_storage_ptr, rt_pipeline_props.shaderGroupHandleSize);
-            sbt_buffer_ptr = (uint8_t *)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
+            sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
             sbt_buffer_space_left -= rt_pipeline_props.shaderGroupHandleSize;
 
             sbt_host_storage_ptr += rt_pipeline_props.shaderGroupHandleSize;
@@ -1594,12 +1652,13 @@ void Pipeline::BuildSbt() {
                     std::cout << std::endl;
                 }
                 if (byte_i % break_every == 0) {
-                    std::cout << std::setw(4) << (break_every * line_i + ((uint64_t)ray_gen_sbt - (uint64_t)sbt_buffer_base_ptr))
+                    std::cout << std::setw(4)
+                              << (break_every * line_i + ((uint64_t)ray_gen_sbt - (uint64_t)sbt_buffer_base_ptr))
                               << ": ";
                     ++line_i;
                 }
 
-                uint32_t byte = ((uint8_t *)ray_gen_sbt)[byte_i];
+                uint32_t byte = ((uint8_t*)ray_gen_sbt)[byte_i];
                 std::cout << std::hex;
                 if (byte == 0)
                     std::cout << "-- ";
@@ -1619,23 +1678,28 @@ void Pipeline::BuildSbt() {
     // Fill Miss shaders headers
     // ---
     if (!miss_shaders_.empty()) {
-        if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
+        if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment,
+                        rt_pipeline_props.shaderGroupHandleSize,
+                        sbt_buffer_ptr,
                         sbt_buffer_space_left)) {
             assert(false);
             return;
         }
 
-        void *miss_sbt = nullptr;
+        void* miss_sbt = nullptr;
         for (size_t miss_i = 0; miss_i < miss_shaders_.size(); ++miss_i) {
-            if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
+            if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment,
+                            rt_pipeline_props.shaderGroupHandleSize,
+                            sbt_buffer_ptr,
                             sbt_buffer_space_left)) {
                 assert(false);
                 return;
             }
-            if (!miss_sbt) miss_sbt = sbt_buffer_ptr;
+            if (!miss_sbt)
+                miss_sbt = sbt_buffer_ptr;
 
             std::memcpy(sbt_buffer_ptr, sbt_host_storage_ptr, rt_pipeline_props.shaderGroupHandleSize);
-            sbt_buffer_ptr = (uint8_t *)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
+            sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
             sbt_buffer_space_left -= rt_pipeline_props.shaderGroupHandleSize;
 
             sbt_host_storage_ptr += rt_pipeline_props.shaderGroupHandleSize;
@@ -1655,12 +1719,12 @@ void Pipeline::BuildSbt() {
                     std::cout << std::endl;
                 }
                 if (byte_i % break_every == 0) {
-                    std::cout << std::setw(4) << (break_every * line_i + ((uint64_t)miss_sbt - (uint64_t)sbt_buffer_base_ptr))
-                              << ": ";
+                    std::cout << std::setw(4)
+                              << (break_every * line_i + ((uint64_t)miss_sbt - (uint64_t)sbt_buffer_base_ptr)) << ": ";
                     ++line_i;
                 }
 
-                uint32_t byte = ((uint8_t *)miss_sbt)[byte_i];
+                uint32_t byte = ((uint8_t*)miss_sbt)[byte_i];
                 std::cout << std::hex;
                 if (byte == 0)
                     std::cout << "-- ";
@@ -1680,23 +1744,28 @@ void Pipeline::BuildSbt() {
     // Fill Closest Hit shaders headers
     // ---
     if (!closest_hit_shaders_.empty()) {
-        if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
+        if (!std::align(rt_pipeline_props.shaderGroupBaseAlignment,
+                        rt_pipeline_props.shaderGroupHandleSize,
+                        sbt_buffer_ptr,
                         sbt_buffer_space_left)) {
             assert(false);
             return;
         }
 
-        void *closest_hit_sbt = nullptr;
+        void* closest_hit_sbt = nullptr;
         for (size_t closest_hit_i = 0; closest_hit_i < closest_hit_shaders_.size(); ++closest_hit_i) {
-            if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment, rt_pipeline_props.shaderGroupHandleSize, sbt_buffer_ptr,
+            if (!std::align(rt_pipeline_props.shaderGroupHandleAlignment,
+                            rt_pipeline_props.shaderGroupHandleSize,
+                            sbt_buffer_ptr,
                             sbt_buffer_space_left)) {
                 assert(false);
                 return;
             }
-            if (!closest_hit_sbt) closest_hit_sbt = sbt_buffer_ptr;
+            if (!closest_hit_sbt)
+                closest_hit_sbt = sbt_buffer_ptr;
 
             std::memcpy(sbt_buffer_ptr, sbt_host_storage_ptr, rt_pipeline_props.shaderGroupHandleSize);
-            sbt_buffer_ptr = (uint8_t *)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
+            sbt_buffer_ptr = (uint8_t*)sbt_buffer_ptr + rt_pipeline_props.shaderGroupHandleSize;
             sbt_buffer_space_left -= rt_pipeline_props.shaderGroupHandleSize;
 
             sbt_host_storage_ptr += rt_pipeline_props.shaderGroupHandleSize;
@@ -1705,7 +1774,8 @@ void Pipeline::BuildSbt() {
 
 #ifdef VVL_DEBUG_LOG_SBT
         {
-            std::cout << "Closest hit shaders SBT entry: offset = " << ((uint64_t)closest_hit_sbt - (uint64_t)sbt_buffer_base_ptr)
+            std::cout << "Closest hit shaders SBT entry: offset = "
+                      << ((uint64_t)closest_hit_sbt - (uint64_t)sbt_buffer_base_ptr)
                       << " | size = " << closest_hit_shaders_sbt_entry_byte_size << '\n';
             const uint32_t break_every = rt_pipeline_props.shaderGroupHandleSize;
             const auto original_fmt_flags = std::cout.flags();
@@ -1717,11 +1787,12 @@ void Pipeline::BuildSbt() {
                 }
                 if (byte_i % break_every == 0) {
                     std::cout << std::setw(4)
-                              << (break_every * line_i + ((uint64_t)closest_hit_sbt - (uint64_t)sbt_buffer_base_ptr)) << ": ";
+                              << (break_every * line_i + ((uint64_t)closest_hit_sbt - (uint64_t)sbt_buffer_base_ptr))
+                              << ": ";
                     ++line_i;
                 }
 
-                uint32_t byte = ((uint8_t *)closest_hit_sbt)[byte_i];
+                uint32_t byte = ((uint8_t*)closest_hit_sbt)[byte_i];
                 std::cout << std::hex;
                 if (byte == 0)
                     std::cout << "-- ";
@@ -1779,8 +1850,8 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
     sbt_address += ray_gen_shaders_.size() * handle_size_base_aligned;
 #ifdef VVL_DEBUG_LOG_SBT
     std::cout << "Ray Gen SBT entry: @ = " << ray_gen_sbt.deviceAddress
-              << " (offset from base = " << ray_gen_sbt.deviceAddress - sbt_base_address << ") | stride = " << ray_gen_sbt.stride
-              << " | size = " << ray_gen_sbt.size << '\n';
+              << " (offset from base = " << ray_gen_sbt.deviceAddress - sbt_base_address
+              << ") | stride = " << ray_gen_sbt.stride << " | size = " << ray_gen_sbt.size << '\n';
 #endif
 
     VkStridedDeviceAddressRegionKHR miss_sbt{};
@@ -1792,8 +1863,8 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
         sbt_address += miss_sbt.size;
 #ifdef VVL_DEBUG_LOG_SBT
         std::cout << "Miss SBT entry: @ = " << miss_sbt.deviceAddress
-                  << " (offset from base = " << miss_sbt.deviceAddress - sbt_base_address << ") | stride = " << miss_sbt.stride
-                  << " | size = " << miss_sbt.size << '\n';
+                  << " (offset from base = " << miss_sbt.deviceAddress - sbt_base_address
+                  << ") | stride = " << miss_sbt.stride << " | size = " << miss_sbt.size << '\n';
 #endif
     }
 
@@ -1821,12 +1892,13 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
     return out;
 }
 
-vkt::Buffer Pipeline::GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, uint32_t width, uint32_t height, uint32_t depth) {
+vkt::Buffer
+Pipeline::GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, uint32_t width, uint32_t height, uint32_t depth) {
     TraceRaysSbt sbt = GetTraceRaysSbt(ray_gen_shader_i);
 
-    vkt::Buffer indirect_rt_buffer(*device_, sizeof(VkTraceRaysIndirectCommand2KHR), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                   vkt::device_address);
-    auto indirect_rt_ptr = (VkTraceRaysIndirectCommand2KHR *)indirect_rt_buffer.Memory().Map();
+    vkt::Buffer indirect_rt_buffer(
+        *device_, sizeof(VkTraceRaysIndirectCommand2KHR), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
+    auto indirect_rt_ptr = (VkTraceRaysIndirectCommand2KHR*)indirect_rt_buffer.Memory().Map();
     *indirect_rt_ptr = {};
     indirect_rt_ptr->raygenShaderRecordAddress = sbt.ray_gen_sbt.deviceAddress;
     indirect_rt_ptr->raygenShaderRecordSize = sbt.ray_gen_sbt.size;
@@ -1867,9 +1939,9 @@ std::vector<uint8_t> Pipeline::GetRayTracingShaderGroupHandles() {
 
     // #ARNO_TODO use correct group count
     const uint32_t shader_group_count = GetShaderGroupsCount();
-    const VkResult result =
-        vk::GetRayTracingShaderGroupHandlesKHR(*device_, Handle(), 0, shader_group_count, sbt_size, sbt_host_storage.data());
-    if (IsValueIn(result, {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY})) {
+    const VkResult result = vk::GetRayTracingShaderGroupHandlesKHR(
+        *device_, Handle(), 0, shader_group_count, sbt_size, sbt_host_storage.data());
+    if (IsValueIn(result, { VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY })) {
         assert(false);
     }
 
@@ -1914,7 +1986,7 @@ std::vector<uint8_t> Pipeline::GetRayTracingShaderGroupHandles() {
     std::cout.flags(original_fmt_flags);
     std::cout << "\n\n";
 
-#endif  // VVL_DEBUG_LOG_SBT
+#endif // VVL_DEBUG_LOG_SBT
 
     return sbt_host_storage;
 }
@@ -1929,13 +2001,13 @@ std::vector<uint8_t> Pipeline::GetRayTracingCaptureReplayShaderGroupHandles() {
     const uint32_t sbt_size = shader_group_cis_.size() * handle_size_aligned;
     std::vector<uint8_t> sbt_host_storage(sbt_size);
 
-    const VkResult result =
-        vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*device_, Handle(), 0, 1, sbt_size, sbt_host_storage.data());
-    if (IsValueIn(result, {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY})) {
+    const VkResult result = vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(
+        *device_, Handle(), 0, 1, sbt_size, sbt_host_storage.data());
+    if (IsValueIn(result, { VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY })) {
         assert(false);
     }
     return sbt_host_storage;
 }
 
-}  // namespace rt
-}  // namespace vkt
+} // namespace rt
+} // namespace vkt

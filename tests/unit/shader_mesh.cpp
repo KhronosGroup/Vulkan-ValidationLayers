@@ -44,16 +44,15 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimit) {
 
     VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maxMeshSharedMemorySize-08754");
 }
 
 TEST_F(NegativeShaderMesh, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
-    TEST_DESCRIPTION(
-        "Validate mesh shader shared memory does not exceed maxMeshSharedMemorySize when using "
-        "VK_KHR_workgroup_memory_explicit_layout");
+    TEST_DESCRIPTION("Validate mesh shader shared memory does not exceed maxMeshSharedMemorySize when using "
+                     "VK_KHR_workgroup_memory_explicit_layout");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
@@ -97,8 +96,8 @@ TEST_F(NegativeShaderMesh, SharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
 
     VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maxMeshSharedMemorySize-08754");
 }
@@ -137,8 +136,8 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantDefault) {
 
     VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maxMeshSharedMemorySize-08754");
 }
@@ -175,7 +174,7 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantSet) {
         void main(){}
     )glsl";
 
-    uint32_t data = 1;  // set Condition
+    uint32_t data = 1; // set Condition
 
     VkSpecializationMapEntry entry;
     entry.constantID = 0;
@@ -188,11 +187,15 @@ TEST_F(NegativeShaderMesh, SharedMemorySpecConstantSet) {
     specialization_info.dataSize = sizeof(uint32_t);
     specialization_info.pData = &data;
 
-    VkShaderObj mesh(this, mesh_source.str().c_str(), VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
+    VkShaderObj mesh(this,
+                     mesh_source.str().c_str(),
+                     VK_SHADER_STAGE_MESH_BIT_EXT,
+                     SPV_ENV_VULKAN_1_2,
+                     SPV_SOURCE_GLSL,
                      &specialization_info);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.fs_->GetStageCreateInfo(), mesh.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maxMeshSharedMemorySize-08754");
 }
@@ -226,8 +229,8 @@ TEST_F(NegativeShaderMesh, TaskSharedMemoryOverLimit) {
     VkShaderObj task(this, task_source.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_2);
     VkShaderObj mesh(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {task.GetStageCreateInfo(), mesh.GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { task.GetStageCreateInfo(), mesh.GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-maxTaskSharedMemorySize-08759");
 }
@@ -248,7 +251,7 @@ TEST_F(NegativeShaderMesh, MeshAndTaskShaderDerivatives) {
         GTEST_SKIP() << "meshAndTaskShaderDerivatives is supported";
     }
 
-    const char *ms_source = R"(
+    const char* ms_source = R"(
                OpCapability ComputeDerivativeGroupQuadsKHR
                OpCapability MeshShadingEXT
                OpExtension "SPV_EXT_mesh_shader"

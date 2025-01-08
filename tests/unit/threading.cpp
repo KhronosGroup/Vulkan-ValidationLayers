@@ -12,17 +12,18 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include <thread>
-#include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/layer_validation_tests.h"
 #include "../framework/thread_helper.h"
+#include <thread>
 
 #if GTEST_IS_THREADSAFE
 class NegativeThreading : public VkLayerTest {};
 
 TEST_F(NegativeThreading, CommandBufferCollision) {
     m_errorMonitor->SetDesiredError("THREADING ERROR");
-    m_errorMonitor->SetAllowedFailureMsg("THREADING ERROR");  // Ignore any extra threading errors found beyond the first one
+    m_errorMonitor->SetAllowedFailureMsg(
+        "THREADING ERROR"); // Ignore any extra threading errors found beyond the first one
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -46,7 +47,7 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
     ThreadTestData data;
     data.commandBuffer = commandBuffer.handle();
     data.event = event.handle();
-    std::atomic<bool> bailout{false};
+    std::atomic<bool> bailout{ false };
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
 
@@ -78,17 +79,19 @@ TEST_F(NegativeThreading, UpdateDescriptorCollision) {
     TEST_DESCRIPTION("Two threads updating the same descriptor set, expected to generate a threading error");
 
     m_errorMonitor->SetDesiredError("vkUpdateDescriptorSets(): THREADING ERROR");
-    m_errorMonitor->SetAllowedFailureMsg("THREADING ERROR");  // Ignore any extra threading errors found beyond the first one
+    m_errorMonitor->SetAllowedFailureMsg(
+        "THREADING ERROR"); // Ignore any extra threading errors found beyond the first one
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    OneOffDescriptorSet normal_descriptor_set(m_device,
-                                              {
-                                                  {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                              },
-                                              0);
+    OneOffDescriptorSet normal_descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        },
+        0);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
@@ -97,7 +100,7 @@ TEST_F(NegativeThreading, UpdateDescriptorCollision) {
     data.descriptorSet = normal_descriptor_set.set_;
     data.binding = 0;
     data.buffer = buffer.handle();
-    std::atomic<bool> bailout{false};
+    std::atomic<bool> bailout{ false };
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
 
@@ -120,4 +123,4 @@ TEST_F(NegativeThreading, UpdateDescriptorCollision) {
 
     m_errorMonitor->VerifyFound();
 }
-#endif  // GTEST_IS_THREADSAFE
+#endif // GTEST_IS_THREADSAFE

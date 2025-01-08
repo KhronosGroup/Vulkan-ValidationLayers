@@ -14,8 +14,8 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "inject_conditional_function_pass.h"
+#include <stdint.h>
 
 namespace gpuav {
 namespace spirv {
@@ -36,5 +36,5 @@ class RayQueryPass : public InjectConditionalFunctionPass {
     uint32_t GetLinkFunctionId();
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

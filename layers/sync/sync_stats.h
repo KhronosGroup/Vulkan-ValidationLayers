@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 #ifndef VVL_ENABLE_SYNCVAL_STATS
 #define VVL_ENABLE_SYNCVAL_STATS 0
@@ -34,8 +34,8 @@ namespace syncval_stats {
 struct Value32 {
     std::atomic_uint32_t u32;
     void Update(uint32_t new_value);
-    uint32_t Add(uint32_t n);  // Returns new counter value
-    uint32_t Sub(uint32_t n);  // Returns new counter value
+    uint32_t Add(uint32_t n); // Returns new counter value
+    uint32_t Sub(uint32_t n); // Returns new counter value
 };
 
 struct ValueMax32 {
@@ -89,5 +89,5 @@ struct Stats {
     void ReportOnDestruction() {}
     std::string CreateReport() { return "SyncVal stats are disabled in the current build configuration\n"; }
 };
-#endif  // VVL_ENABLE_SYNCVAL_STATS != 0
-}  // namespace syncval_stats
+#endif // VVL_ENABLE_SYNCVAL_STATS != 0
+} // namespace syncval_stats

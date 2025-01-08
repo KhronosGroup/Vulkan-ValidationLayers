@@ -28,13 +28,13 @@ TEST_F(PositiveGpuAVDescriptorBuffer, Basic) {
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
     vkt::Buffer buffer_data(*m_device, 16, 0, vkt::device_address);
-    uint32_t *data = (uint32_t *)buffer_data.Memory().Map();
+    uint32_t* data = (uint32_t*)buffer_data.Memory().Map();
     data[0] = 8;
     data[1] = 12;
     data[2] = 1;
     buffer_data.Memory().Unmap();
 
-    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    VkDescriptorSetLayoutBinding binding = { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr };
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
 
     VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
@@ -47,8 +47,8 @@ TEST_F(PositiveGpuAVDescriptorBuffer, Basic) {
 
     ds_layout_size = Align(ds_layout_size, descriptor_buffer_properties.descriptorBufferOffsetAlignment);
 
-    vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
-                                  vkt::device_address);
+    vkt::Buffer descriptor_buffer(
+        *m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
 
     VkDescriptorAddressInfoEXT addr_info = vku::InitStructHelper();
     addr_info.address = buffer_data.Address();
@@ -59,12 +59,14 @@ TEST_F(PositiveGpuAVDescriptorBuffer, Basic) {
     buffer_descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     buffer_descriptor_info.data.pStorageBuffer = &addr_info;
 
-    void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
-    vk::GetDescriptorEXT(device(), &buffer_descriptor_info, descriptor_buffer_properties.storageBufferDescriptorSize,
+    void* mapped_descriptor_data = descriptor_buffer.Memory().Map();
+    vk::GetDescriptorEXT(device(),
+                         &buffer_descriptor_info,
+                         descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data);
     descriptor_buffer.Memory().Unmap();
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
             uint a;
@@ -93,8 +95,13 @@ TEST_F(PositiveGpuAVDescriptorBuffer, Basic) {
 
     uint32_t buffer_index = 0;
     VkDeviceSize buffer_offset = 0;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
-                                         &buffer_index, &buffer_offset);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(),
+                                         VK_PIPELINE_BIND_POINT_COMPUTE,
+                                         pipeline_layout,
+                                         0,
+                                         1,
+                                         &buffer_index,
+                                         &buffer_offset);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
@@ -102,7 +109,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, Basic) {
     m_default_queue->Wait();
 
     if (!IsPlatformMockICD()) {
-        data = (uint32_t *)buffer_data.Memory().Map();
+        data = (uint32_t*)buffer_data.Memory().Map();
         ASSERT_TRUE(data[0] == 8);
         ASSERT_TRUE(data[1] == 12);
         ASSERT_TRUE(data[2] == 20);

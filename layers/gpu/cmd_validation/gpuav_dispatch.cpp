@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-#include "gpu/core/gpuav.h"
+#include "generated/cmd_validation_dispatch_comp.h"
 #include "gpu/cmd_validation/gpuav_cmd_validation_common.h"
+#include "gpu/core/gpuav.h"
 #include "gpu/resources/gpuav_state_trackers.h"
 #include "gpu/shaders/gpuav_error_header.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
-#include "generated/cmd_validation_dispatch_comp.h"
 
 namespace gpuav {
 
@@ -34,12 +34,14 @@ struct SharedDispatchValidationResources final {
     VkShaderEXT shader_object = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
 
-    SharedDispatchValidationResources(Validator &gpuav, VkDescriptorSetLayout error_output_desc_set, bool use_shader_objects,
-                                      const Location &loc)
-        : device(gpuav.device) {
+    SharedDispatchValidationResources(Validator& gpuav,
+                                      VkDescriptorSetLayout error_output_desc_set,
+                                      bool use_shader_objects,
+                                      const Location& loc) :
+        device(gpuav.device) {
         VkResult result = VK_SUCCESS;
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},  // indirect buffer
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr }, // indirect buffer
         };
 
         VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
@@ -56,7 +58,7 @@ struct SharedDispatchValidationResources final {
         push_constant_range.offset = 0;
         push_constant_range.size = kPushConstantDWords * sizeof(uint32_t);
 
-        std::array<VkDescriptorSetLayout, 2> set_layouts = {{error_output_desc_set, ds_layout}};
+        std::array<VkDescriptorSetLayout, 2> set_layouts = { { error_output_desc_set, ds_layout } };
         VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
         pipeline_layout_ci.pushConstantRangeCount = 1;
         pipeline_layout_ci.pPushConstantRanges = &push_constant_range;
@@ -143,7 +145,10 @@ struct SharedDispatchValidationResources final {
     }
 };
 
-void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
+void InsertIndirectDispatchValidation(Validator& gpuav,
+                                      const Location& loc,
+                                      CommandBuffer& cb_state,
+                                      VkBuffer indirect_buffer,
                                       VkDeviceSize indirect_offset) {
     if (!gpuav.gpuav_settings.validate_indirect_dispatches_buffers) {
         return;
@@ -155,11 +160,11 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
     // or DEVICE_LOST resulting from the invalid call will prevent preceding validation errors from being reported.
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
-    auto const &last_bound = cb_state.lastBound[lv_bind_point];
-    const auto *pipeline_state = last_bound.pipeline_state;
+    auto const& last_bound = cb_state.lastBound[lv_bind_point];
+    const auto* pipeline_state = last_bound.pipeline_state;
     const bool use_shader_objects = pipeline_state == nullptr;
 
-    auto &shared_dispatch_resources = gpuav.shared_resources_manager.Get<SharedDispatchValidationResources>(
+    auto& shared_dispatch_resources = gpuav.shared_resources_manager.Get<SharedDispatchValidationResources>(
         gpuav, cb_state.GetErrorLoggingDescSetLayout(), use_shader_objects, loc);
 
     assert(shared_dispatch_resources.IsValid());
@@ -198,64 +203,90 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
         VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
         DispatchCmdBindShadersEXT(cb_state.VkHandle(), 1u, &stage, &shared_dispatch_resources.shader_object);
     } else {
-        DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline);
+        DispatchCmdBindPipeline(
+            cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline);
     }
     uint32_t push_constants[kPushConstantDWords] = {};
     push_constants[0] = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0];
     push_constants[1] = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1];
     push_constants[2] = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[2];
     push_constants[3] = static_cast<uint32_t>((indirect_offset / sizeof(uint32_t)));
-    DispatchCmdPushConstants(cb_state.VkHandle(), shared_dispatch_resources.pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                             sizeof(push_constants), push_constants);
-    BindErrorLoggingDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
-                            cb_state.compute_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
-    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, shared_dispatch_resources.pipeline_layout,
-                                  glsl::kDiagPerCmdDescriptorSet, 1, &indirect_buffer_desc_set, 0, nullptr);
+    DispatchCmdPushConstants(cb_state.VkHandle(),
+                             shared_dispatch_resources.pipeline_layout,
+                             VK_SHADER_STAGE_COMPUTE_BIT,
+                             0,
+                             sizeof(push_constants),
+                             push_constants);
+    BindErrorLoggingDescSet(gpuav,
+                            cb_state,
+                            VK_PIPELINE_BIND_POINT_COMPUTE,
+                            shared_dispatch_resources.pipeline_layout,
+                            cb_state.compute_index,
+                            static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
+    DispatchCmdBindDescriptorSets(cb_state.VkHandle(),
+                                  VK_PIPELINE_BIND_POINT_COMPUTE,
+                                  shared_dispatch_resources.pipeline_layout,
+                                  glsl::kDiagPerCmdDescriptorSet,
+                                  1,
+                                  &indirect_buffer_desc_set,
+                                  0,
+                                  nullptr);
     DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
 
-    CommandBuffer::ErrorLoggerFunc error_logger =
-        [loc](Validator &gpuav, const CommandBuffer &, const uint32_t *error_record, const LogObjectList &objlist,
-              const std::vector<std::string> &) {
-            bool skip = false;
-            using namespace glsl;
+    CommandBuffer::ErrorLoggerFunc error_logger = [loc](Validator& gpuav,
+                                                        const CommandBuffer&,
+                                                        const uint32_t* error_record,
+                                                        const LogObjectList& objlist,
+                                                        const std::vector<std::string>&) {
+        bool skip = false;
+        using namespace glsl;
 
-            if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDispatch) {
-                return skip;
-            }
-
-            switch (error_record[kHeaderErrorSubCodeOffset]) {
-                case kErrorSubCodePreDispatchCountLimitX: {
-                    uint32_t count = error_record[kPreActionParamOffset_0];
-                    skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-x-00417", objlist, loc,
-                                           "Indirect dispatch VkDispatchIndirectCommand::x of %" PRIu32
-                                           " would exceed maxComputeWorkGroupCount[0] limit of %" PRIu32 ".",
-                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
-                    break;
-                }
-                case kErrorSubCodePreDispatchCountLimitY: {
-                    uint32_t count = error_record[kPreActionParamOffset_0];
-                    skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-y-00418", objlist, loc,
-                                           "Indirect dispatch VkDispatchIndirectCommand::y of %" PRIu32
-                                           " would exceed maxComputeWorkGroupCount[1] limit of %" PRIu32 ".",
-                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1]);
-                    break;
-                }
-                case kErrorSubCodePreDispatchCountLimitZ: {
-                    uint32_t count = error_record[kPreActionParamOffset_0];
-                    skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-z-00419", objlist, loc,
-                                           "Indirect dispatch VkDispatchIndirectCommand::z of %" PRIu32
-                                           " would exceed maxComputeWorkGroupCount[2] limit of %" PRIu32 ".",
-                                           count, gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
-                    break;
-                }
-                default:
-                    break;
-            }
-
+        if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDispatch) {
             return skip;
-        };
+        }
+
+        switch (error_record[kHeaderErrorSubCodeOffset]) {
+            case kErrorSubCodePreDispatchCountLimitX: {
+                uint32_t count = error_record[kPreActionParamOffset_0];
+                skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-x-00417",
+                                       objlist,
+                                       loc,
+                                       "Indirect dispatch VkDispatchIndirectCommand::x of %" PRIu32
+                                       " would exceed maxComputeWorkGroupCount[0] limit of %" PRIu32 ".",
+                                       count,
+                                       gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
+                break;
+            }
+            case kErrorSubCodePreDispatchCountLimitY: {
+                uint32_t count = error_record[kPreActionParamOffset_0];
+                skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-y-00418",
+                                       objlist,
+                                       loc,
+                                       "Indirect dispatch VkDispatchIndirectCommand::y of %" PRIu32
+                                       " would exceed maxComputeWorkGroupCount[1] limit of %" PRIu32 ".",
+                                       count,
+                                       gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1]);
+                break;
+            }
+            case kErrorSubCodePreDispatchCountLimitZ: {
+                uint32_t count = error_record[kPreActionParamOffset_0];
+                skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-z-00419",
+                                       objlist,
+                                       loc,
+                                       "Indirect dispatch VkDispatchIndirectCommand::z of %" PRIu32
+                                       " would exceed maxComputeWorkGroupCount[2] limit of %" PRIu32 ".",
+                                       count,
+                                       gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]);
+                break;
+            }
+            default:
+                break;
+        }
+
+        return skip;
+    };
 
     cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
 }
 
-}  // namespace gpuav
+} // namespace gpuav

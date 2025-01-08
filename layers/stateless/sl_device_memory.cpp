@@ -18,9 +18,11 @@
 
 #include "stateless/stateless_validation.h"
 
-bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
-                                                               const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
-                                                               const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device,
+                                                               const VkMemoryAllocateInfo* pAllocateInfo,
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               VkDeviceMemory* pMemory,
+                                                               const ErrorObject& error_obj) const {
     bool skip = false;
 
     if (!pAllocateInfo) {
@@ -29,8 +31,10 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     const Location allocate_info_loc = error_obj.location.dot(Field::pAllocateInfo);
     auto chained_prio_struct = vku::FindStructInPNextChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext);
     if (chained_prio_struct && (chained_prio_struct->priority < 0.0f || chained_prio_struct->priority > 1.0f)) {
-        skip |= LogError("VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602", device,
-                         allocate_info_loc.pNext(Struct::VkMemoryPriorityAllocateInfoEXT, Field::priority), "is %f",
+        skip |= LogError("VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602",
+                         device,
+                         allocate_info_loc.pNext(Struct::VkMemoryPriorityAllocateInfoEXT, Field::priority),
+                         "is %f",
                          chained_prio_struct->priority);
     }
 
@@ -41,58 +45,76 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 
     if (flags) {
         const Location flags_loc = allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::flags);
-        if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) && !enabled_features.bufferDeviceAddressCaptureReplay) {
-            skip |= LogError("VUID-VkMemoryAllocateInfo-flags-03330", device, flags_loc,
+        if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
+            !enabled_features.bufferDeviceAddressCaptureReplay) {
+            skip |= LogError("VUID-VkMemoryAllocateInfo-flags-03330",
+                             device,
+                             flags_loc,
                              "has VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT set, but"
                              "bufferDeviceAddressCaptureReplay feature is not enabled.");
         }
         if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) && !enabled_features.bufferDeviceAddress) {
-            skip |= LogError("VUID-VkMemoryAllocateInfo-flags-03331", device, flags_loc,
-                             "has VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT set, but bufferDeviceAddress feature is not enabled.");
+            skip |= LogError(
+                "VUID-VkMemoryAllocateInfo-flags-03331",
+                device,
+                flags_loc,
+                "has VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT set, but bufferDeviceAddress feature is not enabled.");
         }
     }
     return skip;
 }
 
-bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
-                                                                const VkDeviceImageMemoryRequirements &memory_requirements,
-                                                                const Location &loc) const {
+bool StatelessValidation::ValidateDeviceImageMemoryRequirements(
+    VkDevice device, const VkDeviceImageMemoryRequirements& memory_requirements, const Location& loc) const {
     bool skip = false;
 
-    const auto &create_info = *(memory_requirements.pCreateInfo);
+    const auto& create_info = *(memory_requirements.pCreateInfo);
     if (vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext)) {
-        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06416", device, loc,
+        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06416",
+                         device,
+                         loc,
                          "pNext chain contains VkImageSwapchainCreateInfoKHR.");
     }
     if (vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(create_info.pNext)) {
-        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776", device, loc,
+        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776",
+                         device,
+                         loc,
                          "pNext chain contains VkImageDrmFormatModifierExplicitCreateInfoEXT.");
     }
 
     if (vkuFormatIsMultiplane(create_info.format) && (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
         if (memory_requirements.planeAspect == VK_IMAGE_ASPECT_NONE) {
-            skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06417", device, loc.dot(Field::planeAspect),
+            skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06417",
+                             device,
+                             loc.dot(Field::planeAspect),
                              "is VK_IMAGE_ASPECT_NONE with a multi-planar format and disjoint flag.");
         } else if ((create_info.tiling == VK_IMAGE_TILING_LINEAR || create_info.tiling == VK_IMAGE_TILING_OPTIMAL) &&
                    !IsOnlyOneValidPlaneAspect(create_info.format, memory_requirements.planeAspect)) {
-            skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06419", device, loc.dot(Field::planeAspect),
-                             "is %s but is invalid for %s.", string_VkImageAspectFlags(memory_requirements.planeAspect).c_str(),
+            skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06419",
+                             device,
+                             loc.dot(Field::planeAspect),
+                             "is %s but is invalid for %s.",
+                             string_VkImageAspectFlags(memory_requirements.planeAspect).c_str(),
                              string_VkFormat(create_info.format));
         }
     }
     const uint64_t external_format = GetExternalFormat(memory_requirements.pCreateInfo->pNext);
     if (external_format != 0) {
-        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pNext-06996", device, loc.dot(Field::pCreateInfo),
-                         "pNext chain contains VkExternalFormatANDROID with externalFormat %" PRIu64 ".", external_format);
+        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pNext-06996",
+                         device,
+                         loc.dot(Field::pCreateInfo),
+                         "pNext chain contains VkExternalFormatANDROID with externalFormat %" PRIu64 ".",
+                         external_format);
     }
 
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device,
-                                                                                 const VkDeviceImageMemoryRequirements *pInfo,
-                                                                                 VkMemoryRequirements2 *pMemoryRequirements,
-                                                                                 const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements(
+    VkDevice device,
+    const VkDeviceImageMemoryRequirements* pInfo,
+    VkMemoryRequirements2* pMemoryRequirements,
+    const ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
@@ -101,8 +123,11 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements
 }
 
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
-    VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &error_obj) const {
+    VkDevice device,
+    const VkDeviceImageMemoryRequirements* pInfo,
+    uint32_t* pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
+    const ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
@@ -110,20 +135,23 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequir
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
-                                                                const VkBindSparseInfo *pBindInfo, VkFence fence,
-                                                                const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue,
+                                                                uint32_t bindInfoCount,
+                                                                const VkBindSparseInfo* pBindInfo,
+                                                                VkFence fence,
+                                                                const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t bind_info_i = 0; bind_info_i < bindInfoCount; ++bind_info_i) {
-        const VkBindSparseInfo &bind_info = pBindInfo[bind_info_i];
+        const VkBindSparseInfo& bind_info = pBindInfo[bind_info_i];
         for (uint32_t image_bind_i = 0; image_bind_i < bind_info.imageBindCount; ++image_bind_i) {
-            const VkSparseImageMemoryBindInfo &image_bind = bind_info.pImageBinds[image_bind_i];
+            const VkSparseImageMemoryBindInfo& image_bind = bind_info.pImageBinds[image_bind_i];
             for (uint32_t bind_i = 0; bind_i < image_bind.bindCount; ++bind_i) {
-                const VkSparseImageMemoryBind &bind = image_bind.pBinds[bind_i];
+                const VkSparseImageMemoryBind& bind = image_bind.pBinds[bind_i];
                 if (bind.extent.width == 0) {
                     const LogObjectList objlist(queue, image_bind.image);
-                    skip |= LogError("VUID-VkSparseImageMemoryBind-extent-09388", objlist,
+                    skip |= LogError("VUID-VkSparseImageMemoryBind-extent-09388",
+                                     objlist,
                                      error_obj.location.dot(Field::pBindInfo, bind_info_i)
                                          .dot(Field::pImageBinds, image_bind_i)
                                          .dot(Field::pBinds, bind_i)
@@ -134,7 +162,8 @@ bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, u
 
                 if (bind.extent.height == 0) {
                     const LogObjectList objlist(queue, image_bind.image);
-                    skip |= LogError("VUID-VkSparseImageMemoryBind-extent-09389", objlist,
+                    skip |= LogError("VUID-VkSparseImageMemoryBind-extent-09389",
+                                     objlist,
                                      error_obj.location.dot(Field::pBindInfo, bind_info_i)
                                          .dot(Field::pImageBinds, image_bind_i)
                                          .dot(Field::pBinds, bind_i)
@@ -145,7 +174,8 @@ bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, u
 
                 if (bind.extent.depth == 0) {
                     const LogObjectList objlist(queue, image_bind.image);
-                    skip |= LogError("VUID-VkSparseImageMemoryBind-extent-09390", objlist,
+                    skip |= LogError("VUID-VkSparseImageMemoryBind-extent-09390",
+                                     objlist,
                                      error_obj.location.dot(Field::pBindInfo, bind_info_i)
                                          .dot(Field::pImageBinds, image_bind_i)
                                          .dot(Field::pBinds, bind_i)
@@ -160,12 +190,17 @@ bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, u
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
-                                                                           const ErrorObject &error_obj) const {
+bool StatelessValidation::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device,
+                                                                           VkDeviceMemory memory,
+                                                                           float priority,
+                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
     if (!IsBetweenInclusive(priority, 0.0F, 1.0F)) {
-        skip |= LogError("VUID-vkSetDeviceMemoryPriorityEXT-priority-06258", device, error_obj.location.dot(Field::priority),
-                         "is %f.", priority);
+        skip |= LogError("VUID-vkSetDeviceMemoryPriorityEXT-priority-06258",
+                         device,
+                         error_obj.location.dot(Field::priority),
+                         "is %f.",
+                         priority);
     }
     return skip;
 }

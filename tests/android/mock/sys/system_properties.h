@@ -26,8 +26,7 @@ static const prop_info* __system_property_find(const char* __name) {
     return nullptr;
 }
 
-static void __system_property_read_callback(const prop_info* __pi,
+static void __system_property_read_callback(
+    const prop_info* __pi,
     void (*__callback)(void* __cookie, const char* __name, const char* __value, uint32_t __serial),
-    void* __cookie) {
-
-}
+    void* __cookie) {}

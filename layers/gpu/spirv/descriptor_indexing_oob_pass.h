@@ -14,8 +14,8 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "inject_conditional_function_pass.h"
+#include <stdint.h>
 
 namespace gpuav {
 namespace spirv {
@@ -47,5 +47,5 @@ class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

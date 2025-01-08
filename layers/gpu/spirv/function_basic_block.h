@@ -14,12 +14,12 @@
  */
 #pragma once
 
-#include <stdint.h>
-#include <vector>
-#include <memory>
-#include <spirv/unified1/spirv.hpp>
 #include "containers/custom_containers.h"
 #include "instruction.h"
+#include <memory>
+#include <spirv/unified1/spirv.hpp>
+#include <stdint.h>
+#include <vector>
 
 namespace gpuav {
 namespace spirv {
@@ -33,7 +33,8 @@ struct Function;
 using InstructionList = std::vector<std::unique_ptr<Instruction>>;
 using InstructionIt = InstructionList::iterator;
 
-// Since CFG analysis/manipulation is not a main focus, Blocks/Funcitons are just simple containers for ordering Instructions
+// Since CFG analysis/manipulation is not a main focus, Blocks/Funcitons are just simple containers for ordering
+// Instructions
 struct BasicBlock {
     // Used when loading initial SPIR-V
     BasicBlock(std::unique_ptr<Instruction> label, Function& function);
@@ -88,9 +89,9 @@ struct Function {
     vvl::unordered_map<uint32_t, const Instruction*> inst_map_;
     const Instruction* FindInstruction(uint32_t id) const;
 
-    // A slower version of BasicBlock::CreateInstruction() that will search the entire function for |id| and then inject the
-    // instruction after. Only to be used if you need to suddenly walk back to find an instruction, but normally instructions should
-    // be added as you go forward only.
+    // A slower version of BasicBlock::CreateInstruction() that will search the entire function for |id| and then inject
+    // the instruction after. Only to be used if you need to suddenly walk back to find an instruction, but normally
+    // instructions should be added as you go forward only.
     void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id);
 
     // This is the uvec4 most consumers will need
@@ -105,5 +106,5 @@ struct Function {
 using FunctionList = std::vector<std::unique_ptr<Function>>;
 using FunctionIt = FunctionList::iterator;
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

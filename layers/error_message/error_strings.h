@@ -16,9 +16,9 @@
  */
 #pragma once
 
-#include <vulkan/vk_enum_string_helper.h>
 #include <sstream>
 #include <string>
+#include <vulkan/vk_enum_string_helper.h>
 
 [[maybe_unused]] static std::string string_Attachment(uint32_t attachment) {
     if (attachment == VK_ATTACHMENT_UNUSED) {
@@ -59,7 +59,8 @@
     return ss.str();
 }
 
-[[maybe_unused]] static std::string string_LevelCount(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
+[[maybe_unused]] static std::string string_LevelCount(const VkImageCreateInfo& ci,
+                                                      VkImageSubresourceRange const& range) {
     std::stringstream ss;
     if (range.levelCount == VK_REMAINING_MIP_LEVELS) {
         const uint32_t level_count = ci.mipLevels - range.baseMipLevel;
@@ -71,12 +72,13 @@
     return ss.str();
 }
 
-[[maybe_unused]] static std::string string_LayerCount(const VkImageCreateInfo &ci, VkImageSubresourceRange const &range) {
+[[maybe_unused]] static std::string string_LayerCount(const VkImageCreateInfo& ci,
+                                                      VkImageSubresourceRange const& range) {
     std::stringstream ss;
     if (range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
         const uint32_t layer_count = ci.arrayLayers - range.baseArrayLayer;
-        ss << "VK_REMAINING_ARRAY_LAYERS [arrayLayers (" << ci.arrayLayers << ") - baseArrayLayer (" << range.baseArrayLayer
-           << ") = " << layer_count << "]";
+        ss << "VK_REMAINING_ARRAY_LAYERS [arrayLayers (" << ci.arrayLayers << ") - baseArrayLayer ("
+           << range.baseArrayLayer << ") = " << layer_count << "]";
     } else {
         ss << range.layerCount;
     }
@@ -92,8 +94,8 @@
 
 [[maybe_unused]] static std::string string_VkImageSubresource(VkImageSubresource subresource) {
     std::stringstream ss;
-    ss << "aspectMask = " << string_VkImageAspectFlags(subresource.aspectMask) << ", mipLevel = " << subresource.mipLevel
-       << ", arrayLayer = " << subresource.arrayLayer;
+    ss << "aspectMask = " << string_VkImageAspectFlags(subresource.aspectMask)
+       << ", mipLevel = " << subresource.mipLevel << ", arrayLayer = " << subresource.arrayLayer;
     return ss.str();
 }
 
@@ -106,4 +108,6 @@
     return ss.str();
 }
 
-[[maybe_unused]] static std::string string_VkBool32(VkBool32 value) { return value ? "VK_TRUE" : "VK_FALSE"; }
+[[maybe_unused]] static std::string string_VkBool32(VkBool32 value) {
+    return value ? "VK_TRUE" : "VK_FALSE";
+}

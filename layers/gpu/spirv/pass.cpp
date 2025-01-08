@@ -14,12 +14,12 @@
  */
 
 #include "pass.h"
-#include <cstdint>
-#include <spirv/unified1/spirv.hpp>
 #include "generated/spirv_grammar_helper.h"
+#include "gpu/shaders/gpuav_error_codes.h"
 #include "instruction.h"
 #include "module.h"
-#include "gpu/shaders/gpuav_error_codes.h"
+#include <cstdint>
+#include <spirv/unified1/spirv.hpp>
 
 namespace gpuav {
 namespace spirv {
@@ -37,17 +37,17 @@ const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
     if (variable_id == 0) {
         variable_id = module_.TakeNextId();
         auto new_inst = std::make_unique<Instruction>(4, spv::OpDecorate);
-        new_inst->Fill({variable_id, spv::DecorationBuiltIn, built_in});
+        new_inst->Fill({ variable_id, spv::DecorationBuiltIn, built_in });
         module_.annotations_.emplace_back(std::move(new_inst));
     }
 
-    // Currently we only ever needed Input variables and the built-ins we are using are not those that can be used by both Input and
-    // Output storage classes
+    // Currently we only ever needed Input variables and the built-ins we are using are not those that can be used by
+    // both Input and Output storage classes
     const Variable* built_in_variable = module_.type_manager_.FindVariableById(variable_id);
     if (!built_in_variable) {
         const Type& pointer_type = module_.type_manager_.GetTypePointerBuiltInInput(spv::BuiltIn(built_in));
         auto new_inst = std::make_unique<Instruction>(4, spv::OpVariable);
-        new_inst->Fill({pointer_type.Id(), variable_id, spv::StorageClassInput});
+        new_inst->Fill({ pointer_type.Id(), variable_id, spv::StorageClassInput });
         built_in_variable = &module_.type_manager_.AddVariable(std::move(new_inst), pointer_type);
         module_.AddInterfaceVariables(built_in_variable->Id(), spv::StorageClassInput);
     }
@@ -55,8 +55,8 @@ const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
     return *built_in_variable;
 }
 
-// To reduce having to load this information everytime we do a OpFunctionCall, instead just create it once per Function block and
-// reference it each time
+// To reduce having to load this information everytime we do a OpFunctionCall, instead just create it once per Function
+// block and reference it each time
 uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& target_inst_it) {
     // Cached so only need to compute this once
     if (function.stage_info_id_ != 0) {
@@ -70,7 +70,7 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
     const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
     const Type& uvec4_type = module_.type_manager_.GetTypeVector(uint32_type, 4);
     const uint32_t uint32_0_id = module_.type_manager_.GetConstantZeroUint32().Id();
-    uint32_t stage_info[4] = {uint32_0_id, uint32_0_id, uint32_0_id, uint32_0_id};
+    uint32_t stage_info[4] = { uint32_0_id, uint32_0_id, uint32_0_id, uint32_0_id };
 
     if (module_.entry_points_.size() > 1) {
         // For Multi Entry Points it currently a lot of work to scan every function to see where it will be called from
@@ -85,7 +85,7 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
             const Variable& variable = GetBuiltinVariable(built_in);
             const Type* pointer_type = variable.PointerType(module_.type_manager_);
             const uint32_t load_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
+            block.CreateInstruction(spv::OpLoad, { pointer_type->Id(), load_id, variable.Id() }, &inst_it);
             return load_id;
         };
 
@@ -100,11 +100,12 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
                 const uint32_t load_id = create_load(spv::BuiltInFragCoord);
                 // convert vec4 to uvec4
                 const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {uvec4_type.Id(), bitcast_id, load_id}, &inst_it);
+                block.CreateInstruction(spv::OpBitcast, { uvec4_type.Id(), bitcast_id, load_id }, &inst_it);
 
                 for (uint32_t i = 0; i < 2; i++) {
                     const uint32_t extract_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, bitcast_id, i}, &inst_it);
+                    block.CreateInstruction(
+                        spv::OpCompositeExtract, { uint32_type.Id(), extract_id, bitcast_id, i }, &inst_it);
                     stage_info[i + 1] = extract_id;
                 }
             } break;
@@ -118,7 +119,8 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
 
                 for (uint32_t i = 0; i < 3; i++) {
                     const uint32_t extract_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, load_id, i}, &inst_it);
+                    block.CreateInstruction(
+                        spv::OpCompositeExtract, { uint32_type.Id(), extract_id, load_id, i }, &inst_it);
                     stage_info[i + 1] = extract_id;
                 }
             } break;
@@ -131,7 +133,8 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
 
                 for (uint32_t i = 0; i < 3; i++) {
                     const uint32_t extract_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, load_id, i}, &inst_it);
+                    block.CreateInstruction(
+                        spv::OpCompositeExtract, { uint32_type.Id(), extract_id, load_id, i }, &inst_it);
                     stage_info[i + 1] = extract_id;
                 }
             } break;
@@ -155,12 +158,13 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
                 const Type& vec3_type = module_.type_manager_.GetTypeVector(uint32_type, 3);
                 const uint32_t load_id = create_load(spv::BuiltInTessCoord);
                 const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {vec3_type.Id(), bitcast_id, load_id}, &inst_it);
+                block.CreateInstruction(spv::OpBitcast, { vec3_type.Id(), bitcast_id, load_id }, &inst_it);
 
                 // TessCoord.uv values from it
                 for (uint32_t i = 0; i < 2; i++) {
                     const uint32_t extract_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, bitcast_id, i}, &inst_it);
+                    block.CreateInstruction(
+                        spv::OpCompositeExtract, { uint32_type.Id(), extract_id, bitcast_id, i }, &inst_it);
                     stage_info[i + 2] = extract_id;
                 }
             } break;
@@ -171,17 +175,18 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
     }
 
     function.stage_info_id_ = module_.TakeNextId();
-    block.CreateInstruction(spv::OpCompositeConstruct,
-                            {uvec4_type.Id(), function.stage_info_id_, stage_info[0], stage_info[1], stage_info[2], stage_info[3]},
-                            &inst_it);
+    block.CreateInstruction(
+        spv::OpCompositeConstruct,
+        { uvec4_type.Id(), function.stage_info_id_, stage_info[0], stage_info[1], stage_info[2], stage_info[3] },
+        &inst_it);
 
     function.stage_info_x_id_ = stage_info[0];
     function.stage_info_y_id_ = stage_info[1];
     function.stage_info_z_id_ = stage_info[2];
     function.stage_info_w_id_ = stage_info[3];
 
-    // because we are injecting things in the first block, there is a chance we just destroyed the iterator if the target
-    // instruction was also in the first block, so need to regain it for the caller
+    // because we are injecting things in the first block, there is a chance we just destroyed the iterator if the
+    // target instruction was also in the first block, so need to regain it for the caller
     if ((*target_block_it)->GetLabelId() == block.GetLabelId()) {
         target_inst_it = FindTargetInstruction(block);
     }
@@ -201,22 +206,22 @@ const Instruction* Pass::GetDecoration(uint32_t id, spv::Decoration decoration) 
 
 const Instruction* Pass::GetMemberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration) {
     for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpMemberDecorate && annotation->Word(1) == id && annotation->Word(2) == member_index &&
-            spv::Decoration(annotation->Word(3)) == decoration) {
+        if (annotation->Opcode() == spv::OpMemberDecorate && annotation->Word(1) == id &&
+            annotation->Word(2) == member_index && spv::Decoration(annotation->Word(3)) == decoration) {
             return annotation.get();
         }
     }
     return nullptr;
 }
 
-// In an ideal world, this would be baked into the Type class when we construct it. The core issue is OpTypeMatrix size can be
-// different depending where it is used. Because of this, we need to have a higher level view what is going on in order to correctly
-// figure out the size of a given type.
+// In an ideal world, this would be baked into the Type class when we construct it. The core issue is OpTypeMatrix size
+// can be different depending where it is used. Because of this, we need to have a higher level view what is going on in
+// order to correctly figure out the size of a given type.
 uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool col_major, bool in_matrix) {
     const Type& type = *module_.type_manager_.FindTypeById(type_id);
     switch (type.spv_type_) {
         case SpvType::kPointer:
-            return 8;  // Assuming PhysicalStorageBuffer pointer
+            return 8; // Assuming PhysicalStorageBuffer pointer
             break;
         case SpvType::kMatrix: {
             if (matrix_stride == 0) {
@@ -259,7 +264,8 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
         case SpvType::kStruct: {
             const uint32_t struct_length = type.inst_.Length() - 2;
             const uint32_t struct_id = type.inst_.ResultId();
-            // We do our best to find the "size" of the struct (see https://gitlab.khronos.org/spirv/SPIR-V/-/issues/763)
+            // We do our best to find the "size" of the struct (see
+            // https://gitlab.khronos.org/spirv/SPIR-V/-/issues/763)
             uint32_t highest_element_index = 0;
             uint32_t highest_element_offset = 0;
 
@@ -301,18 +307,20 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
 }
 
 // Find outermost buffer type and its access chain index.
-// Because access chains indexes can be runtime values, we need to build arithmetic logic in the SPIR-V to get the runtime value of
-// the indexing
-uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instruction*>& access_chain_insts, BasicBlock& block,
+// Because access chains indexes can be runtime values, we need to build arithmetic logic in the SPIR-V to get the
+// runtime value of the indexing
+uint32_t Pass::GetLastByte(const Type& descriptor_type,
+                           std::vector<const Instruction*>& access_chain_insts,
+                           BasicBlock& block,
                            InstructionIt* inst_it) {
     assert(!access_chain_insts.empty());
     uint32_t current_type_id = 0;
-    const uint32_t reset_ac_word = 4;  // points to first "Index" operand of an OpAccessChain
+    const uint32_t reset_ac_word = 4; // points to first "Index" operand of an OpAccessChain
     uint32_t ac_word_index = reset_ac_word;
 
     if (descriptor_type.IsArray()) {
         current_type_id = descriptor_type.inst_.Operand(0);
-        ac_word_index++;  // this jumps over the array of descriptors so we first start on the descriptor itself
+        ac_word_index++; // this jumps over the array of descriptors so we first start on the descriptor itself
     } else if (descriptor_type.spv_type_ == SpvType::kStruct) {
         current_type_id = descriptor_type.Id();
     } else {
@@ -362,8 +370,8 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instru
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
 
                 current_offset_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, array_stride_id, ac_index_id_32},
-                                        inst_it);
+                block.CreateInstruction(
+                    spv::OpIMul, { uint32_type.Id(), current_offset_id, array_stride_id, ac_index_id_32 }, inst_it);
 
                 // Get element type for next step
                 current_type_id = current_type->inst_.Operand(0);
@@ -375,20 +383,22 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instru
                 matrix_stride_id = module_.type_manager_.GetConstantUInt32(matrix_stride).Id();
                 uint32_t vec_type_id = current_type->inst_.Operand(0);
 
-                // If column major, multiply column index by matrix stride, otherwise by vector component size and save matrix
-                // stride for vector (row) index
+                // If column major, multiply column index by matrix stride, otherwise by vector component size and save
+                // matrix stride for vector (row) index
                 uint32_t col_stride_id = 0;
                 if (col_major) {
                     col_stride_id = matrix_stride_id;
                 } else {
-                    const uint32_t component_type_id = module_.type_manager_.FindTypeById(vec_type_id)->inst_.Operand(0);
+                    const uint32_t component_type_id =
+                        module_.type_manager_.FindTypeById(vec_type_id)->inst_.Operand(0);
                     const uint32_t col_stride = FindTypeByteSize(component_type_id);
                     col_stride_id = module_.type_manager_.GetConstantUInt32(col_stride).Id();
                 }
 
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
                 current_offset_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, col_stride_id, ac_index_id_32}, inst_it);
+                block.CreateInstruction(
+                    spv::OpIMul, { uint32_type.Id(), current_offset_id, col_stride_id, ac_index_id_32 }, inst_it);
 
                 // Get element type for next step
                 current_type_id = vec_type_id;
@@ -401,14 +411,16 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instru
                 const uint32_t ac_index_id_32 = ConvertTo32(ac_index_id, block, inst_it);
                 if (in_matrix && !col_major) {
                     current_offset_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, matrix_stride_id, ac_index_id_32},
+                    block.CreateInstruction(spv::OpIMul,
+                                            { uint32_type.Id(), current_offset_id, matrix_stride_id, ac_index_id_32 },
                                             inst_it);
                 } else {
                     const uint32_t component_type_size = FindTypeByteSize(component_type_id);
                     const uint32_t size_id = module_.type_manager_.GetConstantUInt32(component_type_size).Id();
 
                     current_offset_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpIMul, {uint32_type.Id(), current_offset_id, size_id, ac_index_id_32}, inst_it);
+                    block.CreateInstruction(
+                        spv::OpIMul, { uint32_type.Id(), current_offset_id, size_id, ac_index_id_32 }, inst_it);
                 }
                 // Get element type for next step
                 current_type_id = component_type_id;
@@ -418,7 +430,8 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instru
                 const Constant* member_constant = module_.type_manager_.FindConstantById(ac_index_id);
                 assert(!member_constant->is_spec_constant_);
                 uint32_t member_index = member_constant->inst_.Operand(0);
-                uint32_t member_offset = GetMemberDecoration(current_type_id, member_index, spv::DecorationOffset)->Word(4);
+                uint32_t member_offset =
+                    GetMemberDecoration(current_type_id, member_index, spv::DecorationOffset)->Word(4);
                 current_offset_id = module_.type_manager_.GetConstantUInt32(member_offset).Id();
 
                 // Look for matrix stride for this member if there is one. The matrix
@@ -445,7 +458,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instru
             sum_id = current_offset_id;
         } else {
             const uint32_t new_sum_id = module_.TakeNextId();
-            block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, current_offset_id}, inst_it);
+            block.CreateInstruction(spv::OpIAdd, { uint32_type.Id(), new_sum_id, sum_id, current_offset_id }, inst_it);
             sum_id = new_sum_id;
         }
 
@@ -463,7 +476,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instru
     const uint32_t last_byte_index_id = module_.type_manager_.GetConstantUInt32(last_byte_index).Id();
 
     const uint32_t new_sum_id = module_.TakeNextId();
-    block.CreateInstruction(spv::OpIAdd, {uint32_type.Id(), new_sum_id, sum_id, last_byte_index_id}, inst_it);
+    block.CreateInstruction(spv::OpIAdd, { uint32_type.Id(), new_sum_id, sum_id, last_byte_index_id }, inst_it);
     return new_sum_id;
 }
 
@@ -492,11 +505,11 @@ uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_i
     const uint32_t new_id = module_.TakeNextId();
     const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
     if (is_signed) {
-        block.CreateInstruction(spv::OpSConvert, {uint32_type.Id(), new_id, id}, inst_it);
+        block.CreateInstruction(spv::OpSConvert, { uint32_type.Id(), new_id, id }, inst_it);
     } else {
-        block.CreateInstruction(spv::OpUConvert, {uint32_type.Id(), new_id, id}, inst_it);
+        block.CreateInstruction(spv::OpUConvert, { uint32_type.Id(), new_id, id }, inst_it);
     }
-    return new_id;  // Return an id to the 32bit equivalent.
+    return new_id; // Return an id to the 32bit equivalent.
 }
 
 // Generate code to cast integer it to 32bit unsigned, if needed.
@@ -525,8 +538,8 @@ uint32_t Pass::CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_
 
     const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
     const uint32_t new_id = module_.TakeNextId();
-    block.CreateInstruction(spv::OpBitcast, {uint32_type.Id(), new_id, int32_id}, inst_it);
-    return new_id;  // Return an id to the Uint equivalent.
+    block.CreateInstruction(spv::OpBitcast, { uint32_type.Id(), new_id, int32_id }, inst_it);
+    return new_id; // Return an id to the Uint equivalent.
 }
 
 InstructionIt Pass::FindTargetInstruction(BasicBlock& block) const {
@@ -545,5 +558,5 @@ InstructionIt Pass::FindTargetInstruction(BasicBlock& block) const {
     return block.instructions_.end();
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

@@ -20,16 +20,18 @@
 #include "sync/sync_commandbuffer.h"
 
 struct SyncNodeFormatter {
-    const DebugReport *debug_report;
-    const vvl::StateObject *node;
-    const char *label;
+    const DebugReport* debug_report;
+    const vvl::StateObject* node;
+    const char* label;
 
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::CommandBuffer *cb_state);
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Image *image);
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state);
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_ = nullptr);
+    SyncNodeFormatter(const SyncValidator& sync_state, const vvl::CommandBuffer* cb_state);
+    SyncNodeFormatter(const SyncValidator& sync_state, const vvl::Image* image);
+    SyncNodeFormatter(const SyncValidator& sync_state, const vvl::Queue* q_state);
+    SyncNodeFormatter(const SyncValidator& sync_state,
+                      const vvl::StateObject* state_object,
+                      const char* label_ = nullptr);
 };
-std::string FormatStateObject(const SyncNodeFormatter &formatter);
+std::string FormatStateObject(const SyncNodeFormatter& formatter);
 
 struct ReportKeyValues {
     struct KeyValue {
@@ -44,24 +46,23 @@ struct ReportKeyValues {
     std::string GetExtraPropertiesSection(bool pretty_print) const;
 };
 
-inline constexpr const char *kPropertyMessageType = "message_type";
-inline constexpr const char *kPropertyAccess = "access";
-inline constexpr const char *kPropertyPriorAccess = "prior_access";
-inline constexpr const char *kPropertyReadBarriers = "read_barriers";
-inline constexpr const char *kPropertyWriteBarriers = "write_barriers";
-inline constexpr const char *kPropertyLoadOp = "load_op";
-inline constexpr const char *kPropertyStoreOp = "store_op";
-inline constexpr const char *kPropertyResolveMode = "resolve_mode";
-inline constexpr const char *kPropertyOldLayout = "old_layout";
-inline constexpr const char *kPropertyNewLayout = "new_layout";
-inline constexpr const char *kPropertyResourceParameter = "resource_parameter";
-inline constexpr const char *kPropertyDescriptorType = "descriptor_type";
-inline constexpr const char *kPropertyImageLayout = "image_layout";
-inline constexpr const char *kPropertyImageAspect = "image_aspect";
+inline constexpr const char* kPropertyMessageType = "message_type";
+inline constexpr const char* kPropertyAccess = "access";
+inline constexpr const char* kPropertyPriorAccess = "prior_access";
+inline constexpr const char* kPropertyReadBarriers = "read_barriers";
+inline constexpr const char* kPropertyWriteBarriers = "write_barriers";
+inline constexpr const char* kPropertyLoadOp = "load_op";
+inline constexpr const char* kPropertyStoreOp = "store_op";
+inline constexpr const char* kPropertyResolveMode = "resolve_mode";
+inline constexpr const char* kPropertyOldLayout = "old_layout";
+inline constexpr const char* kPropertyNewLayout = "new_layout";
+inline constexpr const char* kPropertyResourceParameter = "resource_parameter";
+inline constexpr const char* kPropertyDescriptorType = "descriptor_type";
+inline constexpr const char* kPropertyImageLayout = "image_layout";
+inline constexpr const char* kPropertyImageAspect = "image_aspect";
 
 // debug properties
-inline constexpr const char *kPropertySeqNo = "seq_no";
-inline constexpr const char *kPropertySubCmd = "subcmd";
-inline constexpr const char *kPropertyResetNo = "reset_no";
-inline constexpr const char *kPropertyBatchTag = "batch_tag";
-
+inline constexpr const char* kPropertySeqNo = "seq_no";
+inline constexpr const char* kPropertySubCmd = "subcmd";
+inline constexpr const char* kPropertyResetNo = "reset_no";
+inline constexpr const char* kPropertyBatchTag = "batch_tag";

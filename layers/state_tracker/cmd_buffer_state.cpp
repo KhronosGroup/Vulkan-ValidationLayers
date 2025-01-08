@@ -18,21 +18,29 @@
  * limitations under the License.
  */
 #include "state_tracker/cmd_buffer_state.h"
-#include "state_tracker/descriptor_sets.h"
-#include "state_tracker/render_pass_state.h"
-#include "state_tracker/pipeline_state.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/descriptor_sets.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/pipeline_state.h"
+#include "state_tracker/render_pass_state.h"
 
 static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits stage) {
-    if (stage == VK_SHADER_STAGE_VERTEX_BIT) return ShaderObjectStage::VERTEX;
-    if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) return ShaderObjectStage::TESSELLATION_CONTROL;
-    if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) return ShaderObjectStage::TESSELLATION_EVALUATION;
-    if (stage == VK_SHADER_STAGE_GEOMETRY_BIT) return ShaderObjectStage::GEOMETRY;
-    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) return ShaderObjectStage::FRAGMENT;
-    if (stage == VK_SHADER_STAGE_COMPUTE_BIT) return ShaderObjectStage::COMPUTE;
-    if (stage == VK_SHADER_STAGE_TASK_BIT_EXT) return ShaderObjectStage::TASK;
-    if (stage == VK_SHADER_STAGE_MESH_BIT_EXT) return ShaderObjectStage::MESH;
+    if (stage == VK_SHADER_STAGE_VERTEX_BIT)
+        return ShaderObjectStage::VERTEX;
+    if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT)
+        return ShaderObjectStage::TESSELLATION_CONTROL;
+    if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)
+        return ShaderObjectStage::TESSELLATION_EVALUATION;
+    if (stage == VK_SHADER_STAGE_GEOMETRY_BIT)
+        return ShaderObjectStage::GEOMETRY;
+    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT)
+        return ShaderObjectStage::FRAGMENT;
+    if (stage == VK_SHADER_STAGE_COMPUTE_BIT)
+        return ShaderObjectStage::COMPUTE;
+    if (stage == VK_SHADER_STAGE_TASK_BIT_EXT)
+        return ShaderObjectStage::TASK;
+    if (stage == VK_SHADER_STAGE_MESH_BIT_EXT)
+        return ShaderObjectStage::MESH;
 
     assert(false);
 
@@ -40,8 +48,8 @@ static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits
 }
 
 // For Traditional RenderPasses, the index is simply the index into the VkRenderPassCreateInfo::pAttachments,
-// but for dynamic rendering, there is no "standard" way to map the index, instead we have our own custom indexing and it is not
-// obvious at all to the user where it came from
+// but for dynamic rendering, there is no "standard" way to map the index, instead we have our own custom indexing and
+// it is not obvious at all to the user where it came from
 std::string AttachmentInfo::Describe(AttachmentSource source, uint32_t index) const {
     std::ostringstream ss;
     auto type_string = [](Type type) {
@@ -91,7 +99,7 @@ std::string AttachmentInfo::Describe(AttachmentSource source, uint32_t index) co
 }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-static bool GetMetalExport(const VkEventCreateInfo *info) {
+static bool GetMetalExport(const VkEventCreateInfo* info) {
     bool retval = false;
     auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
     while (export_metal_object_info) {
@@ -99,34 +107,33 @@ static bool GetMetalExport(const VkEventCreateInfo *info) {
             retval = true;
             break;
         }
-        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+        export_metal_object_info =
+            vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
     }
     return retval;
 }
-#endif  // VK_USE_PLATFORM_METAL_EXT
+#endif // VK_USE_PLATFORM_METAL_EXT
 
 namespace vvl {
 
-Event::Event(VkEvent handle, const VkEventCreateInfo *create_info)
-    : StateObject(handle, kVulkanObjectTypeEvent),
-      flags(create_info->flags)
+Event::Event(VkEvent handle, const VkEventCreateInfo* create_info) :
+    StateObject(handle, kVulkanObjectTypeEvent), flags(create_info->flags)
 #ifdef VK_USE_PLATFORM_METAL_EXT
-      ,
-      metal_event_export(GetMetalExport(create_info))
-#endif  // VK_USE_PLATFORM_METAL_EXT
+    ,
+    metal_event_export(GetMetalExport(create_info))
+#endif // VK_USE_PLATFORM_METAL_EXT
 {
 }
 
-CommandPool::CommandPool(ValidationStateTracker &dev, VkCommandPool handle, const VkCommandPoolCreateInfo *create_info,
-                         VkQueueFlags flags)
-    : StateObject(handle, kVulkanObjectTypeCommandPool),
-      dev_data(dev),
-      createFlags(create_info->flags),
-      queueFamilyIndex(create_info->queueFamilyIndex),
-      queue_flags(flags),
-      unprotected((create_info->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) == 0) {}
+CommandPool::CommandPool(ValidationStateTracker& dev,
+                         VkCommandPool handle,
+                         const VkCommandPoolCreateInfo* create_info,
+                         VkQueueFlags flags) :
+    StateObject(handle, kVulkanObjectTypeCommandPool),
+    dev_data(dev), createFlags(create_info->flags), queueFamilyIndex(create_info->queueFamilyIndex), queue_flags(flags),
+    unprotected((create_info->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT) == 0) {}
 
-void CommandPool::Allocate(const VkCommandBufferAllocateInfo *allocate_info, const VkCommandBuffer *command_buffers) {
+void CommandPool::Allocate(const VkCommandBufferAllocateInfo* allocate_info, const VkCommandBuffer* command_buffers) {
     for (uint32_t i = 0; i < allocate_info->commandBufferCount; i++) {
         auto new_cb = dev_data.CreateCmdBufferState(command_buffers[i], allocate_info, this);
         commandBuffers.emplace(command_buffers[i], new_cb.get());
@@ -134,7 +141,7 @@ void CommandPool::Allocate(const VkCommandBufferAllocateInfo *allocate_info, con
     }
 }
 
-void CommandPool::Free(uint32_t count, const VkCommandBuffer *command_buffers) {
+void CommandPool::Free(uint32_t count, const VkCommandBuffer* command_buffers) {
     for (uint32_t i = 0; i < count; i++) {
         auto iter = commandBuffers.find(command_buffers[i]);
         if (iter != commandBuffers.end()) {
@@ -144,15 +151,15 @@ void CommandPool::Free(uint32_t count, const VkCommandBuffer *command_buffers) {
     }
 }
 
-void CommandPool::Reset(const Location &loc) {
-    for (auto &entry : commandBuffers) {
+void CommandPool::Reset(const Location& loc) {
+    for (auto& entry : commandBuffers) {
         auto guard = entry.second->WriteLock();
         entry.second->Reset(loc);
     }
 }
 
 void CommandPool::Destroy() {
-    for (auto &entry : commandBuffers) {
+    for (auto& entry : commandBuffers) {
         dev_data.Destroy<CommandBuffer>(entry.first);
     }
     commandBuffers.clear();
@@ -165,39 +172,38 @@ void CommandBuffer::SetActiveSubpass(uint32_t subpass) {
     active_subpass_sample_count_ = std::nullopt;
 }
 
-CommandBuffer::CommandBuffer(ValidationStateTracker &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
-                             const vvl::CommandPool *pool)
-    : RefcountedStateObject(handle, kVulkanObjectTypeCommandBuffer),
-      allocate_info(*allocate_info),
-      command_pool(pool),
-      dev_data(dev),
-      unprotected(pool->unprotected),
-      lastBound({*this, *this, *this}) {
+CommandBuffer::CommandBuffer(ValidationStateTracker& dev,
+                             VkCommandBuffer handle,
+                             const VkCommandBufferAllocateInfo* allocate_info,
+                             const vvl::CommandPool* pool) :
+    RefcountedStateObject(handle, kVulkanObjectTypeCommandBuffer),
+    allocate_info(*allocate_info), command_pool(pool), dev_data(dev), unprotected(pool->unprotected),
+    lastBound({ *this, *this, *this }) {
     ResetCBState();
 }
 
 // Get the image viewstate for a given framebuffer attachment
-vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(uint32_t index) {
+vvl::ImageView* CommandBuffer::GetActiveAttachmentImageViewState(uint32_t index) {
     assert(!active_attachments.empty() && index != VK_ATTACHMENT_UNUSED && (index < active_attachments.size()));
     return active_attachments[index].image_view;
 }
 
 // Get the image viewstate for a given framebuffer attachment
-const vvl::ImageView *CommandBuffer::GetActiveAttachmentImageViewState(uint32_t index) const {
+const vvl::ImageView* CommandBuffer::GetActiveAttachmentImageViewState(uint32_t index) const {
     if (active_attachments.empty() || index == VK_ATTACHMENT_UNUSED || (index >= active_attachments.size())) {
         return nullptr;
     }
     return active_attachments[index].image_view;
 }
 
-void CommandBuffer::AddChild(std::shared_ptr<StateObject> &child_node) {
+void CommandBuffer::AddChild(std::shared_ptr<StateObject>& child_node) {
     assert(child_node);
     if (child_node->AddParent(this)) {
         object_bindings.insert(child_node);
     }
 }
 
-void CommandBuffer::RemoveChild(std::shared_ptr<StateObject> &child_node) {
+void CommandBuffer::RemoveChild(std::shared_ptr<StateObject>& child_node) {
     assert(child_node);
     child_node->RemoveParent(this);
     object_bindings.erase(child_node);
@@ -207,7 +213,7 @@ void CommandBuffer::RemoveChild(std::shared_ptr<StateObject> &child_node) {
 // Maintain the createInfo and set state to CB_NEW, but clear all other state
 void CommandBuffer::ResetCBState() {
     // Remove object bindings
-    for (const auto &obj : object_bindings) {
+    for (const auto& obj : object_bindings) {
         obj->RemoveParent(this);
     }
     object_bindings.clear();
@@ -226,7 +232,7 @@ void CommandBuffer::ResetCBState() {
     state = CbState::New;
     command_count = 0;
     submitCount = 0;
-    image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
+    image_layout_change_count = 1; // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
 
     dynamic_state_status.cb.reset();
     dynamic_state_status.pipeline.reset();
@@ -280,7 +286,7 @@ void CommandBuffer::ResetCBState() {
     event_updates.clear();
     query_updates.clear();
 
-    for (auto &item : lastBound) {
+    for (auto& item : lastBound) {
         item.Reset();
     }
     activeFramebuffer = VK_NULL_HANDLE;
@@ -318,7 +324,7 @@ void CommandBuffer::ResetCBState() {
     push_constant_ranges_layout = nullptr;
 }
 
-void CommandBuffer::Reset(const Location &loc) {
+void CommandBuffer::Reset(const Location& loc) {
     ResetCBState();
     // Remove reverse command buffer links.
     Invalidate(true);
@@ -333,18 +339,21 @@ void CommandBuffer::IncrementResources() {
     //  should then be flagged prior to calling this function
     for (auto event : writeEventsBeforeWait) {
         auto event_state = dev_data.Get<vvl::Event>(event);
-        if (event_state) event_state->write_in_use++;
+        if (event_state)
+            event_state->write_in_use++;
     }
 }
 
 // Discussed in details in https://github.com/KhronosGroup/Vulkan-Docs/issues/1081
 // Internal discussion and CTS were written to prove that this is not called after an incompatible vkCmdBindPipeline
-// "Binding a pipeline with a layout that is not compatible with the push constant layout does not disturb the push constant values"
+// "Binding a pipeline with a layout that is not compatible with the push constant layout does not disturb the push
+// constant values"
 //
 // vkCmdBindDescriptorSet has nothing to do with push constants and don't need to call this after neither
 //
-// Part of this assumes apps at draw/dispatch/traceRays/etc time will have it properly compatible or else other VU will be triggered
-void CommandBuffer::ResetPushConstantRangesLayoutIfIncompatible(const vvl::PipelineLayout &pipeline_layout_state) {
+// Part of this assumes apps at draw/dispatch/traceRays/etc time will have it properly compatible or else other VU will
+// be triggered
+void CommandBuffer::ResetPushConstantRangesLayoutIfIncompatible(const vvl::PipelineLayout& pipeline_layout_state) {
     if (push_constant_ranges_layout == pipeline_layout_state.push_constant_ranges_layout) {
         return;
     }
@@ -364,18 +373,18 @@ void CommandBuffer::Destroy() {
     StateObject::Destroy();
 }
 
-void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+void CommandBuffer::NotifyInvalidate(const StateObject::NodeList& invalid_nodes, bool unlink) {
     {
         auto guard = WriteLock();
         assert(!invalid_nodes.empty());
         // Save all of the vulkan handles between the command buffer and the now invalid node
         LogObjectList log_list;
-        for (auto &obj : invalid_nodes) {
+        for (auto& obj : invalid_nodes) {
             log_list.add(obj->Handle());
         }
 
         bool found_invalid = false;
-        for (auto &obj : invalid_nodes) {
+        for (auto& obj : invalid_nodes) {
             // Only record a broken binding if one of the nodes in the invalid chain is still
             // being tracked by the command buffer. This is to try to avoid race conditions
             // caused by separate CommandBuffer and StateObject::parent_nodes locking.
@@ -386,7 +395,7 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
             switch (obj->Type()) {
                 case kVulkanObjectTypeCommandBuffer:
                     if (unlink) {
-                        linkedCommandBuffers.erase(static_cast<CommandBuffer *>(obj.get()));
+                        linkedCommandBuffers.erase(static_cast<CommandBuffer*>(obj.get()));
                     }
                     break;
                 case kVulkanObjectTypeImage:
@@ -410,7 +419,9 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
     StateObject::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-const CommandBuffer::ImageLayoutMap &CommandBuffer::GetImageLayoutMap() const { return image_layout_map; }
+const CommandBuffer::ImageLayoutMap& CommandBuffer::GetImageLayoutMap() const {
+    return image_layout_map;
+}
 
 // The const variant only need the image as it is the key for the map
 std::shared_ptr<const ImageLayoutRegistry> CommandBuffer::GetImageLayoutRegistry(VkImage image) const {
@@ -422,7 +433,7 @@ std::shared_ptr<const ImageLayoutRegistry> CommandBuffer::GetImageLayoutRegistry
 }
 
 // The non-const variant only needs the image state, as the factory requires it to construct a new entry
-std::shared_ptr<ImageLayoutRegistry> CommandBuffer::GetOrCreateImageLayoutRegistry(const vvl::Image &image_state) {
+std::shared_ptr<ImageLayoutRegistry> CommandBuffer::GetOrCreateImageLayoutRegistry(const vvl::Image& image_state) {
     // Make sure we don't create a nullptr keyed entry for a zombie Image
     if (image_state.Destroyed() || !image_state.layout_range_map) {
         return nullptr;
@@ -437,7 +448,7 @@ std::shared_ptr<ImageLayoutRegistry> CommandBuffer::GetOrCreateImageLayoutRegist
         // Since they use the same global layout state, use it as a key
         // for the local state. We don't need a lock on the global range
         // map to do a lookup based on its pointer.
-        const auto *global_layout_map = image_state.layout_range_map.get();
+        const auto* global_layout_map = image_state.layout_range_map.get();
         auto alias_iter = aliased_image_layout_map.find(global_layout_map);
         if (alias_iter != aliased_image_layout_map.end()) {
             image_layout_registry = alias_iter->second;
@@ -448,7 +459,6 @@ std::shared_ptr<ImageLayoutRegistry> CommandBuffer::GetOrCreateImageLayoutRegist
             // table so it doesn't need to be locked.
             aliased_image_layout_map.emplace(global_layout_map, image_layout_registry);
         }
-
     } else {
         image_layout_registry = std::make_shared<ImageLayoutRegistry>(image_state);
     }
@@ -457,21 +467,24 @@ std::shared_ptr<ImageLayoutRegistry> CommandBuffer::GetOrCreateImageLayoutRegist
         iter->second = image_layout_registry;
     } else {
         // add a new entry
-        image_layout_map.insert({image_state.VkHandle(), image_layout_registry});
+        image_layout_map.insert({ image_state.VkHandle(), image_layout_registry });
     }
     return image_layout_registry;
 }
 
-static bool SetQueryState(const QueryObject &object, QueryState value, QueryMap *localQueryToStateMap) {
+static bool SetQueryState(const QueryObject& object, QueryState value, QueryMap* localQueryToStateMap) {
     (*localQueryToStateMap)[object] = value;
     return false;
 }
 
-void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
+void CommandBuffer::BeginQuery(const QueryObject& query_obj) {
     activeQueries.insert(query_obj);
     startedQueries.insert(query_obj);
-    query_updates.emplace_back([query_obj](CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                           uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
+    query_updates.emplace_back([query_obj](CommandBuffer& cb_state_arg,
+                                           bool do_validate,
+                                           VkQueryPool& firstPerfQueryPool,
+                                           uint32_t perfQueryPass,
+                                           QueryMap* localQueryToStateMap) {
         SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_RUNNING, localQueryToStateMap);
         return false;
     });
@@ -481,10 +494,13 @@ void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
     }
 }
 
-void CommandBuffer::EndQuery(const QueryObject &query_obj) {
+void CommandBuffer::EndQuery(const QueryObject& query_obj) {
     activeQueries.erase(query_obj);
-    query_updates.emplace_back([query_obj](CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                           uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
+    query_updates.emplace_back([query_obj](CommandBuffer& cb_state_arg,
+                                           bool do_validate,
+                                           VkQueryPool& firstPerfQueryPool,
+                                           uint32_t perfQueryPass,
+                                           QueryMap* localQueryToStateMap) {
         return SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_ENDED, localQueryToStateMap);
     });
     updatedQueries.insert(query_obj);
@@ -493,11 +509,11 @@ void CommandBuffer::EndQuery(const QueryObject &query_obj) {
     }
 }
 
-bool CommandBuffer::UpdatesQuery(const QueryObject &query_obj) const {
+bool CommandBuffer::UpdatesQuery(const QueryObject& query_obj) const {
     // Clear out the perf_pass from the caller because it isn't known when the command buffer is recorded.
     auto key = query_obj;
     key.perf_pass = 0;
-    for (auto *sub_cb : linkedCommandBuffers) {
+    for (auto* sub_cb : linkedCommandBuffers) {
         if (sub_cb->updatedQueries.find(key) != sub_cb->updatedQueries.end()) {
             return true;
         }
@@ -505,10 +521,14 @@ bool CommandBuffer::UpdatesQuery(const QueryObject &query_obj) const {
     return updatedQueries.find(key) != updatedQueries.end();
 }
 
-static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass, QueryState value,
-                               QueryMap *localQueryToStateMap) {
+static bool SetQueryStateMulti(VkQueryPool queryPool,
+                               uint32_t firstQuery,
+                               uint32_t queryCount,
+                               uint32_t perfPass,
+                               QueryState value,
+                               QueryMap* localQueryToStateMap) {
     for (uint32_t i = 0; i < queryCount; i++) {
-        QueryObject query_obj = {queryPool, firstQuery + i, perfPass};
+        QueryObject query_obj = { queryPool, firstQuery + i, perfPass };
         (*localQueryToStateMap)[query_obj] = value;
     }
     return false;
@@ -516,32 +536,38 @@ static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint3
 
 void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
-        QueryObject query_obj = {queryPool, slot};
+        QueryObject query_obj = { queryPool, slot };
         activeQueries.erase(query_obj);
         updatedQueries.insert(query_obj);
     }
-    query_updates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
-                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
-                                                                   QueryMap *localQueryToStateMap) {
-        return SetQueryStateMulti(queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_ENDED, localQueryToStateMap);
+    query_updates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer& cb_state_arg,
+                                                                   bool do_validate,
+                                                                   VkQueryPool& firstPerfQueryPool,
+                                                                   uint32_t perfQueryPass,
+                                                                   QueryMap* localQueryToStateMap) {
+        return SetQueryStateMulti(
+            queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_ENDED, localQueryToStateMap);
     });
 }
 
 void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
-        QueryObject query_obj = {queryPool, slot};
+        QueryObject query_obj = { queryPool, slot };
         updatedQueries.insert(query_obj);
     }
 
-    query_updates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
-                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
-                                                                   QueryMap *localQueryToStateMap) {
-        return SetQueryStateMulti(queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_RESET, localQueryToStateMap);
+    query_updates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer& cb_state_arg,
+                                                                   bool do_validate,
+                                                                   VkQueryPool& firstPerfQueryPool,
+                                                                   uint32_t perfQueryPass,
+                                                                   QueryMap* localQueryToStateMap) {
+        return SetQueryStateMulti(
+            queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_RESET, localQueryToStateMap);
     });
 }
 
 void CommandBuffer::UpdateSubpassAttachments() {
-    const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
+    const auto& subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
     assert(active_subpasses.size() == active_attachments.size());
 
     for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
@@ -590,15 +616,17 @@ void CommandBuffer::UpdateSubpassAttachments() {
 }
 
 // For non Dynamic Renderpass we update the attachments
-void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin) {
+void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo* pRenderPassBegin) {
     const bool imageless = (activeFramebuffer->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
-    const VkRenderPassAttachmentBeginInfo *attachment_info_struct = nullptr;
-    if (pRenderPassBegin) attachment_info_struct = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+    const VkRenderPassAttachmentBeginInfo* attachment_info_struct = nullptr;
+    if (pRenderPassBegin)
+        attachment_info_struct = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
 
     for (uint32_t i = 0; i < active_attachments.size(); ++i) {
         if (imageless) {
             if (attachment_info_struct && i < attachment_info_struct->attachmentCount) {
-                active_attachments[i].image_view = dev_data.Get<vvl::ImageView>(attachment_info_struct->pAttachments[i]).get();
+                active_attachments[i].image_view =
+                    dev_data.Get<vvl::ImageView>(attachment_info_struct->pAttachments[i]).get();
             }
         } else {
             active_attachments[i].image_view = activeFramebuffer->attachments_view_state[i].get();
@@ -609,7 +637,9 @@ void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPa
     UpdateSubpassAttachments();
 }
 
-void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin, const VkSubpassContents contents) {
+void CommandBuffer::BeginRenderPass(Func command,
+                                    const VkRenderPassBeginInfo* pRenderPassBegin,
+                                    const VkSubpassContents contents) {
     RecordCmd(command);
     activeFramebuffer = dev_data.Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
     activeRenderPass = dev_data.Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
@@ -634,7 +664,8 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
         UnbindResources();
     }
 
-    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
+    auto chained_device_group_struct =
+        vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
     if (chained_device_group_struct) {
         active_render_pass_device_mask = chained_device_group_struct->deviceMask;
     } else {
@@ -686,7 +717,7 @@ void CommandBuffer::EndRenderPass(Func command) {
     activeFramebuffer = VK_NULL_HANDLE;
 }
 
-void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo) {
+void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo* pRenderingInfo) {
     RecordCmd(command);
     activeRenderPass = std::make_shared<vvl::RenderPass>(pRenderingInfo, true);
     renderPassQueries.clear();
@@ -695,7 +726,8 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     rendering_attachments.color_locations.resize(pRenderingInfo->colorAttachmentCount);
     rendering_attachments.color_indexes.resize(pRenderingInfo->colorAttachmentCount);
 
-    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
+    auto chained_device_group_struct =
+        vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     if (chained_device_group_struct) {
         active_render_pass_device_mask = chained_device_group_struct->deviceMask;
     } else {
@@ -736,38 +768,43 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
         rendering_attachments.color_indexes[i] = i;
 
         if (pRenderingInfo->pColorAttachments[i].imageView != VK_NULL_HANDLE) {
-            auto &color_attachment = active_attachments[GetDynamicColorAttachmentImageIndex(i)];
-            color_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
+            auto& color_attachment = active_attachments[GetDynamicColorAttachmentImageIndex(i)];
+            color_attachment.image_view =
+                dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
             color_attachment.type = AttachmentInfo::Type::Color;
             if (pRenderingInfo->pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_NONE &&
                 pRenderingInfo->pColorAttachments[i].resolveImageView != VK_NULL_HANDLE) {
-                auto &resolve_attachment = active_attachments[GetDynamicColorResolveAttachmentImageIndex(i)];
-                resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
+                auto& resolve_attachment = active_attachments[GetDynamicColorResolveAttachmentImageIndex(i)];
+                resolve_attachment.image_view =
+                    dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
                 resolve_attachment.type = AttachmentInfo::Type::ColorResolve;
             }
         }
     }
 
     if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
-        auto &depth_attachment = active_attachments[GetDynamicDepthAttachmentImageIndex()];
+        auto& depth_attachment = active_attachments[GetDynamicDepthAttachmentImageIndex()];
         depth_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
         depth_attachment.type = AttachmentInfo::Type::Depth;
         if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
-            auto &resolve_attachment = active_attachments[GetDynamicDepthResolveAttachmentImageIndex()];
-            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
+            auto& resolve_attachment = active_attachments[GetDynamicDepthResolveAttachmentImageIndex()];
+            resolve_attachment.image_view =
+                dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
             resolve_attachment.type = AttachmentInfo::Type::DepthResolve;
         }
     }
 
     if (pRenderingInfo->pStencilAttachment && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
-        auto &stencil_attachment = active_attachments[GetDynamicStencilAttachmentImageIndex()];
-        stencil_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
+        auto& stencil_attachment = active_attachments[GetDynamicStencilAttachmentImageIndex()];
+        stencil_attachment.image_view =
+            dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
         stencil_attachment.type = AttachmentInfo::Type::Stencil;
         if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
-            auto &resolve_attachment = active_attachments[GetDynamicStencilResolveAttachmentImageIndex()];
-            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
+            auto& resolve_attachment = active_attachments[GetDynamicStencilResolveAttachmentImageIndex()];
+            resolve_attachment.image_view =
+                dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
             resolve_attachment.type = AttachmentInfo::Type::StencilResolve;
         }
     }
@@ -779,7 +816,7 @@ void CommandBuffer::EndRendering(Func command) {
     active_color_attachments_index.clear();
 }
 
-void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo) {
+void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR* pBeginInfo) {
     RecordCmd(Func::vkCmdBeginVideoCodingKHR);
     bound_video_session = dev_data.Get<vvl::VideoSession>(pBeginInfo->videoSession);
     bound_video_session_parameters = dev_data.Get<vvl::VideoSessionParameters>(pBeginInfo->videoSessionParameters);
@@ -814,7 +851,8 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
                 bound_video_picture_resources.emplace(std::make_pair(res, slot_index));
             }
 
-            if (pBeginInfo->pReferenceSlots[i].slotIndex >= 0 && pBeginInfo->pReferenceSlots[i].pPictureResource == nullptr) {
+            if (pBeginInfo->pReferenceSlots[i].slotIndex >= 0 &&
+                pBeginInfo->pReferenceSlots[i].pPictureResource == nullptr) {
                 deactivated_slot_count++;
             }
         }
@@ -823,16 +861,19 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
             std::vector<int32_t> deactivated_slots{};
             deactivated_slots.reserve(deactivated_slot_count);
             for (uint32_t i = 0; i < pBeginInfo->referenceSlotCount; ++i) {
-                if (pBeginInfo->pReferenceSlots[i].slotIndex >= 0 && pBeginInfo->pReferenceSlots[i].pPictureResource == nullptr) {
+                if (pBeginInfo->pReferenceSlots[i].slotIndex >= 0 &&
+                    pBeginInfo->pReferenceSlots[i].pPictureResource == nullptr) {
                     deactivated_slots.emplace_back(pBeginInfo->pReferenceSlots[i].slotIndex);
                 }
             }
 
             // Enqueue submission time DPB slot deactivation
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [deactivated_slots](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
-                                    vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
-                    for (const auto &slot_index : deactivated_slots) {
+                [deactivated_slots](const ValidationStateTracker& dev_data,
+                                    const vvl::VideoSession* vs_state,
+                                    vvl::VideoSessionDeviceState& dev_state,
+                                    bool do_validate) {
+                    for (const auto& slot_index : deactivated_slots) {
                         dev_state.Deactivate(slot_index);
                     }
                     return false;
@@ -841,7 +882,7 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
     }
 }
 
-void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo) {
+void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR* pEndCodingInfo) {
     RecordCmd(Func::vkCmdEndVideoCodingKHR);
     bound_video_session = nullptr;
     bound_video_session_parameters = nullptr;
@@ -849,50 +890,59 @@ void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo
     video_encode_quality_level.reset();
 }
 
-void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pControlInfo) {
+void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR* pControlInfo) {
     RecordCmd(Func::vkCmdControlVideoCodingKHR);
 
     if (pControlInfo && bound_video_session) {
         if (pControlInfo->flags & VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR) {
             // Remove DPB slot index association for bound video picture resources
-            for (auto &binding : bound_video_picture_resources) {
+            for (auto& binding : bound_video_picture_resources) {
                 binding.second = -1;
             }
 
             // Enqueue submission time video session state reset/initialization
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
-                   vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                [](const ValidationStateTracker& dev_data,
+                   const vvl::VideoSession* vs_state,
+                   vvl::VideoSessionDeviceState& dev_state,
+                   bool do_validate) {
                     dev_state.Reset();
                     return false;
                 });
         }
 
-        if (bound_video_session->IsEncode() && pControlInfo->flags & VK_VIDEO_CODING_CONTROL_ENCODE_RATE_CONTROL_BIT_KHR) {
+        if (bound_video_session->IsEncode() &&
+            pControlInfo->flags & VK_VIDEO_CODING_CONTROL_ENCODE_RATE_CONTROL_BIT_KHR) {
             auto state = VideoEncodeRateControlState(bound_video_session->GetCodecOp(), pControlInfo);
             if (state) {
                 video_encode_rate_control_state = state;
 
                 // Enqueue rate control specific device state changes
                 video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                    [state](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
-                            vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                    [state](const ValidationStateTracker& dev_data,
+                            const vvl::VideoSession* vs_state,
+                            vvl::VideoSessionDeviceState& dev_state,
+                            bool do_validate) {
                         dev_state.SetRateControlState(state);
                         return false;
                     });
             }
         }
 
-        if (bound_video_session->IsEncode() && pControlInfo->flags & VK_VIDEO_CODING_CONTROL_ENCODE_QUALITY_LEVEL_BIT_KHR) {
-            auto quality_level_info = vku::FindStructInPNextChain<VkVideoEncodeQualityLevelInfoKHR>(pControlInfo->pNext);
+        if (bound_video_session->IsEncode() &&
+            pControlInfo->flags & VK_VIDEO_CODING_CONTROL_ENCODE_QUALITY_LEVEL_BIT_KHR) {
+            auto quality_level_info =
+                vku::FindStructInPNextChain<VkVideoEncodeQualityLevelInfoKHR>(pControlInfo->pNext);
             if (quality_level_info != nullptr) {
                 uint32_t quality_level = quality_level_info->qualityLevel;
                 video_encode_quality_level = quality_level;
 
                 // Enqueue encode quality level device state change
                 video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                    [quality_level](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
-                                    vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                    [quality_level](const ValidationStateTracker& dev_data,
+                                    const vvl::VideoSession* vs_state,
+                                    vvl::VideoSessionDeviceState& dev_state,
+                                    bool do_validate) {
                         dev_state.SetEncodeQualityLevel(quality_level);
                         return false;
                     });
@@ -901,11 +951,15 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
     }
 }
 
-void vvl::CommandBuffer::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {
-    query_updates.emplace_back([query_info](vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                            uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
+void vvl::CommandBuffer::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR& query_info) {
+    query_updates.emplace_back([query_info](vvl::CommandBuffer& cb_state_arg,
+                                            bool do_validate,
+                                            VkQueryPool& firstPerfQueryPool,
+                                            uint32_t perfQueryPass,
+                                            QueryMap* localQueryToStateMap) {
         for (uint32_t i = 0; i < query_info.queryCount; i++) {
-            SetQueryState(QueryObject(query_info.queryPool, query_info.firstQuery + i), QUERYSTATE_ENDED, localQueryToStateMap);
+            SetQueryState(
+                QueryObject(query_info.queryPool, query_info.firstQuery + i), QUERYSTATE_ENDED, localQueryToStateMap);
         }
         return false;
     });
@@ -914,12 +968,13 @@ void vvl::CommandBuffer::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQuer
     }
 }
 
-void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
+void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR* pDecodeInfo) {
     RecordCmd(Func::vkCmdDecodeVideoKHR);
 
     if (bound_video_session && pDecodeInfo) {
         if (pDecodeInfo->pSetupReferenceSlot && pDecodeInfo->pSetupReferenceSlot->pPictureResource) {
-            vvl::VideoReferenceSlot setup_slot(dev_data, *bound_video_session->profile, *pDecodeInfo->pSetupReferenceSlot);
+            vvl::VideoReferenceSlot setup_slot(
+                dev_data, *bound_video_session->profile, *pDecodeInfo->pSetupReferenceSlot);
 
             // Update bound video picture resource DPB slot index association
             bound_video_picture_resources[setup_slot.resource] = setup_slot.index;
@@ -927,8 +982,10 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
             // Enqueue submission time reference slot setup or invalidation
             bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(*pDecodeInfo);
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [setup_slot, reference_setup_requested](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
-                                                        vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                [setup_slot, reference_setup_requested](const ValidationStateTracker& dev_data,
+                                                        const vvl::VideoSession* vs_state,
+                                                        vvl::VideoSessionDeviceState& dev_state,
+                                                        bool do_validate) {
                     if (reference_setup_requested) {
                         dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
                     } else {
@@ -939,7 +996,7 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
         }
 
         // Update active query indices
-        for (auto &query : activeQueries) {
+        for (auto& query : activeQueries) {
             uint32_t op_count = bound_video_session->GetVideoDecodeOperationCount(pDecodeInfo);
             query.active_query_index += op_count;
         }
@@ -954,12 +1011,13 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
     }
 }
 
-void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
+void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR* pEncodeInfo) {
     RecordCmd(Func::vkCmdEncodeVideoKHR);
 
     if (bound_video_session && pEncodeInfo) {
         if (pEncodeInfo->pSetupReferenceSlot && pEncodeInfo->pSetupReferenceSlot->pPictureResource) {
-            vvl::VideoReferenceSlot setup_slot(dev_data, *bound_video_session->profile, *pEncodeInfo->pSetupReferenceSlot);
+            vvl::VideoReferenceSlot setup_slot(
+                dev_data, *bound_video_session->profile, *pEncodeInfo->pSetupReferenceSlot);
 
             // Update bound video picture resource DPB slot index association
             bound_video_picture_resources[setup_slot.resource] = setup_slot.index;
@@ -967,8 +1025,10 @@ void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
             // Enqueue submission time reference slot setup or invalidation
             bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(*pEncodeInfo);
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [setup_slot, reference_setup_requested](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
-                                                        vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                [setup_slot, reference_setup_requested](const ValidationStateTracker& dev_data,
+                                                        const vvl::VideoSession* vs_state,
+                                                        vvl::VideoSessionDeviceState& dev_state,
+                                                        bool do_validate) {
                     if (reference_setup_requested) {
                         dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
                     } else {
@@ -979,7 +1039,7 @@ void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
         }
 
         // Update active query indices
-        for (auto &query : activeQueries) {
+        for (auto& query : activeQueries) {
             uint32_t op_count = bound_video_session->GetVideoEncodeOperationCount(pEncodeInfo);
             query.active_query_index += op_count;
         }
@@ -994,7 +1054,7 @@ void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
     }
 }
 
-void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
+void CommandBuffer::Begin(const VkCommandBufferBeginInfo* pBeginInfo) {
     if (CbState::Recorded == state || CbState::InvalidComplete == state) {
         Location loc(Func::vkBeginCommandBuffer);
         Reset(loc);
@@ -1031,8 +1091,8 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                     }
                 }
             } else {
-                auto inheritance_rendering_info =
-                    vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
+                auto inheritance_rendering_info = vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(
+                    beginInfo.pInheritanceInfo->pNext);
                 if (inheritance_rendering_info) {
                     activeRenderPass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info);
                 }
@@ -1040,7 +1100,8 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 
             // Check for VkCommandBufferInheritanceViewportScissorInfoNV (VK_NV_inherited_viewport_scissor)
             auto p_inherited_viewport_scissor_info =
-                vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(beginInfo.pInheritanceInfo->pNext);
+                vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(
+                    beginInfo.pInheritanceInfo->pNext);
             if (p_inherited_viewport_scissor_info != nullptr && p_inherited_viewport_scissor_info->viewportScissor2D) {
                 auto pViewportDepths = p_inherited_viewport_scissor_info->pViewportDepths;
                 inheritedViewportDepths.assign(pViewportDepths,
@@ -1049,7 +1110,8 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
         }
     }
 
-    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
+    auto chained_device_group_struct =
+        vku::FindStructInPNextChain<VkDeviceGroupCommandBufferBeginInfo>(pBeginInfo->pNext);
     if (chained_device_group_struct) {
         initial_device_mask = chained_device_group_struct->deviceMask;
     } else {
@@ -1072,17 +1134,17 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         ASSERT_AND_RETURN(sub_cb_state);
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
-                // TODO: Because this is a state change, clearing the VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT needs to be moved
-                // from the validation step to the recording step
+                // TODO: Because this is a state change, clearing the VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT needs
+                // to be moved from the validation step to the recording step
                 beginInfo.flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
             }
         }
 
         // Propagate inital layout and current layout state to the primary cmd buffer
         // NOTE: The update/population of the image_layout_map is done in CoreChecks, but for other classes derived from
-        // ValidationStateTracker these maps will be empty, so leaving the propagation in the the state tracker should be a no-op
-        // for those other classes.
-        for (const auto &[image, image_layout_registry] : sub_cb_state->image_layout_map) {
+        // ValidationStateTracker these maps will be empty, so leaving the propagation in the the state tracker should
+        // be a no-op for those other classes.
+        for (const auto& [image, image_layout_registry] : sub_cb_state->image_layout_map) {
             const auto image_state = dev_data.Get<vvl::Image>(image);
             if (!image_state || image_state->Destroyed() || !image_layout_registry ||
                 image_state->GetId() != image_layout_registry->GetImageId()) {
@@ -1100,23 +1162,26 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         // Add a query update that runs all the query updates that happen in the sub command buffer.
         // This avoids locking ambiguity because primary command buffers are locked when these
         // callbacks run, but secondary command buffers are not.
-        query_updates.emplace_back([sub_command_buffer](CommandBuffer &cb_state_arg, bool do_validate,
-                                                        VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
-                                                        QueryMap *localQueryToStateMap) {
+        query_updates.emplace_back([sub_command_buffer](CommandBuffer& cb_state_arg,
+                                                        bool do_validate,
+                                                        VkQueryPool& firstPerfQueryPool,
+                                                        uint32_t perfQueryPass,
+                                                        QueryMap* localQueryToStateMap) {
             bool skip = false;
             auto sub_cb_state_arg = cb_state_arg.dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
-            for (auto &function : sub_cb_state_arg->query_updates) {
-                skip |= function(*sub_cb_state_arg, do_validate, firstPerfQueryPool, perfQueryPass, localQueryToStateMap);
+            for (auto& function : sub_cb_state_arg->query_updates) {
+                skip |=
+                    function(*sub_cb_state_arg, do_validate, firstPerfQueryPool, perfQueryPass, localQueryToStateMap);
             }
             return skip;
         });
-        for (auto &function : sub_cb_state->event_updates) {
+        for (auto& function : sub_cb_state->event_updates) {
             event_updates.push_back(function);
         }
-        for (auto &event : sub_cb_state->events) {
+        for (auto& event : sub_cb_state->events) {
             events.push_back(event);
         }
-        for (auto &function : sub_cb_state->queue_submit_functions) {
+        for (auto& function : sub_cb_state->queue_submit_functions) {
             queue_submit_functions.push_back(function);
         }
 
@@ -1147,13 +1212,17 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         }
 
         label_stack_depth_ += sub_cb_state->label_stack_depth_;
-        label_commands_.insert(label_commands_.end(), sub_cb_state->label_commands_.begin(), sub_cb_state->label_commands_.end());
+        label_commands_.insert(
+            label_commands_.end(), sub_cb_state->label_commands_.begin(), sub_cb_state->label_commands_.end());
     }
 }
 
-void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const vvl::PipelineLayout &pipeline_layout,
-                                           vvl::Func bound_command, uint32_t set, uint32_t descriptorWriteCount,
-                                           const VkWriteDescriptorSet *pDescriptorWrites) {
+void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint,
+                                           const vvl::PipelineLayout& pipeline_layout,
+                                           vvl::Func bound_command,
+                                           uint32_t set,
+                                           uint32_t descriptorWriteCount,
+                                           const VkWriteDescriptorSet* pDescriptorWrites) {
     // Short circuit invalid updates
     if ((set >= pipeline_layout.set_layouts.size()) || !pipeline_layout.set_layouts[set] ||
         !pipeline_layout.set_layouts[set]->IsPushDescriptor()) {
@@ -1161,17 +1230,17 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
     }
 
     // We need a descriptor set to update the bindings with, compatible with the passed layout
-    const auto &dsl = pipeline_layout.set_layouts[set];
+    const auto& dsl = pipeline_layout.set_layouts[set];
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-    auto &last_bound = lastBound[lv_bind_point];
-    auto &push_descriptor_set = last_bound.push_descriptor_set;
+    auto& last_bound = lastBound[lv_bind_point];
+    auto& push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
     if (!push_descriptor_set || !last_bound.IsBoundSetCompatible(set, pipeline_layout)) {
         last_bound.UnbindAndResetPushDescriptorSet(dev_data.CreateDescriptorSet(VK_NULL_HANDLE, nullptr, dsl, 0));
     }
 
-    UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, bound_command, set, 1, nullptr, push_descriptor_set, 0,
-                                  nullptr);
+    UpdateLastBoundDescriptorSets(
+        pipelineBindPoint, pipeline_layout, bound_command, set, 1, nullptr, push_descriptor_set, 0, nullptr);
     last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
@@ -1201,15 +1270,16 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
     RecordCmd(command);
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    auto &last_bound = lastBound[lv_bind_point];
-    vvl::Pipeline *pipe = last_bound.pipeline_state;
+    auto& last_bound = lastBound[lv_bind_point];
+    vvl::Pipeline* pipe = last_bound.pipeline_state;
     if (!pipe) {
         return;
     }
 
     // Update the consumed viewport/scissor count.
     {
-        usedViewportScissorCount = std::max({usedViewportScissorCount, pipelineStaticViewportCount, pipelineStaticScissorCount});
+        usedViewportScissorCount =
+            std::max({ usedViewportScissorCount, pipelineStaticViewportCount, pipelineStaticScissorCount });
         usedDynamicViewportCount |= pipe->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
         usedDynamicScissorCount |= pipe->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     }
@@ -1220,22 +1290,23 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
     }
 
     if (last_bound.desc_set_pipeline_layout != VK_NULL_HANDLE) {
-        for (const auto &[set_index, binding_req_map] : pipe->active_slots) {
+        for (const auto& [set_index, binding_req_map] : pipe->active_slots) {
             if (set_index >= last_bound.ds_slots.size()) {
                 continue;
             }
-            auto &ds_slot = last_bound.ds_slots[set_index];
+            auto& ds_slot = last_bound.ds_slots[set_index];
             // Pull the set node
-            auto &descriptor_set = ds_slot.ds_state;
+            auto& descriptor_set = ds_slot.ds_state;
             if (!descriptor_set) {
                 continue;
             }
 
-            // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
+            // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor
+            // binding
 
             // We can skip updating the state if "nothing" has changed since the last validation.
             // See CoreChecks::ValidateActionState for more details.
-            const bool need_update =  // Update if descriptor set (or contents) has changed
+            const bool need_update = // Update if descriptor set (or contents) has changed
                 ds_slot.validated_set != descriptor_set.get() ||
                 ds_slot.validated_set_change_count != descriptor_set->GetChangeCount() ||
                 (!dev_data.disabled[image_layout_validation] &&
@@ -1257,7 +1328,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
 }
 
 // Helper for descriptor set (and buffer) updates.
-static bool PushDescriptorCleanup(LastBound &last_bound, uint32_t set_idx) {
+static bool PushDescriptorCleanup(LastBound& last_bound, uint32_t set_idx) {
     // All uses are from loops over ds_slots, but just in case..
     assert(set_idx < last_bound.ds_slots.size());
 
@@ -1274,10 +1345,14 @@ static bool PushDescriptorCleanup(LastBound &last_bound, uint32_t set_idx) {
 // One of pDescriptorSets or push_descriptor_set should be nullptr, indicating whether this
 // is called for CmdBindDescriptorSets or CmdPushDescriptorSet.
 void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
-                                                  const vvl::PipelineLayout &pipeline_layout, vvl::Func bound_command,
-                                                  uint32_t first_set, uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
-                                                  std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
-                                                  uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
+                                                  const vvl::PipelineLayout& pipeline_layout,
+                                                  vvl::Func bound_command,
+                                                  uint32_t first_set,
+                                                  uint32_t set_count,
+                                                  const VkDescriptorSet* pDescriptorSets,
+                                                  std::shared_ptr<vvl::DescriptorSet>& push_descriptor_set,
+                                                  uint32_t dynamic_offset_count,
+                                                  const uint32_t* p_dynamic_offsets) {
     ASSERT_AND_RETURN((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
 
     uint32_t required_size = first_set + set_count;
@@ -1286,10 +1361,10 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
 
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
-    auto &last_bound = lastBound[lv_bind_point];
+    auto& last_bound = lastBound[lv_bind_point];
     last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
     last_bound.desc_set_bound_command = bound_command;
-    auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
+    auto& pipe_compat_ids = pipeline_layout.set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.ds_slots.size()) {
         last_bound.ds_slots.resize(required_size);
@@ -1299,7 +1374,8 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     // Clean up the "disturbed" before and after the range to be set
     if (required_size < current_size) {
         if (last_bound.ds_slots[last_binding_index].compat_id_for_set != pipe_compat_ids[last_binding_index]) {
-            // We're disturbing those after last, we'll shrink below, but first need to check for and cleanup the push_descriptor
+            // We're disturbing those after last, we'll shrink below, but first need to check for and cleanup the
+            // push_descriptor
             for (auto set_idx = required_size; set_idx < current_size; ++set_idx) {
                 if (PushDescriptorCleanup(last_bound, set_idx)) {
                     break;
@@ -1318,7 +1394,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
 
     // For any previously bound sets, need to set them to "invalid" if they were disturbed by this update
     for (uint32_t set_idx = 0; set_idx < first_set; ++set_idx) {
-        auto &ds_slot = last_bound.ds_slots[set_idx];
+        auto& ds_slot = last_bound.ds_slots[set_idx];
         if (ds_slot.compat_id_for_set != pipe_compat_ids[set_idx]) {
             PushDescriptorCleanup(last_bound, set_idx);
             ds_slot.Reset();
@@ -1327,10 +1403,11 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     }
 
     // Now update the bound sets with the input sets
-    const uint32_t *input_dynamic_offsets = p_dynamic_offsets;  // "read" pointer for dynamic offset data
+    const uint32_t* input_dynamic_offsets = p_dynamic_offsets; // "read" pointer for dynamic offset data
     for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
-        auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
-        auto &ds_slot = last_bound.ds_slots[set_idx];
+        auto set_idx =
+            input_idx + first_set; // set_idx is index within layout, input_idx is index within input descriptor sets
+        auto& ds_slot = last_bound.ds_slots[set_idx];
         auto descriptor_set =
             push_descriptor_set ? push_descriptor_set : dev_data.Get<vvl::DescriptorSet>(pDescriptorSets[input_idx]);
 
@@ -1341,13 +1418,13 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
             PushDescriptorCleanup(last_bound, set_idx);
         }
         ds_slot.ds_state = descriptor_set;
-        ds_slot.compat_id_for_set = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
+        ds_slot.compat_id_for_set = pipe_compat_ids[set_idx]; // compat ids are canonical *per* set index
 
         if (descriptor_set) {
             auto set_dynamic_descriptor_count = descriptor_set->GetDynamicDescriptorCount();
             // TODO: Add logic for tracking push_descriptor offsets (here or in caller)
             if (set_dynamic_descriptor_count && input_dynamic_offsets) {
-                const uint32_t *end_offset = input_dynamic_offsets + set_dynamic_descriptor_count;
+                const uint32_t* end_offset = input_dynamic_offsets + set_dynamic_descriptor_count;
                 ds_slot.dynamic_offsets = std::vector<uint32_t>(input_dynamic_offsets, end_offset);
                 input_dynamic_offsets = end_offset;
                 assert(input_dynamic_offsets <= (p_dynamic_offsets + dynamic_offset_count));
@@ -1359,18 +1436,20 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
 }
 
 void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
-                                                     const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
-                                                     uint32_t set_count, const uint32_t *buffer_indicies,
-                                                     const VkDeviceSize *buffer_offsets) {
+                                                     const vvl::PipelineLayout& pipeline_layout,
+                                                     uint32_t first_set,
+                                                     uint32_t set_count,
+                                                     const uint32_t* buffer_indicies,
+                                                     const VkDeviceSize* buffer_offsets) {
     uint32_t required_size = first_set + set_count;
     const uint32_t last_binding_index = required_size - 1;
     assert(last_binding_index < pipeline_layout.set_compat_ids.size());
 
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
-    auto &last_bound = lastBound[lv_bind_point];
+    auto& last_bound = lastBound[lv_bind_point];
     last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
-    auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
+    auto& pipe_compat_ids = pipeline_layout.set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.ds_slots.size()) {
         last_bound.ds_slots.resize(required_size);
@@ -1380,7 +1459,8 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
     // Clean up the "disturbed" before and after the range to be set
     if (required_size < current_size) {
         if (last_bound.ds_slots[last_binding_index].compat_id_for_set != pipe_compat_ids[last_binding_index]) {
-            // We're disturbing those after last, we'll shrink below, but first need to check for and cleanup the push_descriptor
+            // We're disturbing those after last, we'll shrink below, but first need to check for and cleanup the
+            // push_descriptor
             for (auto set_idx = required_size; set_idx < current_size; ++set_idx) {
                 if (PushDescriptorCleanup(last_bound, set_idx)) {
                     break;
@@ -1405,32 +1485,35 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
 
     // Now update the bound sets with the input sets
     for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
-        auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
-        auto &ds_slot = last_bound.ds_slots[set_idx];
+        auto set_idx =
+            input_idx + first_set; // set_idx is index within layout, input_idx is index within input descriptor sets
+        auto& ds_slot = last_bound.ds_slots[set_idx];
         ds_slot.Reset();
 
         // Record binding
-        ds_slot.descriptor_buffer_binding = {buffer_indicies[input_idx], buffer_offsets[input_idx]};
-        ds_slot.compat_id_for_set = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
+        ds_slot.descriptor_buffer_binding = { buffer_indicies[input_idx], buffer_offsets[input_idx] };
+        ds_slot.compat_id_for_set = pipe_compat_ids[set_idx]; // compat ids are canonical *per* set index
     }
 }
 
 // Set image layout for given VkImageSubresourceRange struct
-void CommandBuffer::SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &image_subresource_range,
-                                   VkImageLayout layout, VkImageLayout expected_layout) {
+void CommandBuffer::SetImageLayout(const vvl::Image& image_state,
+                                   const VkImageSubresourceRange& image_subresource_range,
+                                   VkImageLayout layout,
+                                   VkImageLayout expected_layout) {
     auto image_layout_registry = GetOrCreateImageLayoutRegistry(image_state);
     if (image_layout_registry &&
         image_layout_registry->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout)) {
-        image_layout_change_count++;  // Change the version of this data to force revalidation
+        image_layout_change_count++; // Change the version of this data to force revalidation
     }
 }
 
 // Set the initial image layout for all slices of an image view
-void CommandBuffer::SetImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout) {
+void CommandBuffer::SetImageViewInitialLayout(const vvl::ImageView& view_state, VkImageLayout layout) {
     if (dev_data.disabled[image_layout_validation]) {
         return;
     }
-    vvl::Image *image_state = view_state.image_state.get();
+    vvl::Image* image_state = view_state.image_state.get();
     auto image_layout_registry =
         (image_state && !image_state->Destroyed()) ? GetOrCreateImageLayoutRegistry(*image_state) : nullptr;
     if (image_layout_registry) {
@@ -1439,40 +1522,46 @@ void CommandBuffer::SetImageViewInitialLayout(const vvl::ImageView &view_state, 
 }
 
 // Set the initial image layout for a passed non-normalized subresource range
-void CommandBuffer::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
+void CommandBuffer::SetImageInitialLayout(const vvl::Image& image_state,
+                                          const VkImageSubresourceRange& range,
                                           VkImageLayout layout) {
     auto image_layout_registry = GetOrCreateImageLayoutRegistry(image_state);
     if (image_layout_registry) {
-        image_layout_registry->SetSubresourceRangeInitialLayout(*this, image_state.NormalizeSubresourceRange(range), layout);
+        image_layout_registry->SetSubresourceRangeInitialLayout(
+            *this, image_state.NormalizeSubresourceRange(range), layout);
     }
 }
 
-void CommandBuffer::SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout) {
+void CommandBuffer::SetImageInitialLayout(VkImage image, const VkImageSubresourceRange& range, VkImageLayout layout) {
     auto image_state = dev_data.Get<vvl::Image>(image);
     ASSERT_AND_RETURN(image_state);
     SetImageInitialLayout(*image_state, range, layout);
 }
 
-void CommandBuffer::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceLayers &layers,
+void CommandBuffer::SetImageInitialLayout(const vvl::Image& image_state,
+                                          const VkImageSubresourceLayers& layers,
                                           VkImageLayout layout) {
     SetImageInitialLayout(image_state, RangeFromLayers(layers), layout);
 }
 
 // Set image layout for all slices of an image view
-void CommandBuffer::SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
-    const vvl::Image *image_state = view_state.image_state.get();
+void CommandBuffer::SetImageViewLayout(const vvl::ImageView& view_state,
+                                       VkImageLayout layout,
+                                       VkImageLayout layoutStencil) {
+    const vvl::Image* image_state = view_state.image_state.get();
 
     VkImageSubresourceRange sub_range = view_state.normalized_subresource_range;
 
-    if (sub_range.aspectMask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) && layoutStencil != kInvalidLayout) {
+    if (sub_range.aspectMask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) &&
+        layoutStencil != kInvalidLayout) {
         sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         SetImageLayout(*image_state, sub_range, layout);
         sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
         SetImageLayout(*image_state, sub_range, layoutStencil);
     } else {
-        // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth and
-        // stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will also be
-        // transitioned and thus must be included explicitly
+        // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both
+        // depth and stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing
+        // aspect will also be transitioned and thus must be included explicitly
         if (const VkFormat format = view_state.create_info.format; vkuFormatIsDepthAndStencil(format)) {
             if (layoutStencil == kInvalidLayout &&
                 (sub_range.aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
@@ -1483,13 +1572,15 @@ void CommandBuffer::SetImageViewLayout(const vvl::ImageView &view_state, VkImage
     }
 }
 
-void CommandBuffer::RecordCmd(Func command) { command_count++; }
+void CommandBuffer::RecordCmd(Func command) {
+    command_count++;
+}
 
 void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
     RecordCmd(command);
     RecordDynamicState(state);
 
-    vvl::Pipeline *pipeline = GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    vvl::Pipeline* pipeline = GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (pipeline && !pipeline->IsDynamic(state)) {
         dirtyStaticState = true;
     }
@@ -1501,7 +1592,9 @@ void CommandBuffer::RecordDynamicState(CBDynamicState state) {
     dynamic_state_status.history.set(state);
 }
 
-void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2) {
+void CommandBuffer::RecordTransferCmd(Func command,
+                                      std::shared_ptr<Bindable>&& buf1,
+                                      std::shared_ptr<Bindable>&& buf2) {
     RecordCmd(command);
     if (buf1) {
         AddChild(buf1);
@@ -1524,9 +1617,10 @@ void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageF
         writeEventsBeforeWait.push_back(event);
     }
     event_updates.emplace_back(
-        [event, stageMask](CommandBuffer &, bool do_validate, EventMap &local_event_signal_info, VkQueue, const Location &loc) {
-            local_event_signal_info[event] = EventInfo{stageMask, true};
-            return false;  // skip
+        [event,
+         stageMask](CommandBuffer&, bool do_validate, EventMap& local_event_signal_info, VkQueue, const Location& loc) {
+            local_event_signal_info[event] = EventInfo{ stageMask, true };
+            return false; // skip
         });
 }
 
@@ -1544,13 +1638,15 @@ void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStag
     }
 
     event_updates.emplace_back(
-        [event](CommandBuffer &, bool do_validate, EventMap &local_event_signal_info, VkQueue, const Location &loc) {
-            local_event_signal_info[event] = EventInfo{VK_PIPELINE_STAGE_2_NONE, false};
-            return false;  // skip
+        [event](CommandBuffer&, bool do_validate, EventMap& local_event_signal_info, VkQueue, const Location& loc) {
+            local_event_signal_info[event] = EventInfo{ VK_PIPELINE_STAGE_2_NONE, false };
+            return false; // skip
         });
 }
 
-void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
+void CommandBuffer::RecordWaitEvents(Func command,
+                                     uint32_t eventCount,
+                                     const VkEvent* pEvents,
                                      VkPipelineStageFlags2KHR src_stage_mask) {
     RecordCmd(command);
     for (uint32_t i = 0; i < eventCount; ++i) {
@@ -1565,10 +1661,14 @@ void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const Vk
     }
 }
 
-void CommandBuffer::RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                   uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                   uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    if (dev_data.disabled[command_buffer_state]) return;
+void CommandBuffer::RecordBarriers(uint32_t memoryBarrierCount,
+                                   const VkMemoryBarrier* pMemoryBarriers,
+                                   uint32_t bufferMemoryBarrierCount,
+                                   const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                   uint32_t imageMemoryBarrierCount,
+                                   const VkImageMemoryBarrier* pImageMemoryBarriers) {
+    if (dev_data.disabled[command_buffer_state])
+        return;
 
     for (uint32_t i = 0; i < bufferMemoryBarrierCount; i++) {
         auto buffer_state = dev_data.Get<vvl::Buffer>(pBufferMemoryBarriers[i].buffer);
@@ -1584,8 +1684,9 @@ void CommandBuffer::RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBa
     }
 }
 
-void CommandBuffer::RecordBarriers(const VkDependencyInfo &dep_info) {
-    if (dev_data.disabled[command_buffer_state]) return;
+void CommandBuffer::RecordBarriers(const VkDependencyInfo& dep_info) {
+    if (dev_data.disabled[command_buffer_state])
+        return;
 
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
         auto buffer_state = dev_data.Get<vvl::Buffer>(dep_info.pBufferMemoryBarriers[i].buffer);
@@ -1601,31 +1702,35 @@ void CommandBuffer::RecordBarriers(const VkDependencyInfo &dep_info) {
     }
 }
 
-void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool,
+void CommandBuffer::RecordWriteTimestamp(Func command,
+                                         VkPipelineStageFlags2KHR pipelineStage,
+                                         VkQueryPool queryPool,
                                          uint32_t slot) {
     RecordCmd(command);
-    if (dev_data.disabled[query_validation]) return;
+    if (dev_data.disabled[query_validation])
+        return;
 
     if (!dev_data.disabled[command_buffer_state]) {
         auto pool_state = dev_data.Get<vvl::QueryPool>(queryPool);
         AddChild(pool_state);
     }
-    QueryObject query_obj = {queryPool, slot};
+    QueryObject query_obj = { queryPool, slot };
     EndQuery(query_obj);
 }
 
-void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Location &loc) {
+void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Location& loc) {
     // Update vvl::QueryPool with a query state at the end of the command buffer.
     // Ultimately, it tracks the final query state for the entire submission.
     {
         VkQueryPool first_pool = VK_NULL_HANDLE;
         QueryMap local_query_to_state_map;
-        for (auto &function : query_updates) {
+        for (auto& function : query_updates) {
             function(*this, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
         }
-        for (const auto &[query_object, query_state] : local_query_to_state_map) {
+        for (const auto& [query_object, query_state] : local_query_to_state_map) {
             auto query_pool_state = dev_data.Get<vvl::QueryPool>(query_object.pool);
-            if (!query_pool_state) continue;
+            if (!query_pool_state)
+                continue;
             query_pool_state->SetQueryState(query_object.slot, query_object.perf_pass, query_state);
         }
     }
@@ -1634,11 +1739,14 @@ void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Locat
     // Ultimately, it tracks the last SetEvent for the entire submission.
     {
         EventMap local_event_signal_info;
-        for (const auto &function : event_updates) {
-            function(*this, /*do_validate*/ false, local_event_signal_info,
-                     VK_NULL_HANDLE /* when do_validate is false then wait handler is inactive */, loc);
+        for (const auto& function : event_updates) {
+            function(*this,
+                     /*do_validate*/ false,
+                     local_event_signal_info,
+                     VK_NULL_HANDLE /* when do_validate is false then wait handler is inactive */,
+                     loc);
         }
-        for (const auto &[event, info] : local_event_signal_info) {
+        for (const auto& [event, info] : local_event_signal_info) {
             auto event_state = dev_data.Get<vvl::Event>(event);
             event_state->signaled = info.signal;
             event_state->signal_src_stage_mask = info.src_stage_mask;
@@ -1646,16 +1754,17 @@ void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Locat
         }
     }
 
-    for (const auto &it : video_session_updates) {
+    for (const auto& it : video_session_updates) {
         auto video_session_state = dev_data.Get<vvl::VideoSession>(it.first);
         auto device_state = video_session_state->DeviceStateWrite();
-        for (const auto &function : it.second) {
+        for (const auto& function : it.second) {
             function(dev_data, video_session_state.get(), *device_state, /*do_validate*/ false);
         }
     }
 }
 
-void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after) {
+void CommandBuffer::Retire(uint32_t perf_submit_pass,
+                           const std::function<bool(const QueryObject&)>& is_query_updated_after) {
     // First perform decrement on general case bound objects
     for (auto event : writeEventsBeforeWait) {
         auto event_state = dev_data.Get<vvl::Event>(event);
@@ -1665,14 +1774,15 @@ void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(c
     }
     QueryMap local_query_to_state_map;
     VkQueryPool first_pool = VK_NULL_HANDLE;
-    for (auto &function : query_updates) {
+    for (auto& function : query_updates) {
         function(*this, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
     }
 
-    for (const auto &[query_object, query_state] : local_query_to_state_map) {
+    for (const auto& [query_object, query_state] : local_query_to_state_map) {
         if (query_state == QUERYSTATE_ENDED && !is_query_updated_after(query_object)) {
             auto query_pool_state = dev_data.Get<vvl::QueryPool>(query_object.pool);
-            if (!query_pool_state) continue;
+            if (!query_pool_state)
+                continue;
             query_pool_state->SetQueryState(query_object.slot, query_object.perf_pass, QUERYSTATE_AVAILABLE);
         }
     }
@@ -1721,8 +1831,8 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
     return false;
 }
 
-void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state) {
-    auto &last_bound_state = lastBound[ConvertToPipelineBindPoint(shader_stage)];
+void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject* shader_object_state) {
+    auto& last_bound_state = lastBound[ConvertToPipelineBindPoint(shader_stage)];
     const auto stage_index = static_cast<uint32_t>(ConvertToShaderObjectStage(shader_stage));
     last_bound_state.shader_object_bound[stage_index] = true;
     last_bound_state.shader_object_states[stage_index] = shader_object_state;
@@ -1752,8 +1862,8 @@ void CommandBuffer::UnbindResources() {
 LogObjectList CommandBuffer::GetObjectList(VkShaderStageFlagBits stage) const {
     LogObjectList objlist(handle_);
     const auto lv_bind_point = ConvertToLvlBindPoint(stage);
-    const auto &last_bound = lastBound[lv_bind_point];
-    const auto *pipeline_state = last_bound.pipeline_state;
+    const auto& last_bound = lastBound[lv_bind_point];
+    const auto* pipeline_state = last_bound.pipeline_state;
 
     if (pipeline_state) {
         objlist.add(pipeline_state->Handle());
@@ -1766,8 +1876,8 @@ LogObjectList CommandBuffer::GetObjectList(VkShaderStageFlagBits stage) const {
 LogObjectList CommandBuffer::GetObjectList(VkPipelineBindPoint pipeline_bind_point) const {
     LogObjectList objlist(handle_);
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
-    const auto &last_bound = lastBound[lv_bind_point];
-    const auto *pipeline_state = last_bound.pipeline_state;
+    const auto& last_bound = lastBound[lv_bind_point];
+    const auto* pipeline_state = last_bound.pipeline_state;
 
     if (pipeline_state) {
         objlist.add(pipeline_state->Handle());
@@ -1802,33 +1912,36 @@ LogObjectList CommandBuffer::GetObjectList(VkPipelineBindPoint pipeline_bind_poi
     return objlist;
 }
 
-vvl::Pipeline *CommandBuffer::GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const {
+vvl::Pipeline* CommandBuffer::GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const {
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     return lastBound[lv_bind_point].pipeline_state;
 }
 
-void CommandBuffer::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const vvl::Pipeline **rtn_pipe,
-                                                       const std::vector<LastBound::DescriptorSetSlot> **rtn_sets) const {
+void CommandBuffer::GetCurrentPipelineAndDesriptorSets(
+    VkPipelineBindPoint pipelineBindPoint,
+    const vvl::Pipeline** rtn_pipe,
+    const std::vector<LastBound::DescriptorSetSlot>** rtn_sets) const {
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-    const auto &last_bound = lastBound[lv_bind_point];
-    if (!last_bound.pipeline_state) return;
+    const auto& last_bound = lastBound[lv_bind_point];
+    if (!last_bound.pipeline_state)
+        return;
     *rtn_pipe = last_bound.pipeline_state;
     *rtn_sets = &(last_bound.ds_slots);
 }
 
-void CommandBuffer::BeginLabel(const char *label_name) {
+void CommandBuffer::BeginLabel(const char* label_name) {
     ++label_stack_depth_;
-    label_commands_.emplace_back(LabelCommand{true, label_name});
+    label_commands_.emplace_back(LabelCommand{ true, label_name });
 }
 
 void CommandBuffer::EndLabel() {
     --label_stack_depth_;
-    label_commands_.emplace_back(LabelCommand{false, std::string()});
+    label_commands_.emplace_back(LabelCommand{ false, std::string() });
 }
 
-void CommandBuffer::ReplayLabelCommands(const vvl::span<const LabelCommand> &label_commands,
-                                        std::vector<std::string> &label_stack) {
-    for (const LabelCommand &command : label_commands) {
+void CommandBuffer::ReplayLabelCommands(const vvl::span<const LabelCommand>& label_commands,
+                                        std::vector<std::string>& label_stack) {
+    for (const LabelCommand& command : label_commands) {
         if (command.begin) {
             label_stack.emplace_back(command.label_name.empty() ? "(empty label)" : command.label_name);
         } else if (!label_stack.empty()) {
@@ -1841,8 +1954,9 @@ void CommandBuffer::ReplayLabelCommands(const vvl::span<const LabelCommand> &lab
     }
 }
 
-std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand> &label_commands, uint32_t label_command_index,
-                                              const std::vector<std::string> &initial_label_stack) {
+std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand>& label_commands,
+                                              uint32_t label_command_index,
+                                              const std::vector<std::string>& initial_label_stack) {
     if (label_command_index >= label_commands.size()) {
         // Can happen due to core validation error when in-use command buffer was re-recorded.
         // It's a bug if this happens in a valid vulkan program.
@@ -1854,7 +1968,7 @@ std::string CommandBuffer::GetDebugRegionName(const std::vector<LabelCommand> &l
 
     // Build up complete debug region name from all enclosing regions
     std::string debug_region;
-    for (const std::string &label_name : label_stack) {
+    for (const std::string& label_name : label_stack) {
         if (!debug_region.empty()) {
             debug_region += "::";
         }
@@ -1876,4 +1990,4 @@ std::string CommandBuffer::DescribeInvalidatedState(CBDynamicState dynamic_state
     return ss.str();
 }
 
-}  // namespace vvl
+} // namespace vvl

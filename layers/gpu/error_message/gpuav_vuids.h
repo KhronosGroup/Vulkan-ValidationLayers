@@ -46,4 +46,4 @@ struct GpuVuid {
 // Getter function to provide kVUIDUndefined in case an invalid function is passed in
 
 const GpuVuid& GetGpuVuid(vvl::Func command);
-}  // namespace gpuav
+} // namespace gpuav

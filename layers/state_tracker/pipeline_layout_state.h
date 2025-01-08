@@ -19,17 +19,17 @@
 
 #pragma once
 
-#include <vector>
-#include <memory>
 #include "state_tracker/state_object.h"
 #include "utils/hash_util.h"
 #include "utils/hash_vk_types.h"
+#include <memory>
+#include <vector>
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace vvl {
 class DescriptorSetLayout;
 class DescriptorSetLayoutDef;
-}  // namespace vvl
+} // namespace vvl
 
 class ValidationStateTracker;
 
@@ -46,26 +46,30 @@ using PushConstantRangesDict = hash_util::Dictionary<PushConstantRanges>;
 using PushConstantRangesId = PushConstantRangesDict::Id;
 
 // Defines/stores a compatibility defintion for set N
-// The "layout layout" must store at least set+1 entries, but only the first set+1 are considered for hash and equality testing
-// Note: the "cannonical" data are referenced by Id, not including handle or device specific state
-// Note: hash and equality only consider layout_id entries [0, set] for determining uniqueness
+// The "layout layout" must store at least set+1 entries, but only the first set+1 are considered for hash and equality
+// testing Note: the "cannonical" data are referenced by Id, not including handle or device specific state Note: hash
+// and equality only consider layout_id entries [0, set] for determining uniqueness
 struct PipelineLayoutCompatDef {
     uint32_t set;
     PushConstantRangesId push_constant_ranges;
     PipelineLayoutSetLayoutsId set_layouts_id;
-    PipelineLayoutCompatDef(const uint32_t set_index, const PushConstantRangesId pcr_id, const PipelineLayoutSetLayoutsId sl_id)
-        : set(set_index), push_constant_ranges(pcr_id), set_layouts_id(sl_id) {}
+    PipelineLayoutCompatDef(const uint32_t set_index,
+                            const PushConstantRangesId pcr_id,
+                            const PipelineLayoutSetLayoutsId sl_id) :
+        set(set_index),
+        push_constant_ranges(pcr_id), set_layouts_id(sl_id) {}
     size_t hash() const;
 
-    bool operator==(const PipelineLayoutCompatDef &other) const;
-    std::string DescribeDifference(const PipelineLayoutCompatDef &other) const;
+    bool operator==(const PipelineLayoutCompatDef& other) const;
+    std::string DescribeDifference(const PipelineLayoutCompatDef& other) const;
 };
 
 // Canonical dictionary for PipelineLayoutCompat records
-using PipelineLayoutCompatDict = hash_util::Dictionary<PipelineLayoutCompatDef, hash_util::HasHashMember<PipelineLayoutCompatDef>>;
+using PipelineLayoutCompatDict =
+    hash_util::Dictionary<PipelineLayoutCompatDef, hash_util::HasHashMember<PipelineLayoutCompatDef>>;
 using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 
-PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPushConstantRange *pPushConstantRanges);
+PushConstantRangesId GetCanonicalId(uint32_t pushConstantRangeCount, const VkPushConstantRange* pPushConstantRanges);
 
 namespace vvl {
 
@@ -80,19 +84,21 @@ class PipelineLayout : public StateObject {
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
     VkPipelineLayoutCreateFlags create_flags;
 
-    PipelineLayout(ValidationStateTracker &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo);
+    PipelineLayout(ValidationStateTracker& dev_data,
+                   VkPipelineLayout handle,
+                   const VkPipelineLayoutCreateInfo* pCreateInfo);
     // Merge 2 or more non-overlapping layouts
-    PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts);
+    PipelineLayout(const vvl::span<const PipelineLayout* const>& layouts);
     template <typename Container>
-    PipelineLayout(const Container &layouts) : PipelineLayout(vvl::span<const PipelineLayout *const>{layouts}) {}
+    PipelineLayout(const Container& layouts) : PipelineLayout(vvl::span<const PipelineLayout* const>{ layouts }) {}
 
     VkPipelineLayout VkHandle() const { return handle_.Cast<VkPipelineLayout>(); }
 
     VkPipelineLayoutCreateFlags CreateFlags() const { return create_flags; }
 };
 
-}  // namespace vvl
+} // namespace vvl
 
-std::vector<PipelineLayoutCompatId> GetCompatForSet(
-    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
-    const PushConstantRangesId &push_constant_ranges);
+std::vector<PipelineLayoutCompatId>
+GetCompatForSet(const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>& set_layouts,
+                const PushConstantRangesId& push_constant_ranges);

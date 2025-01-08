@@ -12,12 +12,12 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_helper_nv.h"
-#include "../framework/descriptor_helper.h"
 
-void RayTracingTest::NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR *features2 /*= nullptr*/,
-                                                      VkValidationFeaturesEXT *enabled_features /*= nullptr*/) {
+void RayTracingTest::NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR* features2 /*= nullptr*/,
+                                                      VkValidationFeaturesEXT* enabled_features /*= nullptr*/) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -41,16 +41,17 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    VkValidationFeatureEnableEXT validation_feature_enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-    VkValidationFeatureDisableEXT validation_feature_disables[] = {
-        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
-        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+    VkValidationFeatureEnableEXT validation_feature_enables[] = { VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT };
+    VkValidationFeatureDisableEXT validation_feature_disables[] = { VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
+                                                                    VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+                                                                    VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT,
+                                                                    VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT };
     VkValidationFeaturesEXT validation_features = vku::InitStructHelper(&kDisableMessageLimit);
     validation_features.enabledValidationFeatureCount = 1;
     validation_features.pEnabledValidationFeatures = validation_feature_enables;
     validation_features.disabledValidationFeatureCount = 4;
     validation_features.pDisabledValidationFeatures = validation_feature_disables;
-    RETURN_IF_SKIP(InitFramework(gpu_assisted ? (void *)&validation_features : (void *)&kDisableMessageLimit));
+    RETURN_IF_SKIP(InitFramework(gpu_assisted ? (void*)&validation_features : (void*)&kDisableMessageLimit));
     bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     if (gpu_assisted && IsPlatformMockICD()) {
@@ -77,21 +78,21 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         GTEST_SKIP() << "Did not find required ray tracing properties";
     }
 
-    vkt::Queue *ray_tracing_queue = m_default_queue;
+    vkt::Queue* ray_tracing_queue = m_default_queue;
     uint32_t ray_tracing_queue_family_index = 0;
 
     // If supported, run on the compute only queue.
-    vkt::Queue *compute_only_queue = m_device->ComputeOnlyQueue();
+    vkt::Queue* compute_only_queue = m_device->ComputeOnlyQueue();
     if (compute_only_queue) {
         ray_tracing_queue = compute_only_queue;
         ray_tracing_queue_family_index = compute_only_queue->family_index;
     }
 
-    vkt::CommandPool ray_tracing_command_pool(*m_device, ray_tracing_queue_family_index,
-                                              VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool ray_tracing_command_pool(
+        *m_device, ray_tracing_queue_family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer ray_tracing_command_buffer(*m_device, ray_tracing_command_pool);
 
-    constexpr std::array<VkAabbPositionsKHR, 1> aabbs = {{{-1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f}}};
+    constexpr std::array<VkAabbPositionsKHR, 1> aabbs = { { { -1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f } } };
 
     struct VkGeometryInstanceNV {
         float transform[12];
@@ -104,11 +105,15 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     const VkDeviceSize aabb_buffer_size = sizeof(VkAabbPositionsKHR) * aabbs.size();
     vkt::Buffer aabb_buffer;
-    aabb_buffer.init(*m_device, aabb_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps, nullptr,
+    aabb_buffer.init(*m_device,
+                     aabb_buffer_size,
+                     VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                     kHostVisibleMemProps,
+                     nullptr,
                      vvl::make_span(&ray_tracing_queue_family_index, 1));
 
-    uint8_t *mapped_aabb_buffer_data = (uint8_t *)aabb_buffer.Memory().Map();
-    std::memcpy(mapped_aabb_buffer_data, (uint8_t *)aabbs.data(), static_cast<std::size_t>(aabb_buffer_size));
+    uint8_t* mapped_aabb_buffer_data = (uint8_t*)aabb_buffer.Memory().Map();
+    std::memcpy(mapped_aabb_buffer_data, (uint8_t*)aabbs.data(), static_cast<std::size_t>(aabb_buffer_size));
     aabb_buffer.Memory().Unmap();
 
     VkGeometryNV geometry = {};
@@ -154,11 +159,16 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     VkDeviceSize instance_buffer_size = sizeof(instances[0]) * instances.size();
     vkt::Buffer instance_buffer;
-    instance_buffer.init(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps, nullptr,
+    instance_buffer.init(*m_device,
+                         instance_buffer_size,
+                         VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                         kHostVisibleMemProps,
+                         nullptr,
                          vvl::make_span(&ray_tracing_queue_family_index, 1));
 
-    uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.Memory().Map();
-    std::memcpy(mapped_instance_buffer_data, (uint8_t *)instances.data(), static_cast<std::size_t>(instance_buffer_size));
+    uint8_t* mapped_instance_buffer_data = (uint8_t*)instance_buffer.Memory().Map();
+    std::memcpy(
+        mapped_instance_buffer_data, (uint8_t*)instances.data(), static_cast<std::size_t>(instance_buffer_size));
     instance_buffer.Memory().Unmap();
 
     VkAccelerationStructureInfoNV top_level_as_info = vku::InitStructHelper();
@@ -173,25 +183,49 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     VkDeviceSize scratch_buffer_size = std::max(bot_level_as.BuildScratchMemoryRequirements().memoryRequirements.size,
                                                 top_level_as.BuildScratchMemoryRequirements().memoryRequirements.size);
-    vkt::Buffer scratch_buffer(*m_device, scratch_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
-                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vkt::Buffer scratch_buffer(
+        *m_device, scratch_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     ray_tracing_command_buffer.Begin();
 
     // Build bot level acceleration structure
-    vk::CmdBuildAccelerationStructureNV(ray_tracing_command_buffer.handle(), &bot_level_as.Info(), VK_NULL_HANDLE, 0, VK_FALSE,
-                                        bot_level_as.handle(), VK_NULL_HANDLE, scratch_buffer.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(ray_tracing_command_buffer.handle(),
+                                        &bot_level_as.Info(),
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        scratch_buffer.handle(),
+                                        0);
 
     // Barrier to prevent using scratch buffer for top level build before bottom level build finishes
     VkMemoryBarrier memory_barrier = vku::InitStructHelper();
-    memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
-    memory_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
-    vk::CmdPipelineBarrier(ray_tracing_command_buffer.handle(), VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
-                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
+    memory_barrier.srcAccessMask =
+        VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
+    memory_barrier.dstAccessMask =
+        VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
+    vk::CmdPipelineBarrier(ray_tracing_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
+                           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
+                           0,
+                           1,
+                           &memory_barrier,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
 
     // Build top level acceleration structure
-    vk::CmdBuildAccelerationStructureNV(ray_tracing_command_buffer.handle(), &top_level_as.Info(), instance_buffer.handle(), 0,
-                                        VK_FALSE, top_level_as.handle(), VK_NULL_HANDLE, scratch_buffer.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(ray_tracing_command_buffer.handle(),
+                                        &top_level_as.Info(),
+                                        instance_buffer.handle(),
+                                        0,
+                                        VK_FALSE,
+                                        top_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        scratch_buffer.handle(),
+                                        0);
 
     ray_tracing_command_buffer.End();
 
@@ -205,21 +239,29 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     VkDeviceSize storage_buffer_size = 1024;
     vkt::Buffer storage_buffer;
-    storage_buffer.init(*m_device, storage_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps, nullptr,
+    storage_buffer.init(*m_device,
+                        storage_buffer_size,
+                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                        kHostVisibleMemProps,
+                        nullptr,
                         vvl::make_span(&ray_tracing_queue_family_index, 1));
 
     VkDeviceSize shader_binding_table_buffer_size = ray_tracing_properties.shaderGroupBaseAlignment * 4ull;
     vkt::Buffer shader_binding_table_buffer;
-    shader_binding_table_buffer.init(*m_device, shader_binding_table_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
-                                     kHostVisibleMemProps, nullptr, vvl::make_span(&ray_tracing_queue_family_index, 1));
+    shader_binding_table_buffer.init(*m_device,
+                                     shader_binding_table_buffer_size,
+                                     VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+                                     kHostVisibleMemProps,
+                                     nullptr,
+                                     vvl::make_span(&ray_tracing_queue_family_index, 1));
 
     // Setup descriptors!
-    const VkShaderStageFlags kAllRayTracingStages = VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV |
-                                                    VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV |
-                                                    VK_SHADER_STAGE_INTERSECTION_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV;
+    const VkShaderStageFlags kAllRayTracingStages =
+        VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV |
+        VK_SHADER_STAGE_MISS_BIT_NV | VK_SHADER_STAGE_INTERSECTION_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV;
 
-    void *layout_pnext = nullptr;
-    void *allocate_pnext = nullptr;
+    void* layout_pnext = nullptr;
+    void* allocate_pnext = nullptr;
     VkDescriptorPoolCreateFlags pool_create_flags = 0;
     VkDescriptorSetLayoutCreateFlags layout_create_flags = 0;
     VkDescriptorBindingFlags ds_binding_flags[3] = {};
@@ -240,31 +282,38 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     // Prepare descriptors
     OneOffDescriptorSet ds(m_device,
                            {
-                               {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, kAllRayTracingStages, nullptr},
-                               {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, kAllRayTracingStages, nullptr},
-                               {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, kAllRayTracingStages, nullptr},
+                               { 0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, kAllRayTracingStages, nullptr },
+                               { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, kAllRayTracingStages, nullptr },
+                               { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6, kAllRayTracingStages, nullptr },
                            },
-                           layout_create_flags, layout_pnext, pool_create_flags);
+                           layout_create_flags,
+                           layout_pnext,
+                           pool_create_flags);
 
     VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
     uint32_t desc_counts;
     if (descriptor_indexing) {
         layout_create_flags = 0;
         pool_create_flags = 0;
-        ds_binding_flags[2] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
-        desc_counts = 6;  // We'll reserve 8 spaces in the layout, but the descriptor will only use 6
+        ds_binding_flags[2] =
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+        desc_counts = 6; // We'll reserve 8 spaces in the layout, but the descriptor will only use 6
         variable_count.descriptorSetCount = 1;
         variable_count.pDescriptorCounts = &desc_counts;
         allocate_pnext = &variable_count;
     }
 
-    OneOffDescriptorSet ds_variable(m_device,
-                                    {
-                                        {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, kAllRayTracingStages, nullptr},
-                                        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, kAllRayTracingStages, nullptr},
-                                        {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8, kAllRayTracingStages, nullptr},
-                                    },
-                                    layout_create_flags, layout_pnext, pool_create_flags, allocate_pnext);
+    OneOffDescriptorSet ds_variable(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, kAllRayTracingStages, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, kAllRayTracingStages, nullptr },
+            { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8, kAllRayTracingStages, nullptr },
+        },
+        layout_create_flags,
+        layout_pnext,
+        pool_create_flags,
+        allocate_pnext);
 
     VkAccelerationStructureNV top_level_as_handle = top_level_as.handle();
     VkWriteDescriptorSetAccelerationStructureNV write_descript_set_as = vku::InitStructHelper();
@@ -278,7 +327,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     VkDescriptorImageInfo descriptor_image_infos[6] = {};
     for (int i = 0; i < 6; i++) {
-        descriptor_image_infos[i] = {sampler.handle(), imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        descriptor_image_infos[i] = { sampler.handle(), imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
     }
 
     VkWriteDescriptorSet descriptor_writes[3] = {};
@@ -299,7 +348,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     descriptor_writes[2].dstSet = ds.set_;
     descriptor_writes[2].dstBinding = 2;
     if (descriptor_indexing) {
-        descriptor_writes[2].descriptorCount = 5;  // Intentionally don't write index 5
+        descriptor_writes[2].descriptorCount = 5; // Intentionally don't write index 5
     } else {
         descriptor_writes[2].descriptorCount = 6;
     }
@@ -313,10 +362,10 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         vk::UpdateDescriptorSets(device(), 3, descriptor_writes, 0, NULL);
     }
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds.layout_});
-    const vkt::PipelineLayout pipeline_layout_variable(*m_device, {&ds_variable.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &ds.layout_ });
+    const vkt::PipelineLayout pipeline_layout_variable(*m_device, { &ds_variable.layout_ });
 
-    const auto SetImagesArrayLength = [](const std::string &shader_template, const std::string &length_str) {
+    const auto SetImagesArrayLength = [](const std::string& shader_template, const std::string& length_str) {
         const std::string to_replace = "IMAGES_ARRAY_LENGTH";
 
         std::string result = shader_template;
@@ -597,12 +646,12 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
     const std::string call_source_runtime = SetImagesArrayLength(call_source_template, "");
 
     struct TestCase {
-        const std::string &rgen_shader_source;
-        const std::string &ahit_shader_source;
-        const std::string &chit_shader_source;
-        const std::string &miss_shader_source;
-        const std::string &intr_shader_source;
-        const std::string &call_shader_source;
+        const std::string& rgen_shader_source;
+        const std::string& ahit_shader_source;
+        const std::string& chit_shader_source;
+        const std::string& miss_shader_source;
+        const std::string& intr_shader_source;
+        const std::string& call_shader_source;
         bool variable_length;
         uint32_t rgen_index;
         uint32_t ahit_index;
@@ -610,68 +659,357 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         uint32_t miss_index;
         uint32_t intr_index;
         uint32_t call_index;
-        const char *expected_error;
+        const char* expected_error;
     };
 
     std::vector<TestCase> tests;
-    tests.push_back({rgen_source, ahit_source, chit_source, miss_source, intr_source, call_source, false, 25, 0, 0, 0, 0, 0,
-                     "Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({rgen_source, ahit_source, chit_source, miss_source, intr_source, call_source, false, 0, 25, 0, 0, 0, 0,
-                     "Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({rgen_source, ahit_source, chit_source, miss_source, intr_source, call_source, false, 0, 0, 25, 0, 0, 0,
-                     "Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({rgen_source, ahit_source, chit_source, miss_source, intr_source, call_source, false, 0, 0, 0, 25, 0, 0,
-                     "Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({rgen_source, ahit_source, chit_source, miss_source, intr_source, call_source, false, 0, 0, 0, 0, 25, 0,
-                     "Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({rgen_source, ahit_source, chit_source, miss_source, intr_source, call_source, false, 0, 0, 0, 0, 0, 25,
-                     "Index of 25 used to index descriptor array of length 6."});
+    tests.push_back({ rgen_source,
+                      ahit_source,
+                      chit_source,
+                      miss_source,
+                      intr_source,
+                      call_source,
+                      false,
+                      25,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      "Index of 25 used to index descriptor array of length 6." });
+    tests.push_back({ rgen_source,
+                      ahit_source,
+                      chit_source,
+                      miss_source,
+                      intr_source,
+                      call_source,
+                      false,
+                      0,
+                      25,
+                      0,
+                      0,
+                      0,
+                      0,
+                      "Index of 25 used to index descriptor array of length 6." });
+    tests.push_back({ rgen_source,
+                      ahit_source,
+                      chit_source,
+                      miss_source,
+                      intr_source,
+                      call_source,
+                      false,
+                      0,
+                      0,
+                      25,
+                      0,
+                      0,
+                      0,
+                      "Index of 25 used to index descriptor array of length 6." });
+    tests.push_back({ rgen_source,
+                      ahit_source,
+                      chit_source,
+                      miss_source,
+                      intr_source,
+                      call_source,
+                      false,
+                      0,
+                      0,
+                      0,
+                      25,
+                      0,
+                      0,
+                      "Index of 25 used to index descriptor array of length 6." });
+    tests.push_back({ rgen_source,
+                      ahit_source,
+                      chit_source,
+                      miss_source,
+                      intr_source,
+                      call_source,
+                      false,
+                      0,
+                      0,
+                      0,
+                      0,
+                      25,
+                      0,
+                      "Index of 25 used to index descriptor array of length 6." });
+    tests.push_back({ rgen_source,
+                      ahit_source,
+                      chit_source,
+                      miss_source,
+                      intr_source,
+                      call_source,
+                      false,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      25,
+                      "Index of 25 used to index descriptor array of length 6." });
 
     if (descriptor_indexing) {
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 25, 0, 0, 0, 0, 0, "Index of 25 used to index descriptor array of length 6."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 25, 0, 0, 0, 0, "Index of 25 used to index descriptor array of length 6."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 25, 0, 0, 0, "Index of 25 used to index descriptor array of length 6."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 0, 25, 0, 0, "Index of 25 used to index descriptor array of length 6."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 0, 0, 25, 0, "Index of 25 used to index descriptor array of length 6."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 0, 0, 0, 25, "Index of 25 used to index descriptor array of length 6."});
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          25,
+                          0,
+                          0,
+                          0,
+                          0,
+                          0,
+                          "Index of 25 used to index descriptor array of length 6." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          25,
+                          0,
+                          0,
+                          0,
+                          0,
+                          "Index of 25 used to index descriptor array of length 6." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          25,
+                          0,
+                          0,
+                          0,
+                          "Index of 25 used to index descriptor array of length 6." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          0,
+                          25,
+                          0,
+                          0,
+                          "Index of 25 used to index descriptor array of length 6." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          0,
+                          0,
+                          25,
+                          0,
+                          "Index of 25 used to index descriptor array of length 6." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          0,
+                          0,
+                          0,
+                          25,
+                          "Index of 25 used to index descriptor array of length 6." });
 
-        // For this group, 6 is less than max specified (max specified is 8) but more than actual specified (actual specified is 5)
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 6, 0, 0, 0, 0, 0, "Index of 6 used to index descriptor array of length 6."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 6, 0, 0, 0, 0, "Index of 6 used to index descriptor array of length 6."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 6, 0, 0, 0, "Index of 6 used to index descriptor array of length 6."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 0, 6, 0, 0, "Index of 6 used to index descriptor array of length 6."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 0, 0, 6, 0, "Index of 6 used to index descriptor array of length 6."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 0, 0, 0, 6, "Index of 6 used to index descriptor array of length 6."});
+        // For this group, 6 is less than max specified (max specified is 8) but more than actual specified (actual
+        // specified is 5)
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          6,
+                          0,
+                          0,
+                          0,
+                          0,
+                          0,
+                          "Index of 6 used to index descriptor array of length 6." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          6,
+                          0,
+                          0,
+                          0,
+                          0,
+                          "Index of 6 used to index descriptor array of length 6." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          6,
+                          0,
+                          0,
+                          0,
+                          "Index of 6 used to index descriptor array of length 6." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          0,
+                          6,
+                          0,
+                          0,
+                          "Index of 6 used to index descriptor array of length 6." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          0,
+                          0,
+                          6,
+                          0,
+                          "Index of 6 used to index descriptor array of length 6." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          0,
+                          0,
+                          0,
+                          6,
+                          "Index of 6 used to index descriptor array of length 6." });
 
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 5, 0, 0, 0, 0, 0, "Descriptor index 5 is uninitialized."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 5, 0, 0, 0, 0, "Descriptor index 5 is uninitialized."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 5, 0, 0, 0, "Descriptor index 5 is uninitialized."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 0, 5, 0, 0, "Descriptor index 5 is uninitialized."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 0, 0, 5, 0, "Descriptor index 5 is uninitialized."});
-        tests.push_back({rgen_source_runtime, ahit_source_runtime, chit_source_runtime, miss_source_runtime, intr_source_runtime,
-                         call_source_runtime, true, 0, 0, 0, 0, 0, 5, "Descriptor index 5 is uninitialized."});
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          5,
+                          0,
+                          0,
+                          0,
+                          0,
+                          0,
+                          "Descriptor index 5 is uninitialized." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          5,
+                          0,
+                          0,
+                          0,
+                          0,
+                          "Descriptor index 5 is uninitialized." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          5,
+                          0,
+                          0,
+                          0,
+                          "Descriptor index 5 is uninitialized." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          0,
+                          5,
+                          0,
+                          0,
+                          "Descriptor index 5 is uninitialized." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          0,
+                          0,
+                          5,
+                          0,
+                          "Descriptor index 5 is uninitialized." });
+        tests.push_back({ rgen_source_runtime,
+                          ahit_source_runtime,
+                          chit_source_runtime,
+                          miss_source_runtime,
+                          intr_source_runtime,
+                          call_source_runtime,
+                          true,
+                          0,
+                          0,
+                          0,
+                          0,
+                          0,
+                          5,
+                          "Descriptor index 5 is uninitialized." });
     }
 
     // Iteration 0 tests with no descriptor set bound (to sanity test "draw" validation). Iteration 1
     // tests what's in the test case vector.
-    for (const auto &test : tests) {
+    for (const auto& test : tests) {
         if (gpu_assisted) {
             m_errorMonitor->SetDesiredError(test.expected_error);
         }
@@ -717,14 +1055,14 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[4] = {};
         group_create_infos[0] = vku::InitStructHelper();
         group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-        group_create_infos[0].generalShader = 0;  // rgen
+        group_create_infos[0].generalShader = 0; // rgen
         group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
         group_create_infos[1] = vku::InitStructHelper();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-        group_create_infos[1].generalShader = 3;  // miss
+        group_create_infos[1].generalShader = 3; // miss
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
@@ -738,7 +1076,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
         group_create_infos[3] = vku::InitStructHelper();
         group_create_infos[3].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-        group_create_infos[3].generalShader = 5;  // call
+        group_create_infos[3].generalShader = 5; // call
         group_create_infos[3].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[3].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[3].intersectionShader = VK_SHADER_UNUSED_NV;
@@ -752,17 +1090,23 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         pipeline_ci.layout = test.variable_length ? pipeline_layout_variable.handle() : pipeline_layout.handle();
 
         VkPipeline pipeline = VK_NULL_HANDLE;
-        ASSERT_EQ(VK_SUCCESS,
-                  vk::CreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline));
+        ASSERT_EQ(
+            VK_SUCCESS,
+            vk::CreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline));
 
         std::vector<uint8_t> shader_binding_table_data;
         shader_binding_table_data.resize(static_cast<std::size_t>(shader_binding_table_buffer_size), 0);
-        ASSERT_EQ(VK_SUCCESS, vk::GetRayTracingShaderGroupHandlesNV(m_device->handle(), pipeline, 0, 4,
-                                                                    static_cast<std::size_t>(shader_binding_table_buffer_size),
-                                                                    shader_binding_table_data.data()));
+        ASSERT_EQ(VK_SUCCESS,
+                  vk::GetRayTracingShaderGroupHandlesNV(m_device->handle(),
+                                                        pipeline,
+                                                        0,
+                                                        4,
+                                                        static_cast<std::size_t>(shader_binding_table_buffer_size),
+                                                        shader_binding_table_data.data()));
 
-        uint8_t *mapped_shader_binding_table_data = (uint8_t *)shader_binding_table_buffer.Memory().Map();
-        std::memcpy(mapped_shader_binding_table_data, shader_binding_table_data.data(), shader_binding_table_data.size());
+        uint8_t* mapped_shader_binding_table_data = (uint8_t*)shader_binding_table_buffer.Memory().Map();
+        std::memcpy(
+            mapped_shader_binding_table_data, shader_binding_table_data.data(), shader_binding_table_data.size());
         shader_binding_table_buffer.Memory().Unmap();
 
         ray_tracing_command_buffer.Begin();
@@ -770,9 +1114,15 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         vk::CmdBindPipeline(ray_tracing_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline);
 
         if (gpu_assisted) {
-            vk::CmdBindDescriptorSets(ray_tracing_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
-                                      test.variable_length ? pipeline_layout_variable.handle() : pipeline_layout.handle(), 0, 1,
-                                      test.variable_length ? &ds_variable.set_ : &ds.set_, 0, nullptr);
+            vk::CmdBindDescriptorSets(ray_tracing_command_buffer.handle(),
+                                      VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+                                      test.variable_length ? pipeline_layout_variable.handle()
+                                                           : pipeline_layout.handle(),
+                                      0,
+                                      1,
+                                      test.variable_length ? &ds_variable.set_ : &ds.set_,
+                                      0,
+                                      nullptr);
         } else {
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-None-08600");
         }
@@ -781,27 +1131,43 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
             m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02462");
             m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02458");
             // Need these values to pass mapped storage buffer checks
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupHandleSize * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupHandleSize * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupHandleSize * 2ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupHandleSize * 3ull, ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupHandleSize * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupHandleSize * 1ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupHandleSize * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupHandleSize * 3ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
         } else {
             // offset shall be multiple of shaderGroupBaseAlignment and stride of shaderGroupHandleSize
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 3ull, ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 3ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
         }
 
         ray_tracing_command_buffer.End();
         // Update the index of the texture that the shaders should read
-        uint32_t *mapped_storage_buffer_data = (uint32_t *)storage_buffer.Memory().Map();
+        uint32_t* mapped_storage_buffer_data = (uint32_t*)storage_buffer.Memory().Map();
         mapped_storage_buffer_data[0] = test.rgen_index;
         mapped_storage_buffer_data[1] = test.ahit_index;
         mapped_storage_buffer_data[2] = test.chit_index;
@@ -821,7 +1187,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         m_errorMonitor->VerifyFound();
 
         if (gpu_assisted) {
-            mapped_storage_buffer_data = (uint32_t *)storage_buffer.Memory().Map();
+            mapped_storage_buffer_data = (uint32_t*)storage_buffer.Memory().Map();
             ASSERT_TRUE(mapped_storage_buffer_data[6] == 1);
             ASSERT_TRUE(mapped_storage_buffer_data[7] == 2);
             ASSERT_TRUE(mapped_storage_buffer_data[8] == 3);
@@ -832,155 +1198,266 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         } else {
             ray_tracing_command_buffer.Begin();
             vk::CmdBindPipeline(ray_tracing_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline);
-            vk::CmdBindDescriptorSets(ray_tracing_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
-                                      test.variable_length ? pipeline_layout_variable.handle() : pipeline_layout.handle(), 0, 1,
-                                      test.variable_length ? &ds_variable.set_ : &ds.set_, 0, nullptr);
+            vk::CmdBindDescriptorSets(ray_tracing_command_buffer.handle(),
+                                      VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+                                      test.variable_length ? pipeline_layout_variable.handle()
+                                                           : pipeline_layout.handle(),
+                                      0,
+                                      1,
+                                      test.variable_length ? &ds_variable.set_ : &ds.set_,
+                                      0,
+                                      nullptr);
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02462");
             VkDeviceSize stride_align = ray_tracing_properties.shaderGroupHandleSize;
-            VkDeviceSize invalid_max_stride = ray_tracing_properties.maxShaderGroupStride +
-                                              (stride_align - (ray_tracing_properties.maxShaderGroupStride %
-                                                               stride_align));  // should be less than maxShaderGroupStride
+            VkDeviceSize invalid_max_stride =
+                ray_tracing_properties.maxShaderGroupStride +
+                (stride_align - (ray_tracing_properties.maxShaderGroupStride %
+                                 stride_align)); // should be less than maxShaderGroupStride
             VkDeviceSize invalid_stride =
-                ray_tracing_properties.shaderGroupHandleSize >> 1;  // should  be multiple of shaderGroupHandleSize
+                ray_tracing_properties.shaderGroupHandleSize >> 1; // should  be multiple of shaderGroupHandleSize
             VkDeviceSize invalid_offset =
-                ray_tracing_properties.shaderGroupBaseAlignment >> 1;  // should be multiple of shaderGroupBaseAlignment
+                ray_tracing_properties.shaderGroupBaseAlignment >> 1; // should be multiple of shaderGroupBaseAlignment
 
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(), invalid_offset,
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
                                ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               invalid_offset,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02465");
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment, invalid_stride,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               invalid_stride,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02468");
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment, invalid_max_stride,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               invalid_max_stride,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             // hit shader
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02460");
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), invalid_offset, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment,
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
                                ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+                               shader_binding_table_buffer.handle(),
+                               invalid_offset,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02464");
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               invalid_stride, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment, ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               invalid_stride,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02467");
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               invalid_max_stride, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment, ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               invalid_max_stride,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             // miss shader
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02458");
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               invalid_offset, ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment,
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               invalid_offset,
                                ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-missShaderBindingStride-02463");
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, invalid_stride,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment, ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
+                               invalid_stride,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-missShaderBindingStride-02466");
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, invalid_max_stride,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment, ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
+                               invalid_max_stride,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             // raygenshader
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02456");
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(), invalid_offset,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment,
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               invalid_offset,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
                                ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/1);
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/1);
 
             m_errorMonitor->VerifyFound();
-            const auto &limits = m_device->Physical().limits_;
+            const auto& limits = m_device->Physical().limits_;
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-width-02469");
             uint32_t invalid_width = limits.maxComputeWorkGroupCount[0] + 1;
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment, ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/invalid_width, /*height=*/1, /*depth=*/1);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/invalid_width,
+                               /*height=*/1,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-height-02470");
             uint32_t invalid_height = limits.maxComputeWorkGroupCount[1] + 1;
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment, ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/invalid_height, /*depth=*/1);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/invalid_height,
+                               /*depth=*/1);
             m_errorMonitor->VerifyFound();
 
             m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysNV-depth-02471");
             uint32_t invalid_depth = limits.maxComputeWorkGroupCount[2] + 1;
-            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                               shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
-                               ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                               ray_tracing_properties.shaderGroupBaseAlignment, ray_tracing_properties.shaderGroupHandleSize,
-                               /*width=*/1, /*height=*/1, /*depth=*/invalid_depth);
+            vk::CmdTraceRaysNV(ray_tracing_command_buffer.handle(),
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 0ull,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 1ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               shader_binding_table_buffer.handle(),
+                               ray_tracing_properties.shaderGroupBaseAlignment,
+                               ray_tracing_properties.shaderGroupHandleSize,
+                               /*width=*/1,
+                               /*height=*/1,
+                               /*depth=*/invalid_depth);
             m_errorMonitor->VerifyFound();
 
             ray_tracing_command_buffer.End();
@@ -990,15 +1467,16 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 }
 
 TEST_F(NegativeRayTracingNV, ArrayOOBRayTracingShaders) {
-    TEST_DESCRIPTION(
-        "Core validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors for "
-        "ray tracing shaders.");
+    TEST_DESCRIPTION("Core validation: Verify detection of out-of-bounds descriptor array indexing and use of "
+                     "uninitialized descriptors for "
+                     "ray tracing shaders.");
 
     OOBRayTracingShadersTestBodyNV(false);
 }
 
 TEST_F(NegativeRayTracingNV, AccelerationStructureBindings) {
-    TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
+    TEST_DESCRIPTION(
+        "Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
     RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
 
     VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props = vku::InitStructHelper();
@@ -1064,25 +1542,25 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     unbound_buffer_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
     vkt::Buffer unbound_buffer(*m_device, unbound_buffer_ci, vkt::no_mem);
 
-    constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
-    constexpr std::array<uint32_t, 3> indicies = {0, 1, 2};
-    constexpr std::array aabbs = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
-    constexpr std::array transforms = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+    constexpr std::array vertices = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f };
+    constexpr std::array<uint32_t, 3> indicies = { 0, 1, 2 };
+    constexpr std::array aabbs = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f };
+    constexpr std::array transforms = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f };
 
-    uint8_t *mapped_vbo_buffer_data = (uint8_t *)vbo.Memory().Map();
-    std::memcpy(mapped_vbo_buffer_data, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
+    uint8_t* mapped_vbo_buffer_data = (uint8_t*)vbo.Memory().Map();
+    std::memcpy(mapped_vbo_buffer_data, (uint8_t*)vertices.data(), sizeof(float) * vertices.size());
     vbo.Memory().Unmap();
 
-    uint8_t *mapped_ibo_buffer_data = (uint8_t *)ibo.Memory().Map();
-    std::memcpy(mapped_ibo_buffer_data, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
+    uint8_t* mapped_ibo_buffer_data = (uint8_t*)ibo.Memory().Map();
+    std::memcpy(mapped_ibo_buffer_data, (uint8_t*)indicies.data(), sizeof(uint32_t) * indicies.size());
     ibo.Memory().Unmap();
 
-    uint8_t *mapped_tbo_buffer_data = (uint8_t *)tbo.Memory().Map();
-    std::memcpy(mapped_tbo_buffer_data, (uint8_t *)transforms.data(), sizeof(float) * transforms.size());
+    uint8_t* mapped_tbo_buffer_data = (uint8_t*)tbo.Memory().Map();
+    std::memcpy(mapped_tbo_buffer_data, (uint8_t*)transforms.data(), sizeof(float) * transforms.size());
     tbo.Memory().Unmap();
 
-    uint8_t *mapped_aabbbo_buffer_data = (uint8_t *)aabbbo.Memory().Map();
-    std::memcpy(mapped_aabbbo_buffer_data, (uint8_t *)aabbs.data(), sizeof(float) * aabbs.size());
+    uint8_t* mapped_aabbbo_buffer_data = (uint8_t*)aabbbo.Memory().Map();
+    std::memcpy(mapped_aabbbo_buffer_data, (uint8_t*)aabbs.data(), sizeof(float) * aabbs.size());
     aabbbo.Memory().Unmap();
 
     VkGeometryNV valid_geometry_triangles = vku::InitStructHelper();
@@ -1110,7 +1588,7 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     valid_geometry_aabbs.geometry.aabbs.offset = 0;
     valid_geometry_aabbs.geometry.aabbs.stride = 24;
 
-    const auto GetCreateInfo = [](const VkGeometryNV &geometry) {
+    const auto GetCreateInfo = [](const VkGeometryNV& geometry) {
         VkAccelerationStructureCreateInfoNV as_create_info = vku::InitStructHelper();
         as_create_info.info = vku::InitStructHelper();
         as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
@@ -1331,8 +1809,8 @@ TEST_F(NegativeRayTracingNV, ValidateCreateAccelerationStructure) {
         bad_flags_level_create_info.info.instanceCount = 0;
         bad_flags_level_create_info.info.geometryCount = 1;
         bad_flags_level_create_info.info.pGeometries = &geometry;
-        bad_flags_level_create_info.info.flags =
-            VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV | VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_NV;
+        bad_flags_level_create_info.info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV |
+                                                 VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_NV;
         m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureInfoNV-flags-02592");
         vk::CreateAccelerationStructureNV(device(), &bad_flags_level_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
@@ -1364,7 +1842,7 @@ TEST_F(NegativeRayTracingNV, ValidateCreateAccelerationStructure) {
         aabb_geometry.geometry.aabbs.offset = 0;
         aabb_geometry.geometry.aabbs.stride = 24;
 
-        std::vector<VkGeometryNV> geometries = {geometry, aabb_geometry};
+        std::vector<VkGeometryNV> geometries = { geometry, aabb_geometry };
 
         VkAccelerationStructureCreateInfoNV mix_geometry_types_as_create_info = as_create_info;
         mix_geometry_types_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
@@ -1428,7 +1906,8 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
         as_memory_alloc_bad_alignment.allocationSize += 1;
 
         VkDeviceMemory as_memory_bad_alignment = VK_NULL_HANDLE;
-        ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &as_memory_alloc_bad_alignment, NULL, &as_memory_bad_alignment));
+        ASSERT_EQ(VK_SUCCESS,
+                  vk::AllocateMemory(device(), &as_memory_alloc_bad_alignment, NULL, &as_memory_bad_alignment));
 
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_alignment = as_bind_info;
         as_bind_info_bad_alignment.memory = as_memory_bad_alignment;
@@ -1448,8 +1927,8 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
 
         VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_offset = as_bind_info;
         as_bind_info_bad_offset.memory = as_memory_bad_offset;
-        as_bind_info_bad_offset.memoryOffset =
-            (as_memory_alloc.allocationSize + as_memory_requirements.alignment) & ~(as_memory_requirements.alignment - 1);
+        as_bind_info_bad_offset.memoryOffset = (as_memory_alloc.allocationSize + as_memory_requirements.alignment) &
+                                               ~(as_memory_requirements.alignment - 1);
 
         m_errorMonitor->SetDesiredError("VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-03621");
         vk::BindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_bad_offset);
@@ -1461,7 +1940,8 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
     // Can not bind with offset that doesn't leave enough size
     {
         VkDeviceSize offset = (as_memory_requirements.size - 1) & ~(as_memory_requirements.alignment - 1);
-        if (offset > 0 && (as_memory_requirements.size < (as_memory_alloc.allocationSize - as_memory_requirements.alignment))) {
+        if (offset > 0 &&
+            (as_memory_requirements.size < (as_memory_alloc.allocationSize - as_memory_requirements.alignment))) {
             VkDeviceMemory as_memory_bad_offset = VK_NULL_HANDLE;
             ASSERT_EQ(VK_SUCCESS, vk::AllocateMemory(device(), &as_memory_alloc, NULL, &as_memory_bad_offset));
 
@@ -1483,7 +1963,8 @@ TEST_F(NegativeRayTracingNV, ValidateBindAccelerationStructure) {
         vk::GetPhysicalDeviceMemoryProperties(m_device->Physical().handle(), &memory_properties);
 
         uint32_t supported_memory_type_bits = as_memory_requirements.memoryTypeBits;
-        uint32_t unsupported_mem_type_bits = ((1 << memory_properties.memoryTypeCount) - 1) & ~supported_memory_type_bits;
+        uint32_t unsupported_mem_type_bits =
+            ((1 << memory_properties.memoryTypeCount) - 1) & ~supported_memory_type_bits;
         if (unsupported_mem_type_bits != 0) {
             VkMemoryAllocateInfo as_memory_alloc_bad_type = as_memory_alloc;
             ASSERT_TRUE(m_device->Physical().SetMemoryType(unsupported_mem_type_bits, &as_memory_alloc_bad_type, 0));
@@ -1533,10 +2014,11 @@ TEST_F(NegativeRayTracingNV, ValidateWriteDescriptorSetAccelerationStructure) {
     RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    OneOffDescriptorSet ds(m_device,
-                           {
-                               {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_RAYGEN_BIT_NV, nullptr},
-                           });
+    OneOffDescriptorSet ds(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_RAYGEN_BIT_NV, nullptr },
+        });
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = ds.set_;
@@ -1583,8 +2065,15 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
 
     // Command buffer must be in recording state
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-recording");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
-                                        bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.Begin();
@@ -1599,16 +2088,30 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
     // build info is incompatible but still needs to be valid to get past the stateless checks.
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-dst-02488");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-dst-02488");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &as_build_info_with_incompatible_type, VK_NULL_HANDLE, 0,
-                                        VK_FALSE, bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &as_build_info_with_incompatible_type,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_errorMonitor->VerifyFound();
 
     // Incompatible flags
     VkAccelerationStructureInfoNV as_build_info_with_incompatible_flags = bot_level_as_create_info.info;
     as_build_info_with_incompatible_flags.flags = VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_NV;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-dst-02488");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &as_build_info_with_incompatible_flags, VK_NULL_HANDLE, 0,
-                                        VK_FALSE, bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &as_build_info_with_incompatible_flags,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_errorMonitor->VerifyFound();
 
     // Incompatible build size
@@ -1618,8 +2121,15 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
     VkAccelerationStructureInfoNV as_build_info_with_incompatible_geometry = bot_level_as_create_info.info;
     as_build_info_with_incompatible_geometry.pGeometries = &geometry_with_more_vertices;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-dst-02488");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &as_build_info_with_incompatible_geometry, VK_NULL_HANDLE, 0,
-                                        VK_FALSE, bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &as_build_info_with_incompatible_geometry,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_errorMonitor->VerifyFound();
 
     // Scratch buffer too small
@@ -1628,31 +2138,65 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
     too_small_scratch_buffer_info.size = 1;
     vkt::Buffer too_small_scratch_buffer(*m_device, too_small_scratch_buffer_info);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-update-02491");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
-                                        bot_level_as.handle(), VK_NULL_HANDLE, too_small_scratch_buffer.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        too_small_scratch_buffer.handle(),
+                                        0);
     m_errorMonitor->VerifyFound();
 
     // Scratch buffer with offset too small
     VkDeviceSize scratch_buffer_offset = 5;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-update-02491");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
-                                        bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(),
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
                                         scratch_buffer_offset);
     m_errorMonitor->VerifyFound();
 
     // Src must have been built before
     vkt::AccelerationStructureNV bot_level_as_updated(*m_device, bot_level_as_create_info);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-update-02489");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_TRUE,
-                                        bot_level_as_updated.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_TRUE,
+                                        bot_level_as_updated.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_errorMonitor->VerifyFound();
 
     // Src must have been built before with the VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_NV flag
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
-                                        bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-update-02490");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_TRUE,
-                                        bot_level_as_updated.handle(), bot_level_as.handle(), bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_TRUE,
+                                        bot_level_as_updated.handle(),
+                                        bot_level_as.handle(),
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_errorMonitor->VerifyFound();
 
     // invalid scratch buffer (invalid usage)
@@ -1660,23 +2204,43 @@ TEST_F(NegativeRayTracingNV, ValidateCmdBuildAccelerationStructure) {
     create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     const vkt::Buffer bot_level_as_invalid_scratch = bot_level_as.CreateScratchBuffer(*m_device, &create_info);
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureInfoNV-scratch-02781");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
-                                        bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_invalid_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_invalid_scratch.handle(),
+                                        0);
     m_errorMonitor->VerifyFound();
 
     // invalid instance data.
     m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureInfoNV-instanceData-02782");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info,
-                                        bot_level_as_invalid_scratch.handle(), 0, VK_FALSE, bot_level_as.handle(), VK_NULL_HANDLE,
-                                        bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        bot_level_as_invalid_scratch.handle(),
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_errorMonitor->VerifyFound();
 
     // must be called outside renderpass
     InitRenderTarget();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructureNV-renderpass");
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
-                                        bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_command_buffer.EndRenderPass();
     m_errorMonitor->VerifyFound();
 }
@@ -1704,8 +2268,15 @@ TEST_F(NegativeRayTracingNV, ObjInUseCmdBuildAccelerationStructure) {
     const vkt::Buffer bot_level_as_scratch = bot_level_as.CreateScratchBuffer(*m_device);
 
     m_command_buffer.Begin();
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
-                                        bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        bot_level_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
 
@@ -1801,61 +2372,73 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-src-04963");
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(), dst_as.handle(), src_as.handle(),
-                                       VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
+    vk::CmdCopyAccelerationStructureNV(
+        m_command_buffer.handle(), dst_as.handle(), src_as.handle(), VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
-                                        src_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        src_as.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
     // Command buffer must be in recording state
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-recording");
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(), dst_as.handle(), src_as.handle(),
-                                       VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
+    vk::CmdCopyAccelerationStructureNV(
+        m_command_buffer.handle(), dst_as.handle(), src_as.handle(), VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.Begin();
 
     // Src must have been created with allow compaction flag
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-src-03411");
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(), dst_as.handle(), src_as.handle(),
-                                       VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV);
+    vk::CmdCopyAccelerationStructureNV(
+        m_command_buffer.handle(), dst_as.handle(), src_as.handle(), VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV);
     m_errorMonitor->VerifyFound();
 
     // Dst must have been bound with memory
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-dst-07792");
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(), dst_as_without_mem.handle(), src_as.handle(),
+    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(),
+                                       dst_as_without_mem.handle(),
+                                       src_as.handle(),
                                        VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
 
     m_errorMonitor->VerifyFound();
 
     // mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR or VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-mode-03410");
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(), dst_as.handle(), src_as.handle(),
+    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(),
+                                       dst_as.handle(),
+                                       src_as.handle(),
                                        VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR);
     m_errorMonitor->VerifyFound();
 
     // mode must be a valid VkCopyAccelerationStructureModeKHR value
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-mode-parameter");
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(), dst_as.handle(), src_as.handle(),
-                                       VK_COPY_ACCELERATION_STRUCTURE_MODE_MAX_ENUM_KHR);
+    vk::CmdCopyAccelerationStructureNV(
+        m_command_buffer.handle(), dst_as.handle(), src_as.handle(), VK_COPY_ACCELERATION_STRUCTURE_MODE_MAX_ENUM_KHR);
     m_errorMonitor->VerifyFound();
 
     // This command must only be called outside of a render pass instance
     InitRenderTarget();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-renderpass");
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(), dst_as.handle(), src_as.handle(),
-                                       VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
+    vk::CmdCopyAccelerationStructureNV(
+        m_command_buffer.handle(), dst_as.handle(), src_as.handle(), VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
     m_command_buffer.EndRenderPass();
     m_errorMonitor->VerifyFound();
 
     vkt::DeviceMemory host_memory;
     host_memory.init(*m_device,
-                     vkt::DeviceMemory::GetResourceAllocInfo(*m_device, dst_as_without_mem.MemoryRequirements().memoryRequirements,
+                     vkt::DeviceMemory::GetResourceAllocInfo(*m_device,
+                                                             dst_as_without_mem.MemoryRequirements().memoryRequirements,
                                                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 
     VkBindAccelerationStructureMemoryInfoNV bind_info = vku::InitStructHelper();
@@ -1867,15 +2450,26 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     vk::GetAccelerationStructureHandleNV(*m_device, dst_as_without_mem.handle(), sizeof(uint64_t), &handle);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-buffer-03719");
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(), dst_as_without_mem.handle(), src_as.handle(),
+    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(),
+                                       dst_as_without_mem.handle(),
+                                       src_as.handle(),
                                        VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-buffer-03718");
     const vkt::Buffer bot_level_as_scratch2 = dst_as_without_mem.CreateScratchBuffer(*m_device);
-    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
-                                        dst_as_without_mem.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
-    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(), src_as.handle(), dst_as_without_mem.handle(),
+    vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(),
+                                        &bot_level_as_create_info.info,
+                                        VK_NULL_HANDLE,
+                                        0,
+                                        VK_FALSE,
+                                        dst_as_without_mem.handle(),
+                                        VK_NULL_HANDLE,
+                                        bot_level_as_scratch.handle(),
+                                        0);
+    vk::CmdCopyAccelerationStructureNV(m_command_buffer.handle(),
+                                       src_as.handle(),
+                                       dst_as_without_mem.handle(),
                                        VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
     m_errorMonitor->VerifyFound();
 }

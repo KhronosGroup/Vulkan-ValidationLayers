@@ -20,35 +20,35 @@
  ****************************************************************************/
 #pragma once
 
+#include <algorithm>
 #include <atomic>
-#include <shared_mutex>
 #include <cinttypes>
+#include <memory>
+#include <shared_mutex>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <algorithm>
-#include <memory>
 #include <string_view>
 
-#include <vulkan/vulkan.h>
-#include <vulkan/vk_layer.h>
-#include <vulkan/vk_enum_string_helper.h>
-#include <vulkan/utility/vk_struct_helper.hpp>
-#include <vulkan/utility/vk_safe_struct.hpp>
-#include "utils/cast_utils.h"
-#include "layer_options.h"
-#include "containers/custom_containers.h"
-#include "error_message/logging.h"
-#include "error_message/error_location.h"
-#include "error_message/record_object.h"
-#include "error_message/log_message_type.h"
-#include "utils/vk_layer_extension_utils.h"
-#include "utils/vk_layer_utils.h"
-#include "generated/vk_dispatch_table_helper.h"
 #include "chassis/dispatch_object.h"
+#include "containers/custom_containers.h"
+#include "error_message/error_location.h"
+#include "error_message/log_message_type.h"
+#include "error_message/logging.h"
+#include "error_message/record_object.h"
+#include "generated/vk_dispatch_table_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "gpu/core/gpuav_settings.h"
+#include "layer_options.h"
 #include "sync/sync_settings.h"
+#include "utils/cast_utils.h"
+#include "utils/vk_layer_extension_utils.h"
+#include "utils/vk_layer_utils.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
+#include <vulkan/utility/vk_struct_helper.hpp>
+#include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vk_layer.h>
+#include <vulkan/vulkan.h>
 
 namespace chassis {
 struct CreateGraphicsPipelines;
@@ -59,12 +59,12 @@ struct CreateShaderModule;
 struct ShaderObject;
 struct CreatePipelineLayout;
 struct CreateBuffer;
-}  // namespace chassis
+} // namespace chassis
 
 namespace vvl {
 struct AllocateDescriptorSetsData;
 class Pipeline;
-}  // namespace vvl
+} // namespace vvl
 
 // Because of GPL, we currently create our Pipeline state objects before the PreCallValidate
 // Each chassis layer will need to track its own state
@@ -73,8 +73,8 @@ using PipelineStates = std::vector<std::shared_ptr<vvl::Pipeline>>;
 // When testing for a valid value, allow a way to right away return how it might not be valid
 enum class ValidValue {
     Valid = 0,
-    NotFound,     // example, trying to use a random int for an enum
-    NoExtension,  // trying to use a proper value, but the extension is required
+    NotFound,    // example, trying to use a random int for an enum
+    NoExtension, // trying to use a proper value, but the extension is required
 };
 
 // Layer chassis validation object base class definition
@@ -101,39 +101,21 @@ class ValidationObject : public Logger {
 
     bool is_device_lost = false;
 
-    ValidationObject(vvl::dispatch::Device* dev, LayerObjectTypeId type_id)
-        : Logger(dev->debug_report),
-          api_version(dev->api_version),
-          dispatch_instance_(dev->dispatch_instance),
-          dispatch_device_(dev),
-          instance_extensions(dev->dispatch_instance->instance_extensions),
-          device_extensions(dev->device_extensions),
-          global_settings(dev->settings.global_settings),
-          gpuav_settings(dev->settings.gpuav_settings),
-          syncval_settings(dev->settings.syncval_settings),
-          disabled(dev->settings.disabled),
-          enabled(dev->settings.enabled),
-          instance(dev->dispatch_instance->instance),
-          physical_device(dev->physical_device),
-          device(dev->device),
-          container_type(type_id) {}
+    ValidationObject(vvl::dispatch::Device* dev, LayerObjectTypeId type_id) :
+        Logger(dev->debug_report), api_version(dev->api_version), dispatch_instance_(dev->dispatch_instance),
+        dispatch_device_(dev), instance_extensions(dev->dispatch_instance->instance_extensions),
+        device_extensions(dev->device_extensions), global_settings(dev->settings.global_settings),
+        gpuav_settings(dev->settings.gpuav_settings), syncval_settings(dev->settings.syncval_settings),
+        disabled(dev->settings.disabled), enabled(dev->settings.enabled), instance(dev->dispatch_instance->instance),
+        physical_device(dev->physical_device), device(dev->device), container_type(type_id) {}
 
-    ValidationObject(vvl::dispatch::Instance* instance, LayerObjectTypeId type_id)
-        : Logger(instance->debug_report),
-          api_version(instance->api_version),
-          dispatch_instance_(instance),
-          dispatch_device_(nullptr),
-          instance_extensions(instance->instance_extensions),
-          device_extensions(instance->device_extensions),
-          global_settings(instance->settings.global_settings),
-          gpuav_settings(instance->settings.gpuav_settings),
-          syncval_settings(instance->settings.syncval_settings),
-          disabled(instance->settings.disabled),
-          enabled(instance->settings.enabled),
-          instance(instance->instance),
-          physical_device(VK_NULL_HANDLE),
-          device(VK_NULL_HANDLE),
-          container_type(type_id) {}
+    ValidationObject(vvl::dispatch::Instance* instance, LayerObjectTypeId type_id) :
+        Logger(instance->debug_report), api_version(instance->api_version), dispatch_instance_(instance),
+        dispatch_device_(nullptr), instance_extensions(instance->instance_extensions),
+        device_extensions(instance->device_extensions), global_settings(instance->settings.global_settings),
+        gpuav_settings(instance->settings.gpuav_settings), syncval_settings(instance->settings.syncval_settings),
+        disabled(instance->settings.disabled), enabled(instance->settings.enabled), instance(instance->instance),
+        physical_device(VK_NULL_HANDLE), device(VK_NULL_HANDLE), container_type(type_id) {}
 
     virtual ~ValidationObject() {}
 
@@ -195,178 +177,271 @@ class ValidationObject : public Logger {
         }
     }
 
-    virtual void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
+    virtual void CoreLayerDestroyValidationCacheEXT(VkDevice device,
+                                                    VkValidationCacheEXT validationCache,
                                                     const VkAllocationCallbacks* pAllocator) {}
-    virtual VkResult CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
+    virtual VkResult CoreLayerMergeValidationCachesEXT(VkDevice device,
+                                                       VkValidationCacheEXT dstCache,
+                                                       uint32_t srcCacheCount,
                                                        const VkValidationCacheEXT* pSrcCaches) {
         return VK_SUCCESS;
     }
-    virtual VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize,
+    virtual VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device,
+                                                        VkValidationCacheEXT validationCache,
+                                                        size_t* pDataSize,
                                                         void* pData) {
         return VK_SUCCESS;
     }
     // Manually generated pre/post hooks
     // Allow additional state parameter for CreateGraphicsPipelines
-    virtual bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    virtual bool PreCallValidateCreateGraphicsPipelines(VkDevice device,
+                                                        VkPipelineCache pipelineCache,
+                                                        uint32_t createInfoCount,
                                                         const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                        const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkPipeline* pPipelines,
+                                                        const ErrorObject& error_obj,
+                                                        PipelineStates& pipeline_states,
                                                         chassis::CreateGraphicsPipelines& chassis_state) const {
-        return PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                      error_obj);
+        return PreCallValidateCreateGraphicsPipelines(
+            device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, error_obj);
     }
-    virtual void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    virtual void PreCallRecordCreateGraphicsPipelines(VkDevice device,
+                                                      VkPipelineCache pipelineCache,
+                                                      uint32_t createInfoCount,
                                                       const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                      const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkPipeline* pPipelines,
+                                                      const RecordObject& record_obj,
+                                                      PipelineStates& pipeline_states,
                                                       chassis::CreateGraphicsPipelines& chassis_state) {
-        PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                             record_obj);
+        PreCallRecordCreateGraphicsPipelines(
+            device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj);
     }
-    virtual void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    virtual void PostCallRecordCreateGraphicsPipelines(VkDevice device,
+                                                       VkPipelineCache pipelineCache,
+                                                       uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                       const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkPipeline* pPipelines,
+                                                       const RecordObject& record_obj,
+                                                       PipelineStates& pipeline_states,
                                                        chassis::CreateGraphicsPipelines& chassis_state) {
-        PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                              record_obj);
+        PostCallRecordCreateGraphicsPipelines(
+            device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj);
     }
 
     // Allow additional state parameter for CreateComputePipelines
-    virtual bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    virtual bool PreCallValidateCreateComputePipelines(VkDevice device,
+                                                       VkPipelineCache pipelineCache,
+                                                       uint32_t createInfoCount,
                                                        const VkComputePipelineCreateInfo* pCreateInfos,
-                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                       const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkPipeline* pPipelines,
+                                                       const ErrorObject& error_obj,
+                                                       PipelineStates& pipeline_states,
                                                        chassis::CreateComputePipelines& chassis_state) const {
-        return PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                     error_obj);
+        return PreCallValidateCreateComputePipelines(
+            device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, error_obj);
     }
-    virtual void PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    virtual void PreCallRecordCreateComputePipelines(VkDevice device,
+                                                     VkPipelineCache pipelineCache,
+                                                     uint32_t createInfoCount,
                                                      const VkComputePipelineCreateInfo* pCreateInfos,
-                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                     const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     VkPipeline* pPipelines,
+                                                     const RecordObject& record_obj,
+                                                     PipelineStates& pipeline_states,
                                                      chassis::CreateComputePipelines& chassis_state) {
-        PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                            record_obj);
+        PreCallRecordCreateComputePipelines(
+            device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj);
     }
-    virtual void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    virtual void PostCallRecordCreateComputePipelines(VkDevice device,
+                                                      VkPipelineCache pipelineCache,
+                                                      uint32_t createInfoCount,
                                                       const VkComputePipelineCreateInfo* pCreateInfos,
-                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                      const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkPipeline* pPipelines,
+                                                      const RecordObject& record_obj,
+                                                      PipelineStates& pipeline_states,
                                                       chassis::CreateComputePipelines& chassis_state) {
-        PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                             record_obj);
+        PostCallRecordCreateComputePipelines(
+            device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj);
     }
 
     // Allow additional state parameter for CreateRayTracingPipelinesNV
-    virtual bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
+    virtual bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device,
+                                                            VkPipelineCache pipelineCache,
                                                             uint32_t createInfoCount,
                                                             const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                            const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                            const VkAllocationCallbacks* pAllocator,
+                                                            VkPipeline* pPipelines,
+                                                            const ErrorObject& error_obj,
+                                                            PipelineStates& pipeline_states,
                                                             chassis::CreateRayTracingPipelinesNV& chassis_state) const {
-        return PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                          pPipelines, error_obj);
+        return PreCallValidateCreateRayTracingPipelinesNV(
+            device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, error_obj);
     }
-    virtual void PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    virtual void PreCallRecordCreateRayTracingPipelinesNV(VkDevice device,
+                                                          VkPipelineCache pipelineCache,
+                                                          uint32_t createInfoCount,
                                                           const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                          const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                          const VkAllocationCallbacks* pAllocator,
+                                                          VkPipeline* pPipelines,
+                                                          const RecordObject& record_obj,
+                                                          PipelineStates& pipeline_states,
                                                           chassis::CreateRayTracingPipelinesNV& chassis_state) {
-        PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                 record_obj);
+        PreCallRecordCreateRayTracingPipelinesNV(
+            device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj);
     }
-    virtual void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    virtual void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device,
+                                                           VkPipelineCache pipelineCache,
+                                                           uint32_t createInfoCount,
                                                            const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                           const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           VkPipeline* pPipelines,
+                                                           const RecordObject& record_obj,
+                                                           PipelineStates& pipeline_states,
                                                            chassis::CreateRayTracingPipelinesNV& chassis_state) {
-        PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                  record_obj);
+        PostCallRecordCreateRayTracingPipelinesNV(
+            device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, record_obj);
     }
 
     // Allow additional state parameter for CreateRayTracingPipelinesKHR
-    virtual bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                             VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                             const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
-                                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                             const ErrorObject& error_obj, PipelineStates& pipeline_states,
-                                                             chassis::CreateRayTracingPipelinesKHR& chassis_state) const {
-        return PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
-                                                           pAllocator, pPipelines, error_obj);
+    virtual bool
+    PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device,
+                                                VkDeferredOperationKHR deferredOperation,
+                                                VkPipelineCache pipelineCache,
+                                                uint32_t createInfoCount,
+                                                const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                                const VkAllocationCallbacks* pAllocator,
+                                                VkPipeline* pPipelines,
+                                                const ErrorObject& error_obj,
+                                                PipelineStates& pipeline_states,
+                                                chassis::CreateRayTracingPipelinesKHR& chassis_state) const {
+        return PreCallValidateCreateRayTracingPipelinesKHR(
+            device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, error_obj);
     }
-    virtual void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                           VkPipelineCache pipelineCache, uint32_t createInfoCount,
+    virtual void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device,
+                                                           VkDeferredOperationKHR deferredOperation,
+                                                           VkPipelineCache pipelineCache,
+                                                           uint32_t createInfoCount,
                                                            const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
-                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                           const RecordObject& record_obj, PipelineStates& pipeline_states,
+                                                           const VkAllocationCallbacks* pAllocator,
+                                                           VkPipeline* pPipelines,
+                                                           const RecordObject& record_obj,
+                                                           PipelineStates& pipeline_states,
                                                            chassis::CreateRayTracingPipelinesKHR& chassis_state) {
-        PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
-                                                  pAllocator, pPipelines, record_obj);
+        PreCallRecordCreateRayTracingPipelinesKHR(device,
+                                                  deferredOperation,
+                                                  pipelineCache,
+                                                  createInfoCount,
+                                                  pCreateInfos,
+                                                  pAllocator,
+                                                  pPipelines,
+                                                  record_obj);
     }
-    virtual void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                            VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                            const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
-                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                            const RecordObject& record_obj, PipelineStates& pipeline_states,
-                                                            std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
-        PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
-                                                   pAllocator, pPipelines, record_obj);
+    virtual void
+    PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device,
+                                               VkDeferredOperationKHR deferredOperation,
+                                               VkPipelineCache pipelineCache,
+                                               uint32_t createInfoCount,
+                                               const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                               const VkAllocationCallbacks* pAllocator,
+                                               VkPipeline* pPipelines,
+                                               const RecordObject& record_obj,
+                                               PipelineStates& pipeline_states,
+                                               std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
+        PostCallRecordCreateRayTracingPipelinesKHR(device,
+                                                   deferredOperation,
+                                                   pipelineCache,
+                                                   createInfoCount,
+                                                   pCreateInfos,
+                                                   pAllocator,
+                                                   pPipelines,
+                                                   record_obj);
     }
 
     // Allow modification of a down-chain parameter for CreatePipelineLayout
-    virtual void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
-                                                   const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
-                                                   const RecordObject& record_obj, chassis::CreatePipelineLayout& chassis_state) {
+    virtual void PreCallRecordCreatePipelineLayout(VkDevice device,
+                                                   const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator,
+                                                   VkPipelineLayout* pPipelineLayout,
+                                                   const RecordObject& record_obj,
+                                                   chassis::CreatePipelineLayout& chassis_state) {
         PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
     }
 
-    // Enable the CreateShaderModule/CreateShaderEXT API to take an extra argument for state preservation and paramter modification
-    virtual void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
-                                                 const RecordObject& record_obj, chassis::CreateShaderModule& chassis_state) {
+    // Enable the CreateShaderModule/CreateShaderEXT API to take an extra argument for state preservation and paramter
+    // modification
+    virtual void PreCallRecordCreateShaderModule(VkDevice device,
+                                                 const VkShaderModuleCreateInfo* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator,
+                                                 VkShaderModule* pShaderModule,
+                                                 const RecordObject& record_obj,
+                                                 chassis::CreateShaderModule& chassis_state) {
         PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj);
     }
-    virtual void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
-                                                  const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
-                                                  const RecordObject& record_obj, chassis::CreateShaderModule& chassis_state) {
+    virtual void PostCallRecordCreateShaderModule(VkDevice device,
+                                                  const VkShaderModuleCreateInfo* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator,
+                                                  VkShaderModule* pShaderModule,
+                                                  const RecordObject& record_obj,
+                                                  chassis::CreateShaderModule& chassis_state) {
         PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj);
     }
-    virtual void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
-                                               const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                               const RecordObject& record_obj, chassis::ShaderObject& chassis_state) {
+    virtual void PreCallRecordCreateShadersEXT(VkDevice device,
+                                               uint32_t createInfoCount,
+                                               const VkShaderCreateInfoEXT* pCreateInfos,
+                                               const VkAllocationCallbacks* pAllocator,
+                                               VkShaderEXT* pShaders,
+                                               const RecordObject& record_obj,
+                                               chassis::ShaderObject& chassis_state) {
         PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj);
     }
-    virtual void PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
-                                                const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                                VkShaderEXT* pShaders, const RecordObject& record_obj,
+    virtual void PostCallRecordCreateShadersEXT(VkDevice device,
+                                                uint32_t createInfoCount,
+                                                const VkShaderCreateInfoEXT* pCreateInfos,
+                                                const VkAllocationCallbacks* pAllocator,
+                                                VkShaderEXT* pShaders,
+                                                const RecordObject& record_obj,
                                                 chassis::ShaderObject& chassis_state) {
         PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj);
     }
 
     // Allow AllocateDescriptorSets to use some local stack storage for performance purposes
-    virtual bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                       VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj,
+    virtual bool PreCallValidateAllocateDescriptorSets(VkDevice device,
+                                                       const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                       VkDescriptorSet* pDescriptorSets,
+                                                       const ErrorObject& error_obj,
                                                        vvl::AllocateDescriptorSetsData& ads_state) const {
         return PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj);
     }
-    virtual void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                      VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
+    virtual void PostCallRecordAllocateDescriptorSets(VkDevice device,
+                                                      const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                      VkDescriptorSet* pDescriptorSets,
+                                                      const RecordObject& record_obj,
                                                       vvl::AllocateDescriptorSetsData& ads_state) {
         PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj);
     }
 
     // Allow modification of a down-chain parameter for CreateBuffer
-    virtual void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
-                                           const RecordObject& record_obj, chassis::CreateBuffer& chassis_state) {
+    virtual void PreCallRecordCreateBuffer(VkDevice device,
+                                           const VkBufferCreateInfo* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator,
+                                           VkBuffer* pBuffer,
+                                           const RecordObject& record_obj,
+                                           chassis::CreateBuffer& chassis_state) {
         PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj);
     }
 
     // Modify a parameter to CreateDevice
-    virtual void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
-                                           const RecordObject& record_obj, vku::safe_VkDeviceCreateInfo* modified_create_info) {
+    virtual void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice,
+                                           const VkDeviceCreateInfo* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator,
+                                           VkDevice* pDevice,
+                                           const RecordObject& record_obj,
+                                           vku::safe_VkDeviceCreateInfo* modified_create_info) {
         PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj);
     }
 

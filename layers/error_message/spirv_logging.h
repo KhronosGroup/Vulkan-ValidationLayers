@@ -16,11 +16,12 @@
  */
 
 #pragma once
-#include <vector>
-#include <sstream>
 #include "state_tracker/shader_instruction.h"
+#include <sstream>
+#include <vector>
 
-// When producing error messages for SPIR-V related items and the user generated the shader with debug information, we can use these
-// helpers to print out information from their High Level source instead of some cryptic SPIR-V jargon
-void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<spirv::Instruction> &instructions,
-                         const spirv::Instruction &last_line_insn);
+// When producing error messages for SPIR-V related items and the user generated the shader with debug information, we
+// can use these helpers to print out information from their High Level source instead of some cryptic SPIR-V jargon
+void GetShaderSourceInfo(std::ostringstream& ss,
+                         const std::vector<spirv::Instruction>& instructions,
+                         const spirv::Instruction& last_line_insn);

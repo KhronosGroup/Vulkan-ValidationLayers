@@ -26,7 +26,7 @@ TEST_F(PositiveMesh, BasicUsage) {
 
     InitRenderTarget();
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices = 3, max_primitives=1) out;
@@ -40,7 +40,7 @@ TEST_F(PositiveMesh, BasicUsage) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { ms.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
     pipe.gp_ci_.pVertexInputState = nullptr;
     pipe.gp_ci_.pInputAssemblyState = nullptr;
@@ -49,8 +49,14 @@ TEST_F(PositiveMesh, BasicUsage) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
     vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -95,7 +101,7 @@ TEST_F(PositiveMesh, MeshShaderOnly) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper helper(*this);
-    helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    helper.shader_stages_ = { ms.GetStageCreateInfo(), fs.GetStageCreateInfo() };
 
     // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
     helper.gp_ci_.pVertexInputState = nullptr;
@@ -139,7 +145,7 @@ TEST_F(PositiveMesh, PointSize) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper helper(*this);
-    helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    helper.shader_stages_ = { ms.GetStageCreateInfo(), fs.GetStageCreateInfo() };
 
     // Ensure pVertexInputState and pInputAssembly state are null, as these should be ignored.
     helper.gp_ci_.pVertexInputState = nullptr;
@@ -229,8 +235,8 @@ TEST_F(PositiveMesh, TaskAndMeshShaderNV) {
     VkShaderObj ts(this, taskShaderText, VK_SHADER_STAGE_TASK_BIT_NV, SPV_ENV_VULKAN_1_2);
     VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, SPV_ENV_VULKAN_1_2);
 
-    const auto break_vp = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    const auto break_vp = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit);
 }
@@ -285,8 +291,8 @@ TEST_F(PositiveMesh, MeshPerTaskNV) {
     VkShaderObj ts(this, taskShaderText, VK_SHADER_STAGE_TASK_BIT_NV, SPV_ENV_VULKAN_1_2);
     VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, SPV_ENV_VULKAN_1_2);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo() };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -304,8 +310,8 @@ TEST_F(PositiveMesh, PrimitiveTopology) {
     VkShaderObj ms(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {ms.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;  // requires primitiveTopologyListRestart
+    pipe.shader_stages_ = { ms.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST; // requires primitiveTopologyListRestart
     pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 }
@@ -320,7 +326,7 @@ TEST_F(PositiveMesh, DrawIndexMesh) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices = 32, max_primitives = 32, triangles) out;
@@ -334,7 +340,7 @@ TEST_F(PositiveMesh, DrawIndexMesh) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { ms.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -349,7 +355,7 @@ TEST_F(PositiveMesh, DrawIndexTask) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *task_source = R"glsl(
+    const char* task_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         taskPayloadSharedEXT uint mesh_payload[32];
@@ -359,7 +365,7 @@ TEST_F(PositiveMesh, DrawIndexTask) {
         }
     )glsl";
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices = 32, max_primitives = 32, triangles) out;
@@ -374,7 +380,7 @@ TEST_F(PositiveMesh, DrawIndexTask) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -394,7 +400,7 @@ TEST_F(PositiveMesh, MeshAndTaskShaderDerivatives) {
         GTEST_SKIP() << "meshAndTaskShaderDerivatives is not supported";
     }
 
-    const char *ms_source = R"(
+    const char* ms_source = R"(
                OpCapability ComputeDerivativeGroupQuadsKHR
                OpCapability MeshShadingEXT
                OpExtension "SPV_EXT_mesh_shader"
@@ -443,7 +449,7 @@ TEST_F(PositiveMesh, TessellationDynamicState) {
 
     InitRenderTarget();
 
-    const char *mesh_source = R"glsl(
+    const char* mesh_source = R"glsl(
         #version 460
         #extension GL_EXT_mesh_shader : enable
         layout(max_vertices = 3, max_primitives=1) out;
@@ -457,15 +463,21 @@ TEST_F(PositiveMesh, TessellationDynamicState) {
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { ms.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.AddDynamicState(VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT);
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
     vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();

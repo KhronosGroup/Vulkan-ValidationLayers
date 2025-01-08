@@ -22,9 +22,12 @@
 // NOLINTBEGIN
 
 #include "error_location_helper.h"
-#include "generated/vk_api_version.h"
+
 #include <assert.h>
+
 #include <string_view>
+
+#include "generated/vk_api_version.h"
 
 // clang-format off
 namespace vvl {

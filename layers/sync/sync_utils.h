@@ -18,8 +18,8 @@
 #pragma once
 #include "generated/sync_validation_types.h"
 #include "generated/vk_object_types.h"
-#include <vulkan/vulkan.h>
 #include <string>
+#include <vulkan/vulkan.h>
 
 // Remove Windows trojan macro that prevents usage of this name in any scope of the program.
 // For example, nested namespace type sync_utils::MemoryBarrier won't compile because of this.
@@ -34,7 +34,7 @@ class ValidationStateTracker;
 namespace vvl {
 class Image;
 class Buffer;
-}  // namespace vvl
+} // namespace vvl
 
 namespace sync_utils {
 
@@ -42,9 +42,10 @@ static constexpr VkQueueFlags kAllQueueTypes = (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE
 
 VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures& features, const DeviceExtensions& device_extensions);
 
-// Expand all pipeline stage bits. If queue_flags and disabled_feature_mask is provided, the expansion of ALL_COMMANDS_BIT
-// and ALL_GRAPHICS_BIT will be limited to what is supported.
-VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQueueFlags queue_flags = kAllQueueTypes,
+// Expand all pipeline stage bits. If queue_flags and disabled_feature_mask is provided, the expansion of
+// ALL_COMMANDS_BIT and ALL_GRAPHICS_BIT will be limited to what is supported.
+VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask,
+                                           VkQueueFlags queue_flags = kAllQueueTypes,
                                            const VkPipelineStageFlags2 disabled_feature_mask = 0);
 
 VkAccessFlags2 ExpandAccessFlags(VkAccessFlags2 access_mask);
@@ -79,36 +80,30 @@ struct MemoryBarrier {
     VkPipelineStageFlags2 dstStageMask;
     VkAccessFlags2 dstAccessMask;
 
-    explicit MemoryBarrier(const VkMemoryBarrier2& barrier)
-        : srcStageMask(barrier.srcStageMask),
-          srcAccessMask(barrier.srcAccessMask),
-          dstStageMask(barrier.dstStageMask),
-          dstAccessMask(barrier.dstAccessMask) {}
-    explicit MemoryBarrier(const VkBufferMemoryBarrier2& barrier)
-        : srcStageMask(barrier.srcStageMask),
-          srcAccessMask(barrier.srcAccessMask),
-          dstStageMask(barrier.dstStageMask),
-          dstAccessMask(barrier.dstAccessMask) {}
-    explicit MemoryBarrier(const VkImageMemoryBarrier2& barrier)
-        : srcStageMask(barrier.srcStageMask),
-          srcAccessMask(barrier.srcAccessMask),
-          dstStageMask(barrier.dstStageMask),
-          dstAccessMask(barrier.dstAccessMask) {}
-    MemoryBarrier(const VkMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
-        : srcStageMask(src_stage_mask),
-          srcAccessMask(barrier.srcAccessMask),
-          dstStageMask(dst_stage_mask),
-          dstAccessMask(barrier.dstAccessMask) {}
-    MemoryBarrier(const VkBufferMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
-        : srcStageMask(src_stage_mask),
-          srcAccessMask(barrier.srcAccessMask),
-          dstStageMask(dst_stage_mask),
-          dstAccessMask(barrier.dstAccessMask) {}
-    MemoryBarrier(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
-        : srcStageMask(src_stage_mask),
-          srcAccessMask(barrier.srcAccessMask),
-          dstStageMask(dst_stage_mask),
-          dstAccessMask(barrier.dstAccessMask) {}
+    explicit MemoryBarrier(const VkMemoryBarrier2& barrier) :
+        srcStageMask(barrier.srcStageMask), srcAccessMask(barrier.srcAccessMask), dstStageMask(barrier.dstStageMask),
+        dstAccessMask(barrier.dstAccessMask) {}
+    explicit MemoryBarrier(const VkBufferMemoryBarrier2& barrier) :
+        srcStageMask(barrier.srcStageMask), srcAccessMask(barrier.srcAccessMask), dstStageMask(barrier.dstStageMask),
+        dstAccessMask(barrier.dstAccessMask) {}
+    explicit MemoryBarrier(const VkImageMemoryBarrier2& barrier) :
+        srcStageMask(barrier.srcStageMask), srcAccessMask(barrier.srcAccessMask), dstStageMask(barrier.dstStageMask),
+        dstAccessMask(barrier.dstAccessMask) {}
+    MemoryBarrier(const VkMemoryBarrier& barrier,
+                  VkPipelineStageFlags src_stage_mask,
+                  VkPipelineStageFlags dst_stage_mask) :
+        srcStageMask(src_stage_mask),
+        srcAccessMask(barrier.srcAccessMask), dstStageMask(dst_stage_mask), dstAccessMask(barrier.dstAccessMask) {}
+    MemoryBarrier(const VkBufferMemoryBarrier& barrier,
+                  VkPipelineStageFlags src_stage_mask,
+                  VkPipelineStageFlags dst_stage_mask) :
+        srcStageMask(src_stage_mask),
+        srcAccessMask(barrier.srcAccessMask), dstStageMask(dst_stage_mask), dstAccessMask(barrier.dstAccessMask) {}
+    MemoryBarrier(const VkImageMemoryBarrier& barrier,
+                  VkPipelineStageFlags src_stage_mask,
+                  VkPipelineStageFlags dst_stage_mask) :
+        srcStageMask(src_stage_mask),
+        srcAccessMask(barrier.srcAccessMask), dstStageMask(dst_stage_mask), dstAccessMask(barrier.dstAccessMask) {}
 };
 
 enum class OwnershipTransferOp { none, release, acquire };
@@ -119,24 +114,22 @@ struct OwnershipTransferBarrier : MemoryBarrier {
     uint32_t srcQueueFamilyIndex;
     uint32_t dstQueueFamilyIndex;
 
-    OwnershipTransferBarrier(const VkBufferMemoryBarrier2& barrier)
-        : MemoryBarrier(barrier),
-          srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
-          dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
-    OwnershipTransferBarrier(const VkBufferMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask,
-                       VkPipelineStageFlags dst_stage_mask)
-        : MemoryBarrier(barrier, src_stage_mask, dst_stage_mask),
-          srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
-          dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
-    OwnershipTransferBarrier(const VkImageMemoryBarrier2& barrier)
-        : MemoryBarrier(barrier),
-          srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
-          dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
-    OwnershipTransferBarrier(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask,
-                       VkPipelineStageFlags dst_stage_mask)
-        : MemoryBarrier(barrier, src_stage_mask, dst_stage_mask),
-          srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
-          dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
+    OwnershipTransferBarrier(const VkBufferMemoryBarrier2& barrier) :
+        MemoryBarrier(barrier), srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
+        dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
+    OwnershipTransferBarrier(const VkBufferMemoryBarrier& barrier,
+                             VkPipelineStageFlags src_stage_mask,
+                             VkPipelineStageFlags dst_stage_mask) :
+        MemoryBarrier(barrier, src_stage_mask, dst_stage_mask),
+        srcQueueFamilyIndex(barrier.srcQueueFamilyIndex), dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
+    OwnershipTransferBarrier(const VkImageMemoryBarrier2& barrier) :
+        MemoryBarrier(barrier), srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
+        dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
+    OwnershipTransferBarrier(const VkImageMemoryBarrier& barrier,
+                             VkPipelineStageFlags src_stage_mask,
+                             VkPipelineStageFlags dst_stage_mask) :
+        MemoryBarrier(barrier, src_stage_mask, dst_stage_mask),
+        srcQueueFamilyIndex(barrier.srcQueueFamilyIndex), dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
 
     OwnershipTransferOp TransferOp(uint32_t command_pool_queue_family) const {
         if (srcQueueFamilyIndex != dstQueueFamilyIndex) {
@@ -155,13 +148,13 @@ struct BufferBarrier : OwnershipTransferBarrier {
     VkDeviceSize offset;
     VkDeviceSize size;
 
-    explicit BufferBarrier(const VkBufferMemoryBarrier2& barrier)
-        : OwnershipTransferBarrier(barrier), buffer(barrier.buffer), offset(barrier.offset), size(barrier.size) {}
-    BufferBarrier(const VkBufferMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
-        : OwnershipTransferBarrier(barrier, src_stage_mask, dst_stage_mask),
-          buffer(barrier.buffer),
-          offset(barrier.offset),
-          size(barrier.size) {}
+    explicit BufferBarrier(const VkBufferMemoryBarrier2& barrier) :
+        OwnershipTransferBarrier(barrier), buffer(barrier.buffer), offset(barrier.offset), size(barrier.size) {}
+    BufferBarrier(const VkBufferMemoryBarrier& barrier,
+                  VkPipelineStageFlags src_stage_mask,
+                  VkPipelineStageFlags dst_stage_mask) :
+        OwnershipTransferBarrier(barrier, src_stage_mask, dst_stage_mask),
+        buffer(barrier.buffer), offset(barrier.offset), size(barrier.size) {}
 };
 
 struct ImageBarrier : OwnershipTransferBarrier {
@@ -170,18 +163,15 @@ struct ImageBarrier : OwnershipTransferBarrier {
     VkImage image;
     VkImageSubresourceRange subresourceRange;
 
-    explicit ImageBarrier(const VkImageMemoryBarrier2& barrier)
-        : OwnershipTransferBarrier(barrier),
-          oldLayout(barrier.oldLayout),
-          newLayout(barrier.newLayout),
-          image(barrier.image),
-          subresourceRange(barrier.subresourceRange) {}
-    ImageBarrier(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
-        : OwnershipTransferBarrier(barrier, src_stage_mask, dst_stage_mask),
-          oldLayout(barrier.oldLayout),
-          newLayout(barrier.newLayout),
-          image(barrier.image),
-          subresourceRange(barrier.subresourceRange) {}
+    explicit ImageBarrier(const VkImageMemoryBarrier2& barrier) :
+        OwnershipTransferBarrier(barrier), oldLayout(barrier.oldLayout), newLayout(barrier.newLayout),
+        image(barrier.image), subresourceRange(barrier.subresourceRange) {}
+    ImageBarrier(const VkImageMemoryBarrier& barrier,
+                 VkPipelineStageFlags src_stage_mask,
+                 VkPipelineStageFlags dst_stage_mask) :
+        OwnershipTransferBarrier(barrier, src_stage_mask, dst_stage_mask),
+        oldLayout(barrier.oldLayout), newLayout(barrier.newLayout), image(barrier.image),
+        subresourceRange(barrier.subresourceRange) {}
 };
 
-}  // namespace sync_utils
+} // namespace sync_utils

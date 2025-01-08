@@ -90,13 +90,13 @@ enum class CopyError {
 };
 
 // Does not contain Host Image Copy
-const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError error);
+const std::string& GetCopyBufferImageDeviceVUID(const Location& loc, CopyError error);
 // contains Host Image Copy
-const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error);
-const std::string &GetCopyImageVUID(const Location &loc, CopyError error);
-const std::string &GetImageMipLevelVUID(const Location &loc);
-const std::string &GetImageArrayLayerRangeVUID(const Location &loc);
-const std::string &GetImageImageLayoutVUID(const Location &loc);
+const std::string& GetCopyBufferImageVUID(const Location& loc, CopyError error);
+const std::string& GetCopyImageVUID(const Location& loc, CopyError error);
+const std::string& GetImageMipLevelVUID(const Location& loc);
+const std::string& GetImageArrayLayerRangeVUID(const Location& loc);
+const std::string& GetImageImageLayoutVUID(const Location& loc);
 
 enum class SubresourceRangeError {
     BaseMip_01486,
@@ -104,7 +104,7 @@ enum class SubresourceRangeError {
     BaseLayer_01488,
     LayerCount_01725,
 };
-const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRangeError error);
+const std::string& GetSubresourceRangeVUID(const Location& loc, SubresourceRangeError error);
 
 enum class PipelineInterfaceVariableError {
     ShaderStage_07988,
@@ -112,6 +112,6 @@ enum class PipelineInterfaceVariableError {
     DescriptorCount_07991,
     Inline_10391,
 };
-const char *GetPipelineInterfaceVariableVUID(const vvl::Pipeline &pipeline, PipelineInterfaceVariableError error);
+const char* GetPipelineInterfaceVariableVUID(const vvl::Pipeline& pipeline, PipelineInterfaceVariableError error);
 
-}  // namespace vvl
+} // namespace vvl

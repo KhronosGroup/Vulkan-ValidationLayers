@@ -18,9 +18,9 @@
 #pragma once
 
 #include <atomic>
+#include <cassert>
 #include <mutex>
 #include <regex>
-#include <cassert>
 
 #include "error_message/log_message_type.h"
 #include <vulkan/vulkan_core.h>
@@ -44,60 +44,62 @@ class ErrorMonitor {
     void CreateCallback(VkInstance instance) noexcept;
     void DestroyCallback(VkInstance instance) noexcept;
 
-    ErrorMonitor(const ErrorMonitor &) = delete;
-    ErrorMonitor &operator=(const ErrorMonitor &) = delete;
-    ErrorMonitor(ErrorMonitor &&) noexcept = delete;
-    ErrorMonitor &operator=(ErrorMonitor &&) noexcept = delete;
+    ErrorMonitor(const ErrorMonitor&) = delete;
+    ErrorMonitor& operator=(const ErrorMonitor&) = delete;
+    ErrorMonitor(ErrorMonitor&&) noexcept = delete;
+    ErrorMonitor& operator=(ErrorMonitor&&) noexcept = delete;
 
     // Set monitor to pristine state
     void Reset();
 
     // ErrorMonitor will look for an error message containing the specified string(s)
-    void SetDesiredFailureMsg(const VkFlags msg_flags, const char *const msg_string);
-    void SetDesiredFailureMsg(const VkFlags msg_flags, const std::string &msg);
-    void SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string regex_str);
+    void SetDesiredFailureMsg(const VkFlags msg_flags, const char* const msg_string);
+    void SetDesiredFailureMsg(const VkFlags msg_flags, const std::string& msg);
+    void SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char* vuid, std::string regex_str);
     // Any error message matching undesired_regex_str will provoke a test failure
-    void SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string regex_str,
+    void SetDesiredFailureMsgRegex(const VkFlags msg_flags,
+                                   const char* vuid,
+                                   std::string regex_str,
                                    std::string undesired_regex_str);
     // Most tests check for kErrorBit so default to just using it
-    void SetDesiredError(const char *msg, uint32_t count = 1);
+    void SetDesiredError(const char* msg, uint32_t count = 1);
     // Regex uses modified ECMAScript regular expression grammar https://eel.is/c++draft/re.grammar
-    void SetDesiredErrorRegex(const char *vuid, std::string regex_str, uint32_t count = 1);
+    void SetDesiredErrorRegex(const char* vuid, std::string regex_str, uint32_t count = 1);
     // And use this for
-    void SetDesiredWarningRegex(const char *vuid, std::string regex_str, uint32_t count = 1);
-    void SetDesiredWarning(const char *msg, uint32_t count = 1);
-    void SetDesiredInfo(const char *msg, uint32_t count = 1);
+    void SetDesiredWarningRegex(const char* vuid, std::string regex_str, uint32_t count = 1);
+    void SetDesiredWarning(const char* msg, uint32_t count = 1);
+    void SetDesiredInfo(const char* msg, uint32_t count = 1);
 
     // Set an error that the error monitor will ignore. Do not use this function if you are creating a new test.
-    // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
-    // function and its definition.
-    void SetUnexpectedError(const char *const msg);
+    // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the
+    // use of this function and its definition.
+    void SetUnexpectedError(const char* const msg);
 
     // Set an error that should not cause a test failure
-    void SetAllowedFailureMsg(const char *const msg);
+    void SetAllowedFailureMsg(const char* const msg);
 
-    VkBool32 CheckForDesiredMsg(const char *vuid, const char *const msg_string);
+    VkBool32 CheckForDesiredMsg(const char* vuid, const char* const msg_string);
     VkDebugReportFlagsEXT GetMessageFlags();
-    void SetError(const char *const errorString);
-    void SetBailout(std::atomic<bool> *bailout);
+    void SetError(const char* const errorString);
+    void SetBailout(std::atomic<bool>* bailout);
 
     // Helpers
     void VerifyFound();
     void Finish();
 
-    const auto *GetDebugCreateInfo() const { return &debug_create_info_; }
+    const auto* GetDebugCreateInfo() const { return &debug_create_info_; }
 
     // ExpectSuccess now takes an optional argument allowing a custom combination of debug flags
     void ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask = kErrorBit);
 
   private:
-    void SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string msg_regex, std::regex regex);
+    void SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char* vuid, std::string msg_regex, std::regex regex);
     bool ExpectingSuccess() const;
     bool NeedCheckSuccess() const;
     void VerifyNotFound();
-    // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
-    // function and its definition.
-    bool IgnoreMessage(std::string const &msg) const;
+    // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the
+    // use of this function and its definition.
+    bool IgnoreMessage(std::string const& msg) const;
     bool AnyDesiredMsgFound() const;
     void MonitorReset();
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(mutex_); }
@@ -115,7 +117,7 @@ class ErrorMonitor {
     struct VuidAndMessage {
         std::string_view vuid;
         enum MsgType { Undefined, String, Regex } msg_type = Undefined;
-        std::string msg_string;  // also used to store regex string
+        std::string msg_string; // also used to store regex string
         std::regex msg_regex;
         std::regex undesired_msg_regex;
         std::string undesired_msg_regex_string;
@@ -132,7 +134,7 @@ class ErrorMonitor {
             undesired_msg_regex_string = std::move(undesired_regex_str);
             undesired_msg_regex = std::move(undesired_regex);
         }
-        bool Search(const char *vuid, std::string_view msg) const;
+        bool Search(const char* vuid, std::string_view msg) const;
         bool SearchUndesiredRegex(std::string_view msg) const;
         std::string Print() const;
     };
@@ -141,7 +143,7 @@ class ErrorMonitor {
     std::vector<std::string> ignore_message_strings_;
     std::vector<std::string> allowed_message_strings_;
     mutable std::mutex mutex_;
-    std::atomic<bool> *bailout_{};
+    std::atomic<bool>* bailout_{};
     bool message_found_{};
     bool print_all_errors_{};
 };

@@ -17,9 +17,9 @@
 
 #pragma once
 
+#include "state_tracker/cmd_buffer_state.h"
 #include <utility>
 #include <vector>
-#include "state_tracker/cmd_buffer_state.h"
 
 namespace gpuav {
 class Validator;
@@ -49,7 +49,11 @@ class RestorablePipelineState {
     std::vector<vvl::ShaderObject*> shader_objects_;
 };
 
-void BindErrorLoggingDescSet(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint bind_point,
-                             VkPipelineLayout pipeline_layout, uint32_t cmd_index, uint32_t error_logger_index);
+void BindErrorLoggingDescSet(Validator& gpuav,
+                             CommandBuffer& cb_state,
+                             VkPipelineBindPoint bind_point,
+                             VkPipelineLayout pipeline_layout,
+                             uint32_t cmd_index,
+                             uint32_t error_logger_index);
 
-}  // namespace gpuav
+} // namespace gpuav

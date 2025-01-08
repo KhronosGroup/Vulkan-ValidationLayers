@@ -17,16 +17,16 @@
  * limitations under the License.
  */
 #pragma once
-#include "state_tracker/state_object.h"
+#include "error_message/error_location.h"
 #include "state_tracker/fence_state.h"
 #include "state_tracker/semaphore_state.h"
+#include "state_tracker/state_object.h"
 #include <condition_variable>
 #include <deque>
 #include <future>
+#include <string>
 #include <thread>
 #include <vector>
-#include <string>
-#include "error_message/error_location.h"
 
 class ValidationStateTracker;
 
@@ -48,26 +48,26 @@ struct CommandBufferSubmission {
     // => GPU-AV needs to track this initial label stack per command buffer submission.
     std::vector<std::string> initial_label_stack;
 
-    CommandBufferSubmission(std::shared_ptr<vvl::CommandBuffer> cb, std::vector<std::string> initial_label_stack)
-        : cb(std::move(cb)), initial_label_stack(std::move(initial_label_stack)) {}
-    CommandBufferSubmission(CommandBufferSubmission &&other)
-        : cb(std::move(other.cb)), initial_label_stack(std::move(other.initial_label_stack)) {}
-    CommandBufferSubmission &operator=(const CommandBufferSubmission &other) = default;
-    CommandBufferSubmission(const CommandBufferSubmission &) = default;
+    CommandBufferSubmission(std::shared_ptr<vvl::CommandBuffer> cb, std::vector<std::string> initial_label_stack) :
+        cb(std::move(cb)), initial_label_stack(std::move(initial_label_stack)) {}
+    CommandBufferSubmission(CommandBufferSubmission&& other) :
+        cb(std::move(other.cb)), initial_label_stack(std::move(other.initial_label_stack)) {}
+    CommandBufferSubmission& operator=(const CommandBufferSubmission& other) = default;
+    CommandBufferSubmission(const CommandBufferSubmission&) = default;
 };
 
 struct QueueSubmission {
-    QueueSubmission(const Location &loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
+    QueueSubmission(const Location& loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
 
-    bool end_batch{false};
+    bool end_batch{ false };
     std::vector<vvl::CommandBufferSubmission> cb_submissions{};
 
     std::vector<SemaphoreInfo> wait_semaphores;
     std::vector<SemaphoreInfo> signal_semaphores;
     std::shared_ptr<Fence> fence;
     LocationCapture loc;
-    uint64_t seq{0};
-    uint32_t perf_submit_pass{0};
+    uint64_t seq{ 0 };
+    uint32_t perf_submit_pass{ 0 };
     std::promise<void> completed;
     std::shared_future<void> waiter;
 
@@ -75,15 +75,15 @@ struct QueueSubmission {
         cb_submissions.emplace_back(std::move(cb_state), std::move(initial_label_stack));
     }
 
-    void AddSignalSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, uint64_t value) {
+    void AddSignalSemaphore(std::shared_ptr<Semaphore>&& semaphore_state, uint64_t value) {
         signal_semaphores.emplace_back(std::move(semaphore_state), value);
     }
 
-    void AddWaitSemaphore(std::shared_ptr<Semaphore> &&semaphore_state, uint64_t value) {
+    void AddWaitSemaphore(std::shared_ptr<Semaphore>&& semaphore_state, uint64_t value) {
         wait_semaphores.emplace_back(std::move(semaphore_state), value);
     }
 
-    void AddFence(std::shared_ptr<Fence> &&fence_state) { fence = std::move(fence_state); }
+    void AddFence(std::shared_ptr<Fence>&& fence_state) { fence = std::move(fence_state); }
 
     void EndUse();
     void BeginUse();
@@ -105,14 +105,15 @@ struct PreSubmitResult {
 
 class Queue : public StateObject {
   public:
-    Queue(ValidationStateTracker &dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index,
-          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties)
-        : StateObject(handle, kVulkanObjectTypeQueue),
-          queue_family_index(family_index),
-          queue_index(queue_index),
-          create_flags(flags),
-          queue_family_properties(queueFamilyProperties),
-          dev_data_(dev_data) {}
+    Queue(ValidationStateTracker& dev_data,
+          VkQueue handle,
+          uint32_t family_index,
+          uint32_t queue_index,
+          VkDeviceQueueCreateFlags flags,
+          const VkQueueFamilyProperties& queueFamilyProperties) :
+        StateObject(handle, kVulkanObjectTypeQueue),
+        queue_family_index(family_index), queue_index(queue_index), create_flags(flags),
+        queue_family_properties(queueFamilyProperties), dev_data_(dev_data) {}
 
     ~Queue() { Destroy(); }
     void Destroy() override;
@@ -120,7 +121,7 @@ class Queue : public StateObject {
     VkQueue VkHandle() const { return handle_.Cast<VkQueue>(); }
 
     // called from the various PreCallRecordQueueSubmit() methods
-    virtual PreSubmitResult PreSubmit(std::vector<QueueSubmission> &&submissions);
+    virtual PreSubmitResult PreSubmit(std::vector<QueueSubmission>&& submissions);
     // called from the various PostCallRecordQueueSubmit() methods
     void PostSubmit();
 
@@ -130,10 +131,10 @@ class Queue : public StateObject {
 
     // Wait for the queue thread to finish processing submissions with sequence numbers
     // up to and including until_seq. kU64Max means to finish all submissions.
-    void Wait(const Location &loc, uint64_t until_seq = kU64Max);
+    void Wait(const Location& loc, uint64_t until_seq = kU64Max);
 
     // Helper that combines Notify and Wait
-    void NotifyAndWait(const Location &loc, uint64_t until_seq = kU64Max);
+    void NotifyAndWait(const Location& loc, uint64_t until_seq = kU64Max);
 
     // Find a timeline wait that does not have a resolving signal submitted yet.
     // Check submissions up to and including until_seq.
@@ -153,8 +154,8 @@ class Queue : public StateObject {
     // Access to this variable relies on external queue synchronization.
     std::vector<std::string> cmdbuf_label_stack;
 
-    // Track the last closed label. It is used in the error messages to help locate unbalanced vkCmdEndDebugUtilsLabelEXT command.
-    // Access to this variable relies on external queue synchronization.
+    // Track the last closed label. It is used in the error messages to help locate unbalanced
+    // vkCmdEndDebugUtilsLabelEXT command. Access to this variable relies on external queue synchronization.
     std::string last_closed_cmdbuf_label;
 
     // Stop per-queue label tracking after the first label mismatch error.
@@ -163,9 +164,9 @@ class Queue : public StateObject {
 
   protected:
     // called from the various PostCallRecordQueueSubmit() methods
-    virtual void PostSubmit(QueueSubmission &submission) {}
+    virtual void PostSubmit(QueueSubmission& submission) {}
     // called when the worker thread decides a submissions has finished executing
-    virtual void Retire(QueueSubmission &submission);
+    virtual void Retire(QueueSubmission& submission);
 
   private:
     uint32_t timeline_wait_count_ = 0;
@@ -173,20 +174,20 @@ class Queue : public StateObject {
   private:
     using LockGuard = std::unique_lock<std::mutex>;
     void ThreadFunc();
-    QueueSubmission *NextSubmission();
+    QueueSubmission* NextSubmission();
     LockGuard Lock() const { return LockGuard(lock_); }
 
-    ValidationStateTracker &dev_data_;
+    ValidationStateTracker& dev_data_;
 
     // state related to submitting to the queue, all data members must
     // be accessed with lock_ held
     std::unique_ptr<std::thread> thread_;
     std::deque<QueueSubmission> submissions_;
-    std::atomic<uint64_t> seq_{0};
-    uint64_t request_seq_{0};
-    bool exit_thread_{false};
+    std::atomic<uint64_t> seq_{ 0 };
+    uint64_t request_seq_{ 0 };
+    bool exit_thread_{ false };
     mutable std::mutex lock_;
     // condition to wake up the queue's thread
     std::condition_variable cond_;
 };
-}  // namespace vvl
+} // namespace vvl

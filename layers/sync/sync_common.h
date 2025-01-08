@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 #pragma once
-#include "containers/subresource_adapter.h"
 #include "containers/range_vector.h"
+#include "containers/subresource_adapter.h"
 #include "generated/sync_validation_types.h"
 #include <set>
 
@@ -25,14 +25,14 @@ class Buffer;
 class BufferView;
 struct VertexBufferBinding;
 struct IndexBufferBinding;
-}  // namespace vvl
+} // namespace vvl
 
 namespace syncval_state {
 class CommandBuffer;
 class ImageState;
 class ImageViewState;
 class Swapchain;
-}  // namespace syncval_state
+} // namespace syncval_state
 
 class HazardResult;
 class SyncValidator;
@@ -59,12 +59,13 @@ struct ResourceUsageTagEx {
 };
 
 template <typename T>
-ResourceAccessRange MakeRange(const T &has_offset_and_size) {
-    return ResourceAccessRange(has_offset_and_size.offset, (has_offset_and_size.offset + has_offset_and_size.effective_size));
+ResourceAccessRange MakeRange(const T& has_offset_and_size) {
+    return ResourceAccessRange(has_offset_and_size.offset,
+                               (has_offset_and_size.offset + has_offset_and_size.effective_size));
 }
 ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size);
-ResourceAccessRange MakeRange(const vvl::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size);
-ResourceAccessRange MakeRange(const vvl::BufferView &buf_view_state);
+ResourceAccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, VkDeviceSize size);
+ResourceAccessRange MakeRange(const vvl::BufferView& buf_view_state);
 ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_t count, uint32_t stride);
 
 extern const ResourceAccessRange kFullRange;
@@ -75,7 +76,7 @@ constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | 
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
-    static inline const SyncAccessInfo &AccessInfo(SyncAccessIndex access_index) {
+    static inline const SyncAccessInfo& AccessInfo(SyncAccessIndex access_index) {
         return syncAccessInfoByAccessIndex()[access_index];
     }
     static inline SyncAccessFlags FlagBit(SyncAccessIndex stage_access) {
@@ -83,9 +84,9 @@ struct SyncStageAccess {
     }
 
     static bool IsRead(SyncAccessIndex access_index) { return syncAccessReadMask[access_index]; }
-    static bool IsRead(const SyncAccessInfo &info) { return IsRead(info.access_index); }
+    static bool IsRead(const SyncAccessInfo& info) { return IsRead(info.access_index); }
     static bool IsWrite(SyncAccessIndex access_index) { return syncAccessWriteMask[access_index]; }
-    static bool IsWrite(const SyncAccessInfo &info) { return IsWrite(info.access_index); }
+    static bool IsWrite(const SyncAccessInfo& info) { return IsWrite(info.access_index); }
 
     static VkPipelineStageFlags2 PipelineStageBit(SyncAccessIndex access_index) {
         return syncAccessInfoByAccessIndex()[access_index].stage_mask;
@@ -93,7 +94,7 @@ struct SyncStageAccess {
     static SyncAccessFlags AccessScopeByStage(VkPipelineStageFlags2 stages);
     static SyncAccessFlags AccessScopeByAccess(VkAccessFlags2 access);
     static SyncAccessFlags AccessScope(VkPipelineStageFlags2 stages, VkAccessFlags2 access);
-    static SyncAccessFlags AccessScope(const SyncAccessFlags &stage_scope, VkAccessFlags2 accesses) {
+    static SyncAccessFlags AccessScope(const SyncAccessFlags& stage_scope, VkAccessFlags2 accesses) {
         return stage_scope & AccessScopeByAccess(accesses);
     }
 };
@@ -106,7 +107,8 @@ struct SyncStageAccess {
 //
 // The following were shown to not improve hit rate for current usage (tag set gathering).  For general use YMMV.
 //  * More complicated index construction (at >> LogSize ^ at)
-//  * Multi-way LRU eviction caching (equivalent hit rate to 1-way direct replacement of same total cache slots) but with
+//  * Multi-way LRU eviction caching (equivalent hit rate to 1-way direct replacement of same total cache slots) but
+//  with
 //    higher complexity.
 template <typename IntegralKey, size_t LogSize = 4U, IntegralKey kInvalidKey = IntegralKey(0)>
 class CachedInsertSet : public std::set<IntegralKey> {
@@ -119,7 +121,7 @@ class CachedInsertSet : public std::set<IntegralKey> {
 
     void CachedInsert(const key_type key) {
         // 1-way direct replacement
-        const Index index = static_cast<Index>(key & kMask);  // Simplest
+        const Index index = static_cast<Index>(key & kMask); // Simplest
 
         if (entries_[index] != key) {
             entries_[index] = key;
@@ -138,15 +140,15 @@ template <typename KeyType>
 class SingleRangeGenerator {
   public:
     using RangeType = KeyType;
-    SingleRangeGenerator(const KeyType &range) : current_(range) {}
-    const KeyType &operator*() const { return current_; }
-    const KeyType *operator->() const { return &current_; }
-    SingleRangeGenerator &operator++() {
-        current_ = KeyType();  // just one real range
+    SingleRangeGenerator(const KeyType& range) : current_(range) {}
+    const KeyType& operator*() const { return current_; }
+    const KeyType* operator->() const { return &current_; }
+    SingleRangeGenerator& operator++() {
+        current_ = KeyType(); // just one real range
         return *this;
     }
 
-    bool operator==(const SingleRangeGenerator &other) const { return current_ == other.current_; }
+    bool operator==(const SingleRangeGenerator& other) const { return current_ == other.current_; }
 
   private:
     SingleRangeGenerator() = default;

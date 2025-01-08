@@ -22,9 +22,9 @@
 
 // NOLINTBEGIN
 
-#include "vk_api_version.h"
-
 #include <vulkan/vulkan.h>
+
+#include "vk_api_version.h"
 
 namespace vkt {
 enum class Feature {

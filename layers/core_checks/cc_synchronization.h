@@ -24,7 +24,7 @@ class CoreChecks;
 // Tracks semaphore state changes during the validation phase of QueueSubmit commands.
 // Semaphore state object (vvl::Semaphore) is updated later in the record phase.
 struct SemaphoreSubmitState {
-    const CoreChecks &core;
+    const CoreChecks& core;
     const VkQueue queue;
     const VkQueueFlags queue_flags;
 
@@ -38,18 +38,25 @@ struct SemaphoreSubmitState {
     vvl::unordered_map<VkSemaphore, uint64_t> timeline_signals;
     vvl::unordered_map<VkSemaphore, uint64_t> timeline_waits;
 
-    SemaphoreSubmitState(const CoreChecks &core_, VkQueue q_, VkQueueFlags queue_flags_)
-        : core(core_), queue(q_), queue_flags(queue_flags_) {}
+    SemaphoreSubmitState(const CoreChecks& core_, VkQueue q_, VkQueueFlags queue_flags_) :
+        core(core_), queue(q_), queue_flags(queue_flags_) {}
 
-    bool CanWaitBinary(const vvl::Semaphore &semaphore_state) const;
-    bool CanSignalBinary(const vvl::Semaphore &semaphore_state, VkQueue &other_queue, vvl::Func &other_acquire_command) const;
+    bool CanWaitBinary(const vvl::Semaphore& semaphore_state) const;
+    bool CanSignalBinary(const vvl::Semaphore& semaphore_state,
+                         VkQueue& other_queue,
+                         vvl::Func& other_acquire_command) const;
 
-    bool CheckSemaphoreValue(const vvl::Semaphore &semaphore_state, std::string &where, uint64_t &bad_value,
+    bool CheckSemaphoreValue(const vvl::Semaphore& semaphore_state,
+                             std::string& where,
+                             uint64_t& bad_value,
                              std::function<bool(const vvl::Semaphore::OpType, uint64_t, bool is_pending)> compare_func);
 
-    VkQueue AnotherQueueWaits(const vvl::Semaphore &semaphore_state) const;
+    VkQueue AnotherQueueWaits(const vvl::Semaphore& semaphore_state) const;
 
-    bool ValidateBinaryWait(const Location &loc, VkQueue queue, const vvl::Semaphore &semaphore_state);
-    bool ValidateWaitSemaphore(const Location &wait_semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
-    bool ValidateSignalSemaphore(const Location &signal_semaphore_loc, const vvl::Semaphore &semaphore_state, uint64_t value);
+    bool ValidateBinaryWait(const Location& loc, VkQueue queue, const vvl::Semaphore& semaphore_state);
+    bool
+    ValidateWaitSemaphore(const Location& wait_semaphore_loc, const vvl::Semaphore& semaphore_state, uint64_t value);
+    bool ValidateSignalSemaphore(const Location& signal_semaphore_loc,
+                                 const vvl::Semaphore& semaphore_state,
+                                 uint64_t value);
 };

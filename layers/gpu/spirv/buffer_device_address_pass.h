@@ -14,8 +14,8 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "inject_conditional_function_pass.h"
+#include <stdint.h>
 
 namespace gpuav {
 namespace spirv {
@@ -41,5 +41,5 @@ class BufferDeviceAddressPass : public InjectConditionalFunctionPass {
     uint32_t type_length_ = 0;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

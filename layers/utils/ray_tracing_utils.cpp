@@ -16,8 +16,8 @@
 
 #include "ray_tracing_utils.h"
 
-#include "generated/dispatch_functions.h"
 #include "containers/custom_containers.h"
+#include "generated/dispatch_functions.h"
 
 #include <cassert>
 #include <vector>
@@ -25,10 +25,11 @@
 
 namespace rt {
 
-static VkAccelerationStructureBuildSizesInfoKHR ComputeBuildSizes(const VkDevice device,
-                                                                  const VkAccelerationStructureBuildTypeKHR build_type,
-                                                                  const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
-                                                                  const VkAccelerationStructureBuildRangeInfoKHR *range_infos) {
+static VkAccelerationStructureBuildSizesInfoKHR
+ComputeBuildSizes(const VkDevice device,
+                  const VkAccelerationStructureBuildTypeKHR build_type,
+                  const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
+                  const VkAccelerationStructureBuildRangeInfoKHR* range_infos) {
     std::vector<uint32_t> primitive_counts(build_info.geometryCount);
     for (const auto [i, build_range] : vvl::enumerate(range_infos, build_info.geometryCount)) {
         primitive_counts[i] = build_range->primitiveCount;
@@ -39,14 +40,16 @@ static VkAccelerationStructureBuildSizesInfoKHR ComputeBuildSizes(const VkDevice
     return size_info;
 }
 
-VkDeviceSize ComputeScratchSize(BuildType build_type, const VkDevice device,
-                                const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
-                                const VkAccelerationStructureBuildRangeInfoKHR *range_infos) {
+VkDeviceSize ComputeScratchSize(BuildType build_type,
+                                const VkDevice device,
+                                const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
+                                const VkAccelerationStructureBuildRangeInfoKHR* range_infos) {
     const VkAccelerationStructureBuildSizesInfoKHR size_info =
         ComputeBuildSizes(device,
                           build_type == BuildType::Device ? VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR
                                                           : VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_KHR,
-                          build_info, range_infos);
+                          build_info,
+                          range_infos);
     switch (build_info.mode) {
         case VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR:
             return size_info.buildScratchSize;
@@ -59,15 +62,17 @@ VkDeviceSize ComputeScratchSize(BuildType build_type, const VkDevice device,
     }
 }
 
-VkDeviceSize ComputeAccelerationStructureSize(BuildType build_type, const VkDevice device,
-                                              const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
-                                              const VkAccelerationStructureBuildRangeInfoKHR *range_infos) {
+VkDeviceSize ComputeAccelerationStructureSize(BuildType build_type,
+                                              const VkDevice device,
+                                              const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
+                                              const VkAccelerationStructureBuildRangeInfoKHR* range_infos) {
     const VkAccelerationStructureBuildSizesInfoKHR size_info =
         ComputeBuildSizes(device,
                           build_type == BuildType::Device ? VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR
                                                           : VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_KHR,
-                          build_info, range_infos);
+                          build_info,
+                          range_infos);
     return size_info.accelerationStructureSize;
 }
 
-}  // namespace rt
+} // namespace rt

@@ -17,37 +17,39 @@
 
 #pragma once
 
-#include <atomic>
-#include <mutex>
-#include "state_tracker/descriptor_sets.h"
 #include "gpu/resources/gpuav_vulkan_objects.h"
 #include "gpu/spirv/interface.h"
+#include "state_tracker/descriptor_sets.h"
+#include <atomic>
+#include <mutex>
 
 namespace gpuav {
 class Validator;
 
 // Information about how each descriptor was accessed
 struct DescriptorAccess {
-    uint32_t binding;      // binding number in the descriptor set
-    uint32_t index;        // index into descriptor array
-    uint32_t variable_id;  // OpVariable of descriptor accessed;
+    uint32_t binding;     // binding number in the descriptor set
+    uint32_t index;       // index into descriptor array
+    uint32_t variable_id; // OpVariable of descriptor accessed;
 };
 
 class DescriptorSet : public vvl::DescriptorSet {
   public:
-    DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool,
-                  const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
-                  ValidationStateTracker *state_data);
+    DescriptorSet(const VkDescriptorSet set,
+                  vvl::DescriptorPool* pool,
+                  const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
+                  uint32_t variable_count,
+                  ValidationStateTracker* state_data);
     virtual ~DescriptorSet();
-    void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
-    void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
-    void PerformCopyUpdate(const VkCopyDescriptorSet &, const vvl::DescriptorSet &) override;
+    void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet* write_descs) override;
+    void PerformWriteUpdate(const VkWriteDescriptorSet&) override;
+    void PerformCopyUpdate(const VkCopyDescriptorSet&, const vvl::DescriptorSet&) override;
 
-    VkDeviceAddress GetTypeAddress(Validator &gpuav, const Location &loc);
-    VkDeviceAddress GetPostProcessBuffer(Validator &gpuav, const Location &loc);
+    VkDeviceAddress GetTypeAddress(Validator& gpuav, const Location& loc);
+    VkDeviceAddress GetPostProcessBuffer(Validator& gpuav, const Location& loc);
     bool HasPostProcessBuffer() const { return !post_process_buffer_.IsDestroyed(); }
 
-    std::vector<DescriptorAccess> GetDescriptorAccesses(const Location &loc, uint32_t shader_set) const;
+    std::vector<DescriptorAccess> GetDescriptorAccesses(const Location& loc, uint32_t shader_set) const;
 
   private:
     void BuildBindingLayouts();
@@ -57,11 +59,11 @@ class DescriptorSet : public vvl::DescriptorSet {
 
     std::vector<gpuav::spirv::BindingLayout> binding_layouts_;
 
-    // Since we will re-bind the same descriptor set many times, keeping a version allows us to know if things have changed and
-    // worth re-saving the new information
-    std::atomic<uint32_t> current_version_{0};
+    // Since we will re-bind the same descriptor set many times, keeping a version allows us to know if things have
+    // changed and worth re-saving the new information
+    std::atomic<uint32_t> current_version_{ 0 };
     // Set when created the last used state
-    uint32_t last_used_version_{0};
+    uint32_t last_used_version_{ 0 };
     vko::Buffer input_buffer_;
 
     mutable std::mutex state_lock_;
@@ -70,9 +72,9 @@ class DescriptorSet : public vvl::DescriptorSet {
 typedef uint32_t DescriptorId;
 class DescriptorHeap {
   public:
-    DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const Location &loc);
+    DescriptorHeap(Validator& gpuav, uint32_t max_descriptors, const Location& loc);
     ~DescriptorHeap();
-    DescriptorId NextId(const VulkanTypedHandle &handle);
+    DescriptorId NextId(const VulkanTypedHandle& handle);
     void DeleteId(DescriptorId id);
 
     VkDeviceAddress GetDeviceAddress() const { return buffer_.Address(); }
@@ -83,11 +85,11 @@ class DescriptorHeap {
     mutable std::mutex lock_;
 
     const uint32_t max_descriptors_;
-    DescriptorId next_id_{1};
+    DescriptorId next_id_{ 1 };
     vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
 
     vko::Buffer buffer_;
-    uint32_t *gpu_heap_state_{nullptr};
+    uint32_t* gpu_heap_state_{ nullptr };
 };
 
-}  // namespace gpuav
+} // namespace gpuav

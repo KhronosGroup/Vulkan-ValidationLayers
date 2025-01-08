@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 
-#include <cstring>
 #include "vk_layer_extension_utils.h"
+#include <cstring>
 
-VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProperties *layer_extensions, uint32_t *pCount,
-                                     VkExtensionProperties *pProperties) {
+VkResult util_GetExtensionProperties(const uint32_t count,
+                                     const VkExtensionProperties* layer_extensions,
+                                     uint32_t* pCount,
+                                     VkExtensionProperties* pProperties) {
     if (pProperties == nullptr || layer_extensions == nullptr) {
         *pCount = count;
         return VK_SUCCESS;
@@ -35,8 +37,10 @@ VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProp
     return VK_SUCCESS;
 }
 
-VkResult util_GetLayerProperties(const uint32_t count, const VkLayerProperties *layer_properties, uint32_t *pCount,
-                                 VkLayerProperties *pProperties) {
+VkResult util_GetLayerProperties(const uint32_t count,
+                                 const VkLayerProperties* layer_properties,
+                                 uint32_t* pCount,
+                                 VkLayerProperties* pProperties) {
     if (pProperties == nullptr || layer_properties == nullptr) {
         *pCount = count;
         return VK_SUCCESS;

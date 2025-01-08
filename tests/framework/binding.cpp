@@ -18,8 +18,8 @@
 
 #include "binding.h"
 
-#include <string.h>  // memset(), memcmp()
 #include <cassert>
+#include <string.h> // memset(), memcmp()
 
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
@@ -45,11 +45,15 @@
         handle_ = VK_NULL_HANDLE;                              \
         internal::NonDispHandle<decltype(handle_)>::destroy(); \
     }                                                          \
-    cls::~cls() noexcept { destroy(); }
+    cls::~cls() noexcept {                                     \
+        destroy();                                             \
+    }
 
 namespace vkt {
 
-void Instance::Init(const VkInstanceCreateInfo &info) { ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&info, NULL, &handle_)); }
+void Instance::Init(const VkInstanceCreateInfo& info) {
+    ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&info, NULL, &handle_));
+}
 
 void Instance::Destroy() noexcept {
     if (handle_ != VK_NULL_HANDLE) {
@@ -97,7 +101,7 @@ std::vector<VkLayerProperties> GetGlobalLayers() {
             layers.resize(layer_count);
             return layers;
         } else if (err == VK_INCOMPLETE) {
-            layer_count *= 2;  // wasn't enough space, increase it
+            layer_count *= 2; // wasn't enough space, increase it
             layers.resize(layer_count);
         } else {
             return {};
@@ -108,14 +112,16 @@ std::vector<VkLayerProperties> GetGlobalLayers() {
 /*
  * Return list of Global extensions provided by the ICD / Loader
  */
-std::vector<VkExtensionProperties> GetGlobalExtensions() { return GetGlobalExtensions(nullptr); }
+std::vector<VkExtensionProperties> GetGlobalExtensions() {
+    return GetGlobalExtensions(nullptr);
+}
 
 /*
  * Return list of Global extensions provided by the specified layer
  * If pLayerName is NULL, will return extensions implemented by the loader /
  * ICDs
  */
-std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName) {
+std::vector<VkExtensionProperties> GetGlobalExtensions(const char* pLayerName) {
     VkResult err;
     uint32_t extension_count = 32;
     std::vector<VkExtensionProperties> extensions(extension_count);
@@ -125,7 +131,7 @@ std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName) {
             extensions.resize(extension_count);
             return extensions;
         } else if (err == VK_INCOMPLETE) {
-            extension_count *= 2;  // wasn't enough space, increase it
+            extension_count *= 2; // wasn't enough space, increase it
             extensions.resize(extension_count);
         } else {
             return {};
@@ -137,7 +143,7 @@ std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName) {
  * Return list of PhysicalDevice extensions provided by the specified layer
  * If pLayerName is NULL, will return extensions for ICD / loader.
  */
-std::vector<VkExtensionProperties> PhysicalDevice::Extensions(const char *pLayerName) const {
+std::vector<VkExtensionProperties> PhysicalDevice::Extensions(const char* pLayerName) const {
     VkResult err;
     uint32_t extension_count = 512;
     std::vector<VkExtensionProperties> extensions(extension_count);
@@ -147,7 +153,7 @@ std::vector<VkExtensionProperties> PhysicalDevice::Extensions(const char *pLayer
             extensions.resize(extension_count);
             return extensions;
         } else if (err == VK_INCOMPLETE) {
-            extension_count *= 2;  // wasn't enough space, increase it
+            extension_count *= 2; // wasn't enough space, increase it
             extensions.resize(extension_count);
         } else {
             return {};
@@ -155,7 +161,9 @@ std::vector<VkExtensionProperties> PhysicalDevice::Extensions(const char *pLayer
     }
 }
 
-bool PhysicalDevice::SetMemoryType(const uint32_t type_bits, VkMemoryAllocateInfo *info, const VkFlags properties,
+bool PhysicalDevice::SetMemoryType(const uint32_t type_bits,
+                                   VkMemoryAllocateInfo* info,
+                                   const VkFlags properties,
                                    const VkFlags forbid) const {
     uint32_t type_mask = type_bits;
     // Search memtypes to find first index with those properties
@@ -164,7 +172,8 @@ bool PhysicalDevice::SetMemoryType(const uint32_t type_bits, VkMemoryAllocateInf
             // Type is available, does it match user properties?
             if ((memory_properties_.memoryTypes[i].propertyFlags & properties) == properties &&
                 (memory_properties_.memoryTypes[i].propertyFlags & forbid) == 0 &&
-                (memory_properties_.memoryHeaps[memory_properties_.memoryTypes[i].heapIndex].size >= info->allocationSize)) {
+                (memory_properties_.memoryHeaps[memory_properties_.memoryTypes[i].heapIndex].size >=
+                 info->allocationSize)) {
                 info->memoryTypeIndex = i;
                 return true;
             }
@@ -188,7 +197,7 @@ std::vector<VkLayerProperties> PhysicalDevice::Layers() const {
             layers.resize(layer_count);
             return layers;
         } else if (err == VK_INCOMPLETE) {
-            layer_count *= 2;  // wasn't enough space, increase it
+            layer_count *= 2; // wasn't enough space, increase it
             layers.resize(layer_count);
         } else {
             return {};
@@ -196,8 +205,10 @@ std::vector<VkLayerProperties> PhysicalDevice::Layers() const {
     }
 }
 
-QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties> &queue_props, bool all_queue_count)
-    : queue_info_(), queue_priorities_() {
+QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties>& queue_props,
+                                           bool all_queue_count) :
+    queue_info_(),
+    queue_priorities_() {
     queue_info_.reserve(queue_props.size());
 
     for (uint32_t i = 0; i < (uint32_t)queue_props.size(); ++i) {
@@ -214,14 +225,19 @@ QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProper
 }
 
 void Device::destroy() noexcept {
-    if (!initialized()) return;
+    if (!initialized())
+        return;
     vk::DestroyDevice(handle(), NULL);
     handle_ = VK_NULL_HANDLE;
 }
 
-Device::~Device() noexcept { destroy(); }
+Device::~Device() noexcept {
+    destroy();
+}
 
-void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, void *create_device_pnext,
+void Device::init(std::vector<const char*>& extensions,
+                  VkPhysicalDeviceFeatures* features,
+                  void* create_device_pnext,
                   bool all_queue_count) {
     // request all queues
     QueueCreateInfoArray queue_info(physical_device_.queue_properties_, all_queue_count);
@@ -267,7 +283,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
     init(dev_info);
 }
 
-void Device::init(const VkDeviceCreateInfo &info) {
+void Device::init(const VkDeviceCreateInfo& info) {
     VkDevice dev;
 
     ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(physical_device_.handle(), &info, NULL, &dev));
@@ -276,16 +292,16 @@ void Device::init(const VkDeviceCreateInfo &info) {
     InitQueues(info);
 }
 
-void Device::InitQueues(const VkDeviceCreateInfo &info) {
+void Device::InitQueues(const VkDeviceCreateInfo& info) {
     uint32_t queue_node_count = physical_device_.queue_properties_.size();
 
     queue_families_.resize(queue_node_count);
     for (uint32_t i = 0; i < info.queueCreateInfoCount; i++) {
-        const auto &queue_create_info = info.pQueueCreateInfos[i];
+        const auto& queue_create_info = info.pQueueCreateInfos[i];
         auto queue_family_i = queue_create_info.queueFamilyIndex;
-        const auto &queue_family_prop = physical_device_.queue_properties_[queue_family_i];
+        const auto& queue_family_prop = physical_device_.queue_properties_[queue_family_i];
 
-        QueueFamilyQueues &queue_storage = queue_families_[queue_family_i];
+        QueueFamilyQueues& queue_storage = queue_families_[queue_family_i];
         queue_storage.reserve(queue_create_info.queueCount);
         for (uint32_t queue_i = 0; queue_i < queue_create_info.queueCount; ++queue_i) {
             VkQueue queue = VK_NULL_HANDLE;
@@ -320,11 +336,11 @@ void Device::InitQueues(const VkDeviceCreateInfo &info) {
         }
     }
 
-    ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[TRANSFER].empty() || !queues_[SPARSE].empty() ||
-                !queues_[VIDEO_DECODE].empty() || !queues_[VIDEO_ENCODE].empty());
+    ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[TRANSFER].empty() ||
+                !queues_[SPARSE].empty() || !queues_[VIDEO_DECODE].empty() || !queues_[VIDEO_ENCODE].empty());
 }
 
-const Device::QueueFamilyQueues &Device::QueuesFromFamily(uint32_t queue_family) const {
+const Device::QueueFamilyQueues& Device::QueuesFromFamily(uint32_t queue_family) const {
     assert(queue_family < queue_families_.size());
     return queue_families_[queue_family];
 }
@@ -354,14 +370,16 @@ std::optional<uint32_t> Device::QueueFamilyWithoutCapabilities(VkQueueFlags with
     return {};
 }
 
-Queue *Device::QueueWithoutCapabilities(VkQueueFlags without) const {
+Queue* Device::QueueWithoutCapabilities(VkQueueFlags without) const {
     auto family_index = QueueFamilyWithoutCapabilities(without);
     return family_index.has_value() ? QueuesFromFamily(*family_index)[0].get() : nullptr;
 }
 
-std::optional<uint32_t> Device::ComputeOnlyQueueFamily() const { return QueueFamily(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT); }
+std::optional<uint32_t> Device::ComputeOnlyQueueFamily() const {
+    return QueueFamily(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+}
 
-Queue *Device::ComputeOnlyQueue() const {
+Queue* Device::ComputeOnlyQueue() const {
     auto family_index = ComputeOnlyQueueFamily();
     return family_index.has_value() ? QueuesFromFamily(*family_index)[0].get() : nullptr;
 }
@@ -370,7 +388,7 @@ std::optional<uint32_t> Device::TransferOnlyQueueFamily() const {
     return QueueFamily(VK_QUEUE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
 }
 
-Queue *Device::TransferOnlyQueue() const {
+Queue* Device::TransferOnlyQueue() const {
     auto family_index = TransferOnlyQueueFamily();
     return family_index.has_value() ? QueuesFromFamily(*family_index)[0].get() : nullptr;
 }
@@ -382,13 +400,13 @@ std::optional<uint32_t> Device::NonGraphicsQueueFamily() const {
     return TransferOnlyQueueFamily();
 }
 
-Queue *Device::NonGraphicsQueue() const {
+Queue* Device::NonGraphicsQueue() const {
     auto family_index = NonGraphicsQueueFamily();
     return family_index.has_value() ? QueuesFromFamily(*family_index)[0].get() : nullptr;
 }
 
-bool Device::IsEnabledExtension(const char *extension) const {
-    const auto is_x = [&extension](const char *enabled_extension) { return strcmp(extension, enabled_extension) == 0; };
+bool Device::IsEnabledExtension(const char* extension) const {
+    const auto is_x = [&extension](const char* enabled_extension) { return strcmp(extension, enabled_extension) == 0; };
     return std::any_of(enabled_extensions_.begin(), enabled_extensions_.end(), is_x);
 }
 
@@ -431,18 +449,20 @@ VkFormatFeatureFlags2 Device::FormatFeaturesBuffer(VkFormat format) const {
     }
 }
 
-void Device::Wait() const { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
+void Device::Wait() const {
+    ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle()));
+}
 
-VkResult Device::Wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout) {
+VkResult Device::Wait(const std::vector<const Fence*>& fences, bool wait_all, uint64_t timeout) {
     const std::vector<VkFence> fence_handles = MakeVkHandles<VkFence>(fences);
-    VkResult err =
-        vk::WaitForFences(handle(), static_cast<uint32_t>(fence_handles.size()), fence_handles.data(), wait_all, timeout);
+    VkResult err = vk::WaitForFences(
+        handle(), static_cast<uint32_t>(fence_handles.size()), fence_handles.data(), wait_all, timeout);
     EXPECT_TRUE(err == VK_SUCCESS || err == VK_TIMEOUT);
 
     return err;
 }
 
-VkResult Queue::Submit(const CommandBuffer &cmd, const Fence &fence) {
+VkResult Queue::Submit(const CommandBuffer& cmd, const Fence& fence) {
     VkSubmitInfo submit = vku::InitStructHelper();
     submit.commandBufferCount = cmd.initialized() ? 1 : 0;
     submit.pCommandBuffers = &cmd.handle();
@@ -450,7 +470,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const Fence &fence) {
     return result;
 }
 
-VkResult Queue::Submit(const vvl::span<CommandBuffer *> &cmds, const Fence &fence) {
+VkResult Queue::Submit(const vvl::span<CommandBuffer*>& cmds, const Fence& fence) {
     const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = static_cast<uint32_t>(cmd_handles.size());
@@ -459,7 +479,7 @@ VkResult Queue::Submit(const vvl::span<CommandBuffer *> &cmds, const Fence &fenc
     return result;
 }
 
-VkResult Queue::Submit(const CommandBuffer &cmd, const vkt::Wait &wait, const Fence &fence) {
+VkResult Queue::Submit(const CommandBuffer& cmd, const vkt::Wait& wait, const Fence& fence) {
     assert(wait.stage_mask < VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM);
     const auto wait_stage_mask = static_cast<VkPipelineStageFlags>(wait.stage_mask);
 
@@ -473,7 +493,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const vkt::Wait &wait, const Fe
     return result;
 }
 
-VkResult Queue::Submit(const CommandBuffer &cmd, const Signal &signal, const Fence &fence) {
+VkResult Queue::Submit(const CommandBuffer& cmd, const Signal& signal, const Fence& fence) {
     assert(signal.stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     VkSubmitInfo submit = vku::InitStructHelper();
@@ -485,7 +505,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const Signal &signal, const Fen
     return result;
 }
 
-VkResult Queue::Submit(const CommandBuffer &cmd, const vkt::Wait &wait, const Signal &signal, const Fence &fence) {
+VkResult Queue::Submit(const CommandBuffer& cmd, const vkt::Wait& wait, const Signal& signal, const Fence& fence) {
     assert(wait.stage_mask < VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM);
     assert(signal.stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     const auto wait_stage_mask = static_cast<VkPipelineStageFlags>(wait.stage_mask);
@@ -502,7 +522,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const vkt::Wait &wait, const Si
     return result;
 }
 
-VkResult Queue::Submit(const CommandBuffer &cmd, const TimelineWait &wait, const Fence &fence) {
+VkResult Queue::Submit(const CommandBuffer& cmd, const TimelineWait& wait, const Fence& fence) {
     assert(wait.stage_mask < VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM);
     const auto wait_stage_mask = static_cast<VkPipelineStageFlags>(wait.stage_mask);
 
@@ -520,7 +540,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const TimelineWait &wait, const
     return result;
 }
 
-VkResult Queue::Submit(const CommandBuffer &cmd, const TimelineSignal &signal, const Fence &fence) {
+VkResult Queue::Submit(const CommandBuffer& cmd, const TimelineSignal& signal, const Fence& fence) {
     assert(signal.stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     VkTimelineSemaphoreSubmitInfo timeline_info = vku::InitStructHelper();
@@ -536,7 +556,8 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const TimelineSignal &signal, c
     return result;
 }
 
-VkResult Queue::Submit(const CommandBuffer &cmd, const TimelineWait &wait, const TimelineSignal &signal, const Fence &fence) {
+VkResult
+Queue::Submit(const CommandBuffer& cmd, const TimelineWait& wait, const TimelineSignal& signal, const Fence& fence) {
     assert(wait.stage_mask < VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM);
     assert(signal.stage_mask == VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     const auto wait_stage_mask = static_cast<VkPipelineStageFlags>(wait.stage_mask);
@@ -559,7 +580,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const TimelineWait &wait, const
     return result;
 }
 
-VkResult Queue::Submit2(const CommandBuffer &cmd, const Fence &fence, bool use_khr) {
+VkResult Queue::Submit2(const CommandBuffer& cmd, const Fence& fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = cmd.handle();
 
@@ -576,7 +597,7 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const Fence &fence, bool use_k
     return result;
 }
 
-VkResult Queue::Submit2(const vvl::span<const CommandBuffer> &cmds, const Fence &fence, bool use_khr) {
+VkResult Queue::Submit2(const vvl::span<const CommandBuffer>& cmds, const Fence& fence, bool use_khr) {
     std::vector<VkCommandBufferSubmitInfo> cmd_submit_infos;
     cmd_submit_infos.reserve(cmds.size());
     for (size_t i = 0; i < cmds.size(); i++) {
@@ -597,7 +618,7 @@ VkResult Queue::Submit2(const vvl::span<const CommandBuffer> &cmds, const Fence 
     return result;
 }
 
-VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const Fence &fence, bool use_khr) {
+VkResult Queue::Submit2(const CommandBuffer& cmd, const vkt::Wait& wait, const Fence& fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = cmd.handle();
 
@@ -620,7 +641,7 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const F
     return result;
 }
 
-VkResult Queue::Submit2(const CommandBuffer &cmd, const Signal &signal, const Fence &fence, bool use_khr) {
+VkResult Queue::Submit2(const CommandBuffer& cmd, const Signal& signal, const Fence& fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = cmd.handle();
 
@@ -643,7 +664,8 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const Signal &signal, const Fe
     return result;
 }
 
-VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const Signal &signal, const Fence &fence, bool use_khr) {
+VkResult Queue::Submit2(
+    const CommandBuffer& cmd, const vkt::Wait& wait, const Signal& signal, const Fence& fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = cmd.handle();
 
@@ -672,7 +694,7 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const S
     return result;
 }
 
-VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const Fence &fence, bool use_khr) {
+VkResult Queue::Submit2(const CommandBuffer& cmd, const TimelineWait& wait, const Fence& fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = cmd.handle();
 
@@ -696,7 +718,7 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, cons
     return result;
 }
 
-VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineSignal &signal, const Fence &fence, bool use_khr) {
+VkResult Queue::Submit2(const CommandBuffer& cmd, const TimelineSignal& signal, const Fence& fence, bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = cmd.handle();
 
@@ -720,7 +742,10 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineSignal &signal, 
     return result;
 }
 
-VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const TimelineSignal &signal, const Fence &fence,
+VkResult Queue::Submit2(const CommandBuffer& cmd,
+                        const TimelineWait& wait,
+                        const TimelineSignal& signal,
+                        const Fence& fence,
                         bool use_khr) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = cmd.handle();
@@ -752,7 +777,8 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, cons
     return result;
 }
 
-VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const TimelineSignal &signal, const Fence &fence) {
+VkResult
+Queue::Submit2(const CommandBuffer& cmd, const vkt::Wait& wait, const TimelineSignal& signal, const Fence& fence) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = cmd.handle();
 
@@ -777,7 +803,7 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const T
     return result;
 }
 
-VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, const Signal &signal, const Fence &fence) {
+VkResult Queue::Submit2(const CommandBuffer& cmd, const TimelineWait& wait, const Signal& signal, const Fence& fence) {
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     cb_info.commandBuffer = cmd.handle();
 
@@ -802,8 +828,10 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, cons
     return result;
 }
 
-VkResult Queue::Present(const Swapchain &swapchain, uint32_t image_index, const Semaphore &wait_semaphore,
-                        void *present_info_pnext) {
+VkResult Queue::Present(const Swapchain& swapchain,
+                        uint32_t image_index,
+                        const Semaphore& wait_semaphore,
+                        void* present_info_pnext) {
     VkPresentInfoKHR present = vku::InitStructHelper(present_info_pnext);
     if (wait_semaphore.initialized()) {
         present.waitSemaphoreCount = 1;
@@ -831,14 +859,16 @@ void DeviceMemory::destroy() noexcept {
     handle_ = VK_NULL_HANDLE;
 }
 
-DeviceMemory::~DeviceMemory() noexcept { destroy(); }
+DeviceMemory::~DeviceMemory() noexcept {
+    destroy();
+}
 
-void DeviceMemory::init(const Device &dev, const VkMemoryAllocateInfo &info) {
+void DeviceMemory::init(const Device& dev, const VkMemoryAllocateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::AllocateMemory, dev, &info);
     memory_allocate_info_ = info;
 }
 
-VkResult DeviceMemory::TryInit(const Device &dev, const VkMemoryAllocateInfo &info) {
+VkResult DeviceMemory::TryInit(const Device& dev, const VkMemoryAllocateInfo& info) {
     assert(!initialized());
     VkDeviceMemory handle = VK_NULL_HANDLE;
     auto result = vk::AllocateMemory(dev.handle(), &info, nullptr, &handle);
@@ -848,27 +878,33 @@ VkResult DeviceMemory::TryInit(const Device &dev, const VkMemoryAllocateInfo &in
     return result;
 }
 
-const void *DeviceMemory::Map(VkFlags flags) const {
-    void *data;
+const void* DeviceMemory::Map(VkFlags flags) const {
+    void* data;
     VkResult result = vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data);
     EXPECT_EQ(VK_SUCCESS, result);
-    if (result != VK_SUCCESS) data = NULL;
+    if (result != VK_SUCCESS)
+        data = NULL;
     return data;
 }
 
-void *DeviceMemory::Map(VkFlags flags) {
-    void *data;
+void* DeviceMemory::Map(VkFlags flags) {
+    void* data;
     VkResult result = vk::MapMemory(device(), handle(), 0, VK_WHOLE_SIZE, flags, &data);
     EXPECT_EQ(VK_SUCCESS, result);
-    if (result != VK_SUCCESS) data = NULL;
+    if (result != VK_SUCCESS)
+        data = NULL;
 
     return data;
 }
 
-void DeviceMemory::Unmap() const { vk::UnmapMemory(device(), handle()); }
+void DeviceMemory::Unmap() const {
+    vk::UnmapMemory(device(), handle());
+}
 
-VkMemoryAllocateInfo DeviceMemory::GetResourceAllocInfo(const Device &dev, const VkMemoryRequirements &reqs,
-                                                        VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+VkMemoryAllocateInfo DeviceMemory::GetResourceAllocInfo(const Device& dev,
+                                                        const VkMemoryRequirements& reqs,
+                                                        VkMemoryPropertyFlags mem_props,
+                                                        void* alloc_info_pnext) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(alloc_info_pnext);
     alloc_info.allocationSize = reqs.size;
     EXPECT_TRUE(dev.Physical().SetMemoryType(reqs.memoryTypeBits, &alloc_info, mem_props));
@@ -877,33 +913,40 @@ VkMemoryAllocateInfo DeviceMemory::GetResourceAllocInfo(const Device &dev, const
 
 NON_DISPATCHABLE_HANDLE_DTOR(Fence, vk::DestroyFence)
 
-Fence &Fence::operator=(Fence &&rhs) noexcept {
+Fence& Fence::operator=(Fence&& rhs) noexcept {
     destroy();
     NonDispHandle<VkFence>::operator=(std::move(rhs));
     return *this;
 }
 
-void Fence::Init(const Device &dev, const VkFenceCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateFence, dev, &info); }
+void Fence::Init(const Device& dev, const VkFenceCreateInfo& info) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateFence, dev, &info);
+}
 
-void Fence::Init(const Device &dev, const VkFenceCreateFlags flags) {
+void Fence::Init(const Device& dev, const VkFenceCreateFlags flags) {
     VkFenceCreateInfo fence_ci = vku::InitStructHelper();
     fence_ci.flags = flags;
     Init(dev, fence_ci);
 }
 
-VkResult Fence::Wait(uint64_t timeout) const { return vk::WaitForFences(device(), 1, &handle(), VK_TRUE, timeout); }
+VkResult Fence::Wait(uint64_t timeout) const {
+    return vk::WaitForFences(device(), 1, &handle(), VK_TRUE, timeout);
+}
 
-VkResult Fence::Reset() const { return vk::ResetFences(device(), 1, &handle()); }
+VkResult Fence::Reset() const {
+    return vk::ResetFences(device(), 1, &handle());
+}
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-VkResult Fence::ExportHandle(HANDLE &win32_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
+VkResult Fence::ExportHandle(HANDLE& win32_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
     VkFenceGetWin32HandleInfoKHR ghi = vku::InitStructHelper();
     ghi.fence = handle();
     ghi.handleType = handle_type;
     return vk::GetFenceWin32HandleKHR(device(), &ghi, &win32_handle);
 }
 
-VkResult Fence::ImportHandle(HANDLE win32_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
+VkResult
+Fence::ImportHandle(HANDLE win32_handle, VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
     VkImportFenceWin32HandleInfoKHR ifi = vku::InitStructHelper();
     ifi.fence = handle();
     ifi.handleType = handle_type;
@@ -911,9 +954,9 @@ VkResult Fence::ImportHandle(HANDLE win32_handle, VkExternalFenceHandleTypeFlagB
     ifi.flags = flags;
     return vk::ImportFenceWin32HandleKHR(device(), &ifi);
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Fence::ExportHandle(int &fd_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
+VkResult Fence::ExportHandle(int& fd_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
     VkFenceGetFdInfoKHR gfi = vku::InitStructHelper();
     gfi.fence = handle();
     gfi.handleType = handle_type;
@@ -931,7 +974,7 @@ VkResult Fence::ImportHandle(int fd_handle, VkExternalFenceHandleTypeFlagBits ha
 
 NON_DISPATCHABLE_HANDLE_DTOR(Semaphore, vk::DestroySemaphore)
 
-Semaphore::Semaphore(const Device &dev, VkSemaphoreType type, uint64_t initial_value) {
+Semaphore::Semaphore(const Device& dev, VkSemaphoreType type, uint64_t initial_value) {
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
         init(dev, vku::InitStruct<VkSemaphoreCreateInfo>());
     } else {
@@ -943,13 +986,13 @@ Semaphore::Semaphore(const Device &dev, VkSemaphoreType type, uint64_t initial_v
     }
 }
 
-Semaphore &Semaphore::operator=(Semaphore &&rhs) noexcept {
+Semaphore& Semaphore::operator=(Semaphore&& rhs) noexcept {
     destroy();
     NonDispHandle<VkSemaphore>::operator=(std::move(rhs));
     return *this;
 }
 
-void Semaphore::init(const Device &dev, const VkSemaphoreCreateInfo &info) {
+void Semaphore::init(const Device& dev, const VkSemaphoreCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateSemaphore, dev, &info);
 }
 
@@ -998,7 +1041,7 @@ uint64_t Semaphore::GetCounterValue(bool use_khr) const {
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-VkResult Semaphore::ExportHandle(HANDLE &win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+VkResult Semaphore::ExportHandle(HANDLE& win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     win32_handle = nullptr;
     VkSemaphoreGetWin32HandleInfoKHR ghi = vku::InitStructHelper();
     ghi.semaphore = handle();
@@ -1006,7 +1049,8 @@ VkResult Semaphore::ExportHandle(HANDLE &win32_handle, VkExternalSemaphoreHandle
     return vk::GetSemaphoreWin32HandleKHR(device(), &ghi, &win32_handle);
 }
 
-VkResult Semaphore::ImportHandle(HANDLE win32_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type,
+VkResult Semaphore::ImportHandle(HANDLE win32_handle,
+                                 VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                  VkSemaphoreImportFlags flags) {
     VkImportSemaphoreWin32HandleInfoKHR ihi = vku::InitStructHelper();
     ihi.semaphore = handle();
@@ -1015,9 +1059,9 @@ VkResult Semaphore::ImportHandle(HANDLE win32_handle, VkExternalSemaphoreHandleT
     ihi.flags = flags;
     return vk::ImportSemaphoreWin32HandleKHR(device(), &ihi);
 }
-#endif  // VK_USE_PLATFORM_WIN32_KHR
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
-VkResult Semaphore::ExportHandle(int &fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+VkResult Semaphore::ExportHandle(int& fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     fd_handle = -1;
     VkSemaphoreGetFdInfoKHR ghi = vku::InitStructHelper();
     ghi.semaphore = handle();
@@ -1025,7 +1069,9 @@ VkResult Semaphore::ExportHandle(int &fd_handle, VkExternalSemaphoreHandleTypeFl
     return vk::GetSemaphoreFdKHR(device(), &ghi, &fd_handle);
 }
 
-VkResult Semaphore::ImportHandle(int fd_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags) {
+VkResult Semaphore::ImportHandle(int fd_handle,
+                                 VkExternalSemaphoreHandleTypeFlagBits handle_type,
+                                 VkSemaphoreImportFlags flags) {
     // Import opaque handle exported above
     VkImportSemaphoreFdInfoKHR ihi = vku::InitStructHelper();
     ihi.semaphore = handle();
@@ -1037,36 +1083,53 @@ VkResult Semaphore::ImportHandle(int fd_handle, VkExternalSemaphoreHandleTypeFla
 
 NON_DISPATCHABLE_HANDLE_DTOR(Event, vk::DestroyEvent)
 
-void Event::init(const Device &dev, const VkEventCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateEvent, dev, &info); }
+void Event::init(const Device& dev, const VkEventCreateInfo& info) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateEvent, dev, &info);
+}
 
-void Event::Set() { ASSERT_EQ(VK_SUCCESS, vk::SetEvent(device(), handle())); }
+void Event::Set() {
+    ASSERT_EQ(VK_SUCCESS, vk::SetEvent(device(), handle()));
+}
 
-void Event::CmdSet(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
+void Event::CmdSet(const CommandBuffer& cmd, VkPipelineStageFlags stage_mask) {
     vk::CmdSetEvent(cmd.handle(), handle(), stage_mask);
 }
 
-void Event::CmdReset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask) {
+void Event::CmdReset(const CommandBuffer& cmd, VkPipelineStageFlags stage_mask) {
     vk::CmdResetEvent(cmd.handle(), handle(), stage_mask);
 }
 
-void Event::CmdWait(const CommandBuffer &cmd, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
-                    const std::vector<VkMemoryBarrier> &memory_barriers, const std::vector<VkBufferMemoryBarrier> &buffer_barriers,
-                    const std::vector<VkImageMemoryBarrier> &image_barriers) {
+void Event::CmdWait(const CommandBuffer& cmd,
+                    VkPipelineStageFlags src_stage_mask,
+                    VkPipelineStageFlags dst_stage_mask,
+                    const std::vector<VkMemoryBarrier>& memory_barriers,
+                    const std::vector<VkBufferMemoryBarrier>& buffer_barriers,
+                    const std::vector<VkImageMemoryBarrier>& image_barriers) {
     VkEvent event_handle = handle();
-    vk::CmdWaitEvents(cmd.handle(), 1, &event_handle, src_stage_mask, dst_stage_mask, static_cast<uint32_t>(memory_barriers.size()),
-                      memory_barriers.data(), static_cast<uint32_t>(buffer_barriers.size()), buffer_barriers.data(),
-                      static_cast<uint32_t>(image_barriers.size()), image_barriers.data());
+    vk::CmdWaitEvents(cmd.handle(),
+                      1,
+                      &event_handle,
+                      src_stage_mask,
+                      dst_stage_mask,
+                      static_cast<uint32_t>(memory_barriers.size()),
+                      memory_barriers.data(),
+                      static_cast<uint32_t>(buffer_barriers.size()),
+                      buffer_barriers.data(),
+                      static_cast<uint32_t>(image_barriers.size()),
+                      image_barriers.data());
 }
 
-void Event::Reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetEvent(device(), handle())); }
+void Event::Reset() {
+    ASSERT_EQ(VK_SUCCESS, vk::ResetEvent(device(), handle()));
+}
 
 NON_DISPATCHABLE_HANDLE_DTOR(QueryPool, vk::DestroyQueryPool)
 
-void QueryPool::init(const Device &dev, const VkQueryPoolCreateInfo &info) {
+void QueryPool::init(const Device& dev, const VkQueryPoolCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateQueryPool, dev, &info);
 }
 
-VkResult QueryPool::Results(uint32_t first, uint32_t count, size_t size, void *data, size_t stride) {
+VkResult QueryPool::Results(uint32_t first, uint32_t count, size_t size, void* data, size_t stride) {
     VkResult err = vk::GetQueryPoolResults(device(), handle(), first, count, size, data, stride, 0);
     EXPECT_TRUE(err == VK_SUCCESS || err == VK_NOT_READY);
 
@@ -1075,12 +1138,12 @@ VkResult QueryPool::Results(uint32_t first, uint32_t count, size_t size, void *d
 
 NON_DISPATCHABLE_HANDLE_DTOR(Buffer, vk::DestroyBuffer)
 
-Buffer::Buffer(Buffer &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
+Buffer::Buffer(Buffer&& rhs) noexcept : NonDispHandle(std::move(rhs)) {
     create_info_ = std::move(rhs.create_info_);
     internal_mem_ = std::move(rhs.internal_mem_);
 }
 
-Buffer &Buffer::operator=(Buffer &&rhs) noexcept {
+Buffer& Buffer::operator=(Buffer&& rhs) noexcept {
     if (&rhs == this) {
         return *this;
     }
@@ -1092,7 +1155,10 @@ Buffer &Buffer::operator=(Buffer &&rhs) noexcept {
     return *this;
 }
 
-void Buffer::init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+void Buffer::init(const Device& dev,
+                  const VkBufferCreateInfo& info,
+                  VkMemoryPropertyFlags mem_props,
+                  void* alloc_info_pnext) {
     InitNoMemory(dev, info);
 
     auto alloc_info = DeviceMemory::GetResourceAllocInfo(dev, MemoryRequirements(), mem_props, alloc_info_pnext);
@@ -1101,14 +1167,18 @@ void Buffer::init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPro
     BindMemory(internal_mem_, 0);
 }
 
-void Buffer::InitHostVisibleWithData(const Device &dev, VkBufferUsageFlags usage, const void *data, size_t data_size,
-                                     const vvl::span<uint32_t> &queue_families) {
+void Buffer::InitHostVisibleWithData(const Device& dev,
+                                     VkBufferUsageFlags usage,
+                                     const void* data,
+                                     size_t data_size,
+                                     const vvl::span<uint32_t>& queue_families) {
     const auto create_info = CreateInfo(static_cast<VkDeviceSize>(data_size), usage, queue_families);
     InitNoMemory(dev, create_info);
 
     // According to the specification there is always a host visible coherent memory type.
     // It can always be bound to a buffer created without SPARSE_BIDNING/PROTECTED flags.
-    const VkMemoryPropertyFlags memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    const VkMemoryPropertyFlags memory_properties =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     const VkMemoryRequirements memory_requirements = MemoryRequirements();
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = memory_requirements.size;
@@ -1116,12 +1186,12 @@ void Buffer::InitHostVisibleWithData(const Device &dev, VkBufferUsageFlags usage
     internal_mem_.init(dev, alloc_info);
     BindMemory(internal_mem_, 0);
 
-    void *ptr = internal_mem_.Map();
+    void* ptr = internal_mem_.Map();
     std::memcpy(ptr, data, data_size);
     internal_mem_.Unmap();
 }
 
-void Buffer::InitNoMemory(const Device &dev, const VkBufferCreateInfo &info) {
+void Buffer::InitNoMemory(const Device& dev, const VkBufferCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateBuffer, dev, &info);
     create_info_ = info;
 }
@@ -1134,13 +1204,13 @@ VkMemoryRequirements Buffer::MemoryRequirements() const {
     return reqs;
 }
 
-void Buffer::AllocateAndBindMemory(const Device &dev, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+void Buffer::AllocateAndBindMemory(const Device& dev, VkMemoryPropertyFlags mem_props, void* alloc_info_pnext) {
     assert(!internal_mem_.initialized());
     internal_mem_.init(dev, DeviceMemory::GetResourceAllocInfo(dev, MemoryRequirements(), mem_props, alloc_info_pnext));
     BindMemory(internal_mem_, 0);
 }
 
-void Buffer::BindMemory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
+void Buffer::BindMemory(const DeviceMemory& mem, VkDeviceSize mem_offset) {
     const auto result = vk::BindBufferMemory(device(), handle(), mem.handle(), mem_offset);
     // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
     // In the case of a validation error, it's part of the test logic how to handle it.
@@ -1159,31 +1229,42 @@ VkDeviceAddress Buffer::Address() const {
 
 NON_DISPATCHABLE_HANDLE_DTOR(BufferView, vk::DestroyBufferView)
 
-void BufferView::init(const Device &dev, const VkBufferViewCreateInfo &info) {
+void BufferView::init(const Device& dev, const VkBufferViewCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateBufferView, dev, &info);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Image, vk::DestroyImage)
 
-Image::Image(const Device &dev, const VkImageCreateInfo &info) : device_(&dev) { init(dev, info, 0); }
+Image::Image(const Device& dev, const VkImageCreateInfo& info) : device_(&dev) {
+    init(dev, info, 0);
+}
 
-Image::Image(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext)
-    : device_(&dev) {
+Image::Image(const Device& dev,
+             const VkImageCreateInfo& info,
+             VkMemoryPropertyFlags mem_props,
+             void* alloc_info_pnext) :
+    device_(&dev) {
     init(dev, info, mem_props, alloc_info_pnext);
 }
 
-Image::Image(const Device &dev, uint32_t const width, uint32_t const height, uint32_t const mip_levels, VkFormat const format,
-             VkFlags const usage)
-    : device_(&dev) {
+Image::Image(const Device& dev,
+             uint32_t const width,
+             uint32_t const height,
+             uint32_t const mip_levels,
+             VkFormat const format,
+             VkFlags const usage) :
+    device_(&dev) {
     Init(dev, width, height, mip_levels, format, usage);
 }
 
-Image::Image(const Device &dev, const VkImageCreateInfo &info, NoMemT) : device_(&dev) { InitNoMemory(dev, info); }
+Image::Image(const Device& dev, const VkImageCreateInfo& info, NoMemT) : device_(&dev) {
+    InitNoMemory(dev, info);
+}
 
 // If you find yourself wanting to expand this or making another overload, then you might really just want to call
 //     SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 // after you init the image manually
-Image::Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT) : device_(&dev) {
+Image::Image(const Device& dev, const VkImageCreateInfo& info, SetLayoutT) : device_(&dev) {
     init(*device_, info, 0);
 
     VkImageLayout newLayout;
@@ -1200,7 +1281,7 @@ Image::Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT) : dev
     SetLayout(image_aspect, newLayout);
 }
 
-Image::Image(Image &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
+Image::Image(Image&& rhs) noexcept : NonDispHandle(std::move(rhs)) {
     device_ = std::move(rhs.device_);
     rhs.device_ = nullptr;
 
@@ -1213,7 +1294,7 @@ Image::Image(Image &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
     rhs.image_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
-Image &Image::operator=(Image &&rhs) noexcept {
+Image& Image::operator=(Image&& rhs) noexcept {
     if (&rhs == this) {
         return *this;
     }
@@ -1234,7 +1315,10 @@ Image &Image::operator=(Image &&rhs) noexcept {
     return *this;
 }
 
-void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+void Image::init(const Device& dev,
+                 const VkImageCreateInfo& info,
+                 VkMemoryPropertyFlags mem_props,
+                 void* alloc_info_pnext) {
     InitNoMemory(dev, info);
 
     if (initialized()) {
@@ -1244,14 +1328,19 @@ void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPrope
     }
 }
 
-void Image::Init(const Device &dev, uint32_t const width, uint32_t const height, uint32_t const mip_levels, VkFormat const format,
+void Image::Init(const Device& dev,
+                 uint32_t const width,
+                 uint32_t const height,
+                 uint32_t const mip_levels,
+                 VkFormat const format,
                  VkFlags const usage) {
-    const VkImageCreateInfo info = ImageCreateInfo2D(width, height, mip_levels, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    const VkImageCreateInfo info =
+        ImageCreateInfo2D(width, height, mip_levels, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     init(dev, info, 0);
 }
 
 // Currently all init call here, so can set things for all path
-void Image::InitNoMemory(const Device &dev, const VkImageCreateInfo &info) {
+void Image::InitNoMemory(const Device& dev, const VkImageCreateInfo& info) {
     if (!device_) {
         device_ = &dev;
     }
@@ -1260,14 +1349,15 @@ void Image::InitNoMemory(const Device &dev, const VkImageCreateInfo &info) {
     image_layout_ = info.initialLayout;
 }
 
-bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, const VkFormatFeatureFlags2 features) {
+bool Image::IsCompatible(const Device& dev, const VkImageUsageFlags usages, const VkFormatFeatureFlags2 features) {
     VkFormatFeatureFlags2 all_feature_flags =
         VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT |
         VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT | VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT |
         VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT | VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT |
         VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT | VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
         VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT |
-        VK_FORMAT_FEATURE_2_BLIT_SRC_BIT | VK_FORMAT_FEATURE_2_BLIT_DST_BIT | VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+        VK_FORMAT_FEATURE_2_BLIT_SRC_BIT | VK_FORMAT_FEATURE_2_BLIT_DST_BIT |
+        VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
     if (dev.IsEnabledExtension(VK_IMG_FILTER_CUBIC_EXTENSION_NAME)) {
         all_feature_flags |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT;
     }
@@ -1281,12 +1371,13 @@ bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, cons
     }
 
     if (dev.IsEnabledExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
-        all_feature_flags |= VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT |
-                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT |
-                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT |
-                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT |
-                             VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT |
-                             VK_FORMAT_FEATURE_2_DISJOINT_BIT | VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT;
+        all_feature_flags |=
+            VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT |
+            VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT |
+            VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT |
+            VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT |
+            VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT |
+            VK_FORMAT_FEATURE_2_DISJOINT_BIT | VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT;
     }
 
     if (dev.IsEnabledExtension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
@@ -1295,20 +1386,30 @@ bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, cons
                              VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT;
     }
 
-    if ((features & all_feature_flags) == 0) return false;  // whole format unsupported
+    if ((features & all_feature_flags) == 0)
+        return false; // whole format unsupported
 
-    if ((usages & VK_IMAGE_USAGE_SAMPLED_BIT) && !(features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT)) return false;
-    if ((usages & VK_IMAGE_USAGE_STORAGE_BIT) && !(features & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT)) return false;
-    if ((usages & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) && !(features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT)) return false;
-    if ((usages & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) && !(features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT))
+    if ((usages & VK_IMAGE_USAGE_SAMPLED_BIT) && !(features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT))
+        return false;
+    if ((usages & VK_IMAGE_USAGE_STORAGE_BIT) && !(features & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT))
+        return false;
+    if ((usages & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) && !(features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT))
+        return false;
+    if ((usages & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
+        !(features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT))
         return false;
 
     return true;
 }
 
-VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mip_levels,
-                                           uint32_t const layers, VkFormat const format, VkFlags const usage,
-                                           VkImageTiling const requested_tiling, const vvl::span<uint32_t> &queue_families) {
+VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t const width,
+                                           uint32_t const height,
+                                           uint32_t const mip_levels,
+                                           uint32_t const layers,
+                                           VkFormat const format,
+                                           VkFlags const usage,
+                                           VkImageTiling const requested_tiling,
+                                           const vvl::span<uint32_t>& queue_families) {
     VkImageCreateInfo imageCreateInfo = CreateInfo();
     imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
     imageCreateInfo.format = format;
@@ -1316,7 +1417,7 @@ VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t const width, uint32_t const 
     imageCreateInfo.extent.height = height;
     imageCreateInfo.mipLevels = mip_levels;
     imageCreateInfo.arrayLayers = layers;
-    imageCreateInfo.tiling = requested_tiling;  // This will be touched up below...
+    imageCreateInfo.tiling = requested_tiling; // This will be touched up below...
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // Automatically set sharing mode etc. based on queue family information
@@ -1337,13 +1438,13 @@ VkMemoryRequirements Image::MemoryRequirements() const {
     return reqs;
 }
 
-void Image::AllocateAndBindMemory(const Device &dev, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+void Image::AllocateAndBindMemory(const Device& dev, VkMemoryPropertyFlags mem_props, void* alloc_info_pnext) {
     assert(!internal_mem_.initialized());
     internal_mem_.init(dev, DeviceMemory::GetResourceAllocInfo(dev, MemoryRequirements(), mem_props, alloc_info_pnext));
     BindMemory(internal_mem_, 0);
 }
 
-void Image::BindMemory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
+void Image::BindMemory(const DeviceMemory& mem, VkDeviceSize mem_offset) {
     const auto result = vk::BindImageMemory(device(), handle(), mem.handle(), mem_offset);
     // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
     // In the case of a validation error, it's part of the test logic how to handle it.
@@ -1358,37 +1459,45 @@ VkImageAspectFlags Image::AspectMask(VkFormat format) {
         image_aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
     } else if (vkuFormatIsStencilOnly(format)) {
         image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
-    } else {  // color
+    } else { // color
         image_aspect = VK_IMAGE_ASPECT_COLOR_BIT;
     }
     return image_aspect;
 }
 
-void Image::ImageMemoryBarrier(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
-                               VkImageLayout image_layout, VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages) {
+void Image::ImageMemoryBarrier(CommandBuffer& cmd_buf,
+                               VkImageAspectFlags aspect,
+                               VkFlags output_mask,
+                               VkFlags input_mask,
+                               VkImageLayout image_layout,
+                               VkPipelineStageFlags src_stages,
+                               VkPipelineStageFlags dest_stages) {
     // clang-format on
     const VkImageSubresourceRange subresourceRange =
         SubresourceRange(aspect, 0, create_info_.mipLevels, 0, create_info_.arrayLayers);
     VkImageMemoryBarrier barrier;
     barrier = ImageMemoryBarrier(output_mask, input_mask, image_layout_, image_layout, subresourceRange);
 
-    VkImageMemoryBarrier *pmemory_barrier = &barrier;
+    VkImageMemoryBarrier* pmemory_barrier = &barrier;
 
     // write barrier to the command buffer
-    vk::CmdPipelineBarrier(cmd_buf.handle(), src_stages, dest_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, NULL, 0, NULL, 1,
-                           pmemory_barrier);
+    vk::CmdPipelineBarrier(
+        cmd_buf.handle(), src_stages, dest_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, NULL, 0, NULL, 1, pmemory_barrier);
 }
 
-void Image::SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
+void Image::SetLayout(CommandBuffer& cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
     VkFlags src_mask, dst_mask;
-    const VkFlags all_cache_outputs = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+    const VkFlags all_cache_outputs = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT |
+                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-    const VkFlags all_cache_inputs = VK_ACCESS_HOST_READ_BIT | VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_INDEX_READ_BIT |
-                                     VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+    const VkFlags all_cache_inputs = VK_ACCESS_HOST_READ_BIT | VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+                                     VK_ACCESS_INDEX_READ_BIT | VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+                                     VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
                                      VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
                                      VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
 
-    const VkFlags shader_read_inputs = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
+    const VkFlags shader_read_inputs =
+        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
 
     if (image_layout == image_layout_) {
         return;
@@ -1412,7 +1521,7 @@ void Image::SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImage
             src_mask = 0;
             break;
         default:
-            src_mask = all_cache_outputs;  // Only need to worry about writes, as the stage mask will protect reads
+            src_mask = all_cache_outputs; // Only need to worry about writes, as the stage mask will protect reads
     }
 
     // Narrow the dst mask by the valid accesss for the new layout
@@ -1475,11 +1584,11 @@ VkImageViewCreateInfo Image::BasicViewCreatInfo(VkImageAspectFlags aspect_mask) 
     ci.components.g = VK_COMPONENT_SWIZZLE_G;
     ci.components.b = VK_COMPONENT_SWIZZLE_B;
     ci.components.a = VK_COMPONENT_SWIZZLE_A;
-    ci.subresourceRange = {aspect_mask, 0, 1, 0, 1};
+    ci.subresourceRange = { aspect_mask, 0, 1, 0, 1 };
     return ci;
 }
 
-ImageView Image::CreateView(VkImageAspectFlags aspect, void *pNext) const {
+ImageView Image::CreateView(VkImageAspectFlags aspect, void* pNext) const {
     VkImageViewCreateInfo ci = BasicViewCreatInfo(aspect);
     ci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
     ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
@@ -1487,17 +1596,21 @@ ImageView Image::CreateView(VkImageAspectFlags aspect, void *pNext) const {
     return ImageView(*device_, ci);
 }
 
-ImageView Image::CreateView(VkImageViewType type, uint32_t baseMipLevel, uint32_t levelCount, uint32_t baseArrayLayer,
-                            uint32_t layerCount, VkImageAspectFlags aspect) const {
+ImageView Image::CreateView(VkImageViewType type,
+                            uint32_t baseMipLevel,
+                            uint32_t levelCount,
+                            uint32_t baseArrayLayer,
+                            uint32_t layerCount,
+                            VkImageAspectFlags aspect) const {
     VkImageViewCreateInfo ci = BasicViewCreatInfo();
     ci.viewType = type;
-    ci.subresourceRange = {aspect, baseMipLevel, levelCount, baseArrayLayer, layerCount};
+    ci.subresourceRange = { aspect, baseMipLevel, levelCount, baseArrayLayer, layerCount };
     return ImageView(*device_, ci);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(ImageView, vk::DestroyImageView)
 
-void ImageView::init(const Device &dev, const VkImageViewCreateInfo &info) {
+void ImageView::init(const Device& dev, const VkImageViewCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateImageView, dev, &info);
 }
 
@@ -1512,12 +1625,14 @@ void AccelerationStructureNV::destroy() noexcept {
     vkDestroyAccelerationStructureNV(device(), handle(), nullptr);
     handle_ = VK_NULL_HANDLE;
 }
-AccelerationStructureNV::~AccelerationStructureNV() noexcept { destroy(); }
+AccelerationStructureNV::~AccelerationStructureNV() noexcept {
+    destroy();
+}
 
 VkMemoryRequirements2 AccelerationStructureNV::MemoryRequirements() const {
     PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
-        (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(device(),
-                                                                                  "vkGetAccelerationStructureMemoryRequirementsNV");
+        (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(
+            device(), "vkGetAccelerationStructureMemoryRequirementsNV");
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
     VkMemoryRequirements2 memoryRequirements = {};
     VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = vku::InitStructHelper();
@@ -1529,8 +1644,8 @@ VkMemoryRequirements2 AccelerationStructureNV::MemoryRequirements() const {
 
 VkMemoryRequirements2 AccelerationStructureNV::BuildScratchMemoryRequirements() const {
     PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
-        (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(device(),
-                                                                                  "vkGetAccelerationStructureMemoryRequirementsNV");
+        (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(
+            device(), "vkGetAccelerationStructureMemoryRequirementsNV");
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
 
     VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = vku::InitStructHelper();
@@ -1542,7 +1657,9 @@ VkMemoryRequirements2 AccelerationStructureNV::BuildScratchMemoryRequirements() 
     return memoryRequirements;
 }
 
-void AccelerationStructureNV::init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory) {
+void AccelerationStructureNV::init(const Device& dev,
+                                   const VkAccelerationStructureCreateInfoNV& info,
+                                   bool init_memory) {
     PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructureNV =
         (PFN_vkCreateAccelerationStructureNV)vk::GetDeviceProcAddr(dev.handle(), "vkCreateAccelerationStructureNV");
     assert(vkCreateAccelerationStructureNV != nullptr);
@@ -1552,11 +1669,13 @@ void AccelerationStructureNV::init(const Device &dev, const VkAccelerationStruct
     info_ = info.info;
 
     if (init_memory) {
-        memory_.init(dev, DeviceMemory::GetResourceAllocInfo(dev, MemoryRequirements().memoryRequirements,
-                                                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+        memory_.init(dev,
+                     DeviceMemory::GetResourceAllocInfo(
+                         dev, MemoryRequirements().memoryRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
         PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemoryNV =
-            (PFN_vkBindAccelerationStructureMemoryNV)vk::GetDeviceProcAddr(dev.handle(), "vkBindAccelerationStructureMemoryNV");
+            (PFN_vkBindAccelerationStructureMemoryNV)vk::GetDeviceProcAddr(dev.handle(),
+                                                                           "vkBindAccelerationStructureMemoryNV");
         assert(vkBindAccelerationStructureMemoryNV != nullptr);
 
         VkBindAccelerationStructureMemoryInfoNV bind_info = vku::InitStructHelper();
@@ -1565,13 +1684,16 @@ void AccelerationStructureNV::init(const Device &dev, const VkAccelerationStruct
         ASSERT_EQ(VK_SUCCESS, vkBindAccelerationStructureMemoryNV(dev.handle(), 1, &bind_info));
 
         PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandleNV =
-            (PFN_vkGetAccelerationStructureHandleNV)vk::GetDeviceProcAddr(dev.handle(), "vkGetAccelerationStructureHandleNV");
+            (PFN_vkGetAccelerationStructureHandleNV)vk::GetDeviceProcAddr(dev.handle(),
+                                                                          "vkGetAccelerationStructureHandleNV");
         assert(vkGetAccelerationStructureHandleNV != nullptr);
-        ASSERT_EQ(VK_SUCCESS, vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_));
+        ASSERT_EQ(VK_SUCCESS,
+                  vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_));
     }
 }
 
-Buffer AccelerationStructureNV::CreateScratchBuffer(const Device &device, VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
+Buffer AccelerationStructureNV::CreateScratchBuffer(const Device& device,
+                                                    VkBufferCreateInfo* pCreateInfo /*= nullptr*/,
                                                     bool buffer_device_address /*= false*/) const {
     VkMemoryRequirements scratch_buffer_memory_requirements = BuildScratchMemoryRequirements().memoryRequirements;
     VkBufferCreateInfo create_info = {};
@@ -1582,11 +1704,12 @@ Buffer AccelerationStructureNV::CreateScratchBuffer(const Device &device, VkBuff
     } else {
         create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         create_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-        if (buffer_device_address) create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        if (buffer_device_address)
+            create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
 
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    void *pNext = nullptr;
+    void* pNext = nullptr;
     if (buffer_device_address) {
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
         pNext = &alloc_flags;
@@ -1597,36 +1720,41 @@ Buffer AccelerationStructureNV::CreateScratchBuffer(const Device &device, VkBuff
 
 NON_DISPATCHABLE_HANDLE_DTOR(ShaderModule, vk::DestroyShaderModule)
 
-void ShaderModule::init(const Device &dev, const VkShaderModuleCreateInfo &info) {
+void ShaderModule::init(const Device& dev, const VkShaderModuleCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateShaderModule, dev, &info);
 }
 
-VkResult ShaderModule::InitTry(const Device &dev, const VkShaderModuleCreateInfo &info) {
+VkResult ShaderModule::InitTry(const Device& dev, const VkShaderModuleCreateInfo& info) {
     VkShaderModule mod;
 
     VkResult err = vk::CreateShaderModule(dev.handle(), &info, NULL, &mod);
-    if (err == VK_SUCCESS) NonDispHandle::init(dev.handle(), mod);
+    if (err == VK_SUCCESS)
+        NonDispHandle::init(dev.handle(), mod);
 
     return err;
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Shader, vk::DestroyShaderEXT)
 
-void Shader::init(const Device &dev, const VkShaderCreateInfoEXT &info) {
+void Shader::init(const Device& dev, const VkShaderCreateInfoEXT& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateShadersEXT, dev, 1u, &info);
 }
 
-VkResult Shader::InitTry(const Device &dev, const VkShaderCreateInfoEXT &info) {
+VkResult Shader::InitTry(const Device& dev, const VkShaderCreateInfoEXT& info) {
     VkShaderEXT mod;
 
     VkResult err = vk::CreateShadersEXT(dev.handle(), 1u, &info, NULL, &mod);
-    if (err == VK_SUCCESS) NonDispHandle::init(dev.handle(), mod);
+    if (err == VK_SUCCESS)
+        NonDispHandle::init(dev.handle(), mod);
 
     return err;
 }
 
-Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
-               const VkDescriptorSetLayout *descriptorSetLayout, const VkPushConstantRange *pushConstRange) {
+Shader::Shader(const Device& dev,
+               const VkShaderStageFlagBits stage,
+               const std::vector<uint32_t>& spv,
+               const VkDescriptorSetLayout* descriptorSetLayout,
+               const VkPushConstantRange* pushConstRange) {
     VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = stage;
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -1644,8 +1772,11 @@ Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::
     init(dev, createInfo);
 }
 
-Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint8_t> &binary,
-               const VkDescriptorSetLayout *descriptorSetLayout, const VkPushConstantRange *pushConstRange) {
+Shader::Shader(const Device& dev,
+               const VkShaderStageFlagBits stage,
+               const std::vector<uint8_t>& binary,
+               const VkDescriptorSetLayout* descriptorSetLayout,
+               const VkPushConstantRange* pushConstRange) {
     VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = stage;
     createInfo.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
@@ -1665,13 +1796,13 @@ Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::
 
 NON_DISPATCHABLE_HANDLE_DTOR(PipelineCache, vk::DestroyPipelineCache)
 
-void PipelineCache::init(const Device &dev, const VkPipelineCacheCreateInfo &info) {
+void PipelineCache::init(const Device& dev, const VkPipelineCacheCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreatePipelineCache, dev, &info);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Pipeline, vk::DestroyPipeline)
 
-void Pipeline::init(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
+void Pipeline::init(const Device& dev, const VkGraphicsPipelineCreateInfo& info) {
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
     VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
@@ -1681,7 +1812,7 @@ void Pipeline::init(const Device &dev, const VkGraphicsPipelineCreateInfo &info)
     }
 }
 
-VkResult Pipeline::InitTry(const Device &dev, const VkGraphicsPipelineCreateInfo &info) {
+VkResult Pipeline::InitTry(const Device& dev, const VkGraphicsPipelineCreateInfo& info) {
     VkPipeline pipe;
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
@@ -1698,7 +1829,7 @@ VkResult Pipeline::InitTry(const Device &dev, const VkGraphicsPipelineCreateInfo
     return err;
 }
 
-void Pipeline::init(const Device &dev, const VkComputePipelineCreateInfo &info) {
+void Pipeline::init(const Device& dev, const VkComputePipelineCreateInfo& info) {
     VkPipelineCache cache;
     VkPipelineCacheCreateInfo ci = vku::InitStructHelper();
     VkResult err = vk::CreatePipelineCache(dev.handle(), &ci, NULL, &cache);
@@ -1708,11 +1839,13 @@ void Pipeline::init(const Device &dev, const VkComputePipelineCreateInfo &info) 
     }
 }
 
-void Pipeline::init(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info) {
+void Pipeline::init(const Device& dev, const VkRayTracingPipelineCreateInfoKHR& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRayTracingPipelinesKHR, dev, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &info);
 }
 
-void Pipeline::InitDeferred(const Device &dev, const VkRayTracingPipelineCreateInfoKHR &info, VkDeferredOperationKHR deferred_op) {
+void Pipeline::InitDeferred(const Device& dev,
+                            const VkRayTracingPipelineCreateInfoKHR& info,
+                            VkDeferredOperationKHR deferred_op) {
     // ALL parameters need to survive until deferred operation is completed
     // In our case, it means both info and handle need to be kept alive
     // => cannot use NON_DISPATCHABLE_HANDLE_INIT because used handle is a temporary
@@ -1724,8 +1857,9 @@ void Pipeline::InitDeferred(const Device &dev, const VkRayTracingPipelineCreateI
 
 NON_DISPATCHABLE_HANDLE_DTOR(PipelineLayout, vk::DestroyPipelineLayout)
 
-void PipelineLayout::init(const Device &dev, VkPipelineLayoutCreateInfo &info,
-                          const std::vector<const DescriptorSetLayout *> &layouts) {
+void PipelineLayout::init(const Device& dev,
+                          VkPipelineLayoutCreateInfo& info,
+                          const std::vector<const DescriptorSetLayout*>& layouts) {
     const std::vector<VkDescriptorSetLayout> layout_handles = MakeVkHandles<VkDescriptorSetLayout>(layouts);
     info.setLayoutCount = static_cast<uint32_t>(layout_handles.size());
     info.pSetLayouts = layout_handles.data();
@@ -1733,33 +1867,35 @@ void PipelineLayout::init(const Device &dev, VkPipelineLayoutCreateInfo &info,
     init(dev, info);
 }
 
-void PipelineLayout::init(const Device &dev, VkPipelineLayoutCreateInfo &info) {
+void PipelineLayout::init(const Device& dev, VkPipelineLayoutCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreatePipelineLayout, dev, &info);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Sampler, vk::DestroySampler)
 
-void Sampler::init(const Device &dev, const VkSamplerCreateInfo &info) {
+void Sampler::init(const Device& dev, const VkSamplerCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateSampler, dev, &info);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(DescriptorSetLayout, vk::DestroyDescriptorSetLayout)
 
-void DescriptorSetLayout::init(const Device &dev, const VkDescriptorSetLayoutCreateInfo &info) {
+void DescriptorSetLayout::init(const Device& dev, const VkDescriptorSetLayoutCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDescriptorSetLayout, dev, &info);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(DescriptorPool, vk::DestroyDescriptorPool)
 
-void DescriptorPool::init(const Device &dev, const VkDescriptorPoolCreateInfo &info) {
+void DescriptorPool::init(const Device& dev, const VkDescriptorPoolCreateInfo& info) {
     dynamic_usage_ = (info.flags & VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT) != 0;
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDescriptorPool, dev, &info);
 }
 
-void DescriptorPool::Reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetDescriptorPool(device(), handle(), 0)); }
+void DescriptorPool::Reset() {
+    ASSERT_EQ(VK_SUCCESS, vk::ResetDescriptorPool(device(), handle(), 0));
+}
 
-std::vector<DescriptorSet *> DescriptorPool::AllocateSets(const Device &dev,
-                                                          const std::vector<const DescriptorSetLayout *> &layouts) {
+std::vector<DescriptorSet*> DescriptorPool::AllocateSets(const Device& dev,
+                                                         const std::vector<const DescriptorSetLayout*>& layouts) {
     const std::vector<VkDescriptorSetLayout> layout_handles = MakeVkHandles<VkDescriptorSetLayout>(layouts);
 
     std::vector<VkDescriptorSet> set_handles;
@@ -1772,21 +1908,22 @@ std::vector<DescriptorSet *> DescriptorPool::AllocateSets(const Device &dev,
     VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, set_handles.data());
     EXPECT_EQ(VK_SUCCESS, err);
 
-    std::vector<DescriptorSet *> sets;
+    std::vector<DescriptorSet*> sets;
     for (std::vector<VkDescriptorSet>::const_iterator it = set_handles.begin(); it != set_handles.end(); it++) {
         // do descriptor sets need memories bound?
-        DescriptorSet *descriptorSet = new DescriptorSet(dev, this, *it);
+        DescriptorSet* descriptorSet = new DescriptorSet(dev, this, *it);
         sets.push_back(descriptorSet);
     }
     return sets;
 }
 
-std::vector<DescriptorSet *> DescriptorPool::AllocateSets(const Device &dev, const DescriptorSetLayout &layout, uint32_t count) {
-    return AllocateSets(dev, std::vector<const DescriptorSetLayout *>(count, &layout));
+std::vector<DescriptorSet*>
+DescriptorPool::AllocateSets(const Device& dev, const DescriptorSetLayout& layout, uint32_t count) {
+    return AllocateSets(dev, std::vector<const DescriptorSetLayout*>(count, &layout));
 }
 
-DescriptorSet *DescriptorPool::AllocateSets(const Device &dev, const DescriptorSetLayout &layout) {
-    std::vector<DescriptorSet *> set = AllocateSets(dev, layout, 1);
+DescriptorSet* DescriptorPool::AllocateSets(const Device& dev, const DescriptorSetLayout& layout) {
+    std::vector<DescriptorSet*> set = AllocateSets(dev, layout, 1);
     return (set.empty()) ? NULL : set[0];
 }
 void DescriptorSet::destroy() noexcept {
@@ -1795,14 +1932,16 @@ void DescriptorSet::destroy() noexcept {
     }
     // Only call vk::Free* on sets allocated from pool with usage *_DYNAMIC
     if (containing_pool_->GetDynamicUsage()) {
-        VkDescriptorSet sets[1] = {handle()};
+        VkDescriptorSet sets[1] = { handle() };
         ASSERT_EQ(VK_SUCCESS, vk::FreeDescriptorSets(device(), containing_pool_->handle(), 1, sets));
     }
     handle_ = VK_NULL_HANDLE;
 }
-DescriptorSet::~DescriptorSet() noexcept { destroy(); }
+DescriptorSet::~DescriptorSet() noexcept {
+    destroy();
+}
 
-void DescriptorUpdateTemplate::Init(const Device &dev, const VkDescriptorUpdateTemplateCreateInfo &info) {
+void DescriptorUpdateTemplate::Init(const Device& dev, const VkDescriptorUpdateTemplateCreateInfo& info) {
     if (vk::CreateDescriptorUpdateTemplateKHR) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDescriptorUpdateTemplateKHR, dev, &info);
     } else {
@@ -1823,22 +1962,24 @@ void DescriptorUpdateTemplate::destroy() noexcept {
     internal::NonDispHandle<decltype(handle_)>::destroy();
 }
 
-DescriptorUpdateTemplate::~DescriptorUpdateTemplate() noexcept { destroy(); }
+DescriptorUpdateTemplate::~DescriptorUpdateTemplate() noexcept {
+    destroy();
+}
 
 NON_DISPATCHABLE_HANDLE_DTOR(CommandPool, vk::DestroyCommandPool)
 
-void CommandPool::Init(const Device &dev, const VkCommandPoolCreateInfo &info) {
+void CommandPool::Init(const Device& dev, const VkCommandPoolCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateCommandPool, dev, &info);
 }
 
-void CommandPool::Init(const Device &dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
+void CommandPool::Init(const Device& dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
     VkCommandPoolCreateInfo pool_ci = vku::InitStructHelper();
     pool_ci.flags = flags;
     pool_ci.queueFamilyIndex = queue_family_index;
     Init(dev, pool_ci);
 }
 
-CommandPool::CommandPool(const Device &dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
+CommandPool::CommandPool(const Device& dev, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
     Init(dev, queue_family_index, flags);
 }
 
@@ -1846,13 +1987,15 @@ void CommandBuffer::destroy() noexcept {
     if (!initialized()) {
         return;
     }
-    VkCommandBuffer cmds[] = {handle()};
+    VkCommandBuffer cmds[] = { handle() };
     vk::FreeCommandBuffers(dev_handle_, cmd_pool_, 1, cmds);
     handle_ = VK_NULL_HANDLE;
 }
-CommandBuffer::~CommandBuffer() noexcept { destroy(); }
+CommandBuffer::~CommandBuffer() noexcept {
+    destroy();
+}
 
-void CommandBuffer::init(const Device &dev, const VkCommandBufferAllocateInfo &info) {
+void CommandBuffer::init(const Device& dev, const VkCommandBufferAllocateInfo& info) {
     VkCommandBuffer cmd;
 
     // Make sure commandPool is set
@@ -1864,13 +2007,15 @@ void CommandBuffer::init(const Device &dev, const VkCommandBufferAllocateInfo &i
     cmd_pool_ = info.commandPool;
 }
 
-void CommandBuffer::Init(const Device &dev, const CommandPool &pool, VkCommandBufferLevel level) {
+void CommandBuffer::Init(const Device& dev, const CommandPool& pool, VkCommandBufferLevel level) {
     auto create_info = CommandBuffer::CreateInfo(pool.handle());
     create_info.level = level;
     init(dev, create_info);
 }
 
-void CommandBuffer::Begin(const VkCommandBufferBeginInfo *info) { ASSERT_EQ(VK_SUCCESS, vk::BeginCommandBuffer(handle(), info)); }
+void CommandBuffer::Begin(const VkCommandBufferBeginInfo* info) {
+    ASSERT_EQ(VK_SUCCESS, vk::BeginCommandBuffer(handle(), info));
+}
 
 void CommandBuffer::Begin(VkCommandBufferUsageFlags flags) {
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
@@ -1891,29 +2036,37 @@ void CommandBuffer::End() {
     VkResult result = vk::EndCommandBuffer(handle());
     if (result == VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR) {
         GTEST_MESSAGE_AT_(__FILE__, __LINE__, "", ::testing::TestPartResult::kSkip)
-            << "This test cannot be executed on an implementation that reports VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR in "
+            << "This test cannot be executed on an implementation that reports "
+               "VK_ERROR_INVALID_VIDEO_STD_PARAMETERS_KHR in "
                "vkEndCommandBuffer()";
-        throw testing::AssertionException(testing::TestPartResult(testing::TestPartResult::kSkip, __FILE__, __LINE__, ""));
+        throw testing::AssertionException(
+            testing::TestPartResult(testing::TestPartResult::kSkip, __FILE__, __LINE__, ""));
     } else {
         ASSERT_EQ(VK_SUCCESS, result);
     }
 }
 
-void CommandBuffer::Reset(VkCommandBufferResetFlags flags) { ASSERT_EQ(VK_SUCCESS, vk::ResetCommandBuffer(handle(), flags)); }
+void CommandBuffer::Reset(VkCommandBufferResetFlags flags) {
+    ASSERT_EQ(VK_SUCCESS, vk::ResetCommandBuffer(handle(), flags));
+}
 
-VkCommandBufferAllocateInfo CommandBuffer::CreateInfo(VkCommandPool const &pool) {
+VkCommandBufferAllocateInfo CommandBuffer::CreateInfo(VkCommandPool const& pool) {
     VkCommandBufferAllocateInfo info = vku::InitStructHelper();
     info.commandPool = pool;
     info.commandBufferCount = 1;
     return info;
 }
 
-void CommandBuffer::BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents) {
+void CommandBuffer::BeginRenderPass(const VkRenderPassBeginInfo& info, VkSubpassContents contents) {
     vk::CmdBeginRenderPass(handle(), &info, contents);
 }
 
-void CommandBuffer::BeginRenderPass(VkRenderPass rp, VkFramebuffer fb, uint32_t render_area_width, uint32_t render_area_height,
-                                    uint32_t clear_count, VkClearValue *clear_values) {
+void CommandBuffer::BeginRenderPass(VkRenderPass rp,
+                                    VkFramebuffer fb,
+                                    uint32_t render_area_width,
+                                    uint32_t render_area_height,
+                                    uint32_t clear_count,
+                                    VkClearValue* clear_values) {
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
     render_pass_begin_info.renderPass = rp;
     render_pass_begin_info.framebuffer = fb;
@@ -1924,11 +2077,15 @@ void CommandBuffer::BeginRenderPass(VkRenderPass rp, VkFramebuffer fb, uint32_t 
     vk::CmdBeginRenderPass(handle(), &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void CommandBuffer::NextSubpass(VkSubpassContents contents) { vk::CmdNextSubpass(handle(), contents); }
+void CommandBuffer::NextSubpass(VkSubpassContents contents) {
+    vk::CmdNextSubpass(handle(), contents);
+}
 
-void CommandBuffer::EndRenderPass() { vk::CmdEndRenderPass(handle()); }
+void CommandBuffer::EndRenderPass() {
+    vk::CmdEndRenderPass(handle());
+}
 
-void CommandBuffer::BeginRendering(const VkRenderingInfo &renderingInfo) {
+void CommandBuffer::BeginRendering(const VkRenderingInfo& renderingInfo) {
     if (vk::CmdBeginRenderingKHR) {
         vk::CmdBeginRenderingKHR(handle(), &renderingInfo);
     } else {
@@ -1958,47 +2115,59 @@ void CommandBuffer::EndRendering() {
     }
 }
 
-void CommandBuffer::BindVertFragShader(const vkt::Shader &vert_shader, const vkt::Shader &frag_shader) {
-    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
-                                            VK_SHADER_STAGE_FRAGMENT_BIT};
-    const VkShaderEXT shaders[] = {vert_shader.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, frag_shader.handle()};
+void CommandBuffer::BindVertFragShader(const vkt::Shader& vert_shader, const vkt::Shader& frag_shader) {
+    const VkShaderStageFlagBits stages[] = { VK_SHADER_STAGE_VERTEX_BIT,
+                                             VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+                                             VK_SHADER_STAGE_GEOMETRY_BIT,
+                                             VK_SHADER_STAGE_FRAGMENT_BIT };
+    const VkShaderEXT shaders[] = {
+        vert_shader.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, frag_shader.handle()
+    };
     vk::CmdBindShadersEXT(handle(), 5, stages, shaders);
 }
 
-void CommandBuffer::BindCompShader(const vkt::Shader &comp_shader) {
-    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
-    const VkShaderEXT shaders[] = {comp_shader.handle()};
+void CommandBuffer::BindCompShader(const vkt::Shader& comp_shader) {
+    const VkShaderStageFlagBits stages[] = { VK_SHADER_STAGE_COMPUTE_BIT };
+    const VkShaderEXT shaders[] = { comp_shader.handle() };
     vk::CmdBindShadersEXT(handle(), 1, stages, shaders);
 }
 
-void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo) {
+void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR& beginInfo) {
     vk::CmdBeginVideoCodingKHR(handle(), &beginInfo);
 }
 
-void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo) {
+void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR& controlInfo) {
     vk::CmdControlVideoCodingKHR(handle(), &controlInfo);
 }
 
-void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo) { vk::CmdDecodeVideoKHR(handle(), &decodeInfo); }
+void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR& decodeInfo) {
+    vk::CmdDecodeVideoKHR(handle(), &decodeInfo);
+}
 
-void CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR &encodeInfo) { vk::CmdEncodeVideoKHR(handle(), &encodeInfo); }
+void CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR& encodeInfo) {
+    vk::CmdEncodeVideoKHR(handle(), &encodeInfo);
+}
 
-void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) { vk::CmdEndVideoCodingKHR(handle(), &endInfo); }
+void CommandBuffer::EndVideoCoding(const VkVideoEndCodingInfoKHR& endInfo) {
+    vk::CmdEndVideoCodingKHR(handle(), &endInfo);
+}
 
-void CommandBuffer::Copy(const Buffer &src, const Buffer &dst) {
+void CommandBuffer::Copy(const Buffer& src, const Buffer& dst) {
     assert(src.CreateInfo().size == dst.CreateInfo().size);
-    const VkBufferCopy region = {0, 0, src.CreateInfo().size};
+    const VkBufferCopy region = { 0, 0, src.CreateInfo().size };
     vk::CmdCopyBuffer(handle(), src.handle(), dst.handle(), 1, &region);
 }
 
-void CommandBuffer::ExecuteCommands(const CommandBuffer &secondary) { vk::CmdExecuteCommands(handle(), 1, &secondary.handle()); }
+void CommandBuffer::ExecuteCommands(const CommandBuffer& secondary) {
+    vk::CmdExecuteCommands(handle(), 1, &secondary.handle());
+}
 
-void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo &info) {
+void RenderPass::init(const Device& dev, const VkRenderPassCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass, dev, &info);
 }
 
-void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo2 &info) {
+void RenderPass::init(const Device& dev, const VkRenderPassCreateInfo2& info) {
     if (vk::CreateRenderPass2KHR) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass2KHR, dev, &info);
     } else {
@@ -2008,13 +2177,13 @@ void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo2 &info) {
 
 NON_DISPATCHABLE_HANDLE_DTOR(RenderPass, vk::DestroyRenderPass)
 
-void Framebuffer::init(const Device &dev, const VkFramebufferCreateInfo &info) {
+void Framebuffer::init(const Device& dev, const VkFramebufferCreateInfo& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateFramebuffer, dev, &info);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Framebuffer, vk::DestroyFramebuffer)
 
-void SamplerYcbcrConversion::init(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info) {
+void SamplerYcbcrConversion::init(const Device& dev, const VkSamplerYcbcrConversionCreateInfo& info) {
     if (vk::CreateSamplerYcbcrConversionKHR) {
         NON_DISPATCHABLE_HANDLE_INIT(vk::CreateSamplerYcbcrConversionKHR, dev, &info);
     } else {
@@ -2034,8 +2203,10 @@ VkSamplerYcbcrConversionCreateInfo SamplerYcbcrConversion::DefaultConversionInfo
     ycbcr_create_info.format = format;
     ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
-    ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-                                    VK_COMPONENT_SWIZZLE_IDENTITY};
+    ycbcr_create_info.components = { VK_COMPONENT_SWIZZLE_IDENTITY,
+                                     VK_COMPONENT_SWIZZLE_IDENTITY,
+                                     VK_COMPONENT_SWIZZLE_IDENTITY,
+                                     VK_COMPONENT_SWIZZLE_IDENTITY };
     ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
@@ -2056,19 +2227,22 @@ void SamplerYcbcrConversion::destroy() noexcept {
     internal::NonDispHandle<decltype(handle_)>::destroy();
 }
 
-SamplerYcbcrConversion::~SamplerYcbcrConversion() noexcept { destroy(); }
+SamplerYcbcrConversion::~SamplerYcbcrConversion() noexcept {
+    destroy();
+}
 
 NON_DISPATCHABLE_HANDLE_DTOR(Swapchain, vk::DestroySwapchainKHR)
 
-void Swapchain::Init(const Device &dev, const VkSwapchainCreateInfoKHR &info) {
+void Swapchain::Init(const Device& dev, const VkSwapchainCreateInfoKHR& info) {
     assert(!initialized());
     VkSwapchainKHR handle = VK_NULL_HANDLE;
     auto result = vk::CreateSwapchainKHR(dev.handle(), &info, nullptr, &handle);
-    // NOTE: Swapchain creation has more error codes comparing to other objects that use NON_DISPATCHABLE_HANDLE_INIT macro
-    ASSERT_TRUE((result == VK_SUCCESS) || (result == VK_ERROR_VALIDATION_FAILED_EXT) || (result == VK_ERROR_OUT_OF_DEVICE_MEMORY) ||
-                (result == VK_ERROR_OUT_OF_HOST_MEMORY) || (result == VK_ERROR_SURFACE_LOST_KHR) ||
-                (result == VK_ERROR_DEVICE_LOST) || (result == VK_ERROR_NATIVE_WINDOW_IN_USE_KHR) ||
-                (result == VK_ERROR_INITIALIZATION_FAILED));
+    // NOTE: Swapchain creation has more error codes comparing to other objects that use NON_DISPATCHABLE_HANDLE_INIT
+    // macro
+    ASSERT_TRUE((result == VK_SUCCESS) || (result == VK_ERROR_VALIDATION_FAILED_EXT) ||
+                (result == VK_ERROR_OUT_OF_DEVICE_MEMORY) || (result == VK_ERROR_OUT_OF_HOST_MEMORY) ||
+                (result == VK_ERROR_SURFACE_LOST_KHR) || (result == VK_ERROR_DEVICE_LOST) ||
+                (result == VK_ERROR_NATIVE_WINDOW_IN_USE_KHR) || (result == VK_ERROR_INITIALIZATION_FAILED));
     if (result == VK_SUCCESS) {
         NonDispHandle::init(dev.handle(), handle);
     }
@@ -2087,18 +2261,20 @@ std::vector<VkImage> Swapchain::GetImages() const {
     return images;
 }
 
-uint32_t Swapchain::AcquireNextImage(const Semaphore &image_acquired, uint64_t timeout, VkResult *result) {
+uint32_t Swapchain::AcquireNextImage(const Semaphore& image_acquired, uint64_t timeout, VkResult* result) {
     uint32_t image_index = 0;
-    VkResult acquire_result = vk::AcquireNextImageKHR(device(), handle(), timeout, image_acquired, VK_NULL_HANDLE, &image_index);
+    VkResult acquire_result =
+        vk::AcquireNextImageKHR(device(), handle(), timeout, image_acquired, VK_NULL_HANDLE, &image_index);
     if (result) {
         *result = acquire_result;
     }
     return image_index;
 }
 
-uint32_t Swapchain::AcquireNextImage(const Fence &image_acquired, uint64_t timeout, VkResult *result) {
+uint32_t Swapchain::AcquireNextImage(const Fence& image_acquired, uint64_t timeout, VkResult* result) {
     uint32_t image_index = 0;
-    VkResult acquire_result = vk::AcquireNextImageKHR(device(), handle(), timeout, VK_NULL_HANDLE, image_acquired, &image_index);
+    VkResult acquire_result =
+        vk::AcquireNextImageKHR(device(), handle(), timeout, VK_NULL_HANDLE, image_acquired, &image_index);
     if (result) {
         *result = acquire_result;
     }
@@ -2106,16 +2282,16 @@ uint32_t Swapchain::AcquireNextImage(const Fence &image_acquired, uint64_t timeo
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(IndirectCommandsLayout, vk::DestroyIndirectCommandsLayoutEXT)
-void IndirectCommandsLayout::Init(const Device &dev, const VkIndirectCommandsLayoutCreateInfoEXT &info) {
+void IndirectCommandsLayout::Init(const Device& dev, const VkIndirectCommandsLayoutCreateInfoEXT& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateIndirectCommandsLayoutEXT, dev, &info);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(IndirectExecutionSet, vk::DestroyIndirectExecutionSetEXT)
-void IndirectExecutionSet::Init(const Device &dev, const VkIndirectExecutionSetCreateInfoEXT &info) {
+void IndirectExecutionSet::Init(const Device& dev, const VkIndirectExecutionSetCreateInfoEXT& info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateIndirectExecutionSetEXT, dev, &info);
 }
 
-IndirectExecutionSet::IndirectExecutionSet(const Device &dev, VkPipeline init_pipeline, uint32_t max_pipelines) {
+IndirectExecutionSet::IndirectExecutionSet(const Device& dev, VkPipeline init_pipeline, uint32_t max_pipelines) {
     VkIndirectExecutionSetPipelineInfoEXT exe_set_pipeline_info = vku::InitStructHelper();
     exe_set_pipeline_info.initialPipeline = init_pipeline;
     exe_set_pipeline_info.maxPipelineCount = max_pipelines;
@@ -2125,7 +2301,7 @@ IndirectExecutionSet::IndirectExecutionSet(const Device &dev, VkPipeline init_pi
     exe_set_ci.info.pPipelineInfo = &exe_set_pipeline_info;
     Init(dev, exe_set_ci);
 }
-IndirectExecutionSet::IndirectExecutionSet(const Device &dev, const VkIndirectExecutionSetShaderInfoEXT &shader_info) {
+IndirectExecutionSet::IndirectExecutionSet(const Device& dev, const VkIndirectExecutionSetShaderInfoEXT& shader_info) {
     VkIndirectExecutionSetCreateInfoEXT exe_set_ci = vku::InitStructHelper();
     exe_set_ci.type = VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT;
     exe_set_ci.info.pShaderInfo = &shader_info;
@@ -2133,38 +2309,38 @@ IndirectExecutionSet::IndirectExecutionSet(const Device &dev, const VkIndirectEx
 }
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-VkResult Surface::Init(VkInstance instance, const VkWin32SurfaceCreateInfoKHR &info) {
+VkResult Surface::Init(VkInstance instance, const VkWin32SurfaceCreateInfoKHR& info) {
     VkResult result = vk::CreateWin32SurfaceKHR(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
 }
 #endif
 #if defined(VK_USE_PLATFORM_METAL_EXT)
-VkResult Surface::Init(VkInstance instance, const VkMetalSurfaceCreateInfoEXT &info) {
+VkResult Surface::Init(VkInstance instance, const VkMetalSurfaceCreateInfoEXT& info) {
     VkResult result = vk::CreateMetalSurfaceEXT(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
 }
 #endif
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-VkResult Surface::Init(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR &info) {
+VkResult Surface::Init(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR& info) {
     VkResult result = vk::CreateAndroidSurfaceKHR(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
 }
 #endif
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-VkResult Surface::Init(VkInstance instance, const VkXlibSurfaceCreateInfoKHR &info) {
+VkResult Surface::Init(VkInstance instance, const VkXlibSurfaceCreateInfoKHR& info) {
     VkResult result = vk::CreateXlibSurfaceKHR(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
 }
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-VkResult Surface::Init(VkInstance instance, const VkXcbSurfaceCreateInfoKHR &info) {
+VkResult Surface::Init(VkInstance instance, const VkXcbSurfaceCreateInfoKHR& info) {
     VkResult result = vk::CreateXcbSurfaceKHR(instance, &info, nullptr, &handle_);
     instance_ = instance;
     return result;
 }
 #endif
-}  // namespace vkt
+} // namespace vkt

@@ -313,4 +313,4 @@ struct DrawDispatchVuid {
 };
 
 const DrawDispatchVuid& GetDrawDispatchVuid(vvl::Func function);
-}
+} // namespace vvl

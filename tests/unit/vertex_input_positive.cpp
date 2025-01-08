@@ -11,11 +11,11 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "generated/vk_extension_helper.h"
+#include <vulkan/vulkan_core.h>
 
 class PositiveVertexInput : public VkLayerTest {};
 
@@ -36,7 +36,7 @@ TEST_F(PositiveVertexInput, AttributeMatrixType) {
         input_attribs[i].location = i;
     }
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location=0) in mat2x4 x;
         void main(){
@@ -52,7 +52,7 @@ TEST_F(PositiveVertexInput, AttributeMatrixType) {
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
     /* expect success */
 }
@@ -74,7 +74,7 @@ TEST_F(PositiveVertexInput, AttributeArrayType) {
         input_attribs[i].location = i;
     }
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec4 x[2];
         void main(){
@@ -90,7 +90,7 @@ TEST_F(PositiveVertexInput, AttributeArrayType) {
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -100,7 +100,7 @@ TEST_F(PositiveVertexInput, AttributeStructType) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkVertexInputBindingDescription input_binding = {0, 32, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputBindingDescription input_binding = { 0, 32, VK_VERTEX_INPUT_RATE_VERTEX };
 
     VkVertexInputAttributeDescription input_attrib;
     memset(&input_attrib, 0, sizeof(input_attrib));
@@ -111,7 +111,7 @@ TEST_F(PositiveVertexInput, AttributeStructType) {
     //     in VertexIn {
     //         layout(location = 4) vec4 x;
     //     } x_struct;
-    char const *vsSource = R"(
+    char const* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -138,7 +138,7 @@ TEST_F(PositiveVertexInput, AttributeStructType) {
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -148,7 +148,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeWithArray) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkVertexInputBindingDescription input_binding = {0, 48, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputBindingDescription input_binding = { 0, 48, VK_VERTEX_INPUT_RATE_VERTEX };
 
     VkVertexInputAttributeDescription input_attribs[3];
     memset(input_attribs, 0, sizeof(input_attribs));
@@ -166,7 +166,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeWithArray) {
     //         layout(location = 4) vec4 y[2];
     //         layout(location = 1) vec3 x;
     //     } x_struct;
-    char const *vsSource = R"(
+    char const* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -198,7 +198,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeWithArray) {
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -208,11 +208,11 @@ TEST_F(PositiveVertexInput, AttributeStructTypeSecondLocation) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputBindingDescription input_binding = { 0, 24, VK_VERTEX_INPUT_RATE_VERTEX };
 
     VkVertexInputAttributeDescription input_attribs[2] = {
-        {4, 0, VK_FORMAT_R32G32B32A32_SINT, 0},
-        {6, 0, VK_FORMAT_R32G32B32A32_UINT, 0},
+        { 4, 0, VK_FORMAT_R32G32B32A32_SINT, 0 },
+        { 6, 0, VK_FORMAT_R32G32B32A32_UINT, 0 },
     };
 
     // This is not valid GLSL (but is valid SPIR-V) - would look like:
@@ -220,7 +220,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeSecondLocation) {
     //         layout(location = 4) ivec4 x;
     //         layout(location = 6) uvec4 y;
     //     } x_struct;
-    char const *vsSource = R"(
+    char const* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -250,7 +250,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeSecondLocation) {
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -260,11 +260,11 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputBindingDescription input_binding = { 0, 24, VK_VERTEX_INPUT_RATE_VERTEX };
 
     VkVertexInputAttributeDescription input_attribs[2] = {
-        {4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-        {5, 0, VK_FORMAT_R32G32B32A32_UINT, 0},
+        { 4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0 },
+        { 5, 0, VK_FORMAT_R32G32B32A32_UINT, 0 },
     };
 
     // This is not valid GLSL (but is valid SPIR-V) - would look like:
@@ -272,7 +272,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation) {
     //         vec4 x;
     //         uvec4 y;
     //     } x_struct;
-    char const *vsSource = R"(
+    char const* vsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical Simple
                OpEntryPoint Vertex %1 "main" %2
@@ -301,15 +301,16 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation) {
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
 TEST_F(PositiveVertexInput, AttributeComponents) {
-    TEST_DESCRIPTION(
-        "Test that pipeline validation accepts consuming a vertex attribute through multiple vertex shader inputs, each consuming "
-        "a different subset of the components, and that fragment shader-attachment validation tolerates multiple duplicate "
-        "location outputs");
+    TEST_DESCRIPTION("Test that pipeline validation accepts consuming a vertex attribute through multiple vertex "
+                     "shader inputs, each consuming "
+                     "a different subset of the components, and that fragment shader-attachment validation tolerates "
+                     "multiple duplicate "
+                     "location outputs");
     AddRequiredFeature(vkt::Feature::independentBlend);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -325,7 +326,7 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
         input_attribs[i].location = i;
     }
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         layout(location=1) in vec3 y1;
@@ -335,7 +336,7 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
            gl_Position = x + vec4(y1, y2) + z;
         }
     )glsl";
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(location=0, component=0) out float color0;
         layout(location=0, component=1) out float color1;
@@ -356,8 +357,8 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
     rp.AddAttachmentDescription(VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
+    rp.AddAttachmentReference({ 1, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddColorAttachment(0);
     rp.AddColorAttachment(1);
     rp.CreateRenderPass();
@@ -368,7 +369,7 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
     cb_attachments[0].blendEnable = VK_FALSE;
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.cb_ci_.attachmentCount = 2;
     pipe.cb_ci_.pAttachments = cb_attachments;
@@ -380,9 +381,9 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
 }
 
 TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
-    TEST_DESCRIPTION(
-        "Test that pipeline validation accepts basic use of 64bit vertex attributes. This is interesting because they consume "
-        "multiple locations.");
+    TEST_DESCRIPTION("Test that pipeline validation accepts basic use of 64bit vertex attributes. This is interesting "
+                     "because they consume "
+                     "multiple locations.");
 
     AddRequiredFeature(vkt::Feature::shaderFloat64);
     RETURN_IF_SKIP(Init());
@@ -412,7 +413,7 @@ TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
     input_attribs[3].offset = 96;
     input_attribs[3].format = VK_FORMAT_R64G64B64A64_SFLOAT;
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location=0) in dmat4 x;
         void main(){
@@ -428,7 +429,7 @@ TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 4;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -446,7 +447,7 @@ TEST_F(PositiveVertexInput, VertexAttribute64bit) {
 
     vkt::Buffer vtx_buf(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450 core
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location = 0) in float64_t pos;
@@ -455,14 +456,14 @@ TEST_F(PositiveVertexInput, VertexAttribute64bit) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    VkVertexInputBindingDescription input_binding = {0, 0, VK_VERTEX_INPUT_RATE_VERTEX};
-    VkVertexInputAttributeDescription input_attribs = {0, 0, format, 0};
+    VkVertexInputBindingDescription input_binding = { 0, 0, VK_VERTEX_INPUT_RATE_VERTEX };
+    VkVertexInputAttributeDescription input_attribs = { 0, 0, format, 0 };
 
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -479,12 +480,12 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
         GTEST_SKIP() << "Device does not support VK_FORMAT_R64G64B64A64_SFLOAT vertex buffers";
     }
 
-    VkVertexInputBindingDescription input_binding = {0, 24, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputBindingDescription input_binding = { 0, 24, VK_VERTEX_INPUT_RATE_VERTEX };
 
     VkVertexInputAttributeDescription input_attribs[3] = {
-        {4, 0, VK_FORMAT_R32G32B32A32_SINT, 0},
-        {5, 0, VK_FORMAT_R64G64B64A64_SFLOAT, 0},  // takes 2 slots
-        {7, 0, VK_FORMAT_R32G32B32A32_SINT, 0},
+        { 4, 0, VK_FORMAT_R32G32B32A32_SINT, 0 },
+        { 5, 0, VK_FORMAT_R64G64B64A64_SFLOAT, 0 }, // takes 2 slots
+        { 7, 0, VK_FORMAT_R32G32B32A32_SINT, 0 },
     };
 
     // This is not valid GLSL (but is valid SPIR-V) - would look like:
@@ -493,7 +494,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
     //         float64 y;
     //         ivec4 z;
     //     } x_struct;
-    char const *vsSource = R"(
+    char const* vsSource = R"(
                OpCapability Shader
                OpCapability Float64
                OpMemoryModel Logical Simple
@@ -523,7 +524,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = input_attribs;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -539,7 +540,7 @@ TEST_F(PositiveVertexInput, Attribute64bitMissingComponent) {
         GTEST_SKIP() << "Format not supported for Vertex Buffer";
     }
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450 core
         #extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
         layout(location = 0) in f64vec2 pos;
@@ -548,14 +549,14 @@ TEST_F(PositiveVertexInput, Attribute64bitMissingComponent) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    VkVertexInputBindingDescription input_binding = {0, 32, VK_VERTEX_INPUT_RATE_VERTEX};
-    VkVertexInputAttributeDescription input_attribs = {0, 0, format, 0};
+    VkVertexInputBindingDescription input_binding = { 0, 32, VK_VERTEX_INPUT_RATE_VERTEX };
+    VkVertexInputAttributeDescription input_attribs = { 0, 0, format, 0 };
 
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
 
     pipe.CreateGraphicsPipeline();
 }
@@ -613,11 +614,13 @@ TEST_F(PositiveVertexInput, VertextBindingNonLinear) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
-    VkVertexInputBindingDescription vtx_binding_des[3] = {
-        {3, 0, VK_VERTEX_INPUT_RATE_VERTEX}, {5, 0, VK_VERTEX_INPUT_RATE_VERTEX}, {2, 0, VK_VERTEX_INPUT_RATE_VERTEX}};
+    VkVertexInputBindingDescription vtx_binding_des[3] = { { 3, 0, VK_VERTEX_INPUT_RATE_VERTEX },
+                                                           { 5, 0, VK_VERTEX_INPUT_RATE_VERTEX },
+                                                           { 2, 0, VK_VERTEX_INPUT_RATE_VERTEX } };
 
-    VkVertexInputAttributeDescription vtx_attri_des[3] = {
-        {0, 5, VK_FORMAT_R8G8B8A8_UNORM, 0}, {1, 3, VK_FORMAT_R8G8B8A8_UNORM, 0}, {2, 2, VK_FORMAT_R8G8B8A8_UNORM, 0}};
+    VkVertexInputAttributeDescription vtx_attri_des[3] = { { 0, 5, VK_FORMAT_R8G8B8A8_UNORM, 0 },
+                                                           { 1, 3, VK_FORMAT_R8G8B8A8_UNORM, 0 },
+                                                           { 2, 2, VK_FORMAT_R8G8B8A8_UNORM, 0 } };
     pipe.vi_ci_.vertexBindingDescriptionCount = 3;
     pipe.vi_ci_.pVertexBindingDescriptions = vtx_binding_des;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 3;
@@ -627,8 +630,9 @@ TEST_F(PositiveVertexInput, VertextBindingNonLinear) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    VkDeviceSize offsets[6] = {0, 0, 0, 0, 0, 0};
-    VkBuffer buffers[6] = {buffer.handle(), buffer.handle(), buffer.handle(), buffer.handle(), buffer.handle(), buffer.handle()};
+    VkDeviceSize offsets[6] = { 0, 0, 0, 0, 0, 0 };
+    VkBuffer buffers[6] = { buffer.handle(), buffer.handle(), buffer.handle(),
+                            buffer.handle(), buffer.handle(), buffer.handle() };
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 6, buffers, offsets);
 
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
@@ -650,9 +654,11 @@ TEST_F(PositiveVertexInput, VertextBindingDynamicState) {
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    VkDeviceSize offsets[2] = {0, 0};
+    VkDeviceSize offsets[2] = { 0, 0 };
 
-    VkVertexInputBindingDescription2EXT bindings[3] = {vku::InitStructHelper(), vku::InitStructHelper(), vku::InitStructHelper()};
+    VkVertexInputBindingDescription2EXT bindings[3] = { vku::InitStructHelper(),
+                                                        vku::InitStructHelper(),
+                                                        vku::InitStructHelper() };
     bindings[0].binding = 3;
     bindings[0].divisor = 1;
     bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -663,8 +669,9 @@ TEST_F(PositiveVertexInput, VertextBindingDynamicState) {
     bindings[2].divisor = 1;
     bindings[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    VkVertexInputAttributeDescription2EXT attributes[3] = {vku::InitStructHelper(), vku::InitStructHelper(),
-                                                           vku::InitStructHelper()};
+    VkVertexInputAttributeDescription2EXT attributes[3] = { vku::InitStructHelper(),
+                                                            vku::InitStructHelper(),
+                                                            vku::InitStructHelper() };
     attributes[0].location = 1;
     attributes[0].binding = 3;
     attributes[0].format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -677,7 +684,7 @@ TEST_F(PositiveVertexInput, VertextBindingDynamicState) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    VkBuffer buffers[2] = {buffer.handle(), buffer.handle()};
+    VkBuffer buffers[2] = { buffer.handle(), buffer.handle() };
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 5, 2, buffers, offsets);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 3, bindings, 3, attributes);
@@ -699,8 +706,8 @@ TEST_F(PositiveVertexInput, VertexStrideDynamicStride) {
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     CreatePipelineHelper pipe(*this);
-    VkVertexInputBindingDescription bindings = {0, 3, VK_VERTEX_INPUT_RATE_VERTEX};
-    VkVertexInputAttributeDescription attributes = {0, 0, VK_FORMAT_R16_UNORM, 0};
+    VkVertexInputBindingDescription bindings = { 0, 3, VK_VERTEX_INPUT_RATE_VERTEX };
+    VkVertexInputAttributeDescription attributes = { 0, 0, VK_FORMAT_R16_UNORM, 0 };
 
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
@@ -757,7 +764,7 @@ TEST_F(PositiveVertexInput, VertexStrideDoubleDynamicStride) {
     const VkDeviceSize good_stride = 4;
 
     vk::CmdBindVertexBuffers2EXT(m_command_buffer.handle(), 0, 1, &buffer.handle(), &offset, nullptr, &bad_stride);
-    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1, &binding, 1, &attribute);  // set to valid
+    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1, &binding, 1, &attribute); // set to valid
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
     // flip order around
@@ -780,7 +787,7 @@ TEST_F(PositiveVertexInput, InputBindingMaxVertexInputBindingStrideDynamic) {
     VkVertexInputBindingDescription vertex_input_binding_description{};
     vertex_input_binding_description.stride = m_device->Physical().limits_.maxVertexInputBindingStride + 1;
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
+    const auto set_info = [&](CreatePipelineHelper& helper) {
         helper.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
         helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
@@ -796,8 +803,8 @@ TEST_F(PositiveVertexInput, BindVertexBufferNull) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    VkVertexInputBindingDescription bindings = {0, 4, VK_VERTEX_INPUT_RATE_VERTEX};
-    VkVertexInputAttributeDescription attributes = {0, 0, VK_FORMAT_R8G8B8A8_UNORM, 0};
+    VkVertexInputBindingDescription bindings = { 0, 4, VK_VERTEX_INPUT_RATE_VERTEX };
+    VkVertexInputAttributeDescription attributes = { 0, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 };
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
@@ -808,9 +815,9 @@ TEST_F(PositiveVertexInput, BindVertexBufferNull) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    VkDeviceSize offsets[2] = {0, 0};
+    VkDeviceSize offsets[2] = { 0, 0 };
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    VkBuffer buffers[2] = {buffer.handle(), VK_NULL_HANDLE};
+    VkBuffer buffers[2] = { buffer.handle(), VK_NULL_HANDLE };
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 2, buffers, offsets);
 
     // only uses first binding
@@ -830,10 +837,10 @@ TEST_F(PositiveVertexInput, InterleavedAttributes) {
 
     // Has item in Binding = 1 which we never bind with CmdBindVertexBuffers
     CreatePipelineHelper pipe0(*this);
-    VkVertexInputBindingDescription vtx_binding_des[2] = {{0, 12, VK_VERTEX_INPUT_RATE_VERTEX},
-                                                          {1, 12, VK_VERTEX_INPUT_RATE_VERTEX}};
-    VkVertexInputAttributeDescription vtx_attri_des[2] = {{0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0},
-                                                          {1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0}};
+    VkVertexInputBindingDescription vtx_binding_des[2] = { { 0, 12, VK_VERTEX_INPUT_RATE_VERTEX },
+                                                           { 1, 12, VK_VERTEX_INPUT_RATE_VERTEX } };
+    VkVertexInputAttributeDescription vtx_attri_des[2] = { { 0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, 0 },
+                                                           { 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, 0 } };
     pipe0.vi_ci_.vertexBindingDescriptionCount = 2;
     pipe0.vi_ci_.pVertexBindingDescriptions = vtx_binding_des;
     pipe0.vi_ci_.vertexAttributeDescriptionCount = 2;
@@ -851,8 +858,8 @@ TEST_F(PositiveVertexInput, InterleavedAttributes) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     // We bind, but rebind with valid pipeline
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.Handle());  // invalid
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());  // valid
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.Handle()); // invalid
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle()); // valid
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vtx_buf.handle(), &offset);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
@@ -869,7 +876,7 @@ TEST_F(PositiveVertexInput, LegacyVertexAttributes) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location=0) in int x; /* attrib provided float */
         void main(){
@@ -880,7 +887,7 @@ TEST_F(PositiveVertexInput, LegacyVertexAttributes) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 
     VkVertexInputBindingDescription2EXT binding = vku::InitStructHelper();
@@ -914,14 +921,14 @@ TEST_F(PositiveVertexInput, ResetCmdSetVertexInput) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vs_source_int = R"glsl(
+    char const* vs_source_int = R"glsl(
         #version 450
         layout(location=0) in uvec4 x;
         void main(){}
     )glsl";
     VkShaderObj vs_int(this, vs_source_int, VK_SHADER_STAGE_VERTEX_BIT);
 
-    char const *vs_source_float = R"glsl(
+    char const* vs_source_float = R"glsl(
         #version 450
         layout(location=0) in vec4 x;
         void main(){}
@@ -930,12 +937,12 @@ TEST_F(PositiveVertexInput, ResetCmdSetVertexInput) {
 
     CreatePipelineHelper pipe_int(*this);
     pipe_int.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    pipe_int.shader_stages_ = {vs_int.GetStageCreateInfo(), pipe_int.fs_->GetStageCreateInfo()};
+    pipe_int.shader_stages_ = { vs_int.GetStageCreateInfo(), pipe_int.fs_->GetStageCreateInfo() };
     pipe_int.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_float(*this);
     pipe_float.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    pipe_float.shader_stages_ = {vs_float.GetStageCreateInfo(), pipe_float.fs_->GetStageCreateInfo()};
+    pipe_float.shader_stages_ = { vs_float.GetStageCreateInfo(), pipe_float.fs_->GetStageCreateInfo() };
     pipe_float.CreateGraphicsPipeline();
 
     vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -975,7 +982,7 @@ TEST_F(PositiveVertexInput, VertexAttributeRobustness) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
+    char const* vs_source = R"glsl(
         #version 450
         layout(location=0) in vec4 x; /* not provided */
         void main(){
@@ -985,7 +992,7 @@ TEST_F(PositiveVertexInput, VertexAttributeRobustness) {
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 }
 
@@ -997,7 +1004,7 @@ TEST_F(PositiveVertexInput, VertexAttributeRobustnessDynamic) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location = 0) in vec4 x;
         layout(location = 1) in vec4 y;
@@ -1010,7 +1017,7 @@ TEST_F(PositiveVertexInput, VertexAttributeRobustnessDynamic) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
     pipe.CreateGraphicsPipeline();
 
@@ -1046,7 +1053,7 @@ TEST_F(PositiveVertexInput, VertexInputRebinding) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(location = 0) in float a;
 
@@ -1058,7 +1065,7 @@ TEST_F(PositiveVertexInput, VertexInputRebinding) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.CreateGraphicsPipeline();
 
     VkVertexInputBindingDescription2EXT bindings[2];
@@ -1084,8 +1091,8 @@ TEST_F(PositiveVertexInput, VertexInputRebinding) {
     attributes[1].offset = 0;
 
     vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    VkDeviceSize offsets[2] = {0, 0};
-    VkBuffer buffers[2] = {vertex_buffer.handle(), vertex_buffer.handle()};
+    VkDeviceSize offsets[2] = { 0, 0 };
+    VkBuffer buffers[2] = { vertex_buffer.handle(), vertex_buffer.handle() };
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);

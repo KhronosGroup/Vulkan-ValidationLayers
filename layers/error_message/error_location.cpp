@@ -21,7 +21,8 @@ void Location::AppendFields(std::ostream& out) const {
     if (prev) {
         // When apply a .dot(sub_index) we duplicate the field item
         // Instead of dealing with partial non-const Location, just do the check here
-        const Location& prev_loc = (prev->field == field && prev->index == kNoIndex && prev->prev) ? *prev->prev : *prev;
+        const Location& prev_loc =
+            (prev->field == field && prev->index == kNoIndex && prev->prev) ? *prev->prev : *prev;
 
         // Work back and print for Locaiton first
         prev_loc.AppendFields(out);
@@ -64,10 +65,11 @@ std::string Location::Message() const {
 }
 
 namespace vvl {
-LocationCapture::LocationCapture(const Location& loc) { Capture(loc, 1); }
+LocationCapture::LocationCapture(const Location& loc) {
+    Capture(loc, 1);
+}
 
-LocationCapture::LocationCapture(const LocationCapture& other)
-    : capture(other.capture) {
+LocationCapture::LocationCapture(const LocationCapture& other) : capture(other.capture) {
     if (capture.empty()) {
         return;
     }
@@ -77,8 +79,7 @@ LocationCapture::LocationCapture(const LocationCapture& other)
     }
 }
 
-LocationCapture::LocationCapture(LocationCapture&& other)
-    : capture(std::move(other.capture)) {
+LocationCapture::LocationCapture(LocationCapture&& other) : capture(std::move(other.capture)) {
     if (capture.empty()) {
         return;
     }
@@ -154,7 +155,7 @@ bool operator==(const Key& key, const Location& loc) {
         return true;
     }
     if (key.recurse_field) {
-        const Location *prev = loc.prev;
+        const Location* prev = loc.prev;
         while (prev != nullptr) {
             if (key.field == prev->field) {
                 return true;
@@ -165,4 +166,4 @@ bool operator==(const Key& key, const Location& loc) {
     return false;
 }
 
-}  // namespace vvl
+} // namespace vvl

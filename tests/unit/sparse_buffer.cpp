@@ -12,8 +12,8 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
+#include "utils/cast_utils.h"
 
 class NegativeSparseBuffer : public VkLayerTest {};
 
@@ -40,7 +40,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindSize) {
     buffer_mem.init(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
-    buffer_memory_bind.size = 0u;  // This will trigger the VUID we are testing
+    buffer_memory_bind.size = 0u; // This will trigger the VUID we are testing
     buffer_memory_bind.memory = buffer_mem.handle();
 
     VkSparseBufferMemoryBindInfo buffer_memory_bind_info{};
@@ -86,11 +86,11 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindAlignments) {
 
     std::array<VkSparseMemoryBind, 3> buffer_memory_binds = {};
     buffer_memory_binds[0].resourceOffset = 0;
-    buffer_memory_binds[0].size = 1u;  // Unaligned
+    buffer_memory_binds[0].size = 1u; // Unaligned
     buffer_memory_binds[0].memory = buffer_mem.handle();
     buffer_memory_binds[0].memoryOffset = 0;
 
-    buffer_memory_binds[1].resourceOffset = 1;  // Unaligned
+    buffer_memory_binds[1].resourceOffset = 1; // Unaligned
     buffer_memory_binds[1].size = 0x10000;
     buffer_memory_binds[1].memory = buffer_mem.handle();
     buffer_memory_binds[1].memoryOffset = 0;
@@ -98,7 +98,7 @@ TEST_F(NegativeSparseBuffer, QueueBindSparseMemoryBindAlignments) {
     buffer_memory_binds[2].resourceOffset = 0;
     buffer_memory_binds[2].size = 0x10000;
     buffer_memory_binds[2].memory = buffer_mem.handle();
-    buffer_memory_binds[2].memoryOffset = 1;  // Unaligned
+    buffer_memory_binds[2].memoryOffset = 1; // Unaligned
 
     VkSparseBufferMemoryBindInfo buffer_memory_bind_info{};
     buffer_memory_bind_info.buffer = buffer_sparse.handle();
@@ -355,15 +355,15 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     copy_info_list[0].dstOffset = 16;
     copy_info_list[0].size = copy_size;
 
-    copy_info_list[1].srcOffset = 16;  // source overlaps copy_info_list[0].dst
+    copy_info_list[1].srcOffset = 16; // source overlaps copy_info_list[0].dst
     copy_info_list[1].dstOffset = 32;
     copy_info_list[1].size = copy_size;
 
-    copy_info_list[2].srcOffset = 32;  // source overlaps copy_info_list[1].dst
+    copy_info_list[2].srcOffset = 32; // source overlaps copy_info_list[1].dst
     copy_info_list[2].dstOffset = 48;
     copy_info_list[2].size = copy_size;
 
-    copy_info_list[3].srcOffset = 48;  // source overlaps copy_info_list[2].dst
+    copy_info_list[3].srcOffset = 48; // source overlaps copy_info_list[2].dst
     copy_info_list[3].dstOffset = 64;
     copy_info_list[3].size = copy_size;
 
@@ -402,7 +402,10 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy2) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
+    vk::CmdCopyBuffer(m_command_buffer.handle(),
+                      buffer_sparse.handle(),
+                      buffer_sparse.handle(),
+                      size32(copy_info_list),
                       copy_info_list.data());
     m_command_buffer.End();
 
@@ -481,9 +484,10 @@ TEST_F(NegativeSparseBuffer, OverlappingBufferCopy3) {
     // Set up complete
 
     VkBufferCopy copy_info;
-    copy_info.srcOffset = 0;                              // srcOffset is the start of buffer_mem_1, or 0 in this space.
-    copy_info.dstOffset = buffer_mem_reqs.alignment / 2;  // dstOffset is the start of buffer_mem_2, or 0 in this space
-                                                          // => since overlaps are computed in buffer space, none should be detected
+    copy_info.srcOffset = 0; // srcOffset is the start of buffer_mem_1, or 0 in this space.
+    copy_info.dstOffset =
+        buffer_mem_reqs.alignment / 2; // dstOffset is the start of buffer_mem_2, or 0 in this space
+                                       // => since overlaps are computed in buffer space, none should be detected
     copy_info.size = buffer_mem_reqs.alignment;
     m_command_buffer.Begin();
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);

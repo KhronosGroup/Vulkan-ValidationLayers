@@ -23,11 +23,13 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <vulkan/vulkan.h>
+
 #include <array>
 #include <bitset>
 #include <map>
-#include <stdint.h>
-#include <vulkan/vulkan.h>
+
 #include "containers/custom_containers.h"
 // clang-format off
 static constexpr VkAccessFlags2 kShaderReadExpandBits = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT|VK_ACCESS_2_SHADER_STORAGE_READ_BIT|VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR;

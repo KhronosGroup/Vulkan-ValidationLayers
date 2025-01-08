@@ -13,8 +13,8 @@
 
 #include "queue_submit_context.h"
 
-QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Queue* force_q1)
-    : dev(device), q0(VK_NULL_HANDLE), q1(VK_NULL_HANDLE) {
+QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Queue* force_q1) :
+    dev(device), q0(VK_NULL_HANDLE), q1(VK_NULL_HANDLE) {
     if (force_q0) {
         q0 = force_q0->handle();
         q_fam = force_q0->family_index;
@@ -24,7 +24,7 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
                 q1 = force_q1->handle();
             }
         } else {
-            q1 = q0;  // Allow the two queues to be the same and valid if forced
+            q1 = q0; // Allow the two queues to be the same and valid if forced
         }
     } else {
         const auto& queues = device->QueuesWithTransferCapability();
@@ -47,7 +47,8 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
         }
     }
 
-    if (!Valid()) return;
+    if (!Valid())
+        return;
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -57,11 +58,11 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
 
     VkDeviceSize size = 256;
     VkDeviceSize half_size = size / 2;
-    full_buffer = {0, 0, size};
-    first_half = {0, 0, half_size};
-    second_half = {half_size, half_size, half_size};
-    first_to_second = {0, half_size, half_size};
-    second_to_first = {half_size, 0, half_size};
+    full_buffer = { 0, 0, size };
+    first_half = { 0, 0, half_size };
+    second_half = { half_size, half_size, half_size };
+    first_to_second = { 0, half_size, half_size };
+    second_to_first = { half_size, 0, half_size };
 
     pool.Init(*device, q_fam, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
@@ -101,11 +102,12 @@ void QSTestContext::Copy(vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy&
 }
 
 void QSTestContext::CopyGeneral(const vkt::Image& from, const vkt::Image& to, const VkImageCopy& region) {
-    vk::CmdCopyImage(current_cb->handle(), from.handle(), VK_IMAGE_LAYOUT_GENERAL, to.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &region);
+    vk::CmdCopyImage(
+        current_cb->handle(), from.handle(), VK_IMAGE_LAYOUT_GENERAL, to.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
 }
 
-VkBufferMemoryBarrier QSTestContext::InitBufferBarrier(const vkt::Buffer& buffer, VkAccessFlags src, VkAccessFlags dst) {
+VkBufferMemoryBarrier
+QSTestContext::InitBufferBarrier(const vkt::Buffer& buffer, VkAccessFlags src, VkAccessFlags dst) {
     VkBufferMemoryBarrier buffer_barrier = vku::InitStructHelper();
     buffer_barrier.srcAccessMask = src;
     buffer_barrier.dstAccessMask = dst;
@@ -124,14 +126,30 @@ VkBufferMemoryBarrier QSTestContext::InitBufferBarrierWAR(const vkt::Buffer& buf
 }
 
 void QSTestContext::TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier) {
-    vk::CmdPipelineBarrier(current_cb->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
-                           &buffer_barrier, 0, nullptr);
+    vk::CmdPipelineBarrier(current_cb->handle(),
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           1,
+                           &buffer_barrier,
+                           0,
+                           nullptr);
 }
 
-void QSTestContext::TransferBarrierWAR(const vkt::Buffer& buffer) { TransferBarrier(InitBufferBarrierWAR(buffer)); }
-void QSTestContext::TransferBarrierRAW(const vkt::Buffer& buffer) { TransferBarrier(InitBufferBarrierRAW(buffer)); }
+void QSTestContext::TransferBarrierWAR(const vkt::Buffer& buffer) {
+    TransferBarrier(InitBufferBarrierWAR(buffer));
+}
+void QSTestContext::TransferBarrierRAW(const vkt::Buffer& buffer) {
+    TransferBarrier(InitBufferBarrierRAW(buffer));
+}
 
-void QSTestContext::Submit(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
+void QSTestContext::Submit(VkQueue q,
+                           vkt::CommandBuffer& cb,
+                           VkSemaphore wait,
+                           VkPipelineStageFlags wait_mask,
+                           VkSemaphore signal,
                            VkFence fence) {
     VkSubmitInfo submit1 = vku::InitStructHelper();
     submit1.commandBufferCount = 1;
@@ -149,8 +167,13 @@ void QSTestContext::Submit(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait, 
     vk::QueueSubmit(q, 1, &submit1, fence);
 }
 
-void QSTestContext::SubmitX(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
-                            VkPipelineStageFlags signal_mask, VkFence fence) {
+void QSTestContext::SubmitX(VkQueue q,
+                            vkt::CommandBuffer& cb,
+                            VkSemaphore wait,
+                            VkPipelineStageFlags wait_mask,
+                            VkSemaphore signal,
+                            VkPipelineStageFlags signal_mask,
+                            VkFence fence) {
     VkSubmitInfo2 submit1 = vku::InitStructHelper();
     VkCommandBufferSubmitInfo cb_info = vku::InitStructHelper();
     VkSemaphoreSubmitInfo wait_info = vku::InitStructHelper();
@@ -176,13 +199,22 @@ void QSTestContext::SubmitX(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait,
     vk::QueueSubmit2(q, 1, &submit1, fence);
 }
 
-void QSTestContext::WaitEventBufferTransfer(vkt::Buffer& buffer, VkPipelineStageFlags src_mask, VkPipelineStageFlags dst_mask) {
+void QSTestContext::WaitEventBufferTransfer(vkt::Buffer& buffer,
+                                            VkPipelineStageFlags src_mask,
+                                            VkPipelineStageFlags dst_mask) {
     std::vector<VkBufferMemoryBarrier> buffer_barriers(1, InitBufferBarrierWAR(buffer));
-    event.CmdWait(*current_cb, src_mask, dst_mask, std::vector<VkMemoryBarrier>(), buffer_barriers,
+    event.CmdWait(*current_cb,
+                  src_mask,
+                  dst_mask,
+                  std::vector<VkMemoryBarrier>(),
+                  buffer_barriers,
                   std::vector<VkImageMemoryBarrier>());
 }
 
-void QSTestContext::RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy& copy_region) {
+void QSTestContext::RecordCopy(vkt::CommandBuffer& cb,
+                               vkt::Buffer& from,
+                               vkt::Buffer& to,
+                               const VkBufferCopy& copy_region) {
     Begin(cb);
     Copy(from, to, copy_region);
     End();

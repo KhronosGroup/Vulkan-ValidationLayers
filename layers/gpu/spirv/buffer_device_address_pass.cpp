@@ -15,8 +15,8 @@
 
 #include "buffer_device_address_pass.h"
 #include "module.h"
-#include <spirv/unified1/spirv.hpp>
 #include <iostream>
+#include <spirv/unified1/spirv.hpp>
 
 #include "generated/instrumentation_buffer_device_address_comp.h"
 
@@ -25,8 +25,10 @@ namespace spirv {
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
-    static LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrumentation_buffer_device_address_comp_size, 0,
-                                 "inst_buffer_device_address"};
+    static LinkInfo link_info = { instrumentation_buffer_device_address_comp,
+                                  instrumentation_buffer_device_address_comp_size,
+                                  0,
+                                  "inst_buffer_device_address" };
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
@@ -36,13 +38,14 @@ uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block,
+                                                     InstructionIt* inst_it,
                                                      const InjectionData& injection_data) {
     // Convert reference pointer to uint64
     const uint32_t pointer_id = target_instruction_->Operand(0);
     const Type& uint64_type = module_.type_manager_.GetTypeInt(64, 0);
     const uint32_t convert_id = module_.TakeNextId();
-    block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), convert_id, pointer_id}, inst_it);
+    block.CreateInstruction(spv::OpConvertPtrToU, { uint64_type.Id(), convert_id, pointer_id }, inst_it);
 
     const Constant& length_constant = module_.type_manager_.GetConstantUInt32(type_length_);
     const uint32_t opcode = target_instruction_->Opcode();
@@ -54,11 +57,17 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, convert_id,
-         length_constant.Id(), access_opcode.Id(), alignment_constant.Id()},
-        inst_it);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            { bool_type,
+                              function_result,
+                              function_def,
+                              injection_data.inst_position_id,
+                              injection_data.stage_info_id,
+                              convert_id,
+                              length_constant.Id(),
+                              access_opcode.Id(),
+                              alignment_constant.Id() },
+                            inst_it);
 
     return function_result;
 }
@@ -75,7 +84,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
         // We only care if there is an Aligned Memory Operands
         // VUID-StandaloneSpirv-PhysicalStorageBuffer64-04708 requires there to be an Aligned operand
         const uint32_t memory_operand_index = opcode == spv::OpLoad ? 4 : 3;
-        const uint32_t alignment_word_index = opcode == spv::OpLoad ? 5 : 4;  // OpStore is at [4]
+        const uint32_t alignment_word_index = opcode == spv::OpLoad ? 5 : 4; // OpStore is at [4]
         if (inst.Length() < alignment_word_index) {
             return false;
         }
@@ -113,8 +122,8 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     // Most common case we will just spot the access directly using the PhysicalStorageBuffer pointer
     if (op_type_pointer->inst_.Operand(0) == spv::StorageClassPhysicalStorageBuffer) {
         // If loading the struct, this is likely just saving it
-        // Shown from RADV/Intel NIR compiler, the compiler gets an offset and then dereference just the member, it never "loads the
-        // whole struct"
+        // Shown from RADV/Intel NIR compiler, the compiler gets an offset and then dereference just the member, it
+        // never "loads the whole struct"
         if (accessed_type->spv_type_ == SpvType::kStruct) {
             // If the struct is only a single element, then everything works and the size will be the same
             if (accessed_type->inst_.Length() > 3) {
@@ -136,5 +145,5 @@ void BufferDeviceAddressPass::PrintDebugInfo() {
     std::cout << "BufferDeviceAddressPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

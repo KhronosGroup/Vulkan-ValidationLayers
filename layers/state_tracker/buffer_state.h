@@ -18,9 +18,9 @@
  * limitations under the License.
  */
 #pragma once
-#include <variant>
-#include "state_tracker/device_memory_state.h"
 #include "containers/range_vector.h"
+#include "state_tracker/device_memory_state.h"
+#include <variant>
 
 class ValidationStateTracker;
 
@@ -31,7 +31,7 @@ class VideoProfileDesc;
 class Buffer : public Bindable {
   public:
     const vku::safe_VkBufferCreateInfo safe_create_info;
-    const VkBufferCreateInfo &create_info;
+    const VkBufferCreateInfo& create_info;
 
     const VkMemoryRequirements requirements;
     VkDeviceAddress deviceAddress = 0;
@@ -40,9 +40,9 @@ class Buffer : public Bindable {
 
     unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
 
-    Buffer(ValidationStateTracker &dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo);
+    Buffer(ValidationStateTracker& dev_data, VkBuffer handle, const VkBufferCreateInfo* pCreateInfo);
 
-    Buffer(Buffer const &rh_obj) = delete;
+    Buffer(Buffer const& rh_obj) = delete;
 
     // This destructor is needed because Bindable depends on the tracker_ variant defined in this
     // class. So we need to do the Destroy() work before tracker_ is destroyed.
@@ -65,16 +65,17 @@ class Buffer : public Bindable {
         return 0;
     }
 
-    static VkDeviceSize GetRegionSize(const std::shared_ptr<const Buffer> &buffer_state, VkDeviceSize offset, VkDeviceSize size) {
+    static VkDeviceSize
+    GetRegionSize(const std::shared_ptr<const Buffer>& buffer_state, VkDeviceSize offset, VkDeviceSize size) {
         return buffer_state ? buffer_state->GetRegionSize(offset, size) : 0;
     }
 
     sparse_container::range<VkDeviceAddress> DeviceAddressRange() const {
-        return {deviceAddress, deviceAddress + create_info.size};
+        return { deviceAddress, deviceAddress + create_info.size };
     }
 
     // This function is only used for comparing Imported External Dedicated Memory
-    bool CompareCreateInfo(const Buffer &other) const;
+    bool CompareCreateInfo(const Buffer& other) const;
 
   private:
     std::variant<std::monostate, BindableLinearMemoryTracker, BindableSparseMemoryTracker> tracker_;
@@ -83,17 +84,19 @@ class Buffer : public Bindable {
 class BufferView : public StateObject {
   public:
     const vku::safe_VkBufferViewCreateInfo safe_create_info;
-    const VkBufferViewCreateInfo &create_info;
+    const VkBufferViewCreateInfo& create_info;
 
     std::shared_ptr<Buffer> buffer_state;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     const bool metal_bufferview_export;
-#endif  // VK_USE_PLATFORM_METAL_EXT
+#endif // VK_USE_PLATFORM_METAL_EXT
     // Format features that matter when accessing the buffer
     // both as a buffer (ex OpLoad) or image (ex OpImageWrite)
     const VkFormatFeatureFlags2KHR buffer_format_features;
 
-    BufferView(const std::shared_ptr<Buffer> &bf, VkBufferView handle, const VkBufferViewCreateInfo *pCreateInfo,
+    BufferView(const std::shared_ptr<Buffer>& bf,
+               VkBufferView handle,
+               const VkBufferViewCreateInfo* pCreateInfo,
                VkFormatFeatureFlags2KHR format_features);
 
     void LinkChildNodes() override {
@@ -106,7 +109,7 @@ class BufferView : public StateObject {
         }
     }
 
-    BufferView(const BufferView &rh_obj) = delete;
+    BufferView(const BufferView& rh_obj) = delete;
 
     VkBufferView VkHandle() const { return handle_.Cast<VkBufferView>(); }
 
@@ -128,4 +131,4 @@ class BufferView : public StateObject {
     }
 };
 
-}  // namespace vvl
+} // namespace vvl

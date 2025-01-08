@@ -25,7 +25,7 @@ namespace vvl {
 class Buffer;
 
 struct VertexBufferBinding {
-    VkBuffer buffer;  // VK_NULL_HANDLE is valid if using nullDescriptor
+    VkBuffer buffer; // VK_NULL_HANDLE is valid if using nullDescriptor
     // Binding valid size: 0 if buffer is not tracked, actual size if VK_WHOLE_SIZE was specified,
     // clamped up to 0 if specified size is greater than the size actually left in the buffer
     VkDeviceSize effective_size;
@@ -38,16 +38,16 @@ struct VertexBufferBinding {
 };
 
 struct IndexBufferBinding {
-    VkBuffer buffer;  // VK_NULL_HANDLE is valid if using nullDescriptor
+    VkBuffer buffer; // VK_NULL_HANDLE is valid if using nullDescriptor
     VkDeviceSize size;
     VkDeviceSize offset;
     VkIndexType index_type;
 
     IndexBufferBinding() : buffer(VK_NULL_HANDLE), size(0), offset(0), index_type(static_cast<VkIndexType>(0)) {}
-    IndexBufferBinding(VkBuffer buffer_, VkDeviceSize size_, VkDeviceSize offset_, VkIndexType index_type_)
-        : buffer(buffer_), size(size_), offset(offset_), index_type(index_type_) {}
+    IndexBufferBinding(VkBuffer buffer_, VkDeviceSize size_, VkDeviceSize offset_, VkIndexType index_type_) :
+        buffer(buffer_), size(size_), offset(offset_), index_type(index_type_) {}
 
     void reset() { *this = IndexBufferBinding(); }
 };
 
-}  // namespace vvl
+} // namespace vvl

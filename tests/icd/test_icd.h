@@ -16,17 +16,17 @@
 
 #pragma once
 
-#include <stdlib.h>
 #include <cstring>
+#include <stdlib.h>
 
 #include <array>
 #include <mutex>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-#include "vulkan/vulkan.h"
 #include "vulkan/vk_icd.h"
+#include "vulkan/vulkan.h"
 
 namespace icd {
 
@@ -44,7 +44,9 @@ static void* CreateDispObjHandle() {
     set_loader_magic_value(handle);
     return handle;
 }
-static void DestroyDispObjHandle(void* handle) { delete reinterpret_cast<VK_LOADER_DATA*>(handle); }
+static void DestroyDispObjHandle(void* handle) {
+    delete reinterpret_cast<VK_LOADER_DATA*>(handle);
+}
 
 static constexpr uint32_t icd_physical_device_count = 1;
 static std::unordered_map<VkInstance, std::array<VkPhysicalDevice, icd_physical_device_count>> physical_device_map;
@@ -74,4 +76,4 @@ static VkPhysicalDeviceLimits SetLimits(VkPhysicalDeviceLimits* limits);
 void SetBoolArrayTrue(VkBool32* bool_array, uint32_t num_bools);
 VkDeviceSize GetImageSizeFromCreateInfo(const VkImageCreateInfo* pCreateInfo);
 
-}  // namespace icd
+} // namespace icd

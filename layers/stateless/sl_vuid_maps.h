@@ -29,6 +29,6 @@ enum class PipelineBinaryInfoError {
     BinaryCount_09622,
 };
 
-const std::string &GetPipelineBinaryInfoVUID(const Location &loc, PipelineBinaryInfoError error);
+const std::string& GetPipelineBinaryInfoVUID(const Location& loc, PipelineBinaryInfoError error);
 
-}  // namespace vvl
+} // namespace vvl

@@ -19,7 +19,8 @@
 #include "state_tracker/state_tracker.h"
 
 namespace vvl {
-static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker &dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
+static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker& dev_data,
+                                                   const VkShaderCreateInfoEXT& pCreateInfo) {
     ShaderObject::SetLayoutVector set_layouts(pCreateInfo.setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo.setLayoutCount; ++i) {
@@ -28,18 +29,19 @@ static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker &dev_d
     return set_layouts;
 }
 
-ShaderObject::ShaderObject(ValidationStateTracker &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT handle,
-                           std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders)
-    : StateObject(handle, kVulkanObjectTypeShaderEXT),
-      safe_create_info(&create_info_i),
-      create_info(*safe_create_info.ptr()),
-      spirv(spirv_module),
-      entrypoint(spirv ? spirv->FindEntrypoint(create_info.pName, create_info.stage) : nullptr),
-      active_slots(GetActiveSlots(entrypoint)),
-      max_active_slot(GetMaxActiveSlot(active_slots)),
-      set_layouts(GetSetLayouts(dev_data, create_info)),
-      push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
-      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)) {
+ShaderObject::ShaderObject(ValidationStateTracker& dev_data,
+                           const VkShaderCreateInfoEXT& create_info_i,
+                           VkShaderEXT handle,
+                           std::shared_ptr<spirv::Module>& spirv_module,
+                           uint32_t createInfoCount,
+                           VkShaderEXT* pShaders) :
+    StateObject(handle, kVulkanObjectTypeShaderEXT),
+    safe_create_info(&create_info_i), create_info(*safe_create_info.ptr()), spirv(spirv_module),
+    entrypoint(spirv ? spirv->FindEntrypoint(create_info.pName, create_info.stage) : nullptr),
+    active_slots(GetActiveSlots(entrypoint)), max_active_slot(GetMaxActiveSlot(active_slots)),
+    set_layouts(GetSetLayouts(dev_data, create_info)),
+    push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
+    set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)) {
     if ((create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
         for (uint32_t i = 0; i < createInfoCount; ++i) {
             if (pShaders[i] != handle) {
@@ -58,4 +60,4 @@ VkPrimitiveTopology ShaderObject::GetTopology() const {
     }
     return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 }
-}  // namespace vvl
+} // namespace vvl

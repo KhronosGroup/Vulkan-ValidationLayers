@@ -23,8 +23,9 @@
 
 // NOLINTBEGIN
 
-#include <vulkan/vulkan.h>
 #include "vk_object_types.h"
+
+#include <vulkan/vulkan.h>
 
 // Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version
 static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax] = {

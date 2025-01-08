@@ -22,7 +22,7 @@ TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    char const* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x[8]; } constants;
         void main(){
@@ -30,7 +30,7 @@ TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
         }
     )glsl";
 
-    char const *const fsSource = R"glsl(
+    char const* const fsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x[4]; } constants;
         layout(location=0) out vec4 o;
@@ -42,14 +42,15 @@ TEST_F(PositiveShaderPushConstants, OverlappingPushConstantRange) {
     VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj const fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPushConstantRange push_constant_ranges[2]{{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 8},
-                                                {VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float) * 4}};
+    VkPushConstantRange push_constant_ranges[2]{ { VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 8 },
+                                                 { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float) * 4 } };
 
     VkPipelineLayoutCreateInfo const pipeline_layout_info{
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 2, push_constant_ranges};
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 2, push_constant_ranges
+    };
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.pipeline_layout_ci_ = pipeline_layout_info;
 
     pipe.CreateGraphicsPipeline();
@@ -133,18 +134,29 @@ TEST_F(PositiveShaderPushConstants, MultipleEntryPointVert) {
         OpEntryPoint Vertex %main_v "main_v" %out_vert
     )" + source_body;
 
-    VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float)}};
+    VkPushConstantRange push_constant_ranges[1]{ { VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) } };
     VkPipelineLayoutCreateInfo const pipeline_layout_info{
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges};
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges
+    };
 
     // Vertex entry point first
     {
-        VkShaderObj const vs(this, vert_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const vs(this,
+                             vert_first.c_str(),
+                             VK_SHADER_STAGE_VERTEX_BIT,
+                             SPV_ENV_VULKAN_1_0,
+                             SPV_SOURCE_ASM,
+                             nullptr,
                              "main_v");
-        VkShaderObj const fs(this, vert_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const fs(this,
+                             vert_first.c_str(),
+                             VK_SHADER_STAGE_FRAGMENT_BIT,
+                             SPV_ENV_VULKAN_1_0,
+                             SPV_SOURCE_ASM,
+                             nullptr,
                              "main_f");
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        const auto set_info = [&](CreatePipelineHelper& helper) {
+            helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
             helper.pipeline_layout_ci_ = pipeline_layout_info;
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -152,12 +164,22 @@ TEST_F(PositiveShaderPushConstants, MultipleEntryPointVert) {
 
     // Fragment entry point first
     {
-        VkShaderObj const vs(this, frag_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const vs(this,
+                             frag_first.c_str(),
+                             VK_SHADER_STAGE_VERTEX_BIT,
+                             SPV_ENV_VULKAN_1_0,
+                             SPV_SOURCE_ASM,
+                             nullptr,
                              "main_v");
-        VkShaderObj const fs(this, frag_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const fs(this,
+                             frag_first.c_str(),
+                             VK_SHADER_STAGE_FRAGMENT_BIT,
+                             SPV_ENV_VULKAN_1_0,
+                             SPV_SOURCE_ASM,
+                             nullptr,
                              "main_f");
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        const auto set_info = [&](CreatePipelineHelper& helper) {
+            helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
             helper.pipeline_layout_ci_ = pipeline_layout_info;
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -242,18 +264,29 @@ TEST_F(PositiveShaderPushConstants, MultipleEntryPointFrag) {
         OpEntryPoint Vertex %main_v "main_v" %out_vert
     )" + source_body;
 
-    VkPushConstantRange push_constant_ranges[1]{{VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float)}};
+    VkPushConstantRange push_constant_ranges[1]{ { VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float) } };
     VkPipelineLayoutCreateInfo const pipeline_layout_info{
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges};
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, push_constant_ranges
+    };
 
     // Vertex entry point first
     {
-        VkShaderObj const vs(this, vert_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const vs(this,
+                             vert_first.c_str(),
+                             VK_SHADER_STAGE_VERTEX_BIT,
+                             SPV_ENV_VULKAN_1_0,
+                             SPV_SOURCE_ASM,
+                             nullptr,
                              "main_v");
-        VkShaderObj const fs(this, vert_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const fs(this,
+                             vert_first.c_str(),
+                             VK_SHADER_STAGE_FRAGMENT_BIT,
+                             SPV_ENV_VULKAN_1_0,
+                             SPV_SOURCE_ASM,
+                             nullptr,
                              "main_f");
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        const auto set_info = [&](CreatePipelineHelper& helper) {
+            helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
             helper.pipeline_layout_ci_ = pipeline_layout_info;
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -261,12 +294,22 @@ TEST_F(PositiveShaderPushConstants, MultipleEntryPointFrag) {
 
     // Fragment entry point first
     {
-        VkShaderObj const vs(this, frag_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const vs(this,
+                             frag_first.c_str(),
+                             VK_SHADER_STAGE_VERTEX_BIT,
+                             SPV_ENV_VULKAN_1_0,
+                             SPV_SOURCE_ASM,
+                             nullptr,
                              "main_v");
-        VkShaderObj const fs(this, frag_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+        VkShaderObj const fs(this,
+                             frag_first.c_str(),
+                             VK_SHADER_STAGE_FRAGMENT_BIT,
+                             SPV_ENV_VULKAN_1_0,
+                             SPV_SOURCE_ASM,
+                             nullptr,
                              "main_f");
-        const auto set_info = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        const auto set_info = [&](CreatePipelineHelper& helper) {
+            helper.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
             helper.pipeline_layout_ci_ = pipeline_layout_info;
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -278,7 +321,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    char const* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { layout(offset = 16) vec4 x; } constants;
         void main(){
@@ -292,27 +335,30 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     // range A and B are the same while range C is different
     // All 3 ranges fit the range from the shader
     const uint32_t pc_size = 32;
-    VkPushConstantRange range_a = {VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size};
-    VkPushConstantRange range_b = {VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size};
-    VkPushConstantRange range_c = {VK_SHADER_STAGE_VERTEX_BIT, 16, pc_size};
+    VkPushConstantRange range_a = { VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size };
+    VkPushConstantRange range_b = { VK_SHADER_STAGE_VERTEX_BIT, 0, pc_size };
+    VkPushConstantRange range_c = { VK_SHADER_STAGE_VERTEX_BIT, 16, pc_size };
 
     VkPipelineLayoutCreateInfo pipeline_layout_info_a = {
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &range_a};
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &range_a
+    };
     VkPipelineLayoutCreateInfo pipeline_layout_info_b = {
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &range_b};
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &range_b
+    };
     VkPipelineLayoutCreateInfo pipeline_layout_info_c = {
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &range_c};
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &range_c
+    };
 
-    CreatePipelineHelper pipeline_helper_a(*this);  // layout_a and range_a
-    CreatePipelineHelper pipeline_helper_b(*this);  // layout_b and range_b
-    CreatePipelineHelper pipeline_helper_c(*this);  // layout_c and range_c
-    pipeline_helper_a.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    CreatePipelineHelper pipeline_helper_a(*this); // layout_a and range_a
+    CreatePipelineHelper pipeline_helper_b(*this); // layout_b and range_b
+    CreatePipelineHelper pipeline_helper_c(*this); // layout_c and range_c
+    pipeline_helper_a.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipeline_helper_a.pipeline_layout_ci_ = pipeline_layout_info_a;
     pipeline_helper_a.CreateGraphicsPipeline();
-    pipeline_helper_b.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipeline_helper_b.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipeline_helper_b.pipeline_layout_ci_ = pipeline_layout_info_b;
     pipeline_helper_b.CreateGraphicsPipeline();
-    pipeline_helper_c.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipeline_helper_c.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipeline_helper_c.pipeline_layout_ci_ = pipeline_layout_info_c;
     pipeline_helper_c.CreateGraphicsPipeline();
 
@@ -324,7 +370,7 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     const VkPipeline pipeline_b = pipeline_helper_b.Handle();
     const VkPipeline pipeline_c = pipeline_helper_c.Handle();
 
-    const float data[16] = {};  // dummy data to match shader size
+    const float data[16] = {}; // dummy data to match shader size
 
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
@@ -414,11 +460,12 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     InitRenderTarget();
 
     // Create set of Pipeline Layouts that cover variations of ranges
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+    VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, 4 };
     VkPipelineLayoutCreateInfo pipeline_layout_info = {
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range
+    };
 
-    char const *vsSourceUnused = R"glsl(
+    char const* vsSourceUnused = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x; } consts;
         void main(){
@@ -426,7 +473,7 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
         }
     )glsl";
 
-    char const *vsSourceEmpty = R"glsl(
+    char const* vsSourceEmpty = R"glsl(
         #version 450
         void main(){
            gl_Position = vec4(1.0);
@@ -439,13 +486,13 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
 
     // Just in layout
     CreatePipelineHelper pipeline_unused(*this);
-    pipeline_unused.shader_stages_ = {vsUnused.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipeline_unused.shader_stages_ = { vsUnused.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipeline_unused.pipeline_layout_ci_ = pipeline_layout_info;
     pipeline_unused.CreateGraphicsPipeline();
 
     // Shader never had a reference
     CreatePipelineHelper pipeline_empty(*this);
-    pipeline_empty.shader_stages_ = {vsEmpty.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipeline_empty.shader_stages_ = { vsEmpty.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipeline_empty.pipeline_layout_ci_ = pipeline_layout_info;
     pipeline_empty.CreateGraphicsPipeline();
 
@@ -475,7 +522,7 @@ TEST_F(PositiveShaderPushConstants, OffsetVector) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    char const* const vsSource = R"glsl(
         #version 450
 
         layout(push_constant) uniform Material {
@@ -491,18 +538,19 @@ TEST_F(PositiveShaderPushConstants, OffsetVector) {
     VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Set up a push constant range
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 16, 32};
-    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
+    VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 16, 32 };
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, { push_constant_range });
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, { push_constant_range });
     pipe.CreateGraphicsPipeline();
 
-    const float data[16] = {};  // dummy data to match shader size
+    const float data[16] = {}; // dummy data to match shader size
 
     m_command_buffer.Begin();
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 16, data);
+    vk::CmdPushConstants(
+        m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 16, data);
     m_command_buffer.End();
 }
 
@@ -516,7 +564,7 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferBasic) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    char const* const vsSource = R"glsl(
         #version 450
 
         #extension GL_EXT_buffer_reference : enable
@@ -540,18 +588,19 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferBasic) {
     VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Use exact range
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 16, 28};
-    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
+    VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 16, 28 };
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, { push_constant_range });
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, { push_constant_range });
     pipe.CreateGraphicsPipeline();
 
-    const float data[12] = {};  // dummy data to match shader size
+    const float data[12] = {}; // dummy data to match shader size
 
     m_command_buffer.Begin();
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 12, data);
+    vk::CmdPushConstants(
+        m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 16, 12, data);
     m_command_buffer.End();
 }
 
@@ -566,7 +615,7 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    const char *vertex_source = R"glsl(
+    const char* vertex_source = R"glsl(
         #version 450
 
         #extension GL_EXT_buffer_reference : enable
@@ -588,7 +637,7 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
         )glsl";
     const VkShaderObj vs(this, vertex_source, VK_SHADER_STAGE_VERTEX_BIT);
 
-    const char *fragment_source = R"glsl(
+    const char* fragment_source = R"glsl(
         #version 450
 
         #extension GL_EXT_buffer_reference : enable
@@ -619,10 +668,11 @@ TEST_F(PositiveShaderPushConstants, PhysicalStorageBufferVertFrag) {
 
     VkPipelineLayoutCreateInfo const pipeline_layout_info{
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr,           0, 0, nullptr,
-        static_cast<uint32_t>(push_ranges.size()),     push_ranges.data()};
+        static_cast<uint32_t>(push_ranges.size()),     push_ranges.data()
+    };
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.pipeline_layout_ci_ = pipeline_layout_info;
     pipe.CreateGraphicsPipeline();
 }
@@ -633,14 +683,14 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    // Note - it is invalid SPIR-V for an entrypoint to have 2 Push Constant variables used. This is only valid because it is being
-    // ignored
+    // Note - it is invalid SPIR-V for an entrypoint to have 2 Push Constant variables used. This is only valid because
+    // it is being ignored
     //
     // What this looks like:
     //
     // layout(push_constant) uniform pc_a { layout(offset = 32) vec4 x; } a;
     // layout(push_constant) uniform pc_b { layout(offset = 16) vec4 x; } b;
-    const char *source = R"(
+    const char* source = R"(
                  OpCapability Shader
                  OpMemoryModel Logical GLSL450
                  OpEntryPoint Vertex %1 "main"
@@ -676,12 +726,12 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
     VkShaderObj const vs(this, source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 32, 16};
-    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
+    VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 32, 16 };
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, { push_constant_range });
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, { push_constant_range });
     pipe.CreateGraphicsPipeline();
 
     const float data[16] = {};
@@ -689,7 +739,8 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 32, 16, data);
+    vk::CmdPushConstants(
+        m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 32, 16, data);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -699,7 +750,7 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeDefault) {
     TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block, but use default value");
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 460
         layout (constant_id = 2) const int my_array_size = 1;
         layout (push_constant) uniform my_buf {
@@ -711,12 +762,12 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeDefault) {
         }
     )glsl";
 
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 32};
-    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
+    VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_COMPUTE_BIT, 0, 32 };
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, { push_constant_range });
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, { push_constant_range });
     pipe.CreateComputePipeline();
 }
 
@@ -724,7 +775,7 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeSet) {
     TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 460
         layout (constant_id = 0) const int my_array_size = 256;
         layout (push_constant) uniform my_buf {
@@ -750,12 +801,12 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeSet) {
     specialization_info.dataSize = sizeof(uint32_t);
     specialization_info.pData = &data;
 
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 16};
-    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
+    VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_COMPUTE_BIT, 0, 16 };
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, { push_constant_range });
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
-                                             &specialization_info);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, { push_constant_range });
     pipe.CreateComputePipeline();
 }

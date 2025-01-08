@@ -25,10 +25,14 @@ static std::array<uint32_t, 4> GetRawClearColor(VkFormat format, const VkClearCo
     std::copy_n(clear_value.uint32, raw_color.size(), raw_color.data());
 
     // Zero out unused components to avoid polluting the cache with garbage
-    if (!vkuFormatHasRed(format)) raw_color[0] = 0;
-    if (!vkuFormatHasGreen(format)) raw_color[1] = 0;
-    if (!vkuFormatHasBlue(format)) raw_color[2] = 0;
-    if (!vkuFormatHasAlpha(format)) raw_color[3] = 0;
+    if (!vkuFormatHasRed(format))
+        raw_color[0] = 0;
+    if (!vkuFormatHasGreen(format))
+        raw_color[1] = 0;
+    if (!vkuFormatHasBlue(format))
+        raw_color[2] = 0;
+    if (!vkuFormatHasAlpha(format))
+        raw_color[3] = 0;
 
     return raw_color;
 }
@@ -42,9 +46,10 @@ static bool IsClearColorZeroOrOne(VkFormat format, const std::array<uint32_t, 4>
     memcpy(&raw_one, &one, sizeof(one));
     memcpy(&raw_zero, &zero, sizeof(zero));
 
-    const bool is_one =
-        (!vkuFormatHasRed(format) || (clear_color[0] == raw_one)) && (!vkuFormatHasGreen(format) || (clear_color[1] == raw_one)) &&
-        (!vkuFormatHasBlue(format) || (clear_color[2] == raw_one)) && (!vkuFormatHasAlpha(format) || (clear_color[3] == raw_one));
+    const bool is_one = (!vkuFormatHasRed(format) || (clear_color[0] == raw_one)) &&
+                        (!vkuFormatHasGreen(format) || (clear_color[1] == raw_one)) &&
+                        (!vkuFormatHasBlue(format) || (clear_color[2] == raw_one)) &&
+                        (!vkuFormatHasAlpha(format) || (clear_color[3] == raw_one));
     const bool is_zero = (!vkuFormatHasRed(format) || (clear_color[0] == raw_zero)) &&
                          (!vkuFormatHasGreen(format) || (clear_color[1] == raw_zero)) &&
                          (!vkuFormatHasBlue(format) || (clear_color[2] == raw_zero)) &&
@@ -52,7 +57,8 @@ static bool IsClearColorZeroOrOne(VkFormat format, const std::array<uint32_t, 4>
     return is_one || is_zero;
 }
 
-void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cb_state, VkCompareOp new_depth_compare_op,
+void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cb_state,
+                                            VkCompareOp new_depth_compare_op,
                                             bool new_depth_test_enable) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
@@ -75,7 +81,8 @@ void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cb_state, V
     cb_state.nv.depth_test_enable = new_depth_test_enable;
 }
 
-void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cb_state, VkImage depth_attachment,
+void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cb_state,
+                                         VkImage depth_attachment,
                                          const VkImageSubresourceRange& subresource_range) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
@@ -119,10 +126,12 @@ void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBuffer& cb_s
 
 template <typename Func>
 static void ForEachSubresource(const vvl::Image& image, const VkImageSubresourceRange& range, Func&& func) {
-    const uint32_t layer_count =
-        (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (image.full_range.layerCount - range.baseArrayLayer) : range.layerCount;
-    const uint32_t level_count =
-        (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (image.full_range.levelCount - range.baseMipLevel) : range.levelCount;
+    const uint32_t layer_count = (range.layerCount == VK_REMAINING_ARRAY_LAYERS)
+                                     ? (image.full_range.layerCount - range.baseArrayLayer)
+                                     : range.layerCount;
+    const uint32_t level_count = (range.levelCount == VK_REMAINING_MIP_LEVELS)
+                                     ? (image.full_range.levelCount - range.baseMipLevel)
+                                     : range.levelCount;
 
     for (uint32_t i = 0; i < layer_count; ++i) {
         const uint32_t layer = range.baseArrayLayer + i;
@@ -133,7 +142,8 @@ static void ForEachSubresource(const vvl::Image& image, const VkImageSubresource
     }
 }
 
-void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cb_state, VkImage depth_image,
+void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cb_state,
+                                              VkImage depth_image,
                                               const VkImageSubresourceRange& subresource_range) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
@@ -162,8 +172,10 @@ void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cb_sta
     RecordSetZcullDirection(cb_state, scope.image, scope.range, mode);
 }
 
-void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cb_state, VkImage depth_image,
-                                            const VkImageSubresourceRange& subresource_range, ZcullDirection mode) {
+void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cb_state,
+                                            VkImage depth_image,
+                                            const VkImageSubresourceRange& subresource_range,
+                                            ZcullDirection mode) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     const auto image_it = cb_state.nv.zcull_per_image.find(depth_image);
@@ -187,7 +199,8 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cb_state) {
     auto& scope = cb_state.nv.zcull_scope;
 
     auto image = Get<vvl::Image>(scope.image);
-    if (!image) return;
+    if (!image)
+        return;
 
     ForEachSubresource(*image, scope.range, [&scope](uint32_t layer, uint32_t level) {
         auto& subresource = scope.tree->GetState(layer, level);
@@ -220,8 +233,10 @@ bool BestPractices::ValidateZcullScope(const bp_state::CommandBuffer& cb_state, 
     return skip;
 }
 
-bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cb_state, VkImage image,
-                                  const VkImageSubresourceRange& subresource_range, const Location& loc) const {
+bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cb_state,
+                                  VkImage image,
+                                  const VkImageSubresourceRange& subresource_range,
+                                  const Location& loc) const {
     bool skip = false;
 
     const char* good_mode = nullptr;
@@ -265,12 +280,18 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cb_state, VkIma
 
     if (is_balanced) {
         skip |= LogPerformanceWarning(
-            "BestPractices-NVIDIA-Zcull-LessGreaterRatio", cb_state.Handle(), loc,
+            "BestPractices-NVIDIA-Zcull-LessGreaterRatio",
+            cb_state.Handle(),
+            loc,
             "%s Depth attachment %s is primarily rendered with depth compare op %s, but some draws use %s. "
             "Z-cull is disabled for the least used direction, which harms depth testing performance. "
-            "The Z-cull direction can be reset by clearing the depth attachment, transitioning from VK_IMAGE_LAYOUT_UNDEFINED, "
+            "The Z-cull direction can be reset by clearing the depth attachment, transitioning from "
+            "VK_IMAGE_LAYOUT_UNDEFINED, "
             "using VK_ATTACHMENT_LOAD_OP_DONT_CARE, or using VK_ATTACHMENT_STORE_OP_DONT_CARE.",
-            VendorSpecificTag(kBPVendorNVIDIA), FormatHandle(cb_state.nv.zcull_scope.image).c_str(), good_mode, bad_mode);
+            VendorSpecificTag(kBPVendorNVIDIA),
+            FormatHandle(cb_state.nv.zcull_scope.image).c_str(),
+            good_mode,
+            bad_mode);
     }
 
     return skip;
@@ -292,21 +313,23 @@ void BestPractices::RecordClearColor(VkFormat format, const VkClearColorValue& c
         return;
     }
 
-    const auto it =
-        std::find(kCustomClearColorCompressedFormatsNVIDIA.begin(), kCustomClearColorCompressedFormatsNVIDIA.end(), format);
+    const auto it = std::find(
+        kCustomClearColorCompressedFormatsNVIDIA.begin(), kCustomClearColorCompressedFormatsNVIDIA.end(), format);
     if (it == kCustomClearColorCompressedFormatsNVIDIA.end()) {
         // The format cannot be compressed with a custom color
         return;
     }
 
     // Record custom clear color
-    WriteLockGuard guard{clear_colors_lock_};
+    WriteLockGuard guard{ clear_colors_lock_ };
     if (clear_colors_.size() < kMaxRecommendedNumberOfClearColorsNVIDIA) {
         clear_colors_.insert(raw_color);
     }
 }
 
-bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat format, const VkClearColorValue& clear_value,
+bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer,
+                                       VkFormat format,
+                                       const VkClearColorValue& clear_value,
                                        const Location& loc) const {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
@@ -317,8 +340,8 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
         return skip;
     }
 
-    const auto it =
-        std::find(kCustomClearColorCompressedFormatsNVIDIA.begin(), kCustomClearColorCompressedFormatsNVIDIA.end(), format);
+    const auto it = std::find(
+        kCustomClearColorCompressedFormatsNVIDIA.begin(), kCustomClearColorCompressedFormatsNVIDIA.end(), format);
     if (it == kCustomClearColorCompressedFormatsNVIDIA.end()) {
         // The format is not compressible
         std::string format_list;
@@ -332,17 +355,22 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
             }
         }
 
-        skip |= LogPerformanceWarning("BestPractices-NVIDIA-ClearColor-NotCompressed", commandBuffer, loc,
-                                      "%s Clearing image with format %s without a 1.0f or 0.0f clear color. "
-                                      "The clear will not get compressed in the GPU, harming performance. "
-                                      "This can be fixed using a clear color of VkClearColorValue{0.0f, 0.0f, 0.0f, 0.0f}, or "
-                                      "VkClearColorValue{1.0f, 1.0f, 1.0f, 1.0f}. Alternatively, use %s.",
-                                      VendorSpecificTag(kBPVendorNVIDIA), string_VkFormat(format), format_list.c_str());
+        skip |= LogPerformanceWarning(
+            "BestPractices-NVIDIA-ClearColor-NotCompressed",
+            commandBuffer,
+            loc,
+            "%s Clearing image with format %s without a 1.0f or 0.0f clear color. "
+            "The clear will not get compressed in the GPU, harming performance. "
+            "This can be fixed using a clear color of VkClearColorValue{0.0f, 0.0f, 0.0f, 0.0f}, or "
+            "VkClearColorValue{1.0f, 1.0f, 1.0f, 1.0f}. Alternatively, use %s.",
+            VendorSpecificTag(kBPVendorNVIDIA),
+            string_VkFormat(format),
+            format_list.c_str());
     } else {
         // The format is compressible
         bool registered = false;
         {
-            ReadLockGuard guard{clear_colors_lock_};
+            ReadLockGuard guard{ clear_colors_lock_ };
             registered = clear_colors_.find(raw_color) != clear_colors_.end();
 
             if (!registered) {
@@ -354,24 +382,30 @@ bool BestPractices::ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat f
             std::string clear_color_str;
 
             if (vkuFormatIsUINT(format)) {
-                clear_color_str = std::to_string(clear_value.uint32[0]) + ", " + std::to_string(clear_value.uint32[1]) + ", " +
-                                  std::to_string(clear_value.uint32[2]) + ", " + std::to_string(clear_value.uint32[3]);
+                clear_color_str = std::to_string(clear_value.uint32[0]) + ", " + std::to_string(clear_value.uint32[1]) +
+                                  ", " + std::to_string(clear_value.uint32[2]) + ", " +
+                                  std::to_string(clear_value.uint32[3]);
             } else if (vkuFormatIsSINT(format)) {
-                clear_color_str = std::to_string(clear_value.int32[0]) + ", " + std::to_string(clear_value.int32[1]) + ", " +
-                                  std::to_string(clear_value.int32[2]) + ", " + std::to_string(clear_value.int32[3]);
+                clear_color_str = std::to_string(clear_value.int32[0]) + ", " + std::to_string(clear_value.int32[1]) +
+                                  ", " + std::to_string(clear_value.int32[2]) + ", " +
+                                  std::to_string(clear_value.int32[3]);
             } else {
-                clear_color_str = std::to_string(clear_value.float32[0]) + ", " + std::to_string(clear_value.float32[1]) + ", " +
-                                  std::to_string(clear_value.float32[2]) + ", " + std::to_string(clear_value.float32[3]);
+                clear_color_str =
+                    std::to_string(clear_value.float32[0]) + ", " + std::to_string(clear_value.float32[1]) + ", " +
+                    std::to_string(clear_value.float32[2]) + ", " + std::to_string(clear_value.float32[3]);
             }
 
             skip |= LogPerformanceWarning(
-                "BestPractices-NVIDIA-ClearColor-NotCompressed", commandBuffer, loc,
+                "BestPractices-NVIDIA-ClearColor-NotCompressed",
+                commandBuffer,
+                loc,
                 "%s Clearing image with unregistered VkClearColorValue{%s}. "
                 "This clear will not get compressed in the GPU, harming performance. "
                 "The clear color is not registered because too many unique colors have been used. "
                 "Select a discrete set of clear colors and stick to those. "
                 "VkClearColorValue{0, 0, 0, 0} and VkClearColorValue{1.0f, 1.0f, 1.0f, 1.0f} are always registered.",
-                VendorSpecificTag(kBPVendorNVIDIA), clear_color_str.c_str());
+                VendorSpecificTag(kBPVendorNVIDIA),
+                clear_color_str.c_str());
         }
     }
 

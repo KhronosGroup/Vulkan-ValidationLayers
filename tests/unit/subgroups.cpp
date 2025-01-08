@@ -52,16 +52,16 @@ TEST_F(NegativeSubgroup, Properties) {
     }
 
     std::string vsSource;
-    std::vector<const char *> errors;
-    // There is no 'supportedOperations' check due to it would be redundant to the Capability check done first in VUID 01091 since
-    // each 'supportedOperations' flag is 1:1 map to a SPIR-V Capability
-    const char *operation_vuid = "VUID-VkShaderModuleCreateInfo-pCode-08740";
-    const char *stage_vuid = "VUID-RuntimeSpirv-None-06343";
-    const char *quad_vuid = "VUID-RuntimeSpirv-None-06342";
+    std::vector<const char*> errors;
+    // There is no 'supportedOperations' check due to it would be redundant to the Capability check done first in VUID
+    // 01091 since each 'supportedOperations' flag is 1:1 map to a SPIR-V Capability
+    const char* operation_vuid = "VUID-VkShaderModuleCreateInfo-pCode-08740";
+    const char* stage_vuid = "VUID-RuntimeSpirv-None-06343";
+    const char* quad_vuid = "VUID-RuntimeSpirv-None-06342";
 
     // Same pipeline creation for each subgroup test
-    auto subgroup_test = [this](std::string source, const std::vector<const char *> &errors) {
-        for (const auto &error : errors) m_errorMonitor->SetDesiredError(error);
+    auto subgroup_test = [this](std::string source, const std::vector<const char*>& errors) {
+        for (const auto& error : errors) m_errorMonitor->SetDesiredError(error);
         VkShaderObj vs(this, source.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
         if (!errors.empty()) {
             m_errorMonitor->VerifyFound();
@@ -277,9 +277,9 @@ TEST_F(NegativeSubgroup, ExtendedTypesDisabled) {
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
+    const vkt::PipelineLayout pl(*m_device, { &dsl });
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #extension GL_KHR_shader_subgroup_arithmetic : enable
         #extension GL_EXT_shader_subgroup_extended_types_float16 : enable
@@ -320,7 +320,7 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
         cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT;
         m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-02754");
-        cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
+        cs_pipeline.CreateComputePipeline(false); // need false to prevent late binding
         m_errorMonitor->VerifyFound();
     }
 
@@ -339,7 +339,7 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
         cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT |
                                          VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT;
         m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-flags-02758");
-        cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
+        cs_pipeline.CreateComputePipeline(false); // need false to prevent late binding
         m_errorMonitor->VerifyFound();
     }
 
@@ -357,7 +357,7 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT;
         m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-flags-02759");
-        cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
+        cs_pipeline.CreateComputePipeline(false); // need false to prevent late binding
         m_errorMonitor->VerifyFound();
     }
 
@@ -365,35 +365,38 @@ TEST_F(NegativeSubgroup, PipelineSubgroupSizeControl) {
     // Intel integrated GPU normally have a min of 8 and max of 32
     if (subgroup_properties.minSubgroupSize >= 8 && subgroup_properties.minSubgroupSize < 16 &&
         subgroup_properties.maxSubgroupSize >= 16) {
-        subgroup_size_control.requiredSubgroupSize = 10;  // non-power of 2
+        subgroup_size_control.requiredSubgroupSize = 10; // non-power of 2
         CreateComputePipelineHelper cs_pipeline(*this);
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
         cs_pipeline.cp_ci_.stage.flags = 0;
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02760");
-        cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02760");
+        cs_pipeline.CreateComputePipeline(false); // need false to prevent late binding
         m_errorMonitor->VerifyFound();
     }
 
     if (subgroup_properties.minSubgroupSize > 1) {
-        subgroup_size_control.requiredSubgroupSize = 1;  // below min
+        subgroup_size_control.requiredSubgroupSize = 1; // below min
         CreateComputePipelineHelper cs_pipeline(*this);
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
         cs_pipeline.cp_ci_.stage.flags = 0;
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02761");
-        cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02761");
+        cs_pipeline.CreateComputePipeline(false); // need false to prevent late binding
         m_errorMonitor->VerifyFound();
     }
 
     {
-        subgroup_size_control.requiredSubgroupSize = subgroup_properties.maxSubgroupSize * 2;  // above max
+        subgroup_size_control.requiredSubgroupSize = subgroup_properties.maxSubgroupSize * 2; // above max
         CreateComputePipelineHelper cs_pipeline(*this);
         cs_pipeline.LateBindPipelineInfo();
         cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
         cs_pipeline.cp_ci_.stage.flags = 0;
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02762");
-        cs_pipeline.CreateComputePipeline(false);  // need false to prevent late binding
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02762");
+        cs_pipeline.CreateComputePipeline(false); // need false to prevent late binding
         m_errorMonitor->VerifyFound();
     }
 }
@@ -531,7 +534,7 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlStage) {
         GTEST_SKIP() << "Vertex shader subgroup not supported.";
     }
 
-    const char *vsSource = R"glsl(
+    const char* vsSource = R"glsl(
         #version 450
         #extension GL_KHR_shader_subgroup_basic : require
         void main() {
@@ -542,7 +545,7 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlStage) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_2);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.shader_stages_[0].flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-flags-08988");
     pipe.CreateGraphicsPipeline();
@@ -555,7 +558,7 @@ TEST_F(NegativeSubgroup, SubgroupUniformControlFlow) {
     AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpExtension "SPV_KHR_subgroup_uniform_control_flow"
           %1 = OpExtInstImport "GLSL.std.450"
@@ -611,8 +614,8 @@ TEST_F(NegativeSubgroup, ComputeLocalWorkgroupSize) {
     VkPipelineShaderStageRequiredSubgroupSizeCreateInfo subgroup_size_control = vku::InitStructHelper();
     subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
 
-    uint32_t size = static_cast<uint32_t>(
-        std::ceil(std::sqrt(subgroup_size_control.requiredSubgroupSize * subgroup_properties.maxComputeWorkgroupSubgroups)));
+    uint32_t size = static_cast<uint32_t>(std::ceil(
+        std::sqrt(subgroup_size_control.requiredSubgroupSize * subgroup_properties.maxComputeWorkgroupSubgroups)));
 
     if (size <= 1024) {
         std::stringstream csSource;
@@ -744,12 +747,13 @@ TEST_F(NegativeSubgroup, MeshLocalWorkgroupSize) {
                 OpEmitMeshTasksEXT %uint_1 %uint_1 %uint_1
                 OpFunctionEnd)";
 
-    VkShaderObj task_shader(this, taskSrc.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+    VkShaderObj task_shader(
+        this, taskSrc.str().c_str(), VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
     VkShaderObj mesh_shader(this, kMeshMinimalGlsl, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL);
 
     CreatePipelineHelper pipe(*this);
     pipe.LateBindPipelineInfo();
-    pipe.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo()};
+    pipe.shader_stages_ = { task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo() };
     pipe.shader_stages_[0].pNext = &subgroup_size_control;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pNext-02756");
     pipe.CreateGraphicsPipeline(false);

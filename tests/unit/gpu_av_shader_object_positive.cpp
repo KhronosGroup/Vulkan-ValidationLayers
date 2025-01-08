@@ -9,11 +9,11 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 #include "../framework/shader_object_helper.h"
 #include "../framework/shader_templates.h"
-#include "../framework/pipeline_helper.h"
 
 class PositiveGpuAVShaderObject : public GpuAVTest {
   public:
@@ -32,10 +32,12 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
 
     AddRequiredFeature(vkt::Feature::robustBufferAccess);
     const VkBool32 value = true;
-    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                       &value};
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                               &setting};
+    const VkLayerSettingEXT setting = {
+        OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value
+    };
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {
+        VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting
+    };
     RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
 
     // Robust buffer access will be on by default
@@ -43,11 +45,12 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     InitState(nullptr, nullptr, pool_flags);
     InitDynamicRenderTarget();
 
-    OneOffDescriptorSet vert_descriptor_set(m_device,
-                                            {
-                                                {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-                                            });
-    vkt::PipelineLayout pipeline_layout(*m_device, {&vert_descriptor_set.layout_});
+    OneOffDescriptorSet vert_descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
+        });
+    vkt::PipelineLayout pipeline_layout(*m_device, { &vert_descriptor_set.layout_ });
 
     static const char vert_src[] = R"glsl(
         #version 460
@@ -60,12 +63,14 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
-    VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_.handle()};
+    VkDescriptorSetLayout descriptor_set_layouts[] = { vert_descriptor_set.layout_.handle() };
 
-    VkShaderCreateInfoEXT vert_create_info = ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, descriptor_set_layouts);
-    VkShaderCreateInfoEXT frag_create_info = ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, descriptor_set_layouts);
+    VkShaderCreateInfoEXT vert_create_info =
+        ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 1, descriptor_set_layouts);
+    VkShaderCreateInfoEXT frag_create_info =
+        ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, descriptor_set_layouts);
 
-    VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+    VkValidationFeatureEnableEXT enabled[] = { VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT };
     VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures = enabled;
@@ -83,8 +88,14 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindVertFragShader(vertShader, fragShader);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
-                              &vert_descriptor_set.set_, 0u, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0u,
+                              1u,
+                              &vert_descriptor_set.set_,
+                              0u,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -101,8 +112,14 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindVertFragShader(vertShader2, fragShader);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
-                              &vert_descriptor_set.set_, 0u, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0u,
+                              1u,
+                              &vert_descriptor_set.set_,
+                              0u,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -114,7 +131,8 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
 }
 
 TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
-    TEST_DESCRIPTION("Test that user supplied push constants are correctly restored. One graphics pipeline, indirect draw.");
+    TEST_DESCRIPTION(
+        "Test that user supplied push constants are correctly restored. One graphics pipeline, indirect draw.");
     InitBasicShaderObject();
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
@@ -122,9 +140,10 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
-    vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                kHostVisibleMemProps);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
+    vkt::Buffer indirect_draw_parameters_buffer(
+        *m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    auto& indirect_draw_parameters =
+        *static_cast<VkDrawIndirectCommand*>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
@@ -133,7 +152,8 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     indirect_draw_parameters_buffer.Memory().Unmap();
 
     constexpr int32_t int_count = 16;
-    vkt::Buffer storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
+    vkt::Buffer storage_buffer(
+        *m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     // Use different push constant ranges for vertex and fragment shader.
     // The underlying storage buffer is the same.
@@ -154,17 +174,18 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
         push_constants.integers_2[i] = (int_count / 2) + i;
     }
 
-    constexpr uint32_t shader_pcr_byte_size = uint32_t(sizeof(VkDeviceAddress)) + uint32_t(sizeof(int32_t)) * (int_count / 2);
-    std::array<VkPushConstantRange, 2> push_constant_ranges = {{
-        {VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size},
-        {VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size, shader_pcr_byte_size},
-    }};
+    constexpr uint32_t shader_pcr_byte_size =
+        uint32_t(sizeof(VkDeviceAddress)) + uint32_t(sizeof(int32_t)) * (int_count / 2);
+    std::array<VkPushConstantRange, 2> push_constant_ranges = { {
+        { VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size },
+        { VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size, shader_pcr_byte_size },
+    } };
     VkPipelineLayoutCreateInfo plci = vku::InitStructHelper();
     plci.pushConstantRangeCount = size32(push_constant_ranges);
     plci.pPushConstantRanges = push_constant_ranges.data();
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
 
-    char const *vs_source = R"glsl(
+    char const* vs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -193,7 +214,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
 
-    char const *fs_source = R"glsl(
+    char const* fs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -216,10 +237,18 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
         )glsl";
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
 
-    VkShaderCreateInfoEXT vs_ci = ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr,
-                                                   static_cast<uint32_t>(push_constant_ranges.size()), push_constant_ranges.data());
-    VkShaderCreateInfoEXT fs_ci = ShaderCreateInfo(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 0, nullptr,
-                                                   static_cast<uint32_t>(push_constant_ranges.size()), push_constant_ranges.data());
+    VkShaderCreateInfoEXT vs_ci = ShaderCreateInfo(vs_spv,
+                                                   VK_SHADER_STAGE_VERTEX_BIT,
+                                                   0,
+                                                   nullptr,
+                                                   static_cast<uint32_t>(push_constant_ranges.size()),
+                                                   push_constant_ranges.data());
+    VkShaderCreateInfoEXT fs_ci = ShaderCreateInfo(fs_spv,
+                                                   VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                   0,
+                                                   nullptr,
+                                                   static_cast<uint32_t>(push_constant_ranges.size()),
+                                                   push_constant_ranges.data());
 
     const vkt::Shader vs(*m_device, vs_ci);
     const vkt::Shader fs(*m_device, fs_ci);
@@ -230,23 +259,40 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindVertFragShader(vs, fs);
 
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipeline_layout.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT,
+                         0,
+                         shader_pcr_byte_size,
                          &push_constants);
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
-                         shader_pcr_byte_size, &push_constants.storage_buffer_ptr_2);
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipeline_layout.handle(),
+                         VK_SHADER_STAGE_FRAGMENT_BIT,
+                         shader_pcr_byte_size,
+                         shader_pcr_byte_size,
+                         &push_constants.storage_buffer_ptr_2);
     // Make sure pushing the same push constants twice does not break internal management
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipeline_layout.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT,
+                         0,
+                         shader_pcr_byte_size,
                          &push_constants);
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
-                         shader_pcr_byte_size, &push_constants.storage_buffer_ptr_2);
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipeline_layout.handle(),
+                         VK_SHADER_STAGE_FRAGMENT_BIT,
+                         shader_pcr_byte_size,
+                         shader_pcr_byte_size,
+                         &push_constants.storage_buffer_ptr_2);
     // Vertex shader will write 8 values to storage buffer, fragment shader another 8
-    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirect(
+        m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRendering();
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.Memory().Map());
+    auto storage_buffer_ptr = static_cast<int32_t*>(storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], i);
     }
@@ -254,9 +300,9 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
 }
 
 TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
-    TEST_DESCRIPTION(
-        "Test that user supplied push constants are correctly restored. One graphics pipeline, one compute pipeline, indirect draw "
-        "and dispatch.");
+    TEST_DESCRIPTION("Test that user supplied push constants are correctly restored. One graphics pipeline, one "
+                     "compute pipeline, indirect draw "
+                     "and dispatch.");
     InitBasicShaderObject();
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
@@ -274,7 +320,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     // Graphics pipeline
     // ---
 
-    char const *vs_source = R"glsl(
+    char const* vs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -303,7 +349,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
 
-    char const *fs_source = R"glsl(
+    char const* fs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -327,15 +373,16 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
 
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
 
-    VkPushConstantRange graphics_push_constant_ranges = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                                         sizeof(PushConstants)};
+    VkPushConstantRange graphics_push_constant_ranges = { VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                          0,
+                                                          sizeof(PushConstants) };
     VkPipelineLayoutCreateInfo graphics_plci = vku::InitStructHelper();
     graphics_plci.pushConstantRangeCount = 1;
     graphics_plci.pPushConstantRanges = &graphics_push_constant_ranges;
     vkt::PipelineLayout graphics_pipeline_layout(*m_device, graphics_plci);
 
-    vkt::Buffer graphics_storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                        vkt::device_address);
+    vkt::Buffer graphics_storage_buffer(
+        *m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     PushConstants graphics_push_constants;
     graphics_push_constants.storage_buffer = graphics_storage_buffer.Address();
@@ -343,9 +390,10 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
         graphics_push_constants.integers[i] = i;
     }
 
-    vkt::Buffer indirect_draw_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                kHostVisibleMemProps);
-    auto &indirect_draw_parameters = *static_cast<VkDrawIndirectCommand *>(indirect_draw_parameters_buffer.Memory().Map());
+    vkt::Buffer indirect_draw_parameters_buffer(
+        *m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    auto& indirect_draw_parameters =
+        *static_cast<VkDrawIndirectCommand*>(indirect_draw_parameters_buffer.Memory().Map());
     indirect_draw_parameters.vertexCount = 3;
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
@@ -363,7 +411,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     // Compute pipeline
     // ---
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
             #version 450
             #extension GL_EXT_buffer_reference : enable
 
@@ -387,14 +435,14 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
 
     const auto cs_spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
 
-    VkPushConstantRange compute_push_constant_ranges = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants)};
+    VkPushConstantRange compute_push_constant_ranges = { VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants) };
     VkPipelineLayoutCreateInfo compute_plci = vku::InitStructHelper();
     compute_plci.pushConstantRangeCount = 1;
     compute_plci.pPushConstantRanges = &compute_push_constant_ranges;
     vkt::PipelineLayout compute_pipeline_layout(*m_device, compute_plci);
 
-    vkt::Buffer compute_storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                       vkt::device_address);
+    vkt::Buffer compute_storage_buffer(
+        *m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
     PushConstants compute_push_constants;
     compute_push_constants.storage_buffer = compute_storage_buffer.Address();
@@ -407,10 +455,10 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
 
     const vkt::Shader cs(*m_device, cs_ci);
 
-    vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                    kHostVisibleMemProps);
-    auto &indirect_dispatch_parameters =
-        *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.Memory().Map());
+    vkt::Buffer indirect_dispatch_parameters_buffer(
+        *m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    auto& indirect_dispatch_parameters =
+        *static_cast<VkDispatchIndirectCommand*>(indirect_dispatch_parameters_buffer.Memory().Map());
     indirect_dispatch_parameters.x = 1;
     indirect_dispatch_parameters.y = 1;
     indirect_dispatch_parameters.z = 1;
@@ -426,29 +474,37 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     m_command_buffer.BindVertFragShader(vs, fs);
     m_command_buffer.BindCompShader(cs);
 
-    vk::CmdPushConstants(m_command_buffer.handle(), graphics_pipeline_layout.handle(),
-                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(graphics_push_constants),
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         graphics_pipeline_layout.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                         0,
+                         sizeof(graphics_push_constants),
                          &graphics_push_constants);
 
     // Vertex shader will write 4 values to graphics storage buffer, fragment shader another 4
-    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirect(
+        m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRendering();
 
-    vk::CmdPushConstants(m_command_buffer.handle(), compute_pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                         sizeof(compute_push_constants), &compute_push_constants);
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         compute_pipeline_layout.handle(),
+                         VK_SHADER_STAGE_COMPUTE_BIT,
+                         0,
+                         sizeof(compute_push_constants),
+                         &compute_push_constants);
     // Compute shaders will write 8 values to compute storage buffer
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_dispatch_parameters_buffer.handle(), 0);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.Memory().Map());
+    auto compute_storage_buffer_ptr = static_cast<int32_t*>(compute_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(compute_storage_buffer_ptr[i], int_count + i);
     }
     compute_storage_buffer.Memory().Unmap();
 
-    auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.Memory().Map());
+    auto graphics_storage_buffer_ptr = static_cast<int32_t*>(graphics_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(graphics_storage_buffer_ptr[i], i);
     }
@@ -461,10 +517,12 @@ TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
 
     AddRequiredFeature(vkt::Feature::robustBufferAccess);
     const VkBool32 value = true;
-    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                       &value};
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                               &setting};
+    const VkLayerSettingEXT setting = {
+        OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value
+    };
+    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {
+        VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting
+    };
     RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
     InitState();
 
@@ -479,7 +537,7 @@ TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
     const auto comp_spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src);
     VkShaderCreateInfoEXT comp_create_info = ShaderCreateInfo(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
-    VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+    VkValidationFeatureEnableEXT enabled[] = { VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT };
     VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures = enabled;
@@ -491,10 +549,10 @@ TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
     compute_pipe.cs_ = std::make_unique<VkShaderObj>(this, comp_src, VK_SHADER_STAGE_COMPUTE_BIT);
     compute_pipe.CreateComputePipeline();
 
-    vkt::Buffer indirect_dispatch_parameters_buffer(*m_device, sizeof(VkDispatchIndirectCommand),
-                                                    VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
-    auto &indirect_dispatch_parameters =
-        *static_cast<VkDispatchIndirectCommand *>(indirect_dispatch_parameters_buffer.Memory().Map());
+    vkt::Buffer indirect_dispatch_parameters_buffer(
+        *m_device, sizeof(VkDispatchIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    auto& indirect_dispatch_parameters =
+        *static_cast<VkDispatchIndirectCommand*>(indirect_dispatch_parameters_buffer.Memory().Map());
     indirect_dispatch_parameters.x = 1u;
     indirect_dispatch_parameters.y = 1u;
     indirect_dispatch_parameters.z = 1u;

@@ -10,15 +10,15 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/layer_validation_tests.h"
 #include <gtest/gtest.h>
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
 
 class NegativeDeviceFeatureProperty : public VkLayerTest {
   public:
     VkDevice m_second_device = VK_NULL_HANDLE;
     VkDeviceCreateInfo m_second_device_ci = vku::InitStructHelper();
-    vkt::QueueCreateInfoArray *m_queue_info = nullptr;
+    vkt::QueueCreateInfoArray* m_queue_info = nullptr;
     void InitDeviceFeatureProperty();
 
     ~NegativeDeviceFeatureProperty() {
@@ -169,7 +169,7 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions11) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitDeviceFeatureProperty());
 
-    std::vector<const char *> device_extensions;
+    std::vector<const char*> device_extensions;
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME)) {
         device_extensions.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
     }
@@ -182,7 +182,7 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions11) {
     m_second_device_ci.enabledExtensionCount = device_extensions.size();
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-04476");
-    m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain"); // for android loader
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
@@ -191,7 +191,7 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions12) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitDeviceFeatureProperty());
 
-    std::vector<const char *> device_extensions;
+    std::vector<const char*> device_extensions;
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
         device_extensions.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
         m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-02831");
@@ -220,13 +220,13 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions12) {
     features12.descriptorIndexing = VK_FALSE;
     features12.samplerFilterMinmax = VK_FALSE;
     features12.shaderOutputViewportIndex = VK_FALSE;
-    features12.shaderOutputLayer = VK_TRUE;  // Set true since both shader_viewport features need to true
+    features12.shaderOutputLayer = VK_TRUE; // Set true since both shader_viewport features need to true
 
     m_second_device_ci.pNext = &features12;
     m_second_device_ci.ppEnabledExtensionNames = device_extensions.data();
     m_second_device_ci.enabledExtensionCount = device_extensions.size();
 
-    m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain"); // for android loader
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
@@ -238,7 +238,7 @@ TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceFeatures2) {
 
     // VUID-VkDeviceCreateInfo-pNext-pNext
     m_errorMonitor->SetDesiredError("its parent extension VK_KHR_get_physical_device_properties2 has not been enabled");
-    m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain"); // for android loader
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
@@ -264,7 +264,7 @@ TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceVulkan11Features) {
     m_second_device_ci.pNext = &features11;
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-02829");
-    m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain"); // for android loader
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
@@ -280,7 +280,7 @@ TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceVulkan12Features) {
     m_second_device_ci.pNext = &features12;
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-02830");
-    m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain"); // for android loader
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
@@ -296,7 +296,7 @@ TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceVulkan13Features) {
     m_second_device_ci.pNext = &features13;
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-06532");
-    m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain"); // for android loader
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
@@ -309,13 +309,14 @@ TEST_F(NegativeDeviceFeatureProperty, Maintenance1AndNegativeViewport) {
         GTEST_SKIP() << "Maintenance1 and AMD_negative viewport height extensions not supported";
     }
 
-    std::array extension_names = {VK_KHR_MAINTENANCE_1_EXTENSION_NAME, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME};
+    std::array extension_names = { VK_KHR_MAINTENANCE_1_EXTENSION_NAME,
+                                   VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME };
     m_second_device_ci.enabledExtensionCount = extension_names.size();
     m_second_device_ci.ppEnabledExtensionNames = extension_names.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374");
-    // The following unexpected error is coming from the LunarG loader. Do not make it a desired message because platforms that do
-    // not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
+    // The following unexpected error is coming from the LunarG loader. Do not make it a desired message because
+    // platforms that do not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
     m_errorMonitor->SetUnexpectedError("Failed to create device chain.");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
@@ -330,13 +331,14 @@ TEST_F(NegativeDeviceFeatureProperty, BufferDeviceAddressExtAndKhr) {
         GTEST_SKIP() << "Both buffer device address extensions not enabled";
     }
 
-    std::array extension_names = {VK_KHR_DEVICE_GROUP_EXTENSION_NAME, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-                                  VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME};
+    std::array extension_names = { VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
+                                   VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+                                   VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME };
     m_second_device_ci.enabledExtensionCount = extension_names.size();
     m_second_device_ci.ppEnabledExtensionNames = extension_names.data();
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-03328");
-    m_errorMonitor->SetUnexpectedError("Failed to create device chain.");  // for android loader
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain."); // for android loader
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
@@ -349,13 +351,13 @@ TEST_F(NegativeDeviceFeatureProperty, NegativeViewportHeight11) {
         GTEST_SKIP() << "AMD_negative viewport height extensions not supported";
     }
 
-    const char *extension_names = VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME;
+    const char* extension_names = VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME;
     m_second_device_ci.enabledExtensionCount = 1;
     m_second_device_ci.ppEnabledExtensionNames = &extension_names;
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-01840");
-    // The following unexpected error is coming from the LunarG loader. Do not make it a desired message because platforms that do
-    // not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
+    // The following unexpected error is coming from the LunarG loader. Do not make it a desired message because
+    // platforms that do not use the LunarG loader (e.g. Android) will not see the message and the test will fail.
     m_errorMonitor->SetUnexpectedError("Failed to create device chain.");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
@@ -371,7 +373,7 @@ TEST_F(NegativeDeviceFeatureProperty, BufferDeviceAddress) {
     features12.bufferDeviceAddress = VK_TRUE;
     m_second_device_ci.pNext = &features12;
 
-    const char *extension_names = VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME;
+    const char* extension_names = VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME;
     m_second_device_ci.enabledExtensionCount = 1;
     m_second_device_ci.ppEnabledExtensionNames = &extension_names;
 
@@ -381,8 +383,8 @@ TEST_F(NegativeDeviceFeatureProperty, BufferDeviceAddress) {
 }
 
 TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceGlobalPriorityQueryFeaturesKHR) {
-    TEST_DESCRIPTION(
-        "VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR has an EXT and KHR extension that can enable it, but we forgot both");
+    TEST_DESCRIPTION("VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR has an EXT and KHR extension that can enable it, "
+                     "but we forgot both");
     RETURN_IF_SKIP(InitDeviceFeatureProperty());
     if (!DeviceExtensionSupported(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME) &&
         !DeviceExtensionSupported(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)) {
@@ -417,7 +419,7 @@ TEST_F(NegativeDeviceFeatureProperty, MissingExtensionPhysicalDeviceFeature) {
 
 TEST_F(NegativeDeviceFeatureProperty, MissingExtensionPromoted) {
     TEST_DESCRIPTION("Add feature to vkCreateDevice withouth extension (for a promoted extension)");
-    SetTargetApiVersion(VK_API_VERSION_1_2);  // VK_KHR_maintenance4 added in 1.3
+    SetTargetApiVersion(VK_API_VERSION_1_2); // VK_KHR_maintenance4 added in 1.3
     RETURN_IF_SKIP(InitDeviceFeatureProperty());
     if (!DeviceExtensionSupported(VK_KHR_MAINTENANCE_4_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_maintenance4 not supported";
@@ -544,7 +546,8 @@ TEST_F(NegativeDeviceFeatureProperty, PrimitiveFragmentShadingRateMeshShader) {
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&mesh_shader_features);
     m_second_device_ci.pNext = &features2;
 
-    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-primitiveFragmentShadingRateMeshShader-07033");
+    m_errorMonitor->SetDesiredError(
+        "VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-primitiveFragmentShadingRateMeshShader-07033");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }

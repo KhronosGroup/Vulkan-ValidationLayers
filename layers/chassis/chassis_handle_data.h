@@ -30,4 +30,4 @@ union HandleData {
     CommandBufferData command_buffer;
 };
 
-}  // namespace chassis
+} // namespace chassis

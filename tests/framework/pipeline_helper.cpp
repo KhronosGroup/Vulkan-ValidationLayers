@@ -12,7 +12,7 @@
 
 #include "pipeline_helper.h"
 
-CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, void *pNext) : layer_test_(test) {
+CreatePipelineHelper::CreatePipelineHelper(VkLayerTest& test, void* pNext) : layer_test_(test) {
     // default VkDevice, can be overwritten if multi-device tests
     device_ = layer_test_.DeviceObj();
 
@@ -20,7 +20,7 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, void *pNext) : lay
     gp_ci_.pNext = pNext;
 
     // InitDescriptorSetInfo
-    dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } };
 
     // InitInputAndVertexInfo
     vi_ci_ = vku::InitStructHelper();
@@ -37,12 +37,12 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, void *pNext) : lay
 
     // InitPipelineLayoutInfo
     pipeline_layout_ci_ = vku::InitStructHelper();
-    pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
-    pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
+    pipeline_layout_ci_.setLayoutCount = 1;    // Not really changeable because InitState() sets exactly one pSetLayout
+    pipeline_layout_ci_.pSetLayouts = nullptr; // must bound after it is created
 
     // InitViewportInfo
-    viewport_ = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    scissor_ = {{0, 0}, {64, 64}};
+    viewport_ = { 0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f };
+    scissor_ = { { 0, 0 }, { 64, 64 } };
     vp_state_ci_ = vku::InitStructHelper();
     vp_state_ci_.viewportCount = 1;
     vp_state_ci_.pViewports = &viewport_;
@@ -74,7 +74,7 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, void *pNext) : lay
     // InitBlendStateInfo
     cb_ci_ = vku::InitStructHelper();
     cb_ci_.logicOpEnable = VK_FALSE;
-    cb_ci_.logicOp = VK_LOGIC_OP_COPY;  // ignored if enable is VK_FALSE above
+    cb_ci_.logicOp = VK_LOGIC_OP_COPY; // ignored if enable is VK_FALSE above
     cb_ci_.attachmentCount = 1;
     cb_ci_.pAttachments = &cb_attachments_;
     for (int i = 0; i < 4; i++) {
@@ -113,15 +113,19 @@ CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test, void *pNext) : lay
     gp_ci_.renderPass = layer_test_.RenderPass();
 }
 
-CreatePipelineHelper::~CreatePipelineHelper() { Destroy(); }
+CreatePipelineHelper::~CreatePipelineHelper() {
+    Destroy();
+}
 
-void CreatePipelineHelper::InitShaderInfo() { ResetShaderInfo(kVertexMinimalGlsl, kFragmentMinimalGlsl); }
+void CreatePipelineHelper::InitShaderInfo() {
+    ResetShaderInfo(kVertexMinimalGlsl, kFragmentMinimalGlsl);
+}
 
-void CreatePipelineHelper::ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text) {
+void CreatePipelineHelper::ResetShaderInfo(const char* vertex_shader_text, const char* fragment_shader_text) {
     vs_ = std::make_unique<VkShaderObj>(&layer_test_, vertex_shader_text, VK_SHADER_STAGE_VERTEX_BIT);
     fs_ = std::make_unique<VkShaderObj>(&layer_test_, fragment_shader_text, VK_SHADER_STAGE_FRAGMENT_BIT);
     // We shouldn't need a fragment shader but add it to be able to run on more devices
-    shader_stages_ = {vs_->GetStageCreateInfo(), fs_->GetStageCreateInfo()};
+    shader_stages_ = { vs_->GetStageCreateInfo(), fs_->GetStageCreateInfo() };
 }
 
 void CreatePipelineHelper::Destroy() {
@@ -145,7 +149,7 @@ void CreatePipelineHelper::AddDynamicState(VkDynamicState dynamic_state) {
     gp_ci_.pDynamicState = &dyn_state_ci_;
 }
 
-void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
+void CreatePipelineHelper::InitVertexInputLibInfo(void* p_next) {
     gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT;
 
@@ -158,7 +162,7 @@ void CreatePipelineHelper::InitVertexInputLibInfo(void *p_next) {
     shader_stages_.clear();
 }
 
-void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next) {
+void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreateInfo* info, void* p_next) {
     gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
 
@@ -172,11 +176,11 @@ void CreatePipelineHelper::InitPreRasterLibInfo(const VkPipelineShaderStageCreat
     gp_ci_.renderPass = layer_test_.RenderPass();
     gp_ci_.subpass = 0;
 
-    gp_ci_.stageCount = 1;  // default is just the Vertex shader
+    gp_ci_.stageCount = 1; // default is just the Vertex shader
     gp_ci_.pStages = info;
 }
 
-void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo *info, void *p_next) {
+void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreateInfo* info, void* p_next) {
     gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
 
@@ -193,11 +197,11 @@ void CreatePipelineHelper::InitFragmentLibInfo(const VkPipelineShaderStageCreate
     // TODO if renderPass is null, MS info is not needed
     gp_ci_.pMultisampleState = &ms_ci_;
 
-    gp_ci_.stageCount = 1;  // default is just the Fragment shader
+    gp_ci_.stageCount = 1; // default is just the Fragment shader
     gp_ci_.pStages = info;
 }
 
-void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
+void CreatePipelineHelper::InitFragmentOutputLibInfo(void* p_next) {
     gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
     gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
 
@@ -216,10 +220,10 @@ void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
     shader_stages_.clear();
 }
 
-void CreatePipelineHelper::InitShaderLibInfo(std::vector<VkPipelineShaderStageCreateInfo> &info, void *p_next) {
+void CreatePipelineHelper::InitShaderLibInfo(std::vector<VkPipelineShaderStageCreateInfo>& info, void* p_next) {
     gpl_info.emplace(vku::InitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(p_next));
-    gpl_info->flags =
-        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+    gpl_info->flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                      VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
 
     gp_ci_ = vku::InitStructHelper(&gpl_info);
     gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
@@ -257,10 +261,11 @@ void CreatePipelineHelper::LateBindPipelineInfo() {
                 ASSERT_TRUE(descriptor_set_->Initialized());
             }
 
-            const std::vector<VkPushConstantRange> push_ranges(
-                pipeline_layout_ci_.pPushConstantRanges,
-                pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
-            pipeline_layout_ = vkt::PipelineLayout(*device_, {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
+            const std::vector<VkPushConstantRange> push_ranges(pipeline_layout_ci_.pPushConstantRanges,
+                                                               pipeline_layout_ci_.pPushConstantRanges +
+                                                                   pipeline_layout_ci_.pushConstantRangeCount);
+            pipeline_layout_ =
+                vkt::PipelineLayout(*device_, { &descriptor_set_->layout_ }, push_ranges, pipeline_layout_ci_.flags);
         }
         gp_ci_.layout = pipeline_layout_.handle();
     }
@@ -284,11 +289,11 @@ VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool do_late_bind, bool no
     if (do_late_bind) {
         LateBindPipelineInfo();
     }
-    return vk::CreateGraphicsPipelines(device_->handle(), no_cache ? VK_NULL_HANDLE : pipeline_cache_, 1, &gp_ci_, NULL,
-                                       &pipeline_);
+    return vk::CreateGraphicsPipelines(
+        device_->handle(), no_cache ? VK_NULL_HANDLE : pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
 }
 
-CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void *pNext) : layer_test_(test) {
+CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest& test, void* pNext) : layer_test_(test) {
     // default VkDevice, can be overwritten if multi-device tests
     device_ = layer_test_.DeviceObj();
 
@@ -296,12 +301,12 @@ CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void
     cp_ci_.pNext = pNext;
 
     // InitDescriptorSetInfo
-    dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr } };
 
     // InitPipelineLayoutInfo
     pipeline_layout_ci_ = vku::InitStructHelper();
-    pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
-    pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
+    pipeline_layout_ci_.setLayoutCount = 1;    // Not really changeable because InitState() sets exactly one pSetLayout
+    pipeline_layout_ci_.pSetLayouts = nullptr; // must bound after it is created
 
     // InitPipelineCacheInfo
     pc_ci_ = vku::InitStructHelper();
@@ -315,7 +320,9 @@ CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void
     cp_ci_.layout = VK_NULL_HANDLE;
 }
 
-CreateComputePipelineHelper::~CreateComputePipelineHelper() { Destroy(); }
+CreateComputePipelineHelper::~CreateComputePipelineHelper() {
+    Destroy();
+}
 
 void CreateComputePipelineHelper::InitShaderInfo() {
     cs_ = std::make_unique<VkShaderObj>(&layer_test_, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -352,10 +359,11 @@ void CreateComputePipelineHelper::LateBindPipelineInfo() {
                 ASSERT_TRUE(descriptor_set_->Initialized());
             }
 
-            const std::vector<VkPushConstantRange> push_ranges(
-                pipeline_layout_ci_.pPushConstantRanges,
-                pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
-            pipeline_layout_ = vkt::PipelineLayout(*device_, {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
+            const std::vector<VkPushConstantRange> push_ranges(pipeline_layout_ci_.pPushConstantRanges,
+                                                               pipeline_layout_ci_.pPushConstantRanges +
+                                                                   pipeline_layout_ci_.pushConstantRangeCount);
+            pipeline_layout_ =
+                vkt::PipelineLayout(*device_, { &descriptor_set_->layout_ }, push_ranges, pipeline_layout_ci_.flags);
         }
 
         cp_ci_.layout = pipeline_layout_.handle();
@@ -368,12 +376,14 @@ VkResult CreateComputePipelineHelper::CreateComputePipeline(bool do_late_bind, b
     if (do_late_bind) {
         LateBindPipelineInfo();
     }
-    return vk::CreateComputePipelines(device_->handle(), no_cache ? VK_NULL_HANDLE : pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
+    return vk::CreateComputePipelines(
+        device_->handle(), no_cache ? VK_NULL_HANDLE : pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
 }
 
 namespace vkt {
 
-GraphicsPipelineLibraryStage::GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage) : spv(spv) {
+GraphicsPipelineLibraryStage::GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage) :
+    spv(spv) {
     shader_ci = vku::InitStructHelper();
     shader_ci.codeSize = spv.size() * sizeof(uint32_t);
     shader_ci.pCode = spv.data();
@@ -384,16 +394,20 @@ GraphicsPipelineLibraryStage::GraphicsPipelineLibraryStage(vvl::span<const uint3
     stage_ci.pName = "main";
 }
 
-SimpleGPL::SimpleGPL(VkLayerTest &test, VkPipelineLayout layout, const char *vertex_shader, const char *fragment_shader)
-    : vertex_input_lib_(test), pre_raster_lib_(test), frag_shader_lib_(test), frag_out_lib_(test) {
+SimpleGPL::SimpleGPL(VkLayerTest& test,
+                     VkPipelineLayout layout,
+                     const char* vertex_shader,
+                     const char* fragment_shader) :
+    vertex_input_lib_(test),
+    pre_raster_lib_(test), frag_shader_lib_(test), frag_out_lib_(test) {
     auto device = test.DeviceObj();
 
     vertex_input_lib_.InitVertexInputLibInfo();
     vertex_input_lib_.CreateGraphicsPipeline(false);
 
     // For GPU-AV tests this shrinks things so only a single fragment is executed
-    VkViewport viewport = {0, 0, 1, 1, 0, 1};
-    VkRect2D scissor = {{0, 0}, {1, 1}};
+    VkViewport viewport = { 0, 0, 1, 1, 0, 1 };
+    VkRect2D scissor = { { 0, 0 }, { 1, 1 } };
 
     const auto vs_spv = test.GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertex_shader ? vertex_shader : kVertexMinimalGlsl);
     vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
@@ -403,7 +417,8 @@ SimpleGPL::SimpleGPL(VkLayerTest &test, VkPipelineLayout layout, const char *ver
     pre_raster_lib_.gp_ci_.layout = layout;
     pre_raster_lib_.CreateGraphicsPipeline();
 
-    const auto fs_spv = test.GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader ? fragment_shader : kFragmentMinimalGlsl);
+    const auto fs_spv =
+        test.GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fragment_shader ? fragment_shader : kFragmentMinimalGlsl);
     vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     frag_shader_lib_.InitFragmentLibInfo(&fs_stage.stage_ci);
     frag_shader_lib_.gp_ci_.layout = layout;
@@ -428,4 +443,4 @@ SimpleGPL::SimpleGPL(VkLayerTest &test, VkPipelineLayout layout, const char *ver
     pipe_.init(*device, exe_pipe_ci);
 }
 
-}  // namespace vkt
+} // namespace vkt

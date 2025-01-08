@@ -20,9 +20,9 @@
 
 #pragma once
 
-#include <vulkan/vulkan_core.h>
-#include "utils/vk_layer_utils.h"
 #include "containers/custom_containers.h"
+#include "utils/vk_layer_utils.h"
+#include <vulkan/vulkan_core.h>
 
 #include <spirv-tools/libspirv.hpp>
 
@@ -71,15 +71,16 @@ inline ShaderObjectStage VkShaderStageToShaderObjectStage(VkShaderStageFlagBits 
 
 class ValidationCache {
   public:
-    static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const *pCreateInfo, uint32_t spirv_val_option_hash) {
+    static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const* pCreateInfo,
+                                       uint32_t spirv_val_option_hash) {
         auto cache = new ValidationCache(spirv_val_option_hash);
         cache->Load(pCreateInfo);
         return VkValidationCacheEXT(cache);
     }
 
-    void Load(VkValidationCacheCreateInfoEXT const *pCreateInfo);
-    void Write(size_t *pDataSize, void *pData);
-    void Merge(ValidationCache const *other);
+    void Load(VkValidationCacheCreateInfoEXT const* pCreateInfo);
+    void Write(size_t* pDataSize, void* pData);
+    void Merge(ValidationCache const* other);
 
     bool Contains(uint32_t hash) {
         auto guard = ReadLock();
@@ -96,7 +97,7 @@ class ValidationCache {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
-    void GetUUID(uint8_t *uuid);
+    void GetUUID(uint8_t* uuid);
 
     // Can hit cases where error appear/disappear if spirv-val settings are adjusted
     // see https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8031
@@ -110,8 +111,9 @@ class ValidationCache {
     mutable std::shared_mutex lock_;
 };
 
-spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4);
+spv_target_env PickSpirvEnv(const APIVersion& api_version, bool spirv_1_4);
 
-void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
-                            spvtools::ValidatorOptions &out_options, uint32_t *out_hash);
-
+void AdjustValidatorOptions(const DeviceExtensions& device_extensions,
+                            const DeviceFeatures& enabled_features,
+                            spvtools::ValidatorOptions& out_options,
+                            uint32_t* out_hash);

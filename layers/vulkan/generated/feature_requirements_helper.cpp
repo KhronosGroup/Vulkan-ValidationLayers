@@ -24,9 +24,9 @@
 
 #include "generated/feature_requirements_helper.h"
 
-#include "generated/pnext_chain_extraction.h"
-
 #include <vulkan/utility/vk_struct_helper.hpp>
+
+#include "generated/pnext_chain_extraction.h"
 
 namespace vkt {
 FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **inout_pnext_chain) {
@@ -4357,7 +4357,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-            case Feature::constantAlphaColorBlendFactors : {
+        case Feature::constantAlphaColorBlendFactors: {
             auto vk_struct = const_cast<VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(
                 vku::FindStructInPNextChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "containers/custom_containers.h"
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -25,27 +26,26 @@
 #include <string_view>
 #include <type_traits>
 #include <vector>
-#include "containers/custom_containers.h"
 
 // Hash and equality utilities for supporting hashing containers (e.g. unordered_set, unordered_map)
 namespace hash_util {
 
 // True iff both pointers are null or both are non-null
 template <typename T>
-bool SimilarForNullity(const T *const lhs, const T *const rhs) {
+bool SimilarForNullity(const T* const lhs, const T* const rhs) {
     return ((lhs != nullptr) && (rhs != nullptr)) || ((lhs == nullptr) && (rhs == nullptr));
 }
 
 // Wrap std hash to avoid manual casts for the holes in std::hash (in C++11)
 template <typename Value>
-size_t HashWithUnderlying(Value value, typename std::enable_if<!std::is_enum<Value>::value, void *>::type = nullptr) {
+size_t HashWithUnderlying(Value value, typename std::enable_if<!std::is_enum<Value>::value, void*>::type = nullptr) {
     return vvl::hash<Value>()(value);
 }
 
 template <typename Value>
-size_t HashWithUnderlying(Value value, typename std::enable_if<std::is_enum<Value>::value, void *>::type = nullptr) {
+size_t HashWithUnderlying(Value value, typename std::enable_if<std::is_enum<Value>::value, void*>::type = nullptr) {
     using Underlying = typename std::underlying_type<Value>::type;
-    return vvl::hash<Underlying>()(static_cast<const Underlying &>(value));
+    return vvl::hash<Underlying>()(static_cast<const Underlying&>(value));
 }
 
 class HashCombiner {
@@ -54,14 +54,14 @@ class HashCombiner {
 
     template <typename Value>
     struct WrappedHash {
-        size_t operator()(const Value &value) const { return HashWithUnderlying(value); }
+        size_t operator()(const Value& value) const { return HashWithUnderlying(value); }
     };
 
     HashCombiner(Key combined = 0) : combined_(combined) {}
 
     // If you need to override the default hash
     template <typename Value, typename Hasher = WrappedHash<Value>>
-    HashCombiner &Combine(const Value &value) {
+    HashCombiner& Combine(const Value& value) {
         // magic and combination algorithm based on boost::hash_combine
         // http://www.boost.org/doc/libs/1_43_0/doc/html/hash/reference.html#boost.hash_combine
         // Magic value is 2^size / ((1-sqrt(5)/2)
@@ -72,7 +72,7 @@ class HashCombiner {
     }
 
     template <typename Iterator, typename Hasher = WrappedHash<typename std::iterator_traits<Iterator>::value_type>>
-    HashCombiner &Combine(Iterator first, Iterator end) {
+    HashCombiner& Combine(Iterator first, Iterator end) {
         using Value = typename std::iterator_traits<Iterator>::value_type;
         auto current = first;
         for (; current != end; ++current) {
@@ -82,12 +82,12 @@ class HashCombiner {
     }
 
     template <typename Value, typename Hasher = WrappedHash<Value>>
-    HashCombiner &Combine(const std::vector<Value> &vector) {
+    HashCombiner& Combine(const std::vector<Value>& vector) {
         return Combine(vector.cbegin(), vector.cend());
     }
 
     template <typename Value>
-    HashCombiner &operator<<(const Value &value) {
+    HashCombiner& operator<<(const Value& value) {
         return Combine(value);
     }
 
@@ -101,13 +101,13 @@ class HashCombiner {
 // A template to inherit std::hash overloads from when T::hash() is defined
 template <typename T>
 struct HasHashMember {
-    size_t operator()(const T &value) const { return value.hash(); }
+    size_t operator()(const T& value) const { return value.hash(); }
 };
 
 // A template to inherit std::hash overloads from when is an *ordered* constainer
 template <typename T>
 struct IsOrderedContainer {
-    size_t operator()(const T &value) const { return HashCombiner().Combine(value.cbegin(), value.cend()).Value(); }
+    size_t operator()(const T& value) const { return HashCombiner().Combine(value.cbegin(), value.cend()).Value(); }
 };
 
 // The dictionary provides a way of referencing canonical/reference
@@ -133,23 +133,24 @@ class Dictionary {
     // Find the unique entry match the provided value, adding if needed
     // TODO: segregate lookup from insert, using reader/write locks to reduce contention -- if needed
     template <typename U = T>
-    Id LookUp(U &&value) {
-        // We create an Id from the value, which will either be retained by dict (if new) or deleted on return (if extant)
+    Id LookUp(U&& value) {
+        // We create an Id from the value, which will either be retained by dict (if new) or deleted on return (if
+        // extant)
         Id from_input = std::make_shared<T>(std::forward<U>(value));
 
-        // Insert takes care of the "unique" id part by rejecting the insert if a key matching by_value exists, but returning us
-        // the Id of the extant shared_pointer(id->def) instead.
-        // return the value of the Iterator from the <Iterator, bool> pair returned by insert
-        Guard g(lock);  // Dict isn't thread safe, and use is presumed to be multi-threaded
+        // Insert takes care of the "unique" id part by rejecting the insert if a key matching by_value exists, but
+        // returning us the Id of the extant shared_pointer(id->def) instead. return the value of the Iterator from the
+        // <Iterator, bool> pair returned by insert
+        Guard g(lock); // Dict isn't thread safe, and use is presumed to be multi-threaded
         return *dict.insert(from_input).first;
     }
 
   private:
     struct HashKeyValue {
-        size_t operator()(const Id &value) const { return Hasher()(*value); }
+        size_t operator()(const Id& value) const { return Hasher()(*value); }
     };
     struct KeyValueEqual {
-        bool operator()(const Id &lhs, const Id &rhs) const { return KeyEqual()(*lhs, *rhs); }
+        bool operator()(const Id& lhs, const Id& rhs) const { return KeyEqual()(*lhs, *rhs); }
     };
     using Dict = vvl::unordered_set<Id, HashKeyValue, KeyValueEqual>;
     using Lock = std::mutex;
@@ -160,8 +161,8 @@ class Dictionary {
 
 uint32_t VuidHash(std::string_view vuid);
 
-uint32_t ShaderHash(const void *pCode, const size_t codeSize);
+uint32_t ShaderHash(const void* pCode, const size_t codeSize);
 
-uint64_t DescriptorVariableHash(const void *info, const size_t info_size);
+uint64_t DescriptorVariableHash(const void* info, const size_t info_size);
 
-}  // namespace hash_util
+} // namespace hash_util

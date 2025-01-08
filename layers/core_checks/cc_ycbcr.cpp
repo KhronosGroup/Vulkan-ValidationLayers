@@ -32,10 +32,11 @@ bool CoreChecks::FormatRequiresYcbcrConversionExplicitly(const VkFormat format) 
     return vkuFormatRequiresYcbcrConversion(format);
 }
 
-bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator,
-                                                             VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                             const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device,
+                                                             const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                             const VkAllocationCallbacks* pAllocator,
+                                                             VkSamplerYcbcrConversion* pYcbcrConversion,
+                                                             const ErrorObject& error_obj) const {
     bool skip = false;
     const VkFormat conversion_format = pCreateInfo->format;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -44,13 +45,17 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
     const uint64_t external_format = GetExternalFormat(pCreateInfo->pNext);
     if (external_format != 0) {
         if (VK_FORMAT_UNDEFINED != conversion_format) {
-            return LogError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01904", device, create_info_loc.dot(Field::format),
+            return LogError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01904",
+                            device,
+                            create_info_loc.dot(Field::format),
                             "(%s) is not VK_FORMAT_UNDEFINED while "
                             "there is a chained VkExternalFormatANDROID struct with a non-zero externalFormat.",
                             string_VkFormat(conversion_format));
         }
     } else if (vkuFormatIsUNORM(conversion_format) == false) {
-        skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-format-04061", device, create_info_loc.dot(Field::format),
+        skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-format-04061",
+                         device,
+                         create_info_loc.dot(Field::format),
                          "(%s) is not an UNORM format and there is no external format conversion being created.",
                          string_VkFormat(conversion_format));
     }
@@ -59,8 +64,8 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
     // (vkspec.html#potential-format-features)
     VkFormatFeatureFlags2KHR format_features = ~0ULL;
     if (conversion_format == VK_FORMAT_UNDEFINED) {
-        // only check for external format inside VK_FORMAT_UNDEFINED check to prevent unnecessary extra errors from no format
-        // features being supported
+        // only check for external format inside VK_FORMAT_UNDEFINED check to prevent unnecessary extra errors from no
+        // format features being supported
         if (external_format != 0) {
             auto it = ahb_ext_formats_map.find(external_format);
             if (it != ahb_ext_formats_map.end()) {
@@ -75,56 +80,74 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
     // These can't be in StatelessValidation due to needing possible External AHB state for feature support
     if (((format_features & VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT) == 0) &&
         ((format_features & VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT) == 0)) {
-        skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01650", device, create_info_loc.dot(Field::format),
+        skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-format-01650",
+                         device,
+                         create_info_loc.dot(Field::format),
                          "(%s) does not support either VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT or "
                          "VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT",
                          string_VkFormat(conversion_format));
     }
     if ((format_features & VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT) == 0) {
-        if (vkuFormatIsXChromaSubsampled(conversion_format) && pCreateInfo->xChromaOffset == VK_CHROMA_LOCATION_COSITED_EVEN) {
+        if (vkuFormatIsXChromaSubsampled(conversion_format) &&
+            pCreateInfo->xChromaOffset == VK_CHROMA_LOCATION_COSITED_EVEN) {
             skip |=
-                LogError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651", device, create_info_loc.dot(Field::format),
+                LogError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651",
+                         device,
+                         create_info_loc.dot(Field::format),
                          "(%s) does not support VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT so xChromaOffset can't "
                          "be VK_CHROMA_LOCATION_COSITED_EVEN",
                          string_VkFormat(conversion_format));
         }
-        if (vkuFormatIsYChromaSubsampled(conversion_format) && pCreateInfo->yChromaOffset == VK_CHROMA_LOCATION_COSITED_EVEN) {
+        if (vkuFormatIsYChromaSubsampled(conversion_format) &&
+            pCreateInfo->yChromaOffset == VK_CHROMA_LOCATION_COSITED_EVEN) {
             skip |=
-                LogError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651", device, create_info_loc.dot(Field::format),
+                LogError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651",
+                         device,
+                         create_info_loc.dot(Field::format),
                          "(%s) does not support VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT so yChromaOffset can't "
                          "be VK_CHROMA_LOCATION_COSITED_EVEN",
                          string_VkFormat(conversion_format));
         }
     }
     if ((format_features & VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT) == 0) {
-        if (vkuFormatIsXChromaSubsampled(conversion_format) && pCreateInfo->xChromaOffset == VK_CHROMA_LOCATION_MIDPOINT) {
+        if (vkuFormatIsXChromaSubsampled(conversion_format) &&
+            pCreateInfo->xChromaOffset == VK_CHROMA_LOCATION_MIDPOINT) {
             skip |=
-                LogError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652", device, create_info_loc.dot(Field::format),
+                LogError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652",
+                         device,
+                         create_info_loc.dot(Field::format),
                          "(%s) does not support VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT so xChromaOffset can't "
                          "be VK_CHROMA_LOCATION_MIDPOINT",
                          string_VkFormat(conversion_format));
         }
-        if (vkuFormatIsYChromaSubsampled(conversion_format) && pCreateInfo->yChromaOffset == VK_CHROMA_LOCATION_MIDPOINT) {
+        if (vkuFormatIsYChromaSubsampled(conversion_format) &&
+            pCreateInfo->yChromaOffset == VK_CHROMA_LOCATION_MIDPOINT) {
             skip |=
-                LogError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652", device, create_info_loc.dot(Field::format),
+                LogError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652",
+                         device,
+                         create_info_loc.dot(Field::format),
                          "(%s) does not support VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT so yChromaOffset can't "
                          "be VK_CHROMA_LOCATION_MIDPOINT",
                          string_VkFormat(conversion_format));
         }
     }
-    if (((format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT) ==
-         0) &&
+    if (((format_features &
+          VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT) == 0) &&
         (pCreateInfo->forceExplicitReconstruction == VK_TRUE)) {
-        skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656", device,
-                         create_info_loc.dot(Field::format),
-                         "(%s) does not support "
-                         "VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT so "
-                         "forceExplicitReconstruction must be VK_FALSE",
-                         string_VkFormat(conversion_format));
+        skip |=
+            LogError("VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656",
+                     device,
+                     create_info_loc.dot(Field::format),
+                     "(%s) does not support "
+                     "VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT so "
+                     "forceExplicitReconstruction must be VK_FALSE",
+                     string_VkFormat(conversion_format));
     }
     if (((format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT) == 0) &&
         (pCreateInfo->chromaFilter == VK_FILTER_LINEAR)) {
-        skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657", device, create_info_loc.dot(Field::format),
+        skip |= LogError("VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657",
+                         device,
+                         create_info_loc.dot(Field::format),
                          "(%s) does not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT so "
                          "chromaFilter must not be VK_FILTER_LINEAR",
                          string_VkFormat(conversion_format));
@@ -134,9 +157,9 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
 }
 
 bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
-                                                                const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
-                                                                const VkAllocationCallbacks *pAllocator,
-                                                                VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                                const ErrorObject &error_obj) const {
+                                                                const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
+                                                                const VkAllocationCallbacks* pAllocator,
+                                                                VkSamplerYcbcrConversion* pYcbcrConversion,
+                                                                const ErrorObject& error_obj) const {
     return PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, error_obj);
 }

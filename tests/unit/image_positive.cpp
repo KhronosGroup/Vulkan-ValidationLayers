@@ -11,27 +11,27 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/barrier_queue_family.h"
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
-#include "../framework/barrier_queue_family.h"
 
 #include "utils/vk_layer_utils.h"
 
 // A reasonable well supported default VkImageCreateInfo for image creation
 VkImageCreateInfo ImageTest::DefaultImageInfo() {
     VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.flags = 0;                          // assumably any is supported
-    ci.imageType = VK_IMAGE_TYPE_2D;       // any is supported
-    ci.format = VK_FORMAT_R8G8B8A8_UNORM;  // has mandatory support for all usages
-    ci.extent = {64, 64, 1};               // limit is 256 for 3D, or 4096
-    ci.mipLevels = 1;                      // any is supported
-    ci.arrayLayers = 1;                    // limit is 256
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;    // needs to be 1 if TILING_LINEAR
+    ci.flags = 0;                         // assumably any is supported
+    ci.imageType = VK_IMAGE_TYPE_2D;      // any is supported
+    ci.format = VK_FORMAT_R8G8B8A8_UNORM; // has mandatory support for all usages
+    ci.extent = { 64, 64, 1 };            // limit is 256 for 3D, or 4096
+    ci.mipLevels = 1;                     // any is supported
+    ci.arrayLayers = 1;                   // limit is 256
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;   // needs to be 1 if TILING_LINEAR
     // if VK_IMAGE_TILING_LINEAR imageType must be 2D, usage must be TRANSFER, and levels layers samplers all 1
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;  // depends on format
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT; // depends on format
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     return ci;
 }
@@ -42,16 +42,18 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     TEST_DESCRIPTION("Valid image ownership transfers that shouldn't create errors");
     RETURN_IF_SKIP(Init());
 
-    vkt::Queue *no_gfx_queue = m_device->QueueWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+    vkt::Queue* no_gfx_queue = m_device->QueueWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (!no_gfx_queue) {
         GTEST_SKIP() << "Required queue not present (non-graphics non-compute capable required)";
     }
 
-    vkt::CommandPool no_gfx_pool(*m_device, no_gfx_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool no_gfx_pool(
+        *m_device, no_gfx_queue->family_index, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer no_gfx_cb(*m_device, no_gfx_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     // Create an "exclusive" image owned by the graphics queue.
-    VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkFlags image_use =
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, image_use);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     auto image_subres = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
@@ -59,8 +61,15 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
 
-    ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_command_buffer, no_gfx_queue, no_gfx_cb,
-                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, nullptr, &image_barrier);
+    ValidOwnershipTransfer(m_errorMonitor,
+                           m_default_queue,
+                           m_command_buffer,
+                           no_gfx_queue,
+                           no_gfx_cb,
+                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           nullptr,
+                           &image_barrier);
 
     // Change layouts while changing ownership
     image_barrier.srcQueueFamilyIndex = no_gfx_queue->family_index;
@@ -73,24 +82,31 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
         image_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
 
-    ValidOwnershipTransfer(m_errorMonitor, no_gfx_queue, no_gfx_cb, m_default_queue, m_command_buffer,
-                           VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, nullptr, &image_barrier);
+    ValidOwnershipTransfer(m_errorMonitor,
+                           no_gfx_queue,
+                           no_gfx_cb,
+                           m_default_queue,
+                           m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                           nullptr,
+                           &image_barrier);
 }
 
 TEST_F(PositiveImage, AliasedMemoryTracking) {
-    TEST_DESCRIPTION(
-        "Create a buffer, allocate memory, bind memory, destroy the buffer, create an image, and bind the same memory to it");
+    TEST_DESCRIPTION("Create a buffer, allocate memory, bind memory, destroy the buffer, create an image, and bind the "
+                     "same memory to it");
 
     RETURN_IF_SKIP(Init());
 
     VkDeviceSize buff_size = 256;
-    auto buffer = std::make_unique<vkt::Buffer>(*m_device, vkt::Buffer::CreateInfo(buff_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT),
-                                                vkt::no_mem);
+    auto buffer = std::make_unique<vkt::Buffer>(
+        *m_device, vkt::Buffer::CreateInfo(buff_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT), vkt::no_mem);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;  // mandatory format
-    image_create_info.extent.width = 64;                  // at least 4096x4096 is supported
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM; // mandatory format
+    image_create_info.extent.width = 64;                 // at least 4096x4096 is supported
     image_create_info.extent.height = 64;
     image_create_info.extent.depth = 1;
     image_create_info.mipLevels = 1;
@@ -107,9 +123,10 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     vkt::DeviceMemory mem;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
-    bool has_memtype =
-        m_device->Physical().SetMemoryType(buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits,
-                                           &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool has_memtype = m_device->Physical().SetMemoryType(buffer_memory_requirements.memoryTypeBits &
+                                                              image_memory_requirements.memoryTypeBits,
+                                                          &alloc_info,
+                                                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a host visible memory type for both a buffer and an image";
     }
@@ -134,7 +151,8 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
 TEST_F(PositiveImage, CreateImageViewFollowsParameterCompatibilityRequirements) {
     TEST_DESCRIPTION("Verify that creating an ImageView with valid usage does not generate validation errors.");
     RETURN_IF_SKIP(Init());
-    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    auto image_ci =
+        vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     image.CreateView();
@@ -162,7 +180,7 @@ TEST_F(PositiveImage, FormatCompatibility) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&format_list);
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 1};
+    image_create_info.extent = { 32, 32, 1 };
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -173,9 +191,8 @@ TEST_F(PositiveImage, FormatCompatibility) {
 }
 
 TEST_F(PositiveImage, MultpilePNext) {
-    TEST_DESCRIPTION(
-        "Use VkImageFormatListCreateInfo and VkImageCompressionControlEXT to make sure internal "
-        "DispatchGetPhysicalDeviceImageFormatProperties2 pass them along");
+    TEST_DESCRIPTION("Use VkImageFormatListCreateInfo and VkImageCompressionControlEXT to make sure internal "
+                     "DispatchGetPhysicalDeviceImageFormatProperties2 pass them along");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
@@ -193,7 +210,7 @@ TEST_F(PositiveImage, MultpilePNext) {
     VkImageCreateInfo image_create_info = vku::InitStructHelper(&image_compression);
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 1};
+    image_create_info.extent = { 32, 32, 1 };
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -215,7 +232,7 @@ TEST_F(PositiveImage, FramebufferFrom3DImage) {
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_ci.extent = {32, 32, 4};
+    image_ci.extent = { 32, 32, 4 };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -252,25 +269,25 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
-    image_ci.flags =
-        VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT |
+                     VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_BC3_UNORM_BLOCK;
     image_ci.extent = {
-        64,  // width
-        64,  // height
-        1,   // depth
+        64, // width
+        64, // height
+        1,  // depth
     };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage =
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                     VK_IMAGE_USAGE_SAMPLED_BIT;
 
     VkImageFormatProperties image_properties;
-    VkResult err = vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling,
-                                                              image_ci.usage, image_ci.flags, &image_properties);
+    VkResult err = vk::GetPhysicalDeviceImageFormatProperties(
+        Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling, image_ci.usage, image_ci.flags, &image_properties);
     // Test not supported by driver
     if (err != VK_SUCCESS) {
         GTEST_SKIP() << "Image format not valid for format, type, tiling, usage and flags combination.";
@@ -386,7 +403,7 @@ TEST_F(PositiveImage, Create3DImageView) {
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.imageType = VK_IMAGE_TYPE_3D;
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ci.extent = {32, 32, 8};
+    ci.extent = { 32, 32, 8 };
     ci.mipLevels = 6;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -409,7 +426,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.imageType = VK_IMAGE_TYPE_3D;
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ci.extent = {32, 32, 8};
+    ci.extent = { 32, 32, 8 };
     ci.mipLevels = 6;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -514,16 +531,16 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    VkFormat f_color = VK_FORMAT_R32_SFLOAT;  // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
-    if (!FormatFeaturesAreSupported(Gpu(), f_color, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+    VkFormat f_color = VK_FORMAT_R32_SFLOAT; // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
+    if (!FormatFeaturesAreSupported(
+            Gpu(), f_color, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
         GTEST_SKIP() << "No blit feature format support";
     }
 
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = f_color;
-    ci.extent = {64, 64, 1};
+    ci.extent = { 64, 64, 1 };
     ci.mipLevels = 1;
     ci.arrayLayers = 4;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -532,20 +549,32 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
     vkt::Image image(*m_device, ci, vkt::set_layout);
 
     VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
-    blitRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, VK_REMAINING_ARRAY_LAYERS};
-    blitRegion.srcOffsets[0] = {0, 0, 0};
-    blitRegion.srcOffsets[1] = {16, 16, 1};
-    blitRegion.dstOffsets[0] = {32, 32, 0};
-    blitRegion.dstOffsets[1] = {64, 64, 1};
+    blitRegion.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS };
+    blitRegion.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, VK_REMAINING_ARRAY_LAYERS };
+    blitRegion.srcOffsets[0] = { 0, 0, 0 };
+    blitRegion.srcOffsets[1] = { 16, 16, 1 };
+    blitRegion.dstOffsets[0] = { 32, 32, 0 };
+    blitRegion.dstOffsets[1] = { 64, 64, 1 };
 
     m_command_buffer.Begin();
 
-    vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), image.Layout(), image.handle(), image.Layout(), 1, &blitRegion,
+    vk::CmdBlitImage(m_command_buffer.handle(),
+                     image.handle(),
+                     image.Layout(),
+                     image.handle(),
+                     image.Layout(),
+                     1,
+                     &blitRegion,
                      VK_FILTER_NEAREST);
 
-    blitRegion.dstSubresource.layerCount = 2;  // same as VK_REMAINING_ARRAY_LAYERS
-    vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), image.Layout(), image.handle(), image.Layout(), 1, &blitRegion,
+    blitRegion.dstSubresource.layerCount = 2; // same as VK_REMAINING_ARRAY_LAYERS
+    vk::CmdBlitImage(m_command_buffer.handle(),
+                     image.handle(),
+                     image.Layout(),
+                     image.handle(),
+                     image.Layout(),
+                     1,
+                     &blitRegion,
                      VK_FILTER_NEAREST);
 }
 
@@ -566,7 +595,7 @@ TEST_F(PositiveImage, BlockTexelViewCompatibleMultipleLayers) {
     image_create_info.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
-    image_create_info.extent = {32, 32, 1};
+    image_create_info.extent = { 32, 32, 1 };
     image_create_info.mipLevels = 4;
     image_create_info.arrayLayers = 2;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -617,7 +646,7 @@ TEST_F(PositiveImage, ImageAlignmentControlZero) {
     RETURN_IF_SKIP(Init());
 
     VkImageAlignmentControlCreateInfoMESA alignment_control = vku::InitStructHelper();
-    alignment_control.maximumRequestedAlignment = 0;  // Should ignore
+    alignment_control.maximumRequestedAlignment = 0; // Should ignore
 
     VkImageCreateInfo image_create_info = DefaultImageInfo();
     image_create_info.pNext = &alignment_control;
@@ -633,7 +662,7 @@ TEST_F(PositiveImage, RemainingMipLevels2DViewOf3D) {
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_ci.extent = {32, 32, 2};
+    image_ci.extent = { 32, 32, 2 };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -652,7 +681,7 @@ TEST_F(PositiveImage, RemainingMipLevelsBlockTexelView) {
     image_create_info.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
-    image_create_info.extent = {32, 32, 1};
+    image_create_info.extent = { 32, 32, 1 };
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 2;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -670,6 +699,6 @@ TEST_F(PositiveImage, RemainingMipLevelsBlockTexelView) {
     ivci.image = image.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
-    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1};
+    ivci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1 };
     CreateImageViewTest(*this, &ivci);
 }

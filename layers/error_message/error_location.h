@@ -20,10 +20,10 @@
 #include <cstdint>
 #include <string>
 
+#include "chassis/chassis_handle_data.h"
+#include "containers/custom_containers.h"
 #include "generated/error_location_helper.h"
 #include "logging.h"
-#include "containers/custom_containers.h"
-#include "chassis/chassis_handle_data.h"
 #include "utils/hash_util.h"
 
 // Holds the 'Location' of where the code is inside a function/struct/etc
@@ -36,27 +36,22 @@ struct Location {
 
     const vvl::Struct structure{};
     const vvl::Field field{};
-    const uint32_t index{};  // optional index if checking an array.
-    const bool isPNext{};    // will print the struct is from a 'pNext` chain
+    const uint32_t index{}; // optional index if checking an array.
+    const bool isPNext{};   // will print the struct is from a 'pNext` chain
     const Location* prev{};
     mutable const std::string* debug_region{};
 
-    Location(vvl::Func func, vvl::Struct s, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex)
-        : function(func), structure(s), field(f), index(i), isPNext(false), prev(nullptr) {}
-    Location(vvl::Func func, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex)
-        : function(func), structure(vvl::Struct::Empty), field(f), index(i), isPNext(false), prev(nullptr) {}
-    Location(const Location& prev_loc, vvl::Struct s, vvl::Field f, uint32_t i, bool p)
-        : function(prev_loc.function), structure(s), field(f), index(i), isPNext(p), prev(&prev_loc) {}
-    Location(const Location& loc, std::string& debug_region)
-        : function(loc.function),
-          structure(loc.structure),
-          field(loc.field),
-          index(loc.index),
-          isPNext(loc.isPNext),
-          prev(loc.prev),
-          debug_region(&debug_region) {}
+    Location(vvl::Func func, vvl::Struct s, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex) :
+        function(func), structure(s), field(f), index(i), isPNext(false), prev(nullptr) {}
+    Location(vvl::Func func, vvl::Field f = vvl::Field::Empty, uint32_t i = kNoIndex) :
+        function(func), structure(vvl::Struct::Empty), field(f), index(i), isPNext(false), prev(nullptr) {}
+    Location(const Location& prev_loc, vvl::Struct s, vvl::Field f, uint32_t i, bool p) :
+        function(prev_loc.function), structure(s), field(f), index(i), isPNext(p), prev(&prev_loc) {}
+    Location(const Location& loc, std::string& debug_region) :
+        function(loc.function), structure(loc.structure), field(loc.field), index(loc.index), isPNext(loc.isPNext),
+        prev(loc.prev), debug_region(&debug_region) {}
 
-    void AppendFields(std::ostream &out) const;
+    void AppendFields(std::ostream& out) const;
     std::string Fields() const;
     std::string Message() const;
 
@@ -89,15 +84,15 @@ struct Location {
 // Contains the base information needed for errors to be logged out
 // Created for each function as a starting point to build off of
 struct ErrorObject {
-    const Location location;   // starting location (Always the function entrypoint)
-    const VulkanTypedHandle handle;  // dispatchable handle is always first parameter of the function call
+    const Location location;        // starting location (Always the function entrypoint)
+    const VulkanTypedHandle handle; // dispatchable handle is always first parameter of the function call
     const LogObjectList objlist;
     const chassis::HandleData* handle_data;
 
-    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_)
-        : location(Location(command_)), handle(handle_), objlist(handle), handle_data(nullptr) {}
-    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_, const chassis::HandleData* handle_data_)
-        : location(Location(command_)), handle(handle_), objlist(handle), handle_data(handle_data_) {}
+    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_) :
+        location(Location(command_)), handle(handle_), objlist(handle), handle_data(nullptr) {}
+    ErrorObject(vvl::Func command_, VulkanTypedHandle handle_, const chassis::HandleData* handle_data_) :
+        location(Location(command_)), handle(handle_), objlist(handle), handle_data(handle_data_) {}
 };
 
 namespace vvl {
@@ -121,8 +116,8 @@ struct LocationVuidAdapter {
 
 struct LocationCapture {
     LocationCapture(const Location& loc);
-    LocationCapture(const LocationCapture &other);
-    LocationCapture(LocationCapture &&other);
+    LocationCapture(const LocationCapture& other);
+    LocationCapture(LocationCapture&& other);
 
     const Location& Get() const { return capture.back(); }
 
@@ -147,19 +142,19 @@ struct Key {
     Struct structure;
     Field field;
     bool recurse_field;
-    Key(Struct r, Field f = Field::Empty, bool recurse = false)
-        : function(Func::Empty), structure(r), field(f), recurse_field(recurse) {}
-    Key(Func fn, Field f = Field::Empty, bool recurse = false)
-        : function(fn), structure(Struct::Empty), field(f), recurse_field(recurse) {}
-    Key(Func fn, Struct r, Field f = Field::Empty, bool recurse = false)
-        : function(fn), structure(r), field(f), recurse_field(recurse) {}
+    Key(Struct r, Field f = Field::Empty, bool recurse = false) :
+        function(Func::Empty), structure(r), field(f), recurse_field(recurse) {}
+    Key(Func fn, Field f = Field::Empty, bool recurse = false) :
+        function(fn), structure(Struct::Empty), field(f), recurse_field(recurse) {}
+    Key(Func fn, Struct r, Field f = Field::Empty, bool recurse = false) :
+        function(fn), structure(r), field(f), recurse_field(recurse) {}
 
     struct hash {
       public:
         std::size_t operator()(const Key& key) const {
             hash_util::HashCombiner hc;
-            hc << static_cast<uint32_t>(key.function) << static_cast<uint32_t>(key.structure) << static_cast<uint32_t>(key.field)
-               << key.recurse_field;
+            hc << static_cast<uint32_t>(key.function) << static_cast<uint32_t>(key.structure)
+               << static_cast<uint32_t>(key.field) << key.recurse_field;
             return hc.Value();
         }
     };
@@ -208,4 +203,4 @@ static const std::string& FindVUID(OuterKey key, const Location& loc, const Tabl
     return empty;
 }
 
-}  // namespace vvl
+} // namespace vvl

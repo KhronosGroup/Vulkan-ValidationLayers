@@ -22,6 +22,7 @@
 // NOLINTBEGIN
 #pragma once
 #include <array>
+
 #include "vulkan/vulkan.h"
 // clang-format off
 const uint32_t GeneratedVulkanHeaderVersion = 304;

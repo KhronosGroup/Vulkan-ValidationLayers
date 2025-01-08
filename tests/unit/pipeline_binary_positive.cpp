@@ -153,7 +153,7 @@ TEST_F(PositivePipelineBinary, GetPipelineKey) {
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &pipeline_dsl });
 
     VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.stage = cs.GetStageCreateInfo();

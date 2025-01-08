@@ -31,5 +31,5 @@ struct LinkInfo {
     const char* opname;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

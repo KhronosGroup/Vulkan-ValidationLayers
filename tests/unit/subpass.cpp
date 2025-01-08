@@ -28,12 +28,16 @@ TEST_F(NegativeSubpass, NonGraphicsPipeline) {
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
     VkSubpassDescription subpasses[] = {
-        {0, VK_PIPELINE_BIND_POINT_COMPUTE, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
+        { 0, VK_PIPELINE_BIND_POINT_COMPUTE, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr },
     };
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 1u, subpasses, 0u, nullptr);
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2Supported, "VUID-VkSubpassDescription-pipelineBindPoint-04952",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2Supported,
+                         "VUID-VkSubpassDescription-pipelineBindPoint-04952",
                          "VUID-VkSubpassDescription2-pipelineBindPoint-04953");
 }
 
@@ -61,7 +65,8 @@ TEST_F(NegativeSubpass, InputAttachmentParameters) {
     subpass.inputAttachmentCount = 1;
     subpass.pInputAttachments = &reference;
 
-    auto rpci2 = vku::InitStruct<VkRenderPassCreateInfo2KHR>(nullptr, 0u, 1u, &attach_desc, 1u, &subpass, 0u, nullptr, 0u, nullptr);
+    auto rpci2 = vku::InitStruct<VkRenderPassCreateInfo2KHR>(
+        nullptr, 0u, 1u, &attach_desc, 1u, &subpass, 0u, nullptr, 0u, nullptr);
 
     // Valid
     PositiveTestRenderPass2KHRCreate(*m_device, rpci2);
@@ -72,19 +77,19 @@ TEST_F(NegativeSubpass, InputAttachmentParameters) {
     // Test for aspect mask of 0
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-attachment-02525");
     m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pInputAttachments-02897");
-    TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, {"VUID-VkSubpassDescription2-attachment-02800"});
+    TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, { "VUID-VkSubpassDescription2-attachment-02800" });
 
     // Test for invalid aspect mask bits
-    reference.aspectMask = 0x40000000;  // invalid VkImageAspectFlagBits value
+    reference.aspectMask = 0x40000000; // invalid VkImageAspectFlagBits value
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-attachment-02525");
     m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pInputAttachments-02897");
-    TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, {"VUID-VkSubpassDescription2-attachment-02799"});
+    TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, { "VUID-VkSubpassDescription2-attachment-02799" });
 
     // Test for invalid use of VK_IMAGE_ASPECT_METADATA_BIT
     reference.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-attachment-02525");
     m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pInputAttachments-02897");
-    TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, {"VUID-VkSubpassDescription2-attachment-02801"});
+    TestRenderPass2KHRCreate(*m_errorMonitor, *m_device, rpci2, { "VUID-VkSubpassDescription2-attachment-02801" });
 }
 
 TEST_F(NegativeSubpass, SubpassDependencies) {
@@ -107,205 +112,352 @@ TEST_F(NegativeSubpass, SubpassDependencies) {
 
     // Create two dummy subpasses
     VkSubpassDescription subpasses[] = {
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
+        { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr },
+        { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr },
     };
 
     VkSubpassDependency dependency;
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 2u, subpasses, 1u, &dependency);
 
     // Non graphics stages in subpass dependency
-    dependency = {0, 1, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT,
-                  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-00837",
+    dependency = { 0,
+                   1,
+                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT,
+                   VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT };
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00837",
                          "VUID-VkRenderPassCreateInfo2-pDependencies-03054");
 
-    dependency = {0, 1, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0};
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-00837",
+    dependency = { 0, 1, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0 };
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00837",
                          "VUID-VkRenderPassCreateInfo2-pDependencies-03054");
 
-    dependency = {0, 1, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0};
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-00837",
+    dependency = { 0, 1, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0 };
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00837",
                          "VUID-VkRenderPassCreateInfo2-pDependencies-03054");
 
-    dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT};
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-00838",
+    dependency = { 0,
+                   1,
+                   VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT };
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00838",
                          "VUID-VkRenderPassCreateInfo2-pDependencies-03055");
 
-    dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 0, 0};
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-00838",
+    dependency = { 0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 0, 0 };
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00838",
                          "VUID-VkRenderPassCreateInfo2-pDependencies-03055");
 
-    dependency = {0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0};
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-00837",
+    dependency = {
+        0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0
+    };
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00837",
                          "VUID-VkRenderPassCreateInfo2-pDependencies-03054");
 
-    dependency = {VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0};
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-00838",
+    dependency = {
+        VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0
+    };
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00838",
                          "VUID-VkRenderPassCreateInfo2-pDependencies-03055");
 
-    dependency = {0, 0, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-00837",
+    dependency = { 0, 0, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0 };
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00837",
                          "VUID-VkRenderPassCreateInfo2-pDependencies-03054");
 
     // Geometry shaders not enabled source
-    dependency = {0, 1, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
+    dependency = { 0, 1, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0 };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-srcStageMask-04090",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-srcStageMask-04090",
                          "VUID-VkSubpassDependency2-srcStageMask-04090");
 
     // Geometry shaders not enabled destination
-    dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, 0, 0, 0};
+    dependency = { 0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, 0, 0, 0 };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-dstStageMask-04090",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-dstStageMask-04090",
                          "VUID-VkSubpassDependency2-dstStageMask-04090");
 
     // Tessellation not enabled source
-    dependency = {0, 1, VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
+    dependency = { 0, 1, VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
+                   0, 0 };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-srcStageMask-04091",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-srcStageMask-04091",
                          "VUID-VkSubpassDependency2-srcStageMask-04091");
 
     // Tessellation not enabled destination
-    dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, 0, 0, 0};
+    dependency = { 0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, 0,
+                   0, 0 };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-dstStageMask-04091",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-dstStageMask-04091",
                          "VUID-VkSubpassDependency2-dstStageMask-04091");
 
     // Potential cyclical dependency
-    dependency = {1, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
+    dependency = { 1, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0 };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-00864",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-srcSubpass-00864",
                          "VUID-VkSubpassDependency2-srcSubpass-03084");
 
     // EXTERNAL to EXTERNAL dependency
-    dependency = {
-        VK_SUBPASS_EXTERNAL, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
+    dependency = { VK_SUBPASS_EXTERNAL,
+                   VK_SUBPASS_EXTERNAL,
+                   VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                   VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                   0,
+                   0,
+                   0 };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-00865",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-srcSubpass-00865",
                          "VUID-VkSubpassDependency2-srcSubpass-03085");
 
     // srcStage contains framebuffer space, and dstStage contains non-framebuffer space
-    dependency = {0,
-                  0,
-                  VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                  VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                  0,
-                  0,
-                  0};
+    dependency = { 0,
+                   0,
+                   VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                   VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                   0,
+                   0,
+                   0 };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-06809",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-srcSubpass-06809",
                          "VUID-VkSubpassDependency2-srcSubpass-06810");
 
     // framebuffer space stages in self dependency with region bit
-    dependency = {0, 0, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 0, 0, 0};
+    dependency = {
+        0, 0, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 0, 0, 0
+    };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-02243",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-srcSubpass-02243",
                          "VUID-VkSubpassDependency2-srcSubpass-02245");
 
-    // Same test but make sure the logical invalid order does not trip other VUID since both are framebuffer space stages
-    dependency = {0, 0, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, 0, 0};
+    // Same test but make sure the logical invalid order does not trip other VUID since both are framebuffer space
+    // stages
+    dependency = {
+        0, 0, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, 0, 0, 0
+    };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-02243",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-srcSubpass-02243",
                          "VUID-VkSubpassDependency2-srcSubpass-02245");
 
     // Source access mask mismatch with source stage mask
-    dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_UNIFORM_READ_BIT, 0, 0};
+    dependency = {
+        0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_UNIFORM_READ_BIT, 0, 0
+    };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-srcAccessMask-00868",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-srcAccessMask-00868",
                          "VUID-VkSubpassDependency2-srcAccessMask-03088");
 
     // Destination access mask mismatch with destination stage mask
-    dependency = {
-        0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0};
+    dependency = { 0,
+                   1,
+                   VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                   0,
+                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                   0 };
 
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-dstAccessMask-00869",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkSubpassDependency-dstAccessMask-00869",
                          "VUID-VkSubpassDependency2-dstAccessMask-03089");
 
     // srcSubpass larger than subpassCount
-    dependency = {3, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0};
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-06866",
+    dependency = {
+        3, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0
+    };
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-06866",
                          "VUID-VkRenderPassCreateInfo2-srcSubpass-02526");
 
     // dstSubpass larger than subpassCount
-    dependency = {0, 3, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0};
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-06867",
+    dependency = {
+        0, 3, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0
+    };
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-06867",
                          "VUID-VkRenderPassCreateInfo2-dstSubpass-02527");
 
     if (multiview_supported) {
         // VIEW_LOCAL_BIT but multiview is not enabled
-        dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      0, 0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
+        dependency = { 0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                       0, 0, VK_DEPENDENCY_VIEW_LOCAL_BIT };
 
-        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, nullptr,
-                             "VUID-VkRenderPassCreateInfo2-viewMask-03059");
+        TestRenderPassCreate(
+            m_errorMonitor, *m_device, rpci, rp2_supported, nullptr, "VUID-VkRenderPassCreateInfo2-viewMask-03059");
 
         // Enable multiview
-        uint32_t pViewMasks[2] = {0x3u, 0x3u};
-        int32_t pViewOffsets[2] = {0, 0};
-        auto rpmvci = vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, pViewMasks, 0u, nullptr, 0u, nullptr);
+        uint32_t pViewMasks[2] = { 0x3u, 0x3u };
+        int32_t pViewOffsets[2] = { 0, 0 };
+        auto rpmvci =
+            vku::InitStruct<VkRenderPassMultiviewCreateInfo>(nullptr, 2u, pViewMasks, 0u, nullptr, 0u, nullptr);
         rpci.pNext = &rpmvci;
 
         // Excessive view offsets
-        dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      0, 0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
+        dependency = { 0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                       0, 0, VK_DEPENDENCY_VIEW_LOCAL_BIT };
         rpmvci.pViewOffsets = pViewOffsets;
         rpmvci.dependencyCount = 2;
 
-        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01929", nullptr);
+        TestRenderPassCreate(
+            m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01929", nullptr);
 
         rpmvci.dependencyCount = 0;
 
         // View offset with subpass self dependency
-        dependency = {0, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      0, 0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
+        dependency = { 0, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                       0, 0, VK_DEPENDENCY_VIEW_LOCAL_BIT };
         rpmvci.pViewOffsets = pViewOffsets;
         pViewOffsets[0] = 1;
         rpmvci.dependencyCount = 1;
 
-        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01930",
+        TestRenderPassCreate(m_errorMonitor,
+                             *m_device,
+                             rpci,
+                             false,
+                             "VUID-VkRenderPassCreateInfo-pNext-01930",
                              "VUID-VkSubpassDependency2-viewOffset-02530");
 
         rpmvci.dependencyCount = 0;
 
         // View offset with no view local bit
         if (rp2_supported) {
-            dependency = {0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
+            dependency = {
+                0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0
+            };
             rpmvci.pViewOffsets = pViewOffsets;
             pViewOffsets[0] = 1;
             rpmvci.dependencyCount = 1;
 
-            TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, nullptr,
+            TestRenderPassCreate(m_errorMonitor,
+                                 *m_device,
+                                 rpci,
+                                 rp2_supported,
+                                 nullptr,
                                  "VUID-VkSubpassDependency2-dependencyFlags-03092");
 
             rpmvci.dependencyCount = 0;
         }
 
         // EXTERNAL subpass with VIEW_LOCAL_BIT - source subpass
-        dependency = {VK_SUBPASS_EXTERNAL,         1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
-                      VK_DEPENDENCY_VIEW_LOCAL_BIT};
+        dependency = { VK_SUBPASS_EXTERNAL,
+                       1,
+                       VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                       0,
+                       0,
+                       VK_DEPENDENCY_VIEW_LOCAL_BIT };
 
-        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-dependencyFlags-02520",
+        TestRenderPassCreate(m_errorMonitor,
+                             *m_device,
+                             rpci,
+                             rp2_supported,
+                             "VUID-VkSubpassDependency-dependencyFlags-02520",
                              "VUID-VkSubpassDependency2-dependencyFlags-03090");
 
         // EXTERNAL subpass with VIEW_LOCAL_BIT - destination subpass
-        dependency = {0, VK_SUBPASS_EXTERNAL,         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
-                      0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
+        dependency = {
+            0, VK_SUBPASS_EXTERNAL,         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
+            0, VK_DEPENDENCY_VIEW_LOCAL_BIT
+        };
 
-        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-dependencyFlags-02521",
+        TestRenderPassCreate(m_errorMonitor,
+                             *m_device,
+                             rpci,
+                             rp2_supported,
+                             "VUID-VkSubpassDependency-dependencyFlags-02521",
                              "VUID-VkSubpassDependency2-dependencyFlags-03091");
 
         // Multiple views but no view local bit in self-dependency
-        dependency = {0, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
+        dependency = { 0, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0 };
 
-        TestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-00872",
+        TestRenderPassCreate(m_errorMonitor,
+                             *m_device,
+                             rpci,
+                             rp2_supported,
+                             "VUID-VkSubpassDependency-srcSubpass-00872",
                              "VUID-VkRenderPassCreateInfo2-pDependencies-03060");
     }
 }
 
 TEST_F(NegativeSubpass, NextSubpassExcessive) {
-    TEST_DESCRIPTION("Test that an error is produced when CmdNextSubpass is called too many times in a renderpass instance");
+    TEST_DESCRIPTION(
+        "Test that an error is produced when CmdNextSubpass is called too many times in a renderpass instance");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -335,15 +487,18 @@ TEST_F(NegativeSubpass, NextSubpassExcessive) {
 }
 
 TEST_F(NegativeSubpass, RenderPassEndBeforeFinalSubpass) {
-    TEST_DESCRIPTION("Test that an error is produced when CmdEndRenderPass is called before the final subpass has been reached");
+    TEST_DESCRIPTION(
+        "Test that an error is produced when CmdEndRenderPass is called before the final subpass has been reached");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     const bool rp2Supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
-    VkSubpassDescription sd[2] = {{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr},
-                                  {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr}};
+    VkSubpassDescription sd[2] = {
+        { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr },
+        { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr }
+    };
 
     auto rcpi = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 0u, nullptr, 2u, sd, 0u, nullptr);
 
@@ -384,9 +539,10 @@ TEST_F(NegativeSubpass, SubpassIndices) {
 
     const VkPipelineStageFlags kGraphicsStages =
         VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
-        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
     VkSubpassDependency dependency = {};
     // Use only 2 subpasses, so these values should trigger validation errors
@@ -425,22 +581,28 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
 
     // A renderpass with two subpasses, both writing the same attachment.
     VkAttachmentDescription attach[] = {
-        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        { 0,
+          VK_FORMAT_R8G8B8A8_UNORM,
+          VK_SAMPLE_COUNT_1_BIT,
+          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+          VK_IMAGE_LAYOUT_UNDEFINED,
+          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
     };
-    VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference ref = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
     VkSubpassDescription subpasses[] = {
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
+        { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr },
+        { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr },
     };
-    VkSubpassDependency dep = {0,
-                               1,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                               VK_DEPENDENCY_BY_REGION_BIT};
+    VkSubpassDependency dep = { 0,
+                                1,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_DEPENDENCY_BY_REGION_BIT };
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, attach, 2u, subpasses, 1u, &dep);
     vkt::RenderPass rp(*m_device, rpci);
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -480,27 +642,40 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     TEST_DESCRIPTION("Check case where subpass index references different image from image barrier");
     RETURN_IF_SKIP(Init());
 
-    // Create RP/FB combo where subpass has incorrect index attachment, this is 2nd half of "VUID-vkCmdPipelineBarrier-image-02635"
+    // Create RP/FB combo where subpass has incorrect index attachment, this is 2nd half of
+    // "VUID-vkCmdPipelineBarrier-image-02635"
     VkAttachmentDescription attach[] = {
-        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
-        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        { 0,
+          VK_FORMAT_R8G8B8A8_UNORM,
+          VK_SAMPLE_COUNT_1_BIT,
+          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+          VK_IMAGE_LAYOUT_UNDEFINED,
+          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
+        { 0,
+          VK_FORMAT_R8G8B8A8_UNORM,
+          VK_SAMPLE_COUNT_1_BIT,
+          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+          VK_IMAGE_LAYOUT_UNDEFINED,
+          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
     };
     // ref attachment points to wrong attachment index compared to img_barrier below
-    VkAttachmentReference ref = {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference ref = { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
     VkSubpassDescription subpasses[] = {
-        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr},
+        { 0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref, nullptr, nullptr, 0, nullptr },
     };
-    VkSubpassDependency dep = {0,
-                               0,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                               VK_DEPENDENCY_BY_REGION_BIT};
+    VkSubpassDependency dep = { 0,
+                                0,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_DEPENDENCY_BY_REGION_BIT };
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 2u, attach, 1u, subpasses, 1u, &dep);
     vkt::RenderPass rp(*m_device, rpci);
@@ -510,7 +685,7 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     vkt::Image image2(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView imageView2 = image2.CreateView();
     // re-use imageView from start of test
-    VkImageView iv_array[2] = {imageView, imageView2};
+    VkImageView iv_array[2] = { imageView, imageView2 };
     vkt::Framebuffer fb(*m_device, rp.handle(), 2u, iv_array);
 
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
@@ -529,8 +704,15 @@ TEST_F(NegativeSubpass, ImageBarrierSubpassConflict) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.handle(), fb.handle(), 32, 32);
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-image-04073");
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
                            &img_barrier);
     m_errorMonitor->VerifyFound();
 }
@@ -571,13 +753,21 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     inputAttachments.push_back(inputRef);
 
     const VkSubpassDescription subpass = {
-        0u,      VK_PIPELINE_BIND_POINT_GRAPHICS, size32(inputAttachments), inputAttachments.data(), 0, nullptr, 0u, nullptr, 0u,
+        0u,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        size32(inputAttachments),
+        inputAttachments.data(),
+        0,
+        nullptr,
+        0u,
+        nullptr,
+        0u,
         nullptr,
     };
     const std::vector<VkSubpassDescription> subpasses(1u, subpass);
 
-    const auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachmentDescs), attachmentDescs.data(),
-                                                            size32(subpasses), subpasses.data(), 0u, nullptr);
+    const auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(
+        nullptr, 0u, size32(attachmentDescs), attachmentDescs.data(), size32(subpasses), subpasses.data(), 0u, nullptr);
     vkt::RenderPass rp(*m_device, rpci);
     vkt::Framebuffer fb(*m_device, rp.handle(), 1, &view_input.handle(), 64, 64);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
@@ -587,7 +777,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     {
         // input index is wrong, it doesn't exist in supbass input attachments and the set and binding is undefined
         // It causes desired failures.
-        char const *fsSource_fail = R"glsl(
+        char const* fsSource_fail = R"glsl(
             #version 450
             layout(input_attachment_index=1, set=0, binding=1) uniform subpassInput x;
             void main() {
@@ -598,8 +788,8 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         VkShaderObj fs_fail(this, fsSource_fail, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper g_pipe(*this);
-        g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs_fail.GetStageCreateInfo()};
-        g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs_fail.GetStageCreateInfo() };
+        g_pipe.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
         g_pipe.gp_ci_.renderPass = rp.handle();
         m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
         m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07988");
@@ -607,8 +797,8 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         m_errorMonitor->VerifyFound();
     }
 
-    {  // Binds input attachment
-        char const *fsSource = R"glsl(
+    { // Binds input attachment
+        char const* fsSource = R"glsl(
             #version 450
             layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
             void main() {
@@ -618,26 +808,33 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
         CreatePipelineHelper g_pipe(*this);
-        g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        g_pipe.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
         g_pipe.gp_ci_.renderPass = rp.handle();
         g_pipe.CreateGraphicsPipeline();
 
-        g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        g_pipe.descriptor_set_->WriteDescriptorImageInfo(
+            0, view_input, sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe.descriptor_set_->UpdateDescriptorSets();
 
         m_command_buffer.Begin();
 
         image_input.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        m_renderPassBeginInfo.renderArea = {{0, 0}, {64, 64}};
+        m_renderPassBeginInfo.renderArea = { { 0, 0 }, { 64, 64 } };
         m_renderPassBeginInfo.renderPass = rp.handle();
         m_renderPassBeginInfo.framebuffer = fb.handle();
 
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
-                                  1, &g_pipe.descriptor_set_->set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  g_pipe.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &g_pipe.descriptor_set_->set_,
+                                  0,
+                                  nullptr);
 
         vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
@@ -672,8 +869,8 @@ TEST_F(NegativeSubpass, SubpassDescriptionViewMask) {
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     VkSubpassDescription2 subpass =
-        vku::InitStructHelper();  //{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr,
-                                  // nullptr, 0, nullptr};
+        vku::InitStructHelper(); //{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr,
+                                 // nullptr, 0, nullptr};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.viewMask = 1 << render_pass_multiview_props.maxMultiviewViewCount;
 
@@ -744,7 +941,7 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     pipe2.CreateGraphicsPipeline();
 
     VkClearValue clear_value = {};
-    clear_value.color = {{0, 0, 0, 0}};
+    clear_value.color = { { 0, 0, 0, 0 } };
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(render_pass.handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
@@ -774,7 +971,7 @@ TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
     // If a VkMemoryBarrier2 is included in the pNext chain,
     // srcStageMask, dstStageMask, srcAccessMask, and dstAccessMask parameters are ignored.
     // The synchronization and access scopes instead are defined by the parameters of VkMemoryBarrier2.
-    SetTargetApiVersion(VK_API_VERSION_1_2);  // VK_KHR_create_renderpass2
+    SetTargetApiVersion(VK_API_VERSION_1_2); // VK_KHR_create_renderpass2
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
@@ -806,7 +1003,7 @@ TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
     VkSubpassDependency2 dependency = vku::InitStructHelper();
     dependency.srcSubpass = 0;
     dependency.dstSubpass = 0;
-    dependency.srcStageMask = 0X8000000;  // not real value, VK_PIPELINE_STAGE_VIDEO_ENCODE_BIT_KHR doesn't exist
+    dependency.srcStageMask = 0X8000000; // not real value, VK_PIPELINE_STAGE_VIDEO_ENCODE_BIT_KHR doesn't exist
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -827,10 +1024,10 @@ TEST_F(NegativeSubpass, SubpassDependencyMasksSync2) {
         m_errorMonitor->VerifyFound();
     }
 
-    dependency.pNext = &mem_barrier;  // srcStageMask should be ignored now
+    dependency.pNext = &mem_barrier; // srcStageMask should be ignored now
     { vkt::RenderPass render_pass(*m_device, rpci); }
 
-    mem_barrier.srcStageMask = 0x8000000000000000ULL;  // not real value
+    mem_barrier.srcStageMask = 0x8000000000000000ULL; // not real value
     {
         m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcStageMask-parameter");
         vkt::RenderPass render_pass(*m_device, rpci);
@@ -845,19 +1042,20 @@ TEST_F(NegativeSubpass, InputAttachmentReferences) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    VkAttachmentDescription attach = {0,
-                                      VK_FORMAT_R8G8B8A8_UNORM,
-                                      VK_SAMPLE_COUNT_1_BIT,
-                                      VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                      VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                      VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                      VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                      VK_IMAGE_LAYOUT_UNDEFINED,
-                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkAttachmentDescription attach = { 0,
+                                       VK_FORMAT_R8G8B8A8_UNORM,
+                                       VK_SAMPLE_COUNT_1_BIT,
+                                       VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                       VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                       VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                       VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                       VK_IMAGE_LAYOUT_UNDEFINED,
+                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+    VkAttachmentReference ref = { 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 
-    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    VkInputAttachmentAspectReference iaar = {0, 0, VK_IMAGE_ASPECT_METADATA_BIT};
+    VkSubpassDescription subpass = { 0,      VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 0, nullptr, nullptr, nullptr, 0,
+                                     nullptr };
+    VkInputAttachmentAspectReference iaar = { 0, 0, VK_IMAGE_ASPECT_METADATA_BIT };
     auto rpiaaci = vku::InitStruct<VkRenderPassInputAttachmentAspectCreateInfo>(nullptr, 1u, &iaar);
 
     auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(&rpiaaci, 0u, 1u, &attach, 1u, &subpass, 0u, nullptr);
@@ -867,16 +1065,22 @@ TEST_F(NegativeSubpass, InputAttachmentReferences) {
     iaar.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo-pNext-01963");
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-attachment-02525");
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkInputAttachmentAspectReference-aspectMask-01964", nullptr);
+    TestRenderPassCreate(
+        m_errorMonitor, *m_device, rpci, false, "VUID-VkInputAttachmentAspectReference-aspectMask-01964", nullptr);
 
     iaar.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo-pNext-01963");
     m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-attachment-02525");
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkInputAttachmentAspectReference-aspectMask-02250", nullptr);
+    TestRenderPassCreate(
+        m_errorMonitor, *m_device, rpci, false, "VUID-VkInputAttachmentAspectReference-aspectMask-02250", nullptr);
 
     // Aspect not present
     iaar.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01963",
+    TestRenderPassCreate(m_errorMonitor,
+                         *m_device,
+                         rpci,
+                         false,
+                         "VUID-VkRenderPassCreateInfo-pNext-01963",
                          "VUID-VkRenderPassCreateInfo2-attachment-02525");
 
     // Invalid subpass index
@@ -898,68 +1102,74 @@ TEST_F(NegativeSubpass, InputAttachmentLayout) {
     RETURN_IF_SKIP(Init());
     const bool rp2_supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
 
-    const VkAttachmentDescription attach0 = {0,
-                                             VK_FORMAT_R8G8B8A8_UNORM,
-                                             VK_SAMPLE_COUNT_1_BIT,
-                                             VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                             VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                             VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                             VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                             VK_IMAGE_LAYOUT_UNDEFINED,
-                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    const VkAttachmentDescription attach1 = {0,
-                                             VK_FORMAT_R8G8B8A8_UNORM,
-                                             VK_SAMPLE_COUNT_1_BIT,
-                                             VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                             VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                             VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                             VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                             VK_IMAGE_LAYOUT_UNDEFINED,
-                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    const VkAttachmentDescription attach0 = { 0,
+                                              VK_FORMAT_R8G8B8A8_UNORM,
+                                              VK_SAMPLE_COUNT_1_BIT,
+                                              VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                              VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                              VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                              VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                              VK_IMAGE_LAYOUT_UNDEFINED,
+                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+    const VkAttachmentDescription attach1 = { 0,
+                                              VK_FORMAT_R8G8B8A8_UNORM,
+                                              VK_SAMPLE_COUNT_1_BIT,
+                                              VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                              VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                              VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                              VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                              VK_IMAGE_LAYOUT_UNDEFINED,
+                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 
-    const VkAttachmentReference ref0 = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    const VkAttachmentReference ref1 = {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    const VkAttachmentReference inRef0 = {0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    const VkAttachmentReference inRef1 = {1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    const VkAttachmentReference ref0 = { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+    const VkAttachmentReference ref1 = { 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+    const VkAttachmentReference inRef0 = { 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+    const VkAttachmentReference inRef1 = { 1, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 
     // First subpass draws to attachment 0
-    const VkSubpassDescription subpass0 = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref0, nullptr, nullptr, 0, nullptr};
+    const VkSubpassDescription subpass0 = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &ref0, nullptr, nullptr, 0, nullptr
+    };
     // Second subpass reads attachment 0 as input-attachment, writes to attachment 1
-    const VkSubpassDescription subpass1 = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &inRef0, 1, &ref1, nullptr, nullptr, 0, nullptr};
+    const VkSubpassDescription subpass1 = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &inRef0, 1, &ref1, nullptr, nullptr, 0, nullptr
+    };
     // Seconnd subpass reads attachment 1 as input-attachment, writes to attachment 0
-    const VkSubpassDescription subpass2 = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &inRef1, 1, &ref0, nullptr, nullptr, 0, nullptr};
+    const VkSubpassDescription subpass2 = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &inRef1, 1, &ref0, nullptr, nullptr, 0, nullptr
+    };
 
     // Subpass 0 writes attachment 0 as output, subpass 1 reads as input (RAW)
-    VkSubpassDependency dep0 = {0,
-                                1,
-                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
-                                VK_DEPENDENCY_BY_REGION_BIT};
+    VkSubpassDependency dep0 = { 0,
+                                 1,
+                                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                 VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                                 VK_DEPENDENCY_BY_REGION_BIT };
     // Subpass 1 writes attachment 1 as output, subpass 2 reads as input while (RAW)
-    VkSubpassDependency dep1 = {1,
-                                2,
-                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
-                                VK_DEPENDENCY_BY_REGION_BIT};
+    VkSubpassDependency dep1 = { 1,
+                                 2,
+                                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                 VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                                 VK_DEPENDENCY_BY_REGION_BIT };
     // Subpass 1 reads attachment 0 as input, subpass 2 writes output (WAR)
-    VkSubpassDependency dep2 = {1,
-                                2,
-                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
-                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                VK_DEPENDENCY_BY_REGION_BIT};
+    VkSubpassDependency dep2 = { 1,
+                                 2,
+                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                 VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                 VK_DEPENDENCY_BY_REGION_BIT };
 
-    std::vector<VkAttachmentDescription> attachs = {attach0, attach1};
-    std::vector<VkSubpassDescription> subpasses = {subpass0, subpass1, subpass2};
-    std::vector<VkSubpassDependency> deps = {dep0, dep1, dep2};
+    std::vector<VkAttachmentDescription> attachs = { attach0, attach1 };
+    std::vector<VkSubpassDescription> subpasses = { subpass0, subpass1, subpass2 };
+    std::vector<VkSubpassDependency> deps = { dep0, dep1, dep2 };
 
-    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachs), attachs.data(), size32(subpasses),
-                                                      subpasses.data(), size32(deps), deps.data());
+    auto rpci = vku::InitStruct<VkRenderPassCreateInfo>(
+        nullptr, 0u, size32(attachs), attachs.data(), size32(subpasses), subpasses.data(), size32(deps), deps.data());
 
     // Current setup should be OK -- no attachment is both input and output in same subpass
     PositiveTestRenderPassCreate(m_errorMonitor, *m_device, rpci, rp2_supported);
@@ -968,14 +1178,14 @@ TEST_F(NegativeSubpass, InputAttachmentLayout) {
 }
 
 TEST_F(NegativeSubpass, InputAttachmentMissing) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a shader consuming an input attachment which is not included in the subpass "
-        "description");
+    TEST_DESCRIPTION("Test that an error is produced for a shader consuming an input attachment which is not included "
+                     "in the subpass "
+                     "description");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
         layout(location=0) out vec4 color;
@@ -986,22 +1196,22 @@ TEST_F(NegativeSubpass, InputAttachmentMissing) {
 
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
 }
 
 TEST_F(NegativeSubpass, InputAttachmentMissingArray) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a shader consuming an input attachment which is not included in the subpass "
-        "description -- array case");
+    TEST_DESCRIPTION("Test that an error is produced for a shader consuming an input attachment which is not included "
+                     "in the subpass "
+                     "description -- array case");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[1];
         layout(location=0) out vec4 color;
@@ -1012,9 +1222,9 @@ TEST_F(NegativeSubpass, InputAttachmentMissingArray) {
 
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
 }
@@ -1025,7 +1235,7 @@ TEST_F(NegativeSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout (constant_id = 0) const int index = 2;
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[index];
@@ -1035,14 +1245,15 @@ TEST_F(NegativeSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
         }
     )glsl";
 
-    uint32_t data = 4;  // over VkDescriptorSetLayoutBinding::descriptorCount
-    VkSpecializationMapEntry entry = {0, 0, sizeof(uint32_t)};
-    VkSpecializationInfo specialization_info = {1, &entry, sizeof(uint32_t), &data};
-    const VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+    uint32_t data = 4; // over VkDescriptorSetLayoutBinding::descriptorCount
+    VkSpecializationMapEntry entry = { 0, 0, sizeof(uint32_t) };
+    VkSpecializationInfo specialization_info = { 1, &entry, sizeof(uint32_t), &data };
+    const VkShaderObj fs(
+        this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07991");
 }
@@ -1052,31 +1263,31 @@ TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
 
     RETURN_IF_SKIP(Init());
 
-    const VkAttachmentDescription inputAttachmentDescription = {0,
-                                                                m_render_target_fmt,
-                                                                VK_SAMPLE_COUNT_1_BIT,
-                                                                VK_ATTACHMENT_LOAD_OP_LOAD,
-                                                                VK_ATTACHMENT_STORE_OP_STORE,
-                                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                                VK_IMAGE_LAYOUT_GENERAL,
-                                                                VK_IMAGE_LAYOUT_GENERAL};
+    const VkAttachmentDescription inputAttachmentDescription = { 0,
+                                                                 m_render_target_fmt,
+                                                                 VK_SAMPLE_COUNT_1_BIT,
+                                                                 VK_ATTACHMENT_LOAD_OP_LOAD,
+                                                                 VK_ATTACHMENT_STORE_OP_STORE,
+                                                                 VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                                 VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                                 VK_IMAGE_LAYOUT_GENERAL,
+                                                                 VK_IMAGE_LAYOUT_GENERAL };
 
     // index 0 is unused
     // index 1 is is valid (for both color and input)
-    const VkAttachmentReference inputAttachmentReferences[2] = {{VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL},
-                                                                {0, VK_IMAGE_LAYOUT_GENERAL}};
+    const VkAttachmentReference inputAttachmentReferences[2] = { { VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_GENERAL },
+                                                                 { 0, VK_IMAGE_LAYOUT_GENERAL } };
 
-    const VkSubpassDescription subpassDescription = {(VkSubpassDescriptionFlags)0,
-                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     2,
-                                                     inputAttachmentReferences,
-                                                     1,
-                                                     &inputAttachmentReferences[1],
-                                                     nullptr,
-                                                     nullptr,
-                                                     0,
-                                                     nullptr};
+    const VkSubpassDescription subpassDescription = { (VkSubpassDescriptionFlags)0,
+                                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                      2,
+                                                      inputAttachmentReferences,
+                                                      1,
+                                                      &inputAttachmentReferences[1],
+                                                      nullptr,
+                                                      nullptr,
+                                                      0,
+                                                      nullptr };
 
     VkRenderPassCreateInfo renderPassInfo = vku::InitStructHelper();
     renderPassInfo.attachmentCount = 1;
@@ -1088,7 +1299,7 @@ TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
 
     // There are 2 OpLoad/OpAccessChain that point the same OpVariable
     // Make sure we are not just taking the first load and checking all loads on a variable
-    const char *fs_source = R"glsl(
+    const char* fs_source = R"glsl(
         #version 460
         layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput xs[2];
         layout(location=0) out vec4 color;
@@ -1099,9 +1310,9 @@ TEST_F(NegativeSubpass, InputAttachmentSharingVariable) {
     )glsl";
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
 
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    const auto set_info = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        helper.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
         helper.gp_ci_.renderPass = renderPass.handle();
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038");
@@ -1196,7 +1407,7 @@ TEST_F(NegativeSubpass, FramebufferNoAttachmentsSampleCounts) {
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.CreateRenderPass();
 
     VkPipelineMultisampleStateCreateInfo ms_state = vku::InitStructHelper();

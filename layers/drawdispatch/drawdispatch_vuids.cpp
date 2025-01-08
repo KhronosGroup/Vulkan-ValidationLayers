@@ -4327,8 +4327,8 @@ static const auto kDrawdispatchVuid = vvl::unordered_map<Func, DrawDispatchVuid>
 }
 // clang-format on
 
-// Getter function to provide kVUIDUndefined in case an invalid function is passed in. Likely if new extension adds command and
-// VUIDs are not added yet
+// Getter function to provide kVUIDUndefined in case an invalid function is passed in. Likely if new extension adds
+// command and VUIDs are not added yet
 const DrawDispatchVuid& GetDrawDispatchVuid(Func function) {
     const vvl::unordered_map<Func, DrawDispatchVuid>& vuids = GetDrawDispatchVuid();
     if (vuids.find(function) != vuids.cend()) {
@@ -4337,4 +4337,4 @@ const DrawDispatchVuid& GetDrawDispatchVuid(Func function) {
         return vuids.at(Func::Empty);
     }
 }
-}  // namespace vvl
+} // namespace vvl

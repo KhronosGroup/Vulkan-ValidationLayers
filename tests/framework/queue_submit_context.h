@@ -13,8 +13,8 @@
 
 #pragma once
 
-#include <vulkan/vulkan.h>
 #include "binding.h"
+#include <vulkan/vulkan.h>
 
 struct QSTestContext {
     vkt::Device* dev;
@@ -76,29 +76,44 @@ struct QSTestContext {
     void TransferBarrierRAW(const vkt::Buffer& buffer);
     void TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier);
 
-    void Submit(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
+    void Submit(VkQueue q,
+                vkt::CommandBuffer& cb,
+                VkSemaphore wait = VK_NULL_HANDLE,
+                VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                VkSemaphore signal = VK_NULL_HANDLE,
                 VkFence fence = VK_NULL_HANDLE);
 
     // X == Submit 2 but since we already have numeric overloads for the queues X -> eXtension version
-    void SubmitX(VkQueue q, vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
-                 VkPipelineStageFlags signal_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkFence fence = VK_NULL_HANDLE);
+    void SubmitX(VkQueue q,
+                 vkt::CommandBuffer& cb,
+                 VkSemaphore wait = VK_NULL_HANDLE,
+                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                 VkSemaphore signal = VK_NULL_HANDLE,
+                 VkPipelineStageFlags signal_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                 VkFence fence = VK_NULL_HANDLE);
 
-    void Submit0(vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
+    void Submit0(vkt::CommandBuffer& cb,
+                 VkSemaphore wait = VK_NULL_HANDLE,
+                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                 VkSemaphore signal = VK_NULL_HANDLE,
                  VkFence fence = VK_NULL_HANDLE) {
         Submit(q0, cb, wait, wait_mask, signal, fence);
     }
-    void Submit0Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) { Submit0(cb, semaphore.handle(), wait_mask); }
+    void Submit0Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) {
+        Submit0(cb, semaphore.handle(), wait_mask);
+    }
     void Submit0Signal(vkt::CommandBuffer& cb) { Submit0(cb, VK_NULL_HANDLE, 0U, semaphore.handle()); }
 
-    void Submit1(vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
+    void Submit1(vkt::CommandBuffer& cb,
+                 VkSemaphore wait = VK_NULL_HANDLE,
+                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                 VkSemaphore signal = VK_NULL_HANDLE,
                  VkFence fence = VK_NULL_HANDLE) {
         Submit(q1, cb, wait, wait_mask, signal, fence);
     }
-    void Submit1Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) { Submit1(cb, semaphore.handle(), wait_mask); }
+    void Submit1Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) {
+        Submit1(cb, semaphore.handle(), wait_mask);
+    }
     void Submit1Signal(vkt::CommandBuffer& cb, VkPipelineStageFlags signal_mask) {
         Submit1(cb, VK_NULL_HANDLE, 0U, semaphore.handle());
     }
@@ -113,5 +128,7 @@ struct QSTestContext {
     void DeviceWait() { vk::DeviceWaitIdle(dev->handle()); }
 
     void RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to, const VkBufferCopy& copy_region);
-    void RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to) { RecordCopy(cb, from, to, full_buffer); }
+    void RecordCopy(vkt::CommandBuffer& cb, vkt::Buffer& from, vkt::Buffer& to) {
+        RecordCopy(cb, from, to, full_buffer);
+    }
 };

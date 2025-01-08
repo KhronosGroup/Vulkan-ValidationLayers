@@ -19,7 +19,8 @@
 // The goal is to keep the class simple as possible.
 //
 // Interface:
-//   We use a seperate class for RenderPass1 and RenderPass2, but want to not have them diverage, so we keep an interface class
+//   We use a seperate class for RenderPass1 and RenderPass2, but want to not have them diverage, so we keep an
+//   interface class
 //
 // Common usage:
 //   RenderPassSingleSubpass rp(*this);
@@ -32,19 +33,21 @@
 //   rp.CreateRenderPass();
 class InterfaceRenderPassSingleSubpass {
   public:
-    InterfaceRenderPassSingleSubpass(VkLayerTest &test, vkt::Device *device = nullptr);
+    InterfaceRenderPassSingleSubpass(VkLayerTest& test, vkt::Device* device = nullptr);
     virtual ~InterfaceRenderPassSingleSubpass() { Destroy(); }
 
     VkRenderPass Handle() { return render_pass_; }
 
     // Parameters are ordered from most likely to be custom values
     // Most tests don't need to worry about the Load/Store ops as we never read the values
-    virtual void AddAttachmentDescription(VkFormat format, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
+    virtual void AddAttachmentDescription(VkFormat format,
+                                          VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
                                           VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL,
                                           VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                           VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE) = 0;
     // Overload for setting samples count
-    virtual void AddAttachmentDescription(VkFormat format, VkSampleCountFlagBits samples,
+    virtual void AddAttachmentDescription(VkFormat format,
+                                          VkSampleCountFlagBits samples,
                                           VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
                                           VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL) = 0;
 
@@ -60,31 +63,33 @@ class InterfaceRenderPassSingleSubpass {
                                       VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                       VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT) = 0;
 
-    virtual void CreateRenderPass(void *pNext = nullptr) = 0;
+    virtual void CreateRenderPass(void* pNext = nullptr) = 0;
 
     // Explicit destroy for those tests that need to test render pass lifetime
     void Destroy() { render_pass_.destroy(); };
 
   protected:
-    VkLayerTest &layer_test_;
-    vkt::Device *device_;
+    VkLayerTest& layer_test_;
+    vkt::Device* device_;
 
     vkt::RenderPass render_pass_;
 };
 
 class RenderPassSingleSubpass : public InterfaceRenderPassSingleSubpass {
   public:
-    RenderPassSingleSubpass(VkLayerTest &test, vkt::Device *device = nullptr);
+    RenderPassSingleSubpass(VkLayerTest& test, vkt::Device* device = nullptr);
 
     VkRenderPassCreateInfo GetCreateInfo();
 
     // Ordered from most likely to be custom vs will use defauly
-    void AddAttachmentDescription(VkFormat format, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
+    void AddAttachmentDescription(VkFormat format,
+                                  VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
                                   VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL,
                                   VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                   VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE);
     // Overload for setting sampler count
-    void AddAttachmentDescription(VkFormat format, VkSampleCountFlagBits samples,
+    void AddAttachmentDescription(VkFormat format,
+                                  VkSampleCountFlagBits samples,
                                   VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
                                   VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL);
 
@@ -103,14 +108,14 @@ class RenderPassSingleSubpass : public InterfaceRenderPassSingleSubpass {
                               VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                               VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT);
 
-    void CreateRenderPass(void *pNext = nullptr);
+    void CreateRenderPass(void* pNext = nullptr);
 
   private:
     VkRenderPassCreateInfo rp_create_info_;
 
     std::vector<VkAttachmentDescription> attachment_descriptions_;
 
-    std::vector<VkAttachmentReference> attachments_references_;  // global pool
+    std::vector<VkAttachmentReference> attachments_references_; // global pool
     std::vector<VkAttachmentReference> input_attachments_;
     std::vector<VkAttachmentReference> color_attachments_;
     VkAttachmentReference resolve_attachment_;
@@ -122,25 +127,30 @@ class RenderPassSingleSubpass : public InterfaceRenderPassSingleSubpass {
 
 class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
   public:
-    RenderPass2SingleSubpass(VkLayerTest &test, vkt::Device *device = nullptr);
+    RenderPass2SingleSubpass(VkLayerTest& test, vkt::Device* device = nullptr);
 
     VkRenderPassCreateInfo2 GetCreateInfo();
 
     // Ordered from most likely to be custom vs will use defauly
-    void AddAttachmentDescription(VkFormat format, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
+    void AddAttachmentDescription(VkFormat format,
+                                  VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
                                   VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL,
                                   VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                   VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE);
     // Overload for setting sampler count
-    void AddAttachmentDescription(VkFormat format, VkSampleCountFlagBits samples,
+    void AddAttachmentDescription(VkFormat format,
+                                  VkSampleCountFlagBits samples,
                                   VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL,
                                   VkImageLayout finalLayout = VK_IMAGE_LAYOUT_GENERAL);
 
-    // Have a seperate set function to keep AddAttachmentDescription simple (very few things extend the AttachmentDescription)
-    void SetAttachmentDescriptionPNext(uint32_t index, void *pNext);
+    // Have a seperate set function to keep AddAttachmentDescription simple (very few things extend the
+    // AttachmentDescription)
+    void SetAttachmentDescriptionPNext(uint32_t index, void* pNext);
 
-    void AddAttachmentReference(uint32_t attachment, VkImageLayout layout, VkImageAspectFlags aspect_mask = 0,
-                                void *pNext = nullptr);
+    void AddAttachmentReference(uint32_t attachment,
+                                VkImageLayout layout,
+                                VkImageAspectFlags aspect_mask = 0,
+                                void* pNext = nullptr);
 
     // Pass in index to VkAttachmentReference
     void AddInputAttachment(uint32_t index);
@@ -148,7 +158,8 @@ class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
     void AddResolveAttachment(uint32_t index);
     void AddDepthStencilAttachment(uint32_t index);
     // VK_KHR_depth_stencil_resolve
-    void AddDepthStencilResolveAttachment(uint32_t index, VkResolveModeFlagBits depth_resolve_mode,
+    void AddDepthStencilResolveAttachment(uint32_t index,
+                                          VkResolveModeFlagBits depth_resolve_mode,
                                           VkResolveModeFlagBits stencil_resolve_mode);
     // VK_KHR_fragment_shading_rate
     void AddFragmentShadingRateAttachment(uint32_t index, VkExtent2D texel_size);
@@ -162,14 +173,14 @@ class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
                               VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                               VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT);
 
-    void CreateRenderPass(void *pNext = nullptr);
+    void CreateRenderPass(void* pNext = nullptr);
 
   private:
     VkRenderPassCreateInfo2 rp_create_info_;
 
     std::vector<VkAttachmentDescription2> attachment_descriptions_;
 
-    std::vector<VkAttachmentReference2> attachments_references_;  // global pool
+    std::vector<VkAttachmentReference2> attachments_references_; // global pool
     std::vector<VkAttachmentReference2> input_attachments_;
     std::vector<VkAttachmentReference2> color_attachments_;
     VkAttachmentReference2 resolve_attachment_;

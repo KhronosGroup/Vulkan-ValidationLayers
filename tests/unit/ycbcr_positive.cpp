@@ -11,9 +11,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 
 class PositiveYcbcr : public VkLayerTest {};
 
@@ -24,7 +24,7 @@ TEST_F(PositiveYcbcr, PlaneAspectNone) {
     VkImageCreateInfo image_createinfo = vku::InitStructHelper();
     image_createinfo.imageType = VK_IMAGE_TYPE_2D;
     image_createinfo.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    image_createinfo.extent = {128, 128, 1};
+    image_createinfo.extent = { 128, 128, 1 };
     image_createinfo.mipLevels = 1;
     image_createinfo.arrayLayers = 1;
     image_createinfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -47,7 +47,7 @@ TEST_F(PositiveYcbcr, MultiplaneGetImageSubresourceLayout) {
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    ci.extent = {128, 128, 1};
+    ci.extent = { 128, 128, 1 };
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -80,10 +80,10 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     auto ci = vku::InitStruct<VkImageCreateInfo>();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;  // All planes of equal extent
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM; // All planes of equal extent
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    ci.extent = {16, 16, 1};
+    ci.extent = { 16, 16, 1 };
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -97,22 +97,30 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
 
     m_command_buffer.Reset();
     m_command_buffer.Begin();
-    image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
+    image.ImageMemoryBarrier(m_command_buffer,
+                             VK_IMAGE_ASPECT_COLOR_BIT,
+                             0,
+                             VK_ACCESS_TRANSFER_WRITE_BIT,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     std::array<VkImageAspectFlagBits, 3> aspects = {
-        {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, VK_IMAGE_ASPECT_PLANE_2_BIT}};
+        { VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, VK_IMAGE_ASPECT_PLANE_2_BIT }
+    };
     std::array<vkt::Buffer, 3> buffers;
 
     VkBufferImageCopy copy = {};
     copy.imageSubresource.layerCount = 1;
-    copy.imageExtent = {16, 16, 1};
+    copy.imageExtent = { 16, 16, 1 };
 
     for (size_t i = 0; i < aspects.size(); ++i) {
         buffers[i].init(*m_device, 16 * 16 * 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         copy.imageSubresource.aspectMask = aspects[i];
-        vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffers[i].handle(), image.handle(),
-                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        vk::CmdCopyBufferToImage(m_command_buffer.handle(),
+                                 buffers[i].handle(),
+                                 image.handle(),
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                 1,
+                                 &copy);
     }
     m_command_buffer.End();
 }
@@ -124,7 +132,9 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(),
+                                    VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM,
+                                    VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
@@ -132,10 +142,10 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     auto ci = vku::InitStruct<VkImageCreateInfo>();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;  // All planes of equal extent
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM; // All planes of equal extent
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    ci.extent = {128, 128, 1};
+    ci.extent = { 128, 128, 1 };
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -155,15 +165,20 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
 
     // Copy plane 0 to plane 2
     VkImageCopy copyRegion = {};
-    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1};
-    copyRegion.srcOffset = {0, 0, 0};
-    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0, 1};
-    copyRegion.dstOffset = {0, 0, 0};
-    copyRegion.extent = {128, 128, 1};
+    copyRegion.srcSubresource = { VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1 };
+    copyRegion.srcOffset = { 0, 0, 0 };
+    copyRegion.dstSubresource = { VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 0, 1 };
+    copyRegion.dstOffset = { 0, 0, 0 };
+    copyRegion.extent = { 128, 128, 1 };
 
     m_command_buffer.Begin();
     image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_GENERAL);
-    vk::CmdCopyImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &copyRegion);
     m_command_buffer.End();
 
@@ -178,7 +193,9 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(),
+                                    VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM,
+                                    VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
@@ -186,10 +203,10 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
     auto ci = vku::InitStruct<VkImageCreateInfo>();
     ci.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;  // All planes of equal extent
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM; // All planes of equal extent
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    ci.extent = {128, 128, 1};
+    ci.extent = { 128, 128, 1 };
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -266,7 +283,9 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, VK_IMAGE_TILING_OPTIMAL,
+    if (!FormatFeaturesAreSupported(Gpu(),
+                                    VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM,
+                                    VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
@@ -274,10 +293,10 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     auto ci = vku::InitStruct<VkImageCreateInfo>();
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;  // All planes of equal extent
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM; // All planes of equal extent
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    ci.extent = {256, 256, 1};
+    ci.extent = { 256, 256, 1 };
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -294,13 +313,17 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     VkBufferImageCopy copy_region = {};
     copy_region.bufferRowLength = 128;
     copy_region.bufferImageHeight = 128;
-    copy_region.imageSubresource = {VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1};
-    copy_region.imageExtent = {64, 64, 1};
+    copy_region.imageSubresource = { VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1 };
+    copy_region.imageExtent = { 64, 64, 1 };
 
     vk::ResetCommandBuffer(m_command_buffer.handle(), 0);
     m_command_buffer.Begin();
     image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+    vk::CmdCopyBufferToImage(m_command_buffer.handle(),
+                             buffer.handle(),
+                             image.handle(),
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                             1,
                              &copy_region);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
@@ -325,14 +348,15 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     vkt::Sampler sampler(*m_device, sampler_ci);
 
     OneOffDescriptorSet descriptor_set(
-        m_device, {
-                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
-                  });
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle() },
+        });
     if (!descriptor_set.set_) {
         GTEST_SKIP() << "Can't allocate descriptor with immutable sampler";
     }
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
     descriptor_set.WriteDescriptorImageInfo(0, view.handle(), sampler.handle());
     descriptor_set.UpdateDescriptorSets();
 
@@ -353,12 +377,26 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &img_barrier);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
@@ -380,7 +418,7 @@ TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {
     ci.format = format;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    ci.extent = {256, 256, 1};
+    ci.extent = { 256, 256, 1 };
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -399,14 +437,15 @@ TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {
     vkt::Sampler sampler(*m_device, sampler_ci);
 
     OneOffDescriptorSet descriptor_set(
-        m_device, {
-                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
-                  });
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle() },
+        });
     if (!descriptor_set.set_) {
         GTEST_SKIP() << "Can't allocate descriptor with immutable sampler";
     }
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
     descriptor_set.WriteDescriptorImageInfo(0, view.handle(), sampler.handle());
     descriptor_set.UpdateDescriptorSets();
 
@@ -421,15 +460,21 @@ TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -448,7 +493,7 @@ TEST_F(PositiveYcbcr, ImageQuerySizeLod) {
     ci.format = format;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    ci.extent = {256, 256, 1};
+    ci.extent = { 256, 256, 1 };
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -467,14 +512,15 @@ TEST_F(PositiveYcbcr, ImageQuerySizeLod) {
     vkt::Sampler sampler(*m_device, sampler_ci);
 
     OneOffDescriptorSet descriptor_set(
-        m_device, {
-                      {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
-                  });
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle() },
+        });
     if (!descriptor_set.set_) {
         GTEST_SKIP() << "Can't allocate descriptor with immutable sampler";
     }
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
     descriptor_set.WriteDescriptorImageInfo(0, view.handle(), sampler.handle());
     descriptor_set.UpdateDescriptorSets();
 
@@ -490,15 +536,21 @@ TEST_F(PositiveYcbcr, ImageQuerySizeLod) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -509,7 +561,7 @@ TEST_F(PositiveYcbcr, FormatCompatibilitySamePlane) {
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const VkFormat formats[2] = {VK_FORMAT_R8_SNORM, VK_FORMAT_R8_UNORM};
+    const VkFormat formats[2] = { VK_FORMAT_R8_SNORM, VK_FORMAT_R8_UNORM };
 
     VkImageFormatListCreateInfo format_list = vku::InitStructHelper();
     format_list.viewFormatCount = 2;
@@ -520,7 +572,7 @@ TEST_F(PositiveYcbcr, FormatCompatibilitySamePlane) {
     image_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     image_create_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.extent = {32, 32, 1};
+    image_create_info.extent = { 32, 32, 1 };
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -537,7 +589,7 @@ TEST_F(PositiveYcbcr, FormatCompatibilityDifferentPlane) {
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    const VkFormat formats[3] = {VK_FORMAT_R8_SNORM, VK_FORMAT_R8G8_UNORM, VK_FORMAT_R8G8_SNORM};
+    const VkFormat formats[3] = { VK_FORMAT_R8_SNORM, VK_FORMAT_R8G8_UNORM, VK_FORMAT_R8G8_SNORM };
 
     VkImageFormatListCreateInfo format_list = vku::InitStructHelper();
     format_list.viewFormatCount = 3;
@@ -548,7 +600,7 @@ TEST_F(PositiveYcbcr, FormatCompatibilityDifferentPlane) {
     image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     image_create_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.extent = {32, 32, 1};
+    image_create_info.extent = { 32, 32, 1 };
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;

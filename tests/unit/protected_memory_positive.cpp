@@ -33,7 +33,7 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
 
     // Try to find a protected queue family type
     bool protected_queue = false;
-    VkQueueFamilyProperties queue_properties;  // selected queue family used
+    VkQueueFamilyProperties queue_properties; // selected queue family used
     uint32_t queue_family_index = 0;
     uint32_t queue_family_count = 0;
     vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
@@ -64,7 +64,7 @@ TEST_F(PositiveProtectedMemory, MixProtectedQueue) {
     queue_create_info[0].pQueuePriorities = &queue_priority;
 
     queue_create_info[1] = vku::InitStructHelper();
-    queue_create_info[1].flags = 0;  // unprotected because the protected flag is not set
+    queue_create_info[1].flags = 0; // unprotected because the protected flag is not set
     queue_create_info[1].queueFamilyIndex = queue_family_index;
     queue_create_info[1].queueCount = 1;
     queue_create_info[1].pQueuePriorities = &queue_priority;

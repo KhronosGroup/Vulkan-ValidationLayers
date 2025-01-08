@@ -13,13 +13,14 @@
  */
 
 #include "../framework/layer_validation_tests.h"
-#include "../framework/ray_tracing_helper_nv.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/ray_tracing_helper_nv.h"
 
 class NegativeRayTracingPipelineNV : public RayTracingTest {};
 
 TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
-    TEST_DESCRIPTION("Validate vkCreateRayTracingPipelinesNV and CreateInfo parameters during ray-tracing pipeline creation");
+    TEST_DESCRIPTION(
+        "Validate vkCreateRayTracingPipelinesNV and CreateInfo parameters during ray-tracing pipeline creation");
     AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
     RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
 
@@ -77,7 +78,8 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
         pipeline_ci.groupCount = 1;
         pipeline_ci.pGroups = &group_create_info;
         pipeline_ci.layout = empty_pipeline_layout.handle();
-        pipeline_ci.flags = VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV | VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+        pipeline_ci.flags =
+            VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV | VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
         m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoNV-flags-02957");
         vk::CreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
@@ -267,7 +269,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
 
         VkRayTracingShaderGroupCreateInfoNV group_create_info = vku::InitStructHelper();
         group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-        group_create_info.generalShader = 1;  // Bad index here
+        group_create_info.generalShader = 1; // Bad index here
         group_create_info.closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_info.anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_info.intersectionShader = VK_SHADER_UNUSED_NV;
@@ -307,7 +309,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
 
         group_create_infos[1] = vku::InitStructHelper();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-        group_create_infos[1].generalShader = 1;  // Index 1 corresponds to a closest hit shader
+        group_create_infos[1].generalShader = 1; // Index 1 corresponds to a closest hit shader
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
@@ -348,7 +350,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         group_create_infos[1] = vku::InitStructHelper();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[1].generalShader = 0;
-        group_create_infos[1].closestHitShader = 0;  // This should not be set for a general shader group
+        group_create_infos[1].closestHitShader = 0; // This should not be set for a general shader group
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
@@ -390,7 +392,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[1].intersectionShader = 5;  // invalid index
+        group_create_infos[1].intersectionShader = 5; // invalid index
 
         VkRayTracingPipelineCreateInfoNV pipeline_ci = vku::InitStructHelper();
         pipeline_ci.stageCount = 2;
@@ -430,7 +432,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[1].intersectionShader = 0;  // Index 0 corresponds to a raygen shader
+        group_create_infos[1].intersectionShader = 0; // Index 0 corresponds to a raygen shader
 
         VkRayTracingPipelineCreateInfoNV pipeline_ci = vku::InitStructHelper();
         pipeline_ci.stageCount = 2;
@@ -509,7 +511,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[1].anyHitShader = 5;  // Invalid index
+        group_create_infos[1].anyHitShader = 5; // Invalid index
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
         VkRayTracingPipelineCreateInfoNV pipeline_ci = vku::InitStructHelper();
@@ -549,7 +551,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[1].anyHitShader = 1;  // Index 1 corresponds to a closest hit shader
+        group_create_infos[1].anyHitShader = 1; // Index 1 corresponds to a closest hit shader
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
         VkRayTracingPipelineCreateInfoNV pipeline_ci = vku::InitStructHelper();
@@ -588,7 +590,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         group_create_infos[1] = vku::InitStructHelper();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[1].closestHitShader = 5;  // Invalid index
+        group_create_infos[1].closestHitShader = 5; // Invalid index
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
@@ -628,7 +630,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         group_create_infos[1] = vku::InitStructHelper();
         group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
         group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[1].closestHitShader = 1;  // Index 1 corresponds to an any hit shader
+        group_create_infos[1].closestHitShader = 1; // Index 1 corresponds to an any hit shader
         group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
@@ -667,14 +669,16 @@ TEST_F(NegativeRayTracingPipelineNV, StageCreationFeedbackCount) {
     feedback_info.pipelineStageCreationFeedbackCount = 2;
     feedback_info.pPipelineStageCreationFeedbacks = &feedbacks[1];
 
-    auto set_feedback = [&feedback_info](nv::rt::RayTracingPipelineHelper &helper) { helper.rp_ci_.pNext = &feedback_info; };
+    auto set_feedback = [&feedback_info](nv::rt::RayTracingPipelineHelper& helper) {
+        helper.rp_ci_.pNext = &feedback_info;
+    };
 
     feedback_info.pipelineStageCreationFeedbackCount = 3;
     nv::rt::RayTracingPipelineHelper::OneshotPositiveTest(*this, set_feedback);
 
     feedback_info.pipelineStageCreationFeedbackCount = 2;
-    nv::rt::RayTracingPipelineHelper::OneshotTest(*this, set_feedback,
-                                                  "VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651");
+    nv::rt::RayTracingPipelineHelper::OneshotTest(
+        *this, set_feedback, "VUID-VkRayTracingPipelineCreateInfoNV-pipelineStageCreationFeedbackCount-06651");
 }
 
 TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
@@ -694,7 +698,7 @@ TEST_F(NegativeRayTracingPipelineNV, MissingEntrypoint) {
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08742");
-    VkShaderObj miss_shader(this, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, nullptr,
-                            "foo");
+    VkShaderObj miss_shader(
+        this, missShaderText, VK_SHADER_STAGE_MISS_BIT_KHR, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL, nullptr, "foo");
     m_errorMonitor->VerifyFound();
 }

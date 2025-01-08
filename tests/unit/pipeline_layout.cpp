@@ -12,10 +12,10 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include <vulkan/vulkan_core.h>
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
+#include <vulkan/vulkan_core.h>
 
 class NegativePipelineLayout : public VkLayerTest {};
 
@@ -69,8 +69,8 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
 
     if (max_subsampled_samplers >= properties2.properties.limits.maxDescriptorSetSamplers) {
         GTEST_SKIP() << "test assumes maxDescriptorSetSubsampledSamplers limit (" << max_subsampled_samplers
-                     << ") is less than overall sampler limit (" << properties2.properties.limits.maxDescriptorSetSamplers
-                     << "). Skipping.";
+                     << ") is less than overall sampler limit ("
+                     << properties2.properties.limits.maxDescriptorSetSamplers << "). Skipping.";
     }
 
     VkDescriptorSetLayoutBinding dslb = {};
@@ -112,9 +112,9 @@ TEST_F(NegativePipelineLayout, ExcessSubsampledPerStageDescriptors) {
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
     pipeline_layout_ci.setLayoutCount = 1;
     pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
-    const char *max_sampler_vuid = "VUID-VkPipelineLayoutCreateInfo-pImmutableSamplers-03566";
+    const char* max_sampler_vuid = "VUID-VkPipelineLayoutCreateInfo-pImmutableSamplers-03566";
     m_errorMonitor->SetDesiredError(max_sampler_vuid);
-    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, {&ds_layout});
+    vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, { &ds_layout });
     m_errorMonitor->VerifyFound();
 }
 
@@ -124,8 +124,8 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     AddOptionalExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    bool descriptor_indexing =
-        IsExtensionsEnabled(VK_KHR_MAINTENANCE_3_EXTENSION_NAME) && IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    bool descriptor_indexing = IsExtensionsEnabled(VK_KHR_MAINTENANCE_3_EXTENSION_NAME) &&
+                               IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     uint32_t max_uniform_buffers = m_device->Physical().limits_.maxPerStageDescriptorUniformBuffers;
     uint32_t max_storage_buffers = m_device->Physical().limits_.maxPerStageDescriptorStorageBuffers;
@@ -144,15 +144,14 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     uint32_t sum_samplers = m_device->Physical().limits_.maxDescriptorSetSamplers;
     uint32_t sum_input_attachments = m_device->Physical().limits_.maxDescriptorSetInputAttachments;
 
-    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
-        vku::InitStructHelper();
+    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties = vku::InitStructHelper();
     if (descriptor_indexing) {
         GetPhysicalDeviceProperties2(descriptor_indexing_properties);
     }
 
     // Devices that report UINT32_MAX for any of these limits can't run this test
     if (vvl::kU32Max ==
-        std::max({max_uniform_buffers, max_storage_buffers, max_sampled_images, max_storage_images, max_samplers})) {
+        std::max({ max_uniform_buffers, max_storage_buffers, max_sampled_images, max_storage_images, max_samplers })) {
         GTEST_SKIP() << "Physical device limits report as UINT32_MAX";
     }
 
@@ -186,16 +185,19 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03016");
     if ((max_samplers + max_combined) > sum_samplers) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03028");  // expect all-stages sum too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"); // expect all-stages sum too
     }
     if (max_combined > sum_sampled_images) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03033");  // expect all-stages sum too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"); // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if ((max_samplers + max_combined) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036");
         }
-        if ((max_samplers + max_combined) > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSamplers) {
+        if ((max_samplers + max_combined) >
+            descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSamplers) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03022");
         }
         if (max_combined > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSampledImages) {
@@ -207,7 +209,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -230,16 +232,20 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03017");
     if (dslb.descriptorCount > sum_uniform_buffers) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03029");  // expect all-stages sum too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029"); // expect all-stages sum too
     }
     if (dslb.descriptorCount > sum_dyn_uniform_buffers) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03030");  // expect all-stages sum too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030"); // expect all-stages sum too
     }
     if (descriptor_indexing) {
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
+        if (dslb.descriptorCount >
+            descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038");
         }
-        if ((dslb.descriptorCount * 2) > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindUniformBuffers) {
+        if ((dslb.descriptorCount * 2) >
+            descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindUniformBuffers) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03023");
         }
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffers) {
@@ -248,7 +254,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -274,26 +280,30 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03018");
     if (dslb.descriptorCount > sum_dyn_storage_buffers) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03032");  // expect all-stages sum too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032"); // expect all-stages sum too
     }
     const uint32_t storage_buffer_count = dslb_vec[0].descriptorCount + dslb_vec[2].descriptorCount;
     if (storage_buffer_count > sum_storage_buffers) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03031");  // expect all-stages sum too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031"); // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if (storage_buffer_count > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffers) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03039");
         }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
+        if (dslb.descriptorCount >
+            descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040");
         }
-        if ((dslb.descriptorCount * 3) > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindStorageBuffers) {
+        if ((dslb.descriptorCount * 3) >
+            descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindStorageBuffers) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03024");
         }
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -321,10 +331,12 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");
     const uint32_t sampled_image_count = max_combined + 2 * max_sampled_images;
     if (sampled_image_count > sum_sampled_images) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03033");  // expect all-stages sum too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"); // expect all-stages sum too
     }
     if (max_combined > sum_samplers) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03028");  // expect all-stages sum too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"); // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if (sampled_image_count > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSampledImages) {
@@ -342,7 +354,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -366,7 +378,8 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03020");
     const uint32_t storage_image_count = 2 * dslb.descriptorCount;
     if (storage_image_count > sum_storage_images) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03034");  // expect all-stages sum too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034"); // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if (storage_image_count > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageImages) {
@@ -378,7 +391,7 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -397,19 +410,21 @@ TEST_F(NegativePipelineLayout, ExcessPerStageDescriptors) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03021");
     if (dslb.descriptorCount > sum_input_attachments) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03035");  // expect all-stages sum too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035"); // expect all-stages sum too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindInputAttachments) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03043");
         }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindInputAttachments) {
+        if (dslb.descriptorCount >
+            descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindInputAttachments) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03027");
         }
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 }
@@ -438,15 +453,20 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     uint32_t sum_samplers = m_device->Physical().limits_.maxDescriptorSetSamplers;
     uint32_t sum_input_attachments = m_device->Physical().limits_.maxDescriptorSetInputAttachments;
 
-    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties =
-        vku::InitStructHelper();
+    VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_properties = vku::InitStructHelper();
     if (descriptor_indexing) {
         GetPhysicalDeviceProperties2(descriptor_indexing_properties);
     }
 
     // Devices that report UINT32_MAX for any of these limits can't run this test
-    if (vvl::kU32Max == std::max({sum_dyn_uniform_buffers, sum_uniform_buffers, sum_dyn_storage_buffers, sum_storage_buffers,
-                                  sum_sampled_images, sum_storage_images, sum_samplers, sum_input_attachments})) {
+    if (vvl::kU32Max == std::max({ sum_dyn_uniform_buffers,
+                                   sum_uniform_buffers,
+                                   sum_dyn_storage_buffers,
+                                   sum_storage_buffers,
+                                   sum_sampled_images,
+                                   sum_storage_images,
+                                   sum_samplers,
+                                   sum_input_attachments })) {
         GTEST_SKIP() << "Physical device limits report as 2^32-1";
     }
 
@@ -481,15 +501,17 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03028");
     if (dslb.descriptorCount > max_samplers) {
         m_errorMonitor->SetDesiredError(
-            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016");  // Expect max-per-stage samplers exceeds limits
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016"); // Expect max-per-stage samplers exceeds limits
     }
     if (dslb.descriptorCount > sum_sampled_images) {
         m_errorMonitor->SetDesiredError(
-            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033");  // Expect max overall sampled image count exceeds limits
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"); // Expect max overall sampled image count exceeds
+                                                                     // limits
     }
     if (dslb.descriptorCount > max_sampled_images) {
         m_errorMonitor->SetDesiredError(
-            "VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");  // Expect max per-stage sampled image count exceeds limits
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-06939"); // Expect max per-stage sampled image count exceeds
+                                                                     // limits
     }
     if (descriptor_indexing) {
         if ((sum_samplers + 1) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
@@ -502,13 +524,14 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
         if (dslb_vec[1].descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSampledImages) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041");
         }
-        if (dslb_vec[1].descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSampledImages) {
+        if (dslb_vec[1].descriptorCount >
+            descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindSampledImages) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03025");
         }
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -528,7 +551,8 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03029");
     if (dslb.descriptorCount > max_uniform_buffers) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03017");  // expect max-per-stage too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"); // expect max-per-stage too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffers) {
@@ -540,7 +564,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -560,10 +584,12 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03030");
     if (dslb.descriptorCount > max_uniform_buffers) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03017");  // expect max-per-stage too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"); // expect max-per-stage too
     }
     if (descriptor_indexing) {
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
+        if (dslb.descriptorCount >
+            descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038");
         }
         if (dslb.descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindUniformBuffers) {
@@ -572,7 +598,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -592,7 +618,8 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03031");
     if (dslb.descriptorCount > max_storage_buffers) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03018");  // expect max-per-stage too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"); // expect max-per-stage too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffers) {
@@ -604,7 +631,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -624,10 +651,12 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03032");
     if (dslb.descriptorCount > max_storage_buffers) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03018");  // expect max-per-stage too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"); // expect max-per-stage too
     }
     if (descriptor_indexing) {
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
+        if (dslb.descriptorCount >
+            descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040");
         }
         if (dslb.descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindStorageBuffers) {
@@ -636,7 +665,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -669,7 +698,8 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     // Takes max since VUID only checks per shader stage
     if (std::max(dslb_vec[0].descriptorCount, dslb_vec[1].descriptorCount) > max_sampled_images) {
         m_errorMonitor->SetDesiredError(
-            "VUID-VkPipelineLayoutCreateInfo-descriptorType-06939");  // Expect max-per-stage sampled images to exceed limits
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-06939"); // Expect max-per-stage sampled images to exceed
+                                                                     // limits
     }
     if (descriptor_indexing) {
         if (max_samplers > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindSamplers) {
@@ -689,7 +719,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -714,7 +744,8 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03034");
     if (dslb.descriptorCount > max_storage_images) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03020");  // expect max-per-stage too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020"); // expect max-per-stage too
     }
     if (descriptor_indexing) {
         if ((sum_storage_images + 1) > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindStorageImages) {
@@ -727,7 +758,7 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 
@@ -747,19 +778,21 @@ TEST_F(NegativePipelineLayout, ExcessDescriptorsOverall) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03035");
     if (dslb.descriptorCount > max_input_attachments) {
-        m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03021");  // expect max-per-stage too
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021"); // expect max-per-stage too
     }
     if (descriptor_indexing) {
         if (dslb.descriptorCount > descriptor_indexing_properties.maxDescriptorSetUpdateAfterBindInputAttachments) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03043");
         }
-        if (dslb.descriptorCount > descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindInputAttachments) {
+        if (dslb.descriptorCount >
+            descriptor_indexing_properties.maxPerStageDescriptorUpdateAfterBindInputAttachments) {
             m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03027");
         }
     }
     err = vk::CreatePipelineLayout(device(), &pipeline_layout_ci, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
-    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL);  // Unnecessary but harmless if test passed
+    vk::DestroyPipelineLayout(device(), pipeline_layout, NULL); // Unnecessary but harmless if test passed
     pipeline_layout = VK_NULL_HANDLE;
     vk::DestroyDescriptorSetLayout(device(), ds_layout, NULL);
 }
@@ -770,11 +803,12 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatch) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                       });
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout (std140, set = 0, binding = 0) uniform buf {
             mat4 mvp;
@@ -787,8 +821,8 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatch) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07990");
     pipe.CreateGraphicsPipeline();
@@ -796,11 +830,12 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatch) {
 }
 
 TEST_F(NegativePipelineLayout, DescriptorTypeMismatchCompute) {
-    TEST_DESCRIPTION("Test that an error is produced for a pipeline consuming a descriptor-backed resource of a mismatched type");
+    TEST_DESCRIPTION(
+        "Test that an error is produced for a pipeline consuming a descriptor-backed resource of a mismatched type");
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -809,21 +844,24 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchCompute) {
         }
     )glsl";
 
-    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+    const auto set_info = [&](CreateComputePipelineHelper& helper) {
         helper.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+        helper.dsl_bindings_ = {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr }
+        };
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-07990");
+    CreateComputePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-07990");
 }
 
 TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
-    TEST_DESCRIPTION(
-        "HLSL will sometimes produce a SAMPLED_IMAGE / SAMPLER on the same slot that is same as COMBINED_IMAGE_SAMPLER");
+    TEST_DESCRIPTION("HLSL will sometimes produce a SAMPLED_IMAGE / SAMPLER on the same slot that is same as "
+                     "COMBINED_IMAGE_SAMPLER");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget(0, nullptr);
 
-    char const *fsSource = R"(
+    char const* fsSource = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main "main"
@@ -861,31 +899,33 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchNonCombinedImageSampler) {
 
     // Should be VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
 
-    const auto set_sampled_image = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    const auto set_sampled_image = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        helper.dsl_bindings_ = { { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr } };
     };
-    CreatePipelineHelper::OneshotTest(*this, set_sampled_image, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07990");
+    CreatePipelineHelper::OneshotTest(
+        *this, set_sampled_image, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07990");
 
-    const auto set_sampler = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    const auto set_sampler = [&](CreatePipelineHelper& helper) {
+        helper.shader_stages_ = { helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        helper.dsl_bindings_ = { { 1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr } };
     };
     CreatePipelineHelper::OneshotTest(*this, set_sampler, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-07990");
 }
 
 TEST_F(NegativePipelineLayout, DescriptorNotAccessible) {
-    TEST_DESCRIPTION(
-        "Create a pipeline in which a descriptor used by a shader stage does not include that stage in its stageFlags.");
+    TEST_DESCRIPTION("Create a pipeline in which a descriptor used by a shader stage does not include that stage in "
+                     "its stageFlags.");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT /*!*/, nullptr},
-                                     });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT /*!*/, nullptr },
+                           });
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout (std140, set = 0, binding = 0) uniform buf {
             mat4 mvp;
@@ -898,8 +938,8 @@ TEST_F(NegativePipelineLayout, DescriptorNotAccessible) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &ds.layout_ });
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07988");
     pipe.CreateGraphicsPipeline();
@@ -907,9 +947,9 @@ TEST_F(NegativePipelineLayout, DescriptorNotAccessible) {
 }
 
 TEST_F(NegativePipelineLayout, UniformBlockNotProvided) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a shader consuming a uniform block which has no corresponding binding in the pipeline "
-        "layout");
+    TEST_DESCRIPTION("Test that an error is produced for a shader consuming a uniform block which has no corresponding "
+                     "binding in the pipeline "
+                     "layout");
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07988");
 
     RETURN_IF_SKIP(Init());
@@ -919,8 +959,8 @@ TEST_F(NegativePipelineLayout, UniformBlockNotProvided) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
 
-    OneOffDescriptorSet descriptor_set(m_device, {});  // no descriptor in layout
-    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(m_device, {}); // no descriptor in layout
+    vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
@@ -929,13 +969,13 @@ TEST_F(NegativePipelineLayout, UniformBlockNotProvided) {
 }
 
 TEST_F(NegativePipelineLayout, MissingDescriptor) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a compute pipeline consuming a descriptor which is not provided in the pipeline "
-        "layout");
+    TEST_DESCRIPTION("Test that an error is produced for a compute pipeline consuming a descriptor which is not "
+                     "provided in the pipeline "
+                     "layout");
 
     RETURN_IF_SKIP(Init());
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         layout(local_size_x=1) in;
         layout(set=0, binding=0) buffer block { vec4 x; };
@@ -968,10 +1008,11 @@ TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
     std::vector<vkt::DescriptorSetLayout> ds_layouts;
     for (uint32_t i = 0; i < descriptor_set_layout_count; ++i) {
         dsl_binding.binding = i;
-        ds_layouts.emplace_back(*m_device, std::vector<VkDescriptorSetLayoutBinding>(1, dsl_binding),
+        ds_layouts.emplace_back(*m_device,
+                                std::vector<VkDescriptorSetLayoutBinding>(1, dsl_binding),
                                 VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     }
-    const auto &ds_vk_layouts = MakeVkHandles<VkDescriptorSetLayout>(ds_layouts);
+    const auto& ds_vk_layouts = MakeVkHandles<VkDescriptorSetLayout>(ds_layouts);
 
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
@@ -1026,15 +1067,20 @@ TEST_F(NegativePipelineLayout, InlineUniformBlockArray) {
     VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
     pool_inline_info.maxInlineUniformBlockBindings = 1;
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr},
-                                       },
-                                       0, nullptr, 0, nullptr, &pool_inline_info);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr },
+        },
+        0,
+        nullptr,
+        0,
+        nullptr,
+        &pool_inline_info);
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO0 { uint ssbo; };
@@ -1062,15 +1108,20 @@ TEST_F(NegativePipelineLayout, InlineUniformBlockArrayOf1) {
     VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
     pool_inline_info.maxInlineUniformBlockBindings = 1;
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr},
-                                       },
-                                       0, nullptr, 0, nullptr, &pool_inline_info);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 8, VK_SHADER_STAGE_ALL, nullptr },
+        },
+        0,
+        nullptr,
+        0,
+        nullptr,
+        &pool_inline_info);
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
-    char const *cs_source = R"glsl(
+    char const* cs_source = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
         layout(set = 0, binding = 0) buffer SSBO0 { uint ssbo; };

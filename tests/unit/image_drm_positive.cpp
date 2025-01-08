@@ -14,13 +14,14 @@
 #include "../framework/layer_validation_tests.h"
 
 void ImageDrmTest::InitBasicImageDrm() {
-    SetTargetApiVersion(VK_API_VERSION_1_2);  // required extension added here
+    SetTargetApiVersion(VK_API_VERSION_1_2); // required extension added here
     AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(Init());
 }
 
-std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count) {
+std::vector<uint64_t>
+ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatFeatureFlags2 features, uint32_t plane_count) {
     std::vector<uint64_t> mods;
     VkDrmFormatModifierPropertiesListEXT mod_props = vku::InitStructHelper();
     VkFormatProperties2 format_props = vku::InitStructHelper(&mod_props);
@@ -34,8 +35,9 @@ std::vector<uint64_t> ImageDrmTest::GetFormatModifier(VkFormat format, VkFormatF
     vk::GetPhysicalDeviceFormatProperties2(Gpu(), format, &format_props);
 
     for (uint32_t i = 0; i < mod_props.drmFormatModifierCount; ++i) {
-        auto &mod = mod_props.pDrmFormatModifierProperties[i];
-        if (((mod.drmFormatModifierTilingFeatures & features) == features) && (plane_count == mod.drmFormatModifierPlaneCount)) {
+        auto& mod = mod_props.pDrmFormatModifierProperties[i];
+        if (((mod.drmFormatModifierTilingFeatures & features) == features) &&
+            (plane_count == mod.drmFormatModifierPlaneCount)) {
             mods.push_back(mod.drmFormatModifier);
         }
     }
@@ -71,7 +73,7 @@ TEST_F(PositiveImageDrm, Basic) {
         ci.flags = 0;
         ci.imageType = VK_IMAGE_TYPE_2D;
         ci.format = format;
-        ci.extent = {128, 128, 1};
+        ci.extent = { 128, 128, 1 };
         ci.mipLevels = 1;
         ci.arrayLayers = 1;
         ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -119,9 +121,11 @@ TEST_F(PositiveImageDrm, Basic) {
             image,
             VK_IMAGE_VIEW_TYPE_2D,
             format,
-            {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-             VK_COMPONENT_SWIZZLE_IDENTITY},
-            {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+            { VK_COMPONENT_SWIZZLE_IDENTITY,
+              VK_COMPONENT_SWIZZLE_IDENTITY,
+              VK_COMPONENT_SWIZZLE_IDENTITY,
+              VK_COMPONENT_SWIZZLE_IDENTITY },
+            { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
         };
 
         CreateImageViewTest(*this, &ivci);
@@ -136,8 +140,8 @@ TEST_F(PositiveImageDrm, Basic) {
 
 TEST_F(PositiveImageDrm, ExternalMemory) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5649
-    TEST_DESCRIPTION(
-        "Create image with VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and VkExternalMemoryImageCreateInfo in the pNext chain");
+    TEST_DESCRIPTION("Create image with VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT and VkExternalMemoryImageCreateInfo in "
+                     "the pNext chain");
 
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicImageDrm());
@@ -161,7 +165,7 @@ TEST_F(PositiveImageDrm, ExternalMemory) {
     VkImageCreateInfo ci = vku::InitStructHelper(&drm_info);
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = format;
-    ci.extent = {128, 128, 1};
+    ci.extent = { 128, 128, 1 };
     ci.mipLevels = 1;
     ci.arrayLayers = 1;
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -247,7 +251,7 @@ TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
         GTEST_SKIP() << "Failed to create image.";
     }
 
-    VkImageSubresource subresource{VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT, 0, 0};
+    VkImageSubresource subresource{ VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT, 0, 0 };
     VkSubresourceLayout layout{};
     vk::GetImageSubresourceLayout(m_device->handle(), image.handle(), &subresource, &layout);
 }
@@ -274,7 +278,7 @@ TEST_F(PositiveImageDrm, MutableFormat) {
     image_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     image_info.imageType = VK_IMAGE_TYPE_2D;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.extent = {128, 128, 1};
+    image_info.extent = { 128, 128, 1 };
     image_info.mipLevels = 1;
     image_info.arrayLayers = 1;
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -301,7 +305,7 @@ TEST_F(PositiveImageDrm, GetImageDrmFormatModifierProperties) {
     VkImageCreateInfo image_info = vku::InitStructHelper(&mod_list);
     image_info.imageType = VK_IMAGE_TYPE_2D;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_info.extent = {128, 128, 1};
+    image_info.extent = { 128, 128, 1 };
     image_info.mipLevels = 1;
     image_info.arrayLayers = 1;
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -355,7 +359,7 @@ TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoConcurrent) {
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.sharingMode = VK_SHARING_MODE_CONCURRENT;
     drm_format_modifier.queueFamilyIndexCount = 2;
-    uint32_t queue_family_indices[2] = {0, 1};
+    uint32_t queue_family_indices[2] = { 0, 1 };
     drm_format_modifier.pQueueFamilyIndices = queue_family_indices;
 
     VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper(&drm_format_modifier);

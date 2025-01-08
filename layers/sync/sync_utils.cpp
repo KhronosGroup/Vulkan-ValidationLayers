@@ -15,19 +15,21 @@
  * limitations under the License.
  */
 #include "sync/sync_utils.h"
-#include "state_tracker/state_tracker.h"
 #include "generated/enum_flag_bits.h"
+#include "state_tracker/state_tracker.h"
 
 namespace sync_utils {
 static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2) * 8;
 
-VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, const DeviceExtensions& device_extensions) {
+VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures& features,
+                                             const DeviceExtensions& device_extensions) {
     VkPipelineStageFlags2 result = 0;
     if (!features.geometryShader) {
         result |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
     }
     if (!features.tessellationShader) {
-        result |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+        result |=
+            VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
     }
     if (!features.conditionalRendering) {
         result |= VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
@@ -60,13 +62,14 @@ VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, con
     return result;
 }
 
-VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQueueFlags queue_flags,
+VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask,
+                                           VkQueueFlags queue_flags,
                                            const VkPipelineStageFlags2 disabled_feature_mask) {
     VkPipelineStageFlags2 expanded = stage_mask;
 
     if (VK_PIPELINE_STAGE_ALL_COMMANDS_BIT & stage_mask) {
         expanded &= ~VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-        for (const auto &all_commands : syncAllCommandStagesByQueueFlags()) {
+        for (const auto& all_commands : syncAllCommandStagesByQueueFlags()) {
             if (all_commands.first & queue_flags) {
                 expanded |= all_commands.second & ~disabled_feature_mask;
             }
@@ -77,8 +80,8 @@ VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQ
         // Make sure we don't pull in the HOST stage from expansion, but keep it if set by the caller.
         // The syncAllCommandStagesByQueueFlags table includes HOST for all queue types since it is
         // allowed but it shouldn't be part of ALL_GRAPHICS
-        expanded |=
-            syncAllCommandStagesByQueueFlags().at(VK_QUEUE_GRAPHICS_BIT) & ~disabled_feature_mask & ~VK_PIPELINE_STAGE_HOST_BIT;
+        expanded |= syncAllCommandStagesByQueueFlags().at(VK_QUEUE_GRAPHICS_BIT) & ~disabled_feature_mask &
+                    ~VK_PIPELINE_STAGE_HOST_BIT;
     }
     if (VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT & stage_mask) {
         expanded &= ~VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
@@ -140,16 +143,18 @@ VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask) {
     return result;
 }
 
-static VkPipelineStageFlags2 RelatedPipelineStages(
-    VkPipelineStageFlags2 stage_mask, const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2> &map) {
+static VkPipelineStageFlags2
+RelatedPipelineStages(VkPipelineStageFlags2 stage_mask,
+                      const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2>& map) {
     VkPipelineStageFlags2 unscanned = stage_mask;
     VkPipelineStageFlags2 related = 0;
-    for (const auto &entry : map) {
-        const auto &stage = entry.first;
+    for (const auto& entry : map) {
+        const auto& stage = entry.first;
         if (stage & unscanned) {
             related = related | entry.second;
             unscanned = unscanned & ~stage;
-            if (!unscanned) break;
+            if (!unscanned)
+                break;
         }
     }
     return related;
@@ -164,7 +169,7 @@ VkPipelineStageFlags2 WithLaterPipelineStages(VkPipelineStageFlags2 stage_mask) 
 }
 
 // helper to extract the union of the stage masks in all of the barriers
-ExecScopes GetGlobalStageMasks(const VkDependencyInfo &dep_info) {
+ExecScopes GetGlobalStageMasks(const VkDependencyInfo& dep_info) {
     ExecScopes result{};
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; i++) {
         result.src |= dep_info.pMemoryBarriers[i].srcStageMask;
@@ -296,4 +301,4 @@ ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage) {
     return it->second;
 }
 
-}  // namespace sync_utils
+} // namespace sync_utils

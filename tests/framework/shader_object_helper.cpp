@@ -13,9 +13,13 @@
 #include "shader_object_helper.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
-VkShaderCreateInfoEXT ShaderCreateInfo(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage, uint32_t set_layout_count,
-                                       const VkDescriptorSetLayout* set_layouts, uint32_t pc_range_count,
-                                       const VkPushConstantRange* pc_ranges, const VkSpecializationInfo* specialization_info) {
+VkShaderCreateInfoEXT ShaderCreateInfo(const std::vector<uint32_t>& spirv,
+                                       VkShaderStageFlagBits stage,
+                                       uint32_t set_layout_count,
+                                       const VkDescriptorSetLayout* set_layouts,
+                                       uint32_t pc_range_count,
+                                       const VkPushConstantRange* pc_ranges,
+                                       const VkSpecializationInfo* specialization_info) {
     VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
     create_info.flags = 0;
     create_info.stage = stage;
@@ -32,8 +36,8 @@ VkShaderCreateInfoEXT ShaderCreateInfo(const std::vector<uint32_t>& spirv, VkSha
     return create_info;
 }
 
-VkShaderCreateInfoEXT ShaderCreateInfoFlag(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage,
-                                           VkShaderCreateFlagsEXT flags) {
+VkShaderCreateInfoEXT
+ShaderCreateInfoFlag(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage, VkShaderCreateFlagsEXT flags) {
     VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
     create_info.flags = flags;
     create_info.stage = stage;
@@ -50,8 +54,8 @@ VkShaderCreateInfoEXT ShaderCreateInfoFlag(const std::vector<uint32_t>& spirv, V
     return create_info;
 }
 
-VkShaderCreateInfoEXT ShaderCreateInfoLink(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage,
-                                           VkShaderStageFlags next_stage) {
+VkShaderCreateInfoEXT
+ShaderCreateInfoLink(const std::vector<uint32_t>& spirv, VkShaderStageFlagBits stage, VkShaderStageFlags next_stage) {
     VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
     create_info.flags = VK_SHADER_CREATE_LINK_STAGE_BIT_EXT;
     create_info.stage = stage;

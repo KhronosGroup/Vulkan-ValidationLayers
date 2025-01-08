@@ -19,16 +19,20 @@
 
 #include "best_practices/best_practices_validation.h"
 
-bool BestPractices::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
+bool BestPractices::PreCallValidateCreateBuffer(VkDevice device,
+                                                const VkBufferCreateInfo* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator,
+                                                VkBuffer* pBuffer,
                                                 const ErrorObject& error_obj) const {
     bool skip = false;
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->sharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
-        skip |= LogWarning("BestPractices-vkCreateBuffer-sharing-mode-exclusive", device,
-                           error_obj.location.dot(Field::pCreateInfo).dot(Field::sharingMode),
-                           "is VK_SHARING_MODE_EXCLUSIVE while specifying multiple queues (queueFamilyIndexCount of %" PRIu32 ").",
-                           pCreateInfo->queueFamilyIndexCount);
+        skip |= LogWarning(
+            "BestPractices-vkCreateBuffer-sharing-mode-exclusive",
+            device,
+            error_obj.location.dot(Field::pCreateInfo).dot(Field::sharingMode),
+            "is VK_SHARING_MODE_EXCLUSIVE while specifying multiple queues (queueFamilyIndexCount of %" PRIu32 ").",
+            pCreateInfo->queueFamilyIndexCount);
     }
 
     return skip;

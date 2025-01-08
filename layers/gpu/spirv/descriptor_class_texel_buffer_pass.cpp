@@ -15,8 +15,8 @@
 
 #include "descriptor_class_texel_buffer_pass.h"
 #include "module.h"
-#include <spirv/unified1/spirv.hpp>
 #include <iostream>
+#include <spirv/unified1/spirv.hpp>
 
 #include "generated/instrumentation_descriptor_class_texel_buffer_comp.h"
 #include "gpu/shaders/gpuav_shaders_constants.h"
@@ -24,12 +24,16 @@
 namespace gpuav {
 namespace spirv {
 
-DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) : Pass(module) { module.use_bda_ = true; }
+DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) : Pass(module) {
+    module.use_bda_ = true;
+}
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() {
-    static LinkInfo link_info = {instrumentation_descriptor_class_texel_buffer_comp,
-                                 instrumentation_descriptor_class_texel_buffer_comp_size, 0, "inst_descriptor_class_texel_buffer"};
+    static LinkInfo link_info = { instrumentation_descriptor_class_texel_buffer_comp,
+                                  instrumentation_descriptor_class_texel_buffer_comp_size,
+                                  0,
+                                  "inst_descriptor_class_texel_buffer" };
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
@@ -39,12 +43,13 @@ uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block,
+                                                            InstructionIt* inst_it,
                                                             const InjectionData& injection_data) {
     assert(access_chain_inst_ && var_inst_);
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it); // might be int32
 
     const uint32_t opcode = target_instruction_->Opcode();
     const uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
@@ -66,11 +71,18 @@ uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, I
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_, binding_layout_offset.Id()},
-        inst_it);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            { bool_type,
+                              function_result,
+                              function_def,
+                              injection_data.inst_position_id,
+                              injection_data.stage_info_id,
+                              set_constant.Id(),
+                              binding_constant.Id(),
+                              descriptor_index_id,
+                              descriptor_offset_id_,
+                              binding_layout_offset.Id() },
+                            inst_it);
 
     return function_result;
 }
@@ -94,13 +106,15 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
     const uint32_t image_word = OpcodeImageAccessPosition(opcode);
 
     image_inst_ = function.FindInstruction(inst.Word(image_word));
-    if (!image_inst_) return false;
+    if (!image_inst_)
+        return false;
     const Type* image_type = module_.type_manager_.FindTypeById(image_inst_->TypeId());
-    if (!image_type) return false;
+    if (!image_type)
+        return false;
 
     const uint32_t dim = image_type->inst_.Operand(1);
     if (dim != spv::DimBuffer) {
-        return false;  // It is a Storage Image
+        return false; // It is a Storage Image
     }
     const uint32_t depth = image_type->inst_.Operand(2);
     const uint32_t arrayed = image_type->inst_.Operand(3);
@@ -117,7 +131,7 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
         load_inst = function.FindInstruction(load_inst->Operand(0));
     }
     if (!load_inst || load_inst->Opcode() != spv::OpLoad) {
-        return false;  // TODO: Handle additional possibilities?
+        return false; // TODO: Handle additional possibilities?
     }
 
     var_inst_ = function.FindInstruction(load_inst->Operand(0));
@@ -184,15 +198,18 @@ bool DescriptorClassTexelBufferPass::Run() {
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             if ((*block_it)->loop_header_) {
-                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
+                continue; // Currently can't properly handle injecting CFG logic into a loop header block
             }
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
+                // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function
+                // or not
+                if (!RequiresInstrumentation(*function, *(inst_it->get())))
+                    continue;
 
-                if (module_.max_instrumentations_count_ != 0 && instrumentations_count_ >= module_.max_instrumentations_count_) {
-                    return true;  // hit limit
+                if (module_.max_instrumentations_count_ != 0 &&
+                    instrumentations_count_ >= module_.max_instrumentations_count_) {
+                    return true; // hit limit
                 }
                 instrumentations_count_++;
 
@@ -213,5 +230,5 @@ bool DescriptorClassTexelBufferPass::Run() {
     return instrumentations_count_ != 0;
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

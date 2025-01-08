@@ -78,8 +78,8 @@ TEST_F(NegativeDebugExtensions, DebugMarkerName) {
     cb_begin_Info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vk::BeginCommandBuffer(commandBuffer, &cb_begin_Info);
 
-    const VkRect2D scissor = {{-1, 0}, {16, 16}};
-    const VkRect2D scissors[] = {scissor, scissor};
+    const VkRect2D scissor = { { -1, 0 }, { 16, 16 } };
+    const VkRect2D scissors[] = { scissor, scissor };
 
     // Test parameter_validation layer
     m_errorMonitor->SetDesiredError(commandBuffer_name.c_str());
@@ -139,9 +139,8 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     }
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
-        data->count++;
-    };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                             DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -227,8 +226,8 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     cb_begin_Info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vk::BeginCommandBuffer(commandBuffer, &cb_begin_Info);
 
-    const VkRect2D scissor = {{-1, 0}, {16, 16}};
-    const VkRect2D scissors[] = {scissor, scissor};
+    const VkRect2D scissor = { { -1, 0 }, { 16, 16 } };
+    const VkRect2D scissors[] = { scissor, scissor };
 
     VkDebugUtilsLabelEXT command_label = vku::InitStructHelper();
     command_label.pLabelName = "Command Label 0123";
@@ -237,8 +236,9 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     command_label.color[2] = 2.;
     command_label.color[3] = 3.0;
     bool command_label_test = false;
-    auto command_label_callback = [command_label, &command_label_test](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                                                                       DebugUtilsLabelCheckData *data) {
+    auto command_label_callback = [command_label,
+                                   &command_label_test](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                        DebugUtilsLabelCheckData* data) {
         data->count++;
         command_label_test = false;
         if (pCallbackData->cmdBufLabelCount == 1) {
@@ -280,7 +280,7 @@ TEST_F(NegativeDebugExtensions, DebugMarkerSetUtils) {
     memory_allocate_info.memoryTypeIndex = 0;
     vkt::DeviceMemory memory(*m_device, memory_allocate_info);
 
-    int tags[3] = {1, 2, 3};
+    int tags[3] = { 1, 2, 3 };
     VkDebugMarkerObjectTagInfoEXT name_info = vku::InitStructHelper();
     name_info.object = (uint64_t)VK_NULL_HANDLE;
     name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
@@ -308,9 +308,8 @@ TEST_F(NegativeDebugExtensions, DebugUtilsParameterFlags) {
     RETURN_IF_SKIP(Init());
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
-        data->count++;
-    };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                             DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -326,8 +325,8 @@ TEST_F(NegativeDebugExtensions, DebugUtilsParameterFlags) {
 }
 
 struct LayerStatusCheckData {
-    std::function<void(const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, LayerStatusCheckData *)> callback;
-    ErrorMonitor *error_monitor;
+    std::function<void(const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, LayerStatusCheckData*)> callback;
+    ErrorMonitor* error_monitor;
 };
 
 TEST_F(NegativeDebugExtensions, LayerInfoMessages) {
@@ -335,14 +334,15 @@ TEST_F(NegativeDebugExtensions, LayerInfoMessages) {
 
     auto ici = GetInstanceCreateInfo();
     LayerStatusCheckData callback_data;
-    auto local_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, LayerStatusCheckData *data) {
+    auto local_callback = [](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, LayerStatusCheckData* data) {
         std::string message(pCallbackData->pMessage);
         if ((data->error_monitor->GetMessageFlags() & kInformationBit) &&
             (message.find("UNASSIGNED-khronos-validation-createinstance-status-message") == std::string::npos)) {
             data->error_monitor->SetError("UNASSIGNED-Khronos-validation-createinstance-status-message-not-found");
         } else if ((data->error_monitor->GetMessageFlags() & kPerformanceWarningBit) &&
                    (message.find("UNASSIGNED-khronos-Validation-debug-build-warning-message") == std::string::npos)) {
-            data->error_monitor->SetError("UNASSIGNED-khronos-validation-createinstance-debug-warning-message-not-found");
+            data->error_monitor->SetError(
+                "UNASSIGNED-khronos-validation-createinstance-debug-warning-message-not-found");
         }
     };
     callback_data.error_monitor = m_errorMonitor;
@@ -383,9 +383,8 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
     vkt::Device second_device(gpu_, m_device_extension_names, &features, nullptr);
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
-        data->count++;
-    };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                             DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -398,7 +397,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
     VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
     vk::CreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
 
-    const char *object_name = "device_object";
+    const char* object_name = "device_object";
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_DEVICE;
@@ -421,9 +420,8 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectDestroyedHandle) {
     }
 
     DebugUtilsLabelCheckData callback_data;
-    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {
-        data->count++;
-    };
+    auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                             DebugUtilsLabelCheckData* data) { data->count++; };
     callback_data.count = 0;
     callback_data.callback = empty_callback;
 
@@ -439,7 +437,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectDestroyedHandle) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     uint64_t bad_handle = (uint64_t)sampler.handle();
     sampler.destroy();
-    const char *object_name = "sampler_object";
+    const char* object_name = "sampler_object";
 
     VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
     name_info.objectType = VK_OBJECT_TYPE_SAMPLER;
@@ -512,7 +510,7 @@ TEST_F(NegativeDebugExtensions, DebugLabelPrimaryCommandBuffer3) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.End();
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01912");
-    std::array cbs = {&cb0, &cb1};
+    std::array cbs = { &cb0, &cb1 };
     m_default_queue->Submit(cbs);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
@@ -547,8 +545,8 @@ TEST_F(NegativeDebugExtensions, SwapchainImagesDebugMarker) {
     swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
-                                         info.surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = { info.surface_capabilities.minImageExtent.width,
+                                          info.surface_capabilities.minImageExtent.height };
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -573,7 +571,7 @@ TEST_F(NegativeDebugExtensions, SwapchainImagesDebugMarker) {
     }
 
     {
-        int tags[2] = {1, 2};
+        int tags[2] = { 1, 2 };
         VkDebugMarkerObjectTagInfoEXT name_info = vku::InitStructHelper();
         name_info.object = (uint64_t)images[0];
         name_info.objectType = VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT;

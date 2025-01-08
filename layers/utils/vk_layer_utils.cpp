@@ -21,22 +21,24 @@
 #include <sys/stat.h>
 
 #include "containers/range_vector.h"
-#include "vulkan/vulkan_core.h"
 #include "vk_layer_config.h"
+#include "vulkan/vulkan_core.h"
 
-VkLayerInstanceCreateInfo *GetChainInfo(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func) {
-    VkLayerInstanceCreateInfo *chain_info = (VkLayerInstanceCreateInfo *)pCreateInfo->pNext;
-    while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO && chain_info->function == func)) {
-        chain_info = (VkLayerInstanceCreateInfo *)chain_info->pNext;
+VkLayerInstanceCreateInfo* GetChainInfo(const VkInstanceCreateInfo* pCreateInfo, VkLayerFunction func) {
+    VkLayerInstanceCreateInfo* chain_info = (VkLayerInstanceCreateInfo*)pCreateInfo->pNext;
+    while (chain_info &&
+           !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO && chain_info->function == func)) {
+        chain_info = (VkLayerInstanceCreateInfo*)chain_info->pNext;
     }
     assert(chain_info != NULL);
     return chain_info;
 }
 
-VkLayerDeviceCreateInfo *GetChainInfo(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func) {
-    VkLayerDeviceCreateInfo *chain_info = (VkLayerDeviceCreateInfo *)pCreateInfo->pNext;
-    while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO && chain_info->function == func)) {
-        chain_info = (VkLayerDeviceCreateInfo *)chain_info->pNext;
+VkLayerDeviceCreateInfo* GetChainInfo(const VkDeviceCreateInfo* pCreateInfo, VkLayerFunction func) {
+    VkLayerDeviceCreateInfo* chain_info = (VkLayerDeviceCreateInfo*)pCreateInfo->pNext;
+    while (chain_info &&
+           !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO && chain_info->function == func)) {
+        chain_info = (VkLayerDeviceCreateInfo*)chain_info->pNext;
     }
     assert(chain_info != NULL);
     return chain_info;
@@ -53,18 +55,23 @@ std::string GetTempFilePath() {
             }
         }
     }
-    if (!tmp_path.size()) tmp_path = GetEnvironment("TMPDIR");
-    if (!tmp_path.size()) tmp_path = GetEnvironment("TMP");
-    if (!tmp_path.size()) tmp_path = GetEnvironment("TEMP");
-    if (!tmp_path.size()) tmp_path = "/tmp";
+    if (!tmp_path.size())
+        tmp_path = GetEnvironment("TMPDIR");
+    if (!tmp_path.size())
+        tmp_path = GetEnvironment("TMP");
+    if (!tmp_path.size())
+        tmp_path = GetEnvironment("TEMP");
+    if (!tmp_path.size())
+        tmp_path = "/tmp";
     return tmp_path;
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level) {
+VkExtent3D
+GetEffectiveExtent(const VkImageCreateInfo& ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level) {
     // Return zero extent if mip level doesn't exist
     if (mip_level >= ci.mipLevels) {
-        return VkExtent3D{0, 0, 0};
+        return VkExtent3D{ 0, 0, 0 };
     }
 
     VkExtent3D extent = ci.extent;
@@ -81,8 +88,8 @@ VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFl
     {
         const uint32_t corner = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
         const uint32_t min_size = 1 + corner;
-        const std::array dimensions = {&extent.width, &extent.height, &extent.depth};
-        for (uint32_t *dim : dimensions) {
+        const std::array dimensions = { &extent.width, &extent.height, &extent.depth };
+        for (uint32_t* dim : dimensions) {
             // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
             if (*dim == 0) {
                 continue;

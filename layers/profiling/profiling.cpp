@@ -23,46 +23,46 @@
 
 #if defined(VVL_TRACY_CPU_MEMORY)
 
-void *operator new(std ::size_t size) {
+void* operator new(std ::size_t size) {
     auto ptr = malloc(size);
     VVL_TracyAlloc(ptr, size);
     return ptr;
 }
 
-void operator delete(void *ptr) noexcept {
+void operator delete(void* ptr) noexcept {
     VVL_TracyFree(ptr);
     free(ptr);
 }
 
-void *operator new[](std::size_t size) {
+void* operator new[](std::size_t size) {
     auto ptr = malloc(size);
     VVL_TracyAlloc(ptr, size);
     return ptr;
 }
 
-void operator delete[](void *ptr) noexcept {
+void operator delete[](void* ptr) noexcept {
     VVL_TracyFree(ptr);
     free(ptr);
 };
 
-void *operator new(std::size_t size, const std::nothrow_t &) noexcept {
+void* operator new(std::size_t size, const std::nothrow_t&) noexcept {
     auto ptr = malloc(size);
     VVL_TracyAlloc(ptr, size);
     return ptr;
 }
 
-void operator delete(void *ptr, const std::nothrow_t &) noexcept {
+void operator delete(void* ptr, const std::nothrow_t&) noexcept {
     VVL_TracyFree(ptr);
     free(ptr);
 }
 
-void *operator new[](std::size_t size, const std::nothrow_t &) noexcept {
+void* operator new[](std::size_t size, const std::nothrow_t&) noexcept {
     auto ptr = malloc(size);
     VVL_TracyAlloc(ptr, size);
     return ptr;
 }
 
-void operator delete[](void *ptr, const std::nothrow_t &) noexcept {
+void operator delete[](void* ptr, const std::nothrow_t&) noexcept {
     VVL_TracyFree(ptr);
     free(ptr);
 }
@@ -74,58 +74,60 @@ void operator delete[](void *ptr, const std::nothrow_t &) noexcept {
 #define vvl_aligned_free(ptr) _aligned_free(ptr)
 #else
 // TODO - Need to understand why on Linux sometimes calling aligned_alloc causes corruption
-void *vvl_aligned_malloc(std::size_t size, std::size_t al) {
-    void *mem = malloc(size + al + sizeof(void *));
-    void **ptr = (void **)((uintptr_t)((uintptr_t)mem + al + sizeof(void *)) & ~(al - 1));
+void* vvl_aligned_malloc(std::size_t size, std::size_t al) {
+    void* mem = malloc(size + al + sizeof(void*));
+    void** ptr = (void**)((uintptr_t)((uintptr_t)mem + al + sizeof(void*)) & ~(al - 1));
     ptr[-1] = mem;
     return ptr;
 }
 
-void vvl_aligned_free(void *ptr) { free(((void **)ptr)[-1]); }
-#endif
-
-void *operator new(std::size_t size, std::align_val_t al) noexcept(false) {
-    auto ptr = vvl_aligned_malloc(size, size_t(al));
-    VVL_TracyAlloc(ptr, size);
-    return ptr;
-}
-void *operator new[](std::size_t size, std::align_val_t al) noexcept(false) {
-    auto ptr = vvl_aligned_malloc(size, size_t(al));
-    VVL_TracyAlloc(ptr, size);
-    return ptr;
-}
-
-void *operator new(std::size_t size, std::align_val_t al, const std::nothrow_t &) noexcept {
-    auto ptr = vvl_aligned_malloc(size, size_t(al));
-    VVL_TracyAlloc(ptr, size);
-    return ptr;
-}
-void *operator new[](std::size_t size, std::align_val_t al, const std::nothrow_t &) noexcept {
-    auto ptr = vvl_aligned_malloc(size, size_t(al));
-    VVL_TracyAlloc(ptr, size);
-    return ptr;
-}
-
-void operator delete(void *ptr, std::align_val_t al) noexcept {
-    VVL_TracyFree(ptr);
-    vvl_aligned_free(ptr);
-}
-void operator delete[](void *ptr, std::align_val_t al) noexcept {
-    VVL_TracyFree(ptr);
-    vvl_aligned_free(ptr);
-}
-
-void operator delete(void *ptr, std::align_val_t al, const std::nothrow_t &) noexcept {
-    VVL_TracyFree(ptr);
-    vvl_aligned_free(ptr);
-}
-void operator delete[](void *ptr, std::align_val_t al, const std::nothrow_t &) noexcept {
-    VVL_TracyFree(ptr);
-    vvl_aligned_free(ptr);
+void vvl_aligned_free(void* ptr) {
+    free(((void**)ptr)[-1]);
 }
 #endif
 
-#endif  // #if defined(VVL_TRACY_CPU_MEMORY)
+void* operator new(std::size_t size, std::align_val_t al) noexcept(false) {
+    auto ptr = vvl_aligned_malloc(size, size_t(al));
+    VVL_TracyAlloc(ptr, size);
+    return ptr;
+}
+void* operator new[](std::size_t size, std::align_val_t al) noexcept(false) {
+    auto ptr = vvl_aligned_malloc(size, size_t(al));
+    VVL_TracyAlloc(ptr, size);
+    return ptr;
+}
+
+void* operator new(std::size_t size, std::align_val_t al, const std::nothrow_t&) noexcept {
+    auto ptr = vvl_aligned_malloc(size, size_t(al));
+    VVL_TracyAlloc(ptr, size);
+    return ptr;
+}
+void* operator new[](std::size_t size, std::align_val_t al, const std::nothrow_t&) noexcept {
+    auto ptr = vvl_aligned_malloc(size, size_t(al));
+    VVL_TracyAlloc(ptr, size);
+    return ptr;
+}
+
+void operator delete(void* ptr, std::align_val_t al) noexcept {
+    VVL_TracyFree(ptr);
+    vvl_aligned_free(ptr);
+}
+void operator delete[](void* ptr, std::align_val_t al) noexcept {
+    VVL_TracyFree(ptr);
+    vvl_aligned_free(ptr);
+}
+
+void operator delete(void* ptr, std::align_val_t al, const std::nothrow_t&) noexcept {
+    VVL_TracyFree(ptr);
+    vvl_aligned_free(ptr);
+}
+void operator delete[](void* ptr, std::align_val_t al, const std::nothrow_t&) noexcept {
+    VVL_TracyFree(ptr);
+    vvl_aligned_free(ptr);
+}
+#endif
+
+#endif // #if defined(VVL_TRACY_CPU_MEMORY)
 
 #if TRACY_MANUAL_LIFETIME
 
@@ -148,10 +150,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 #else
 
-__attribute__((constructor)) static void so_attach(void) { tracy::StartupProfiler(); }
+__attribute__((constructor)) static void so_attach(void) {
+    tracy::StartupProfiler();
+}
 
-#endif  // #if defined(_WIN32)
+#endif // #if defined(_WIN32)
 
-#endif  // #if TRACY_MANUAL_LIFETIME
+#endif // #if TRACY_MANUAL_LIFETIME
 
-#endif  // #if defined(TRACY_ENABLE)
+#endif // #if defined(TRACY_ENABLE)

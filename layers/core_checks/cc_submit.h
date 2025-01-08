@@ -28,7 +28,7 @@ class ValidationObject;
 
 namespace vvl {
 struct QueueSubmission;
-}  // namespace vvl
+} // namespace vvl
 
 // Performs validationn when QueueSubmision is ready to retire.
 struct QueueSubmissionValidator {

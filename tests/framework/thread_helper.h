@@ -37,13 +37,13 @@ class ThreadTimeoutHelper {
     bool WaitForThreads(int timeout_in_seconds);
 
     struct Guard {
-        Guard(ThreadTimeoutHelper &timeout_helper) : timeout_helper_(timeout_helper) {}
-        Guard(const Guard &) = delete;
-        Guard &operator=(const Guard &) = delete;
+        Guard(ThreadTimeoutHelper& timeout_helper) : timeout_helper_(timeout_helper) {}
+        Guard(const Guard&) = delete;
+        Guard& operator=(const Guard&) = delete;
 
         ~Guard() { timeout_helper_.OnThreadDone(); }
 
-        ThreadTimeoutHelper &timeout_helper_;
+        ThreadTimeoutHelper& timeout_helper_;
     };
     // Mandatory elision of copy/move operations guarantees the destructor is not called
     // (even in the presence of copy/move constructor) and the object is constructed directly
@@ -68,11 +68,11 @@ struct ThreadTestData {
     VkDescriptorSet descriptorSet;
     VkBuffer buffer;
     uint32_t binding;
-    std::atomic<bool> *bailout;
+    std::atomic<bool>* bailout;
 };
 
-void AddToCommandBuffer(ThreadTestData *);
-void UpdateDescriptor(ThreadTestData *);
-#endif  // GTEST_IS_THREADSAFE
+void AddToCommandBuffer(ThreadTestData*);
+void UpdateDescriptor(ThreadTestData*);
+#endif // GTEST_IS_THREADSAFE
 
-void ReleaseNullFence(ThreadTestData *);
+void ReleaseNullFence(ThreadTestData*);

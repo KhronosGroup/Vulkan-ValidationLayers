@@ -14,8 +14,8 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "pass.h"
+#include <stdint.h>
 
 namespace gpuav {
 namespace spirv {
@@ -44,5 +44,5 @@ class PostProcessDescriptorIndexingPass : public Pass {
     uint32_t variable_id_ = 0;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

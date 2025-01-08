@@ -18,8 +18,12 @@
 
 #include "vulkan/vulkan_core.h"
 
-VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProperties *layer_extensions, uint32_t *pCount,
-                                     VkExtensionProperties *pProperties);
+VkResult util_GetExtensionProperties(const uint32_t count,
+                                     const VkExtensionProperties* layer_extensions,
+                                     uint32_t* pCount,
+                                     VkExtensionProperties* pProperties);
 
-VkResult util_GetLayerProperties(const uint32_t count, const VkLayerProperties *layer_properties, uint32_t *pCount,
-                                 VkLayerProperties *pProperties);
+VkResult util_GetLayerProperties(const uint32_t count,
+                                 const VkLayerProperties* layer_properties,
+                                 uint32_t* pCount,
+                                 VkLayerProperties* pProperties);

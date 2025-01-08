@@ -8,12 +8,12 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include <stdio.h>
-#include <iostream>
-#include <filesystem>
-#include <vector>
-#include <cstring>
 #include <chrono>
+#include <cstring>
+#include <filesystem>
+#include <iostream>
+#include <stdio.h>
+#include <vector>
 
 #include "module.h"
 
@@ -21,14 +21,16 @@ static constexpr uint32_t kDefaultShaderId = 23;
 static constexpr uint32_t kInstDefaultDescriptorSet = 3;
 static constexpr uint32_t kInstDefaultDebugPrintfBinding = 0;
 
-// While desireable for the instrumentation to be agnostic of the incoming pipeline, we do need to know how the descriptors are laid
-// out in the descriptor set layout
+// While desireable for the instrumentation to be agnostic of the incoming pipeline, we do need to know how the
+// descriptors are laid out in the descriptor set layout
 //
 // This represents a shader that looks like
 //   layout(set = 0, binding = 0) type a[2];
 //   layout(set = 0, binding = 1) type b;
 //   layout(set = 0, binding = 2) type c[2];
-const std::vector<std::vector<gpuav::spirv::BindingLayout>> kSetIndexToBindingsLayoutLUT = {{{0, 2}, {2, 1}, {3, 2}}};
+const std::vector<std::vector<gpuav::spirv::BindingLayout>> kSetIndexToBindingsLayoutLUT = {
+    { { 0, 2 }, { 2, 1 }, { 3, 2 } }
+};
 
 static bool timer = false;
 static bool print_debug_info = false;
@@ -47,7 +49,8 @@ void PrintUsage(const char* program) {
 
 USAGE: %s <input> -o <output> <passes>
 )",
-           program, program);
+           program,
+           program);
 
     printf(R"(
   --all-passes
@@ -117,7 +120,7 @@ bool ParseFlags(int argc, char** argv, const char** out_file) {
         }
     }
 
-    return true;  // valid
+    return true; // valid
 }
 
 int main(int argc, char** argv) {

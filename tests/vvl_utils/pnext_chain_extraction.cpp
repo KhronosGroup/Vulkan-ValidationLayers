@@ -38,7 +38,7 @@ TEST(PnextChainExtract, Extract1) {
     vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 extracted_chain{};
     void* chain_begin = vvl::PnextChainExtract(&s4, extracted_chain);
 
-    const std::vector<VkStructureType> expected_sTypes = {s1.sType, s2.sType, s3.sType, s4.sType};
+    const std::vector<VkStructureType> expected_sTypes = { s1.sType, s2.sType, s3.sType, s4.sType };
     ASSERT_TRUE(FindSTypes(chain_begin, expected_sTypes));
 }
 
@@ -60,7 +60,7 @@ TEST(PnextChainExtract, Extract2) {
     vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 extracted_chain{};
     void* chain_begin = vvl::PnextChainExtract(&s5, extracted_chain);
 
-    const std::vector<VkStructureType> expected_sTypes = {s1.sType, s2.sType, s3.sType, s4.sType, s5.sType};
+    const std::vector<VkStructureType> expected_sTypes = { s1.sType, s2.sType, s3.sType, s4.sType, s5.sType };
     ASSERT_TRUE(FindSTypes(chain_begin, expected_sTypes));
 }
 
@@ -89,7 +89,7 @@ TEST(PnextChainExtract, ExtractAddRemove1) {
     vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 extracted_chain{};
     void* chain_begin = vvl::PnextChainExtract(&s4, extracted_chain);
 
-    std::vector<VkStructureType> expected_sTypes = {s1.sType, s2.sType, s3.sType, s4.sType};
+    std::vector<VkStructureType> expected_sTypes = { s1.sType, s2.sType, s3.sType, s4.sType };
     ASSERT_TRUE(FindSTypes(chain_begin, expected_sTypes));
 
     {
@@ -114,7 +114,7 @@ TEST(PnextChainExtract, ExtractAddRemove2) {
     vvl::PnextChainVkPhysicalDeviceImageFormatInfo2 extracted_chain{};
     void* chain_begin = vvl::PnextChainExtract(&s4, extracted_chain);
 
-    std::vector<VkStructureType> expected_sTypes = {s1.sType, s2.sType, s3.sType, s4.sType};
+    std::vector<VkStructureType> expected_sTypes = { s1.sType, s2.sType, s3.sType, s4.sType };
     ASSERT_TRUE(FindSTypes(chain_begin, expected_sTypes));
 
     {

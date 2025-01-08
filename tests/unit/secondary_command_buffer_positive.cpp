@@ -22,11 +22,14 @@ TEST_F(PositiveSecondaryCommandBuffer, Barrier) {
 
     // A renderpass with a single subpass that declared a self-dependency
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentDescription(
+        VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
     rp.AddColorAttachment(0);
-    rp.AddSubpassDependency(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                            VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT);
+    rp.AddSubpassDependency(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            VK_ACCESS_SHADER_WRITE_BIT,
+                            VK_ACCESS_SHADER_WRITE_BIT);
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -36,33 +39,50 @@ TEST_F(PositiveSecondaryCommandBuffer, Barrier) {
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &imageView.handle());
 
     m_command_buffer.Begin();
-    VkRenderPassBeginInfo rpbi =
-        vku::InitStruct<VkRenderPassBeginInfo>(nullptr, rp.Handle(), fb.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
+    VkRenderPassBeginInfo rpbi = vku::InitStruct<VkRenderPassBeginInfo>(
+        nullptr, rp.Handle(), fb.handle(), VkRect2D{ { 0, 0 }, { 32u, 32u } }, 0u, nullptr);
     vk::CmdBeginRenderPass(m_command_buffer.handle(), &rpbi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-    vkt::CommandPool pool(*m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandPool pool(
+        *m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     vkt::CommandBuffer secondary(*m_device, pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-    VkCommandBufferInheritanceInfo cbii = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
-                                           nullptr,
-                                           rp.Handle(),
-                                           0,
-                                           VK_NULL_HANDLE,  // Set to NULL FB handle intentionally to flesh out any errors
-                                           VK_FALSE,
-                                           0,
-                                           0};
-    VkCommandBufferBeginInfo cbbi = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
-                                     VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT,
-                                     &cbii};
+    VkCommandBufferInheritanceInfo cbii = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        nullptr,
+        rp.Handle(),
+        0,
+        VK_NULL_HANDLE, // Set to NULL FB handle intentionally to flesh out any errors
+        VK_FALSE,
+        0,
+        0
+    };
+    VkCommandBufferBeginInfo cbbi = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                      nullptr,
+                                      VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT |
+                                          VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT,
+                                      &cbii };
     vk::BeginCommandBuffer(secondary.handle(), &cbbi);
     VkMemoryBarrier mem_barrier = vku::InitStructHelper();
     mem_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    vk::CmdPipelineBarrier(secondary.handle(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                           VK_DEPENDENCY_BY_REGION_BIT, 1, &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(secondary.handle(),
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT,
+                           1,
+                           &mem_barrier,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
 
-    image.ImageMemoryBarrier(secondary, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT,
-                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+    image.ImageMemoryBarrier(secondary,
+                             VK_IMAGE_ASPECT_COLOR_BIT,
+                             VK_ACCESS_SHADER_WRITE_BIT,
+                             VK_ACCESS_SHADER_WRITE_BIT,
+                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     secondary.End();
 
@@ -75,9 +95,10 @@ TEST_F(PositiveSecondaryCommandBuffer, Barrier) {
 }
 
 TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalled) {
-    TEST_DESCRIPTION(
-        "This test is to verify that when vkCmdClearAttachments is called by a secondary commandbuffer, the validation layers do "
-        "not throw an error if the primary commandbuffer begins a renderpass before executing the secondary commandbuffer.");
+    TEST_DESCRIPTION("This test is to verify that when vkCmdClearAttachments is called by a secondary commandbuffer, "
+                     "the validation layers do "
+                     "not throw an error if the primary commandbuffer begins a renderpass before executing the "
+                     "secondary commandbuffer.");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -103,14 +124,15 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalled) {
     color_attachment.clearValue.color.float32[2] = 0.0;
     color_attachment.clearValue.color.float32[3] = 0.0;
     color_attachment.colorAttachment = 0;
-    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
+    VkClearRect clear_rect = { { { 0, 0 }, { m_width, m_height } }, 0, 1 };
     vk::CmdClearAttachments(secondary.handle(), 1, &color_attachment, 1, &clear_rect);
     secondary.End();
     // Modify clear rect here to verify that it doesn't cause validation error
-    clear_rect = {{{0, 0}, {99999999, 99999999}}, 0, 0};
+    clear_rect = { { { 0, 0 }, { 99999999, 99999999 } }, 0, 0 };
 
     m_command_buffer.Begin();
-    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    vk::CmdBeginRenderPass(
+        m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary.handle());
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -124,9 +146,11 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalledWithoutFb) {
     RETURN_IF_SKIP(Init());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -139,20 +163,21 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalledWithoutFb) {
     info.pInheritanceInfo = &hinfo;
 
     secondary.Begin(&info);
-    VkClearAttachment color_attachment = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VkClearValue{}};
+    VkClearAttachment color_attachment = { VK_IMAGE_ASPECT_COLOR_BIT, 0, VkClearValue{} };
 
     VkClearAttachment ds_attachment = {};
     ds_attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     ds_attachment.clearValue.depthStencil.depth = 0.2f;
     ds_attachment.clearValue.depthStencil.stencil = 1;
 
-    const std::array clear_attachments = {color_attachment, ds_attachment};
-    VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
+    const std::array clear_attachments = { color_attachment, ds_attachment };
+    VkClearRect clear_rect = { { { 0, 0 }, { m_width, m_height } }, 0, 1 };
     vk::CmdClearAttachments(secondary.handle(), size32(clear_attachments), clear_attachments.data(), 1, &clear_rect);
     secondary.End();
 
     m_command_buffer.Begin();
-    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    vk::CmdBeginRenderPass(
+        m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary.handle());
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -215,7 +240,8 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearColorAttachments) {
     command_buffer_allocate_info.commandBufferCount = 1;
 
     VkCommandBuffer secondary_command_buffer;
-    ASSERT_EQ(VK_SUCCESS, vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &secondary_command_buffer));
+    ASSERT_EQ(VK_SUCCESS,
+              vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &secondary_command_buffer));
     VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
     VkCommandBufferInheritanceInfo command_buffer_inheritance_info = vku::InitStructHelper();
     command_buffer_inheritance_info.renderPass = m_renderPass;
@@ -233,18 +259,20 @@ TEST_F(PositiveSecondaryCommandBuffer, ClearColorAttachments) {
     color_attachment.clearValue.color.float32[2] = 0;
     color_attachment.clearValue.color.float32[3] = 0;
     color_attachment.colorAttachment = 0;
-    VkClearRect clear_rect = {{{0, 0}, {32, 32}}, 0, 1};
+    VkClearRect clear_rect = { { { 0, 0 }, { 32, 32 } }, 0, 1 };
     vk::CmdClearAttachments(secondary_command_buffer, 1, &color_attachment, 1, &clear_rect);
     vk::EndCommandBuffer(secondary_command_buffer);
     m_command_buffer.Begin();
-    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    vk::CmdBeginRenderPass(
+        m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary_command_buffer);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
 
 TEST_F(PositiveSecondaryCommandBuffer, ImageLayoutTransitions) {
-    TEST_DESCRIPTION("Perform an image layout transition in a secondary command buffer followed by a transition in the primary.");
+    TEST_DESCRIPTION(
+        "Perform an image layout transition in a secondary command buffer followed by a transition in the primary.");
     RETURN_IF_SKIP(Init());
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
     InitRenderTarget();
@@ -280,8 +308,16 @@ TEST_F(PositiveSecondaryCommandBuffer, ImageLayoutTransitions) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(secondary_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &img_barrier);
+    vk::CmdPipelineBarrier(secondary_command_buffer,
+                           VK_PIPELINE_STAGE_HOST_BIT,
+                           VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &img_barrier);
     vk::EndCommandBuffer(secondary_command_buffer);
 
     // Now update primary cmd buffer to execute secondary and transitions image
@@ -301,8 +337,16 @@ TEST_F(PositiveSecondaryCommandBuffer, ImageLayoutTransitions) {
     img_barrier2.subresourceRange.baseMipLevel = 0;
     img_barrier2.subresourceRange.layerCount = 1;
     img_barrier2.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(primary_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &img_barrier2);
+    vk::CmdPipelineBarrier(primary_command_buffer,
+                           VK_PIPELINE_STAGE_HOST_BIT,
+                           VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &img_barrier2);
     vk::EndCommandBuffer(primary_command_buffer);
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = 1;
@@ -328,8 +372,17 @@ TEST_F(PositiveSecondaryCommandBuffer, EventStageMask) {
 
     commandBuffer.Begin();
     vk::CmdExecuteCommands(commandBuffer.handle(), 1, &secondary.handle());
-    vk::CmdWaitEvents(commandBuffer.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(commandBuffer.handle(),
+                      1,
+                      &event.handle(),
+                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                      0,
+                      nullptr,
+                      0,
+                      nullptr,
+                      0,
+                      nullptr);
     commandBuffer.End();
 
     m_default_queue->Submit(commandBuffer);
@@ -350,8 +403,17 @@ TEST_F(PositiveSecondaryCommandBuffer, EventsIn) {
     VkCommandBuffer scb = secondary_cb.handle();
     secondary_cb.Begin();
     vk::CmdSetEvent(scb, ev_handle, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
-    vk::CmdWaitEvents(scb, 1, &ev_handle, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0,
-                      nullptr, 0, nullptr);
+    vk::CmdWaitEvents(scb,
+                      1,
+                      &ev_handle,
+                      VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+                      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                      0,
+                      nullptr,
+                      0,
+                      nullptr,
+                      0,
+                      nullptr);
     secondary_cb.End();
     m_command_buffer.Begin();
     vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &scb);

@@ -11,11 +11,11 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/render_pass_helper.h"
-#include "../framework/descriptor_helper.h"
 #include "../framework/queue_submit_context.h"
+#include "../framework/render_pass_helper.h"
 #include <utils/vk_layer_utils.h>
 
 class NegativeSyncVal : public VkSyncValTest {};
@@ -32,10 +32,10 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     vkt::Buffer buffer_b(*m_device, 256, transfer_usage, mem_prop);
     vkt::Buffer buffer_c(*m_device, 256, transfer_usage, mem_prop);
 
-    VkBufferCopy region = {0, 0, 256};
-    VkBufferCopy front2front = {0, 0, 128};
-    VkBufferCopy front2back = {0, 128, 128};
-    VkBufferCopy back2back = {128, 128, 128};
+    VkBufferCopy region = { 0, 0, 256 };
+    VkBufferCopy front2front = { 0, 0, 128 };
+    VkBufferCopy front2back = { 0, 128, 128 };
+    VkBufferCopy back2back = { 128, 128, 128 };
 
     auto cb = m_command_buffer.handle();
     m_command_buffer.Begin();
@@ -46,14 +46,23 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     VkBufferMemoryBarrier buffer_barrier = vku::InitStructHelper();
     buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier.buffer = buffer_a.handle();
     buffer_barrier.offset = 0;
     buffer_barrier.size = 256;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &buffer_barrier, 0,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           1,
+                           &buffer_barrier,
+                           0,
                            nullptr);
 
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
@@ -67,23 +76,25 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_b.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
-    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer thus doesn't
+    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer
+    // thus doesn't
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     VkMemoryBarrier mem_barrier = vku::InitStructHelper();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
+    vk::CmdPipelineBarrier(
+        cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0, nullptr);
 
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;  // Protect C but not B
+    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT; // Protect C but not B
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
+    vk::CmdPipelineBarrier(
+        cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0, nullptr);
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_b.handle(), buffer_c.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
@@ -134,8 +145,16 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     vkt::CommandBuffer secondary_cb3(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb3 = secondary_cb3.handle();
     secondary_cb3.Begin();
-    vk::CmdPipelineBarrier(secondary_cb3.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                           nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(secondary_cb3.handle(),
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
     secondary_cb3.End();
 
     vkt::CommandBuffer secondary_cb4(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -159,7 +178,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     // This is also a "SYNC-HAZARD-WRITE-AFTER-WRITE" present, but only the first hazard is reported.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     {
-        VkCommandBuffer two_cbs[2] = {scb1, scb2};
+        VkCommandBuffer two_cbs[2] = { scb1, scb2 };
         vk::CmdExecuteCommands(cb, 2, two_cbs);
     }
     m_errorMonitor->VerifyFound();
@@ -170,7 +189,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     m_command_buffer.Begin();
     {
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-        VkCommandBuffer two_cbs[2] = {scb1, scb4};
+        VkCommandBuffer two_cbs[2] = { scb1, scb4 };
         vk::CmdExecuteCommands(cb, 2, two_cbs);
         m_errorMonitor->VerifyFound();
     }
@@ -180,7 +199,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazards) {
     m_command_buffer.Reset();
     m_command_buffer.Begin();
     {
-        VkCommandBuffer three_cbs[3] = {scb1, scb3, scb4};
+        VkCommandBuffer three_cbs[3] = { scb1, scb3, scb4 };
         vk::CmdExecuteCommands(cb, 3, three_cbs);
     }
     m_command_buffer.End();
@@ -218,10 +237,10 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
     vkt::Buffer buffer_b(*m_device, 256, transfer_usage, mem_prop);
     vkt::Buffer buffer_c(*m_device, 256, transfer_usage, mem_prop);
 
-    VkBufferCopy region = {0, 0, 256};
-    VkBufferCopy front2front = {0, 0, 128};
-    VkBufferCopy front2back = {0, 128, 128};
-    VkBufferCopy back2back = {128, 128, 128};
+    VkBufferCopy region = { 0, 0, 256 };
+    VkBufferCopy front2front = { 0, 0, 128 };
+    VkBufferCopy front2back = { 0, 128, 128 };
+    VkBufferCopy back2back = { 128, 128, 128 };
 
     auto cb = m_command_buffer.handle();
     m_command_buffer.Begin();
@@ -232,7 +251,8 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     {
         VkBufferMemoryBarrier2 buffer_barrier = vku::InitStructHelper();
         buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
@@ -259,10 +279,12 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_b.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
-    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer thus doesn't
+    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer
+    // thus doesn't
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     {
         VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
         mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
@@ -277,7 +299,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
         vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
 
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-        mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;  // Protect C but not B
+        mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT; // Protect C but not B
         mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
         vk::CmdPipelineBarrier2KHR(cb, &dep_info);
         vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_b.handle(), buffer_c.handle(), 1, &region);
@@ -288,7 +310,8 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
 }
 
 struct ClearAttachmentHazardHelper {
-    static constexpr VkImageUsageFlags kTransferUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    static constexpr VkImageUsageFlags kTransferUsage =
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     const uint32_t width = 256;
     const uint32_t height = 128;
@@ -308,16 +331,9 @@ struct ClearAttachmentHazardHelper {
     vkt::ImageView rt_view;
     vkt::ImageView ds_view;
 
-    ClearAttachmentHazardHelper(VkLayerTest& test_, vkt::Device& device_, vkt::Queue& queue_, vkt::CommandBuffer& cb_)
-        : test(test_),
-          device(device_),
-          queue(queue_),
-          command_buffer(cb_),
-          ds_format(FindSupportedDepthStencilFormat(test_.Gpu())),
-          image(),
-          image_ds(),
-          rt(),
-          ds() {
+    ClearAttachmentHazardHelper(VkLayerTest& test_, vkt::Device& device_, vkt::Queue& queue_, vkt::CommandBuffer& cb_) :
+        test(test_), device(device_), queue(queue_), command_buffer(cb_),
+        ds_format(FindSupportedDepthStencilFormat(test_.Gpu())), image(), image_ds(), rt(), ds() {
         auto image_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, rt_format, transfer_usage);
 
         image.init(device, image_ci, 0);
@@ -350,28 +366,33 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         VkImage src_image;
         VkImage dst_image;
     };
-    const AspectInfo aspect_infos[] = {{VK_IMAGE_ASPECT_COLOR_BIT, image, rt},
-                                       {VK_IMAGE_ASPECT_DEPTH_BIT, image_ds, ds},
-                                       {VK_IMAGE_ASPECT_STENCIL_BIT, image_ds, ds}};
+    const AspectInfo aspect_infos[] = { { VK_IMAGE_ASPECT_COLOR_BIT, image, rt },
+                                        { VK_IMAGE_ASPECT_DEPTH_BIT, image_ds, ds },
+                                        { VK_IMAGE_ASPECT_STENCIL_BIT, image_ds, ds } };
 
     // WAW hazard: copy to render target then clear it. Test each aspect (color/depth/stencil).
     for (const auto& info : aspect_infos) {
-        const VkClearAttachment clear_attachment = {VkImageAspectFlags(info.aspect)};
+        const VkClearAttachment clear_attachment = { VkImageAspectFlags(info.aspect) };
 
         VkClearRect clear_rect = {};
-        clear_rect.rect.offset = {0, 0};
-        clear_rect.rect.extent = {width / 2, height / 2};
+        clear_rect.rect.offset = { 0, 0 };
+        clear_rect.rect.extent = { width / 2, height / 2 };
         clear_rect.baseArrayLayer = 0;
         clear_rect.layerCount = 1;
 
         VkImageCopy copy_region = {};
-        copy_region.srcSubresource = {VkImageAspectFlags(info.aspect), 0, 0, 1};
-        copy_region.dstSubresource = {VkImageAspectFlags(info.aspect), 0, 0, 1};
-        copy_region.extent = {width, height, 1};
+        copy_region.srcSubresource = { VkImageAspectFlags(info.aspect), 0, 0, 1 };
+        copy_region.dstSubresource = { VkImageAspectFlags(info.aspect), 0, 0, 1 };
+        copy_region.extent = { width, height, 1 };
 
         command_buffer.Begin();
         // Write 1
-        vk::CmdCopyImage(command_buffer, info.src_image, VK_IMAGE_LAYOUT_GENERAL, info.dst_image, VK_IMAGE_LAYOUT_GENERAL, 1,
+        vk::CmdCopyImage(command_buffer,
+                         info.src_image,
+                         VK_IMAGE_LAYOUT_GENERAL,
+                         info.dst_image,
+                         VK_IMAGE_LAYOUT_GENERAL,
+                         1,
                          &copy_region);
         begin_render(command_buffer);
 
@@ -390,18 +411,18 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
     // RAW hazard: clear render target then copy from it.
     // This tests that vkCmdClearAttachments correctly updates access state, so vkCmdCopyImage can detect hazard.
     {
-        const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_STENCIL_BIT};
+        const VkClearAttachment clear_attachment = { VK_IMAGE_ASPECT_STENCIL_BIT };
 
         VkClearRect clear_rect = {};
-        clear_rect.rect.offset = {0, 0};
-        clear_rect.rect.extent = {width, height};
+        clear_rect.rect.offset = { 0, 0 };
+        clear_rect.rect.extent = { width, height };
         clear_rect.baseArrayLayer = 0;
         clear_rect.layerCount = 1;
 
         VkImageCopy copy_region = {};
-        copy_region.srcSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
-        copy_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
-        copy_region.extent = {width, height, 1};
+        copy_region.srcSubresource = { VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1 };
+        copy_region.dstSubresource = { VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1 };
+        copy_region.extent = { width, height, 1 };
 
         command_buffer.Begin();
         begin_render(command_buffer);
@@ -411,7 +432,8 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
 
         test.SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ-AFTER-WRITE");
         // Read
-        vk::CmdCopyImage(command_buffer, ds, VK_IMAGE_LAYOUT_GENERAL, image_ds, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+        vk::CmdCopyImage(
+            command_buffer, ds, VK_IMAGE_LAYOUT_GENERAL, image_ds, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
         test.VerifyFound();
 
         command_buffer.End();
@@ -422,20 +444,20 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
 
     // RAW hazard: two regions with a single pixel overlap, otherwise the same as the previous scenario.
     {
-        const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_COLOR_BIT};
+        const VkClearAttachment clear_attachment = { VK_IMAGE_ASPECT_COLOR_BIT };
 
         VkClearRect clear_rect = {};
-        clear_rect.rect.offset = {0, 0};
-        clear_rect.rect.extent = {32, 32};
+        clear_rect.rect.offset = { 0, 0 };
+        clear_rect.rect.extent = { 32, 32 };
         clear_rect.baseArrayLayer = 0;
         clear_rect.layerCount = 1;
 
         VkImageCopy copy_region = {};
-        copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        copy_region.srcOffset = {31, 31, 0};
-        copy_region.dstOffset = {31, 31, 0};
-        copy_region.extent = {64, 64, 1};
+        copy_region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+        copy_region.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+        copy_region.srcOffset = { 31, 31, 0 };
+        copy_region.dstOffset = { 31, 31, 0 };
+        copy_region.extent = { 64, 64, 1 };
 
         command_buffer.Begin();
         begin_render(command_buffer);
@@ -454,27 +476,28 @@ void ClearAttachmentHazardHelper::Test(BeginRenderFn& begin_render, EndRenderFn&
         test.DefaultQueue()->Wait();
     }
 
-    // Nudge regions by one pixel compared to the previous test, now they touch but do not overlap. There should be no errors.
-    // Copy to the first region, clear the second region.
+    // Nudge regions by one pixel compared to the previous test, now they touch but do not overlap. There should be no
+    // errors. Copy to the first region, clear the second region.
     {
-        const VkClearAttachment clear_attachment = {VK_IMAGE_ASPECT_DEPTH_BIT};
+        const VkClearAttachment clear_attachment = { VK_IMAGE_ASPECT_DEPTH_BIT };
 
         VkClearRect clear_rect = {};
-        clear_rect.rect.offset = {0, 0};
-        clear_rect.rect.extent = {32, 32};
+        clear_rect.rect.offset = { 0, 0 };
+        clear_rect.rect.extent = { 32, 32 };
         clear_rect.baseArrayLayer = 0;
         clear_rect.layerCount = 1;
 
         VkImageCopy copy_region = {};
-        copy_region.srcSubresource = {VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT), 0, 0, 1};
-        copy_region.dstSubresource = {VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT), 0, 0, 1};
-        copy_region.srcOffset = {32, 32, 0};
-        copy_region.dstOffset = {32, 32, 0};
-        copy_region.extent = {64, 64, 1};
+        copy_region.srcSubresource = { VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT), 0, 0, 1 };
+        copy_region.dstSubresource = { VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT), 0, 0, 1 };
+        copy_region.srcOffset = { 32, 32, 0 };
+        copy_region.dstOffset = { 32, 32, 0 };
+        copy_region.extent = { 64, 64, 1 };
 
         command_buffer.Begin();
         // Write 1
-        vk::CmdCopyImage(command_buffer, image_ds, VK_IMAGE_LAYOUT_GENERAL, ds, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+        vk::CmdCopyImage(
+            command_buffer, image_ds, VK_IMAGE_LAYOUT_GENERAL, ds, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
         begin_render(command_buffer);
         // Write 2
         vk::CmdClearAttachments(command_buffer, 1, &clear_attachment, 1, &clear_rect);
@@ -509,12 +532,12 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
         attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
         return attachment;
     };
-    const VkAttachmentDescription attachments[] = {attachment_without_load_store(helper.rt_format),
-                                                   attachment_without_load_store(helper.ds_format)};
+    const VkAttachmentDescription attachments[] = { attachment_without_load_store(helper.rt_format),
+                                                    attachment_without_load_store(helper.ds_format) };
 
-    const VkImageView views[] = {helper.rt_view, helper.ds_view};
-    const VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
-    const VkAttachmentReference depth_ref = {1, VK_IMAGE_LAYOUT_GENERAL};
+    const VkImageView views[] = { helper.rt_view, helper.ds_view };
+    const VkAttachmentReference color_ref = { 0, VK_IMAGE_LAYOUT_GENERAL };
+    const VkAttachmentReference depth_ref = { 1, VK_IMAGE_LAYOUT_GENERAL };
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -536,7 +559,9 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsHazards) {
     rpbi.renderArea.extent.width = helper.width;
     rpbi.renderArea.extent.height = helper.height;
 
-    auto begin_rendering = [&rpbi](vkt::CommandBuffer& cb) { vk::CmdBeginRenderPass(cb, &rpbi, VK_SUBPASS_CONTENTS_INLINE); };
+    auto begin_rendering = [&rpbi](vkt::CommandBuffer& cb) {
+        vk::CmdBeginRenderPass(cb, &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    };
     auto end_rendering = [](vkt::CommandBuffer& cb) { vk::CmdEndRenderPass(cb); };
     helper.Test(begin_rendering, end_rendering);
 }
@@ -569,7 +594,7 @@ TEST_F(NegativeSyncVal, CmdClearAttachmentsDynamicHazards) {
     depth_attachment.clearValue.color = m_clear_color;
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea.extent = {helper.width, helper.height};
+    rendering_info.renderArea.extent = { helper.width, helper.height };
     rendering_info.layerCount = 1;
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachments = &color_attachment;
@@ -599,21 +624,21 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     vkt::Image image_c_alias(*m_device, image_ci, vkt::no_mem);
     image_c_alias.BindMemory(image_c.Memory(), 0);
 
-    VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
-    VkImageSubresourceLayers layers_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkImageSubresourceLayers layers_1{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1};
-    VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkOffset3D half_offset{64, 64, 0};
-    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
-    VkExtent3D half_extent{64, 64, 1};    // <-- image type is 2D
+    VkImageSubresourceLayers layers_all{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2 };
+    VkImageSubresourceLayers layers_0{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkImageSubresourceLayers layers_1{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1 };
+    VkImageSubresourceRange full_subresource_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2 };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkOffset3D half_offset{ 64, 64, 0 };
+    VkExtent3D full_extent{ 128, 128, 1 }; // <-- image type is 2D
+    VkExtent3D half_extent{ 64, 64, 1 };   // <-- image type is 2D
 
-    VkImageCopy full_region = {layers_all, zero_offset, layers_all, zero_offset, full_extent};
-    VkImageCopy region_0_to_0 = {layers_0, zero_offset, layers_0, zero_offset, full_extent};
-    VkImageCopy region_0_to_1 = {layers_0, zero_offset, layers_1, zero_offset, full_extent};
-    VkImageCopy region_1_to_1 = {layers_1, zero_offset, layers_1, zero_offset, full_extent};
-    VkImageCopy region_0_front = {layers_0, zero_offset, layers_0, zero_offset, half_extent};
-    VkImageCopy region_0_back = {layers_0, half_offset, layers_0, half_offset, half_extent};
+    VkImageCopy full_region = { layers_all, zero_offset, layers_all, zero_offset, full_extent };
+    VkImageCopy region_0_to_0 = { layers_0, zero_offset, layers_0, zero_offset, full_extent };
+    VkImageCopy region_0_to_1 = { layers_0, zero_offset, layers_1, zero_offset, full_extent };
+    VkImageCopy region_1_to_1 = { layers_1, zero_offset, layers_1, zero_offset, full_extent };
+    VkImageCopy region_0_front = { layers_0, zero_offset, layers_0, zero_offset, half_extent };
+    VkImageCopy region_0_back = { layers_0, half_offset, layers_0, half_offset, half_extent };
 
     m_command_buffer.Begin();
 
@@ -623,13 +648,16 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
 
     auto cb = m_command_buffer.handle();
 
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
     m_errorMonitor->VerifyFound();
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -637,64 +665,95 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     image_barrier.subresourceRange = full_subresource_range;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
                            &image_barrier);
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_0);
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_1_to_1);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_0);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_1_to_1);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_1);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
     m_errorMonitor->VerifyFound();
 
-    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer thus doesn't
+    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer
+    // thus doesn't
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     VkMemoryBarrier mem_barrier = vku::InitStructHelper();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdPipelineBarrier(
+        cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
 
     // Use barrier to protect last reader, but not last writer...
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;  // Protects C but not B
+    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT; // Protects C but not B
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
-    vk::CmdCopyImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdPipelineBarrier(
+        cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdCopyImage(
+        cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_back);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_back);
 
     // Safe all transfer accesses
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
+    vk::CmdPipelineBarrier(
+        cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0, nullptr);
 
     // Write to both versions of an alias
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
+    vk::CmdCopyImage(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c_alias.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_c_alias.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_0_front);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c_alias.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_c_alias.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_0_back);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_back);
+    vk::CmdCopyImage(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_back);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -704,13 +763,15 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     vkt::CommandBuffer secondary_cb1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.Begin();
-    vk::CmdCopyImage(scb1, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        scb1, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
     secondary_cb1.End();
 
     auto record_primary = [&]() {
         m_command_buffer.Reset();
         m_command_buffer.Begin();
-        vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+        vk::CmdCopyImage(
+            cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
         vk::CmdExecuteCommands(cb, 1, &scb1);
         m_command_buffer.End();
     };
@@ -722,9 +783,18 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     // With a barrier...
     secondary_cb1.Reset();
     secondary_cb1.Begin();
-    vk::CmdPipelineBarrier(scb1, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
+    vk::CmdPipelineBarrier(scb1,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           1,
+                           &mem_barrier,
+                           0,
+                           nullptr,
+                           0,
                            nullptr);
-    vk::CmdCopyImage(scb1, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        scb1, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
     secondary_cb1.End();
     record_primary();
 
@@ -738,7 +808,15 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     secondary_cb1.Reset();
     secondary_cb1.Begin();
     // Use the wrong stage, get an error
-    vk::CmdPipelineBarrier(scb1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1,
+    vk::CmdPipelineBarrier(scb1,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
                            &image_transition_barrier);
     secondary_cb1.End();
 
@@ -747,9 +825,14 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
     m_errorMonitor->VerifyFound();
 
     // CmdResolveImage hazard testing
-    VkImageFormatProperties formProps = {{0, 0, 0}, 0, 0, 0, 0};
-    vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D,
-                                               VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0, &formProps);
+    VkImageFormatProperties formProps = { { 0, 0, 0 }, 0, 0, 0, 0 };
+    vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(),
+                                               VK_FORMAT_R8G8B8A8_UNORM,
+                                               VK_IMAGE_TYPE_2D,
+                                               VK_IMAGE_TILING_OPTIMAL,
+                                               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                               0,
+                                               &formProps);
 
     if (!(formProps.sampleCounts & VK_SAMPLE_COUNT_2_BIT)) {
         printf("CmdResolveImage Test requires unsupported VK_SAMPLE_COUNT_2_BIT feature. Skipped.\n");
@@ -758,30 +841,51 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
         vkt::Image image_s2_a(*m_device, image_ci);
         vkt::Image image_s2_b(*m_device, image_ci);
 
-        VkImageResolve r_full_region = {layers_all, zero_offset, layers_all, zero_offset, full_extent};
+        VkImageResolve r_full_region = { layers_all, zero_offset, layers_all, zero_offset, full_extent };
 
         m_command_buffer.Reset();
         m_command_buffer.Begin();
         image_s2_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
         image_s2_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-        vk::CmdResolveImage(cb, image_s2_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+        vk::CmdResolveImage(cb,
+                            image_s2_a.handle(),
+                            VK_IMAGE_LAYOUT_GENERAL,
+                            image_a.handle(),
+                            VK_IMAGE_LAYOUT_GENERAL,
+                            1,
                             &r_full_region);
         m_command_buffer.End();
 
         m_command_buffer.Reset();
         m_command_buffer.Begin();
-        vk::CmdCopyImage(cb, image_s2_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_s2_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+        vk::CmdCopyImage(cb,
+                         image_s2_b.handle(),
+                         VK_IMAGE_LAYOUT_GENERAL,
+                         image_s2_a.handle(),
+                         VK_IMAGE_LAYOUT_GENERAL,
+                         1,
                          &full_region);
-        vk::CmdCopyImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+        vk::CmdCopyImage(
+            cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
 
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-        vk::CmdResolveImage(cb, image_s2_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+        vk::CmdResolveImage(cb,
+                            image_s2_a.handle(),
+                            VK_IMAGE_LAYOUT_GENERAL,
+                            image_a.handle(),
+                            VK_IMAGE_LAYOUT_GENERAL,
+                            1,
                             &r_full_region);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-        vk::CmdResolveImage(cb, image_s2_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+        vk::CmdResolveImage(cb,
+                            image_s2_b.handle(),
+                            VK_IMAGE_LAYOUT_GENERAL,
+                            image_b.handle(),
+                            VK_IMAGE_LAYOUT_GENERAL,
+                            1,
                             &r_full_region);
         m_errorMonitor->VerifyFound();
         m_command_buffer.End();
@@ -802,21 +906,21 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
     vkt::Image image_b(*m_device, image_ci);
     vkt::Image image_c(*m_device, image_ci);
 
-    VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
-    VkImageSubresourceLayers layers_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkImageSubresourceLayers layers_1{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1};
-    VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkOffset3D half_offset{64, 64, 0};
-    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
-    VkExtent3D half_extent{64, 64, 1};    // <-- image type is 2D
+    VkImageSubresourceLayers layers_all{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2 };
+    VkImageSubresourceLayers layers_0{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkImageSubresourceLayers layers_1{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1 };
+    VkImageSubresourceRange full_subresource_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2 };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkOffset3D half_offset{ 64, 64, 0 };
+    VkExtent3D full_extent{ 128, 128, 1 }; // <-- image type is 2D
+    VkExtent3D half_extent{ 64, 64, 1 };   // <-- image type is 2D
 
-    VkImageCopy full_region = {layers_all, zero_offset, layers_all, zero_offset, full_extent};
-    VkImageCopy region_0_to_0 = {layers_0, zero_offset, layers_0, zero_offset, full_extent};
-    VkImageCopy region_0_to_1 = {layers_0, zero_offset, layers_1, zero_offset, full_extent};
-    VkImageCopy region_1_to_1 = {layers_1, zero_offset, layers_1, zero_offset, full_extent};
-    VkImageCopy region_0_front = {layers_0, zero_offset, layers_0, zero_offset, half_extent};
-    VkImageCopy region_0_back = {layers_0, half_offset, layers_0, half_offset, half_extent};
+    VkImageCopy full_region = { layers_all, zero_offset, layers_all, zero_offset, full_extent };
+    VkImageCopy region_0_to_0 = { layers_0, zero_offset, layers_0, zero_offset, full_extent };
+    VkImageCopy region_0_to_1 = { layers_0, zero_offset, layers_1, zero_offset, full_extent };
+    VkImageCopy region_1_to_1 = { layers_1, zero_offset, layers_1, zero_offset, full_extent };
+    VkImageCopy region_0_front = { layers_0, zero_offset, layers_0, zero_offset, half_extent };
+    VkImageCopy region_0_back = { layers_0, half_offset, layers_0, half_offset, half_extent };
 
     m_command_buffer.Begin();
 
@@ -826,13 +930,16 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
 
     auto cb = m_command_buffer.handle();
 
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
     m_errorMonitor->VerifyFound();
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     {
         VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
         image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
@@ -849,21 +956,27 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
         vk::CmdPipelineBarrier2KHR(cb, &dep_info);
     }
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_0);
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_1_to_1);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_0);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_1_to_1);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_1);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
     m_errorMonitor->VerifyFound();
 
-    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer thus doesn't
+    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer
+    // thus doesn't
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     {
         VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
         mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
@@ -874,23 +987,28 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
         dep_info.memoryBarrierCount = 1;
         dep_info.pMemoryBarriers = &mem_barrier;
         vk::CmdPipelineBarrier2KHR(cb, &dep_info);
-        vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+        vk::CmdCopyImage(
+            cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
 
         // Use barrier to protect last reader, but not last writer...
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-        mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;  // Protects C but not B
+        mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT; // Protects C but not B
         mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
         vk::CmdPipelineBarrier2KHR(cb, &dep_info);
-        vk::CmdCopyImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+        vk::CmdCopyImage(
+            cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
         m_errorMonitor->VerifyFound();
     }
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_front);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_back);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_back);
 
     m_command_buffer.End();
 }
@@ -905,8 +1023,8 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     const auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 2, format, usage);
     // Verify format
-    bool supported = ImageFormatIsSupported(instance(), Gpu(), image_ci,
-                                            VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
+    bool supported = ImageFormatIsSupported(
+        instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
     if (!supported) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
@@ -916,25 +1034,34 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
     vkt::Image image_b(*m_device, image_ci);
     vkt::Image image_c(*m_device, image_ci);
 
-    VkImageSubresourceLayers layer_all_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 2};
-    VkImageSubresourceLayers layer0_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1};
-    VkImageSubresourceLayers layer0_plane1{VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1};
-    VkImageSubresourceLayers layer1_plane1{VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 1, 1};
+    VkImageSubresourceLayers layer_all_plane0{ VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 2 };
+    VkImageSubresourceLayers layer0_plane0{ VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1 };
+    VkImageSubresourceLayers layer0_plane1{ VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1 };
+    VkImageSubresourceLayers layer1_plane1{ VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 1, 1 };
     VkImageSubresourceRange full_subresource_range{
-        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 1, 0, 2};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkOffset3D one_four_offset{32, 32, 0};
-    VkExtent3D full_extent{128, 128, 1};    // <-- image type is 2D
-    VkExtent3D half_extent{64, 64, 1};      // <-- image type is 2D
-    VkExtent3D one_four_extent{32, 32, 1};  // <-- image type is 2D
+        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 1, 0, 2
+    };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkOffset3D one_four_offset{ 32, 32, 0 };
+    VkExtent3D full_extent{ 128, 128, 1 };   // <-- image type is 2D
+    VkExtent3D half_extent{ 64, 64, 1 };     // <-- image type is 2D
+    VkExtent3D one_four_extent{ 32, 32, 1 }; // <-- image type is 2D
 
-    VkImageCopy region_all_plane0_to_all_plane0 = {layer_all_plane0, zero_offset, layer_all_plane0, zero_offset, full_extent};
-    VkImageCopy region_layer0_plane0_to_layer0_plane0 = {layer0_plane0, zero_offset, layer0_plane0, zero_offset, full_extent};
-    VkImageCopy region_layer0_plane0_to_layer0_plane1 = {layer0_plane0, zero_offset, layer0_plane1, zero_offset, half_extent};
-    VkImageCopy region_layer1_plane1_to_layer1_plane1_front = {layer1_plane1, zero_offset, layer1_plane1, zero_offset,
-                                                               one_four_extent};
-    VkImageCopy region_layer1_plane1_to_layer1_plane1_back = {layer1_plane1, one_four_offset, layer1_plane1, one_four_offset,
-                                                              one_four_extent};
+    VkImageCopy region_all_plane0_to_all_plane0 = {
+        layer_all_plane0, zero_offset, layer_all_plane0, zero_offset, full_extent
+    };
+    VkImageCopy region_layer0_plane0_to_layer0_plane0 = {
+        layer0_plane0, zero_offset, layer0_plane0, zero_offset, full_extent
+    };
+    VkImageCopy region_layer0_plane0_to_layer0_plane1 = {
+        layer0_plane0, zero_offset, layer0_plane1, zero_offset, half_extent
+    };
+    VkImageCopy region_layer1_plane1_to_layer1_plane1_front = {
+        layer1_plane1, zero_offset, layer1_plane1, zero_offset, one_four_extent
+    };
+    VkImageCopy region_layer1_plane1_to_layer1_plane1_back = {
+        layer1_plane1, one_four_offset, layer1_plane1, one_four_offset, one_four_extent
+    };
 
     m_command_buffer.Begin();
 
@@ -944,15 +1071,26 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
 
     auto cb = m_command_buffer.handle();
 
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_all_plane0_to_all_plane0);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_all_plane0_to_all_plane0);
     m_errorMonitor->VerifyFound();
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -960,54 +1098,109 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
     image_barrier.subresourceRange = full_subresource_range;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
                            &image_barrier);
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_layer0_plane0_to_layer0_plane0);
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_layer0_plane0_to_layer0_plane1);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_layer0_plane0_to_layer0_plane1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_all_plane0_to_all_plane0);
     m_errorMonitor->VerifyFound();
 
-    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer thus doesn't
+    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer
+    // thus doesn't
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     VkMemoryBarrier mem_barrier = vku::InitStructHelper();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdPipelineBarrier(
+        cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_all_plane0_to_all_plane0);
 
     // Use barrier to protect last reader, but not last writer...
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;  // Protects C but not B
+    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT; // Protects C but not B
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
-    vk::CmdCopyImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdPipelineBarrier(
+        cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdCopyImage(cb,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_all_plane0_to_all_plane0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_layer1_plane1_to_layer1_plane1_front);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_layer1_plane1_to_layer1_plane1_front);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_layer1_plane1_to_layer1_plane1_back);
 
     m_command_buffer.End();
@@ -1024,16 +1217,16 @@ TEST_F(NegativeSyncVal, CopyLinearImageHazards) {
     vkt::Image image_b(*m_device, image_ci);
     vkt::Image image_c(*m_device, image_ci);
 
-    VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkOffset3D half_offset{64, 64, 0};
-    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
-    VkExtent3D half_extent{64, 64, 1};    // <-- image type is 2D
+    VkImageSubresourceLayers layers_all{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkImageSubresourceRange full_subresource_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkOffset3D half_offset{ 64, 64, 0 };
+    VkExtent3D full_extent{ 128, 128, 1 }; // <-- image type is 2D
+    VkExtent3D half_extent{ 64, 64, 1 };   // <-- image type is 2D
 
-    VkImageCopy full_region = {layers_all, zero_offset, layers_all, zero_offset, full_extent};
-    VkImageCopy region_front = {layers_all, zero_offset, layers_all, zero_offset, half_extent};
-    VkImageCopy region_back = {layers_all, half_offset, layers_all, half_offset, half_extent};
+    VkImageCopy full_region = { layers_all, zero_offset, layers_all, zero_offset, full_extent };
+    VkImageCopy region_front = { layers_all, zero_offset, layers_all, zero_offset, half_extent };
+    VkImageCopy region_back = { layers_all, half_offset, layers_all, half_offset, half_extent };
 
     m_command_buffer.Begin();
 
@@ -1043,13 +1236,16 @@ TEST_F(NegativeSyncVal, CopyLinearImageHazards) {
 
     auto cb = m_command_buffer.handle();
 
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
     m_errorMonitor->VerifyFound();
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1057,26 +1253,47 @@ TEST_F(NegativeSyncVal, CopyLinearImageHazards) {
     image_barrier.subresourceRange = full_subresource_range;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
                            &image_barrier);
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
 
     // Use barrier to protect last reader, but not last writer...
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;  // Protects C but not B
+    image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT; // Protects C but not B
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
                            &image_barrier);
-    vk::CmdCopyImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_front);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_front);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_front);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_front);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_back);
+    vk::CmdCopyImage(
+        cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_back);
 }
 
 TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
@@ -1089,8 +1306,8 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
     VkFormat format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
     const auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_LINEAR);
     // Verify format
-    bool supported = ImageFormatIsSupported(instance(), Gpu(), image_ci,
-                                            VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
+    bool supported = ImageFormatIsSupported(
+        instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
     if (!supported) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
@@ -1100,21 +1317,25 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
     vkt::Image image_b(*m_device, image_ci);
     vkt::Image image_c(*m_device, image_ci);
 
-    VkImageSubresourceLayers layer_all_plane0{VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1};
-    VkImageSubresourceLayers layer_all_plane1{VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1};
+    VkImageSubresourceLayers layer_all_plane0{ VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1 };
+    VkImageSubresourceLayers layer_all_plane1{ VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1 };
     VkImageSubresourceRange full_subresource_range{
-        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 1, 0, 1};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkOffset3D one_four_offset{32, 32, 0};
-    VkExtent3D full_extent{128, 128, 1};    // <-- image type is 2D
-    VkExtent3D half_extent{64, 64, 1};      // <-- image type is 2D
-    VkExtent3D one_four_extent{32, 32, 1};  // <-- image type is 2D
+        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT, 0, 1, 0, 1
+    };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkOffset3D one_four_offset{ 32, 32, 0 };
+    VkExtent3D full_extent{ 128, 128, 1 };   // <-- image type is 2D
+    VkExtent3D half_extent{ 64, 64, 1 };     // <-- image type is 2D
+    VkExtent3D one_four_extent{ 32, 32, 1 }; // <-- image type is 2D
 
-    VkImageCopy region_plane0_to_plane0 = {layer_all_plane0, zero_offset, layer_all_plane0, zero_offset, full_extent};
-    VkImageCopy region_plane0_to_plane1 = {layer_all_plane0, zero_offset, layer_all_plane1, zero_offset, half_extent};
-    VkImageCopy region_plane1_to_plane1_front = {layer_all_plane1, zero_offset, layer_all_plane1, zero_offset, one_four_extent};
-    VkImageCopy region_plane1_to_plane1_back = {layer_all_plane1, one_four_offset, layer_all_plane1, one_four_offset,
-                                                one_four_extent};
+    VkImageCopy region_plane0_to_plane0 = { layer_all_plane0, zero_offset, layer_all_plane0, zero_offset, full_extent };
+    VkImageCopy region_plane0_to_plane1 = { layer_all_plane0, zero_offset, layer_all_plane1, zero_offset, half_extent };
+    VkImageCopy region_plane1_to_plane1_front = {
+        layer_all_plane1, zero_offset, layer_all_plane1, zero_offset, one_four_extent
+    };
+    VkImageCopy region_plane1_to_plane1_back = {
+        layer_all_plane1, one_four_offset, layer_all_plane1, one_four_offset, one_four_extent
+    };
 
     m_command_buffer.Begin();
 
@@ -1124,15 +1345,26 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
 
     auto cb = m_command_buffer.handle();
 
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane0_to_plane0);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane0_to_plane0);
     m_errorMonitor->VerifyFound();
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1140,54 +1372,109 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
     image_barrier.subresourceRange = full_subresource_range;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
                            &image_barrier);
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane0_to_plane0);
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane0_to_plane1);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane0_to_plane1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane0_to_plane0);
     m_errorMonitor->VerifyFound();
 
-    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer thus doesn't
+    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer
+    // thus doesn't
     //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
     VkMemoryBarrier mem_barrier = vku::InitStructHelper();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdPipelineBarrier(
+        cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane0_to_plane0);
 
     // Use barrier to protect last reader, but not last writer...
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;  // Protects C but not B
+    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT; // Protects C but not B
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
-    vk::CmdCopyImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdPipelineBarrier(
+        cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdCopyImage(cb,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane0_to_plane0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane1_to_plane1_front);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane1_to_plane1_front);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_c.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_plane1_to_plane1_back);
 
     m_command_buffer.End();
@@ -1208,55 +1495,56 @@ TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
     vkt::Image image_a(*m_device, image_ci);
     vkt::Image image_b(*m_device, image_ci);
 
-    VkImageSubresourceLayers layers_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkImageSubresourceLayers layers_1{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkOffset3D half_offset{16, 16, 0};
-    VkExtent3D half_extent{16, 16, 1};  // <-- image type is 2D
+    VkImageSubresourceLayers layers_0{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkImageSubresourceLayers layers_1{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1 };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkOffset3D half_offset{ 16, 16, 0 };
+    VkExtent3D half_extent{ 16, 16, 1 }; // <-- image type is 2D
 
-    VkBufferImageCopy region_buffer_front_image_0_front = {0, 16, 16, layers_0, zero_offset, half_extent};
-    VkBufferImageCopy region_buffer_front_image_1_front = {0, 16, 16, layers_1, zero_offset, half_extent};
-    VkBufferImageCopy region_buffer_front_image_1_back = {0, 16, 16, layers_1, half_offset, half_extent};
-    VkBufferImageCopy region_buffer_back_image_0_front = {1024, 16, 16, layers_0, zero_offset, half_extent};
-    VkBufferImageCopy region_buffer_back_image_0_back = {1024, 16, 16, layers_0, half_offset, half_extent};
-    VkBufferImageCopy region_buffer_back_image_1_front = {1024, 16, 16, layers_1, zero_offset, half_extent};
-    VkBufferImageCopy region_buffer_back_image_1_back = {1024, 16, 16, layers_1, half_offset, half_extent};
+    VkBufferImageCopy region_buffer_front_image_0_front = { 0, 16, 16, layers_0, zero_offset, half_extent };
+    VkBufferImageCopy region_buffer_front_image_1_front = { 0, 16, 16, layers_1, zero_offset, half_extent };
+    VkBufferImageCopy region_buffer_front_image_1_back = { 0, 16, 16, layers_1, half_offset, half_extent };
+    VkBufferImageCopy region_buffer_back_image_0_front = { 1024, 16, 16, layers_0, zero_offset, half_extent };
+    VkBufferImageCopy region_buffer_back_image_0_back = { 1024, 16, 16, layers_0, half_offset, half_extent };
+    VkBufferImageCopy region_buffer_back_image_1_front = { 1024, 16, 16, layers_1, zero_offset, half_extent };
+    VkBufferImageCopy region_buffer_back_image_1_back = { 1024, 16, 16, layers_1, half_offset, half_extent };
 
     m_command_buffer.Begin();
     image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     auto cb = m_command_buffer.handle();
-    vk::CmdCopyBufferToImage(cb, buffer_a.handle(), image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region_buffer_front_image_0_front);
+    vk::CmdCopyBufferToImage(
+        cb, buffer_a.handle(), image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_front_image_0_front);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyBufferToImage(cb, buffer_a.handle(), image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region_buffer_front_image_0_front);
+    vk::CmdCopyBufferToImage(
+        cb, buffer_a.handle(), image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_front_image_0_front);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    vk::CmdCopyImageToBuffer(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1,
-                             &region_buffer_front_image_0_front);
+    vk::CmdCopyImageToBuffer(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_front_image_0_front);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    vk::CmdCopyImageToBuffer(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1,
-                             &region_buffer_back_image_0_front);
+    vk::CmdCopyImageToBuffer(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_back_image_0_front);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyImageToBuffer(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1,
-                             &region_buffer_front_image_1_front);
+    vk::CmdCopyImageToBuffer(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_front_image_1_front);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyImageToBuffer(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1,
-                             &region_buffer_front_image_1_back);
+    vk::CmdCopyImageToBuffer(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_front_image_1_back);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyImageToBuffer(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_back_image_0_back);
+    vk::CmdCopyImageToBuffer(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_back_image_0_back);
 
     VkBufferMemoryBarrier buffer_barrier = vku::InitStructHelper();
     buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1264,63 +1552,98 @@ TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
     buffer_barrier.buffer = buffer_a.handle();
     buffer_barrier.offset = 1024;
     buffer_barrier.size = VK_WHOLE_SIZE;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &buffer_barrier, 0,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           1,
+                           &buffer_barrier,
+                           0,
                            nullptr);
 
-    vk::CmdCopyImageToBuffer(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1,
-                             &region_buffer_back_image_1_front);
+    vk::CmdCopyImageToBuffer(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_back_image_1_front);
 
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &buffer_barrier, 0,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           1,
+                           &buffer_barrier,
+                           0,
                            nullptr);
 
-    vk::CmdCopyImageToBuffer(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_back_image_1_back);
+    vk::CmdCopyImageToBuffer(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_a.handle(), 1, &region_buffer_back_image_1_back);
 
-    vk::CmdCopyImageToBuffer(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_b.handle(), 1,
-                             &region_buffer_front_image_0_front);
+    vk::CmdCopyImageToBuffer(
+        cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_b.handle(), 1, &region_buffer_front_image_0_front);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImageToBuffer(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_b.handle(), 1,
-                             &region_buffer_front_image_0_front);
+    vk::CmdCopyImageToBuffer(
+        cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_b.handle(), 1, &region_buffer_front_image_0_front);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    vk::CmdCopyBufferToImage(cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region_buffer_front_image_0_front);
+    vk::CmdCopyBufferToImage(
+        cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_front_image_0_front);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyBufferToImage(cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region_buffer_back_image_0_front);
+    vk::CmdCopyBufferToImage(
+        cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_back_image_0_front);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    vk::CmdCopyBufferToImage(cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region_buffer_front_image_1_front);
+    vk::CmdCopyBufferToImage(
+        cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_front_image_1_front);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    vk::CmdCopyBufferToImage(cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region_buffer_front_image_1_back);
+    vk::CmdCopyBufferToImage(
+        cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_front_image_1_back);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyBufferToImage(cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_back_image_0_back);
+    vk::CmdCopyBufferToImage(
+        cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_back_image_0_back);
 
     buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     buffer_barrier.buffer = buffer_b.handle();
     buffer_barrier.offset = 1024;
     buffer_barrier.size = VK_WHOLE_SIZE;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &buffer_barrier, 0,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           1,
+                           &buffer_barrier,
+                           0,
                            nullptr);
 
-    vk::CmdCopyBufferToImage(cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region_buffer_back_image_1_front);
+    vk::CmdCopyBufferToImage(
+        cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_back_image_1_front);
 
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &buffer_barrier, 0,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           1,
+                           &buffer_barrier,
+                           0,
                            nullptr);
 
-    vk::CmdCopyBufferToImage(cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_back_image_1_back);
+    vk::CmdCopyBufferToImage(
+        cb, buffer_b.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_buffer_back_image_1_back);
 
     m_command_buffer.End();
 }
@@ -1335,15 +1658,21 @@ TEST_F(NegativeSyncVal, BlitImageHazards) {
     vkt::Image image_a(*m_device, image_ci);
     vkt::Image image_b(*m_device, image_ci);
 
-    VkImageSubresourceLayers layers_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkImageSubresourceLayers layers_1{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkOffset3D half_0_offset{16, 16, 0};
-    VkOffset3D half_1_offset{16, 16, 1};
-    VkOffset3D full_offset{32, 32, 1};
-    VkImageBlit region_0_front_1_front = {layers_0, {zero_offset, half_1_offset}, layers_1, {zero_offset, half_1_offset}};
-    VkImageBlit region_1_front_0_front = {layers_1, {zero_offset, half_1_offset}, layers_0, {zero_offset, half_1_offset}};
-    VkImageBlit region_1_back_0_back = {layers_1, {half_0_offset, full_offset}, layers_0, {half_0_offset, full_offset}};
+    VkImageSubresourceLayers layers_0{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkImageSubresourceLayers layers_1{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1 };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkOffset3D half_0_offset{ 16, 16, 0 };
+    VkOffset3D half_1_offset{ 16, 16, 1 };
+    VkOffset3D full_offset{ 32, 32, 1 };
+    VkImageBlit region_0_front_1_front = {
+        layers_0, { zero_offset, half_1_offset }, layers_1, { zero_offset, half_1_offset }
+    };
+    VkImageBlit region_1_front_0_front = {
+        layers_1, { zero_offset, half_1_offset }, layers_0, { zero_offset, half_1_offset }
+    };
+    VkImageBlit region_1_back_0_back = {
+        layers_1, { half_0_offset, full_offset }, layers_0, { half_0_offset, full_offset }
+    };
 
     m_command_buffer.Begin();
     image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
@@ -1351,22 +1680,46 @@ TEST_F(NegativeSyncVal, BlitImageHazards) {
 
     auto cb = m_command_buffer.handle();
 
-    vk::CmdBlitImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &region_0_front_1_front, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(cb,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &region_0_front_1_front,
+                     VK_FILTER_NEAREST);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdBlitImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &region_0_front_1_front, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(cb,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &region_0_front_1_front,
+                     VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdBlitImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &region_1_front_0_front, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(cb,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &region_1_front_0_front,
+                     VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBlitImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &region_1_back_0_back, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(cb,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &region_1_back_0_back,
+                     VK_FILTER_NEAREST);
 
     m_command_buffer.End();
 }
@@ -1375,32 +1728,40 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Image rt_image_0(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    vkt::Image rt_image_0(*m_device,
+                          m_width,
+                          m_height,
+                          1,
+                          VK_FORMAT_R8G8B8A8_UNORM,
                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     auto rt_image_view_0 = rt_image_0.CreateView();
 
-    vkt::Image rt_image_1(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    vkt::Image rt_image_1(*m_device,
+                          m_width,
+                          m_height,
+                          1,
+                          VK_FORMAT_R8G8B8A8_UNORM,
                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     auto rt_image_view_1 = rt_image_1.CreateView();
 
-    const VkSubpassDependency external_subpass_dependency = {VK_SUBPASS_EXTERNAL,
-                                                             0,
-                                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                                             VK_DEPENDENCY_BY_REGION_BIT};
+    const VkSubpassDependency external_subpass_dependency = { VK_SUBPASS_EXTERNAL,
+                                                              0,
+                                                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                              VK_DEPENDENCY_BY_REGION_BIT };
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
-    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
+    rp.AddAttachmentReference({ 1, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddColorAttachment(0);
     rp.AddColorAttachment(1);
     rp.AddSubpassDependency(external_subpass_dependency);
     rp.CreateRenderPass();
-    VkImageView views[2] = {rt_image_view_0.handle(), rt_image_view_1.handle()};
+    VkImageView views[2] = { rt_image_view_0.handle(), rt_image_view_1.handle() };
     vkt::Framebuffer fb(*m_device, rp.Handle(), 2, views);
 
     // Other buffers with which to interact
@@ -1410,10 +1771,10 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     vkt::Image image_a(*m_device, image_ci);
     vkt::Image image_b(*m_device, image_ci);
 
-    VkOffset3D zero_offset{0, 0, 0};
-    VkExtent3D full_extent{m_width, m_height, 1};  // <-- image type is 2D
-    VkImageSubresourceLayers layer_color{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkImageCopy region_to_copy = {layer_color, zero_offset, layer_color, zero_offset, full_extent};
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkExtent3D full_extent{ m_width, m_height, 1 }; // <-- image type is 2D
+    VkImageSubresourceLayers layer_color{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkImageCopy region_to_copy = { layer_color, zero_offset, layer_color, zero_offset, full_extent };
 
     auto cb = m_command_buffer.handle();
 
@@ -1424,15 +1785,22 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     rt_image_1.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     rt_image_0.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, rt_image_0.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     rt_image_0.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_to_copy);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle());  // This fails so the driver call is skip and no end is valid
+    m_command_buffer.BeginRenderPass(rp.Handle(),
+                                     fb.handle()); // This fails so the driver call is skip and no end is valid
     m_errorMonitor->VerifyFound();
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
-    VkImageSubresourceRange rt_full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier
+    // effect too.)
+    VkImageSubresourceRange rt_full_subresource_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -1440,18 +1808,32 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     image_barrier.subresourceRange = rt_full_subresource_range;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0,
-                           nullptr, 1, &image_barrier);
-    vk::CmdCopyImage(cb, rt_image_1.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &image_barrier);
+    vk::CmdCopyImage(cb,
+                     rt_image_1.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region_to_copy);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle());  // This fails so the driver call is skip and no end is valid
+    m_command_buffer.BeginRenderPass(rp.Handle(),
+                                     fb.handle()); // This fails so the driver call is skip and no end is valid
     m_errorMonitor->VerifyFound();
 
     // A global execution barrier that the implict external dependency can chain with should work...
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 0,
-                           nullptr);
+    vk::CmdPipelineBarrier(
+        cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 0, nullptr);
 
     // With the barrier above, the layout transition has a chained execution sync operation, and the default
     // implict VkSubpassDependency safes the load op clear vs. the layout transition...
@@ -1464,13 +1846,17 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Image dst_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    vkt::Image dst_image(*m_device,
+                         m_width,
+                         m_height,
+                         1,
+                         VK_FORMAT_R8G8B8A8_UNORM,
                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     auto dst_image_view = dst_image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &dst_image_view.handle());
@@ -1482,19 +1868,32 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
-    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.extent = {m_width, m_height, 1};
+    region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.extent = { m_width, m_height, 1 };
 
     m_command_buffer.Begin();
     // Initiate copy write
-    vk::CmdCopyImage(m_command_buffer, src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(m_command_buffer,
+                     src_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &region);
 
     // Execution barrier to ensure that copy and loadOp operations do not overlap.
     // This does not synchronize memory accesses though and WAW hazard remains.
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
-                           nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
 
     // Attachment load operation collides with copy
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
@@ -1510,13 +1909,17 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     // GENERAL layout is needed to perform a copy. Also,
     // the absence of layout transition after the render pass is needed because the test hazards
     // attachment store operation with subsequent copy (and the transition would happen in between).
-    vkt::Image dst_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    vkt::Image dst_image(*m_device,
+                         m_width,
+                         m_height,
+                         1,
+                         VK_FORMAT_R8G8B8A8_UNORM,
                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     auto dst_image_view = dst_image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &dst_image_view.handle());
@@ -1525,9 +1928,9 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
-    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.extent = {m_width, m_height, 1};
+    region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.extent = { m_width, m_height, 1 };
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle());
@@ -1537,12 +1940,21 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
 
     // Execution barrier to ensure that storeOp and copy operations do not overlap.
     // This does not synchronize memory accesses though and WAW hazard remains.
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
-                           nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
 
     // Collide with attachment store by copying to the same attachment
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    vk::CmdCopyImage(
+        m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1560,9 +1972,9 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
-    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.extent = {m_width, m_height, 1};
+    region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.extent = { m_width, m_height, 1 };
 
     vkt::ImageView render_target_view = m_renderTargets[0]->CreateView();
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -1573,19 +1985,28 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
     color_attachment.clearValue.color = m_clear_color;
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea.extent = {m_width, m_height};
+    rendering_info.renderArea.extent = { m_width, m_height };
     rendering_info.layerCount = 1;
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
     // Initiate copy write
-    vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, *m_renderTargets[0], VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    vk::CmdCopyImage(
+        m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, *m_renderTargets[0], VK_IMAGE_LAYOUT_GENERAL, 1, &region);
 
     // Execution barrier to ensure that copy and loadOp operations do not overlap.
     // This does not synchronize memory accesses though and WAW hazard remains.
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
-                           nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
 
     // Attachment load operation collides with copy
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
@@ -1607,9 +2028,9 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
-    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.extent = {m_width, m_height, 1};
+    region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.extent = { m_width, m_height, 1 };
 
     vkt::ImageView render_target_view = m_renderTargets[0]->CreateView();
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -1620,7 +2041,7 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
     color_attachment.clearValue.color = m_clear_color;
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
-    rendering_info.renderArea.extent = {m_width, m_height};
+    rendering_info.renderArea.extent = { m_width, m_height };
     rendering_info.layerCount = 1;
     rendering_info.colorAttachmentCount = 1;
     rendering_info.pColorAttachments = &color_attachment;
@@ -1632,12 +2053,21 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
 
     // Execution barrier to ensure that storeOp and copy operations do not overlap.
     // This does not synchronize memory accesses though and WAW hazard remains.
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
-                           nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
 
     // Collide with attachment store by copying to the same attachment
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, *m_renderTargets[0], VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    vk::CmdCopyImage(
+        m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, *m_renderTargets[0], VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1682,23 +2112,25 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     bvci.range = VK_WHOLE_SIZE;
     vkt::BufferView bufferview(*m_device, bvci);
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+        });
 
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, 2048);
-    descriptor_set.WriteDescriptorImageInfo(1, imageview_c, sampler_c.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_GENERAL);
-    descriptor_set.WriteDescriptorImageInfo(2, imageview_s, sampler_s.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(
+        1, imageview_c, sampler_c.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(
+        2, imageview_s, sampler_s.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.WriteDescriptorBufferView(3, bufferview.handle());
     descriptor_set.UpdateDescriptorSets();
 
     // Dispatch
-    const char *csSource = R"glsl(
+    const char* csSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform foo { float x; } ub0;
         layout(set=0, binding=1) uniform sampler2D cis1;
@@ -1718,26 +2150,42 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
 
-    VkBufferCopy buffer_region = {0, 0, 2048};
+    VkBufferCopy buffer_region = { 0, 0, 2048 };
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_b.handle(), buffer_a.handle(), 1, &buffer_region);
 
-    VkImageSubresourceLayers layer{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkExtent3D full_extent{16, 16, 1};
-    VkImageCopy image_region = {layer, zero_offset, layer, zero_offset, full_extent};
-    vk::CmdCopyImage(m_command_buffer.handle(), image_c_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c_a.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
-    vk::CmdCopyImage(m_command_buffer.handle(), image_s_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_s_a.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
+    VkImageSubresourceLayers layer{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkExtent3D full_extent{ 16, 16, 1 };
+    VkImageCopy image_region = { layer, zero_offset, layer, zero_offset, full_extent };
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_c_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_c_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &image_region);
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_s_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_s_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &image_region);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
@@ -1751,8 +2199,14 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_command_buffer.Begin();
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
@@ -1760,43 +2214,69 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyImage(m_command_buffer.handle(), image_c_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c_a.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_c_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_c_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &image_region);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
     m_command_buffer.Reset();
 
     // DispatchIndirect
-    buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_usage =
+        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer buffer_dispatchIndirect(*m_device, sizeof(VkDispatchIndirectCommand), buffer_usage, mem_prop);
     vkt::Buffer buffer_dispatchIndirect2(*m_device, sizeof(VkDispatchIndirectCommand), buffer_usage, mem_prop);
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatchIndirect(m_command_buffer.handle(), buffer_dispatchIndirect.handle(), 0);
     m_command_buffer.End();
 
     m_command_buffer.Reset();
     m_command_buffer.Begin();
 
-    buffer_region = {0, 0, sizeof(VkDispatchIndirectCommand)};
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_dispatchIndirect2.handle(), buffer_dispatchIndirect.handle(), 1,
+    buffer_region = { 0, 0, sizeof(VkDispatchIndirectCommand) };
+    vk::CmdCopyBuffer(m_command_buffer.handle(),
+                      buffer_dispatchIndirect2.handle(),
+                      buffer_dispatchIndirect.handle(),
+                      1,
                       &buffer_region);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     vk::CmdDispatchIndirect(m_command_buffer.handle(), buffer_dispatchIndirect.handle(), 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
     // Draw
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkVertexInputAttributeDescription VertexInputAttributeDescription = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(vbo_data)};
-    VkVertexInputBindingDescription VertexInputBindingDescription = {0, sizeof(vbo_data), VK_VERTEX_INPUT_RATE_VERTEX};
-    buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    const float vbo_data[3] = { 1.f, 0.f, 1.f };
+    VkVertexInputAttributeDescription VertexInputAttributeDescription = {
+        0, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(vbo_data)
+    };
+    VkVertexInputBindingDescription VertexInputBindingDescription = { 0,
+                                                                      sizeof(vbo_data),
+                                                                      VK_VERTEX_INPUT_RATE_VERTEX };
+    buffer_usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer vbo(*m_device, vkt::Buffer::CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
     vkt::Buffer vbo2(*m_device, vkt::Buffer::CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
 
@@ -1807,8 +2287,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     g_pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     g_pipe.vi_ci_.pVertexAttributeDescriptions = &VertexInputAttributeDescription;
     g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    g_pipe.shader_stages_ = { g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
     m_command_buffer.Reset();
@@ -1818,8 +2298,14 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -1827,14 +2313,20 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_command_buffer.Reset();
     m_command_buffer.Begin();
 
-    buffer_region = {0, 0, sizeof(vbo_data)};
+    buffer_region = { 0, 0, sizeof(vbo_data) };
     vk::CmdCopyBuffer(m_command_buffer.handle(), vbo2.handle(), vbo.handle(), 1, &buffer_region);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
@@ -1863,19 +2355,34 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, nullptr, 1,
-                                &vbo_barrier, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+                                0,
+                                nullptr,
+                                1,
+                                &vbo_barrier,
+                                0,
+                                nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
     // DrawIndexed
-    const float ibo_data[3] = {0.f, 0.f, 0.f};
-    buffer_usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    const float ibo_data[3] = { 0.f, 0.f, 0.f };
+    buffer_usage =
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer ibo(*m_device, vkt::Buffer::CreateInfo(sizeof(ibo_data), buffer_usage), mem_prop);
     vkt::Buffer ibo2(*m_device, vkt::Buffer::CreateInfo(sizeof(ibo_data), buffer_usage), mem_prop);
 
@@ -1886,8 +2393,14 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT16);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -1895,15 +2408,21 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_command_buffer.Reset();
     m_command_buffer.Begin();
 
-    buffer_region = {0, 0, sizeof(ibo_data)};
+    buffer_region = { 0, 0, sizeof(ibo_data) };
     vk::CmdCopyBuffer(m_command_buffer.handle(), ibo2.handle(), ibo.handle(), 1, &buffer_region);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT16);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
@@ -1913,7 +2432,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_command_buffer.End();
 
     // DrawIndirect
-    buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_usage =
+        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer buffer_drawIndirect(*m_device, sizeof(VkDrawIndexedIndirectCommand), buffer_usage, mem_prop);
     vkt::Buffer buffer_drawIndirect2(*m_device, sizeof(VkDrawIndirectCommand), buffer_usage, mem_prop);
 
@@ -1923,8 +2443,14 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDrawIndirect(m_command_buffer.handle(), buffer_drawIndirect.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -1932,14 +2458,21 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_command_buffer.Reset();
     m_command_buffer.Begin();
 
-    buffer_region = {0, 0, sizeof(VkDrawIndirectCommand)};
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_drawIndirect2.handle(), buffer_drawIndirect.handle(), 1, &buffer_region);
+    buffer_region = { 0, 0, sizeof(VkDrawIndirectCommand) };
+    vk::CmdCopyBuffer(
+        m_command_buffer.handle(), buffer_drawIndirect2.handle(), buffer_drawIndirect.handle(), 1, &buffer_region);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     vk::CmdDrawIndirect(m_command_buffer.handle(), buffer_drawIndirect.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
@@ -1949,7 +2482,8 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     m_command_buffer.End();
 
     // DrawIndexedIndirect
-    buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_usage =
+        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer buffer_drawIndexedIndirect(*m_device, sizeof(VkDrawIndexedIndirectCommand), buffer_usage, mem_prop);
     vkt::Buffer buffer_drawIndexedIndirect2(*m_device, sizeof(VkDrawIndexedIndirectCommand), buffer_usage, mem_prop);
 
@@ -1960,29 +2494,45 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT16);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), buffer_drawIndirect.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
+    vk::CmdDrawIndexedIndirect(
+        m_command_buffer.handle(), buffer_drawIndirect.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
     m_command_buffer.Reset();
     m_command_buffer.Begin();
 
-    buffer_region = {0, 0, sizeof(VkDrawIndexedIndirectCommand)};
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_drawIndexedIndirect2.handle(), buffer_drawIndexedIndirect.handle(), 1,
+    buffer_region = { 0, 0, sizeof(VkDrawIndexedIndirectCommand) };
+    vk::CmdCopyBuffer(m_command_buffer.handle(),
+                      buffer_drawIndexedIndirect2.handle(),
+                      buffer_drawIndexedIndirect.handle(),
+                      1,
                       &buffer_region);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT16);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), buffer_drawIndexedIndirect.handle(), 0, 1,
-                               sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirect(
+        m_command_buffer.handle(), buffer_drawIndexedIndirect.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -2027,26 +2577,32 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
     bvci.range = VK_WHOLE_SIZE;
     vkt::BufferView bufferview(*m_device, bvci);
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+        });
 
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, 2048);
-    descriptor_set.WriteDescriptorImageInfo(1, imageview_c, sampler_c.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_GENERAL);
-    descriptor_set.WriteDescriptorImageInfo(2, imageview_s, sampler_s.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(
+        1, imageview_c, sampler_c.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(
+        2, imageview_s, sampler_s.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.WriteDescriptorBufferView(3, bufferview.handle());
     descriptor_set.UpdateDescriptorSets();
 
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkVertexInputAttributeDescription VertexInputAttributeDescription = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(vbo_data)};
-    VkVertexInputBindingDescription VertexInputBindingDescription = {0, sizeof(vbo_data), VK_VERTEX_INPUT_RATE_VERTEX};
-    buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    const float vbo_data[3] = { 1.f, 0.f, 1.f };
+    VkVertexInputAttributeDescription VertexInputAttributeDescription = {
+        0, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(vbo_data)
+    };
+    VkVertexInputBindingDescription VertexInputBindingDescription = { 0,
+                                                                      sizeof(vbo_data),
+                                                                      VK_VERTEX_INPUT_RATE_VERTEX };
+    buffer_usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer vbo(*m_device, vkt::Buffer::CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
     vkt::Buffer vbo2(*m_device, vkt::Buffer::CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
 
@@ -2071,18 +2627,20 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
     g_pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     g_pipe.vi_ci_.pVertexAttributeDescriptions = &VertexInputAttributeDescription;
     g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    g_pipe.shader_stages_ = { g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
 
-    buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_usage =
+        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer buffer_count(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
     vkt::Buffer buffer_count2(*m_device, sizeof(uint32_t), buffer_usage, mem_prop);
 
     VkDeviceSize offset = 0;
     // DrawIndirectCount
     {
-        buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        buffer_usage =
+            VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         vkt::Buffer buffer_drawIndirect(*m_device, sizeof(VkDrawIndexedIndirectCommand), buffer_usage, mem_prop);
 
         m_command_buffer.Reset();
@@ -2091,9 +2649,20 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
         vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
 
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
-                                  1, &descriptor_set.set_, 0, nullptr);
-        vk::CmdDrawIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndirect.handle(), 0, buffer_count.handle(), 0, 1,
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  g_pipe.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &descriptor_set.set_,
+                                  0,
+                                  nullptr);
+        vk::CmdDrawIndirectCountKHR(m_command_buffer.handle(),
+                                    buffer_drawIndirect.handle(),
+                                    0,
+                                    buffer_count.handle(),
+                                    0,
+                                    1,
                                     sizeof(VkDrawIndirectCommand));
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
@@ -2101,17 +2670,28 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
         m_command_buffer.Reset();
         m_command_buffer.Begin();
 
-        VkBufferCopy buffer_region = {0, 0, sizeof(uint32_t)};
+        VkBufferCopy buffer_region = { 0, 0, sizeof(uint32_t) };
         vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_count2.handle(), buffer_count.handle(), 1, &buffer_region);
 
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
-                                  1, &descriptor_set.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  g_pipe.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &descriptor_set.set_,
+                                  0,
+                                  nullptr);
 
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-        vk::CmdDrawIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndirect.handle(), 0, buffer_count.handle(), 0, 1,
+        vk::CmdDrawIndirectCountKHR(m_command_buffer.handle(),
+                                    buffer_drawIndirect.handle(),
+                                    0,
+                                    buffer_count.handle(),
+                                    0,
+                                    1,
                                     sizeof(VkDrawIndirectCommand));
         m_errorMonitor->VerifyFound();
 
@@ -2121,11 +2701,13 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
 
     // DrawIndexedIndirectCount
     {
-        buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        buffer_usage =
+            VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         vkt::Buffer buffer_drawIndexedIndirect(*m_device, sizeof(VkDrawIndexedIndirectCommand), buffer_usage, mem_prop);
 
-        const float ibo_data[3] = {0.f, 0.f, 0.f};
-        buffer_usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        const float ibo_data[3] = { 0.f, 0.f, 0.f };
+        buffer_usage =
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         vkt::Buffer ibo(*m_device, vkt::Buffer::CreateInfo(sizeof(ibo_data), buffer_usage), mem_prop);
         vkt::Buffer ibo2(*m_device, vkt::Buffer::CreateInfo(sizeof(ibo_data), buffer_usage), mem_prop);
 
@@ -2136,29 +2718,51 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
         vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT16);
 
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
-                                  1, &descriptor_set.set_, 0, nullptr);
-        vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndexedIndirect.handle(), 0, buffer_count.handle(),
-                                           0, 1, sizeof(VkDrawIndexedIndirectCommand));
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  g_pipe.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &descriptor_set.set_,
+                                  0,
+                                  nullptr);
+        vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(),
+                                           buffer_drawIndexedIndirect.handle(),
+                                           0,
+                                           buffer_count.handle(),
+                                           0,
+                                           1,
+                                           sizeof(VkDrawIndexedIndirectCommand));
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
 
         m_command_buffer.Reset();
         m_command_buffer.Begin();
 
-        VkBufferCopy buffer_region = {0, 0, sizeof(uint32_t)};
+        VkBufferCopy buffer_region = { 0, 0, sizeof(uint32_t) };
         vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_count2.handle(), buffer_count.handle(), 1, &buffer_region);
 
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
         vk::CmdBindIndexBuffer(m_command_buffer.handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT16);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
-                                  1, &descriptor_set.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  g_pipe.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &descriptor_set.set_,
+                                  0,
+                                  nullptr);
 
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-        vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(), buffer_drawIndexedIndirect.handle(), 0, buffer_count.handle(),
-                                           0, 1, sizeof(VkDrawIndexedIndirectCommand));
+        vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(),
+                                           buffer_drawIndexedIndirect.handle(),
+                                           0,
+                                           buffer_count.handle(),
+                                           0,
+                                           1,
+                                           sizeof(VkDrawIndexedIndirectCommand));
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.EndRenderPass();
@@ -2176,12 +2780,12 @@ TEST_F(NegativeSyncVal, CmdClear) {
     vkt::Image image_a(*m_device, image_ci, vkt::set_layout);
     vkt::Image image_b(*m_device, image_ci, vkt::set_layout);
 
-    VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
-    VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageSubresourceLayers layers_all{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkExtent3D full_extent{ 128, 128, 1 }; // <-- image type is 2D
+    VkImageSubresourceRange full_subresource_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
-    VkImageCopy full_region = {layers_all, zero_offset, layers_all, zero_offset, full_extent};
+    VkImageCopy full_region = { layers_all, zero_offset, layers_all, zero_offset, full_extent };
 
     m_command_buffer.Begin();
 
@@ -2190,17 +2794,21 @@ TEST_F(NegativeSyncVal, CmdClear) {
 
     auto cb = m_command_buffer.handle();
     VkClearColorValue ccv = {};
-    vk::CmdClearColorImage(m_command_buffer.handle(), image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
+    vk::CmdClearColorImage(
+        m_command_buffer.handle(), image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
     m_command_buffer.End();
 
     m_command_buffer.Reset();
     m_command_buffer.Begin();
-    vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
+    vk::CmdCopyImage(
+        cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdClearColorImage(m_command_buffer.handle(), image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
+    vk::CmdClearColorImage(
+        m_command_buffer.handle(), image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdClearColorImage(m_command_buffer.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
+    vk::CmdClearColorImage(
+        m_command_buffer.handle(), image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -2217,25 +2825,30 @@ TEST_F(NegativeSyncVal, CmdClear) {
 
     m_command_buffer.Begin();
     const VkClearDepthStencilValue clear_value = {};
-    VkImageSubresourceRange ds_range = {ds_aspect, 0, 1, 0, 1};
+    VkImageSubresourceRange ds_range = { ds_aspect, 0, 1, 0, 1 };
 
     vk::CmdClearDepthStencilImage(cb, image_ds_a.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &ds_range);
     m_command_buffer.End();
 
-    VkImageSubresourceLayers ds_layers_all{ds_aspect, 0, 0, 1};
-    VkImageCopy ds_full_region = {ds_layers_all, zero_offset, ds_layers_all, zero_offset, full_extent};
+    VkImageSubresourceLayers ds_layers_all{ ds_aspect, 0, 0, 1 };
+    VkImageCopy ds_full_region = { ds_layers_all, zero_offset, ds_layers_all, zero_offset, full_extent };
 
     m_command_buffer.Reset();
     m_command_buffer.Begin();
-    vk::CmdCopyImage(cb, image_ds_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_ds_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+    vk::CmdCopyImage(cb,
+                     image_ds_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_ds_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
                      &ds_full_region);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image_ds_a.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1,
-                                  &ds_range);
+    vk::CmdClearDepthStencilImage(
+        m_command_buffer.handle(), image_ds_a.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &ds_range);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image_ds_b.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1,
-                                  &ds_range);
+    vk::CmdClearDepthStencilImage(
+        m_command_buffer.handle(), image_ds_b.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &ds_range);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -2246,7 +2859,8 @@ TEST_F(NegativeSyncVal, CmdQuery) {
     all_queue_count_ = true;
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
-    if ((m_device->Physical().queue_properties_.empty()) || (m_device->Physical().queue_properties_[0].queueCount < 2)) {
+    if ((m_device->Physical().queue_properties_.empty()) ||
+        (m_device->Physical().queue_properties_[0].queueCount < 2)) {
         GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
     uint32_t queue_count;
@@ -2264,7 +2878,7 @@ TEST_F(NegativeSyncVal, CmdQuery) {
     vkt::Buffer buffer_a(*m_device, 256, transfer_usage, mem_prop);
     vkt::Buffer buffer_b(*m_device, 256, transfer_usage, mem_prop);
 
-    VkBufferCopy region = {0, 0, 256};
+    VkBufferCopy region = { 0, 0, 256 };
 
     auto cb = m_command_buffer.handle();
     m_command_buffer.Begin();
@@ -2299,12 +2913,12 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     auto format_dp = format_ds;
     auto format_st = format_ds;
 
-    vkt::Image image_ds(*m_device, 16, 16, 1, format_ds,
-                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    vkt::Image image_dp(*m_device, 16, 16, 1, format_dp,
-                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::Image image_st(*m_device, 16, 16, 1, format_st,
-                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_ds(
+        *m_device, 16, 16, 1, format_ds, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image_dp(
+        *m_device, 16, 16, 1, format_dp, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_st(
+        *m_device, 16, 16, 1, format_st, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::ImageView image_view_ds = image_ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     vkt::ImageView image_view_dp = image_dp.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     vkt::ImageView image_view_st = image_st.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -2368,7 +2982,7 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     g_pipe_st.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_renderPassBeginInfo.renderArea = {{0, 0}, {16, 16}};
+    m_renderPassBeginInfo.renderArea = { { 0, 0 }, { 16, 16 } };
     m_renderPassBeginInfo.pClearValues = nullptr;
     m_renderPassBeginInfo.clearValueCount = 0;
 
@@ -2398,24 +3012,37 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     m_command_buffer.Reset();
     m_command_buffer.Begin();
 
-    image_ds.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_dp.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_st.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_ds.SetLayout(
+        m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_dp.SetLayout(
+        m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_st.SetLayout(
+        m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copyRegion;
-    copyRegion.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
-    copyRegion.srcOffset = {0, 0, 0};
-    copyRegion.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
-    copyRegion.dstOffset = {0, 0, 0};
-    copyRegion.extent = {16, 16, 1};
+    copyRegion.srcSubresource = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1 };
+    copyRegion.srcOffset = { 0, 0, 0 };
+    copyRegion.dstSubresource = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1 };
+    copyRegion.dstOffset = { 0, 0, 0 };
+    copyRegion.extent = { 16, 16, 1 };
 
-    vk::CmdCopyImage(m_command_buffer.handle(), image_ds.handle(), VK_IMAGE_LAYOUT_GENERAL, image_dp.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_ds.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_dp.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &copyRegion);
 
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    vk::CmdCopyImage(m_command_buffer.handle(), image_ds.handle(), VK_IMAGE_LAYOUT_GENERAL, image_st.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_ds.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_st.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &copyRegion);
     m_renderPassBeginInfo.renderPass = rp_ds.handle();
     m_renderPassBeginInfo.framebuffer = fb_ds.handle();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
@@ -2451,51 +3078,63 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
     vkt::Image image_input(*m_device, image_ci);
     vkt::ImageView image_color_view = image_color.CreateView();
     vkt::ImageView image_input_view = image_input.CreateView();
-    VkImageView attachments[] = {image_color_view, image_input_view};
+    VkImageView attachments[] = { image_color_view, image_input_view };
 
     VkAttachmentDescription attachmentDescriptions[] = {
         // Result attachment
-        {(VkAttachmentDescriptionFlags)0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR,
-         VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_IMAGE_LAYOUT_UNDEFINED,  // Here causes DesiredError that SYNC-HAZARD-NONE in BeginRenderPass.
+        { (VkAttachmentDescriptionFlags)0,
+          VK_FORMAT_R8G8B8A8_UNORM,
+          VK_SAMPLE_COUNT_1_BIT,
+          VK_ATTACHMENT_LOAD_OP_CLEAR,
+          VK_ATTACHMENT_STORE_OP_STORE,
+          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+          VK_IMAGE_LAYOUT_UNDEFINED, // Here causes DesiredError that SYNC-HAZARD-NONE in BeginRenderPass.
                                      // It should be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
         // Input attachment
-        {(VkAttachmentDescriptionFlags)0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD,
-         VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL}};
+        { (VkAttachmentDescriptionFlags)0,
+          VK_FORMAT_R8G8B8A8_UNORM,
+          VK_SAMPLE_COUNT_1_BIT,
+          VK_ATTACHMENT_LOAD_OP_LOAD,
+          VK_ATTACHMENT_STORE_OP_STORE,
+          VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+          VK_ATTACHMENT_STORE_OP_DONT_CARE,
+          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL }
+    };
 
-    const VkAttachmentReference resultAttachmentRef = {0u, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
-    const VkAttachmentReference inputAttachmentRef = {1u, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    const VkAttachmentReference resultAttachmentRef = { 0u, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+    const VkAttachmentReference inputAttachmentRef = { 1u, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 
-    const VkSubpassDescription subpassDescription = {(VkSubpassDescriptionFlags)0,
-                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     1u,
-                                                     &inputAttachmentRef,
-                                                     1u,
-                                                     &resultAttachmentRef,
-                                                     0,
-                                                     0,
-                                                     0u,
-                                                     0};
+    const VkSubpassDescription subpassDescription = { (VkSubpassDescriptionFlags)0,
+                                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                      1u,
+                                                      &inputAttachmentRef,
+                                                      1u,
+                                                      &resultAttachmentRef,
+                                                      0,
+                                                      0,
+                                                      0u,
+                                                      0 };
 
-    const VkSubpassDependency subpassDependency = {VK_SUBPASS_EXTERNAL,
-                                                   0,
-                                                   VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                                   VK_ACCESS_TRANSFER_WRITE_BIT,
-                                                   VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT,
-                                                   VK_DEPENDENCY_BY_REGION_BIT};
+    const VkSubpassDependency subpassDependency = { VK_SUBPASS_EXTERNAL,
+                                                    0,
+                                                    VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                    VK_ACCESS_TRANSFER_WRITE_BIT,
+                                                    VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT,
+                                                    VK_DEPENDENCY_BY_REGION_BIT };
 
-    const VkRenderPassCreateInfo renderPassInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-                                                   0,
-                                                   (VkRenderPassCreateFlags)0,
-                                                   2u,
-                                                   attachmentDescriptions,
-                                                   1u,
-                                                   &subpassDescription,
-                                                   1u,
-                                                   &subpassDependency};
+    const VkRenderPassCreateInfo renderPassInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+                                                    0,
+                                                    (VkRenderPassCreateFlags)0,
+                                                    2u,
+                                                    attachmentDescriptions,
+                                                    1u,
+                                                    &subpassDescription,
+                                                    1u,
+                                                    &subpassDependency };
     vkt::RenderPass rp(*m_device, renderPassInfo);
     vkt::Framebuffer fb(*m_device, rp.handle(), 2, attachments);
 
@@ -2503,13 +3142,14 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
 
     m_command_buffer.Begin();
 
-    m_renderPassBeginInfo.renderArea = {{0, 0}, {32, 32}};
+    m_renderPassBeginInfo.renderArea = { { 0, 0 }, { 32, 32 } };
     m_renderPassBeginInfo.renderPass = rp.handle();
     m_renderPassBeginInfo.framebuffer = fb.handle();
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    // Even though we have no accesses prior, the layout transition *is* an access, so load can be validated vs. layout transition
+    // Even though we have no accesses prior, the layout transition *is* an access, so load can be validated vs. layout
+    // transition
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
 
@@ -2543,56 +3183,62 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     vkt::Image image_ds(*m_device, 32, 32, 1, ds_format, usage_ds);
     image_ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-    const VkAttachmentDescription colorAttachmentDescription = {(VkAttachmentDescriptionFlags)0,
-                                                                color_format,
-                                                                VK_SAMPLE_COUNT_1_BIT,
-                                                                VK_ATTACHMENT_LOAD_OP_CLEAR,
-                                                                VK_ATTACHMENT_STORE_OP_STORE,
-                                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                                                                VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    const VkAttachmentDescription colorAttachmentDescription = { (VkAttachmentDescriptionFlags)0,
+                                                                 color_format,
+                                                                 VK_SAMPLE_COUNT_1_BIT,
+                                                                 VK_ATTACHMENT_LOAD_OP_CLEAR,
+                                                                 VK_ATTACHMENT_STORE_OP_STORE,
+                                                                 VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                                 VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                                 VK_IMAGE_LAYOUT_UNDEFINED,
+                                                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
     const VkAttachmentDescription depthStencilAttachmentDescription = {
-        (VkAttachmentDescriptionFlags)0, ds_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR,
-        VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE,
-        VK_IMAGE_LAYOUT_UNDEFINED,  // Here causes DesiredError that SYNC-HAZARD-WRITE_AFTER_WRITE in BeginRenderPass.
-                                    // It should be VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+        (VkAttachmentDescriptionFlags)0,
+        ds_format,
+        VK_SAMPLE_COUNT_1_BIT,
+        VK_ATTACHMENT_LOAD_OP_CLEAR,
+        VK_ATTACHMENT_STORE_OP_STORE,
+        VK_ATTACHMENT_LOAD_OP_CLEAR,
+        VK_ATTACHMENT_STORE_OP_STORE,
+        VK_IMAGE_LAYOUT_UNDEFINED, // Here causes DesiredError that SYNC-HAZARD-WRITE_AFTER_WRITE in BeginRenderPass.
+                                   // It should be VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+    };
 
     std::vector<VkAttachmentDescription> attachmentDescriptions;
     attachmentDescriptions.push_back(colorAttachmentDescription);
     attachmentDescriptions.push_back(depthStencilAttachmentDescription);
 
-    const VkAttachmentReference colorAttachmentRef = {0u, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    const VkAttachmentReference colorAttachmentRef = { 0u, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
-    const VkAttachmentReference depthStencilAttachmentRef = {1u, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+    const VkAttachmentReference depthStencilAttachmentRef = { 1u, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
 
-    const VkSubpassDescription subpassDescription = {(VkSubpassDescriptionFlags)0,
-                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     0u,
-                                                     0,
-                                                     1u,
-                                                     &colorAttachmentRef,
-                                                     0,
-                                                     &depthStencilAttachmentRef,
-                                                     0u,
-                                                     0};
+    const VkSubpassDescription subpassDescription = { (VkSubpassDescriptionFlags)0,
+                                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                      0u,
+                                                      0,
+                                                      1u,
+                                                      &colorAttachmentRef,
+                                                      0,
+                                                      &depthStencilAttachmentRef,
+                                                      0u,
+                                                      0 };
 
-    const VkRenderPassCreateInfo renderPassInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-                                                   0,
-                                                   (VkRenderPassCreateFlags)0,
-                                                   (uint32_t)attachmentDescriptions.size(),
-                                                   &attachmentDescriptions[0],
-                                                   1u,
-                                                   &subpassDescription,
-                                                   0u,
-                                                   0};
+    const VkRenderPassCreateInfo renderPassInfo = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+                                                    0,
+                                                    (VkRenderPassCreateFlags)0,
+                                                    (uint32_t)attachmentDescriptions.size(),
+                                                    &attachmentDescriptions[0],
+                                                    1u,
+                                                    &subpassDescription,
+                                                    0u,
+                                                    0 };
     vkt::RenderPass rp(*m_device, renderPassInfo);
 
     vkt::ImageView color_view = image_color.CreateView();
     vkt::ImageView depth_view = image_ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    VkImageView fb_attachments[] = {color_view, depth_view};
+    VkImageView fb_attachments[] = { color_view, depth_view };
 
     vkt::Framebuffer fb(*m_device, rp.handle(), 2u, fb_attachments);
 
@@ -2622,10 +3268,10 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
 
     m_command_buffer.Begin();
     VkClearValue clear = {};
-    std::array<VkClearValue, 2> clear_values = { {clear, clear} };
+    std::array<VkClearValue, 2> clear_values = { { clear, clear } };
     m_renderPassBeginInfo.pClearValues = clear_values.data();
     m_renderPassBeginInfo.clearValueCount = clear_values.size();
-    m_renderPassBeginInfo.renderArea = {{0, 0}, {32, 32}};
+    m_renderPassBeginInfo.renderArea = { { 0, 0 }, { 32, 32 } };
     m_renderPassBeginInfo.renderPass = rp.handle();
 
     m_renderPassBeginInfo.framebuffer = fb.handle();
@@ -2648,22 +3294,23 @@ struct CreateRenderPassHelper {
         using PreserveVec = std::vector<uint32_t>;
 
         SubpassDescriptionStore() = default;
-        SubpassDescriptionStore(const AttachRefVec& input, const AttachRefVec& color) : input_store(input), color_store(color) {}
+        SubpassDescriptionStore(const AttachRefVec& input, const AttachRefVec& color) :
+            input_store(input), color_store(color) {}
         void SetResolve(const AttachRefVec& resolve) { resolve_store = resolve; }
         void SetDepthStencil(const AttachRefVec& ds) { ds_store = ds; }
         void SetPreserve(const PreserveVec& preserve) { preserve_store = preserve; }
 
         VkSubpassDescription operator*() const {
-            VkSubpassDescription desc = {0u,
-                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                         static_cast<uint32_t>(input_store.size()),
-                                         vvl::DataOrNull(input_store),
-                                         static_cast<uint32_t>(color_store.size()),
-                                         vvl::DataOrNull(color_store),
-                                         vvl::DataOrNull(resolve_store),
-                                         vvl::DataOrNull(ds_store),
-                                         static_cast<uint32_t>(preserve_store.size()),
-                                         vvl::DataOrNull(preserve_store)};
+            VkSubpassDescription desc = { 0u,
+                                          VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                          static_cast<uint32_t>(input_store.size()),
+                                          vvl::DataOrNull(input_store),
+                                          static_cast<uint32_t>(color_store.size()),
+                                          vvl::DataOrNull(color_store),
+                                          vvl::DataOrNull(resolve_store),
+                                          vvl::DataOrNull(ds_store),
+                                          static_cast<uint32_t>(preserve_store.size()),
+                                          vvl::DataOrNull(preserve_store) };
             return desc;
         }
 
@@ -2708,12 +3355,9 @@ struct CreateRenderPassHelper {
     VkRenderPassBeginInfo render_pass_begin;
     std::vector<VkClearValue> clear_colors;
 
-    CreateRenderPassHelper(vkt::Device* dev_)
-        : dev(dev_),
-          color_ref(DefaultColorRef()),
-          input_ref(DefaultInputRef()),
-          fb_attach_desc(DefaultFbAttachDesc()),
-          input_attach_desc(DefaultInputAttachDesc()) {}
+    CreateRenderPassHelper(vkt::Device* dev_) :
+        dev(dev_), color_ref(DefaultColorRef()), input_ref(DefaultInputRef()), fb_attach_desc(DefaultFbAttachDesc()),
+        input_attach_desc(DefaultInputAttachDesc()) {}
 
     void InitImageAndView() {
         auto image_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, format, usage_input);
@@ -2723,7 +3367,7 @@ struct CreateRenderPassHelper {
 
         view_input = image_input->CreateView();
         view_color = image_color->CreateView();
-        attachments = {view_color, view_input};
+        attachments = { view_color, view_input };
     }
 
     static VkAttachmentReference DefaultColorRef() {
@@ -2800,22 +3444,25 @@ struct CreateRenderPassHelper {
     void InitAttachmentArrays() {
         // Add attachments
         if (attachment_descs.empty()) {
-            attachment_descs = {fb_attach_desc, input_attach_desc};
+            attachment_descs = { fb_attach_desc, input_attach_desc };
         }
         if (color_attachments.empty()) {
-            color_attachments = {color_ref};
+            color_attachments = { color_ref };
         }
         if (input_attachments.empty()) {
-            input_attachments = {input_ref};
+            input_attachments = { input_ref };
         }
     }
 
-    void AddSubpassDescription(const std::vector<VkAttachmentReference>& input, const std::vector<VkAttachmentReference>& color) {
+    void AddSubpassDescription(const std::vector<VkAttachmentReference>& input,
+                               const std::vector<VkAttachmentReference>& color) {
         subpass_description_store.emplace_back(input, color);
     }
 
     // Capture the current input and color attachements, which can then be modified
-    void AddInputColorSubpassDescription() { subpass_description_store.emplace_back(input_attachments, color_attachments); }
+    void AddInputColorSubpassDescription() {
+        subpass_description_store.emplace_back(input_attachments, color_attachments);
+    }
 
     // Create a subpass description with all the attachments preserved
     void AddPreserveInputColorSubpassDescription() {
@@ -2849,15 +3496,15 @@ struct CreateRenderPassHelper {
     }
 
     void InitRenderPassInfo() {
-        render_pass_create_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-                                   nullptr,
-                                   0u,
-                                   static_cast<uint32_t>(attachment_descs.size()),
-                                   attachment_descs.data(),
-                                   static_cast<uint32_t>(subpasses.size()),
-                                   subpasses.data(),
-                                   static_cast<uint32_t>(subpass_dep.size()),
-                                   subpass_dep.data()};
+        render_pass_create_info = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+                                    nullptr,
+                                    0u,
+                                    static_cast<uint32_t>(attachment_descs.size()),
+                                    attachment_descs.data(),
+                                    static_cast<uint32_t>(subpasses.size()),
+                                    subpasses.data(),
+                                    static_cast<uint32_t>(subpass_dep.size()),
+                                    subpass_dep.data() };
     }
 
     void InitRenderPass() {
@@ -2871,21 +3518,21 @@ struct CreateRenderPassHelper {
 
     void InitFramebuffer() {
         framebuffer = std::make_shared<vkt::Framebuffer>();
-        VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-                                        0,
-                                        0u,
-                                        render_pass->handle(),
-                                        static_cast<uint32_t>(attachments.size()),
-                                        attachments.data(),
-                                        width,
-                                        height,
-                                        1u};
+        VkFramebufferCreateInfo fbci = { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                                         0,
+                                         0u,
+                                         render_pass->handle(),
+                                         static_cast<uint32_t>(attachments.size()),
+                                         attachments.data(),
+                                         width,
+                                         height,
+                                         1u };
         framebuffer->init(*dev, fbci);
     }
 
     void InitBeginInfo() {
         render_pass_begin = vku::InitStructHelper();
-        render_pass_begin.renderArea = {{0, 0}, {width, height}};
+        render_pass_begin.renderArea = { { 0, 0 }, { width, height } };
         render_pass_begin.renderPass = render_pass->handle();
         render_pass_begin.framebuffer = framebuffer->handle();
 
@@ -2902,7 +3549,7 @@ struct CreateRenderPassHelper {
 
     void InitPipelineHelper(CreatePipelineHelper& g_pipe) {
         g_pipe.ResetShaderInfo(kVertexMinimalGlsl, kFragmentSubpassLoadGlsl);
-        g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
         g_pipe.gp_ci_.renderPass = render_pass->handle();
         ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
     }
@@ -2924,22 +3571,19 @@ struct SyncTestPipeline {
     VkSamplerCreateInfo sampler_info;
     vkt::Sampler sampler;
     VkImageView view_input = VK_NULL_HANDLE;
-    SyncTestPipeline(VkLayerTest& test_, VkRenderPass rp_)
-        : test(test_),
-          rp(rp_),
-          g_pipe(test),
-          vs(&test, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT),
-          fs(&test, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT),
-          sampler_info(SafeSaneSamplerCreateInfo()),
-          sampler() {
+    SyncTestPipeline(VkLayerTest& test_, VkRenderPass rp_) :
+        test(test_), rp(rp_), g_pipe(test), vs(&test, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT),
+        fs(&test, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT), sampler_info(SafeSaneSamplerCreateInfo()),
+        sampler() {
         sampler.init(*test.DeviceObj(), sampler_info);
-        g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        g_pipe.dsl_bindings_ = { { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr } };
         g_pipe.gp_ci_.renderPass = rp;
     }
     void Init() {
         ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
-        g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        g_pipe.descriptor_set_->WriteDescriptorImageInfo(
+            0, view_input, sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe.descriptor_set_->UpdateDescriptorSets();
     }
 };
@@ -2961,16 +3605,28 @@ TEST_F(NegativeSyncVal, LayoutTransition) {
     m_command_buffer.Begin();
     auto cb = m_command_buffer.handle();
     VkClearColorValue ccv = {};
-    VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageSubresourceRange full_subresource_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     const VkImageMemoryBarrier preClearBarrier = {
         VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,   0, 0, image_input_handle,           full_subresource_range,
     };
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0u,
+                           0u,
+                           nullptr,
+                           0u,
+                           nullptr,
+                           1u,
                            &preClearBarrier);
 
-    vk::CmdClearColorImage(m_command_buffer.handle(), image_input_handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &ccv, 1,
+    vk::CmdClearColorImage(m_command_buffer.handle(),
+                           image_input_handle,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           &ccv,
+                           1,
                            &full_subresource_range);
 
     const VkImageMemoryBarrier postClearBarrier = {
@@ -2985,14 +3641,27 @@ TEST_F(NegativeSyncVal, LayoutTransition) {
         image_input_handle,
         full_subresource_range,
     };
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr,
-                           0u, nullptr, 1u, &postClearBarrier);
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           0u,
+                           0u,
+                           nullptr,
+                           0u,
+                           nullptr,
+                           1u,
+                           &postClearBarrier);
 
     m_command_buffer.BeginRenderPass(rp_helper.render_pass_begin);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &g_pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
 
     // Positive test for ordering rules between load and input attachment usage
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
@@ -3002,15 +3671,23 @@ TEST_F(NegativeSyncVal, LayoutTransition) {
 
     // Catch a conflict with the input attachment final layout transition
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdClearColorImage(m_command_buffer.handle(), image_input_handle, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1,
-                           &full_subresource_range);
+    vk::CmdClearColorImage(
+        m_command_buffer.handle(), image_input_handle, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
     m_errorMonitor->VerifyFound();
 
     // There should be no hazard for ILT after ILT
     m_command_buffer.End();
     vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0u,
+                           0u,
+                           nullptr,
+                           0u,
+                           nullptr,
+                           1u,
                            &preClearBarrier);
     const VkImageMemoryBarrier wawBarrier = {
         VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -3024,8 +3701,16 @@ TEST_F(NegativeSyncVal, LayoutTransition) {
         image_input_handle,
         full_subresource_range,
     };
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u, nullptr, 0u,
-                           nullptr, 1u, &wawBarrier);
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                           0u,
+                           0u,
+                           nullptr,
+                           0u,
+                           nullptr,
+                           1u,
+                           &wawBarrier);
     m_command_buffer.End();
 }
 
@@ -3035,12 +3720,12 @@ TEST_F(NegativeSyncVal, SubpassMultiDep) {
 
     CreateRenderPassHelper rp_helper_positive(m_device);
 
-    VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    VkImageSubresourceLayers mip_0_layer_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkOffset3D image_zero{0, 0, 0};
-    VkExtent3D image_size{rp_helper_positive.width, rp_helper_positive.height, 1};
+    VkImageSubresourceRange full_subresource_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    VkImageSubresourceLayers mip_0_layer_0{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkOffset3D image_zero{ 0, 0, 0 };
+    VkExtent3D image_size{ rp_helper_positive.width, rp_helper_positive.height, 1 };
 
-    VkImageCopy full_region{mip_0_layer_0, image_zero, mip_0_layer_0, image_zero, image_size};
+    VkImageCopy full_region{ mip_0_layer_0, image_zero, mip_0_layer_0, image_zero, image_size };
 
     rp_helper_positive.InitImageAndView();
     rp_helper_positive.InitAllAttachmentsToLayoutGeneral();
@@ -3050,34 +3735,62 @@ TEST_F(NegativeSyncVal, SubpassMultiDep) {
 
     auto& subpass_dep_positive = rp_helper_positive.subpass_dep;
 
-    subpass_dep_positive.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                    VK_DEPENDENCY_BY_REGION_BIT});
-    subpass_dep_positive.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
-                                    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, VK_DEPENDENCY_BY_REGION_BIT});
-    subpass_dep_positive.push_back({0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                    VK_ACCESS_TRANSFER_READ_BIT, VK_DEPENDENCY_BY_REGION_BIT});
-    subpass_dep_positive.push_back({0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                    VK_ACCESS_TRANSFER_WRITE_BIT, VK_DEPENDENCY_BY_REGION_BIT});
+    subpass_dep_positive.push_back({ VK_SUBPASS_EXTERNAL,
+                                     0,
+                                     VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                     0,
+                                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                     VK_DEPENDENCY_BY_REGION_BIT });
+    subpass_dep_positive.push_back({ VK_SUBPASS_EXTERNAL,
+                                     0,
+                                     VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                     VK_ACCESS_TRANSFER_WRITE_BIT,
+                                     VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
+                                     VK_DEPENDENCY_BY_REGION_BIT });
+    subpass_dep_positive.push_back({ 0,
+                                     VK_SUBPASS_EXTERNAL,
+                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                     VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                     VK_ACCESS_TRANSFER_READ_BIT,
+                                     VK_DEPENDENCY_BY_REGION_BIT });
+    subpass_dep_positive.push_back({ 0,
+                                     VK_SUBPASS_EXTERNAL,
+                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                     VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                     VK_ACCESS_TRANSFER_WRITE_BIT,
+                                     VK_DEPENDENCY_BY_REGION_BIT });
 
     rp_helper_positive.InitRenderPass();
     rp_helper_positive.InitFramebuffer();
     rp_helper_positive.InitBeginInfo();
 
     auto& subpass_dep_negative = rp_helper_negative.subpass_dep;
-    subpass_dep_negative.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                    VK_DEPENDENCY_BY_REGION_BIT});
+    subpass_dep_negative.push_back({ VK_SUBPASS_EXTERNAL,
+                                     0,
+                                     VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                     0,
+                                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                     VK_DEPENDENCY_BY_REGION_BIT });
     // Show that the two barriers do *not* chain by breaking the positive barrier into two bits.
-    subpass_dep_negative.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, 0,
-                                    VK_DEPENDENCY_BY_REGION_BIT});
-    subpass_dep_negative.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
-                                    VK_DEPENDENCY_BY_REGION_BIT});
+    subpass_dep_negative.push_back({ VK_SUBPASS_EXTERNAL,
+                                     0,
+                                     VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                     VK_ACCESS_TRANSFER_WRITE_BIT,
+                                     0,
+                                     VK_DEPENDENCY_BY_REGION_BIT });
+    subpass_dep_negative.push_back({ VK_SUBPASS_EXTERNAL,
+                                     0,
+                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                     0,
+                                     VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
+                                     VK_DEPENDENCY_BY_REGION_BIT });
 
     rp_helper_negative.InitAllAttachmentsToLayoutGeneral();
 
@@ -3092,24 +3805,24 @@ TEST_F(NegativeSyncVal, SubpassMultiDep) {
     CreatePipelineHelper g_pipe(*this);
     rp_helper_positive.InitPipelineHelper(g_pipe);
 
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, rp_helper_positive.view_input, VK_NULL_HANDLE,
-                                                     VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_IMAGE_LAYOUT_GENERAL);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(
+        0, rp_helper_positive.view_input, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_IMAGE_LAYOUT_GENERAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     auto cb = m_command_buffer.handle();
     VkClearColorValue ccv = {};
 
-    const VkImageMemoryBarrier xferDestBarrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-                                                  nullptr,
-                                                  VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
-                                                  VK_ACCESS_TRANSFER_WRITE_BIT,
-                                                  VK_IMAGE_LAYOUT_GENERAL,
-                                                  VK_IMAGE_LAYOUT_GENERAL,
-                                                  VK_QUEUE_FAMILY_IGNORED,
-                                                  VK_QUEUE_FAMILY_IGNORED,
-                                                  VK_NULL_HANDLE,
-                                                  full_subresource_range};
+    const VkImageMemoryBarrier xferDestBarrier = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                                                   nullptr,
+                                                   VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+                                                   VK_ACCESS_TRANSFER_WRITE_BIT,
+                                                   VK_IMAGE_LAYOUT_GENERAL,
+                                                   VK_IMAGE_LAYOUT_GENERAL,
+                                                   VK_QUEUE_FAMILY_IGNORED,
+                                                   VK_QUEUE_FAMILY_IGNORED,
+                                                   VK_NULL_HANDLE,
+                                                   full_subresource_range };
     const VkImageMemoryBarrier xferDestToSrcBarrier = {
         VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         nullptr,
@@ -3129,20 +3842,42 @@ TEST_F(NegativeSyncVal, SubpassMultiDep) {
     VkImageMemoryBarrier preClearBarrier = xferDestBarrier;
     preClearBarrier.image = image_color;
 
-    VkImageMemoryBarrier preCopyBarriers[2] = {xferDestToSrcBarrier, xferDestBarrier};
+    VkImageMemoryBarrier preCopyBarriers[2] = { xferDestToSrcBarrier, xferDestBarrier };
     preCopyBarriers[0].image = image_color;
     preCopyBarriers[1].image = image_input;
     // Positive test for ordering rules between load and input attachment usage
 
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0u,
+                           0u,
+                           nullptr,
+                           0u,
+                           nullptr,
+                           1u,
                            &preClearBarrier);
 
-    vk::CmdClearColorImage(m_command_buffer.handle(), image_color, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
+    vk::CmdClearColorImage(
+        m_command_buffer.handle(), image_color, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
 
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 2u,
+    vk::CmdPipelineBarrier(cb,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0u,
+                           0u,
+                           nullptr,
+                           0u,
+                           nullptr,
+                           2u,
                            preCopyBarriers);
 
-    vk::CmdCopyImage(m_command_buffer.handle(), image_color, VK_IMAGE_LAYOUT_GENERAL, image_input, VK_IMAGE_LAYOUT_GENERAL, 1u,
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_color,
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_input,
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1u,
                      &full_region);
 
     // No post copy image barrier, we are testing the subpass dependencies
@@ -3150,15 +3885,26 @@ TEST_F(NegativeSyncVal, SubpassMultiDep) {
     // Postive renderpass multidependency test
     m_command_buffer.BeginRenderPass(rp_helper_positive.render_pass_begin);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &g_pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
 
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
     // Positive test for store ordering vs. input attachment and dependency *to* external for layout transition
     m_command_buffer.EndRenderPass();
 
-    vk::CmdCopyImage(m_command_buffer.handle(), image_color, VK_IMAGE_LAYOUT_GENERAL, image_input, VK_IMAGE_LAYOUT_GENERAL, 1u,
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_color,
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_input,
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1u,
                      &full_region);
 
     // Postive renderpass multidependency test, will fail IFF the dependencies are acting indepently.
@@ -3196,7 +3942,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     src_img_info.flags = 0;
     src_img_info.imageType = VK_IMAGE_TYPE_2D;
     src_img_info.format = kFormat;
-    src_img_info.extent = {kWidth, kHeight, 1};
+    src_img_info.extent = { kWidth, kHeight, 1 };
     src_img_info.mipLevels = 1;
     src_img_info.arrayLayers = 1;
     src_img_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -3207,7 +3953,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     dst_img_info.flags = 0;
     dst_img_info.imageType = VK_IMAGE_TYPE_2D;
     dst_img_info.format = kFormat;
-    dst_img_info.extent = {kWidth, kHeight, 1};
+    dst_img_info.extent = { kWidth, kHeight, 1 };
     dst_img_info.mipLevels = 1;
     dst_img_info.arrayLayers = 1;
     dst_img_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -3241,7 +3987,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         attachment_descriptions[i].finalLayout =
             (i == 0) ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        color_refs[i] = {i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+        color_refs[i] = { i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
         img_barriers[i] = vku::InitStructHelper();
         img_barriers[i].srcAccessMask = 0;
@@ -3251,12 +3997,14 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         img_barriers[i].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         img_barriers[i].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         img_barriers[i].image = images[i]->handle();
-        img_barriers[i].subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+        img_barriers[i].subresourceRange = {
+            VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS
+        };
     }
 
-    const VkAttachmentReference input_ref{0u, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    const VkAttachmentReference input_ref{ 0u, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 
-    std::array<std::array<uint32_t, 2>, kNumImages - 1> preserve_subpass{{{2, 3}, {1, 3}, {1, 2}}};
+    std::array<std::array<uint32_t, 2>, kNumImages - 1> preserve_subpass{ { { 2, 3 }, { 1, 3 }, { 1, 2 } } };
 
     std::array<VkSubpassDescription, kNumImages> subpasses{};
 
@@ -3293,7 +4041,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
     VkClearValue clear = {};
     clear.color = m_clear_color;
-    std::array<VkClearValue, 4> clear_values = {{clear, clear, clear, clear}};
+    std::array<VkClearValue, 4> clear_values = { { clear, clear, clear, clear } };
 
     // run the renderpass with no dependencies
     {
@@ -3305,8 +4053,10 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         ASSERT_EQ(VK_SUCCESS, g_pipe_0.CreateGraphicsPipeline());
 
         CreatePipelineHelper g_pipe_12(*this);
-        g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe_12.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        g_pipe_12.dsl_bindings_ = {
+            { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }
+        };
         g_pipe_12.gp_ci_.renderPass = rp.handle();
         g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.LateBindPipelineInfo();
@@ -3317,28 +4067,42 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
         }
 
-        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(
+            0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe_12.descriptor_set_->UpdateDescriptorSets();
 
         m_command_buffer.Begin();
 
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, img_barriers.size(),
+        vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                               0,
+                               0,
+                               nullptr,
+                               0,
+                               nullptr,
+                               img_barriers.size(),
                                img_barriers.data());
 
-        m_renderPassBeginInfo.renderArea = {{0, 0}, {16, 16}};
+        m_renderPassBeginInfo.renderArea = { { 0, 0 }, { 16, 16 } };
         m_renderPassBeginInfo.pClearValues = clear_values.data();
         m_renderPassBeginInfo.clearValueCount = clear_values.size();
 
-        m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
+        m_renderPassBeginInfo.renderArea = { { 0, 0 }, { kWidth, kHeight } };
         m_renderPassBeginInfo.renderPass = rp.handle();
         m_renderPassBeginInfo.framebuffer = fb.handle();
 
         // Test is intentionally running without dependencies.
         vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_layout_.handle(), 0,
-                                  1, &g_pipe_0.descriptor_set_->set_, 0, NULL);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  g_pipe_0.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &g_pipe_0.descriptor_set_->set_,
+                                  0,
+                                  NULL);
 
         vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
@@ -3364,13 +4128,13 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     // add dependencies from subpass 0 to the others, which are necessary but not sufficient
     std::vector<VkSubpassDependency> subpass_dependencies;
     for (uint32_t i = 1; i < subpasses.size(); i++) {
-        VkSubpassDependency dep{0,
-                                i,
-                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
-                                0};
+        VkSubpassDependency dep{ 0,
+                                 i,
+                                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                 VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                                 0 };
         subpass_dependencies.push_back(dep);
     }
     renderpass_info.dependencyCount = subpass_dependencies.size();
@@ -3385,8 +4149,10 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         ASSERT_EQ(VK_SUCCESS, g_pipe_0.CreateGraphicsPipeline());
 
         CreatePipelineHelper g_pipe_12(*this);
-        g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe_12.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        g_pipe_12.dsl_bindings_ = {
+            { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }
+        };
         g_pipe_12.gp_ci_.renderPass = rp.handle();
         g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.LateBindPipelineInfo();
@@ -3397,27 +4163,41 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
         }
 
-        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(
+            0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe_12.descriptor_set_->UpdateDescriptorSets();
 
         m_command_buffer.Begin();
 
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, img_barriers.size(),
+        vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                               0,
+                               0,
+                               nullptr,
+                               0,
+                               nullptr,
+                               img_barriers.size(),
                                img_barriers.data());
 
-        m_renderPassBeginInfo.renderArea = {{0, 0}, {16, 16}};
+        m_renderPassBeginInfo.renderArea = { { 0, 0 }, { 16, 16 } };
         m_renderPassBeginInfo.pClearValues = clear_values.data();
         m_renderPassBeginInfo.clearValueCount = clear_values.size();
 
-        m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
+        m_renderPassBeginInfo.renderArea = { { 0, 0 }, { kWidth, kHeight } };
         m_renderPassBeginInfo.renderPass = rp.handle();
         m_renderPassBeginInfo.framebuffer = fb.handle();
 
         vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_layout_.handle(), 0,
-                                  1, &g_pipe_0.descriptor_set_->set_, 0, NULL);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  g_pipe_0.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &g_pipe_0.descriptor_set_->set_,
+                                  0,
+                                  NULL);
 
         vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
@@ -3436,8 +4216,14 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             }
 
             vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipes[i - 1].handle());
-            vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                      g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
+            vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                      g_pipe_12.pipeline_layout_.handle(),
+                                      0,
+                                      1,
+                                      &g_pipe_12.descriptor_set_->set_,
+                                      0,
+                                      NULL);
 
             vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
         }
@@ -3454,13 +4240,21 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
     // try again with correct dependencies to make subpasses:
     //   2 depend on 1 (avoid ILT hazard)
-    subpass_dependencies.emplace_back(
-        VkSubpassDependency{1, 2, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                            VK_ACCESS_INPUT_ATTACHMENT_READ_BIT, VK_ACCESS_INPUT_ATTACHMENT_READ_BIT, 0});
+    subpass_dependencies.emplace_back(VkSubpassDependency{ 1,
+                                                           2,
+                                                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                           VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                                                           VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                                                           0 });
     //   3 depend on 2 (avoid store hazard)
-    subpass_dependencies.emplace_back(
-        VkSubpassDependency{2, 3, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                            VK_ACCESS_INPUT_ATTACHMENT_READ_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0});
+    subpass_dependencies.emplace_back(VkSubpassDependency{ 2,
+                                                           3,
+                                                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                           VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+                                                           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                           0 });
 
     renderpass_info.dependencyCount = subpass_dependencies.size();
     renderpass_info.pDependencies = subpass_dependencies.data();
@@ -3473,8 +4267,10 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         ASSERT_EQ(VK_SUCCESS, g_pipe_0.CreateGraphicsPipeline());
 
         CreatePipelineHelper g_pipe_12(*this);
-        g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe_12.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        g_pipe_12.dsl_bindings_ = {
+            { 0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }
+        };
         g_pipe_12.gp_ci_.renderPass = rp.handle();
         g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.LateBindPipelineInfo();
@@ -3485,34 +4281,54 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
             g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
         }
 
-        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+        g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(
+            0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe_12.descriptor_set_->UpdateDescriptorSets();
 
         m_command_buffer.Begin();
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, img_barriers.size(),
+        vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                               0,
+                               0,
+                               nullptr,
+                               0,
+                               nullptr,
+                               img_barriers.size(),
                                img_barriers.data());
 
-        m_renderPassBeginInfo.renderArea = {{0, 0}, {16, 16}};
+        m_renderPassBeginInfo.renderArea = { { 0, 0 }, { 16, 16 } };
         m_renderPassBeginInfo.pClearValues = clear_values.data();
         m_renderPassBeginInfo.clearValueCount = clear_values.size();
 
-        m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
+        m_renderPassBeginInfo.renderArea = { { 0, 0 }, { kWidth, kHeight } };
         m_renderPassBeginInfo.renderPass = rp.handle();
         m_renderPassBeginInfo.framebuffer = fb.handle();
 
         vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_layout_.handle(), 0,
-                                  1, &g_pipe_0.descriptor_set_->set_, 0, NULL);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  g_pipe_0.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &g_pipe_0.descriptor_set_->set_,
+                                  0,
+                                  NULL);
 
         vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
         for (uint32_t i = 1; i < subpasses.size(); i++) {
             m_command_buffer.NextSubpass();
             vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipes[i - 1].handle());
-            vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                      g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
+            vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                      g_pipe_12.pipeline_layout_.handle(),
+                                      0,
+                                      1,
+                                      &g_pipe_12.descriptor_set_->set_,
+                                      0,
+                                      NULL);
 
             vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
         }
@@ -3534,10 +4350,10 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
     vkt::Buffer buffer_b(*m_device, 256, transfer_usage, mem_prop);
     vkt::Buffer buffer_c(*m_device, 256, transfer_usage, mem_prop);
 
-    VkBufferCopy region = {0, 0, 256};
-    VkBufferCopy front2front = {0, 0, 128};
-    VkBufferCopy front2back = {0, 128, 128};
-    VkBufferCopy back2back = {128, 128, 128};
+    VkBufferCopy region = { 0, 0, 256 };
+    VkBufferCopy front2front = { 0, 0, 128 };
+    VkBufferCopy front2back = { 0, 128, 128 };
+    VkBufferCopy back2back = { 128, 128, 128 };
 
     vkt::Event event(*m_device);
     VkEvent event_handle = event.handle();
@@ -3549,8 +4365,16 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
     vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &region);
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_c.handle(), 1, &back2back);
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
-                                nullptr, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr);
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2back);
@@ -3563,8 +4387,16 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
     vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &region);
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     // Just protect against WAR, only need a sync barrier.
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
-                                nullptr, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr);
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &region);
 
     // Wait shouldn't prevent this WAW though, as it's only a synchronization barrier
@@ -3581,8 +4413,16 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
     VkMemoryBarrier mem_barrier_waw = vku::InitStructHelper();
     mem_barrier_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 1,
-                                &mem_barrier_waw, 0, nullptr, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                1,
+                                &mem_barrier_waw,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr);
     // The WAW should be safe (on a memory barrier)
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_b.handle(), 1, &region);
     // The WAR should also be safe (on a sync barrier)
@@ -3602,8 +4442,16 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
     m_command_buffer.Begin();
     vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &region);
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
-                                &buffer_barrier_front_waw, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                0,
+                                nullptr,
+                                1,
+                                &buffer_barrier_front_waw,
+                                0,
+                                nullptr);
     vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &front2front);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &back2back);
@@ -3625,21 +4473,21 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     vkt::Event event(*m_device);
     VkEvent event_handle = event.handle();
 
-    VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
-    VkImageSubresourceLayers layers_0{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkImageSubresourceLayers layers_1{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1};
-    VkImageSubresourceRange layers_0_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkOffset3D half_offset{64, 64, 0};
-    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
-    VkExtent3D half_extent{64, 64, 1};    // <-- image type is 2D
+    VkImageSubresourceLayers layers_all{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2 };
+    VkImageSubresourceLayers layers_0{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkImageSubresourceLayers layers_1{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1 };
+    VkImageSubresourceRange layers_0_subresource_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkOffset3D half_offset{ 64, 64, 0 };
+    VkExtent3D full_extent{ 128, 128, 1 }; // <-- image type is 2D
+    VkExtent3D half_extent{ 64, 64, 1 };   // <-- image type is 2D
 
-    VkImageCopy full_region = {layers_all, zero_offset, layers_all, zero_offset, full_extent};
-    VkImageCopy region_0_to_0 = {layers_0, zero_offset, layers_0, zero_offset, full_extent};
-    VkImageCopy region_1_to_1 = {layers_1, zero_offset, layers_1, zero_offset, full_extent};
-    VkImageCopy region_0_q0toq0 = {layers_0, zero_offset, layers_0, zero_offset, half_extent};
-    VkImageCopy region_0_q0toq3 = {layers_0, zero_offset, layers_0, half_offset, half_extent};
-    VkImageCopy region_0_q3toq3 = {layers_0, half_offset, layers_0, half_offset, half_extent};
+    VkImageCopy full_region = { layers_all, zero_offset, layers_all, zero_offset, full_extent };
+    VkImageCopy region_0_to_0 = { layers_0, zero_offset, layers_0, zero_offset, full_extent };
+    VkImageCopy region_1_to_1 = { layers_1, zero_offset, layers_1, zero_offset, full_extent };
+    VkImageCopy region_0_q0toq0 = { layers_0, zero_offset, layers_0, zero_offset, half_extent };
+    VkImageCopy region_0_q0toq3 = { layers_0, zero_offset, layers_0, half_offset, half_extent };
+    VkImageCopy region_0_q3toq3 = { layers_0, half_offset, layers_0, half_offset, half_extent };
 
     auto cb = m_command_buffer.handle();
     auto copy_general = [cb](const vkt::Image& from, const vkt::Image& to, const VkImageCopy& region) {
@@ -3658,8 +4506,16 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     copy_general(image_a, image_b, full_region);
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     copy_general(image_a, image_c, region_0_q3toq3);
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
-                                nullptr, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr);
     copy_general(image_c, image_a, region_0_q0toq0);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     copy_general(image_c, image_a, region_0_q0toq3);
@@ -3673,8 +4529,16 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     copy_general(image_a, image_b, full_region);
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     // Just protect against WAR, only need a sync barrier.
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
-                                nullptr, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr);
     copy_general(image_c, image_a, full_region);
 
     // Wait shouldn't prevent this WAW though, as it's only a synchronization barrier
@@ -3692,8 +4556,16 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     VkMemoryBarrier mem_barrier_waw = vku::InitStructHelper();
     mem_barrier_waw.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier_waw.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 1,
-                                &mem_barrier_waw, 0, nullptr, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                1,
+                                &mem_barrier_waw,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr);
     // The WAW should be safe (on a memory barrier)
     copy_general(image_c, image_b, full_region);
     // The WAR should also be safe (on a sync barrier)
@@ -3717,8 +4589,16 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     set_layouts();
     copy_general(image_a, image_b, full_region);
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
-                                nullptr, 1, &image_barrier_region0_waw);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr,
+                                1,
+                                &image_barrier_region0_waw);
     copy_general(image_a, image_b, region_0_to_0);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     copy_general(image_a, image_b, region_1_to_1);
@@ -3738,15 +4618,31 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent-event-03834");
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
-                                nullptr, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
     m_command_buffer.Begin();
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, nullptr,
-                                0, nullptr, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr);
     m_errorMonitor->SetDesiredError("SYNC-vkCmdResetEvent-missingbarrier-wait");
     m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     m_errorMonitor->VerifyFound();
@@ -3758,14 +4654,38 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0U, 0,
-                           nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           0U,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    m_command_buffer.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 0,
-                                nullptr, 0, nullptr);
+    m_command_buffer.WaitEvents(1,
+                                &event_handle,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr,
+                                0,
+                                nullptr);
     m_command_buffer.ResetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0U, 0,
-                           nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           0U,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
     m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     // Need a barrier between set and a reset
@@ -3789,7 +4709,7 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     vkt::Buffer buffer_a(*m_device, 256, transfer_usage, mem_prop);
     vkt::Buffer buffer_b(*m_device, 256, transfer_usage, mem_prop);
 
-    VkBufferCopy front2front = {0, 0, 128};
+    VkBufferCopy front2front = { 0, 0, 128 };
 
     // Barrier range check for WAW
     VkBufferMemoryBarrier buffer_barrier_front_waw = vku::InitStructHelper();
@@ -3802,8 +4722,16 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     vkt::CommandBuffer secondary_cb1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.Begin();
-    secondary_cb1.WaitEvents(1, &event_handle, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, 1,
-                             &buffer_barrier_front_waw, 0, nullptr);
+    secondary_cb1.WaitEvents(1,
+                             &event_handle,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             0,
+                             nullptr,
+                             1,
+                             &buffer_barrier_front_waw,
+                             0,
+                             nullptr);
     vk::CmdCopyBuffer(scb1, buffer_a.handle(), buffer_b.handle(), 1, &front2front);
     secondary_cb1.End();
 
@@ -3842,7 +4770,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     constexpr size_t kNumDescriptors = 6;
 
     std::array<VkDescriptorBindingFlags, kNumDescriptors> ds_binding_flags;
-    for (auto &elem : ds_binding_flags) {
+    for (auto& elem : ds_binding_flags) {
         elem = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
     }
 
@@ -3850,17 +4778,20 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     layout_createinfo_binding_flags.pBindingFlags = ds_binding_flags.data();
 
     // Prepare descriptors
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {2, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {3, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {4, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       },
-                                       0, &layout_createinfo_binding_flags, 0);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 2, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 3, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 4, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+        },
+        0,
+        &layout_createinfo_binding_flags,
+        0);
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     const uint32_t zeroit_value = 0;
     vkt::Buffer doit_buffer(*m_device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &zeroit_value, sizeof(uint32_t));
@@ -3966,7 +4897,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     vk::UpdateDescriptorSets(device(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
 
     // only descriptor 0 is used, the rest are going to get destroyed
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform foo_0 { int val; } doit;
         layout(set = 0, binding = 1) uniform foo_1 { int val; } readit;
@@ -3995,15 +4926,21 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
 
     VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo() };
     pipe.gp_ci_.layout = pipeline_layout.handle();
     pipe.CreateGraphicsPipeline();
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     // destroy resources for the unused descriptors
     buffer.reset();
@@ -4066,12 +5003,12 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     vkt::RenderPass render_pass(*m_device, rp_ci);
 
     VkClearValue clear_value = {};
-    clear_value.color = {{0, 0, 0, 0}};
+    clear_value.color = { { 0, 0, 0, 0 } };
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_D32_SFLOAT;
-    image_ci.extent = {32, 32, 1};
+    image_ci.extent = { 32, 32, 1 };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -4079,7 +5016,7 @@ TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
     image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     vkt::Image image1(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view1 = image1.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
-    VkImageView framebuffer_attachments[1] = {image_view1.handle()};
+    VkImageView framebuffer_attachments[1] = { image_view1.handle() };
 
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, framebuffer_attachments);
 
@@ -4116,35 +5053,50 @@ TEST_F(NegativeSyncVal, CopyToCompressedImage) {
     VkFormat mp_format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
     vk::GetPhysicalDeviceFormatProperties(Gpu(), mp_format, &format_properties);
     if ((format_properties.linearTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
-        GTEST_SKIP()
-            << "Device does not support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
+        GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT for "
+                        "VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
     }
 
     vkt::Image src_image(*m_device, 1, 1, 1, VK_FORMAT_R32G32_UINT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image dst_image(*m_device, 12, 4, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkImageCopy copy_regions[2] = {};
-    copy_regions[0].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_regions[0].srcOffset = {0, 0, 0};
-    copy_regions[0].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_regions[0].dstOffset = {0, 0, 0};
-    copy_regions[0].extent = {1, 1, 1};
-    copy_regions[1].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_regions[1].srcOffset = {0, 0, 0};
-    copy_regions[1].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_regions[1].dstOffset = {4, 0, 0};
-    copy_regions[1].extent = {1, 1, 1};
+    copy_regions[0].srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    copy_regions[0].srcOffset = { 0, 0, 0 };
+    copy_regions[0].dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    copy_regions[0].dstOffset = { 0, 0, 0 };
+    copy_regions[0].extent = { 1, 1, 1 };
+    copy_regions[1].srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    copy_regions[1].srcOffset = { 0, 0, 0 };
+    copy_regions[1].dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    copy_regions[1].dstOffset = { 4, 0, 0 };
+    copy_regions[1].extent = { 1, 1, 1 };
 
     m_command_buffer.Begin();
 
-    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_regions[0]);
-    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_regions[1]);
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     src_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &copy_regions[0]);
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     src_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &copy_regions[1]);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    copy_regions[1].dstOffset = {4, 0, 0};
-    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_regions[1]);
+    copy_regions[1].dstOffset = { 4, 0, 0 };
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     src_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &copy_regions[1]);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -4154,17 +5106,17 @@ TEST_F(NegativeSyncVal, CopyToCompressedImage) {
 
         VkImageCopy2 copy_regions2[2];
         copy_regions2[0] = vku::InitStructHelper();
-        copy_regions2[0].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        copy_regions2[0].srcOffset = {0, 0, 0};
-        copy_regions2[0].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        copy_regions2[0].dstOffset = {0, 0, 0};
-        copy_regions2[0].extent = {1, 1, 1};
+        copy_regions2[0].srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+        copy_regions2[0].srcOffset = { 0, 0, 0 };
+        copy_regions2[0].dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+        copy_regions2[0].dstOffset = { 0, 0, 0 };
+        copy_regions2[0].extent = { 1, 1, 1 };
         copy_regions2[1] = vku::InitStructHelper();
-        copy_regions2[1].srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        copy_regions2[1].srcOffset = {0, 0, 0};
-        copy_regions2[1].dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-        copy_regions2[1].dstOffset = {4, 0, 0};
-        copy_regions2[1].extent = {1, 1, 1};
+        copy_regions2[1].srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+        copy_regions2[1].srcOffset = { 0, 0, 0 };
+        copy_regions2[1].dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+        copy_regions2[1].dstOffset = { 4, 0, 0 };
+        copy_regions2[1].extent = { 1, 1, 1 };
 
         VkCopyImageInfo2 copy_image_info = vku::InitStructHelper();
         copy_image_info.srcImage = src_image.handle();
@@ -4180,7 +5132,7 @@ TEST_F(NegativeSyncVal, CopyToCompressedImage) {
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
         copy_image_info.regionCount = 1;
         copy_image_info.pRegions = &copy_regions2[1];
-        copy_regions[1].dstOffset = {7, 0, 0};
+        copy_regions[1].dstOffset = { 7, 0, 0 };
         vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info);
         m_errorMonitor->VerifyFound();
 
@@ -4234,19 +5186,20 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
 
     bufferview.init(*m_device, bvci);
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr },
+            { 3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+        });
 
     descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, 2048);
-    descriptor_set.WriteDescriptorImageInfo(1, imageview_c, sampler_c.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                            VK_IMAGE_LAYOUT_GENERAL);
-    descriptor_set.WriteDescriptorImageInfo(2, imageview_s, sampler_s.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(
+        1, imageview_c, sampler_c.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(
+        2, imageview_s, sampler_s.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.WriteDescriptorBufferView(3, bufferview.handle());
     descriptor_set.UpdateDescriptorSets();
 
@@ -4267,11 +5220,16 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     )glsl";
 
     // Draw
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkVertexInputAttributeDescription VertexInputAttributeDescription = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(vbo_data)};
-    VkVertexInputBindingDescription VertexInputBindingDescription = {0, sizeof(vbo_data), VK_VERTEX_INPUT_RATE_VERTEX};
+    const float vbo_data[3] = { 1.f, 0.f, 1.f };
+    VkVertexInputAttributeDescription VertexInputAttributeDescription = {
+        0, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(vbo_data)
+    };
+    VkVertexInputBindingDescription VertexInputBindingDescription = { 0,
+                                                                      sizeof(vbo_data),
+                                                                      VK_VERTEX_INPUT_RATE_VERTEX };
     vkt::Buffer vbo, vbo2;
-    buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_usage =
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vbo.init(*m_device, vbo.CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
     vbo2.init(*m_device, vbo2.CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
 
@@ -4283,36 +5241,60 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     g_pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     g_pipe.vi_ci_.pVertexAttributeDescriptions = &VertexInputAttributeDescription;
     g_pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    g_pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    g_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     g_pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Reset();
     m_command_buffer.Begin();
-    VkImageSubresourceLayers layer{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkExtent3D full_extent{16, 16, 1};
-    VkImageCopy image_region = {layer, zero_offset, layer, zero_offset, full_extent};
-    vk::CmdCopyImage(m_command_buffer.handle(), image_c_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c_a.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
-    vk::CmdCopyImage(m_command_buffer.handle(), image_s_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_s_a.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
+    VkImageSubresourceLayers layer{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkExtent3D full_extent{ 16, 16, 1 };
+    VkImageCopy image_region = { layer, zero_offset, layer, zero_offset, full_extent };
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_c_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_c_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &image_region);
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_s_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_s_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &image_region);
 
     VkMemoryBarrier barrier = vku::InitStructHelper();
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     // wrong: dst stage should be VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 1,
-                           &barrier, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+                           0,
+                           1,
+                           &barrier,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
 
     // one error for each image copied above
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
@@ -4326,20 +5308,44 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     // Try again with the correct dst stage on the barrier
     m_command_buffer.Reset();
     m_command_buffer.Begin();
-    vk::CmdCopyImage(m_command_buffer.handle(), image_c_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c_a.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
-    vk::CmdCopyImage(m_command_buffer.handle(), image_s_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_s_a.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_c_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_c_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &image_region);
+    vk::CmdCopyImage(m_command_buffer.handle(),
+                     image_s_b.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     image_s_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL,
+                     1,
+                     &image_region);
 
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1,
-                           &barrier, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                           0,
+                           1,
+                           &barrier,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &offset);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -4359,7 +5365,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
 
     VkSubmitInfo submit1 = vku::InitStructHelper();
     submit1.commandBufferCount = 2;
-    VkCommandBuffer two_cbs[2] = {test.h_cba, test.h_cbb};
+    VkCommandBuffer two_cbs[2] = { test.h_cba, test.h_cbb };
     submit1.pCommandBuffers = two_cbs;
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
@@ -4368,7 +5374,7 @@ TEST_F(NegativeSyncVal, QSBufferCopyHazards) {
 
     test.DeviceWait();
 
-    VkSubmitInfo submit2[2] = {vku::InitStruct<VkSubmitInfo>(), vku::InitStruct<VkSubmitInfo>()};
+    VkSubmitInfo submit2[2] = { vku::InitStruct<VkSubmitInfo>(), vku::InitStruct<VkSubmitInfo>() };
     submit2[0].commandBufferCount = 1;
     submit2[0].pCommandBuffers = &test.h_cba;
     submit2[1].commandBufferCount = 1;
@@ -4536,7 +5542,9 @@ TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
     }
 
     // Need an extra buffer and CB
-    vkt::Buffer buffer_d(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    vkt::Buffer buffer_d(*m_device,
+                         256,
+                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vkt::CommandBuffer cbd;
     test.InitFromPool(cbd);
@@ -4547,11 +5555,12 @@ TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
     test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
 
     // Command Buffer B reads froms buffer C and writes to buffer A, but has a barrier to protect the write to A when
-    // executed on the same queue, given that commands in "queue submission order" are within the first scope of the barrier.
+    // executed on the same queue, given that commands in "queue submission order" are within the first scope of the
+    // barrier.
     test.BeginB();
 
-    // Use the barrier to clean up the WAR, which will work for command buffers ealier in queue submission order, or with
-    // correct semaphore operations between queues.
+    // Use the barrier to clean up the WAR, which will work for command buffers ealier in queue submission order, or
+    // with correct semaphore operations between queues.
     test.TransferBarrierWAR(test.buffer_a);
     test.CopyCToA();
     test.End();
@@ -4563,15 +5572,15 @@ TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
     // This is included in a "Sucess" section, just to verify CBA and CBB are set up correctly.
     test.Submit0(test.cba);
     test.Submit0(test.cbb);
-    m_device->Wait();  // DeviceWaitIdle, clearing the field for the next subcase
+    m_device->Wait(); // DeviceWaitIdle, clearing the field for the next subcase
 
-    // Submit A and B on the different queues. Since no semaphore is used between the queues, CB B hazards asynchronously with,
-    // CB A with A being read and written on independent queues.
+    // Submit A and B on the different queues. Since no semaphore is used between the queues, CB B hazards
+    // asynchronously with, CB A with A being read and written on independent queues.
     test.Submit0(test.cba);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-READ");
     test.Submit1(test.cbb);
     m_errorMonitor->VerifyFound();
-    m_device->Wait();  // DeviceWaitIdle, clearing the field for the next subcase
+    m_device->Wait(); // DeviceWaitIdle, clearing the field for the next subcase
 
     // Test full async detection
     test.Submit0(test.cba);
@@ -4584,16 +5593,18 @@ TEST_F(NegativeSyncVal, QSBufferCopyQSORules) {
 
     m_device->Wait();
 
-    // Submit A and B on the different queues, with an ineffectual semaphore.  The wait mask is empty, thus nothing in CB B is in
-    // the second excution scope of the waited signal.
+    // Submit A and B on the different queues, with an ineffectual semaphore.  The wait mask is empty, thus nothing in
+    // CB B is in the second excution scope of the waited signal.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     test.Submit0Signal(test.cba);
-    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);  // wait mask is BOTTOM, s.t. this is a wait-for-nothing.
+    test.Submit1Wait(test.cbb,
+                     VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT); // wait mask is BOTTOM, s.t. this is a wait-for-nothing.
     m_errorMonitor->VerifyFound();
 
     // The since second submit failed, it was skipped. So we can try again, without having to WaitDeviceIdle
-    // Include transfers in the second execution scope of the waited signal, s.t. the PipelineBarrier in CB B can chain with it.
-    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_TRANSFER_BIT);  //
+    // Include transfers in the second execution scope of the waited signal, s.t. the PipelineBarrier in CB B can chain
+    // with it.
+    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_TRANSFER_BIT); //
 
     m_device->Wait();
 
@@ -4627,11 +5638,12 @@ TEST_F(NegativeSyncVal, QSBufferEvents) {
     test.End();
 
     // Command Buffer B reads froms buffer C and writes to buffer A, but has a wait to protect the write to A when
-    // executed on the same queue, given that commands in "queue submission order" are within the first scope of the barrier.
+    // executed on the same queue, given that commands in "queue submission order" are within the first scope of the
+    // barrier.
     test.BeginB();
 
-    // Use the barrier to clean up the WAR, which will work for command buffers ealier in queue submission order, or with
-    // correct semaphore operations between queues.
+    // Use the barrier to clean up the WAR, which will work for command buffers ealier in queue submission order, or
+    // with correct semaphore operations between queues.
     test.WaitEventBufferTransfer(test.buffer_a, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
     test.CopyCToA();
     test.End();
@@ -4736,18 +5748,22 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
     vkt::Image image_b(*m_device, image_ci, vkt::set_layout);
     image_b.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
-    VkImageSubresourceLayers all_layers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    VkOffset3D zero_offset{0, 0, 0};
-    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
-    VkImageCopy full_region = {all_layers, zero_offset, all_layers, zero_offset, full_extent};
+    VkImageSubresourceLayers all_layers{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    VkOffset3D zero_offset{ 0, 0, 0 };
+    VkExtent3D full_extent{ 128, 128, 1 }; // <-- image type is 2D
+    VkImageCopy full_region = { all_layers, zero_offset, all_layers, zero_offset, full_extent };
 
     test.BeginA();
     test.CopyGeneral(image_a, image_b, full_region);
     test.End();
 
     test.BeginB();
-    image_a.ImageMemoryBarrier(*test.current_cb, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_NONE, VK_ACCESS_NONE,
-                               VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT,
+    image_a.ImageMemoryBarrier(*test.current_cb,
+                               VK_IMAGE_ASPECT_COLOR_BIT,
+                               VK_ACCESS_NONE,
+                               VK_ACCESS_NONE,
+                               VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+                               VK_PIPELINE_STAGE_TRANSFER_BIT,
                                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     test.End();
 
@@ -4778,17 +5794,17 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     rp_helper.InitAllAttachmentsToLayoutGeneral();
 
     rp_helper.InitImageAndView();
-    rp_helper.InitAttachmentLayouts();  // Quiet any CoreChecks ImageLayout complaints
-    m_device->Wait();                   // and quiesce the system
+    rp_helper.InitAttachmentLayouts(); // Quiet any CoreChecks ImageLayout complaints
+    m_device->Wait();                  // and quiesce the system
 
     // The  dependency protects the input attachment but not the color attachment
-    VkSubpassDependency protect_input_subpass_0 = {VK_SUBPASS_EXTERNAL,
-                                                   0,
-                                                   VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                   VK_ACCESS_TRANSFER_WRITE_BIT,
-                                                   VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
-                                                   0U};
+    VkSubpassDependency protect_input_subpass_0 = { VK_SUBPASS_EXTERNAL,
+                                                    0,
+                                                    VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                    VK_ACCESS_TRANSFER_WRITE_BIT,
+                                                    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
+                                                    0U };
     rp_helper.subpass_dep.push_back(protect_input_subpass_0);
 
     rp_helper.InitRenderPass();
@@ -4799,10 +5815,18 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
 
     auto do_clear = [](vkt::CommandBuffer& cb_obj, CreateRenderPassHelper& rp_helper) {
-        VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        vk::CmdClearColorImage(cb_obj.handle(), rp_helper.image_input->handle(), VK_IMAGE_LAYOUT_GENERAL, &rp_helper.ccv, 1,
+        VkImageSubresourceRange full_subresource_range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+        vk::CmdClearColorImage(cb_obj.handle(),
+                               rp_helper.image_input->handle(),
+                               VK_IMAGE_LAYOUT_GENERAL,
+                               &rp_helper.ccv,
+                               1,
                                &full_subresource_range);
-        vk::CmdClearColorImage(cb_obj.handle(), rp_helper.image_color->handle(), VK_IMAGE_LAYOUT_GENERAL, &rp_helper.ccv, 1,
+        vk::CmdClearColorImage(cb_obj.handle(),
+                               rp_helper.image_color->handle(),
+                               VK_IMAGE_LAYOUT_GENERAL,
+                               &rp_helper.ccv,
+                               1,
                                &full_subresource_range);
     };
 
@@ -4828,21 +5852,21 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     cb1.End();
 
     VkSubmitInfo submit2 = vku::InitStructHelper();
-    VkCommandBuffer two_cbs[2] = {cb0.handle(), cb1.handle()};
+    VkCommandBuffer two_cbs[2] = { cb0.handle(), cb1.handle() };
     submit2.commandBufferCount = 2;
     submit2.pCommandBuffers = two_cbs;
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit2, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    m_device->Wait();  // quiesce the system for the next subtest
+    m_device->Wait(); // quiesce the system for the next subtest
 
     CreateRenderPassHelper rp_helper2(m_device);
     rp_helper2.InitAllAttachmentsToLayoutGeneral();
 
     rp_helper2.InitImageAndView();
-    rp_helper2.InitAttachmentLayouts();  // Quiet any CoreChecks ImageLayout complaints
-    m_device->Wait();                    // and quiesce the system
+    rp_helper2.InitAttachmentLayouts(); // Quiet any CoreChecks ImageLayout complaints
+    m_device->Wait();                   // and quiesce the system
 
     // The  dependency protects the input attachment but not the color attachment
     VkSubpassDependency protect_input_subpass_1 = protect_input_subpass_0;
@@ -4883,7 +5907,7 @@ TEST_F(NegativeSyncVal, QSRenderPass) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit2, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    m_device->Wait();  // and quiesce the system
+    m_device->Wait(); // and quiesce the system
 }
 
 TEST_F(NegativeSyncVal, AvailabilityWithoutVisibilityForBuffer) {
@@ -4908,8 +5932,16 @@ TEST_F(NegativeSyncVal, AvailabilityWithoutVisibilityForBuffer) {
     barrier.dstAccessMask = 0;
     barrier.buffer = buffer;
     barrier.size = VK_WHOLE_SIZE;
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
-                           &barrier, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           1,
+                           &barrier,
+                           0,
+                           nullptr);
 
     // Perform one more copy. Should generate WAW due to missing visibility operation.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
@@ -4929,14 +5961,14 @@ TEST_F(NegativeSyncVal, ImageCopyHazardsLayoutTransition) {
     image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkBufferImageCopy region{};
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageExtent = {64, 64, 1};
+    region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.imageExtent = { 64, 64, 1 };
 
     VkImageMemoryBarrier transition = vku::InitStructHelper();
     transition.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     transition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     transition.image = image;
-    transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    transition.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     m_command_buffer.Begin();
     vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
@@ -4944,15 +5976,24 @@ TEST_F(NegativeSyncVal, ImageCopyHazardsLayoutTransition) {
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     // Create only execution dependency but do not specify any accesses, so copy writes still
     // hazards with image layout transition writes
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0,
-                           nullptr, 1, &transition);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           0,
+                           nullptr,
+                           1,
+                           &transition);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7010#issuecomment-1846751346
 TEST_F(NegativeSyncVal, TestMessageReportingWithManyBarriers) {
-    TEST_DESCRIPTION("Hazardous pipeline barrier contains many barrier structures (> 255). Test that reporting can handle this.");
+    TEST_DESCRIPTION(
+        "Hazardous pipeline barrier contains many barrier structures (> 255). Test that reporting can handle this.");
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -4964,14 +6005,14 @@ TEST_F(NegativeSyncVal, TestMessageReportingWithManyBarriers) {
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkBufferImageCopy region{};
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageExtent = {64, 64, 1};
+    region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.imageExtent = { 64, 64, 1 };
 
     VkImageMemoryBarrier transition = vku::InitStructHelper();
     transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     transition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     transition.image = image;
-    transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    transition.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     // Create a lot of buffer barriers (> 255) so error reporting will have a lot of objects to report.
     constexpr uint32_t buffer_count = 300;
@@ -4988,8 +6029,16 @@ TEST_F(NegativeSyncVal, TestMessageReportingWithManyBarriers) {
 
     // Create only execution dependency but do not specify any accesses,
     // so subsequent copy writes will hazard with the layout transition writes
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr,
-                           buffer_count, buffer_barriers.data(), 1, &transition);
+    vk::CmdPipelineBarrier(m_command_buffer,
+                           VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           0,
+                           0,
+                           nullptr,
+                           buffer_count,
+                           buffer_barriers.data(),
+                           1,
+                           &transition);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
@@ -5008,11 +6057,12 @@ TEST_F(NegativeSyncVal, WriteOnlyBufferWriteHazard) {
     vkt::Buffer buf_a(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     vkt::Buffer buf_b(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+            { 1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        });
     descriptor_set.WriteDescriptorBufferInfo(0, buf_a, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(1, buf_b, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -5027,7 +6077,7 @@ TEST_F(NegativeSyncVal, WriteOnlyBufferWriteHazard) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     VkBufferCopy region{};
@@ -5035,8 +6085,14 @@ TEST_F(NegativeSyncVal, WriteOnlyBufferWriteHazard) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
-                              0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     // Test that we get WAW and not WAR
@@ -5052,16 +6108,21 @@ TEST_F(NegativeSyncVal, WriteOnlyImageWriteHazard) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Buffer copy_source(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    vkt::Buffer copy_source(
+        *m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(
+        *m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-                                                 });
-    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr },
+        });
+    descriptor_set.WriteDescriptorImageInfo(
+        0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
     const char* cs_source = R"glsl(
@@ -5073,17 +6134,23 @@ TEST_F(NegativeSyncVal, WriteOnlyImageWriteHazard) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     VkBufferImageCopy region{};
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageExtent = {32, 32, 1};
+    region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.imageExtent = { 32, 32, 1 };
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
-                              0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     // Test that we get WAW and not WAR
@@ -5103,11 +6170,13 @@ TEST_F(NegativeSyncVal, UseShaderReadAccessForUniformBuffer) {
 
     constexpr VkDeviceSize size = 1024;
     const vkt::Buffer staging_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-    const vkt::Buffer uniform_buffer(*m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    const vkt::Buffer uniform_buffer(
+        *m_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     VkBufferCopy region = {};
     region.size = size;
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
+    OneOffDescriptorSet descriptor_set(
+        m_device, { { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } });
     descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set.UpdateDescriptorSets();
     const char* cs_source = R"glsl(
@@ -5119,7 +6188,7 @@ TEST_F(NegativeSyncVal, UseShaderReadAccessForUniformBuffer) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
@@ -5141,8 +6210,14 @@ TEST_F(NegativeSyncVal, UseShaderReadAccessForUniformBuffer) {
 
     // Initiate dispatch that reads tranferred data.
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
-                              0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer,
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
@@ -5186,8 +6261,8 @@ TEST_F(NegativeSyncVal, FillBufferWrongBarrier) {
     VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
     barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    barrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;    // should be COPY
-    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;  // should be READ
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;   // should be COPY
+    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT; // should be READ
     barrier.buffer = src_buffer;
     barrier.size = size;
 
@@ -5243,7 +6318,7 @@ TEST_F(NegativeSyncVal, UpdateBufferWrongBarrier) {
     region.size = size;
 
     VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
-    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;  // should be CLEAR
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT; // should be CLEAR
     barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
     barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
@@ -5280,8 +6355,8 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
     vkt::Buffer buffer(*m_device, 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     VkBufferImageCopy region = {};
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageExtent = {64, 64, 1};
+    region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.imageExtent = { 64, 64, 1 };
 
     // Submit from Graphics queue: perform image layout transition (WRITE access).
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
@@ -5294,7 +6369,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_barrier.image = image;
-    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    image_barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &image_barrier;
@@ -5334,8 +6409,8 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
     vkt::Buffer buffer(*m_device, 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     VkBufferImageCopy region = {};
-    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.imageExtent = {64, 64, 1};
+    region.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.imageExtent = { 64, 64, 1 };
 
     vkt::Semaphore semaphore(*m_device);
 
@@ -5353,7 +6428,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_barrier.image = image;
-    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    image_barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &image_barrier;
@@ -5485,9 +6560,12 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     const VkImageLayout input_attachment_layout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
 
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(depth_format, input_attachment_layout, input_attachment_layout, VK_ATTACHMENT_LOAD_OP_LOAD,
+    rp.AddAttachmentDescription(depth_format,
+                                input_attachment_layout,
+                                input_attachment_layout,
+                                VK_ATTACHMENT_LOAD_OP_LOAD,
                                 VK_ATTACHMENT_STORE_OP_NONE);
-    rp.AddAttachmentReference({0, input_attachment_layout});
+    rp.AddAttachmentReference({ 0, input_attachment_layout });
     rp.AddInputAttachment(0);
     rp.CreateRenderPass();
 
@@ -5505,19 +6583,21 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     layout_transition.oldLayout = input_attachment_layout;
     layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     layout_transition.image = image;
-    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
+    layout_transition.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 };
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &layout_transition;
 
     // Fragment shader READs input attachment.
     VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    OneOffDescriptorSet descriptor_set(m_device, {binding});
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-                                            input_attachment_layout);
+    const VkDescriptorSetLayoutBinding binding = {
+        0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr
+    };
+    OneOffDescriptorSet descriptor_set(m_device, { binding });
+    descriptor_set.WriteDescriptorImageInfo(
+        0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, input_attachment_layout);
     descriptor_set.UpdateDescriptorSets();
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
@@ -5528,8 +6608,8 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), fb);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+    vk::CmdBindDescriptorSets(
+        m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
 
@@ -5554,7 +6634,8 @@ TEST_F(NegativeSyncVal, WriteSameLocationFromTwoDispatches) {
 
     vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT}});
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT } });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
@@ -5567,13 +6648,19 @@ TEST_F(NegativeSyncVal, WriteSameLocationFromTwoDispatches) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     // TODO: enable error monitor when we fix WAW detection.
     // m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
@@ -5588,7 +6675,8 @@ TEST_F(NegativeSyncVal, WriteSameLocationFromTwoSubmits) {
 
     vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT}});
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       { { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT } });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
@@ -5601,13 +6689,19 @@ TEST_F(NegativeSyncVal, WriteSameLocationFromTwoSubmits) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipe.pipeline_layout_,
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
@@ -5619,7 +6713,8 @@ TEST_F(NegativeSyncVal, WriteSameLocationFromTwoSubmits) {
 }
 
 TEST_F(NegativeSyncVal, ResourceHandleIndexStability) {
-    TEST_DESCRIPTION("Test that stale handle indices (inconsistent state after core validation error) are handled correctly");
+    TEST_DESCRIPTION(
+        "Test that stale handle indices (inconsistent state after core validation error) are handled correctly");
     RETURN_IF_SKIP(InitSyncVal());
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -5629,8 +6724,8 @@ TEST_F(NegativeSyncVal, ResourceHandleIndexStability) {
     vkt::Buffer buffer_d(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_command_buffer.Begin();
-    m_command_buffer.Copy(buffer_a, buffer_b);  // buffer_a: handle index 0, buffer_b: handle index 1
-    m_command_buffer.Copy(buffer_c, buffer);    // buffer_c: handle index 2, buffer: handle index 3
+    m_command_buffer.Copy(buffer_a, buffer_b); // buffer_a: handle index 0, buffer_b: handle index 1
+    m_command_buffer.Copy(buffer_c, buffer);   // buffer_c: handle index 2, buffer: handle index 3
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
 
@@ -5668,7 +6763,7 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage) {
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;  // Read access mask does not protect subsequent copy writes
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT; // Read access mask does not protect subsequent copy writes
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.memoryBarrierCount = 1;
     dep_info.pMemoryBarriers = &barrier;
@@ -5695,7 +6790,7 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage2) {
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;  // Read access mask does not protect subsequent copy writes
+    barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT; // Read access mask does not protect subsequent copy writes
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.memoryBarrierCount = 1;
     dep_info.pMemoryBarriers = &barrier;
@@ -5722,7 +6817,8 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage3) {
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    barrier.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;  // Shader write access mask does not protect subsequent copy writes
+    barrier.dstAccessMask =
+        VK_ACCESS_2_SHADER_WRITE_BIT; // Shader write access mask does not protect subsequent copy writes
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.memoryBarrierCount = 1;
     dep_info.pMemoryBarriers = &barrier;

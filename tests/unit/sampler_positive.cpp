@@ -11,14 +11,15 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/layer_validation_tests.h"
 #include <gtest/gtest.h>
 #include <vulkan/vulkan_core.h>
-#include "../framework/layer_validation_tests.h"
 
 class PositiveSampler : public VkLayerTest {};
 
 TEST_F(PositiveSampler, SamplerMirrorClampToEdgeWithoutFeature) {
-    TEST_DESCRIPTION("Use VK_KHR_sampler_mirror_clamp_to_edge in 1.1 before samplerMirrorClampToEdge feature was added");
+    TEST_DESCRIPTION(
+        "Use VK_KHR_sampler_mirror_clamp_to_edge in 1.1 before samplerMirrorClampToEdge feature was added");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);

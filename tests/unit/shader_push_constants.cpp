@@ -19,14 +19,14 @@
 class NegativeShaderPushConstants : public VkLayerTest {};
 
 TEST_F(NegativeShaderPushConstants, NotDeclared) {
-    TEST_DESCRIPTION(
-        "Create a graphics pipeline in which a push constant range containing a push constant block member is not declared in the "
-        "layout.");
+    TEST_DESCRIPTION("Create a graphics pipeline in which a push constant range containing a push constant block "
+                     "member is not declared in the "
+                     "layout.");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x; } consts;
         void main(){
@@ -42,11 +42,11 @@ TEST_F(NegativeShaderPushConstants, NotDeclared) {
     push_constant_range.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     push_constant_range.size = 4;
 
-    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, { push_constant_range });
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, { push_constant_range });
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07987");
     pipe.CreateGraphicsPipeline();
@@ -61,9 +61,10 @@ TEST_F(NegativeShaderPushConstants, PipelineRange) {
     const uint32_t maxPushConstantsSize = m_device->Physical().limits_.maxPushConstantsSize;
 
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    VkPushConstantRange push_constant_range = {0, 0, 4};
+    VkPushConstantRange push_constant_range = { 0, 0, 4 };
     VkPipelineLayoutCreateInfo pipeline_layout_info{
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range
+    };
 
     // stageFlags of 0
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-requiredbitmask");
@@ -71,49 +72,49 @@ TEST_F(NegativeShaderPushConstants, PipelineRange) {
     m_errorMonitor->VerifyFound();
 
     // offset over limit
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, maxPushConstantsSize, 8};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, maxPushConstantsSize, 8 };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-offset-00294");
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00298");
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // offset not a multiple of 4
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 1, 8};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 1, 8 };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-offset-00295");
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // size of 0
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 0};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, 0 };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00296");
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // size not a multiple of 4
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 7};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, 7 };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00297");
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // size over limit
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize + 4};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize + 4 };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00298");
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // size over limit of non-zero offset
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 4, maxPushConstantsSize};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 4, maxPushConstantsSize };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00298");
     vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout);
     m_errorMonitor->VerifyFound();
 
     // Sanity check its a valid range before making duplicate
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize };
     ASSERT_EQ(VK_SUCCESS, vk::CreatePipelineLayout(device(), &pipeline_layout_info, NULL, &pipeline_layout));
     vk::DestroyPipelineLayout(device(), pipeline_layout, nullptr);
 
     // Duplicate ranges
-    VkPushConstantRange push_constant_range_duplicate[2] = {push_constant_range, push_constant_range};
+    VkPushConstantRange push_constant_range_duplicate[2] = { push_constant_range, push_constant_range };
     pipeline_layout_info.pushConstantRangeCount = 2;
     pipeline_layout_info.pPushConstantRanges = push_constant_range_duplicate;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLayoutCreateInfo-pPushConstantRanges-00292");
@@ -128,9 +129,10 @@ TEST_F(NegativeShaderPushConstants, PipelineRangeShaderObject) {
     RETURN_IF_SKIP(Init());
 
     vkt::Shader shader;
-    VkPushConstantRange push_constant_range = {0, 0, 4};
+    VkPushConstantRange push_constant_range = { 0, 0, 4 };
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
-    VkShaderCreateInfoEXT ci_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &push_constant_range);
+    VkShaderCreateInfoEXT ci_info =
+        ShaderCreateInfo(spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &push_constant_range);
 
     // stageFlags of 0
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-requiredbitmask");
@@ -141,45 +143,45 @@ TEST_F(NegativeShaderPushConstants, PipelineRangeShaderObject) {
     const uint32_t maxPushConstantsSize = m_device->Physical().limits_.maxPushConstantsSize;
 
     // offset over limit
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, maxPushConstantsSize, 8};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, maxPushConstantsSize, 8 };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-offset-00294");
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00298");
     shader.init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // offset not a multiple of 4
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 1, 8};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 1, 8 };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-offset-00295");
     shader.init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // size of 0
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 0};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, 0 };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00296");
     shader.init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // size not a multiple of 4
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 7};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, 7 };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00297");
     shader.init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // size over limit
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize + 4};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize + 4 };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00298");
     shader.init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // size over limit of non-zero offset
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 4, maxPushConstantsSize};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 4, maxPushConstantsSize };
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00298");
     shader.init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
-    push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize};
+    push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize };
     // Duplicate ranges
-    VkPushConstantRange push_constant_range_duplicate[2] = {push_constant_range, push_constant_range};
+    VkPushConstantRange push_constant_range_duplicate[2] = { push_constant_range, push_constant_range };
     ci_info.pushConstantRangeCount = 2;
     ci_info.pPushConstantRanges = push_constant_range_duplicate;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pPushConstantRanges-10063");
@@ -188,13 +190,13 @@ TEST_F(NegativeShaderPushConstants, PipelineRangeShaderObject) {
 }
 
 TEST_F(NegativeShaderPushConstants, NotInLayout) {
-    TEST_DESCRIPTION(
-        "Test that an error is produced for a shader consuming push constants which are not provided in the pipeline layout");
+    TEST_DESCRIPTION("Test that an error is produced for a shader consuming push constants which are not provided in "
+                     "the pipeline layout");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x; } consts;
         void main(){
@@ -205,7 +207,7 @@ TEST_F(NegativeShaderPushConstants, NotInLayout) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     /* should have generated an error -- no push constant ranges provided! */
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07987");
@@ -234,7 +236,7 @@ TEST_F(NegativeShaderPushConstants, Range) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *const vsSource = R"glsl(
+    char const* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo { float x[4]; } constants;
         void main(){
@@ -246,49 +248,64 @@ TEST_F(NegativeShaderPushConstants, Range) {
     VkShaderObj const fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Set up a push constant range
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize};
-    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
+    VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize };
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, { push_constant_range });
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, { push_constant_range });
     pipe.CreateGraphicsPipeline();
 
-    const float data[16] = {};  // dummy data to match shader size
+    const float data[16] = {}; // dummy data to match shader size
 
     m_command_buffer.Begin();
 
     // size of 0
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-arraylength");
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 0, data);
+    vk::CmdPushConstants(
+        m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 0, data);
     m_errorMonitor->VerifyFound();
 
     // offset not a multiple of 4
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-00368");
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 1, 4, data);
+    vk::CmdPushConstants(
+        m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 1, 4, data);
     m_errorMonitor->VerifyFound();
 
     // size not a multiple of 4
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-00369");
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 5, data);
+    vk::CmdPushConstants(
+        m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 5, data);
     m_errorMonitor->VerifyFound();
 
     // offset at limit
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-00370");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-00371");
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT,
-                         maxPushConstantsSize, 4, data);
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipe.pipeline_layout_.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT,
+                         maxPushConstantsSize,
+                         4,
+                         data);
     m_errorMonitor->VerifyFound();
 
     // size at limit
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-00371");
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
-                         maxPushConstantsSize + 4, data);
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipe.pipeline_layout_.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT,
+                         0,
+                         maxPushConstantsSize + 4,
+                         data);
     m_errorMonitor->VerifyFound();
 
     // Size at limit, should be valid
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
-                         maxPushConstantsSize, data);
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipe.pipeline_layout_.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT,
+                         0,
+                         maxPushConstantsSize,
+                         data);
 
     m_command_buffer.End();
 }
@@ -300,7 +317,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     InitRenderTarget();
 
     // push constant range: 0-99
-    char const *const vsSource = R"glsl(
+    char const* const vsSource = R"glsl(
         #version 450
         layout(push_constant, std430) uniform foo {
            bool b;
@@ -324,7 +341,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     )glsl";
 
     // push constant range: 0 - 95
-    char const *const fsSource = R"glsl(
+    char const* const fsSource = R"glsl(
         #version 450
         struct foo1{
            int i[4];
@@ -347,8 +364,8 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj const fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 128};
-    VkPushConstantRange push_constant_range_small = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 4, 4};
+    VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 128 };
+    VkPushConstantRange push_constant_range_small = { VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 4, 4 };
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.pushConstantRangeCount = 1;
@@ -356,7 +373,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     g_pipe.pipeline_layout_ci_ = pipeline_layout_info;
     g_pipe.CreateGraphicsPipeline();
 
@@ -364,7 +381,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     vkt::PipelineLayout pipeline_layout_small(*m_device, pipeline_layout_info);
 
     CreatePipelineHelper g_pipe_small_range(*this);
-    g_pipe_small_range.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe_small_range.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     g_pipe_small_range.pipeline_layout_ci_ = pipeline_layout_info;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-10069");
@@ -375,11 +392,17 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");  // vertex
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");  // fragment
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602"); // vertex
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602"); // fragment
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              g_pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &g_pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -396,12 +419,15 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     // m_errorMonitor->VerifyFound();
 
     // m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");
-    // vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout_small, VK_SHADER_STAGE_VERTEX_BIT, 4, 4, dummy_values);
-    // vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
-    // m_errorMonitor->VerifyFound();
+    // vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout_small, VK_SHADER_STAGE_VERTEX_BIT, 4, 4,
+    // dummy_values); vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0); m_errorMonitor->VerifyFound();
 
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(),
-                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 32, 68, dummy_values);
+    vk::CmdPushConstants(m_command_buffer.handle(),
+                         pipeline_layout.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                         32,
+                         68,
+                         dummy_values);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
@@ -427,7 +453,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     // void main(){
     //     uFragColor = vec4(0.0);
     // }
-    const char *source = R"(
+    const char* source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %main_f "main" %4
@@ -482,7 +508,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     )";
 
     // Push constant are in the vertex Entrypoint
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16};
+    VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16 };
     VkPipelineLayoutCreateInfo pipeline_layout_info = vku::InitStructHelper();
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_constant_range;
@@ -492,7 +518,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     VkShaderObj const fs(this, source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.gp_ci_.layout = pipeline_layout.handle();
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07987");
@@ -512,7 +538,7 @@ TEST_F(NegativeShaderPushConstants, DISABLED_SpecConstantSize) {
     TEST_DESCRIPTION("Use SpecConstant to adjust size of Push Constant Block");
     RETURN_IF_SKIP(Init());
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 460
         layout (constant_id = 0) const int my_array_size = 1;
         layout (push_constant) uniform my_buf {
@@ -538,13 +564,13 @@ TEST_F(NegativeShaderPushConstants, DISABLED_SpecConstantSize) {
     specialization_info.pData = &data;
 
     // With spec constant set, this should be 32, not 16
-    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 16};
-    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {push_constant_range});
+    VkPushConstantRange push_constant_range = { VK_SHADER_STAGE_COMPUTE_BIT, 0, 16 };
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, { push_constant_range });
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
-                                             &specialization_info);
-    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specialization_info);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, { push_constant_range });
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-07987");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();

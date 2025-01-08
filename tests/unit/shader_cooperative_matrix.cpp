@@ -28,9 +28,9 @@ TEST_F(NegativeShaderCooperativeMatrix, SpecInfo) {
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
+    const vkt::PipelineLayout pl(*m_device, { &dsl });
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -56,8 +56,8 @@ TEST_F(NegativeShaderCooperativeMatrix, SpecInfo) {
         65,
     };
     VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
-        {1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+        { 0, sizeof(uint32_t) * 0, sizeof(uint32_t) },
+        { 1, sizeof(uint32_t) * 1, sizeof(uint32_t) },
     };
 
     VkSpecializationInfo specInfo = {
@@ -68,8 +68,8 @@ TEST_F(NegativeShaderCooperativeMatrix, SpecInfo) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -92,7 +92,7 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageUint32) {
         GTEST_SKIP() << "Cannot execute test due to vertex stage expected to be unsupported";
     }
 
-    char const *vtSource = R"glsl(
+    char const* vtSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -109,7 +109,7 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageUint32) {
 
     CreatePipelineHelper pipe(*this);
     pipe.vs_ = std::make_unique<VkShaderObj>(this, vtSource, VK_SHADER_STAGE_VERTEX_BIT);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixSupportedStages-08985");
     pipe.CreateGraphicsPipeline();
@@ -134,7 +134,7 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageFloat16) {
         GTEST_SKIP() << "Cannot execute test due to vertex stage expected to be unsupported";
     }
 
-    char const *vtSource = R"glsl(
+    char const* vtSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -151,7 +151,7 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageFloat16) {
 
     CreatePipelineHelper pipe(*this);
     pipe.vs_ = std::make_unique<VkShaderObj>(this, vtSource, VK_SHADER_STAGE_VERTEX_BIT);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixSupportedStages-08985");
     pipe.CreateGraphicsPipeline();
@@ -160,7 +160,8 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageFloat16) {
 }
 
 TEST_F(NegativeShaderCooperativeMatrix, ParametersMatchProperties) {
-    TEST_DESCRIPTION("Test that parameters match one of the matrices in any of the supported VkCooperativeMatrixPropertiesKHR");
+    TEST_DESCRIPTION(
+        "Test that parameters match one of the matrices in any of the supported VkCooperativeMatrixPropertiesKHR");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
@@ -179,7 +180,7 @@ TEST_F(NegativeShaderCooperativeMatrix, ParametersMatchProperties) {
     }
 
     // Tests are assume that Float16 3*5 is not available
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -212,7 +213,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -233,7 +234,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
         31,
     };
     const VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
+        { 0, sizeof(uint32_t) * 0, sizeof(uint32_t) },
     };
     const VkSpecializationInfo specInfo = {
         1,
@@ -243,8 +244,8 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-08987", 3);
     pipe.CreateComputePipeline();
@@ -269,7 +270,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSizeWorkgroupScope) 
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -293,7 +294,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSizeWorkgroupScope) 
         props2.cooperativeMatrixWorkgroupScopeMaxWorkgroupSize + 1,
     };
     const VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
+        { 0, sizeof(uint32_t) * 0, sizeof(uint32_t) },
     };
     const VkSpecializationInfo specInfo = {
         1,
@@ -303,8 +304,8 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSizeWorkgroupScope) 
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10165", 3);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensions-10166");
@@ -326,7 +327,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -350,8 +351,8 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
         4, // gl_ScopeInvocation
     };
     const VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
-        {1, sizeof(uint32_t) * 1, sizeof(uint32_t)},
+        { 0, sizeof(uint32_t) * 0, sizeof(uint32_t) },
+        { 1, sizeof(uint32_t) * 1, sizeof(uint32_t) },
     };
     const VkSpecializationInfo specInfo = {
         2,
@@ -361,8 +362,8 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
 
     // SPIR-V code is expected to be bad after specialization, due to scopes are different
     // Need to ignore the spirv-val
@@ -391,7 +392,7 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScope) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -409,7 +410,8 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScope) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
+    pipe.cs_ =
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixWorkgroupScope-10164", 3);
     pipe.CreateComputePipeline();
@@ -432,7 +434,7 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxDimensions) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -461,7 +463,7 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxDimensions) {
         dim,
     };
     const VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
+        { 0, sizeof(uint32_t) * 0, sizeof(uint32_t) },
     };
     const VkSpecializationInfo specInfo = {
         1,
@@ -471,8 +473,8 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxDimensions) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixFlexibleDimensionsMaxDimension-10167", 3);
     pipe.CreateComputePipeline();
@@ -496,7 +498,7 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxSharedMemory) {
         GTEST_SKIP() << "Valid Property not found";
     }
 
-    char const *csSource = R"glsl(
+    char const* csSource = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -518,14 +520,14 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxSharedMemory) {
     VkPhysicalDeviceCooperativeMatrix2PropertiesNV props2 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(props2);
 
-    uint32_t shmem_size =
-        m_device->Physical().limits_.maxComputeSharedMemorySize - props2.cooperativeMatrixWorkgroupScopeReservedSharedMemory + 1;
+    uint32_t shmem_size = m_device->Physical().limits_.maxComputeSharedMemorySize -
+                          props2.cooperativeMatrixWorkgroupScopeReservedSharedMemory + 1;
 
     const uint32_t specData[] = {
         shmem_size,
     };
     const VkSpecializationMapEntry entries[] = {
-        {0, sizeof(uint32_t) * 0, sizeof(uint32_t)},
+        { 0, sizeof(uint32_t) * 0, sizeof(uint32_t) },
     };
     const VkSpecializationInfo specInfo = {
         1,
@@ -535,8 +537,8 @@ TEST_F(NegativeShaderCooperativeMatrix, WorkgroupScopeMaxSharedMemory) {
     };
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+    pipe.cs_ = std::make_unique<VkShaderObj>(
+        this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxComputeSharedMemorySize-10168");
     pipe.CreateComputePipeline();
@@ -562,7 +564,7 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
         GTEST_SKIP() << "Valid Property found, need invalid to test";
     }
 
-    char const *source = R"glsl(
+    char const* source = R"glsl(
         #version 450
         #pragma use_vulkan_memory_model
         #extension GL_KHR_cooperative_matrix : enable
@@ -589,7 +591,8 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
 }
 
 TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
-    TEST_DESCRIPTION("Test that if component type of is signed check that appropriate MatrixSignedComponents is present");
+    TEST_DESCRIPTION(
+        "Test that if component type of is signed check that appropriate MatrixSignedComponents is present");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
@@ -648,7 +651,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
         OpFunctionEnd
     )glsl";
 
-    const auto remove_str = [](const std::string &shader_template, const std::string &removestr) {
+    const auto remove_str = [](const std::string& shader_template, const std::string& removestr) {
         std::string result = shader_template;
         auto position = result.find(removestr);
         assert(position != std::string::npos);
@@ -656,23 +659,24 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
         return result;
     };
     const struct {
-        const char *remove;
-        const char *expect;
+        const char* remove;
+        const char* expect;
     } subtests[] = {
-        {"MatrixASignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
-        {"MatrixBSignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
-        {"MatrixCSignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
-        {"|MatrixResultSignedComponentsKHR", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060"},
+        { "MatrixASignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060" },
+        { "MatrixBSignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060" },
+        { "MatrixCSignedComponentsKHR|", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060" },
+        { "|MatrixResultSignedComponentsKHR", "VUID-RuntimeSpirv-OpCooperativeMatrixMulAddKHR-10060" },
     };
 
-    for (const auto &x: subtests) {
+    for (const auto& x : subtests) {
         const std::string csSourceStr = remove_str(csSourceTemplate, std::string(x.remove));
-        const char *css = csSourceStr.c_str();
+        const char* css = csSourceStr.c_str();
         CreateComputePipelineHelper pipe(*this);
 
-        pipe.cs_ = std::make_unique<VkShaderObj>(this, css, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+        pipe.cs_ =
+            std::make_unique<VkShaderObj>(this, css, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 
-        for (const auto &y : subtests) {
+        for (const auto& y : subtests) {
             if (x.remove == y.remove) {
                 // Set expected message
                 m_errorMonitor->SetDesiredError(y.expect);

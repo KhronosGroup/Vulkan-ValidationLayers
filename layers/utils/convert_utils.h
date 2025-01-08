@@ -22,8 +22,8 @@
 vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info);
 
 vku::safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMemoryBarrier& barrier,
-                                                               VkPipelineStageFlags2 srcStageMask,
-                                                               VkPipelineStageFlags2 dstStageMask);
+                                                                VkPipelineStageFlags2 srcStageMask,
+                                                                VkPipelineStageFlags2 dstStageMask);
 
 // Converts array of VkSubmitInfo into array of VkSubmitInfo2.
 // Constructor performs the conversion. The result is stored into submit_infos2.

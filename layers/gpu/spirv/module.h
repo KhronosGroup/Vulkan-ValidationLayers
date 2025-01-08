@@ -14,13 +14,13 @@
  */
 #pragma once
 
+#include "containers/custom_containers.h"
+#include "function_basic_block.h"
+#include "interface.h"
+#include "link.h"
+#include "type_manager.h"
 #include <stdint.h>
 #include <vector>
-#include "link.h"
-#include "interface.h"
-#include "function_basic_block.h"
-#include "type_manager.h"
-#include "containers/custom_containers.h"
 
 class DebugReport;
 
@@ -50,12 +50,14 @@ struct Settings {
 // There are other helper classes that are charge of handling the various parts of the module.
 class Module {
   public:
-    Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
+    Module(vvl::span<const uint32_t> words,
+           DebugReport* debug_report,
+           const Settings& settings,
            const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
-    // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write out all the
-    // instructions to a binary format.
+    // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write
+    // out all the instructions to a binary format.
     ModuleHeader header_;
     InstructionList capabilities_;
     InstructionList extensions_;
@@ -102,9 +104,12 @@ class Module {
     void AddExtension(const char* extension);
     void AddDebugName(const char* name, uint32_t id);
     void AddDecoration(uint32_t target_id, spv::Decoration decoration, const std::vector<uint32_t>& operands);
-    void AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decoration decoration, const std::vector<uint32_t>& operands);
+    void AddMemberDecoration(uint32_t target_id,
+                             uint32_t index,
+                             spv::Decoration decoration,
+                             const std::vector<uint32_t>& operands);
 
-    const uint32_t max_instrumentations_count_ = 0;  // zero is same as "unlimited"
+    const uint32_t max_instrumentations_count_ = 0; // zero is same as "unlimited"
     bool use_bda_ = false;
     // provides a way to map back and know which original SPIR-V this was from
     const uint32_t shader_id_;
@@ -116,17 +121,17 @@ class Module {
     const bool support_int64_;
     const bool support_memory_model_device_scope_;
 
-    // TODO - To make things simple to start, decide if the whole shader has anything bindless or not. The next step will be a
-    // system to pass in the information from the descriptor set layout to build a LUT of which OpVariable point to bindless
-    // descriptors. This will require special consideration as it will break a simple way to test standalone version of the
-    // instrumentation
+    // TODO - To make things simple to start, decide if the whole shader has anything bindless or not. The next step
+    // will be a system to pass in the information from the descriptor set layout to build a LUT of which OpVariable
+    // point to bindless descriptors. This will require special consideration as it will break a simple way to test
+    // standalone version of the instrumentation
     bool has_bindless_descriptors_ = false;
 
     // Used to help debug
     const bool print_debug_info_;
 
-    // To keep the GPU Shader Instrumentation a standalone sub-project, the runtime version needs to pass in info to allow for
-    // warnings/errors to be piped into the normal callback (otherwise will be sent to stdout)
+    // To keep the GPU Shader Instrumentation a standalone sub-project, the runtime version needs to pass in info to
+    // allow for warnings/errors to be piped into the normal callback (otherwise will be sent to stdout)
     DebugReport* debug_report_ = nullptr;
     void InternalWarning(const char* tag, const char* message);
     void InternalError(const char* tag, const char* message);
@@ -135,5 +140,5 @@ class Module {
     const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut_;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

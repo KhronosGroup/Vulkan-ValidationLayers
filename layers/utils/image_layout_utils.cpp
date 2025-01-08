@@ -92,4 +92,3 @@ bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, V
     }
     return matches;
 }
-

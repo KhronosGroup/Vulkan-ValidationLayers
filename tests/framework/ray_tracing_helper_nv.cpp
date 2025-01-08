@@ -14,7 +14,9 @@
 namespace nv {
 namespace rt {
 
-RayTracingPipelineHelper::RayTracingPipelineHelper(VkLayerTest &test) : layer_test_(test) { InitInfo(); }
+RayTracingPipelineHelper::RayTracingPipelineHelper(VkLayerTest& test) : layer_test_(test) {
+    InitInfo();
+}
 RayTracingPipelineHelper::~RayTracingPipelineHelper() {
     VkDevice device = layer_test_.device();
     if (pipeline_cache_ != VK_NULL_HANDLE) {
@@ -59,25 +61,25 @@ void RayTracingPipelineHelper::InitShaderGroups() {
 
 void RayTracingPipelineHelper::InitDescriptorSetInfo() {
     dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_RAYGEN_BIT_NV, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_RAYGEN_BIT_NV, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_RAYGEN_BIT_NV, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_RAYGEN_BIT_NV, nullptr },
     };
 }
 
 void RayTracingPipelineHelper::InitDescriptorSetInfoKHR() {
     dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr},
-        {1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr },
+        { 1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_RAYGEN_BIT_KHR, nullptr },
     };
 }
 
 void RayTracingPipelineHelper::InitPipelineLayoutInfo() {
     pipeline_layout_ci_ = vku::InitStructHelper();
-    pipeline_layout_ci_.setLayoutCount = 1;     // Not really changeable because InitState() sets exactly one pSetLayout
-    pipeline_layout_ci_.pSetLayouts = nullptr;  // must bound after it is created
+    pipeline_layout_ci_.setLayoutCount = 1;    // Not really changeable because InitState() sets exactly one pSetLayout
+    pipeline_layout_ci_.pSetLayouts = nullptr; // must bound after it is created
 }
 
-void RayTracingPipelineHelper::InitShaderInfo() {  // DONE
+void RayTracingPipelineHelper::InitShaderInfo() { // DONE
     static const char rayGenShaderText[] = R"glsl(
         #version 460 core
         #extension GL_NV_ray_tracing : require
@@ -126,7 +128,7 @@ void RayTracingPipelineHelper::InitShaderInfo() {  // DONE
     chs_ = std::make_unique<VkShaderObj>(&layer_test_, closestHitShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
     mis_ = std::make_unique<VkShaderObj>(&layer_test_, missShaderText, VK_SHADER_STAGE_MISS_BIT_NV);
 
-    shader_stages_ = {rgs_->GetStageCreateInfo(), chs_->GetStageCreateInfo(), mis_->GetStageCreateInfo()};
+    shader_stages_ = { rgs_->GetStageCreateInfo(), chs_->GetStageCreateInfo(), mis_->GetStageCreateInfo() };
 }
 
 void RayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
@@ -138,7 +140,7 @@ void RayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
     rp_ci_.pGroups = groups_.data();
 }
 
-void RayTracingPipelineHelper::AddLibrary(const RayTracingPipelineHelper &library) {
+void RayTracingPipelineHelper::AddLibrary(const RayTracingPipelineHelper& library) {
     libraries_.emplace_back(library.Handle());
     rp_library_ci_ = vku::InitStructHelper();
     rp_library_ci_.libraryCount = size32(libraries_);
@@ -175,7 +177,7 @@ void RayTracingPipelineHelper::LateBindPipelineInfo(bool isKHR) {
     descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
     ASSERT_TRUE(descriptor_set_->Initialized());
 
-    pipeline_layout_ = vkt::PipelineLayout(*layer_test_.DeviceObj(), {&descriptor_set_->layout_});
+    pipeline_layout_ = vkt::PipelineLayout(*layer_test_.DeviceObj(), { &descriptor_set_->layout_ });
 
     if (isKHR) {
         rp_ci_KHR_.layout = pipeline_layout_.handle();
@@ -194,15 +196,20 @@ VkResult RayTracingPipelineHelper::CreateNVRayTracingPipeline(bool do_late_bind)
         LateBindPipelineInfo();
     }
     PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV =
-        (PFN_vkCreateRayTracingPipelinesNV)vk::GetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesNV");
+        (PFN_vkCreateRayTracingPipelinesNV)vk::GetInstanceProcAddr(layer_test_.instance(),
+                                                                   "vkCreateRayTracingPipelinesNV");
     return vkCreateRayTracingPipelinesNV(layer_test_.device(), pipeline_cache_, 1, &rp_ci_, nullptr, &pipeline_);
 }
 
-void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, vkt::Buffer *vbo, vkt::Buffer *ibo,
-                                                    VkGeometryNV *geometry, VkDeviceSize offset, bool buffer_device_address) {
+void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device& device,
+                                                    vkt::Buffer* vbo,
+                                                    vkt::Buffer* ibo,
+                                                    VkGeometryNV* geometry,
+                                                    VkDeviceSize offset,
+                                                    bool buffer_device_address) {
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
-    void *alloc_pnext = nullptr;
+    void* alloc_pnext = nullptr;
     if (buffer_device_address) {
         usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
@@ -211,15 +218,15 @@ void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, v
     vbo->init(device, 1024, usage, kHostVisibleMemProps, alloc_pnext);
     ibo->init(device, 1024, usage, kHostVisibleMemProps, alloc_pnext);
 
-    constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
-    constexpr std::array<uint32_t, 3> indicies = {{0, 1, 2}};
+    constexpr std::array vertices = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f };
+    constexpr std::array<uint32_t, 3> indicies = { { 0, 1, 2 } };
 
-    uint8_t *mapped_vbo_buffer_data = (uint8_t *)vbo->Memory().Map();
-    std::memcpy(mapped_vbo_buffer_data + offset, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
+    uint8_t* mapped_vbo_buffer_data = (uint8_t*)vbo->Memory().Map();
+    std::memcpy(mapped_vbo_buffer_data + offset, (uint8_t*)vertices.data(), sizeof(float) * vertices.size());
     vbo->Memory().Unmap();
 
-    uint8_t *mapped_ibo_buffer_data = (uint8_t *)ibo->Memory().Map();
-    std::memcpy(mapped_ibo_buffer_data + offset, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
+    uint8_t* mapped_ibo_buffer_data = (uint8_t*)ibo->Memory().Map();
+    std::memcpy(mapped_ibo_buffer_data + offset, (uint8_t*)indicies.data(), sizeof(uint32_t) * indicies.size());
     ibo->Memory().Unmap();
 
     *geometry = {};
@@ -240,5 +247,5 @@ void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, v
     geometry->geometry.aabbs = {};
     geometry->geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
 }
-}  // namespace rt
-}  // namespace nv
+} // namespace rt
+} // namespace nv

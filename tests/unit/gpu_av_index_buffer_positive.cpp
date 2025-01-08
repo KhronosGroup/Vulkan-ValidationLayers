@@ -11,9 +11,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/buffer_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/buffer_helper.h"
 
 class PositiveGpuAVIndexBuffer : public GpuAVTest {};
 
@@ -34,13 +34,13 @@ TEST_F(PositiveGpuAVIndexBuffer, BadVertexIndex) {
     draw_params.firstIndex = 0;
     draw_params.vertexOffset = 0;
     draw_params.firstInstance = 0;
-    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, {draw_params});
+    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, { draw_params });
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, std::numeric_limits<uint32_t>::max(), 42});
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, { 0, std::numeric_limits<uint32_t>::max(), 42 });
 
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, 0);
@@ -74,7 +74,7 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexIndex) {
     draw_params.firstIndex = 0;
     draw_params.vertexOffset = 0;
     draw_params.firstInstance = 0;
-    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, {draw_params});
+    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, { draw_params });
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
@@ -82,7 +82,8 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexIndex) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirect(
+        m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
@@ -104,7 +105,7 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedDynamicStates) {
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
+    char const* vsSource = R"glsl(
         #version 450
 
         layout(location=0) in vec3 pos;
@@ -116,13 +117,13 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedDynamicStates) {
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
 
     CreatePipelineHelper pipe(*this);
-    VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
-    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    VkVertexInputBindingDescription input_binding = { 0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX };
+    VkVertexInputAttributeDescription input_attrib = { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0 };
     pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
     pipe.vi_ci_.vertexBindingDescriptionCount = 1;
     pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
     pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = { vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo() };
     pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_CULL_MODE);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_FRONT_FACE);
@@ -133,8 +134,9 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedDynamicStates) {
     pipe.AddDynamicState(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY);
     pipe.CreateGraphicsPipeline();
 
-    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 1, 2});
-    vkt::Buffer vertex_buffer = vkt::VertexBuffer<float>(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, { 0, 1, 2 });
+    vkt::Buffer vertex_buffer =
+        vkt::VertexBuffer<float>(*m_device, { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f });
     VkDeviceSize vertex_buffer_offset = 0;
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();

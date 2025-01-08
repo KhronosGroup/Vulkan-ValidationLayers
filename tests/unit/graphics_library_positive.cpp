@@ -11,9 +11,9 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "../framework/descriptor_helper.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
-#include "../framework/descriptor_helper.h"
 
 void GraphicsLibraryTest::InitBasicGraphicsLibrary() {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -166,7 +166,7 @@ TEST_F(PositiveGraphicsLibrary, CombinedShaderSubsets) {
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
-        std::vector<VkPipelineShaderStageCreateInfo> stages = {vs_stage.stage_ci, fs_stage.stage_ci};
+        std::vector<VkPipelineShaderStageCreateInfo> stages = { vs_stage.stage_ci, fs_stage.stage_ci };
         shader_lib.InitShaderLibInfo(stages);
         shader_lib.CreateGraphicsPipeline();
     }
@@ -197,22 +197,24 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     InitRenderTarget();
 
     // Prepare descriptors
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
-                                     });
-    OneOffDescriptorSet ds2(m_device, {
-                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                      });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr },
+                           });
+    OneOffDescriptorSet ds2(m_device,
+                            {
+                                { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+                            });
 
     // We _vs and _fs layouts are identical, but we want them to be separate handles handles for the sake layout merging
-    vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, &ds.layout_, nullptr}, {},
-                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
-                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    vkt::PipelineLayout pipeline_layout_null(*m_device, {&ds.layout_, nullptr, nullptr}, {},
-                                             VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout_vs(
+        *m_device, { &ds.layout_, &ds.layout_, nullptr }, {}, VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout_fs(
+        *m_device, { &ds.layout_, nullptr, &ds2.layout_ }, {}, VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout_null(
+        *m_device, { &ds.layout_, nullptr, nullptr }, {}, VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
-    const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, VK_NULL_HANDLE, VK_NULL_HANDLE};
+    const std::array<VkDescriptorSet, 3> desc_sets = { ds.set_, VK_NULL_HANDLE, VK_NULL_HANDLE };
 
     vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
@@ -273,8 +275,14 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
 
     // Draw with pipeline created with null set
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_null.handle(), 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipeline_layout_null.handle(),
+                              0,
+                              static_cast<uint32_t>(desc_sets.size()),
+                              desc_sets.data(),
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
@@ -333,9 +341,10 @@ TEST_F(PositiveGraphicsLibrary, VertexAttributeDivisorInstanceRateZero) {
     VkPipelineVertexInputDivisorStateCreateInfo divisor_state_create_info = vku::InitStructHelper();
     divisor_state_create_info.vertexBindingDivisorCount = 1;
     divisor_state_create_info.pVertexBindingDivisors = &divisor_description;
-    VkVertexInputBindingDescription vertex_input_binding_description = {divisor_description.binding, 12,
-                                                                        VK_VERTEX_INPUT_RATE_INSTANCE};
-    VkVertexInputAttributeDescription vertex_input_attribute_description = {0, 0, VK_FORMAT_R8_UNORM, 0};
+    VkVertexInputBindingDescription vertex_input_binding_description = { divisor_description.binding,
+                                                                         12,
+                                                                         VK_VERTEX_INPUT_RATE_INSTANCE };
+    VkVertexInputAttributeDescription vertex_input_attribute_description = { 0, 0, VK_FORMAT_R8_UNORM, 0 };
 
     CreatePipelineHelper frag_shader_lib(*this);
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
@@ -384,7 +393,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
-    VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
+    VkDynamicState dynamic_states[1] = { VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY };
     VkPipelineDynamicStateCreateInfo dynamic_create_info = vku::InitStructHelper();
     dynamic_create_info.pDynamicStates = dynamic_states;
     dynamic_create_info.dynamicStateCount = 1;
@@ -468,7 +477,7 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
-    VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
+    VkDynamicState dynamic_states[1] = { VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY };
     VkPipelineDynamicStateCreateInfo dynamic_create_info = vku::InitStructHelper();
     dynamic_create_info.pDynamicStates = dynamic_states;
     dynamic_create_info.dynamicStateCount = 1;
@@ -873,9 +882,11 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     // Create a full pipeline with the same bad rendering info, but enable rasterizer discard to ignore the bad data
@@ -886,7 +897,7 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     // Create an executable pipeline with rasterization disabled
     // Pass rendering info with null pointers that should be ignored
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 2;  // <- bad data that should be ignored
+    pipeline_rendering_info.colorAttachmentCount = 2; // <- bad data that should be ignored
 
     CreatePipelineHelper fs_lib(*this);
     {
@@ -919,7 +930,7 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     CreatePipelineHelper pr_lib(*this);
     pr_lib.InitPreRasterLibInfo(&vs_stage.stage_ci, &pipeline_rendering_info);
     pr_lib.rs_state_ci_.rasterizerDiscardEnable =
-        VK_TRUE;  // This should cause the bad info in pipeline_rendering_info to be ignored
+        VK_TRUE; // This should cause the bad info in pipeline_rendering_info to be ignored
     pr_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     pr_lib.CreateGraphicsPipeline();
 
@@ -945,9 +956,11 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     // Create a full pipeline with the same bad rendering info, but enable rasterizer discard to ignore the bad data
@@ -1019,7 +1032,8 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    vkt::ImageView depth_stencil_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_stencil_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
     depth_attachment.imageView = depth_stencil_view.handle();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -1029,7 +1043,7 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.layerCount = 1;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    begin_rendering_info.renderArea = { { 0, 0 }, { 1, 1 } };
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
@@ -1047,9 +1061,11 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     CreatePipelineHelper fs_lib(*this);
@@ -1120,7 +1136,8 @@ TEST_F(PositiveGraphicsLibrary, DepthState) {
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
 
         pr_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
-        pr_lib.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;  // This should get ignored due to its state being set as dynamic
+        pr_lib.rs_state_ci_.rasterizerDiscardEnable =
+            VK_TRUE; // This should get ignored due to its state being set as dynamic
         pr_lib.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
         pr_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
         pr_lib.CreateGraphicsPipeline(false);
@@ -1151,19 +1168,21 @@ TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     // Create an executable pipeline with rasterization disabled
     // Pass rendering info with null pointers that should be ignored
     VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
-    pipeline_rendering_info.colorAttachmentCount = 2;  // <- bad data that should be ignored
+    pipeline_rendering_info.colorAttachmentCount = 2; // <- bad data that should be ignored
 
     VkGraphicsPipelineLibraryCreateInfoEXT lib_info = vku::InitStructHelper(&pipeline_rendering_info);
-    lib_info.flags =
-        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+    lib_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                     VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
 
     VkStencilOpState stencil = {};
     stencil.failOp = VK_STENCIL_OP_KEEP;
@@ -1186,7 +1205,7 @@ TEST_F(PositiveGraphicsLibrary, FOIgnoredDynamicRendering) {
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    std::array stages = {vs_stage.stage_ci, fs_stage.stage_ci};
+    std::array stages = { vs_stage.stage_ci, fs_stage.stage_ci };
 
     CreatePipelineHelper lib(*this, &lib_info);
     lib.gp_ci_.flags |= VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
@@ -1296,7 +1315,8 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
 }
 
 TEST_F(PositiveGraphicsLibrary, DepthStencilStateIgnored) {
-    TEST_DESCRIPTION("Create a library with fragment shader state, but no fragment output state, and no DS state, but ignored");
+    TEST_DESCRIPTION(
+        "Create a library with fragment shader state, but no fragment output state, and no DS state, but ignored");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -1476,7 +1496,7 @@ TEST_F(PositiveGraphicsLibrary, IgnoredTessellationState) {
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.AddDynamicState(VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT);
-        pre_raster_lib.shader_stages_ = {pre_raster_lib.vs_->GetStageCreateInfo(), stages[0], stages[1]};
+        pre_raster_lib.shader_stages_ = { pre_raster_lib.vs_->GetStageCreateInfo(), stages[0], stages[1] };
         pre_raster_lib.gp_ci_.stageCount = pre_raster_lib.shader_stages_.size();
         pre_raster_lib.gp_ci_.pStages = pre_raster_lib.shader_stages_.data();
         pre_raster_lib.CreateGraphicsPipeline();
@@ -1519,7 +1539,7 @@ TEST_F(PositiveGraphicsLibrary, PushConstant) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
-    VkPushConstantRange pc_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+    VkPushConstantRange pc_range = { VK_SHADER_STAGE_VERTEX_BIT, 0, 4 };
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -1565,7 +1585,7 @@ TEST_F(PositiveGraphicsLibrary, PushConstantOneLibrary) {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
-        VkPushConstantRange pc_range = {VK_SHADER_STAGE_ALL, 0, 4};
+        VkPushConstantRange pc_range = { VK_SHADER_STAGE_ALL, 0, 4 };
         pre_raster_lib.pipeline_layout_ci_.pushConstantRangeCount = 1;
         pre_raster_lib.pipeline_layout_ci_.pPushConstantRanges = &pc_range;
         pre_raster_lib.CreateGraphicsPipeline();
@@ -1600,17 +1620,20 @@ TEST_F(PositiveGraphicsLibrary, SetLayoutCount) {
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
 
-    OneOffDescriptorSet ds(m_device, {
-                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_GEOMETRY_BIT, nullptr},
-                                     });
-    OneOffDescriptorSet ds2(m_device, {
-                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_GEOMETRY_BIT, nullptr},
-                                      });
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_GEOMETRY_BIT, nullptr },
+                           });
+    OneOffDescriptorSet ds2(m_device,
+                            {
+                                { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_GEOMETRY_BIT, nullptr },
+                            });
 
     // with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, we can have different setLayoutCount
-    vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, &ds2.layout_}, {},
-                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_}, {}, VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout_vs(
+        *m_device, { &ds.layout_, &ds2.layout_ }, {}, VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout_fs(
+        *m_device, { &ds.layout_ }, {}, VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
     CreatePipelineHelper pre_raster_lib(*this);
     {
@@ -1638,9 +1661,9 @@ TEST_F(PositiveGraphicsLibrary, SetLayoutCount) {
 }
 
 TEST_F(PositiveGraphicsLibrary, MultisampleStateFragShaderNull) {
-    TEST_DESCRIPTION(
-        "you're allowed to have the fragment shader subset have a multisample state of NULL and the fragment output subset have a "
-        "non-NULL multisample state as long as sample shading is false.");
+    TEST_DESCRIPTION("you're allowed to have the fragment shader subset have a multisample state of NULL and the "
+                     "fragment output subset have a "
+                     "non-NULL multisample state as long as sample shading is false.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitBasicGraphicsLibrary());
     InitRenderTarget();
@@ -1937,7 +1960,7 @@ TEST_F(PositiveGraphicsLibrary, LegacyDitheringEnable) {
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.layerCount = 1;
-    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    begin_rendering_info.renderArea = { { 0, 0 }, { 1, 1 } };
     begin_rendering_info.flags = VK_RENDERING_ENABLE_LEGACY_DITHERING_BIT_EXT;
 
     m_command_buffer.Begin();

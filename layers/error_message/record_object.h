@@ -22,18 +22,22 @@
 struct RecordObject {
     const Location location; // starting location (Always the function entrypoint)
 
-    // not const as we will want to update these after the command is ran, this struct should passed around as a const ref anyway
-    VkResult result = VK_RESULT_MAX_ENUM;  // Not all items return a VkResult
+    // not const as we will want to update these after the command is ran, this struct should passed around as a const
+    // ref anyway
+    VkResult result = VK_RESULT_MAX_ENUM; // Not all items return a VkResult
     VkDeviceAddress device_address = 0;
 
     const chassis::HandleData* handle_data;
 
-    RecordObject(vvl::Func command_, const chassis::HandleData* handle_data_ = nullptr)
-        : location(Location(command_)), handle_data(handle_data_) {}
-    RecordObject(vvl::Func command_, VkResult result_, const chassis::HandleData* handle_data_ = nullptr)
-        : location(Location(command_)), result(result_), handle_data(handle_data_) {}
-    RecordObject(vvl::Func command_, VkDeviceAddress device_address_, const chassis::HandleData* handle_data_ = nullptr)
-        : location(Location(command_)), device_address(device_address_), handle_data(handle_data_) {}
+    RecordObject(vvl::Func command_, const chassis::HandleData* handle_data_ = nullptr) :
+        location(Location(command_)), handle_data(handle_data_) {}
+    RecordObject(vvl::Func command_, VkResult result_, const chassis::HandleData* handle_data_ = nullptr) :
+        location(Location(command_)), result(result_), handle_data(handle_data_) {}
+    RecordObject(vvl::Func command_,
+                 VkDeviceAddress device_address_,
+                 const chassis::HandleData* handle_data_ = nullptr) :
+        location(Location(command_)),
+        device_address(device_address_), handle_data(handle_data_) {}
 
     bool HasResult() { return result != VK_RESULT_MAX_ENUM; }
 };

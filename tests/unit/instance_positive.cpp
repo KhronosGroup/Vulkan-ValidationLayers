@@ -43,8 +43,10 @@ TEST_F(PositiveInstance, TwoInstances) {
 
 TEST_F(PositiveInstance, ValidationInstanceExtensions) {
     std::string layer_name = "VK_LAYER_KHRONOS_validation";
-    std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
-                                           VK_EXT_LAYER_SETTINGS_EXTENSION_NAME, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME};
+    std::vector<std::string> extensions = { VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+                                            VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
+                                            VK_EXT_LAYER_SETTINGS_EXTENSION_NAME,
+                                            VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME };
     uint32_t property_count;
     vk::EnumerateInstanceExtensionProperties(layer_name.c_str(), &property_count, NULL);
     std::vector<VkExtensionProperties> properties(property_count);
@@ -64,7 +66,8 @@ TEST_F(PositiveInstance, ValidationInstanceExtensions) {
 }
 
 TEST_F(PositiveInstance, ValidEnumBeforeLogicalDevice) {
-    TEST_DESCRIPTION("Call a VkPhysicalDevice query API that uses an enum that is only valid with a promoted extension");
+    TEST_DESCRIPTION(
+        "Call a VkPhysicalDevice query API that uses an enum that is only valid with a promoted extension");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(InitFramework());
 
@@ -72,7 +75,7 @@ TEST_F(PositiveInstance, ValidEnumBeforeLogicalDevice) {
     ci.flags = 0;
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.format = VK_FORMAT_G8_B8R8_2PLANE_422_UNORM;
-    ci.extent = {256, 256, 1};
+    ci.extent = { 256, 256, 1 };
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     ci.mipLevels = 1;

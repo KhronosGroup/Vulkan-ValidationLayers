@@ -23,18 +23,19 @@
 // NOLINTBEGIN
 
 #include "chassis/dispatch_object.h"
-#include "utils/cast_utils.h"
-#include <vulkan/utility/vk_safe_struct.hpp>
-#include "state_tracker/pipeline_state.h"
-#include "containers/custom_containers.h"
 
-#include "thread_tracker/thread_safety_validation.h"
-#include "stateless/stateless_validation.h"
-#include "object_tracker/object_lifetime_validation.h"
-#include "core_checks/core_validation.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
+
 #include "best_practices/best_practices_validation.h"
+#include "containers/custom_containers.h"
+#include "core_checks/core_validation.h"
 #include "gpu/core/gpuav.h"
+#include "object_tracker/object_lifetime_validation.h"
+#include "state_tracker/pipeline_state.h"
+#include "stateless/stateless_validation.h"
 #include "sync/sync_validation.h"
+#include "thread_tracker/thread_safety_validation.h"
+#include "utils/cast_utils.h"
 
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 

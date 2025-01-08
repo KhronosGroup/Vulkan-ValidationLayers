@@ -29,7 +29,7 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
@@ -51,11 +51,11 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     fb_ci.renderPass = rp.Handle();
     fb_ci.attachmentCount = 1;
 
-    fb_ci.pAttachments  = nullptr;
+    fb_ci.pAttachments = nullptr;
     vkt::Framebuffer framebuffer_null(*m_device, fb_ci);
 
     vkt::ImageView rt_view = m_renderTargets[0]->CreateView();
-    VkImageView image_views[2] = {rt_view, CastToHandle<VkImageView, uintptr_t>(0xbaadbeef)};
+    VkImageView image_views[2] = { rt_view, CastToHandle<VkImageView, uintptr_t>(0xbaadbeef) };
     fb_ci.pAttachments = image_views;
     vkt::Framebuffer framebuffer_bad_image_view(*m_device, fb_ci);
 }
@@ -74,7 +74,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
@@ -82,7 +82,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = format;
-    image_ci.extent = {32, 32, 4};
+    image_ci.extent = { 32, 32, 4 };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -117,7 +117,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
 
     VkClearValue clear_value = {};
-    clear_value.color = {{0u, 0u, 0u, 0u}};
+    clear_value.color = { { 0u, 0u, 0u, 0u } };
 
     VkRenderPassAttachmentBeginInfo render_pass_attachment_bi = vku::InitStructHelper();
     render_pass_attachment_bi.attachmentCount = 1;
@@ -126,7 +126,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper(&render_pass_attachment_bi);
     render_pass_bi.renderPass = rp.Handle();
     render_pass_bi.framebuffer = framebuffer.handle();
-    render_pass_bi.renderArea.extent = {1, 1};
+    render_pass_bi.renderArea.extent = { 1, 1 };
     render_pass_bi.clearValueCount = 1;
     render_pass_bi.pClearValues = &clear_value;
 
@@ -151,7 +151,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     // Create a renderPass with a single attachment
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(format);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_GENERAL });
     rp.AddDepthStencilAttachment(0);
     rp.CreateRenderPass();
 
@@ -179,7 +179,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     vkt::Framebuffer framebuffer_null(*m_device, fb_ci);
 
     vkt::ImageView rt_view = m_renderTargets[0]->CreateView();
-    VkImageView image_views[2] = {rt_view, CastToHandle<VkImageView, uintptr_t>(0xbaadbeef)};
+    VkImageView image_views[2] = { rt_view, CastToHandle<VkImageView, uintptr_t>(0xbaadbeef) };
     fb_ci.pAttachments = image_views;
     vkt::Framebuffer framebuffer_bad_image_view(*m_device, fb_ci);
 
@@ -192,7 +192,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     beginInfo.pInheritanceInfo = &inheritanceInfo;
 
     VkClearRect clearRect;
-    clearRect.rect = {{0, 0}, {32u, 32u}};
+    clearRect.rect = { { 0, 0 }, { 32u, 32u } };
     clearRect.baseArrayLayer = 0u;
     clearRect.layerCount = 1u;
 

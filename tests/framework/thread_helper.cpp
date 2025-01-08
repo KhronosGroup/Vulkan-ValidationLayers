@@ -14,7 +14,7 @@
 
 bool ThreadTimeoutHelper::WaitForThreads(int timeout_in_seconds) {
     std::unique_lock lock(mutex_);
-    return cv_.wait_for(lock, std::chrono::seconds{timeout_in_seconds}, [this] {
+    return cv_.wait_for(lock, std::chrono::seconds{ timeout_in_seconds }, [this] {
         std::lock_guard lock_guard(active_thread_mutex_);
         return active_threads_ == 0;
     });
@@ -36,7 +36,7 @@ void ThreadTimeoutHelper::OnThreadDone() {
 }
 
 #if GTEST_IS_THREADSAFE
-void AddToCommandBuffer(ThreadTestData *data) {
+void AddToCommandBuffer(ThreadTestData* data) {
     for (int i = 0; i < 80000; i++) {
         vk::CmdSetEvent(data->commandBuffer, data->event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         if (*data->bailout) {
@@ -45,7 +45,7 @@ void AddToCommandBuffer(ThreadTestData *data) {
     }
 }
 
-void UpdateDescriptor(ThreadTestData *data) {
+void UpdateDescriptor(ThreadTestData* data) {
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = data->buffer;
     buffer_info.offset = 0;
@@ -66,9 +66,9 @@ void UpdateDescriptor(ThreadTestData *data) {
     }
 }
 
-#endif  // GTEST_IS_THREADSAFE
+#endif // GTEST_IS_THREADSAFE
 
-void ReleaseNullFence(ThreadTestData *data) {
+void ReleaseNullFence(ThreadTestData* data) {
     for (int i = 0; i < 40000; i++) {
         vk::DestroyFence(data->device, VK_NULL_HANDLE, NULL);
         if (*data->bailout) {

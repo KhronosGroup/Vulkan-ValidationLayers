@@ -16,8 +16,8 @@
 #include "descriptor_indexing_oob_pass.h"
 #include "link.h"
 #include "module.h"
-#include <spirv/unified1/spirv.hpp>
 #include <iostream>
+#include <spirv/unified1/spirv.hpp>
 
 #include "generated/instrumentation_descriptor_indexing_oob_bindless_comp.h"
 #include "generated/instrumentation_descriptor_indexing_oob_non_bindless_comp.h"
@@ -29,12 +29,14 @@ namespace spirv {
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId() {
     // This pass has 2 variations of GLSL we can pull in. Non-Bindless is simpler and we want to use when possible
-    static LinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
-                                          instrumentation_descriptor_indexing_oob_bindless_comp_size, 0,
-                                          "inst_descriptor_indexing_oob_bindless"};
-    static LinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oob_non_bindless_comp,
-                                              instrumentation_descriptor_indexing_oob_non_bindless_comp_size, 0,
-                                              "inst_descriptor_indexing_oob_non_bindless"};
+    static LinkInfo link_info_bindless = { instrumentation_descriptor_indexing_oob_bindless_comp,
+                                           instrumentation_descriptor_indexing_oob_bindless_comp_size,
+                                           0,
+                                           "inst_descriptor_indexing_oob_bindless" };
+    static LinkInfo link_info_non_bindless = { instrumentation_descriptor_indexing_oob_non_bindless_comp,
+                                               instrumentation_descriptor_indexing_oob_non_bindless_comp_size,
+                                               0,
+                                               "inst_descriptor_indexing_oob_non_bindless" };
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();
@@ -45,11 +47,12 @@ uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block,
+                                                       InstructionIt* inst_it,
                                                        const InjectionData& injection_data) {
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it); // might be int32
 
     if (image_inst_) {
         const uint32_t opcode = target_instruction_->Opcode();
@@ -69,11 +72,11 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
                 auto copied = copy_object_map_.find(image_id);
                 if (copied != copy_object_map_.end()) {
                     image_id = copied->second;
-                    block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, inst_it);
+                    block.CreateInstruction(spv::OpCopyObject, { type_id, copy_id, image_id }, inst_it);
                 } else {
                     copy_object_map_.emplace(image_id, copy_id);
                     // slower, but need to guarantee it is placed after a OpSampledImage
-                    block.function_.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, image_id}, image_id);
+                    block.function_.CreateInstruction(spv::OpCopyObject, { type_id, copy_id, image_id }, image_id);
                 }
             }
         }
@@ -87,11 +90,18 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         binding_constant.Id(), descriptor_index_id, binding_layout_size.Id(), binding_layout_offset.Id()},
-        inst_it);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            { bool_type,
+                              function_result,
+                              function_def,
+                              injection_data.inst_position_id,
+                              injection_data.stage_info_id,
+                              set_constant.Id(),
+                              binding_constant.Id(),
+                              descriptor_index_id,
+                              binding_layout_size.Id(),
+                              binding_layout_offset.Id() },
+                            inst_it);
 
     return function_result;
 }
@@ -154,7 +164,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             const uint32_t access_chain_base_id = access_chain_inst->Operand(0);
             variable = module_.type_manager_.FindVariableById(access_chain_base_id);
             if (variable) {
-                break;  // found
+                break; // found
             }
             access_chain_inst = function.FindInstruction(access_chain_base_id);
         }
@@ -170,7 +180,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             return false;
         }
         if (storage_class != spv::StorageClassUniform && storage_class != spv::StorageClassStorageBuffer) {
-            return false;  // Prevents things like Push Constants
+            return false; // Prevents things like Push Constants
         }
 
         const Type* pointer_type = variable->PointerType(module_.type_manager_);
@@ -197,11 +207,11 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
 
         // Things that have an OpImage (in OpcodeImageAccessPosition) but we don't want to handle
         if (opcode == spv::OpImageRead || opcode == spv::OpImageWrite) {
-            return false;  // Storage Images are handled at OpLoad
+            return false; // Storage Images are handled at OpLoad
         } else if (opcode == spv::OpImageTexelPointer) {
-            return false;  // atomics are handled separately
+            return false; // atomics are handled separately
         } else if (opcode == spv::OpImage) {
-            return false;  // Don't deal with the access directly
+            return false; // Don't deal with the access directly
         }
 
         image_inst_ = function.FindInstruction(inst.Word(image_word));
@@ -211,7 +221,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             load_inst = function.FindInstruction(load_inst->Operand(0));
         }
         if (!load_inst || load_inst->Opcode() != spv::OpLoad) {
-            return false;  // TODO: Handle additional possibilities?
+            return false; // TODO: Handle additional possibilities?
         }
 
         var_inst_ = function.FindInstruction(load_inst->Operand(0));
@@ -277,5 +287,5 @@ void DescriptorIndexingOOBPass::PrintDebugInfo() {
               << (module_.has_bindless_descriptors_ ? "Bindless version" : "Non Bindless version") << ")\n";
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

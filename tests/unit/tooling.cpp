@@ -92,7 +92,8 @@ TEST_F(NegativeTooling, PrivateDataSetSecondDevice) {
 
     static const uint64_t data_value = 0x70AD;
     m_errorMonitor->SetDesiredError("VUID-vkSetPrivateData-objectHandle-04016");
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)second_device.handle(), data_slot, data_value);
+    vk::SetPrivateData(
+        m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)second_device.handle(), data_slot, data_value);
     m_errorMonitor->VerifyFound();
 
     vkt::Sampler sampler(second_device, SafeSaneSamplerCreateInfo());

@@ -19,22 +19,27 @@
 namespace gpuav {
 namespace spirv {
 
-InjectFunctionPass::InjectFunctionPass(Module& module) : Pass(module) { module.use_bda_ = true; }
+InjectFunctionPass::InjectFunctionPass(Module& module) : Pass(module) {
+    module.use_bda_ = true;
+}
 
 bool InjectFunctionPass::Run() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             if ((*block_it)->loop_header_) {
-                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
+                continue; // Currently can't properly handle injecting CFG logic into a loop header block
             }
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
+                // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function
+                // or not
+                if (!RequiresInstrumentation(*function, *(inst_it->get())))
+                    continue;
 
-                if (module_.max_instrumentations_count_ != 0 && instrumentations_count_ >= module_.max_instrumentations_count_) {
-                    return true;  // hit limit
+                if (module_.max_instrumentations_count_ != 0 &&
+                    instrumentations_count_ >= module_.max_instrumentations_count_) {
+                    return true; // hit limit
                 }
                 instrumentations_count_++;
 
@@ -55,5 +60,5 @@ bool InjectFunctionPass::Run() {
     return instrumentations_count_ != 0;
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

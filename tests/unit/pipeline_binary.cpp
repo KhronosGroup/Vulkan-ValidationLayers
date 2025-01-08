@@ -41,7 +41,7 @@ TEST_F(NegativePipelineBinary, GetPipelineKey) {
 
         std::vector<VkDescriptorSetLayoutBinding> bindings(0);
         const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
-        const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+        const vkt::PipelineLayout pipeline_layout(*m_device, { &pipeline_dsl });
 
         VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
         compute_create_info.stage = cs.GetStageCreateInfo();
@@ -72,21 +72,31 @@ TEST_F(NegativePipelineBinary, ReleaseCapturedDataAllocator) {
     RETURN_IF_SKIP(Init());
 
     struct Alloc {
-        static VKAPI_ATTR void *VKAPI_CALL alloc(void *, size_t size, size_t, VkSystemAllocationScope) { return malloc(size); };
-        static VKAPI_ATTR void *VKAPI_CALL reallocFunc(void *, void *original, size_t size, size_t, VkSystemAllocationScope) {
+        static VKAPI_ATTR void* VKAPI_CALL alloc(void*, size_t size, size_t, VkSystemAllocationScope) {
+            return malloc(size);
+        };
+        static VKAPI_ATTR void* VKAPI_CALL
+        reallocFunc(void*, void* original, size_t size, size_t, VkSystemAllocationScope) {
             return realloc(original, size);
         };
-        static VKAPI_ATTR void VKAPI_CALL freeFunc(void *, void *ptr) { free(ptr); };
-        static VKAPI_ATTR void VKAPI_CALL internalAlloc(void *, size_t, VkInternalAllocationType, VkSystemAllocationScope){};
-        static VKAPI_ATTR void VKAPI_CALL internalFree(void *, size_t, VkInternalAllocationType, VkSystemAllocationScope){};
+        static VKAPI_ATTR void VKAPI_CALL freeFunc(void*, void* ptr) { free(ptr); };
+        static VKAPI_ATTR void VKAPI_CALL internalAlloc(void*,
+                                                        size_t,
+                                                        VkInternalAllocationType,
+                                                        VkSystemAllocationScope){};
+        static VKAPI_ATTR void VKAPI_CALL internalFree(void*,
+                                                       size_t,
+                                                       VkInternalAllocationType,
+                                                       VkSystemAllocationScope){};
     };
-    const VkAllocationCallbacks allocator = {nullptr, Alloc::alloc, Alloc::reallocFunc, Alloc::freeFunc, nullptr, nullptr};
+    const VkAllocationCallbacks allocator = { nullptr,         Alloc::alloc, Alloc::reallocFunc,
+                                              Alloc::freeFunc, nullptr,      nullptr };
 
     VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &pipeline_dsl });
 
     VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.stage = cs.GetStageCreateInfo();
@@ -97,12 +107,13 @@ TEST_F(NegativePipelineBinary, ReleaseCapturedDataAllocator) {
     compute_create_info.pNext = &flags2;
 
     VkPipeline test_pipeline_with_allocator;
-    VkResult err =
-        vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, &allocator, &test_pipeline_with_allocator);
+    VkResult err = vk::CreateComputePipelines(
+        device(), VK_NULL_HANDLE, 1, &compute_create_info, &allocator, &test_pipeline_with_allocator);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkPipeline test_pipeline_no_allocator;
-    err = vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &test_pipeline_no_allocator);
+    err = vk::CreateComputePipelines(
+        device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &test_pipeline_no_allocator);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkReleaseCapturedPipelineDataInfoKHR data_info = vku::InitStructHelper();
@@ -174,15 +185,25 @@ TEST_F(NegativePipelineBinary, Destroy) {
     pipe.CreateComputePipeline(true, true);
 
     struct Alloc {
-        static VKAPI_ATTR void *VKAPI_CALL alloc(void *, size_t size, size_t, VkSystemAllocationScope) { return malloc(size); };
-        static VKAPI_ATTR void *VKAPI_CALL reallocFunc(void *, void *original, size_t size, size_t, VkSystemAllocationScope) {
+        static VKAPI_ATTR void* VKAPI_CALL alloc(void*, size_t size, size_t, VkSystemAllocationScope) {
+            return malloc(size);
+        };
+        static VKAPI_ATTR void* VKAPI_CALL
+        reallocFunc(void*, void* original, size_t size, size_t, VkSystemAllocationScope) {
             return realloc(original, size);
         };
-        static VKAPI_ATTR void VKAPI_CALL freeFunc(void *, void *ptr) { free(ptr); };
-        static VKAPI_ATTR void VKAPI_CALL internalAlloc(void *, size_t, VkInternalAllocationType, VkSystemAllocationScope){};
-        static VKAPI_ATTR void VKAPI_CALL internalFree(void *, size_t, VkInternalAllocationType, VkSystemAllocationScope){};
+        static VKAPI_ATTR void VKAPI_CALL freeFunc(void*, void* ptr) { free(ptr); };
+        static VKAPI_ATTR void VKAPI_CALL internalAlloc(void*,
+                                                        size_t,
+                                                        VkInternalAllocationType,
+                                                        VkSystemAllocationScope){};
+        static VKAPI_ATTR void VKAPI_CALL internalFree(void*,
+                                                       size_t,
+                                                       VkInternalAllocationType,
+                                                       VkSystemAllocationScope){};
     };
-    const VkAllocationCallbacks allocator = {nullptr, Alloc::alloc, Alloc::reallocFunc, Alloc::freeFunc, nullptr, nullptr};
+    const VkAllocationCallbacks allocator = { nullptr,         Alloc::alloc, Alloc::reallocFunc,
+                                              Alloc::freeFunc, nullptr,      nullptr };
 
     VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
     binary_create_info.pipeline = pipe.Handle();
@@ -334,18 +355,26 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
 
-    m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depthStencil->Init(
+        *m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    vkt::ImageView depth_image_view =
+        m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 0, nullptr, 0, nullptr};
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 0, nullptr, 0, nullptr
+    };
 
     const VkPipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_create_info{
-        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
+        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+        nullptr,
+        0,
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        VK_FALSE
+    };
 
     const VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info_template{
         VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
@@ -360,7 +389,8 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
         0.0f,
         0.0f,
         0.0f,
-        1.0f};
+        1.0f
+    };
 
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = vku::InitStructHelper();
@@ -371,25 +401,25 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
         pipeline_rasterization_state_create_info_template;
     pipeline_rasterization_state_create_info.rasterizerDiscardEnable = VK_TRUE;
 
-    VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-                                                               nullptr,
-                                                               0,
-                                                               1,
-                                                               &vs.GetStageCreateInfo(),
-                                                               &pipeline_vertex_input_state_create_info,
-                                                               &pipeline_input_assembly_state_create_info,
-                                                               nullptr,
-                                                               nullptr,
-                                                               &pipeline_rasterization_state_create_info,
-                                                               nullptr,
-                                                               nullptr,
-                                                               nullptr,
-                                                               nullptr,
-                                                               pipeline_layout,
-                                                               m_renderPass,
-                                                               0,
-                                                               0,
-                                                               0};
+    VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+                                                                nullptr,
+                                                                0,
+                                                                1,
+                                                                &vs.GetStageCreateInfo(),
+                                                                &pipeline_vertex_input_state_create_info,
+                                                                &pipeline_input_assembly_state_create_info,
+                                                                nullptr,
+                                                                nullptr,
+                                                                &pipeline_rasterization_state_create_info,
+                                                                nullptr,
+                                                                nullptr,
+                                                                nullptr,
+                                                                nullptr,
+                                                                pipeline_layout,
+                                                                m_renderPass,
+                                                                0,
+                                                                0,
+                                                                0 };
 
     {
         VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
@@ -398,10 +428,12 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
 
         VkPipeline test_pipeline;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateGraphicsPipelines-pNext-09617");
-        vk::CreateGraphicsPipelines(device(), pipeline_cache, 1, &graphics_pipeline_create_info, nullptr, &test_pipeline);
+        vk::CreateGraphicsPipelines(
+            device(), pipeline_cache, 1, &graphics_pipeline_create_info, nullptr, &test_pipeline);
         m_errorMonitor->VerifyFound();
 
-        err = vk::CreateGraphicsPipelines(device(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &test_pipeline);
+        err = vk::CreateGraphicsPipelines(
+            device(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &test_pipeline);
         ASSERT_EQ(VK_SUCCESS, err);
 
         VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
@@ -427,7 +459,8 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
 
         VkPipeline test_pipeline2;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateGraphicsPipelines-pNext-09616");
-        vk::CreateGraphicsPipelines(device(), pipeline_cache, 1, &graphics_pipeline_create_info, nullptr, &test_pipeline2);
+        vk::CreateGraphicsPipelines(
+            device(), pipeline_cache, 1, &graphics_pipeline_create_info, nullptr, &test_pipeline2);
         m_errorMonitor->VerifyFound();
 
         for (uint32_t i = 0; i < binaries.size(); i++) {
@@ -444,7 +477,8 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
 
         VkPipeline test_pipeline;
 
-        err = vk::CreateGraphicsPipelines(device(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &test_pipeline);
+        err = vk::CreateGraphicsPipelines(
+            device(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &test_pipeline);
         ASSERT_EQ(VK_SUCCESS, err);
 
         VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
@@ -482,7 +516,8 @@ TEST_F(NegativePipelineBinary, GraphicsPipeline) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateGraphicsPipelines-binaryCount-09621");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateGraphicsPipelines-binaryCount-09622");
 
-        vk::CreateGraphicsPipelines(device(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &test_pipeline2);
+        vk::CreateGraphicsPipelines(
+            device(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &test_pipeline2);
         m_errorMonitor->VerifyFound();
 
         for (uint32_t i = 0; i < binaries.size(); i++) {
@@ -575,7 +610,7 @@ TEST_F(NegativePipelineBinary, Creation3) {
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &pipeline_dsl });
 
     VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.stage = cs.GetStageCreateInfo();
@@ -595,7 +630,8 @@ TEST_F(NegativePipelineBinary, Creation3) {
     handles_info.pipelineBinaryCount = 1;
     handles_info.pPipelineBinaries = &pipeline_binary;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineBinaryCreateInfoKHR-pipelineBinaryInternalCache-09609");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkPipelineBinaryCreateInfoKHR-pipelineBinaryInternalCache-09609");
     vk::CreatePipelineBinariesKHR(device(), &binary_create_info, nullptr, &handles_info);
     m_errorMonitor->VerifyFound();
 }
@@ -723,7 +759,7 @@ TEST_F(NegativePipelineBinary, CreateCacheControl) {
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &pipeline_dsl });
 
     VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.stage = cs.GetStageCreateInfo();
@@ -758,7 +794,7 @@ TEST_F(NegativePipelineBinary, InvalidPNext) {
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
     const vkt::DescriptorSetLayout pipeline_dsl(*m_device, bindings);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&pipeline_dsl});
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &pipeline_dsl });
 
     VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.stage = cs.GetStageCreateInfo();

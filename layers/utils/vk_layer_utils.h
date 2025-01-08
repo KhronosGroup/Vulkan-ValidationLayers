@@ -32,17 +32,17 @@
 #include <type_traits>
 #include <vector>
 
-#include <vulkan/utility/vk_format_utils.h>
-#include <vulkan/utility/vk_concurrent_unordered_map.hpp>
-#include <vulkan/utility/vk_struct_helper.hpp>
 #include "vulkan/vk_layer.h"
+#include <vulkan/utility/vk_concurrent_unordered_map.hpp>
+#include <vulkan/utility/vk_format_utils.h>
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 #include "generated/vk_layer_dispatch_table.h"
 
 #ifndef WIN32
-#include <strings.h>  // For ffs()
+#include <strings.h> // For ffs()
 #else
-#include <intrin.h>  // For __lzcnt()
+#include <intrin.h> // For __lzcnt()
 #endif
 
 #define STRINGIFY(s) STRINGIFY_HELPER(s)
@@ -60,8 +60,8 @@
 #endif
 
 // There are many times we want to assert, but also it is highly important to not crash for release builds.
-// This Macro also makes it more obvious if we are returning early because of a known situation or if we are just guarding against
-// something wrong actually happening.
+// This Macro also makes it more obvious if we are returning early because of a known situation or if we are just
+// guarding against something wrong actually happening.
 #define ASSERT_AND_RETURN(cond) \
     do {                        \
         if (!(cond)) {          \
@@ -84,24 +84,27 @@
         continue;                 \
     }
 
-static inline VkExtent3D CastTo3D(const VkExtent2D &d2) {
-    VkExtent3D d3 = {d2.width, d2.height, 1};
+static inline VkExtent3D CastTo3D(const VkExtent2D& d2) {
+    VkExtent3D d3 = { d2.width, d2.height, 1 };
     return d3;
 }
 
-static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
-    VkOffset3D d3 = {d2.x, d2.y, 0};
+static inline VkOffset3D CastTo3D(const VkOffset2D& d2) {
+    VkOffset3D d3 = { d2.x, d2.y, 0 };
     return d3;
 }
 
-// It is very rare to have more than 3 stages (really only geo/tess) and better to save memory/time for the 99% use cases
+// It is very rare to have more than 3 stages (really only geo/tess) and better to save memory/time for the 99% use
+// cases
 static const uint32_t kCommonMaxGraphicsShaderStages = 3;
 
-typedef void *dispatch_key;
-static inline dispatch_key GetDispatchKey(const void *object) { return (dispatch_key) * (VkLayerDispatchTable **)object; }
+typedef void* dispatch_key;
+static inline dispatch_key GetDispatchKey(const void* object) {
+    return (dispatch_key) * (VkLayerDispatchTable**)object;
+}
 
-VkLayerInstanceCreateInfo *GetChainInfo(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func);
-VkLayerDeviceCreateInfo *GetChainInfo(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
+VkLayerInstanceCreateInfo* GetChainInfo(const VkInstanceCreateInfo* pCreateInfo, VkLayerFunction func);
+VkLayerDeviceCreateInfo* GetChainInfo(const VkDeviceCreateInfo* pCreateInfo, VkLayerFunction func);
 
 template <typename T>
 constexpr bool IsPowerOfTwo(T x) {
@@ -141,8 +144,8 @@ static inline int u_ffs(int val) {
 }
 
 // Given p2 a power of two, returns smallest multiple of p2 greater than or equal to x
-// Different than std::align in that it simply aligns an unsigned integer, when std::align aligns a virtual address and does the
-// necessary bookkeeping to be able to correctly free memory at the new address
+// Different than std::align in that it simply aligns an unsigned integer, when std::align aligns a virtual address and
+// does the necessary bookkeeping to be able to correctly free memory at the new address
 template <typename T>
 constexpr T Align(T x, T p2) {
     static_assert(std::numeric_limits<T>::is_integer, "Unsigned integer required.");
@@ -152,7 +155,9 @@ constexpr T Align(T x, T p2) {
 }
 
 // Returns the 0-based index of the LSB. An input mask of 0 yields -1
-static inline int LeastSignificantBit(uint32_t mask) { return u_ffs(static_cast<int>(mask)) - 1; }
+static inline int LeastSignificantBit(uint32_t mask) {
+    return u_ffs(static_cast<int>(mask)) - 1;
+}
 
 template <typename FlagBits, typename Flags>
 FlagBits LeastSignificantFlag(Flags flags) {
@@ -216,13 +221,16 @@ static inline bool IsImageLayoutReadOnly(VkImageLayout layout) {
         VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
         VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
     };
-    return std::any_of(read_only_layouts.begin(), read_only_layouts.end(),
+    return std::any_of(read_only_layouts.begin(),
+                       read_only_layouts.end(),
                        [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
 }
 
 static inline bool IsImageLayoutDepthOnly(VkImageLayout layout) {
-    constexpr std::array depth_only_layouts = {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL};
-    return std::any_of(depth_only_layouts.begin(), depth_only_layouts.end(),
+    constexpr std::array depth_only_layouts = { VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                                VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL };
+    return std::any_of(depth_only_layouts.begin(),
+                       depth_only_layouts.end(),
                        [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
 }
 
@@ -233,14 +241,16 @@ static inline bool IsImageLayoutDepthReadOnly(VkImageLayout layout) {
         VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
         VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
     };
-    return std::any_of(read_only_layouts.begin(), read_only_layouts.end(),
+    return std::any_of(read_only_layouts.begin(),
+                       read_only_layouts.end(),
                        [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
 }
 
 static inline bool IsImageLayoutStencilOnly(VkImageLayout layout) {
-    constexpr std::array depth_only_layouts = {VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
-                                               VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL};
-    return std::any_of(depth_only_layouts.begin(), depth_only_layouts.end(),
+    constexpr std::array depth_only_layouts = { VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
+                                                VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL };
+    return std::any_of(depth_only_layouts.begin(),
+                       depth_only_layouts.end(),
                        [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
 }
 
@@ -251,7 +261,8 @@ static inline bool IsImageLayoutStencilReadOnly(VkImageLayout layout) {
         VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
         VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
     };
-    return std::any_of(read_only_layouts.begin(), read_only_layouts.end(),
+    return std::any_of(read_only_layouts.begin(),
+                       read_only_layouts.end(),
                        [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
 }
 
@@ -274,7 +285,7 @@ static inline uint32_t GetIndexAlignment(VkIndexType indexType) {
             return 4;
         case VK_INDEX_TYPE_UINT8:
             return 1;
-        case VK_INDEX_TYPE_NONE_KHR:  // alias VK_INDEX_TYPE_NONE_NV
+        case VK_INDEX_TYPE_NONE_KHR: // alias VK_INDEX_TYPE_NONE_NV
             return 0;
         default:
             // Not a real index type. Express no alignment requirement here; we expect upper layer
@@ -310,7 +321,7 @@ static inline bool IsValidPlaneAspect(VkFormat format, VkImageAspectFlags aspect
             return true;
         }
     }
-    return false;  // Expects calls to make sure it is a multi-planar format
+    return false; // Expects calls to make sure it is a multi-planar format
 }
 
 static inline bool IsOnlyOneValidPlaneAspect(VkFormat format, VkImageAspectFlags aspect_mask) {
@@ -333,8 +344,9 @@ static inline bool IsAnyPlaneAspect(VkImageAspectFlags aspect_mask) {
 }
 
 static const VkShaderStageFlags kShaderStageAllGraphics =
-    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
-    VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
+    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+    VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
+    VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
 
 static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
@@ -369,11 +381,14 @@ static inline bool IsBetweenInclusive(VkDeviceSize value, VkDeviceSize min, VkDe
     return (value >= min) && (value <= max);
 }
 
-static inline bool IsBetweenInclusive(const VkExtent2D &value, const VkExtent2D &min, const VkExtent2D &max) {
-    return IsBetweenInclusive(value.width, min.width, max.width) && IsBetweenInclusive(value.height, min.height, max.height);
+static inline bool IsBetweenInclusive(const VkExtent2D& value, const VkExtent2D& min, const VkExtent2D& max) {
+    return IsBetweenInclusive(value.width, min.width, max.width) &&
+           IsBetweenInclusive(value.height, min.height, max.height);
 }
 
-static inline bool IsBetweenInclusive(float value, float min, float max) { return (value >= min) && (value <= max); }
+static inline bool IsBetweenInclusive(float value, float min, float max) {
+    return (value >= min) && (value <= max);
+}
 
 // Check if value is integer multiple of granularity
 static inline bool IsIntegerMultipleOf(VkDeviceSize value, VkDeviceSize granularity) {
@@ -384,7 +399,7 @@ static inline bool IsIntegerMultipleOf(VkDeviceSize value, VkDeviceSize granular
     }
 }
 
-static inline bool IsIntegerMultipleOf(const VkOffset2D &value, const VkOffset2D &granularity) {
+static inline bool IsIntegerMultipleOf(const VkOffset2D& value, const VkOffset2D& granularity) {
     return IsIntegerMultipleOf(value.x, granularity.x) && IsIntegerMultipleOf(value.y, granularity.y);
 }
 
@@ -413,18 +428,19 @@ static inline uint32_t GetBitSetCount(uint32_t field) {
 
 static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
     // uint cast applies floor()
-    return 1u + static_cast<uint32_t>(log2(std::max({extent.height, extent.width, extent.depth})));
+    return 1u + static_cast<uint32_t>(log2(std::max({ extent.height, extent.width, extent.depth })));
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
+VkExtent3D
+GetEffectiveExtent(const VkImageCreateInfo& ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
 
 // Used to get the VkExternalFormatANDROID without having to use ifdef in logic
 // Result of zero is same of not having pNext struct
-constexpr uint64_t GetExternalFormat(const void *pNext) {
+constexpr uint64_t GetExternalFormat(const void* pNext) {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     if (pNext) {
-        const auto *external_format = vku::FindStructInPNextChain<VkExternalFormatANDROID>(pNext);
+        const auto* external_format = vku::FindStructInPNextChain<VkExternalFormatANDROID>(pNext);
         if (external_format) {
             return external_format->externalFormat;
         }
@@ -440,12 +456,12 @@ constexpr uint64_t GetExternalFormat(const void *pNext) {
 // std::array arr {1, 2, 3};
 // IsValueIn(1, arr);
 template <typename T, typename RANGE>
-bool IsValueIn(const T &v, const RANGE &range) {
+bool IsValueIn(const T& v, const RANGE& range) {
     return std::find(std::begin(range), std::end(range), v) != std::end(range);
 }
 
 template <typename T>
-bool IsValueIn(const T &v, const std::initializer_list<T> &list) {
+bool IsValueIn(const T& v, const std::initializer_list<T>& list) {
     return IsValueIn<T, decltype(list)>(v, list);
 }
 
@@ -470,7 +486,8 @@ typedef std::unique_lock<std::shared_mutex> WriteLockGuard;
 template <typename T, typename Guard>
 class LockedSharedPtr : public std::shared_ptr<T> {
   public:
-    LockedSharedPtr(std::shared_ptr<T> &&ptr, Guard &&guard) : std::shared_ptr<T>(std::move(ptr)), guard_(std::move(guard)) {}
+    LockedSharedPtr(std::shared_ptr<T>&& ptr, Guard&& guard) :
+        std::shared_ptr<T>(std::move(ptr)), guard_(std::move(guard)) {}
     LockedSharedPtr() : std::shared_ptr<T>(), guard_() {}
 
   private:
@@ -482,8 +499,8 @@ static constexpr VkPipelineStageFlags2KHR kFramebufferStagePipelineStageFlags =
      VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
 static constexpr VkAccessFlags2 kShaderTileImageAllowedAccessFlags =
-    VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
+    VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 static constexpr bool HasNonFramebufferStagePipelineStageFlags(VkPipelineStageFlags2KHR inflags) {
     return (inflags & ~kFramebufferStagePipelineStageFlags) != 0;
@@ -501,16 +518,14 @@ bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size);
 
 namespace vvl {
 
-static inline void ToLower(std::string &str) {
+static inline void ToLower(std::string& str) {
     // std::tolower() returns int which can cause compiler warnings
-    transform(str.begin(), str.end(), str.begin(),
-              [](char c) { return static_cast<char>(std::tolower(c)); });
+    transform(str.begin(), str.end(), str.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 }
 
-static inline void ToUpper(std::string &str) {
+static inline void ToUpper(std::string& str) {
     // std::toupper() returns int which can cause compiler warnings
-    transform(str.begin(), str.end(), str.begin(),
-              [](char c) { return static_cast<char>(std::toupper(c)); });
+    transform(str.begin(), str.end(), str.begin(), [](char c) { return static_cast<char>(std::toupper(c)); });
 }
 
 // The standard does not specify the value of data() for zero-sized contatiners as being null or non-null,
@@ -518,7 +533,7 @@ static inline void ToUpper(std::string &str) {
 //
 // Vulkan VUID's OTOH frequently require NULLs for zero-sized entries, or for option entries with non-zero counts
 template <typename T>
-const typename T::value_type *DataOrNull(const T &container) {
+const typename T::value_type* DataOrNull(const T& container) {
     if (!container.empty()) {
         return container.data();
     }
@@ -535,11 +550,11 @@ inline constexpr bool dependent_false_v = false;
 // https://en.cppreference.com/w/cpp/atomic/atomic/fetch_max
 // https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p0493r5.pdf
 template <typename T>
-inline T atomic_fetch_max(std::atomic<T> &current_max, const T &value) noexcept {
+inline T atomic_fetch_max(std::atomic<T>& current_max, const T& value) noexcept {
     T t = current_max.load();
     while (!current_max.compare_exchange_weak(t, std::max(t, value)))
         ;
     return t;
 }
 
-}  // namespace vvl
+} // namespace vvl

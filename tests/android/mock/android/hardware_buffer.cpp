@@ -33,6 +33,10 @@ int AHardwareBuffer_allocate(const AHardwareBuffer_Desc* desc, AHardwareBuffer**
     return 0;
 }
 
-void AHardwareBuffer_release(AHardwareBuffer* buffer) { (void)buffer; }
+void AHardwareBuffer_release(AHardwareBuffer* buffer) {
+    (void)buffer;
+}
 
-void AHardwareBuffer_describe(const AHardwareBuffer* buffer, AHardwareBuffer_Desc* outDesc) { *outDesc = buffer->desc; };
+void AHardwareBuffer_describe(const AHardwareBuffer* buffer, AHardwareBuffer_Desc* outDesc) {
+    *outDesc = buffer->desc;
+};

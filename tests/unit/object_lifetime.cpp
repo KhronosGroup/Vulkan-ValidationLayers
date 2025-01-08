@@ -12,17 +12,18 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "utils/cast_utils.h"
+#include "../framework/descriptor_helper.h"
+#include "../framework/external_memory_sync.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
-#include "../framework/descriptor_helper.h"
-#include "../framework/external_memory_sync.h"
+#include "utils/cast_utils.h"
 
 class NegativeObjectLifetime : public VkLayerTest {};
 
 TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
-    TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to a buffer dependency being destroyed.");
+    TEST_DESCRIPTION(
+        "Attempt to draw with a command buffer that is invalid due to a buffer dependency being destroyed.");
     RETURN_IF_SKIP(Init());
 
     VkBuffer buffer;
@@ -40,7 +41,8 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferDestroyed) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
-    pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    pass =
+        m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         vk::DestroyBuffer(device(), buffer, NULL);
         GTEST_SKIP() << "Failed to set memory type";
@@ -93,8 +95,16 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
 
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           NULL, 1, &buf_barrier, 0, NULL);
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           0,
+                           0,
+                           NULL,
+                           1,
+                           &buf_barrier,
+                           0,
+                           NULL);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
@@ -112,7 +122,8 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     vkt::DeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci =
+        vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
@@ -133,10 +144,18 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     img_barrier.image = image.handle();
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    img_barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           NULL, 0, NULL, 1, &img_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer.handle(),
+                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           0,
+                           0,
+                           NULL,
+                           0,
+                           NULL,
+                           1,
+                           &img_barrier);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
@@ -169,7 +188,8 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
-    pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    pass =
+        m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     if (!pass) {
         vk::DestroyBuffer(device(), buffer, NULL);
         GTEST_SKIP() << "Failed to set memory type";
@@ -218,7 +238,8 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     VkDeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci =
+        vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     auto err = vk::CreateImage(device(), &image_ci, nullptr, &image);
     ASSERT_EQ(VK_SUCCESS, err);
@@ -241,7 +262,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     m_command_buffer.Begin();
     VkImageMemoryBarrier2 img_barrier = vku::InitStructHelper();
     img_barrier.image = image;
-    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    img_barrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
@@ -270,10 +291,11 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    OneOffDescriptorSet descriptor_set(m_device,
-                                       {
-                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                       });
+    OneOffDescriptorSet descriptor_set(
+        m_device,
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
+        });
     CreatePipelineHelper pipe(*this);
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     VkBufferViewCreateInfo bvci = vku::InitStructHelper();
@@ -294,7 +316,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
         descriptor_set.WriteDescriptorBufferView(0, view);
         descriptor_set.UpdateDescriptorSets();
 
-        char const *fsSource = R"glsl(
+        char const* fsSource = R"glsl(
             #version 450
             layout(set=0, binding=0, r32f) uniform readonly imageBuffer s;
             layout(location=0) out vec4 x;
@@ -305,8 +327,8 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
         VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+        pipe.shader_stages_ = { vs.GetStageCreateInfo(), fs.GetStageCreateInfo() };
+        pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &descriptor_set.layout_ });
         err = pipe.CreateGraphicsPipeline();
         if (err != VK_SUCCESS) {
             GTEST_SKIP() << "Unable to compile shader";
@@ -317,16 +339,22 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
 
         // Bind pipeline to cmd buffer - This causes crash on Mali
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                                  &descriptor_set.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  pipe.pipeline_layout_.handle(),
+                                  0,
+                                  1,
+                                  &descriptor_set.set_,
+                                  0,
+                                  nullptr);
     }
     // buffer is released.
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");  // buffer
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114"); // buffer
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyBufferView(device(), view, NULL);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");  // bufferView
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114"); // bufferView
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -339,8 +367,14 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
     descriptor_set.WriteDescriptorBufferView(0, view);
     descriptor_set.UpdateDescriptorSets();
 
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -356,16 +390,17 @@ TEST_F(NegativeObjectLifetime, CmdBufferBufferViewDestroyed) {
 TEST_F(NegativeObjectLifetime, DescriptorSetStorageBufferDestroyed) {
     RETURN_IF_SKIP(Init());
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           { 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer SSBO { uint x; };
         void main(){
@@ -383,8 +418,14 @@ TEST_F(NegativeObjectLifetime, DescriptorSetStorageBufferDestroyed) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, NULL);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              NULL);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
@@ -410,15 +451,15 @@ TEST_F(NegativeObjectLifetime, DISABLED_DescriptorSetMutableBufferDestroyed) {
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &type_list;
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}}, 0,
-                                       &mdtci);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device, { { 0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } }, 0, &mdtci);
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer SSBO { uint x; };
         void main(){
@@ -431,12 +472,18 @@ TEST_F(NegativeObjectLifetime, DISABLED_DescriptorSetMutableBufferDestroyed) {
     pipe.cp_ci_.layout = pipeline_layout.handle();
     pipe.CreateComputePipeline();
 
-    buffer.destroy();  // Destroy the buffer before it's bound to the cmd buffer
+    buffer.destroy(); // Destroy the buffer before it's bound to the cmd buffer
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, NULL);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              NULL);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
@@ -462,17 +509,17 @@ TEST_F(NegativeObjectLifetime, DISABLED_DescriptorSetMutableBufferArrayDestroyed
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &type_list;
 
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}}, 0,
-                                       &mdtci);
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    OneOffDescriptorSet descriptor_set(
+        m_device, { { 0, VK_DESCRIPTOR_TYPE_MUTABLE_EXT, 2, VK_SHADER_STAGE_COMPUTE_BIT, nullptr } }, 0, &mdtci);
+    const vkt::PipelineLayout pipeline_layout(*m_device, { &descriptor_set.layout_ });
 
-    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);  // not used
-    vkt::Buffer uniform_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);  // used
+    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT); // not used
+    vkt::Buffer uniform_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT); // used
     descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
     descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
     descriptor_set.UpdateDescriptorSets();
 
-    const char *cs_source = R"glsl(
+    const char* cs_source = R"glsl(
         #version 450
         layout(set=0, binding=0) buffer SSBO { uint x; } ssbo[2];
         void main(){
@@ -485,12 +532,18 @@ TEST_F(NegativeObjectLifetime, DISABLED_DescriptorSetMutableBufferArrayDestroyed
     pipe.cp_ci_.layout = pipeline_layout.handle();
     pipe.CreateComputePipeline();
 
-    uniform_buffer.destroy();  // Destroy the buffer before it's bound to the cmd buffer
+    uniform_buffer.destroy(); // Destroy the buffer before it's bound to the cmd buffer
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, NULL);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_COMPUTE,
+                              pipeline_layout.handle(),
+                              0,
+                              1,
+                              &descriptor_set.set_,
+                              0,
+                              NULL);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
@@ -498,13 +551,14 @@ TEST_F(NegativeObjectLifetime, DISABLED_DescriptorSetMutableBufferArrayDestroyed
 }
 
 TEST_F(NegativeObjectLifetime, CmdBufferImageDestroyed) {
-    TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to an image dependency being destroyed.");
+    TEST_DESCRIPTION(
+        "Attempt to draw with a command buffer that is invalid due to an image dependency being destroyed.");
     RETURN_IF_SKIP(Init()) {
         const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
         VkImageCreateInfo image_create_info = vku::InitStructHelper();
         image_create_info.imageType = VK_IMAGE_TYPE_2D;
         image_create_info.format = tex_format;
-        image_create_info.extent = {32, 32, 1};
+        image_create_info.extent = { 32, 32, 1 };
         image_create_info.mipLevels = 1;
         image_create_info.arrayLayers = 1;
         image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -552,7 +606,7 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
         VkImageCreateInfo image_ci = vku::InitStructHelper();
         image_ci.imageType = VK_IMAGE_TYPE_2D;
         image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
-        image_ci.extent = {32, 32, 1};
+        image_ci.extent = { 32, 32, 1 };
         image_ci.mipLevels = 1;
         image_ci.arrayLayers = 1;
         image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -569,13 +623,15 @@ TEST_F(NegativeObjectLifetime, CmdBufferFramebufferImageDestroyed) {
             image.handle(),
             VK_IMAGE_VIEW_TYPE_2D,
             VK_FORMAT_B8G8R8A8_UNORM,
-            {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A},
-            {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+            { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
+            { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
         };
         err = vk::CreateImageView(device(), &ivci, nullptr, &view);
         ASSERT_EQ(VK_SUCCESS, err);
 
-        VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 32, 32, 1};
+        VkFramebufferCreateInfo fci = {
+            VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 32, 32, 1
+        };
         err = vk::CreateFramebuffer(device(), &fci, nullptr, &fb);
         ASSERT_EQ(VK_SUCCESS, err);
 
@@ -614,7 +670,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     VkImageCreateInfo image_ci = vku::InitStructHelper();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_ci.extent = {32, 32, 1};
+    image_ci.extent = { 32, 32, 1 };
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -624,7 +680,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     image_ci.flags = 0;
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
-    vkt::DeviceMemory *image_memory = new vkt::DeviceMemory;
+    vkt::DeviceMemory* image_memory = new vkt::DeviceMemory;
     image_memory->init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
     image.BindMemory(*image_memory, 0);
 
@@ -635,13 +691,14 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
         image.handle(),
         VK_IMAGE_VIEW_TYPE_2D,
         VK_FORMAT_B8G8R8A8_UNORM,
-        {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A},
-        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+        { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
+        { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
     };
     vkt::ImageView view(*m_device, ivci);
 
     VkFramebufferCreateInfo fci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 32, 32, 1};
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 32, 32, 1
+    };
 
     // Introduce error:
     // Free the attachment image memory, then create framebuffer.
@@ -666,21 +723,28 @@ TEST_F(NegativeObjectLifetime, DescriptorPoolInUseDestroyedSignaled) {
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
     };
     pipe.CreateGraphicsPipeline();
 
     // Update descriptor with image and sampler
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(
+        0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, NULL);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe.descriptor_set_->set_,
+                              0,
+                              NULL);
 
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
@@ -712,7 +776,8 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     vkt::ImageView view = image.CreateView();
 
     VkFramebufferCreateInfo fci = {
-        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 256, 256, 1};
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view.handle(), 256, 256, 1
+    };
     VkFramebuffer fb;
     vk::CreateFramebuffer(device(), &fci, nullptr, &fb);
 
@@ -731,7 +796,8 @@ TEST_F(NegativeObjectLifetime, FramebufferInUseDestroyedSignaled) {
     m_errorMonitor->VerifyFound();
     // Wait for queue to complete so we can safely destroy everything
     m_default_queue->Wait();
-    m_errorMonitor->SetUnexpectedError("If framebuffer is not VK_NULL_HANDLE, framebuffer must be a valid VkFramebuffer handle");
+    m_errorMonitor->SetUnexpectedError(
+        "If framebuffer is not VK_NULL_HANDLE, framebuffer must be a valid VkFramebuffer handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Framebuffer obj");
     vk::DestroyFramebuffer(device(), fb, nullptr);
 }
@@ -750,13 +816,14 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_binding.pImmutableSamplers = NULL;
 
-    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    const vkt::DescriptorSetLayout ds_layout(*m_device, { dsl_binding });
     // Create push descriptor set layout
-    const vkt::DescriptorSetLayout push_ds_layout(*m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    const vkt::DescriptorSetLayout push_ds_layout(
+        *m_device, { dsl_binding }, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
 
     // Use helper to create graphics pipeline
     CreatePipelineHelper helper(*this);
-    helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&push_ds_layout, &ds_layout});
+    helper.pipeline_layout_ = vkt::PipelineLayout(*m_device, { &push_ds_layout, &ds_layout });
     helper.CreateGraphicsPipeline();
 
     const uint32_t data_size = sizeof(float) * 3;
@@ -773,13 +840,17 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
     descriptor_write.pBufferInfo = &buff_info;
     descriptor_write.pImageInfo = nullptr;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_write.dstSet = 0;  // Should not cause a validation error
+    descriptor_write.dstSet = 0; // Should not cause a validation error
 
     m_command_buffer.Begin();
 
     // In Intel GPU, it needs to bind pipeline before push descriptor set.
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
+    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(),
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                helper.pipeline_layout_.handle(),
+                                0,
+                                1,
                                 &descriptor_write);
     m_command_buffer.End();
 
@@ -801,9 +872,9 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     vkt::ImageView view = image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
-    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddAttachmentDescription(
+        VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    rp.AddAttachmentReference({ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle(), 256, 256);
@@ -846,9 +917,9 @@ TEST_F(NegativeObjectLifetime, EventInUseDestroyedSignaled) {
 }
 
 TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
-    TEST_DESCRIPTION(
-        "Use vkCmdExecuteCommands with invalid state in primary and secondary command buffers. Delete objects that are in use. "
-        "Call VkQueueSubmit with an event that has been deleted.");
+    TEST_DESCRIPTION("Use vkCmdExecuteCommands with invalid state in primary and secondary command buffers. Delete "
+                     "objects that are in use. "
+                     "Call VkQueueSubmit with an event that has been deleted.");
 
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
@@ -865,7 +936,8 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(
+        0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     VkEvent event;
@@ -877,8 +949,14 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
     vk::CmdSetEvent(m_command_buffer.handle(), event, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
 
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, NULL);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe.descriptor_set_->set_,
+                              0,
+                              NULL);
 
     m_command_buffer.End();
 
@@ -902,7 +980,8 @@ TEST_F(NegativeObjectLifetime, InUseDestroyedSignaled) {
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
-    m_errorMonitor->SetUnexpectedError("If semaphore is not VK_NULL_HANDLE, semaphore must be a valid VkSemaphore handle");
+    m_errorMonitor->SetUnexpectedError(
+        "If semaphore is not VK_NULL_HANDLE, semaphore must be a valid VkSemaphore handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Semaphore obj");
     vk::DestroySemaphore(device(), semaphore, nullptr);
     m_errorMonitor->SetUnexpectedError("If fence is not VK_NULL_HANDLE, fence must be a valid VkFence handle");
@@ -926,7 +1005,7 @@ TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
 
     // Store pipeline handle so we can actually delete it before test finishes
     VkPipeline delete_this_pipeline;
-    {  // Scope pipeline so it will be auto-deleted
+    { // Scope pipeline so it will be auto-deleted
         CreatePipelineHelper pipe(*this);
         pipe.CreateGraphicsPipeline();
 
@@ -940,7 +1019,7 @@ TEST_F(NegativeObjectLifetime, PipelineInUseDestroyedSignaled) {
 
         // Submit cmd buffer and then pipeline destroyed while in-flight
         m_default_queue->Submit(m_command_buffer);
-    }  // Pipeline deletion triggered here
+    } // Pipeline deletion triggered here
     m_errorMonitor->VerifyFound();
     // Make sure queue finished and then actually delete pipeline
     m_default_queue->Wait();
@@ -971,9 +1050,9 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
     };
     pipe.CreateGraphicsPipeline();
 
@@ -986,8 +1065,14 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     // Bind pipeline to cmd buffer
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
 
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
@@ -1000,7 +1085,8 @@ TEST_F(NegativeObjectLifetime, ImageViewInUseDestroyedSignaled) {
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
     // Now we can actually destroy imageView
-    m_errorMonitor->SetUnexpectedError("If imageView is not VK_NULL_HANDLE, imageView must be a valid VkImageView handle");
+    m_errorMonitor->SetUnexpectedError(
+        "If imageView is not VK_NULL_HANDLE, imageView must be a valid VkImageView handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove ImageView obj");
     vk::DestroySampler(device(), sampler, nullptr);
 }
@@ -1021,7 +1107,7 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     VkResult err = vk::CreateBufferView(device(), &bvci, NULL, &view);
     ASSERT_EQ(VK_SUCCESS, err);
 
-    char const *fsSource = R"glsl(
+    char const* fsSource = R"glsl(
         #version 450
         layout(set=0, binding=0, r32f) uniform readonly imageBuffer s;
         layout(location=0) out vec4 x;
@@ -1032,9 +1118,9 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
     };
     err = pipe.CreateGraphicsPipeline();
     if (err != VK_SUCCESS) {
@@ -1050,8 +1136,14 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     // Bind pipeline to cmd buffer
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -1063,7 +1155,8 @@ TEST_F(NegativeObjectLifetime, BufferViewInUseDestroyedSignaled) {
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
     // Now we can actually destroy bufferView
-    m_errorMonitor->SetUnexpectedError("If bufferView is not VK_NULL_HANDLE, bufferView must be a valid VkBufferView handle");
+    m_errorMonitor->SetUnexpectedError(
+        "If bufferView is not VK_NULL_HANDLE, bufferView must be a valid VkBufferView handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove BufferView obj");
     vk::DestroyBufferView(device(), view, NULL);
 }
@@ -1087,9 +1180,9 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.shader_stages_ = { pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo() };
     pipe.dsl_bindings_ = {
-        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr },
     };
     pipe.CreateGraphicsPipeline();
 
@@ -1102,8 +1195,14 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     // Bind pipeline to cmd buffer
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(),
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              pipe.pipeline_layout_.handle(),
+                              0,
+                              1,
+                              &pipe.descriptor_set_->set_,
+                              0,
+                              nullptr);
 
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
@@ -1112,18 +1211,19 @@ TEST_F(NegativeObjectLifetime, SamplerInUseDestroyedSignaled) {
     // Submit cmd buffer and then destroy sampler while in-flight
     m_default_queue->Submit(m_command_buffer);
 
-    vk::DestroySampler(device(), sampler, nullptr);  // Destroyed too soon
+    vk::DestroySampler(device(), sampler, nullptr); // Destroyed too soon
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 
     // Now we can actually destroy sampler
     m_errorMonitor->SetUnexpectedError("If sampler is not VK_NULL_HANDLE, sampler must be a valid VkSampler handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove Sampler obj");
-    vk::DestroySampler(device(), sampler, NULL);  // Destroyed for real
+    vk::DestroySampler(device(), sampler, NULL); // Destroyed for real
 }
 
 TEST_F(NegativeObjectLifetime, CmdBufferEventDestroyed) {
-    TEST_DESCRIPTION("Attempt to draw with a command buffer that is invalid due to an event dependency being destroyed.");
+    TEST_DESCRIPTION(
+        "Attempt to draw with a command buffer that is invalid due to an event dependency being destroyed.");
     RETURN_IF_SKIP(Init());
 
     VkEvent event;
@@ -1224,7 +1324,7 @@ TEST_F(NegativeObjectLifetime, LeakAnObject) {
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
-    const float q_priority[] = {1.0f};
+    const float q_priority[] = { 1.0f };
     VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
     queue_ci.queueFamilyIndex = 0;
     queue_ci.queueCount = 1;
@@ -1245,8 +1345,8 @@ TEST_F(NegativeObjectLifetime, LeakAnObject) {
     vk::DestroyDevice(leaky_device, nullptr);
     m_errorMonitor->VerifyFound();
 
-    // There's no way we can destroy the fence at this point. Even though DestroyDevice failed, the loader has already removed
-    // references to the device
+    // There's no way we can destroy the fence at this point. Even though DestroyDevice failed, the loader has already
+    // removed references to the device
     m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-05137");
     m_errorMonitor->SetUnexpectedError("VUID-vkDestroyInstance-instance-00629");
 }
@@ -1270,7 +1370,7 @@ TEST_F(NegativeObjectLifetime, LeakABuffer) {
         GTEST_SKIP() << "Test requires unsupported sparseBinding feature";
     }
 
-    const float q_priority[] = {1.0f};
+    const float q_priority[] = { 1.0f };
     VkDeviceQueueCreateInfo queue_ci = vku::InitStructHelper();
     queue_ci.queueFamilyIndex = 0;
     queue_ci.queueCount = 1;
@@ -1320,7 +1420,7 @@ TEST_F(NegativeObjectLifetime, FreeDescriptorSetsNull) {
     TEST_DESCRIPTION("Can pass NULL for vkFreeDescriptorSets");
     RETURN_IF_SKIP(Init());
 
-    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1};
+    VkDescriptorPoolSize ds_type_count = { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1 };
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
@@ -1345,16 +1445,17 @@ TEST_F(NegativeObjectLifetime, DescriptorBufferInfoUpdate) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     VkBuffer invalid_buffer = CastToHandle<VkBuffer, uintptr_t>(0xbaadbeef);
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                     {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                           { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr },
+                                       });
     descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set.WriteDescriptorBufferInfo(1, invalid_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
     buffer.destroy();
-    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-parameter");  // destroyed
-    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-parameter");  // invalid
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-parameter"); // destroyed
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-parameter"); // invalid
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
