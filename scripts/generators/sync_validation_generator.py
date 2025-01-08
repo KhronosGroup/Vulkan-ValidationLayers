@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2023-2024 The Khronos Group Inc.
-# Copyright (c) 2023-2024 LunarG, Inc.
+# Copyright (c) 2023-2025 The Khronos Group Inc.
+# Copyright (c) 2023-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -80,8 +80,8 @@ class SyncValidationOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2024 Valve Corporation
-            * Copyright (c) 2015-2024 LunarG, Inc.
+            * Copyright (c) 2015-2025 Valve Corporation
+            * Copyright (c) 2015-2025 LunarG, Inc.
             *
             * Licensed under the Apache License, Version 2.0 (the "License");
             * you may not use this file except in compliance with the License.
@@ -164,6 +164,10 @@ class SyncValidationOutputGenerator(BaseGenerator):
         shader_write_access = next((a for a in self.vk.syncAccess if a.flag.name == 'VK_ACCESS_2_SHADER_WRITE_BIT'), None)
         shader_write_expansion = [e.name for e in shader_write_access.equivalent.accesses]
         out.append(f'static constexpr VkAccessFlags2 kShaderWriteExpandBits = {"|".join(shader_write_expansion)};\n')
+
+        all_transfer_stage = next((s for s in self.vk.syncStage if s.flag.name == 'VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT'), None)
+        all_transfer_expansion = [e.name for e in all_transfer_stage.equivalent.stages]
+        out.append(f'static constexpr VkPipelineStageFlags2 kAllTransferExpandBits = {"|".join(all_transfer_expansion)};\n')
 
         out.append(f'''
 // Fake stages and accesses for acquire present support
