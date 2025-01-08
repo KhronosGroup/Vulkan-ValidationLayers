@@ -751,6 +751,18 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
         has_robust_image_access =
             (api_version >= VK_API_VERSION_1_3 || IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) &&
             phys_dev_extensions.find(vvl::Extension::_VK_EXT_image_robustness) != phys_dev_extensions.end();
+
+        if (IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2) &&
+            phys_dev_extensions.find(vvl::Extension::_VK_EXT_image_robustness) != phys_dev_extensions.end()) {
+            VkPhysicalDeviceRobustness2FeaturesEXT robustness_2_features = vku::InitStructHelper();
+            VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
+            DispatchGetPhysicalDeviceFeatures2Helper(physical_device, &features2);
+            has_robust_image_access2 = robustness_2_features.robustImageAccess2;
+            has_robust_buffer_access2 = robustness_2_features.robustBufferAccess2;
+        } else {
+            has_robust_image_access2 = false;
+            has_robust_buffer_access2 = false;
+        }
     }
 
     const auto &dev_ext = device_extensions;
