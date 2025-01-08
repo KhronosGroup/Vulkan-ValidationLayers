@@ -14,11 +14,11 @@
  */
 #pragma once
 
-#include <stdint.h>
-#include <stddef.h>
-#include <vector>
 #include "containers/custom_containers.h"
 #include <spirv/unified1/spirv.hpp>
+#include <stddef.h>
+#include <stdint.h>
+#include <vector>
 
 struct OperandInfo;
 
@@ -80,10 +80,10 @@ struct Instruction {
 
     // Store minimal extra data
     uint32_t result_id_index_ = 0;
-    uint32_t type_id_index_ = 0;
-    uint32_t operand_index_ = 1;
+    uint32_t type_id_index_   = 0;
+    uint32_t operand_index_   = 1;
     // used to find original position of instruction in shader, pre-instrumented
-    uint32_t position_index_ = 0;
+    uint32_t           position_index_ = 0;
     const OperandInfo& operand_info_;
 
     // When this class was created, for SPIR-V Instructions that could be used in Vulkan,
@@ -108,5 +108,5 @@ struct Instruction {
 #endif
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

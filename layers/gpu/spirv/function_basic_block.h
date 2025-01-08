@@ -14,12 +14,12 @@
  */
 #pragma once
 
-#include <stdint.h>
-#include <vector>
-#include <memory>
-#include <spirv/unified1/spirv.hpp>
 #include "containers/custom_containers.h"
 #include "instruction.h"
+#include <memory>
+#include <spirv/unified1/spirv.hpp>
+#include <stdint.h>
+#include <vector>
 
 namespace gpuav {
 namespace spirv {
@@ -31,9 +31,10 @@ struct Function;
 // The vector acts as our linked list to iterator and make occasional insertions.
 // The unique_ptr allows us to create instructions outside module scope and bring them back.
 using InstructionList = std::vector<std::unique_ptr<Instruction>>;
-using InstructionIt = InstructionList::iterator;
+using InstructionIt   = InstructionList::iterator;
 
-// Since CFG analysis/manipulation is not a main focus, Blocks/Funcitons are just simple containers for ordering Instructions
+// Since CFG analysis/manipulation is not a main focus, Blocks/Funcitons are just simple containers for ordering
+// Instructions
 struct BasicBlock {
     // Used when loading initial SPIR-V
     BasicBlock(std::unique_ptr<Instruction> label, Function& function);
@@ -54,13 +55,13 @@ struct BasicBlock {
     void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, InstructionIt* inst_it = nullptr);
 
     InstructionList instructions_;
-    Function& function_;
+    Function&       function_;
 
     bool loop_header_ = false;
 };
 
 using BasicBlockList = std::vector<std::unique_ptr<BasicBlock>>;
-using BasicBlockIt = BasicBlockList::iterator;
+using BasicBlockIt   = BasicBlockList::iterator;
 
 struct Function {
     Function(Module& module, std::unique_ptr<Instruction> function_inst);
@@ -69,11 +70,11 @@ struct Function {
     void ToBinary(std::vector<uint32_t>& out);
 
     const Instruction& GetDef() { return *pre_block_inst_[0].get(); }
-    BasicBlock& GetFirstBlock() { return *blocks_[0]; }
+    BasicBlock&        GetFirstBlock() { return *blocks_[0]; }
 
     // Adds a new block after and returns reference to it
     BasicBlockIt InsertNewBlock(BasicBlockIt it);
-    void InitBlocks(uint32_t count);
+    void         InitBlocks(uint32_t count);
 
     void ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word);
 
@@ -86,11 +87,11 @@ struct Function {
     InstructionList post_block_inst_;
 
     vvl::unordered_map<uint32_t, const Instruction*> inst_map_;
-    const Instruction* FindInstruction(uint32_t id) const;
+    const Instruction*                               FindInstruction(uint32_t id) const;
 
-    // A slower version of BasicBlock::CreateInstruction() that will search the entire function for |id| and then inject the
-    // instruction after. Only to be used if you need to suddenly walk back to find an instruction, but normally instructions should
-    // be added as you go forward only.
+    // A slower version of BasicBlock::CreateInstruction() that will search the entire function for |id| and then inject
+    // the instruction after. Only to be used if you need to suddenly walk back to find an instruction, but normally
+    // instructions should be added as you go forward only.
     void CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& words, uint32_t id);
 
     // This is the uvec4 most consumers will need
@@ -103,7 +104,7 @@ struct Function {
 };
 
 using FunctionList = std::vector<std::unique_ptr<Function>>;
-using FunctionIt = FunctionList::iterator;
+using FunctionIt   = FunctionList::iterator;
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

@@ -14,25 +14,25 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "pass.h"
+#include <stdint.h>
 
 namespace gpuav {
 namespace spirv {
 
-// Will make sure Buffers (Storage and Uniform Buffers) that are non bindless are not OOB Uses robustBufferAccess to ensure if we
-// are OOB that it won't crash and we will return the error safely
+// Will make sure Buffers (Storage and Uniform Buffers) that are non bindless are not OOB Uses robustBufferAccess to
+// ensure if we are OOB that it won't crash and we will return the error safely
 class DescriptorClassGeneralBufferPass : public Pass {
   public:
     DescriptorClassGeneralBufferPass(Module& module);
-    void PrintDebugInfo();
+    void        PrintDebugInfo();
     const char* Name() const final { return "DescriptorClassGeneralBufferPass"; }
-    bool Run();
+    bool        Run();
 
   private:
-    bool RequiresInstrumentation(const Function& function, const Instruction& inst);
+    bool     RequiresInstrumentation(const Function& function, const Instruction& inst);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data);
-    void Reset() final;
+    void     Reset() final;
 
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
@@ -45,11 +45,11 @@ class DescriptorClassGeneralBufferPass : public Pass {
     // The Type of the OpVariable that is being accessed
     const Type* descriptor_type_ = nullptr;
 
-    uint32_t descriptor_set_ = 0;
-    uint32_t descriptor_binding_ = 0;
-    uint32_t descriptor_index_id_ = 0;  // index input the descriptor array
+    uint32_t descriptor_set_       = 0;
+    uint32_t descriptor_binding_   = 0;
+    uint32_t descriptor_index_id_  = 0; // index input the descriptor array
     uint32_t descriptor_offset_id_ = 0;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

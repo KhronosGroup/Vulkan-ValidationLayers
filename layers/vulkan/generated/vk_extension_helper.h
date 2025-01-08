@@ -25,15 +25,16 @@
 
 #pragma once
 
+#include <vulkan/vulkan.h>
+
+#include <cassert>
 #include <string>
 #include <utility>
 #include <vector>
-#include <cassert>
 
-#include <vulkan/vulkan.h>
 #include "containers/custom_containers.h"
-#include "generated/vk_api_version.h"
 #include "generated/error_location_helper.h"
+#include "generated/vk_api_version.h"
 
 // Extensions (unlike functions, struct, etc) are passed in as strings.
 // The goal is to turn the string to a enum and pass that around the layers.

@@ -14,8 +14,8 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "inject_conditional_function_pass.h"
+#include <stdint.h>
 
 namespace gpuav {
 namespace spirv {
@@ -25,16 +25,16 @@ class RayQueryPass : public InjectConditionalFunctionPass {
   public:
     RayQueryPass(Module& module) : InjectConditionalFunctionPass(module) {}
     const char* Name() const final { return "RayQueryPass"; }
-    void PrintDebugInfo();
+    void        PrintDebugInfo();
 
   private:
-    bool RequiresInstrumentation(const Function& function, const Instruction& inst) final;
+    bool     RequiresInstrumentation(const Function& function, const Instruction& inst) final;
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
-    void Reset() final;
+    void     Reset() final;
 
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

@@ -21,10 +21,10 @@ namespace spirv {
 
 void Instruction::UpdateDebugInfo() {
 #ifndef NDEBUG
-    d_opcode_ = spv::Op(Opcode());
-    d_length_ = Length();
+    d_opcode_    = spv::Op(Opcode());
+    d_length_    = Length();
     d_result_id_ = ResultId();
-    d_type_id_ = TypeId();
+    d_type_id_   = TypeId();
     // the words might not all be filled in yet
     for (uint32_t i = 0; i < words_.size() && i < 12; i++) {
         d_words_[i] = words_[i];
@@ -47,8 +47,8 @@ void Instruction::SetResultTypeIndex() {
     }
 }
 
-Instruction::Instruction(spirv_iterator it, uint32_t position)
-    : position_index_(position), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
+Instruction::Instruction(spirv_iterator it, uint32_t position) :
+    position_index_(position), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
     words_.emplace_back(*it++);
     words_.reserve(Length());
     for (uint32_t i = 1; i < Length(); i++) {
@@ -77,8 +77,8 @@ void Instruction::Fill(const std::vector<uint32_t>& words) {
 void Instruction::AppendWord(uint32_t word) {
     words_.emplace_back(word);
     const uint32_t new_length = Length() + 1;
-    uint32_t first_word = (new_length << 16) | Opcode();
-    words_[0] = first_word;
+    uint32_t       first_word = (new_length << 16) | Opcode();
+    words_[0]                 = first_word;
     UpdateDebugInfo();
 }
 
@@ -94,8 +94,8 @@ void Instruction::ReplaceResultId(uint32_t new_result_id) {
 }
 
 void Instruction::ReplaceOperandId(uint32_t old_word, uint32_t new_word) {
-    const uint32_t length = Length();
-    uint32_t type_index = 0;
+    const uint32_t length     = Length();
+    uint32_t       type_index = 0;
     // Use length as some operands can be optional at the end
     for (uint32_t word_index = operand_index_; word_index < length; word_index++, type_index++) {
         if (words_[word_index] != old_word) {
@@ -228,7 +228,7 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
             break;
         case spv::OpReturnValue:
         case spv::OpFunctionParameter:
-        case spv::OpVariable:  // never use optional initializer
+        case spv::OpVariable: // never use optional initializer
         case spv::OpConstantTrue:
         case spv::OpSpecConstantTrue:
         case spv::OpConstantFalse:
@@ -286,7 +286,7 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
         case spv::OpFunctionEnd:
         case spv::OpExtInstImport:
         case spv::OpString:
-            break;  // Instructions aware of, but nothing to swap
+            break; // Instructions aware of, but nothing to swap
         default:
             assert(false && "Need to add support for new instruction");
     }
@@ -294,5 +294,5 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
     UpdateDebugInfo();
 }
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

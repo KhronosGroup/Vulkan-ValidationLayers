@@ -33,8 +33,8 @@ using uint = unsigned int;
 
 // Bindings for all pre draw types
 const uint kPreDrawBinding_IndirectBuffer = 0;
-const uint kPreDrawBinding_CountBuffer = 1;
-const uint kPreDrawBinding_IndexBuffer = 2;
+const uint kPreDrawBinding_CountBuffer    = 1;
+const uint kPreDrawBinding_IndexBuffer    = 2;
 
 struct IndexedDrawPushData {
     uint smallest_vertex_attributes_count;
@@ -49,7 +49,8 @@ const uint kIndexedIndirectDrawFlags_DrawCountFromBuffer = uint(1) << 0;
 struct DrawIndexedIndirectIndexBufferPushData {
     uint flags;
     uint draw_cmds_stride_dwords;
-    uint bound_index_buffer_indices_count;  // Number of indices in the index buffer, taking index type in account. NOT a byte size.
+    uint bound_index_buffer_indices_count; // Number of indices in the index buffer, taking index type in account. NOT a
+                                           // byte size.
     uint cpu_draw_count;
     uint draw_indexed_indirect_cmds_buffer_dwords_offset;
     uint count_buffer_dwords_offset;
@@ -59,7 +60,8 @@ struct DrawIndexedIndirectVertexBufferPushData {
     uint flags;
     uint index_width;
     uint draw_cmds_stride_dwords;
-    uint bound_index_buffer_indices_count;  // Number of indices in the index buffer, taking index type in account. NOT a byte size.
+    uint bound_index_buffer_indices_count; // Number of indices in the index buffer, taking index type in account. NOT a
+                                           // byte size.
     uint cpu_draw_count;
     uint smallest_vertex_attributes_count;
     uint draw_indexed_indirect_cmds_buffer_dwords_offset;
@@ -91,16 +93,16 @@ struct FirstInstancePushData {
 };
 
 struct CountBufferPushData {
-    uint draw_cmds_byte_stride;
+    uint     draw_cmds_byte_stride;
     uint64_t draw_buffer_offset;
     uint64_t draw_buffer_size;
-    uint draw_cmd_byte_size;
-    uint device_limit_max_draw_indirect_count;
-    uint count_buffer_dwords_offset;
+    uint     draw_cmd_byte_size;
+    uint     device_limit_max_draw_indirect_count;
+    uint     count_buffer_dwords_offset;
 };
 
 #ifdef __cplusplus
-}  // namespace glsl
-}  // namespace gpuav
+} // namespace glsl
+} // namespace gpuav
 #endif
 #endif

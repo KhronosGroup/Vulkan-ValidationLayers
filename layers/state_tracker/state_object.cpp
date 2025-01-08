@@ -18,7 +18,9 @@
  */
 #include "state_tracker/state_object.h"
 
-vvl::StateObject::~StateObject() { Destroy(); }
+vvl::StateObject::~StateObject() {
+    Destroy();
+}
 
 void vvl::StateObject::Destroy() {
     Invalidate();
@@ -43,7 +45,8 @@ const VulkanTypedHandle* vvl::StateObject::InUse() const {
 
 bool vvl::StateObject::AddParent(StateObject* parent_node) {
     auto guard = WriteLockTree();
-    auto result = parent_nodes_.emplace(parent_node->Handle(), std::weak_ptr<StateObject>(parent_node->shared_from_this()));
+    auto result =
+        parent_nodes_.emplace(parent_node->Handle(), std::weak_ptr<StateObject>(parent_node->shared_from_this()));
     return result.second;
 }
 
@@ -59,11 +62,11 @@ vvl::StateObject::NodeMap vvl::StateObject::GetParentsForInvalidate(bool unlink)
     NodeMap result;
     if (unlink) {
         auto guard = WriteLockTree();
-        result = std::move(parent_nodes_);
+        result     = std::move(parent_nodes_);
         parent_nodes_.clear();
     } else {
         auto guard = ReadLockTree();
-        result = parent_nodes_;
+        result     = parent_nodes_;
     }
     return result;
 }

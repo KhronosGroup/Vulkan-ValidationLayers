@@ -22,28 +22,28 @@
 namespace gpuav {
 
 struct GpuVuid {
-    const char* uniform_access_oob_06935 = kVUIDUndefined;
-    const char* storage_access_oob_06936 = kVUIDUndefined;
-    const char* uniform_access_oob_08612 = kVUIDUndefined;
-    const char* storage_access_oob_08613 = kVUIDUndefined;
-    const char* invalid_descriptor_08114 = kVUIDUndefined;
-    const char* descriptor_index_oob_10068 = kVUIDUndefined;
-    const char* count_exceeds_device_limit = kVUIDUndefined;
-    const char* first_instance_not_zero = kVUIDUndefined;
-    const char* group_exceeds_device_limit_x = kVUIDUndefined;
-    const char* group_exceeds_device_limit_y = kVUIDUndefined;
-    const char* group_exceeds_device_limit_z = kVUIDUndefined;
-    const char* mesh_group_count_exceeds_max_x = kVUIDUndefined;
-    const char* mesh_group_count_exceeds_max_y = kVUIDUndefined;
-    const char* mesh_group_count_exceeds_max_z = kVUIDUndefined;
+    const char* uniform_access_oob_06935           = kVUIDUndefined;
+    const char* storage_access_oob_06936           = kVUIDUndefined;
+    const char* uniform_access_oob_08612           = kVUIDUndefined;
+    const char* storage_access_oob_08613           = kVUIDUndefined;
+    const char* invalid_descriptor_08114           = kVUIDUndefined;
+    const char* descriptor_index_oob_10068         = kVUIDUndefined;
+    const char* count_exceeds_device_limit         = kVUIDUndefined;
+    const char* first_instance_not_zero            = kVUIDUndefined;
+    const char* group_exceeds_device_limit_x       = kVUIDUndefined;
+    const char* group_exceeds_device_limit_y       = kVUIDUndefined;
+    const char* group_exceeds_device_limit_z       = kVUIDUndefined;
+    const char* mesh_group_count_exceeds_max_x     = kVUIDUndefined;
+    const char* mesh_group_count_exceeds_max_y     = kVUIDUndefined;
+    const char* mesh_group_count_exceeds_max_z     = kVUIDUndefined;
     const char* mesh_group_count_exceeds_max_total = kVUIDUndefined;
-    const char* task_group_count_exceeds_max_x = kVUIDUndefined;
-    const char* task_group_count_exceeds_max_y = kVUIDUndefined;
-    const char* task_group_count_exceeds_max_z = kVUIDUndefined;
+    const char* task_group_count_exceeds_max_x     = kVUIDUndefined;
+    const char* task_group_count_exceeds_max_y     = kVUIDUndefined;
+    const char* task_group_count_exceeds_max_z     = kVUIDUndefined;
     const char* task_group_count_exceeds_max_total = kVUIDUndefined;
 };
 
 // Getter function to provide kVUIDUndefined in case an invalid function is passed in
 
 const GpuVuid& GetGpuVuid(vvl::Func command);
-}  // namespace gpuav
+} // namespace gpuav

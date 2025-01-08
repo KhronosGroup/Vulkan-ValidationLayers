@@ -14,9 +14,9 @@
  */
 #pragma once
 
-#include <vector>
-#include "instruction.h"
 #include "generated/spirv_grammar_helper.h"
+#include "instruction.h"
+#include <vector>
 
 namespace gpuav {
 namespace spirv {
@@ -38,24 +38,24 @@ static constexpr bool ConstantOperation(uint32_t opcode) {
         case spv::OpSpecConstantTrue:
         case spv::OpSpecConstantFalse:
         case spv::OpSpecConstantComposite:
-        case spv::OpSpecConstantOp:  // always must be in function block
+        case spv::OpSpecConstantOp: // always must be in function block
         default:
             return false;
     }
 }
 
 // There is a LOT that can be done with types, but for simplicity it only does what is needed.
-// The main thing is to try find the type so we don't add a duplicate (but not end of the world if 1 or 2 are duplicated as a
-// trade-off to doing complex logic to resolve more complex types). The class also takes advantage that while Instrumenting we are
-// always aware of our types we are adding or just explictly found.
+// The main thing is to try find the type so we don't add a duplicate (but not end of the world if 1 or 2 are duplicated
+// as a trade-off to doing complex logic to resolve more complex types). The class also takes advantage that while
+// Instrumenting we are always aware of our types we are adding or just explictly found.
 struct Type {
     Type(SpvType spv_type, const Instruction& inst) : spv_type_(spv_type), inst_(inst) {}
 
-    bool operator==(Type const& other) const;
+    bool     operator==(Type const& other) const;
     uint32_t Id() const { return inst_.ResultId(); }
-    bool IsArray() const { return spv_type_ == SpvType::kArray || spv_type_ == SpvType::kRuntimeArray; }
+    bool     IsArray() const { return spv_type_ == SpvType::kArray || spv_type_ == SpvType::kRuntimeArray; }
 
-    const SpvType spv_type_;
+    const SpvType      spv_type_;
     const Instruction& inst_;
 };
 
@@ -67,12 +67,12 @@ static bool IsSpecConstant(uint32_t opcode) {
 // Represents a OpConstant* or OpSpecConstant*
 // (Currently doesn't handle OpSpecConstantComposite or OpSpecConstantOp)
 struct Constant {
-    Constant(const Type& type, const Instruction& inst)
-        : type_(type), inst_(inst), is_spec_constant_(IsSpecConstant(inst.Opcode())) {}
+    Constant(const Type& type, const Instruction& inst) :
+        type_(type), inst_(inst), is_spec_constant_(IsSpecConstant(inst.Opcode())) {}
 
     uint32_t Id() const { return inst_.ResultId(); }
 
-    const Type& type_;
+    const Type&        type_;
     const Instruction& inst_;
     // Most times we just need Constant to get type or id, so being a spec const doesn't matter.
     // This boolean is here incase we do care about the value of the constant.
@@ -83,11 +83,11 @@ struct Constant {
 struct Variable {
     Variable(const Type& type, const Instruction& inst) : type_(type), inst_(inst) {}
 
-    uint32_t Id() const { return inst_.ResultId(); }
+    uint32_t          Id() const { return inst_.ResultId(); }
     spv::StorageClass StorageClass() const { return spv::StorageClass(inst_.Word(3)); }
-    const Type* PointerType(TypeManager& type_manager_) const;
+    const Type*       PointerType(TypeManager& type_manager_) const;
 
-    const Type& type_;
+    const Type&        type_;
     const Instruction& inst_;
 };
 
@@ -121,7 +121,7 @@ class TypeManager {
     const Type& GetTypeSampledImage(const Type& image_type);
     const Type& GetTypePointer(spv::StorageClass storage_class, const Type& pointer_type);
     const Type& GetTypePointerBuiltInInput(spv::BuiltIn built_in);
-    uint32_t TypeLength(const Type& type);
+    uint32_t    TypeLength(const Type& type);
 
     const Constant& AddConstant(std::unique_ptr<Instruction> new_inst, const Type& type);
     const Constant* FindConstantById(uint32_t id) const;
@@ -141,19 +141,19 @@ class TypeManager {
   private:
     Module& module_;
 
-    // Currently we don't worry about duplicated types. If duplicate types are added from the original SPIR-V, we just use the first
-    // one we fine. We should only be adding a new object because it currently doesn't exists.
-    vvl::unordered_map<uint32_t, std::unique_ptr<Type>> id_to_type_;
+    // Currently we don't worry about duplicated types. If duplicate types are added from the original SPIR-V, we just
+    // use the first one we fine. We should only be adding a new object because it currently doesn't exists.
+    vvl::unordered_map<uint32_t, std::unique_ptr<Type>>     id_to_type_;
     vvl::unordered_map<uint32_t, std::unique_ptr<Constant>> id_to_constant_;
     vvl::unordered_map<uint32_t, std::unique_ptr<Variable>> id_to_variable_;
 
     // Create faster lookups for specific types
     // some types are base types and only will be one
-    const Type* void_type = nullptr;
-    const Type* bool_type = nullptr;
-    const Type* sampler_type = nullptr;
-    const Type* ray_query_type = nullptr;
-    const Type* acceleration_structure_type = nullptr;
+    const Type*              void_type                   = nullptr;
+    const Type*              bool_type                   = nullptr;
+    const Type*              sampler_type                = nullptr;
+    const Type*              ray_query_type              = nullptr;
+    const Type*              acceleration_structure_type = nullptr;
     std::vector<const Type*> int_types_;
     std::vector<const Type*> float_types_;
     std::vector<const Type*> vector_types_;
@@ -168,13 +168,13 @@ class TypeManager {
 
     std::vector<const Constant*> int_32bit_constants_;
     std::vector<const Constant*> float_32bit_constants_;
-    const Constant* uint_32bit_zero_constants_ = nullptr;
-    const Constant* float_32bit_zero_constants_ = nullptr;
+    const Constant*              uint_32bit_zero_constants_  = nullptr;
+    const Constant*              float_32bit_zero_constants_ = nullptr;
     std::vector<const Constant*> null_constants_;
 
     std::vector<const Variable*> input_variables_;
     std::vector<const Variable*> output_variables_;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

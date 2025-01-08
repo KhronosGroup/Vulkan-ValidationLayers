@@ -25,12 +25,14 @@
 
 #pragma once
 
-#include <vulkan/vulkan.h>
 #include <vulkan/vk_layer.h>
+#include <vulkan/vulkan.h>
+
 #include <cstring>
 #include <string>
-#include "vk_layer_dispatch_table.h"
+
 #include "vk_extension_helper.h"
+#include "vk_layer_dispatch_table.h"
 
 // Using the above code-generated map of APINames-to-parent extension names, this function will:
 //   o  Determine if the API has an associated extension

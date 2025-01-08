@@ -22,7 +22,7 @@ namespace vvl {
 
 const std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProps(VkPhysicalDevice phys_dev) {
     std::vector<VkQueueFamilyProperties> result;
-    uint32_t count;
+    uint32_t                             count;
     DispatchGetPhysicalDeviceQueueFamilyProperties(phys_dev, &count, nullptr);
     result.resize(count);
     DispatchGetPhysicalDeviceQueueFamilyProperties(phys_dev, &count, result.data());
@@ -37,9 +37,8 @@ VkQueueFlags PhysicalDevice::GetSupportedQueues() {
     return flag;
 }
 
-PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle)
-    : StateObject(handle, kVulkanObjectTypePhysicalDevice),
-      queue_family_properties(GetQueueFamilyProps(handle)),
-      supported_queues(GetSupportedQueues()) {}
+PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle) :
+    StateObject(handle, kVulkanObjectTypePhysicalDevice), queue_family_properties(GetQueueFamilyProps(handle)),
+    supported_queues(GetSupportedQueues()) {}
 
-}  // namespace vvl
+} // namespace vvl

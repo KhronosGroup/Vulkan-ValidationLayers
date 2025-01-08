@@ -48,5 +48,5 @@ inline constexpr uint32_t stream_output_size_offset = 1;
 // error. The format of the records is documented below.
 inline constexpr uint32_t stream_output_data_offset = 2;
 
-}  // namespace cst
-}  // namespace gpuav
+} // namespace cst
+} // namespace gpuav

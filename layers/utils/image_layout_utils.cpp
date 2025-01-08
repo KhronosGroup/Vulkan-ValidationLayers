@@ -74,8 +74,8 @@ VkImageLayout NormalizeSynchronization2Layout(const VkImageAspectFlags aspect_ma
 bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b) {
     bool matches = (a == b);
     if (!matches) {
-        a = NormalizeSynchronization2Layout(aspect_mask, a);
-        b = NormalizeSynchronization2Layout(aspect_mask, b);
+        a       = NormalizeSynchronization2Layout(aspect_mask, a);
+        b       = NormalizeSynchronization2Layout(aspect_mask, b);
         matches = (a == b);
         if (!matches) {
             // Relaxed rules when referencing *only* the depth or stencil aspects.
@@ -92,4 +92,3 @@ bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, V
     }
     return matches;
 }
-

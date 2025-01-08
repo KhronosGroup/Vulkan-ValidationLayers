@@ -23,10 +23,11 @@
 #pragma once
 
 #include <stdint.h>
+#include <vulkan/vulkan.h>
+
 #include <cstring>
 #include <string>
 #include <unordered_map>
-#include <vulkan/vulkan.h>
 
 namespace icd {
 

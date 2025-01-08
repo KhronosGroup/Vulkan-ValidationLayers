@@ -25,18 +25,18 @@
 // NOLINTBEGIN
 
 #include "chassis/chassis.h"
+
 #include <array>
 #include <cstring>
 #include <mutex>
 
+#include "chassis/chassis_modification_state.h"
 #include "chassis/dispatch_object.h"
 #include "chassis/validation_object.h"
-#include "layer_options.h"
-#include "state_tracker/descriptor_sets.h"
-#include "chassis/chassis_modification_state.h"
 #include "core_checks/core_validation.h"
-
+#include "layer_options.h"
 #include "profiling/profiling.h"
+#include "state_tracker/descriptor_sets.h"
 
 // Extension exposed by the validation layer
 static constexpr std::array<VkExtensionProperties, 4> kInstanceExtensions = {

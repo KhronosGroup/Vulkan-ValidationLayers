@@ -20,33 +20,33 @@
 // Default values for those settings should match layers/VkLayer_khronos_validation.json.in
 
 struct GpuAVSettings {
-    bool warn_on_robust_oob = true;
-    uint32_t max_bda_in_use = 10000;
-    bool select_instrumented_shaders = false;
+    bool     warn_on_robust_oob          = true;
+    uint32_t max_bda_in_use              = 10000;
+    bool     select_instrumented_shaders = false;
 
-    bool validate_indirect_draws_buffers = true;
+    bool validate_indirect_draws_buffers      = true;
     bool validate_indirect_dispatches_buffers = true;
     bool validate_indirect_trace_rays_buffers = true;
-    bool validate_buffer_copies = true;
-    bool validate_index_buffers = true;
+    bool validate_buffer_copies               = true;
+    bool validate_index_buffers               = true;
 
     // Currently turned of due to some false positives still observed
     bool validate_image_layout = false;
 
     bool vma_linear_output = true;
 
-    bool debug_validate_instrumented_shaders = false;
-    bool debug_dump_instrumented_shaders = false;
-    uint32_t debug_max_instrumentations_count = 0;  // zero is same as "unlimited"
-    bool debug_print_instrumentation_info = false;
+    bool     debug_validate_instrumented_shaders = false;
+    bool     debug_dump_instrumented_shaders     = false;
+    uint32_t debug_max_instrumentations_count    = 0; // zero is same as "unlimited"
+    bool     debug_print_instrumentation_info    = false;
 
-    // Note - even though DebugPrintf basically fits in here, from the user point of view they are different and that is reflected
-    // in the settings (which are reflected in VkConfig). To make our lives easier, we just make these settings with the hierarchy
-    // of the settings exposed
+    // Note - even though DebugPrintf basically fits in here, from the user point of view they are different and that is
+    // reflected in the settings (which are reflected in VkConfig). To make our lives easier, we just make these
+    // settings with the hierarchy of the settings exposed
     struct ShaderInstrumentation {
-        bool descriptor_checks = true;
-        bool buffer_device_address = true;
-        bool ray_query = true;
+        bool descriptor_checks             = true;
+        bool buffer_device_address         = true;
+        bool ray_query                     = true;
         bool post_process_descriptor_index = true;
     } shader_instrumentation;
 
@@ -58,23 +58,23 @@ struct GpuAVSettings {
 
     // Also disables shader caching and select shader instrumentation
     void DisableShaderInstrumentationAndOptions() {
-        shader_instrumentation.descriptor_checks = false;
-        shader_instrumentation.buffer_device_address = false;
-        shader_instrumentation.ray_query = false;
+        shader_instrumentation.descriptor_checks             = false;
+        shader_instrumentation.buffer_device_address         = false;
+        shader_instrumentation.ray_query                     = false;
         shader_instrumentation.post_process_descriptor_index = false;
         // Because of this setting, cannot really have an "enabled" parameter to pass to this method
         select_instrumented_shaders = false;
     }
     bool IsBufferValidationEnabled() const {
-        return validate_indirect_draws_buffers || validate_indirect_dispatches_buffers || validate_indirect_trace_rays_buffers ||
-               validate_buffer_copies || validate_index_buffers;
+        return validate_indirect_draws_buffers || validate_indirect_dispatches_buffers ||
+               validate_indirect_trace_rays_buffers || validate_buffer_copies || validate_index_buffers;
     }
     void SetBufferValidationEnabled(bool enabled) {
-        validate_indirect_draws_buffers = enabled;
+        validate_indirect_draws_buffers      = enabled;
         validate_indirect_dispatches_buffers = enabled;
         validate_indirect_trace_rays_buffers = enabled;
-        validate_buffer_copies = enabled;
-        validate_index_buffers = enabled;
+        validate_buffer_copies               = enabled;
+        validate_index_buffers               = enabled;
     }
 
     // For people who are using VkValidationFeatureEnableEXT to set only DebugPrintf (and want the rest of GPU-AV off)
@@ -85,11 +85,11 @@ struct GpuAVSettings {
 
         // Turn on the minmal settings for DebugPrintf
         debug_printf_enabled = true;
-        debug_printf_only = true;
+        debug_printf_only    = true;
     }
 
-    bool debug_printf_enabled = false;
-    bool debug_printf_to_stdout = false;
-    bool debug_printf_verbose = false;
+    bool     debug_printf_enabled     = false;
+    bool     debug_printf_to_stdout   = false;
+    bool     debug_printf_verbose     = false;
     uint32_t debug_printf_buffer_size = 1024;
 };

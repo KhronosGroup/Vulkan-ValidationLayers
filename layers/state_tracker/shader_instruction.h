@@ -16,18 +16,18 @@
  */
 #pragma once
 
+#include "containers/custom_containers.h"
 #include <cassert>
 #include <cstdint>
+#include <spirv/unified1/spirv.hpp>
 #include <string>
 #include <vector>
-#include "containers/custom_containers.h"
-#include <spirv/unified1/spirv.hpp>
 
 namespace spirv {
 
 // Holds information about a single SPIR-V instruction
-// Provides easy access to len, opcode, and content words without the caller needing to care too much about the physical SPIRV
-// module layout.
+// Provides easy access to len, opcode, and content words without the caller needing to care too much about the physical
+// SPIRV module layout.
 //
 // For more information of the physical module layout to help understand this struct:
 // https://github.com/KhronosGroup/SPIRV-Guide/blob/main/chapters/parsing_instructions.md
@@ -60,16 +60,16 @@ class Instruction {
         return (char const*)&words_[operand];
     }
 
-    uint32_t GetConstantValue() const;
-    uint32_t GetBitWidth() const;
-    uint32_t GetByteWidth() const { return (GetBitWidth() + 31) / 32; }
+    uint32_t     GetConstantValue() const;
+    uint32_t     GetBitWidth() const;
+    uint32_t     GetByteWidth() const { return (GetBitWidth() + 31) / 32; }
     spv::BuiltIn GetBuiltIn() const;
 
     bool IsArray() const;
     // Helpers for OpTypeImage
     spv::Dim FindImageDim() const;
-    bool IsImageArray() const;
-    bool IsImageMultisampled() const;
+    bool     IsImageArray() const;
+    bool     IsImageMultisampled() const;
 
     // Auto-generated helper functions
     spv::StorageClass StorageClass() const;
@@ -90,15 +90,15 @@ class Instruction {
 
     // Max capacity needs to be uint32_t because an instruction can have a string operand that is (2^16)-1 bytes long
     small_vector<uint32_t, word_vector_length, uint32_t> words_;
-    uint32_t result_id_index_ = 0;
-    uint32_t type_id_index_ = 0;
+    uint32_t                                             result_id_index_ = 0;
+    uint32_t                                             type_id_index_   = 0;
 
 #ifndef NDEBUG
     // Helping values to make debugging what is happening in a instruction easier
     std::string d_opcode_;
-    uint32_t d_length_;
-    uint32_t d_result_id_;
-    uint32_t d_type_id_;
+    uint32_t    d_length_;
+    uint32_t    d_result_id_;
+    uint32_t    d_type_id_;
     // helps people new to using SPIR-V spec to understand Word()
     uint32_t d_words_[12];
 #endif
@@ -106,4 +106,4 @@ class Instruction {
 
 void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<Instruction>& instructions);
 
-}  // namespace spirv
+} // namespace spirv

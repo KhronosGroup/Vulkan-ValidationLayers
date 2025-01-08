@@ -25,15 +25,15 @@
 
 #include "vulkan/vulkan_core.h"
 
-bool ComparePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo &a,
-                                               const VkPipelineMultisampleStateCreateInfo &b);
+bool ComparePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo& a,
+                                               const VkPipelineMultisampleStateCreateInfo& b);
 
-bool CompareDescriptorSetLayoutBinding(const VkDescriptorSetLayoutBinding &a, const VkDescriptorSetLayoutBinding &b);
+bool CompareDescriptorSetLayoutBinding(const VkDescriptorSetLayoutBinding& a, const VkDescriptorSetLayoutBinding& b);
 
-bool ComparePipelineColorBlendAttachmentState(const VkPipelineColorBlendAttachmentState &a,
-                                              const VkPipelineColorBlendAttachmentState &b);
+bool ComparePipelineColorBlendAttachmentState(const VkPipelineColorBlendAttachmentState& a,
+                                              const VkPipelineColorBlendAttachmentState& b);
 
-bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentShadingRateStateCreateInfoKHR &a,
-                                                       const VkPipelineFragmentShadingRateStateCreateInfoKHR &b);
+bool ComparePipelineFragmentShadingRateStateCreateInfo(const VkPipelineFragmentShadingRateStateCreateInfoKHR& a,
+                                                       const VkPipelineFragmentShadingRateStateCreateInfoKHR& b);
 
-bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreateInfo &b);
+bool CompareSamplerCreateInfo(const VkSamplerCreateInfo& a, const VkSamplerCreateInfo& b);

@@ -21,7 +21,9 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstErrorBuffer, std43
 }
 inst_errors_buffer;
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstActionIndex, std430) buffer ActionIndexBuffer { uint index[]; }
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstActionIndex, std430) buffer ActionIndexBuffer {
+    uint index[];
+}
 inst_action_index_buffer;
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstCmdResourceIndex, std430) buffer CmdResourceIndexBuffer {

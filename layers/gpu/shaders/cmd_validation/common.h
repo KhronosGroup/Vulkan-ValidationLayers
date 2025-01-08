@@ -36,23 +36,25 @@ layout(set = kDiagCommonDescriptorSet, binding = kBindingDiagCmdErrorsCount) buf
 };
 
 bool MaxCmdErrorsCountReached() {
-    const uint cmd_id = resource_index[0];
+    const uint cmd_id           = resource_index[0];
     const uint cmd_errors_count = atomicAdd(cmd_errors_count[cmd_id], 1);
     return cmd_errors_count >= kMaxErrorsPerCmd;
 }
 
 void GpuavLogError4(uint error_group, uint error_sub_code, uint param_0, uint param_1, uint param_2, uint param_3) {
-    if (MaxCmdErrorsCountReached()) return;
+    if (MaxCmdErrorsCountReached())
+        return;
 
-    uint vo_idx = atomicAdd(errors_count, kErrorRecordSize);
+    uint       vo_idx               = atomicAdd(errors_count, kErrorRecordSize);
     const bool errors_buffer_filled = (vo_idx + kErrorRecordSize) > errors_buffer.length();
-    if (errors_buffer_filled) return;
+    if (errors_buffer_filled)
+        return;
 
-    errors_buffer[vo_idx + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-    errors_buffer[vo_idx + kHeaderActionIdOffset] = action_index[0];
+    errors_buffer[vo_idx + kHeaderErrorRecordSizeOffset]   = kErrorRecordSize;
+    errors_buffer[vo_idx + kHeaderActionIdOffset]          = action_index[0];
     errors_buffer[vo_idx + kHeaderCommandResourceIdOffset] = resource_index[0];
-    errors_buffer[vo_idx + kHeaderErrorGroupOffset] = error_group;
-    errors_buffer[vo_idx + kHeaderErrorSubCodeOffset] = error_sub_code;
+    errors_buffer[vo_idx + kHeaderErrorGroupOffset]        = error_group;
+    errors_buffer[vo_idx + kHeaderErrorSubCodeOffset]      = error_sub_code;
 
     errors_buffer[vo_idx + kPreActionParamOffset_0] = param_0;
     errors_buffer[vo_idx + kPreActionParamOffset_1] = param_1;

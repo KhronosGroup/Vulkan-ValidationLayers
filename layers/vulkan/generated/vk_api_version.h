@@ -23,8 +23,9 @@
 // NOLINTBEGIN
 #pragma once
 #include <vulkan/vulkan.h>
-#include <sstream>
+
 #include <iomanip>
+#include <sstream>
 
 #define VVL_UNRECOGNIZED_API_VERSION 0xFFFFFFFF
 

@@ -14,8 +14,8 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "pass.h"
+#include <stdint.h>
 
 namespace gpuav {
 namespace spirv {
@@ -38,11 +38,11 @@ class PostProcessDescriptorIndexingPass : public Pass {
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
 
-    uint32_t descriptor_set_ = 0;
-    uint32_t descriptor_binding_ = 0;
+    uint32_t descriptor_set_      = 0;
+    uint32_t descriptor_binding_  = 0;
     uint32_t descriptor_index_id_ = 0;
-    uint32_t variable_id_ = 0;
+    uint32_t variable_id_         = 0;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

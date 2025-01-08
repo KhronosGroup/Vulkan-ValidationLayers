@@ -361,4 +361,4 @@ const GpuVuid &GetGpuVuid(Func command) {
     }
 }
 // clang-format on
-}  // namespace gpuav
+} // namespace gpuav

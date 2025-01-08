@@ -42,4 +42,4 @@
 
 #include <android/hardware_buffer.h>
 
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#endif // VK_USE_PLATFORM_ANDROID_KHR

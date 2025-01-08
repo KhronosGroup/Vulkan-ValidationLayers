@@ -22,7 +22,7 @@ namespace spirv {
 struct LinkInfo {
     // SPIR-V module to link in
     const uint32_t* words;
-    const uint32_t word_count;
+    const uint32_t  word_count;
 
     // Information about the function it has
     uint32_t function_id;
@@ -31,5 +31,5 @@ struct LinkInfo {
     const char* opname;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav
