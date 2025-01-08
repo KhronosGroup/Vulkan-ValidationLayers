@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1117,6 +1117,30 @@ TEST_F(PositiveSyncObject, BasicSetAndWaitEvent2) {
     // Also submit to the queue to test submit time validation
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
+}
+
+TEST_F(PositiveSyncObject, WaitEvent2HostStage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    vkt::Event event(*m_device);
+    VkEvent event_handle = event.handle();
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;  // Ok to use if outside the renderpass
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &barrier;
+
+    m_command_buffer.Begin();
+    vk::CmdWaitEvents2KHR(m_command_buffer.handle(), 1, &event_handle, &dependency_info);
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveSyncObject, DoubleLayoutTransition) {

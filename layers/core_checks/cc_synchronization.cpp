@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1223,7 +1223,8 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
         const LogObjectList objlist(commandBuffer, pEvents[i]);
         const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfos, i);
         if (pDependencyInfos[i].dependencyFlags != 0) {
-            skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-03844", objlist, dep_info_loc.dot(Field::dependencyFlags),
+            // VU being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7089
+            skip |= LogError("UNASSIGNED-vkCmdWaitEvents2-dependencyFlags", objlist, dep_info_loc.dot(Field::dependencyFlags),
                              "(%s) must be 0.", string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
         }
         skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, pDependencyInfos[i]);
@@ -2591,7 +2592,7 @@ bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Locat
                                    queue_flags, barrier.dstAccessMask, barrier.dstStageMask);
     }
 
-    if (barrier_loc.function == Func::vkCmdSetEvent2) {
+    if (barrier_loc.function == Func::vkCmdSetEvent2 || barrier_loc.function == Func::vkCmdSetEvent2KHR) {
         if (barrier.srcStageMask == VK_PIPELINE_STAGE_2_HOST_BIT) {
             skip |= LogError("VUID-vkCmdSetEvent2-srcStageMask-09391", objects, barrier_loc.dot(Field::srcStageMask),
                              "is VK_PIPELINE_STAGE_2_HOST_BIT.");
@@ -2599,6 +2600,11 @@ bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Locat
         if (barrier.dstStageMask == VK_PIPELINE_STAGE_2_HOST_BIT) {
             skip |= LogError("VUID-vkCmdSetEvent2-dstStageMask-09392", objects, barrier_loc.dot(Field::dstStageMask),
                              "is VK_PIPELINE_STAGE_2_HOST_BIT.");
+        }
+    } else if (barrier_loc.function == Func::vkCmdWaitEvents2 || barrier_loc.function == Func::vkCmdWaitEvents2KHR) {
+        if (barrier.srcStageMask == VK_PIPELINE_STAGE_2_HOST_BIT && cb_state.activeRenderPass) {
+            skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-03844", objects, barrier_loc.dot(Field::srcStageMask),
+                             "is VK_PIPELINE_STAGE_2_HOST_BIT inside the render pass.");
         }
     }
     return skip;
