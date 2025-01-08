@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017, 2019-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019-2024 Valve Corporation
- * Copyright (c) 2015-2017, 2019-2024 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2025 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2025 LunarG, Inc.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -105,9 +105,21 @@ VkLayerDeviceCreateInfo *GetChainInfo(const VkDeviceCreateInfo *pCreateInfo, VkL
 
 template <typename T>
 constexpr bool IsPowerOfTwo(T x) {
-    static_assert(std::numeric_limits<T>::is_integer, "Unsigned integer required.");
-    static_assert(std::is_unsigned<T>::value, "Unsigned integer required.");
+    static_assert(std::is_integral_v<T> && std::is_unsigned_v<T>, "Unsigned integer required");
     return x && !(x & (x - 1));
+}
+
+template <typename T>
+constexpr uint32_t GetBitSetCount(T value) {
+    static_assert(std::is_integral_v<T> && std::is_unsigned_v<T>, "Unsigned integer required");
+    static_assert(sizeof(T) == 4 || sizeof(T) == 8, "32 or 64 bit value is expected");
+    return static_cast<uint32_t>(std::bitset<sizeof(T) * 8>(value).count());
+}
+
+template <typename T>
+constexpr bool IsSingleBitSet(T flags) {
+    static_assert(std::is_integral_v<T> && std::is_unsigned_v<T>, "Unsigned integer required");
+    return IsPowerOfTwo(flags);
 }
 
 // Returns the 0-based index of the MSB, like the x86 bit scan reverse (bsr) instruction
@@ -403,12 +415,6 @@ static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divi
         result = dividend / divisor;
     }
     return result;
-}
-
-// Only 32 bit fields should need a bit count
-static inline uint32_t GetBitSetCount(uint32_t field) {
-    std::bitset<32> view_bits(field);
-    return static_cast<uint32_t>(view_bits.count());
 }
 
 static inline uint32_t FullMipChainLevels(VkExtent3D extent) {

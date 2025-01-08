@@ -21,7 +21,7 @@
 namespace sync_utils {
 static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2) * 8;
 
-VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, const DeviceExtensions& device_extensions) {
+VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, const DeviceExtensions &device_extensions) {
     VkPipelineStageFlags2 result = 0;
     if (!features.geometryShader) {
         result |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
@@ -56,7 +56,12 @@ VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, con
     if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing) && !features.rayTracingPipeline) {
         result |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
     }
-    // TODO: VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
+    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing) && !IsExtEnabled(device_extensions.vk_khr_acceleration_structure)) {
+        result |= VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    }
+    if (!features.rayTracingMaintenance1) {
+        result |= VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
+    }
     return result;
 }
 
@@ -199,6 +204,13 @@ std::string StringAccessFlags(VkAccessFlags2 mask) {
         return string_VkAccessFlags(sync1_mask);
     }
     return string_VkAccessFlags2(mask);
+}
+
+void ReplaceExpandBitsWithMetaMask(VkFlags64 &mask, VkFlags64 expand_bits, VkFlags64 meta_mask) {
+    if ((mask & expand_bits) == expand_bits) {
+        mask &= ~expand_bits;
+        mask |= meta_mask;
+    }
 }
 
 ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage) {

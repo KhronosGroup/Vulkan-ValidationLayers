@@ -197,73 +197,173 @@ static bool IsHazardVsRead(SyncHazard hazard) {
     return vs_read;
 }
 
-static std::optional<std::string> GetCompactFormOfAccessFlags(const SyncAccessFlags &accesses, VkQueueFlags allowed_queue_flags) {
-    assert(accesses.any());  // otherwise can report 0 as one of compact forms
+static VkPipelineStageFlags2 GetAllowedStages(VkQueueFlags queue_flags, VkPipelineStageFlagBits2 disabled_stages) {
     VkPipelineStageFlags2 allowed_stages = 0;
     for (const auto &[queue_flag, stages] : syncAllCommandStagesByQueueFlags()) {
-        if (queue_flag & allowed_queue_flags) {
-            allowed_stages |= stages;
+        if (queue_flag & queue_flags) {
+            allowed_stages |= (stages & ~disabled_stages);
         }
     }
-    // Accesses filtered by allowed queue flags
-    SyncAccessFlags all_read_accesses = syncAccessReadMask;
-    SyncAccessFlags all_shader_read_accesses = syncAccessReadMask;
-    SyncAccessFlags all_shader_write_accesses = syncAccessWriteMask;
+    return allowed_stages;
+}
 
+static SyncAccessFlags FilterSyncAccessesByAllowedVkStages(const SyncAccessFlags &accesses, VkPipelineStageFlags2 allowed_stages) {
+    SyncAccessFlags filtered_accesses = accesses;
     const auto &access_infos = syncAccessInfoByAccessIndex();
     for (size_t i = 0; i < access_infos.size(); i++) {
         const SyncAccessInfo &access_info = access_infos[i];
         const bool is_stage_allowed = (access_info.stage_mask & allowed_stages) != 0;
         if (!is_stage_allowed) {
-            all_read_accesses.reset(i);
-            all_shader_read_accesses.reset(i);
-            all_shader_write_accesses.reset(i);
-            continue;
-        }
-        if (all_shader_read_accesses[i]) {
-            const bool is_shader_read = (access_info.access_mask & kShaderReadExpandBits) != 0;
-            if (!is_shader_read) {
-                all_shader_read_accesses.reset(i);
-            }
-        }
-        if (all_shader_write_accesses[i]) {
-            const bool is_shader_write = (access_info.access_mask & kShaderWriteExpandBits) != 0;
-            if (!is_shader_write) {
-                all_shader_write_accesses.reset(i);
-            }
+            filtered_accesses.reset(i);
         }
     }
-    if (accesses == all_read_accesses) {
-        return "SYNC_ALL_COMMANDS_MEMORY_READ";
-    } else if (accesses == all_shader_read_accesses) {
-        return "SYNC_ALL_COMMANDS_SHADER_READ";
-    } else if (accesses == all_shader_write_accesses) {
-        return "SYNC_ALL_COMMANDS_SHADER_WRITE";
-    }
-    return {};
+    return filtered_accesses;
 }
 
-static std::string string_SyncStageAccessFlags(const SyncAccessFlags &accesses, VkQueueFlags allowed_queue_flags) {
-    if (accesses.none()) {
-        return "0";
-    }
-    const auto compact_form = GetCompactFormOfAccessFlags(accesses, allowed_queue_flags);
-    if (compact_form.has_value()) {
-        return *compact_form;
-    }
-    std::string accesses_str;
-    for (const SyncAccessInfo &info : syncAccessInfoByAccessIndex()) {
-        if ((accesses & info.access_bit).any()) {
-            if (!accesses_str.empty()) {
-                accesses_str.append("|");
+static SyncAccessFlags FilterSyncAccessesByAllowedVkAccesses(const SyncAccessFlags &accesses, VkAccessFlags2 allowed_vk_accesses) {
+    SyncAccessFlags filtered_accesses = accesses;
+    const auto &access_infos = syncAccessInfoByAccessIndex();
+    for (size_t i = 0; i < access_infos.size(); i++) {
+        const SyncAccessInfo &access_info = access_infos[i];
+        if (filtered_accesses[i]) {
+            const bool is_access_allowed = (access_info.access_mask & allowed_vk_accesses) != 0;
+            if (!is_access_allowed) {
+                filtered_accesses.reset(i);
             }
-            accesses_str.append(info.name);
         }
     }
-    return accesses_str;
+    return filtered_accesses;
+}
+
+static std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQueueFlags allowed_queue_flags,
+                                      const DeviceFeatures &features, const DeviceExtensions &device_extensions,
+                                      bool format_as_extra_property) {
+    if (sync_accesses.none()) {
+        return "0";
+    }
+
+    const VkPipelineStageFlags2 disabled_stages = sync_utils::DisabledPipelineStages(features, device_extensions);
+    const VkPipelineStageFlags2 all_transfer_expand_bits = kAllTransferExpandBits & ~disabled_stages;
+
+    // Build stage -> accesses mapping. OR-merge accesses that happen on the same stage.
+    // Also handle ALL_COMMANDS accesses.
+    vvl::unordered_map<VkPipelineStageFlagBits2, VkAccessFlags2> stage_to_accesses;
+    {
+        const VkPipelineStageFlags2 allowed_stages = GetAllowedStages(allowed_queue_flags, disabled_stages);
+        const SyncAccessFlags filtered_accesses = FilterSyncAccessesByAllowedVkStages(sync_accesses, allowed_stages);
+
+        const SyncAccessFlags all_reads = FilterSyncAccessesByAllowedVkStages(syncAccessReadMask, allowed_stages);
+        const SyncAccessFlags all_shader_reads = FilterSyncAccessesByAllowedVkAccesses(all_reads, kShaderReadExpandBits);
+
+        const SyncAccessFlags all_writes = FilterSyncAccessesByAllowedVkStages(syncAccessWriteMask, allowed_stages);
+        const SyncAccessFlags all_shader_writes = FilterSyncAccessesByAllowedVkAccesses(all_writes, kShaderWriteExpandBits);
+
+        if (filtered_accesses == all_reads) {
+            stage_to_accesses[VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT] = VK_ACCESS_2_MEMORY_READ_BIT;
+        } else if (filtered_accesses == all_shader_reads) {
+            stage_to_accesses[VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT] = VK_ACCESS_2_SHADER_READ_BIT;
+        } else if (filtered_accesses == all_shader_writes) {
+            stage_to_accesses[VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT] = VK_ACCESS_2_SHADER_WRITE_BIT;
+        } else {
+            for (size_t i = 0; i < filtered_accesses.size(); i++) {
+                if (filtered_accesses[i]) {
+                    const SyncAccessInfo &info = syncAccessInfoByAccessIndex()[i];
+                    stage_to_accesses[info.stage_mask] |= info.access_mask;
+                }
+            }
+        }
+    }
+
+    // Build accesses -> stages mapping. OR-merge stages that share the same accesses
+    vvl::unordered_map<VkAccessFlags2, VkPipelineStageFlags2> accesses_to_stages;
+    for (const auto [stage, accesses] : stage_to_accesses) {
+        accesses_to_stages[accesses] |= stage;
+    }
+
+    // Replace sequences of stages/accesses with more compact equivalent meta values where possible
+    std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> report_accesses;
+    VkPipelineStageFlags2 stages_with_all_supported_accesses = 0;
+    VkAccessFlags2 all_accesses = 0;  // accesses for the above stages
+
+    for (const auto &entry : accesses_to_stages) {
+        VkAccessFlags2 accesses = entry.first;
+        VkPipelineStageFlags2 stages = entry.second;
+
+        // Detect if ALL allowed accesses for the given stage are used.
+        // This is an opportunity to use a compact message form.
+        {
+            VkAccessFlags2 all_supported_accesses = sync_utils::CompatibleAccessMask(stages);
+            // Remove meta stages.
+            // TODO: revisit CompatibleAccessMask helper. SyncVal works with expanded representation.
+            // Meta stages are needed for core checks in this case, update function so serve both purposes well.
+            all_supported_accesses &= ~VK_ACCESS_2_SHADER_READ_BIT;
+            all_supported_accesses &= ~VK_ACCESS_2_SHADER_WRITE_BIT;
+            // Remove unsupported accesses, otherwise the access mask won't be detected as the one that covers ALL accesses
+            // TODO: ideally this should be integrated into utilities logic (need to revisit all use cases)
+            if (!IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
+                all_supported_accesses &= ~VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
+            }
+            if (accesses == all_supported_accesses) {
+                stages_with_all_supported_accesses |= stages;
+                all_accesses |= all_supported_accesses;
+                continue;
+            }
+        }
+
+        sync_utils::ReplaceExpandBitsWithMetaMask(stages, all_transfer_expand_bits, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+        sync_utils::ReplaceExpandBitsWithMetaMask(accesses, kShaderReadExpandBits, VK_ACCESS_2_SHADER_READ_BIT);
+        report_accesses.emplace_back(stages, accesses);
+    }
+    if (stages_with_all_supported_accesses) {
+        if (IsSingleBitSet(stages_with_all_supported_accesses) && GetBitSetCount(all_accesses) <= 2) {
+            // For simple configurations (1 stage and at most 2 accesses) don't use ALL accesses shortcut
+            report_accesses.emplace_back(stages_with_all_supported_accesses, all_accesses);
+        } else {
+            sync_utils::ReplaceExpandBitsWithMetaMask(stages_with_all_supported_accesses, all_transfer_expand_bits,
+                                                      VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+            report_accesses.emplace_back(stages_with_all_supported_accesses, sync_utils::kAllAccesses);
+        }
+    }
+
+    // Create string with available accesses
+    std::stringstream out;
+    bool first = true;
+    for (const auto &[stages, accesses] : report_accesses) {
+        if (!first) {
+            out << ":";
+        }
+        if (format_as_extra_property) {
+            if (accesses == sync_utils::kAllAccesses) {
+                out << string_VkPipelineStageFlags2(stages) << "(ALL_ACCESSES)";
+            } else {
+                out << string_VkPipelineStageFlags2(stages) << "(" << string_VkAccessFlags2(accesses) << ")";
+            }
+        } else {
+            if (accesses == sync_utils::kAllAccesses) {
+                out << "all accesses on " << string_VkPipelineStageFlags2(stages) << " stage";
+            } else {
+                out << string_VkAccessFlags2(accesses) << " accesses on " << string_VkPipelineStageFlags2(stages) << " stage";
+            }
+        }
+        first = false;
+    }
+    return out.str();
+}
+
+static std::string FormatAccessProperty(const SyncAccessInfo &access) {
+    constexpr std::array special_accesses = {SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL,
+                                             SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL, SYNC_IMAGE_LAYOUT_TRANSITION,
+                                             SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER};
+    if (IsValueIn(access.access_index, special_accesses)) {
+        // Print internal name for accesses that don't have corresponding Vulkan constants
+        return access.name;
+    }
+    return string_VkPipelineStageFlagBits2(access.stage_mask) + std::string("(") + string_VkAccessFlagBits2(access.access_mask) +
+           ")";
 }
 
 static std::string FormatHazardState(const HazardResult::HazardState &hazard, VkQueueFlags queue_flags,
+                                     const DeviceFeatures &features, const DeviceExtensions &device_extensions,
                                      ReportKeyValues &key_values) {
     std::stringstream out;
     assert(hazard.access_index < static_cast<SyncAccessIndex>(syncAccessInfoByAccessIndex().size()));
@@ -274,20 +374,23 @@ static std::string FormatHazardState(const HazardResult::HazardState &hazard, Vk
     if (!hazard.recorded_access.get()) {
         // if we have a recorded usage the usage is reported from the recorded contexts point of view
         out << "usage: " << usage_info.name << ", ";
-        key_values.Add(kPropertyAccess, usage_info.name);
+        key_values.Add(kPropertyAccess, FormatAccessProperty(usage_info));
     }
     out << "prior_usage: " << prior_usage_info.name;
-    key_values.Add(kPropertyPriorAccess, prior_usage_info.name);
+    key_values.Add(kPropertyPriorAccess, FormatAccessProperty(prior_usage_info));
     if (IsHazardVsRead(hazard.hazard)) {
         const VkPipelineStageFlags2 barriers = hazard.access_state->GetReadBarriers(hazard.prior_access_index);
         const std::string barriers_str = string_VkPipelineStageFlags2(barriers);
         out << ", read_barriers: " << barriers_str;
-        key_values.Add(kPropertyReadBarriers, barriers_str);
+        key_values.Add(kPropertyReadBarriers, barriers ? barriers_str : "0");
     } else {
         const SyncAccessFlags barriers = hazard.access_state->GetWriteBarriers();
-        const std::string barriers_str = string_SyncStageAccessFlags(barriers, queue_flags);
-        out << ", write_barriers: " << barriers_str;
-        key_values.Add(kPropertyWriteBarriers, barriers_str);
+
+        const std::string message_barriers_str = FormatSyncAccesses(barriers, queue_flags, features, device_extensions, false);
+        out << ", write_barriers: " << message_barriers_str;
+
+        const std::string property_barriers_str = FormatSyncAccesses(barriers, queue_flags, features, device_extensions, true);
+        key_values.Add(kPropertyWriteBarriers, property_barriers_str);
     }
     return out.str();
 }
@@ -295,7 +398,7 @@ static std::string FormatHazardState(const HazardResult::HazardState &hazard, Vk
 std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const {
     std::stringstream out;
     assert(hazard.IsHazard());
-    out << FormatHazardState(hazard.State(), queue_flags_, key_values);
+    out << FormatHazardState(hazard.State(), queue_flags_, sync_state_.enabled_features, sync_state_.device_extensions, key_values);
     out << ", " << FormatUsage(hazard.TagEx()) << ")";
     return out.str();
 }

@@ -4398,7 +4398,7 @@ bool CoreChecks::ValidatePipelineAttachmentSampleCountInfo(const vvl::Pipeline &
                                                            const VkAttachmentSampleCountInfoAMD &attachment_sample_count_info,
                                                            const Location &create_info_loc) const {
     bool skip = false;
-    const uint32_t bits = GetBitSetCount(attachment_sample_count_info.depthStencilAttachmentSamples);
+    const uint32_t bits = GetBitSetCount(static_cast<uint32_t>(attachment_sample_count_info.depthStencilAttachmentSamples));
     if (pipeline.fragment_output_state && attachment_sample_count_info.depthStencilAttachmentSamples != 0 &&
         ((attachment_sample_count_info.depthStencilAttachmentSamples & AllVkSampleCountFlagBits) == 0 || bits > 1)) {
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-depthStencilAttachmentSamples-06593", device,
