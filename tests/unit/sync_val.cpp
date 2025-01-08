@@ -1713,7 +1713,7 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazards) {
         }
     )glsl";
 
-    vkt::Event event(*m_device, vkt::Event::CreateInfo(0));
+    vkt::Event event(*m_device);
     VkEvent event_handle = event.handle();
 
     CreateComputePipelineHelper pipe(*this);
@@ -3539,8 +3539,7 @@ TEST_F(NegativeSyncVal, EventsBufferCopy) {
     VkBufferCopy front2back = {0, 128, 128};
     VkBufferCopy back2back = {128, 128, 128};
 
-    vkt::Event event;
-    event.init(*m_device, vkt::Event::CreateInfo(0));
+    vkt::Event event(*m_device);
     VkEvent event_handle = event.handle();
 
     auto cb = m_command_buffer.handle();
@@ -3623,8 +3622,7 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     vkt::Image image_b(*m_device, image_ci, vkt::set_layout);
     vkt::Image image_c(*m_device, image_ci, vkt::set_layout);
 
-    vkt::Event event;
-    event.init(*m_device, vkt::Event::CreateInfo(0));
+    vkt::Event event(*m_device);
     VkEvent event_handle = event.handle();
 
     VkImageSubresourceLayers layers_all{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 2};
@@ -3733,9 +3731,7 @@ TEST_F(NegativeSyncVal, EventsCommandHazards) {
     RETURN_IF_SKIP(InitSyncValFramework());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Event event;
-    event.init(*m_device, vkt::Event::CreateInfo(0));
-
+    vkt::Event event(*m_device);
     const VkEvent event_handle = event.handle();
 
     m_command_buffer.Begin();

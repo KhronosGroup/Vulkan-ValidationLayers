@@ -442,7 +442,7 @@ inline const Semaphore no_semaphore;  // equivalent to vkt::Semaphore{}
 class Event : public internal::NonDispHandle<VkEvent> {
   public:
     Event() = default;
-    Event(const Device &dev) { init(dev, vku::InitStruct<VkEventCreateInfo>()); }
+    Event(const Device &dev) { init(dev, CreateInfo(0)); }
     Event(const Device &dev, const VkEventCreateInfo &info) { init(dev, info); }
     ~Event() noexcept;
     void destroy() noexcept;
