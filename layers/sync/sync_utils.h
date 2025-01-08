@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,8 @@ class Buffer;
 
 namespace sync_utils {
 
-static constexpr VkQueueFlags kAllQueueTypes = (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT);
+static constexpr VkQueueFlags kAllQueueTypes = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+static constexpr VkAccessFlags2 kAllAccesses = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
 
 VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures& features, const DeviceExtensions& device_extensions);
 
@@ -58,6 +59,9 @@ VkPipelineStageFlags2 WithLaterPipelineStages(VkPipelineStageFlags2 stage_mask);
 std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask);
 
 std::string StringAccessFlags(VkAccessFlags2 mask);
+
+// If mask contains ALL of expand_bits, then clear these bits and add a meta_mask
+void ReplaceExpandBitsWithMetaMask(VkFlags64& mask, VkFlags64 expand_bits, VkFlags64 meta_mask);
 
 struct ExecScopes {
     VkPipelineStageFlags2 src;
