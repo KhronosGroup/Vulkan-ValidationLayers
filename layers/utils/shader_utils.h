@@ -20,9 +20,9 @@
 
 #pragma once
 
-#include <vulkan/vulkan_core.h>
-#include "utils/vk_layer_utils.h"
 #include "containers/custom_containers.h"
+#include "utils/vk_layer_utils.h"
+#include <vulkan/vulkan_core.h>
 
 #include <spirv-tools/libspirv.hpp>
 
@@ -30,7 +30,8 @@ struct DeviceFeatures;
 struct DeviceExtensions;
 class APIVersion;
 
-enum class ShaderObjectStage : uint32_t {
+enum class ShaderObjectStage : uint32_t
+{
     VERTEX = 0u,
     TESSELLATION_CONTROL,
     TESSELLATION_EVALUATION,
@@ -45,8 +46,10 @@ enum class ShaderObjectStage : uint32_t {
 
 constexpr uint32_t kShaderObjectStageCount = 8u;
 
-inline ShaderObjectStage VkShaderStageToShaderObjectStage(VkShaderStageFlagBits stage) {
-    switch (stage) {
+inline ShaderObjectStage VkShaderStageToShaderObjectStage(VkShaderStageFlagBits stage)
+{
+    switch (stage)
+    {
         case VK_SHADER_STAGE_VERTEX_BIT:
             return ShaderObjectStage::VERTEX;
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
@@ -69,34 +72,39 @@ inline ShaderObjectStage VkShaderStageToShaderObjectStage(VkShaderStageFlagBits 
     return ShaderObjectStage::LAST;
 }
 
-class ValidationCache {
+class ValidationCache
+{
   public:
-    static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const *pCreateInfo, uint32_t spirv_val_option_hash) {
+    static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const* pCreateInfo,
+                                       uint32_t                              spirv_val_option_hash)
+    {
         auto cache = new ValidationCache(spirv_val_option_hash);
         cache->Load(pCreateInfo);
         return VkValidationCacheEXT(cache);
     }
 
-    void Load(VkValidationCacheCreateInfoEXT const *pCreateInfo);
-    void Write(size_t *pDataSize, void *pData);
-    void Merge(ValidationCache const *other);
+    void Load(VkValidationCacheCreateInfoEXT const* pCreateInfo);
+    void Write(size_t* pDataSize, void* pData);
+    void Merge(ValidationCache const* other);
 
-    bool Contains(uint32_t hash) {
+    bool Contains(uint32_t hash)
+    {
         auto guard = ReadLock();
         return good_shader_hashes_.count(hash) != 0;
     }
 
-    void Insert(uint32_t hash) {
+    void Insert(uint32_t hash)
+    {
         auto guard = WriteLock();
         good_shader_hashes_.insert(hash);
     }
 
   private:
     ValidationCache(uint32_t spirv_val_option_hash) : spirv_val_option_hash_(spirv_val_option_hash) {}
-    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
+    ReadLockGuard  ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
-    void GetUUID(uint8_t *uuid);
+    void GetUUID(uint8_t* uuid);
 
     // Can hit cases where error appear/disappear if spirv-val settings are adjusted
     // see https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8031
@@ -107,11 +115,12 @@ class ValidationCache {
     // wrong with them; also, we expect they will get fixed, so we're less
     // likely to see them again.
     vvl::unordered_set<uint32_t> good_shader_hashes_;
-    mutable std::shared_mutex lock_;
+    mutable std::shared_mutex    lock_;
 };
 
-spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4);
+spv_target_env PickSpirvEnv(const APIVersion& api_version, bool spirv_1_4);
 
-void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
-                            spvtools::ValidatorOptions &out_options, uint32_t *out_hash);
-
+void AdjustValidatorOptions(const DeviceExtensions&     device_extensions,
+                            const DeviceFeatures&       enabled_features,
+                            spvtools::ValidatorOptions& out_options,
+                            uint32_t*                   out_hash);

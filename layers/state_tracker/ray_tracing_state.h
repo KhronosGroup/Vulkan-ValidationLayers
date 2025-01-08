@@ -17,119 +17,136 @@
  * limitations under the License.
  */
 #pragma once
-#include "state_tracker/device_memory_state.h"
-#include "state_tracker/buffer_state.h"
 #include "generated/dispatch_functions.h"
+#include "state_tracker/buffer_state.h"
+#include "state_tracker/device_memory_state.h"
 
-namespace vvl {
+namespace vvl
+{
 
-class AccelerationStructureNV : public Bindable {
+class AccelerationStructureNV : public Bindable
+{
   public:
-    AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV handle,
-                            const VkAccelerationStructureCreateInfoNV *pCreateInfo)
-        : Bindable(handle, kVulkanObjectTypeAccelerationStructureNV, false, false, 0),
-          safe_create_info(pCreateInfo),
-          create_info(*safe_create_info.ptr()),
-          memory_requirements(GetMemReqs(device, handle, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV)),
-          build_scratch_memory_requirements(
-              GetMemReqs(device, handle, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV)),
-          update_scratch_memory_requirements(
-              GetMemReqs(device, handle, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV)),
-          tracker_(&memory_requirements) {
+    AccelerationStructureNV(VkDevice                                   device,
+                            VkAccelerationStructureNV                  handle,
+                            const VkAccelerationStructureCreateInfoNV* pCreateInfo) :
+        Bindable(handle, kVulkanObjectTypeAccelerationStructureNV, false, false, 0),
+        safe_create_info(pCreateInfo), create_info(*safe_create_info.ptr()),
+        memory_requirements(GetMemReqs(device, handle, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV)),
+        build_scratch_memory_requirements(
+            GetMemReqs(device, handle, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV)),
+        update_scratch_memory_requirements(
+            GetMemReqs(device, handle, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV)),
+        tracker_(&memory_requirements)
+    {
         Bindable::SetMemoryTracker(&tracker_);
     }
-    AccelerationStructureNV(const AccelerationStructureNV &rh_obj) = delete;
+    AccelerationStructureNV(const AccelerationStructureNV& rh_obj) = delete;
 
     VkAccelerationStructureNV VkHandle() const { return handle_.Cast<VkAccelerationStructureNV>(); }
 
-    void Build(const VkAccelerationStructureInfoNV *pInfo) {
+    void Build(const VkAccelerationStructureInfoNV* pInfo)
+    {
         built = true;
         build_info.initialize(pInfo);
     };
 
     const vku::safe_VkAccelerationStructureCreateInfoNV safe_create_info;
-    const VkAccelerationStructureCreateInfoNV &create_info;
+    const VkAccelerationStructureCreateInfoNV&          create_info;
 
     vku::safe_VkAccelerationStructureInfoNV build_info;
-    const VkMemoryRequirements memory_requirements;
-    const VkMemoryRequirements build_scratch_memory_requirements;
-    const VkMemoryRequirements update_scratch_memory_requirements;
-    uint64_t opaque_handle = 0;
-    bool memory_requirements_checked = false;
-    bool build_scratch_memory_requirements_checked = false;
-    bool update_scratch_memory_requirements_checked = false;
-    bool built = false;
+    const VkMemoryRequirements              memory_requirements;
+    const VkMemoryRequirements              build_scratch_memory_requirements;
+    const VkMemoryRequirements              update_scratch_memory_requirements;
+    uint64_t                                opaque_handle                              = 0;
+    bool                                    memory_requirements_checked                = false;
+    bool                                    build_scratch_memory_requirements_checked  = false;
+    bool                                    update_scratch_memory_requirements_checked = false;
+    bool                                    built                                      = false;
 
   private:
-    static VkMemoryRequirements GetMemReqs(VkDevice device, VkAccelerationStructureNV as,
-                                           VkAccelerationStructureMemoryRequirementsTypeNV mem_type) {
+    static VkMemoryRequirements
+    GetMemReqs(VkDevice device, VkAccelerationStructureNV as, VkAccelerationStructureMemoryRequirementsTypeNV mem_type)
+    {
         VkAccelerationStructureMemoryRequirementsInfoNV req_info = vku::InitStructHelper();
-        req_info.type = mem_type;
-        req_info.accelerationStructure = as;
-        VkMemoryRequirements2 requirements = vku::InitStructHelper();
+        req_info.type                                            = mem_type;
+        req_info.accelerationStructure                           = as;
+        VkMemoryRequirements2 requirements                       = vku::InitStructHelper();
         DispatchGetAccelerationStructureMemoryRequirementsNV(device, &req_info, &requirements);
         return requirements.memoryRequirements;
     }
     BindableLinearMemoryTracker tracker_;
 };
 
-class AccelerationStructureKHR : public StateObject {
+class AccelerationStructureKHR : public StateObject
+{
   public:
-    AccelerationStructureKHR(VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
-                             std::shared_ptr<Buffer> &&buf_state)
-        : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR),
-          safe_create_info(pCreateInfo),
-          create_info(*safe_create_info.ptr()),
-          buffer_state(buf_state) {}
-    AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
+    AccelerationStructureKHR(VkAccelerationStructureKHR                  handle,
+                             const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
+                             std::shared_ptr<Buffer>&&                   buf_state) :
+        StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR),
+        safe_create_info(pCreateInfo), create_info(*safe_create_info.ptr()), buffer_state(buf_state)
+    {}
+    AccelerationStructureKHR(const AccelerationStructureKHR& rh_obj) = delete;
 
-    virtual ~AccelerationStructureKHR() {
-        if (!Destroyed()) {
+    virtual ~AccelerationStructureKHR()
+    {
+        if (!Destroyed())
+        {
             Destroy();
         }
     }
 
     VkAccelerationStructureKHR VkHandle() const { return handle_.Cast<VkAccelerationStructureKHR>(); }
 
-    void LinkChildNodes() override {
+    void LinkChildNodes() override
+    {
         // Connect child node(s), which cannot safely be done in the constructor.
         buffer_state->AddParent(this);
     }
 
-    void Destroy() override {
-        if (buffer_state) {
+    void Destroy() override
+    {
+        if (buffer_state)
+        {
             buffer_state->RemoveParent(this);
             buffer_state = nullptr;
         }
         StateObject::Destroy();
     }
 
-    void Build(const VkAccelerationStructureBuildGeometryInfoKHR *pInfo, const bool is_host,
-               const VkAccelerationStructureBuildRangeInfoKHR *build_range_info) {
+    void Build(const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
+               const bool                                         is_host,
+               const VkAccelerationStructureBuildRangeInfoKHR*    build_range_info)
+    {
         is_built = true;
-        if (!build_info_khr.has_value()) {
+        if (!build_info_khr.has_value())
+        {
             build_info_khr = vku::safe_VkAccelerationStructureBuildGeometryInfoKHR();
         }
         build_info_khr->initialize(pInfo, is_host, build_range_info);
     };
 
-    void UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR *p_build_range_infos, uint32_t geometry_count) {
+    void UpdateBuildRangeInfos(const VkAccelerationStructureBuildRangeInfoKHR* p_build_range_infos,
+                               uint32_t                                        geometry_count)
+    {
         build_range_infos.resize(geometry_count);
-        for (const auto [i, build_range] : vvl::enumerate(p_build_range_infos, geometry_count)) {
+        for (const auto [i, build_range] : vvl::enumerate(p_build_range_infos, geometry_count))
+        {
             build_range_infos[i] = *build_range;
         }
     }
 
     const vku::safe_VkAccelerationStructureCreateInfoKHR safe_create_info;
-    const VkAccelerationStructureCreateInfoKHR &create_info;
+    const VkAccelerationStructureCreateInfoKHR&          create_info;
 
-    uint64_t opaque_handle = 0;
-    std::shared_ptr<vvl::Buffer> buffer_state{};
+    uint64_t                                                             opaque_handle = 0;
+    std::shared_ptr<vvl::Buffer>                                         buffer_state{};
     std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> build_info_khr{};
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR>                build_range_infos{};
     // You can't have is_built == false and a build_info_khr, but you can have is_built == true and no build_info_khr,
     // if the acceleration structure was filled by a call to vkCmdCopyMemoryToAccelerationStructure
     bool is_built = false;
 };
 
-}  // namespace vvl
+} // namespace vvl

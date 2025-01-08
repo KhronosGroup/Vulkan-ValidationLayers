@@ -22,19 +22,20 @@
 vku::safe_VkRenderPassCreateInfo2 ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& create_info);
 
 vku::safe_VkImageMemoryBarrier2 ConvertVkImageMemoryBarrierToV2(const VkImageMemoryBarrier& barrier,
-                                                               VkPipelineStageFlags2 srcStageMask,
-                                                               VkPipelineStageFlags2 dstStageMask);
+                                                                VkPipelineStageFlags2       srcStageMask,
+                                                                VkPipelineStageFlags2       dstStageMask);
 
 // Converts array of VkSubmitInfo into array of VkSubmitInfo2.
 // Constructor performs the conversion. The result is stored into submit_infos2.
-struct SubmitInfoConverter {
+struct SubmitInfoConverter
+{
     SubmitInfoConverter(const VkSubmitInfo* submit_infos, uint32_t count);
 
     // That's the conversion result
     std::vector<VkSubmitInfo2> submit_infos2;
 
     // Helper structures referenced by VkSubmitInfo2 objects
-    std::vector<VkSemaphoreSubmitInfo> wait_infos;
+    std::vector<VkSemaphoreSubmitInfo>     wait_infos;
     std::vector<VkCommandBufferSubmitInfo> cb_infos;
-    std::vector<VkSemaphoreSubmitInfo> signal_infos;
+    std::vector<VkSemaphoreSubmitInfo>     signal_infos;
 };

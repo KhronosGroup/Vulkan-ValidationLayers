@@ -16,14 +16,17 @@
 
 #include "pass.h"
 
-namespace gpuav {
-namespace spirv {
+namespace gpuav
+{
+namespace spirv
+{
 
 // A type of common pass that will inject a function call and link it up later.
 // We assume through other means (such as robustness) we won't crash on bad values and go
 //     PassFunction(original_value)
 //     value = original_value;
-class InjectFunctionPass : public Pass {
+class InjectFunctionPass : public Pass
+{
   public:
     bool Run();
 
@@ -35,8 +38,9 @@ class InjectFunctionPass : public Pass {
     // A callback from the function injection logic.
     // Each pass creates a OpFunctionCall and returns its result id.
     // If |inst_it| is not null, it will update it to instruction post OpFunctionCall
-    virtual uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) = 0;
+    virtual uint32_t
+    CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) = 0;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

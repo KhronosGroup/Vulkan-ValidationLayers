@@ -24,8 +24,9 @@
 
 // NOLINTBEGIN
 
-#include "containers/custom_containers.h"
 #include "spirv_grammar_helper.h"
+
+#include "containers/custom_containers.h"
 
 const char* string_SpvOpcode(uint32_t opcode) {
     switch (opcode) {

@@ -21,10 +21,13 @@
 
 struct Location;
 
-namespace gpuav {
+namespace gpuav
+{
 class Validator;
 
-void InsertIndirectTraceRaysValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state,
+void InsertIndirectTraceRaysValidation(Validator&      gpuav,
+                                       const Location& loc,
+                                       CommandBuffer&  cb_state,
                                        VkDeviceAddress indirect_data_address);
 
-}  // namespace gpuav
+} // namespace gpuav

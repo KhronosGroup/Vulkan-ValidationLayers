@@ -18,9 +18,9 @@
 #pragma once
 
 #if defined(TRACY_ENABLE)
+#include "tracy/../client/TracyProfiler.hpp"
 #include "tracy/Tracy.hpp"
 #include "tracy/TracyC.h"
-#include "tracy/../client/TracyProfiler.hpp"
 
 // Define CPU zones
 #define VVL_ZoneScoped ZoneScoped
@@ -41,13 +41,14 @@
     }
 #define VVL_TracyMessageMap(map, key_printer, value_printer)           \
     {                                                                  \
-        static int tracy_map_log_i = 0;                                \
+        static int  tracy_map_log_i   = 0;                             \
         std::string tracy_map_log_str = #map " ";                      \
         tracy_map_log_str += std::to_string(tracy_map_log_i++);        \
         tracy_map_log_str += " - size: ";                              \
         tracy_map_log_str += std::to_string(map.size());               \
         tracy_map_log_str += " - one pair: ";                          \
-        for (const auto& [key, value] : map) {                         \
+        for (const auto& [key, value] : map)                           \
+        {                                                              \
             std::string key_value_str = tracy_map_log_str;             \
             key_value_str += " | key: ";                               \
             key_value_str += key_printer(key);                         \

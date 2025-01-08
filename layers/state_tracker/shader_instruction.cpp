@@ -13,27 +13,32 @@
  * limitations under the License.
  */
 
-#include <sstream>
 #include "state_tracker/shader_instruction.h"
 #include "generated/spirv_grammar_helper.h"
+#include <sstream>
 
-namespace spirv {
+namespace spirv
+{
 
-Instruction::Instruction(std::vector<uint32_t>::const_iterator it) {
+Instruction::Instruction(std::vector<uint32_t>::const_iterator it)
+{
     words_.emplace_back(*it++);
     words_.reserve(Length());
-    for (uint32_t i = 1; i < Length(); i++) {
+    for (uint32_t i = 1; i < Length(); i++)
+    {
         words_.emplace_back(*it++);
     }
     SetResultTypeIndex();
     UpdateDebugInfo();
 }
 
-Instruction::Instruction(const uint32_t* it) {
+Instruction::Instruction(const uint32_t* it)
+{
     words_.emplace_back(*it);
     it++;
     words_.reserve(Length());
-    for (uint32_t i = 1; i < Length(); i++) {
+    for (uint32_t i = 1; i < Length(); i++)
+    {
         words_.emplace_back(*it);
         it++;
     }
@@ -41,61 +46,76 @@ Instruction::Instruction(const uint32_t* it) {
     UpdateDebugInfo();
 }
 
-void Instruction::SetResultTypeIndex() {
+void Instruction::SetResultTypeIndex()
+{
     const bool has_result = OpcodeHasResult(Opcode());
-    if (OpcodeHasType(Opcode())) {
+    if (OpcodeHasType(Opcode()))
+    {
         type_id_index_ = 1;
-        if (has_result) {
+        if (has_result)
+        {
             result_id_index_ = 2;
         }
-    } else if (has_result) {
+    }
+    else if (has_result)
+    {
         result_id_index_ = 1;
     }
 }
 
-void Instruction::UpdateDebugInfo() {
+void Instruction::UpdateDebugInfo()
+{
 #ifndef NDEBUG
-    d_opcode_ = std::string(string_SpvOpcode(Opcode()));
-    d_length_ = Length();
+    d_opcode_    = std::string(string_SpvOpcode(Opcode()));
+    d_length_    = Length();
     d_result_id_ = ResultId();
-    d_type_id_ = TypeId();
-    for (uint32_t i = 0; i < d_length_ && i < 12; i++) {
+    d_type_id_   = TypeId();
+    for (uint32_t i = 0; i < d_length_ && i < 12; i++)
+    {
         d_words_[i] = words_[i];
     }
 #endif
 }
 
-std::string Instruction::Describe() const {
+std::string Instruction::Describe() const
+{
     std::ostringstream ss;
-    const uint32_t opcode = Opcode();
-    const uint32_t length = Length();
-    const bool has_result = ResultId() != 0;
-    const bool has_type = TypeId() != 0;
-    uint32_t operand_offset = 1;  // where to start printing operands
+    const uint32_t     opcode         = Opcode();
+    const uint32_t     length         = Length();
+    const bool         has_result     = ResultId() != 0;
+    const bool         has_type       = TypeId() != 0;
+    uint32_t           operand_offset = 1; // where to start printing operands
     // common disassembled for SPIR-V is
     // %result = Opcode %result_type %operands
-    if (has_result) {
+    if (has_result)
+    {
         operand_offset++;
         ss << "%" << (has_type ? Word(2) : Word(1)) << " = ";
     }
 
     ss << string_SpvOpcode(opcode);
 
-    if (has_type) {
+    if (has_type)
+    {
         operand_offset++;
         ss << " %" << Word(1);
     }
 
     // Exception for some opcode
-    if (opcode == spv::OpEntryPoint) {
+    if (opcode == spv::OpEntryPoint)
+    {
         ss << " " << string_SpvExecutionModel(Word(1)) << " %" << Word(2) << " [Unknown]";
-    } else {
-        const OperandInfo& info = GetOperandInfo(opcode);
-        const uint32_t operands = static_cast<uint32_t>(info.types.size());
-        const uint32_t remaining_words = length - operand_offset;
-        for (uint32_t i = 0; i < remaining_words; i++) {
+    }
+    else
+    {
+        const OperandInfo& info            = GetOperandInfo(opcode);
+        const uint32_t     operands        = static_cast<uint32_t>(info.types.size());
+        const uint32_t     remaining_words = length - operand_offset;
+        for (uint32_t i = 0; i < remaining_words; i++)
+        {
             OperandKind kind = (i < operands) ? info.types[i] : info.types.back();
-            if (kind == OperandKind::LiteralString) {
+            if (kind == OperandKind::LiteralString)
+            {
                 ss << " [string]";
                 break;
             }
@@ -108,13 +128,15 @@ std::string Instruction::Describe() const {
 
 // While simple, function name provides a more human readable description why Word(3) is used.
 //
-// The current various uses for constant values (OpAccessChain, OpTypeArray, LocalSize, etc) all have spec langauge making sure they
-// are scalar ints. It is also not valid for any of these use cases to have a negative value. While it is valid SPIR-V to use 64-bit
-// int, found writting test there is no way to create something valid that also calls this function. So until a use-case is found,
-// we can safely assume returning a uint32_t is ok.
-uint32_t Instruction::GetConstantValue() const {
+// The current various uses for constant values (OpAccessChain, OpTypeArray, LocalSize, etc) all have spec langauge
+// making sure they are scalar ints. It is also not valid for any of these use cases to have a negative value. While it
+// is valid SPIR-V to use 64-bit int, found writting test there is no way to create something valid that also calls this
+// function. So until a use-case is found, we can safely assume returning a uint32_t is ok.
+uint32_t Instruction::GetConstantValue() const
+{
     // This should be a OpConstant (not a OpSpecConstant), if this asserts then 2 things are happening
-    // 1. This function is being used where we don't actually know it is a constant and is a bug in the validation layers
+    // 1. This function is being used where we don't actually know it is a constant and is a bug in the validation
+    // layers
     // 2. The CreateFoldSpecConstantOpAndCompositePass didn't fully fold everything and is a bug in spirv-opt
     assert(Opcode() == spv::OpConstant);
     return Word(3);
@@ -122,10 +144,12 @@ uint32_t Instruction::GetConstantValue() const {
 
 // The idea of this function is to not have to constantly lookup which operand for the width
 // inst.Word(2) -> inst.GetBitWidth()
-uint32_t Instruction::GetBitWidth() const {
-    const uint32_t opcode = Opcode();
-    uint32_t bit_width = 0;
-    switch (opcode) {
+uint32_t Instruction::GetBitWidth() const
+{
+    const uint32_t opcode    = Opcode();
+    uint32_t       bit_width = 0;
+    switch (opcode)
+    {
         case spv::Op::OpTypeFloat:
         case spv::Op::OpTypeInt:
             bit_width = Word(2);
@@ -145,31 +169,49 @@ uint32_t Instruction::GetBitWidth() const {
     return bit_width;
 }
 
-spv::BuiltIn Instruction::GetBuiltIn() const {
-    if (Opcode() == spv::OpDecorate) {
+spv::BuiltIn Instruction::GetBuiltIn() const
+{
+    if (Opcode() == spv::OpDecorate)
+    {
         return static_cast<spv::BuiltIn>(Word(3));
-    } else if (Opcode() == spv::OpMemberDecorate) {
+    }
+    else if (Opcode() == spv::OpMemberDecorate)
+    {
         return static_cast<spv::BuiltIn>(Word(4));
-    } else {
-        assert(false);  // non valid Opcode
+    }
+    else
+    {
+        assert(false); // non valid Opcode
         return spv::BuiltInMax;
     }
 }
 
-bool Instruction::IsArray() const { return (Opcode() == spv::OpTypeArray || Opcode() == spv::OpTypeRuntimeArray); }
+bool Instruction::IsArray() const
+{
+    return (Opcode() == spv::OpTypeArray || Opcode() == spv::OpTypeRuntimeArray);
+}
 
-spv::Dim Instruction::FindImageDim() const { return (Opcode() == spv::OpTypeImage) ? (spv::Dim(Word(3))) : spv::DimMax; }
+spv::Dim Instruction::FindImageDim() const
+{
+    return (Opcode() == spv::OpTypeImage) ? (spv::Dim(Word(3))) : spv::DimMax;
+}
 
-bool Instruction::IsImageArray() const { return (Opcode() == spv::OpTypeImage) && (Word(5) != 0); }
+bool Instruction::IsImageArray() const
+{
+    return (Opcode() == spv::OpTypeImage) && (Word(5) != 0);
+}
 
-bool Instruction::IsImageMultisampled() const {
+bool Instruction::IsImageMultisampled() const
+{
     // spirv-val makes sure that the MS operand is only non-zero when possible to be Multisampled
     return (Opcode() == spv::OpTypeImage) && (Word(6) != 0);
 }
 
-spv::StorageClass Instruction::StorageClass() const {
+spv::StorageClass Instruction::StorageClass() const
+{
     spv::StorageClass storage_class = spv::StorageClassMax;
-    switch (Opcode()) {
+    switch (Opcode())
+    {
         case spv::OpTypePointer:
             storage_class = static_cast<spv::StorageClass>(Word(2));
             break;
@@ -186,22 +228,24 @@ spv::StorageClass Instruction::StorageClass() const {
     return storage_class;
 }
 
-// When logging from things such as GPU-AV, we need to do some SPIR-V processing, but is just to inspect single instructions without
-// knowledge of the rest of the module. This function just turns the saved vector of uint32_t into the Instruction class to make it
-// easier to use.
-void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<Instruction>& instructions) {
+// When logging from things such as GPU-AV, we need to do some SPIR-V processing, but is just to inspect single
+// instructions without knowledge of the rest of the module. This function just turns the saved vector of uint32_t into
+// the Instruction class to make it easier to use.
+void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<Instruction>& instructions)
+{
     // Need to use until we have native std::span in c++20
     using spirv_iterator = vvl::enumeration<const uint32_t, const uint32_t*>::iterator;
 
     assert(instructions.empty());
     spirv_iterator it = spirv.begin();
-    it += 5;  // skip first 5 word of header
+    it += 5; // skip first 5 word of header
     instructions.reserve(spirv.size() * 4);
 
-    while (it != spirv.end()) {
+    while (it != spirv.end())
+    {
         auto new_insn = instructions.emplace_back(it);
         it += new_insn.Length();
     }
 }
 
-}  // namespace spirv
+} // namespace spirv

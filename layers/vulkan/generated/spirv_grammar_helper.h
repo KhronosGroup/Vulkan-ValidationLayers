@@ -26,9 +26,9 @@
 
 #pragma once
 #include <cstdint>
+#include <spirv/unified1/spirv.hpp>
 #include <string>
 #include <vector>
-#include <spirv/unified1/spirv.hpp>
 
 const char* string_SpvOpcode(uint32_t opcode);
 const char* string_SpvStorageClass(uint32_t storage_class);

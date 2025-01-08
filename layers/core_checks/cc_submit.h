@@ -26,12 +26,14 @@
 
 class ValidationObject;
 
-namespace vvl {
+namespace vvl
+{
 struct QueueSubmission;
-}  // namespace vvl
+} // namespace vvl
 
 // Performs validationn when QueueSubmision is ready to retire.
-struct QueueSubmissionValidator {
+struct QueueSubmissionValidator
+{
     const ValidationObject& error_logger;
 
     QueueSubmissionValidator(const ValidationObject& error_logger) : error_logger(error_logger) {}

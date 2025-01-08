@@ -20,8 +20,10 @@
 #define GPU_SHADERS_CONSTANTS_H
 
 #ifdef __cplusplus
-namespace gpuav {
-namespace glsl {
+namespace gpuav
+{
+namespace glsl
+{
 using uint = unsigned int;
 
 // Upper bound for maxUpdateAfterBindDescriptorsInAllPools. This value needs to
@@ -38,16 +40,18 @@ const uint kMaxErrorsPerCmd = 6;
 // Instrumentation
 // ---
 
-// Instead of having to create a variable and pass it in each time for every function call made, we use these values to map
-// constants in the GLSL to be updated with constant values known when we are doing the linking at GPU-AV runtime. (Similar to
-// Specialization Constant)
+// Instead of having to create a variable and pass it in each time for every function call made, we use these values to
+// map constants in the GLSL to be updated with constant values known when we are doing the linking at GPU-AV runtime.
+// (Similar to Specialization Constant)
 const uint kLinkShaderId = 0x0DEAD001;
 
-// This is just a placeholder, honestly could be anything, will be replaced when linking to the runtime descriptor set choosen
+// This is just a placeholder, honestly could be anything, will be replaced when linking to the runtime descriptor set
+// choosen
 const int kInstDefaultDescriptorSet = 7;
 
 // Binding index inside the descriptor set used by instrumentation validation.
-// Set to front as people might want to use only DebugPrintf and this can allow us to reduce overhead not binding the other buffers
+// Set to front as people might want to use only DebugPrintf and this can allow us to reduce overhead not binding the
+// other buffers
 const int kBindingInstDebugPrintf = 0;
 // binding #1 is reserved for the output all non-DebugPrintf shaders write out too.
 const int kBindingInstErrorBuffer = 1;
@@ -55,10 +59,10 @@ const int kBindingInstErrorBuffer = 1;
 const int kBindingInstPostProcess = 2;
 // Each check that requires additional input to be sent must reserve its own binding slot
 const int kBindingInstDescriptorIndexingOOB = 3;
-const int kBindingInstBufferDeviceAddress = 4;
-const int kBindingInstActionIndex = 5;
-const int kBindingInstCmdResourceIndex = 6;
-const int kBindingInstCmdErrorsCount = 7;
+const int kBindingInstBufferDeviceAddress   = 4;
+const int kBindingInstActionIndex           = 5;
+const int kBindingInstCmdResourceIndex      = 6;
+const int kBindingInstCmdErrorsCount        = 7;
 
 // Diagnostic calls
 // ---
@@ -67,10 +71,10 @@ const int kDiagCommonDescriptorSet = 0;
 const int kDiagPerCmdDescriptorSet = 1;
 
 // Diagnostic calls bindings in common descriptor set
-const int kBindingDiagErrorBuffer = 0;
-const int kBindingDiagActionIndex = 1;
+const int kBindingDiagErrorBuffer      = 0;
+const int kBindingDiagActionIndex      = 1;
 const int kBindingDiagCmdResourceIndex = 2;
-const int kBindingDiagCmdErrorsCount = 3;
+const int kBindingDiagCmdErrorsCount   = 3;
 
 // Direct Input Buffer Offsets
 //
@@ -90,14 +94,14 @@ const int kDebugInputBindlessMaxDescSets = 32;
 const uint kNullDescriptor = 0x00ffffff;
 
 // Top 8 bits of the descriptor id
-const uint kDescBitShift = 24;
-const uint kSamplerDesc = 1;
-const uint kImageSamplerDesc = 2;
-const uint kImageDesc = 3;
-const uint kTexelDesc = 4;
-const uint kBufferDesc = 5;
+const uint kDescBitShift      = 24;
+const uint kSamplerDesc       = 1;
+const uint kImageSamplerDesc  = 2;
+const uint kImageDesc         = 3;
+const uint kTexelDesc         = 4;
+const uint kBufferDesc        = 5;
 const uint kInlineUniformDesc = 6;
-const uint kAccelDesc = 7;
+const uint kAccelDesc         = 7;
 
 // Buffer Device Address Input Buffer Format
 //
@@ -128,15 +132,15 @@ const int kDebugInputBuffAddrLengthOffset = 0;
 // 31       30...    ...4...          ...0
 // [accessed | reserved | Descriptor Set ]
 //
-// We store which set in last 5-bits because it can only be 0 to 31 (since devices don't support more than 32 sets and we have
-// warnings/assert if they start)
+// We store which set in last 5-bits because it can only be 0 to 31 (since devices don't support more than 32 sets and
+// we have warnings/assert if they start)
 const uint kDescriptorSetSelectionMask = 0x1F;
 // We use "0" as an initialization value, but the set could be "0" in SPIR-V
 // This mask lets know the descriptor was written to while saving the set value used.
 const uint kDescriptorSetAccessedMask = 1u << 31;
 
 #ifdef __cplusplus
-}  // namespace glsl
-}  // namespace gpuav
+} // namespace glsl
+} // namespace gpuav
 #endif
 #endif

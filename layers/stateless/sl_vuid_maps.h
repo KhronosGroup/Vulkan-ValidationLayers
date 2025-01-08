@@ -19,9 +19,11 @@
 
 struct Location;
 
-namespace vvl {
+namespace vvl
+{
 
-enum class PipelineBinaryInfoError {
+enum class PipelineBinaryInfoError
+{
     PNext_09616,
     PNext_09617,
     BinaryCount_09620,
@@ -29,6 +31,6 @@ enum class PipelineBinaryInfoError {
     BinaryCount_09622,
 };
 
-const std::string &GetPipelineBinaryInfoVUID(const Location &loc, PipelineBinaryInfoError error);
+const std::string& GetPipelineBinaryInfoVUID(const Location& loc, PipelineBinaryInfoError error);
 
-}  // namespace vvl
+} // namespace vvl

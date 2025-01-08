@@ -16,7 +16,8 @@
  */
 #include "gpu/error_message/gpuav_vuids.h"
 
-namespace gpuav {
+namespace gpuav
+{
 
 // clang-format off
 struct GpuVuidsCmdDraw : GpuVuid {
@@ -361,4 +362,4 @@ const GpuVuid &GetGpuVuid(Func command) {
     }
 }
 // clang-format on
-}  // namespace gpuav
+} // namespace gpuav

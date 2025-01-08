@@ -17,24 +17,26 @@
  */
 
 #pragma once
-#include <array>
-#include <vector>
-#include <string>
-#include <cstdint>
-#include <vulkan/vulkan.h>
-#include <vulkan/utility/vk_struct_helper.hpp>
 #include "containers/custom_containers.h"
+#include <array>
+#include <cstdint>
+#include <string>
+#include <vector>
+#include <vulkan/utility/vk_struct_helper.hpp>
+#include <vulkan/vulkan.h>
 
 #define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
-enum ValidationCheckDisables {
+enum ValidationCheckDisables
+{
     VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE,
     VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
     VALIDATION_CHECK_DISABLE_QUERY_VALIDATION,
     VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
 };
 
-enum ValidationCheckEnables {
+enum ValidationCheckEnables
+{
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM,
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD,
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG,
@@ -42,10 +44,11 @@ enum ValidationCheckEnables {
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
 };
 
-// CHECK_DISABLED and CHECK_ENABLED vectors are containers for bools that can opt in or out of specific classes of validation
-// checks. Enum values can be specified via the vk_layer_settings.txt config file or at CreateInstance time via the
-// VK_EXT_validation_features extension that can selectively disable or enable checks.
-enum DisableFlags {
+// CHECK_DISABLED and CHECK_ENABLED vectors are containers for bools that can opt in or out of specific classes of
+// validation checks. Enum values can be specified via the vk_layer_settings.txt config file or at CreateInstance time
+// via the VK_EXT_validation_features extension that can selectively disable or enable checks.
+enum DisableFlags
+{
     command_buffer_state,
     object_in_use,
     query_validation,
@@ -61,7 +64,8 @@ enum DisableFlags {
     kMaxDisableFlags,
 };
 
-enum EnableFlags {
+enum EnableFlags
+{
     gpu_validation,
     gpu_validation_reserve_binding_slot,
     best_practices,
@@ -76,10 +80,11 @@ enum EnableFlags {
 };
 
 using CHECK_DISABLED = std::array<bool, kMaxDisableFlags>;
-using CHECK_ENABLED = std::array<bool, kMaxEnableFlags>;
+using CHECK_ENABLED  = std::array<bool, kMaxEnableFlags>;
 
 // General settings to be used by all parts of the Validation Layers
-struct GlobalSettings {
+struct GlobalSettings
+{
     bool fine_grained_locking = true;
 
     bool debug_disable_spirv_val = false;
@@ -89,30 +94,32 @@ class DebugReport;
 struct GpuAVSettings;
 struct SyncValSettings;
 struct MessageFormatSettings;
-struct ConfigAndEnvSettings {
+struct ConfigAndEnvSettings
+{
     // Matches up with what is passed down to VK_EXT_layer_settings
-    const char *layer_description;
+    const char* layer_description;
 
     // Used so we can find things like VkValidationFeaturesEXT
-    const VkInstanceCreateInfo *create_info;
+    const VkInstanceCreateInfo* create_info;
 
     // Find grain way to turn off/on parts of validation
-    CHECK_ENABLED &enables;
-    CHECK_DISABLED &disables;
+    CHECK_ENABLED&  enables;
+    CHECK_DISABLED& disables;
 
     // Settings for DebugReport
-    DebugReport *debug_report;
+    DebugReport* debug_report;
 
     GlobalSettings* global_settings;
 
     // Individual settings for different internal layers
-    GpuAVSettings *gpuav_settings;
-    SyncValSettings *syncval_settings;
+    GpuAVSettings*   gpuav_settings;
+    SyncValSettings* syncval_settings;
 };
-const std::vector<std::string> &GetDisableFlagNameHelper();
-const std::vector<std::string> &GetEnableFlagNameHelper();
+const std::vector<std::string>& GetDisableFlagNameHelper();
+const std::vector<std::string>& GetEnableFlagNameHelper();
 
-// Process validation features, flags and settings specified through extensions, a layer settings file, or environment variables
-void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data);
+// Process validation features, flags and settings specified through extensions, a layer settings file, or environment
+// variables
+void ProcessConfigAndEnvSettings(ConfigAndEnvSettings* settings_data);
 
-std::vector<std::pair<uint32_t, uint32_t>> &GetCustomStypeInfo();
+std::vector<std::pair<uint32_t, uint32_t>>& GetCustomStypeInfo();

@@ -20,8 +20,10 @@
 #define GPU_SHADERS_DRAW_PUSH_DATA_H
 
 #ifdef __cplusplus
-namespace gpuav {
-namespace glsl {
+namespace gpuav
+{
+namespace glsl
+{
 using uint = unsigned int;
 #else
 #if defined(GL_ARB_gpu_shader_int64)
@@ -33,10 +35,11 @@ using uint = unsigned int;
 
 // Bindings for all pre draw types
 const uint kPreDrawBinding_IndirectBuffer = 0;
-const uint kPreDrawBinding_CountBuffer = 1;
-const uint kPreDrawBinding_IndexBuffer = 2;
+const uint kPreDrawBinding_CountBuffer    = 1;
+const uint kPreDrawBinding_IndexBuffer    = 2;
 
-struct IndexedDrawPushData {
+struct IndexedDrawPushData
+{
     uint smallest_vertex_attributes_count;
     uint index_width;
     uint vertex_offset;
@@ -46,20 +49,24 @@ struct IndexedDrawPushData {
 };
 
 const uint kIndexedIndirectDrawFlags_DrawCountFromBuffer = uint(1) << 0;
-struct DrawIndexedIndirectIndexBufferPushData {
+struct DrawIndexedIndirectIndexBufferPushData
+{
     uint flags;
     uint draw_cmds_stride_dwords;
-    uint bound_index_buffer_indices_count;  // Number of indices in the index buffer, taking index type in account. NOT a byte size.
+    uint bound_index_buffer_indices_count; // Number of indices in the index buffer, taking index type in account. NOT a
+                                           // byte size.
     uint cpu_draw_count;
     uint draw_indexed_indirect_cmds_buffer_dwords_offset;
     uint count_buffer_dwords_offset;
 };
 
-struct DrawIndexedIndirectVertexBufferPushData {
+struct DrawIndexedIndirectVertexBufferPushData
+{
     uint flags;
     uint index_width;
     uint draw_cmds_stride_dwords;
-    uint bound_index_buffer_indices_count;  // Number of indices in the index buffer, taking index type in account. NOT a byte size.
+    uint bound_index_buffer_indices_count; // Number of indices in the index buffer, taking index type in account. NOT a
+                                           // byte size.
     uint cpu_draw_count;
     uint smallest_vertex_attributes_count;
     uint draw_indexed_indirect_cmds_buffer_dwords_offset;
@@ -68,7 +75,8 @@ struct DrawIndexedIndirectVertexBufferPushData {
 };
 
 const uint kDrawMeshFlags_DrawCountFromBuffer = uint(1) << 0;
-struct DrawMeshPushData {
+struct DrawMeshPushData
+{
     uint flags;
     uint draw_cmds_stride_dwords;
     uint cpu_draw_count;
@@ -81,7 +89,8 @@ struct DrawMeshPushData {
 };
 
 const uint kFirstInstanceFlags_DrawCountFromBuffer = uint(1) << 0;
-struct FirstInstancePushData {
+struct FirstInstancePushData
+{
     uint flags;
     uint draw_cmds_stride_dwords;
     uint cpu_draw_count;
@@ -90,17 +99,18 @@ struct FirstInstancePushData {
     uint count_buffer_dwords_offset;
 };
 
-struct CountBufferPushData {
-    uint draw_cmds_byte_stride;
+struct CountBufferPushData
+{
+    uint     draw_cmds_byte_stride;
     uint64_t draw_buffer_offset;
     uint64_t draw_buffer_size;
-    uint draw_cmd_byte_size;
-    uint device_limit_max_draw_indirect_count;
-    uint count_buffer_dwords_offset;
+    uint     draw_cmd_byte_size;
+    uint     device_limit_max_draw_indirect_count;
+    uint     count_buffer_dwords_offset;
 };
 
 #ifdef __cplusplus
-}  // namespace glsl
-}  // namespace gpuav
+} // namespace glsl
+} // namespace gpuav
 #endif
 #endif

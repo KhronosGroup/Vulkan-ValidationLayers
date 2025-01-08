@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
-#include <cstring>
 #include "vk_layer_extension_utils.h"
+#include <cstring>
 
-VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProperties *layer_extensions, uint32_t *pCount,
-                                     VkExtensionProperties *pProperties) {
-    if (pProperties == nullptr || layer_extensions == nullptr) {
+VkResult util_GetExtensionProperties(const uint32_t               count,
+                                     const VkExtensionProperties* layer_extensions,
+                                     uint32_t*                    pCount,
+                                     VkExtensionProperties*       pProperties)
+{
+    if (pProperties == nullptr || layer_extensions == nullptr)
+    {
         *pCount = count;
         return VK_SUCCESS;
     }
@@ -28,16 +32,21 @@ VkResult util_GetExtensionProperties(const uint32_t count, const VkExtensionProp
     const uint32_t copy_size = *pCount < count ? *pCount : count;
     std::memcpy(pProperties, layer_extensions, copy_size * sizeof(VkExtensionProperties));
     *pCount = copy_size;
-    if (copy_size < count) {
+    if (copy_size < count)
+    {
         return VK_INCOMPLETE;
     }
 
     return VK_SUCCESS;
 }
 
-VkResult util_GetLayerProperties(const uint32_t count, const VkLayerProperties *layer_properties, uint32_t *pCount,
-                                 VkLayerProperties *pProperties) {
-    if (pProperties == nullptr || layer_properties == nullptr) {
+VkResult util_GetLayerProperties(const uint32_t           count,
+                                 const VkLayerProperties* layer_properties,
+                                 uint32_t*                pCount,
+                                 VkLayerProperties*       pProperties)
+{
+    if (pProperties == nullptr || layer_properties == nullptr)
+    {
         *pCount = count;
         return VK_SUCCESS;
     }
@@ -45,7 +54,8 @@ VkResult util_GetLayerProperties(const uint32_t count, const VkLayerProperties *
     const uint32_t copy_size = *pCount < count ? *pCount : count;
     std::memcpy(pProperties, layer_properties, copy_size * sizeof(VkLayerProperties));
     *pCount = copy_size;
-    if (copy_size < count) {
+    if (copy_size < count)
+    {
         return VK_INCOMPLETE;
     }
 

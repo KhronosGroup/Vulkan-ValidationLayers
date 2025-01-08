@@ -21,10 +21,14 @@
 
 struct Location;
 
-namespace gpuav {
+namespace gpuav
+{
 class Validator;
 
-void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
-                                      VkDeviceSize indirect_offset);
+void InsertIndirectDispatchValidation(Validator&      gpuav,
+                                      const Location& loc,
+                                      CommandBuffer&  cb_state,
+                                      VkBuffer        indirect_buffer,
+                                      VkDeviceSize    indirect_offset);
 
-}  // namespace gpuav
+} // namespace gpuav

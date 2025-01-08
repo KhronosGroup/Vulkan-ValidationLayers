@@ -21,57 +21,75 @@
 #include <sys/stat.h>
 
 #include "containers/range_vector.h"
-#include "vulkan/vulkan_core.h"
 #include "vk_layer_config.h"
+#include "vulkan/vulkan_core.h"
 
-VkLayerInstanceCreateInfo *GetChainInfo(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func) {
-    VkLayerInstanceCreateInfo *chain_info = (VkLayerInstanceCreateInfo *)pCreateInfo->pNext;
-    while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO && chain_info->function == func)) {
-        chain_info = (VkLayerInstanceCreateInfo *)chain_info->pNext;
+VkLayerInstanceCreateInfo* GetChainInfo(const VkInstanceCreateInfo* pCreateInfo, VkLayerFunction func)
+{
+    VkLayerInstanceCreateInfo* chain_info = (VkLayerInstanceCreateInfo*)pCreateInfo->pNext;
+    while (chain_info &&
+           !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO && chain_info->function == func))
+    {
+        chain_info = (VkLayerInstanceCreateInfo*)chain_info->pNext;
     }
     assert(chain_info != NULL);
     return chain_info;
 }
 
-VkLayerDeviceCreateInfo *GetChainInfo(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func) {
-    VkLayerDeviceCreateInfo *chain_info = (VkLayerDeviceCreateInfo *)pCreateInfo->pNext;
-    while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO && chain_info->function == func)) {
-        chain_info = (VkLayerDeviceCreateInfo *)chain_info->pNext;
+VkLayerDeviceCreateInfo* GetChainInfo(const VkDeviceCreateInfo* pCreateInfo, VkLayerFunction func)
+{
+    VkLayerDeviceCreateInfo* chain_info = (VkLayerDeviceCreateInfo*)pCreateInfo->pNext;
+    while (chain_info &&
+           !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO && chain_info->function == func))
+    {
+        chain_info = (VkLayerDeviceCreateInfo*)chain_info->pNext;
     }
     assert(chain_info != NULL);
     return chain_info;
 }
 
-std::string GetTempFilePath() {
+std::string GetTempFilePath()
+{
     auto tmp_path = GetEnvironment("XDG_CACHE_HOME");
-    if (!tmp_path.size()) {
-        auto cachepath = GetEnvironment("HOME") + "/.cache";
+    if (!tmp_path.size())
+    {
+        auto        cachepath = GetEnvironment("HOME") + "/.cache";
         struct stat info;
-        if (stat(cachepath.c_str(), &info) == 0) {
-            if ((info.st_mode & S_IFMT) == S_IFDIR) {
+        if (stat(cachepath.c_str(), &info) == 0)
+        {
+            if ((info.st_mode & S_IFMT) == S_IFDIR)
+            {
                 tmp_path = cachepath;
             }
         }
     }
-    if (!tmp_path.size()) tmp_path = GetEnvironment("TMPDIR");
-    if (!tmp_path.size()) tmp_path = GetEnvironment("TMP");
-    if (!tmp_path.size()) tmp_path = GetEnvironment("TEMP");
-    if (!tmp_path.size()) tmp_path = "/tmp";
+    if (!tmp_path.size())
+        tmp_path = GetEnvironment("TMPDIR");
+    if (!tmp_path.size())
+        tmp_path = GetEnvironment("TMP");
+    if (!tmp_path.size())
+        tmp_path = GetEnvironment("TEMP");
+    if (!tmp_path.size())
+        tmp_path = "/tmp";
     return tmp_path;
 }
 
 // Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level) {
+VkExtent3D
+GetEffectiveExtent(const VkImageCreateInfo& ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level)
+{
     // Return zero extent if mip level doesn't exist
-    if (mip_level >= ci.mipLevels) {
-        return VkExtent3D{0, 0, 0};
+    if (mip_level >= ci.mipLevels)
+    {
+        return VkExtent3D{ 0, 0, 0 };
     }
 
     VkExtent3D extent = ci.extent;
 
     // If multi-plane, adjust per-plane extent
     const VkFormat format = ci.format;
-    if (vkuFormatIsMultiplane(format)) {
+    if (vkuFormatIsMultiplane(format))
+    {
         VkExtent2D divisors = vkuFindMultiplaneExtentDivisors(format, static_cast<VkImageAspectFlagBits>(aspect_mask));
         extent.width /= divisors.width;
         extent.height /= divisors.height;
@@ -79,12 +97,14 @@ VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFl
 
     // Mip Maps
     {
-        const uint32_t corner = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
-        const uint32_t min_size = 1 + corner;
-        const std::array dimensions = {&extent.width, &extent.height, &extent.depth};
-        for (uint32_t *dim : dimensions) {
+        const uint32_t   corner     = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
+        const uint32_t   min_size   = 1 + corner;
+        const std::array dimensions = { &extent.width, &extent.height, &extent.depth };
+        for (uint32_t* dim : dimensions)
+        {
             // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
-            if (*dim == 0) {
+            if (*dim == 0)
+            {
                 continue;
             }
             *dim >>= mip_level;
@@ -93,7 +113,8 @@ VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFl
     }
 
     // Image arrays have an effective z extent that isn't diminished by mip level
-    if (VK_IMAGE_TYPE_3D != ci.imageType) {
+    if (VK_IMAGE_TYPE_3D != ci.imageType)
+    {
         extent.depth = ci.arrayLayers;
     }
 
@@ -101,7 +122,8 @@ VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFl
 }
 
 // Returns true if [x, x + x_size) and [y, y + y_size) overlap
-bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
+bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size)
+{
     auto intersection = GetRangeIntersection(x, x_size, y, y_size);
     return intersection.non_empty();
 }
