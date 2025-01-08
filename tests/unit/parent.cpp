@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -624,6 +624,34 @@ TEST_F(NegativeParent, PipelineExecutableInfo) {
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271");
     vk::GetPipelineExecutablePropertiesKHR(*m_second_device, &pipeline_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9176
+TEST_F(NegativeParent, DISABLED_PipelineInfoEXT) {
+    TEST_DESCRIPTION("Try making calls without pipelineExecutableInfo.");
+
+    AddRequiredExtensions(VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkPhysicalDevicePipelinePropertiesFeaturesEXT pipeline_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(pipeline_features);
+    RETURN_IF_SKIP(InitState(nullptr, &pipeline_features));
+    InitRenderTarget();
+
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, nullptr, &pipeline_features);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    VkPipelineInfoEXT pipeline_info = vku::InitStructHelper();
+    pipeline_info.sType = VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT;
+    pipeline_info.pipeline = pipe.Handle();
+
+    VkBaseOutStructure out_struct;
+    out_struct.sType = VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelinePropertiesEXT-pipeline-06738");
+    vk::GetPipelinePropertiesEXT(*m_second_device, &pipeline_info, &out_struct);
     m_errorMonitor->VerifyFound();
 }
 
