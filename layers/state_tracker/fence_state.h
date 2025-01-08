@@ -25,7 +25,8 @@
 
 class ValidationStateTracker;
 
-namespace vvl {
+namespace vvl
+{
 
 class Queue;
 class Swapchain;
@@ -46,24 +47,32 @@ class Swapchain;
 //
 // Acquire fence synchronization allows the use of the fence from step a) to wait on the submit batch from step e).
 //
-struct AcquireFenceSync {
+struct AcquireFenceSync
+{
     // The queue submissions that will be notified when WaitForFences is called.
     small_vector<SubmissionReference, 2, uint32_t> submission_refs;
 };
 
-class Fence : public RefcountedStateObject {
+class Fence : public RefcountedStateObject
+{
   public:
-    enum State { kUnsignaled, kInflight, kRetired };
-    enum Scope {
+    enum State
+    {
+        kUnsignaled,
+        kInflight,
+        kRetired
+    };
+    enum Scope
+    {
         kInternal,
         kExternalTemporary,
         kExternalPermanent,
     };
 
-    Fence(ValidationStateTracker &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo);
+    Fence(ValidationStateTracker& dev, VkFence handle, const VkFenceCreateInfo* pCreateInfo);
 
-    const VulkanTypedHandle *InUse() const override;
-    VkFence VkHandle() const { return handle_.Cast<VkFence>(); }
+    const VulkanTypedHandle* InUse() const override;
+    VkFence                  VkHandle() const { return handle_.Cast<VkFence>(); }
     // TODO: apply ReadLock as Semaphore does, or consider reading enums without lock.
     // Consider if more high-level operation should be exposed, because
     // (State() == a && Scope() == b) can be racey, but this could be fine if the
@@ -71,11 +80,11 @@ class Fence : public RefcountedStateObject {
     enum State State() const { return state_; }
     enum Scope Scope() const { return scope_; }
 
-    bool EnqueueSignal(Queue *queue_state, uint64_t next_seq);
+    bool EnqueueSignal(Queue* queue_state, uint64_t next_seq);
 
     // Notify the queue that the fence has signalled and then wait for the queue
     // to update state.
-    void NotifyAndWait(const Location &loc);
+    void NotifyAndWait(const Location& loc);
 
     // Update state of the completed fence. This should only be called by Queue.
     void Retire();
@@ -87,28 +96,31 @@ class Fence : public RefcountedStateObject {
     void Export(VkExternalFenceHandleTypeFlagBits handle_type);
     std::optional<VkExternalFenceHandleTypeFlagBits> ImportedHandleType() const;
 
-    void SetAcquireFenceSync(const AcquireFenceSync &acquire_fence_sync);
+    void SetAcquireFenceSync(const AcquireFenceSync& acquire_fence_sync);
 
-    const VkFenceCreateFlags flags;
+    const VkFenceCreateFlags             flags;
     const VkExternalFenceHandleTypeFlags export_handle_types;
 
   private:
-    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
+    ReadLockGuard  ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
-    Queue *queue_{nullptr};
-    uint64_t seq_{0};
+    Queue*     queue_{ nullptr };
+    uint64_t   seq_{ 0 };
     enum State state_;
-    enum Scope scope_{kInternal};
-    std::optional<VkExternalFenceHandleTypeFlagBits> imported_handle_type_;  // has value when scope is not kInternal
-    mutable std::shared_mutex lock_;
-    std::promise<void> completed_;
-    std::shared_future<void> waiter_;
+    enum Scope scope_
+    {
+        kInternal
+    };
+    std::optional<VkExternalFenceHandleTypeFlagBits> imported_handle_type_; // has value when scope is not kInternal
+    mutable std::shared_mutex                        lock_;
+    std::promise<void>                               completed_;
+    std::shared_future<void>                         waiter_;
 
     // Special frame synchronization based on acquire fence (check AcquireFenceSync documentation)
     AcquireFenceSync acquire_fence_sync_;
 
-    ValidationStateTracker &dev_data_;
+    ValidationStateTracker& dev_data_;
 };
 
-}  // namespace vvl
+} // namespace vvl

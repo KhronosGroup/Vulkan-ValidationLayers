@@ -20,16 +20,25 @@
 #include <vulkan/vulkan_core.h>
 
 struct Location;
-namespace gpuav {
+namespace gpuav
+{
 struct DebugPrintfBufferInfo;
 class CommandBuffer;
 class Validator;
 
-namespace debug_printf {
-bool UpdateInstrumentationDescSet(Validator& gpuav, CommandBuffer& cb_state, VkDescriptorSet instrumentation_desc_set,
-                                  VkPipelineBindPoint bind_point, const Location& loc);
-void AnalyzeAndGenerateMessage(Validator& gpuav, VkCommandBuffer command_buffer, VkQueue queue, DebugPrintfBufferInfo& buffer_info,
-                               uint32_t* const debug_output_buffer, const Location& loc);
-}  // namespace debug_printf
+namespace debug_printf
+{
+bool UpdateInstrumentationDescSet(Validator&          gpuav,
+                                  CommandBuffer&      cb_state,
+                                  VkDescriptorSet     instrumentation_desc_set,
+                                  VkPipelineBindPoint bind_point,
+                                  const Location&     loc);
+void AnalyzeAndGenerateMessage(Validator&             gpuav,
+                               VkCommandBuffer        command_buffer,
+                               VkQueue                queue,
+                               DebugPrintfBufferInfo& buffer_info,
+                               uint32_t* const        debug_output_buffer,
+                               const Location&        loc);
+} // namespace debug_printf
 
-}  // namespace gpuav
+} // namespace gpuav

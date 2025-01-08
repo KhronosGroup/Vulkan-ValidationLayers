@@ -22,8 +22,10 @@
 #include "gpuav_error_codes.h"
 
 #ifdef __cplusplus
-namespace gpuav {
-namespace glsl {
+namespace gpuav
+{
+namespace glsl
+{
 #endif
 
 // GPU-AV Error record structure:
@@ -62,7 +64,7 @@ const int kHeaderInstructionIdOffset = 2;
 
 // This is the stage which generated the validation error. This word is used
 // to determine the contents of the next two words in the record.
-const int kHeaderStageIdOffset = 3;  // Values come from SpvExecutionModel (See spirv.h):
+const int kHeaderStageIdOffset = 3; // Values come from SpvExecutionModel (See spirv.h):
 // Each stage will contain different values in the next set of words of the
 // record used to identify which instantiation of the shader generated the
 // validation error.
@@ -70,12 +72,12 @@ const int kHeaderStageInfoOffset_0 = 4;
 const int kHeaderStageInfoOffset_1 = 5;
 const int kHeaderStageInfoOffset_2 = 6;
 
-const int kHeaderActionIdOffset = 7;
+const int kHeaderActionIdOffset          = 7;
 const int kHeaderCommandResourceIdOffset = 8;
 
 // This identifies the validation error
 // We use groups to more easily manage the many int values not conflicting
-const int kHeaderErrorGroupOffset = 9;
+const int kHeaderErrorGroupOffset   = 9;
 const int kHeaderErrorSubCodeOffset = 10;
 
 const int kHeaderSize = 11;
@@ -85,19 +87,19 @@ const int kHeaderSize = 11;
 
 // Descriptor Indexing
 // ---
-const int kInstDescriptorIndexingDescSetOffset = kHeaderSize;
+const int kInstDescriptorIndexingDescSetOffset     = kHeaderSize;
 const int kInstDescriptorIndexingDescBindingOffset = kHeaderSize + 1;
-const int kInstDescriptorIndexingDescIndexOffset = kHeaderSize + 2;
-const int kInstDescriptorIndexingParamOffset_0 = kHeaderSize + 3;
-const int kInstDescriptorIndexingParamOffset_1 = kHeaderSize + 4;
+const int kInstDescriptorIndexingDescIndexOffset   = kHeaderSize + 2;
+const int kInstDescriptorIndexingParamOffset_0     = kHeaderSize + 3;
+const int kInstDescriptorIndexingParamOffset_1     = kHeaderSize + 4;
 
 // Descriptor Class
 // ---
-const int kInstDescriptorClassDescSetOffset = kHeaderSize;
+const int kInstDescriptorClassDescSetOffset     = kHeaderSize;
 const int kInstDescriptorClassDescBindingOffset = kHeaderSize + 1;
-const int kInstDescriptorClassDescIndexOffset = kHeaderSize + 2;
-const int kInstDescriptorClassParamOffset_0 = kHeaderSize + 3;
-const int kInstDescriptorClassParamOffset_1 = kHeaderSize + 4;
+const int kInstDescriptorClassDescIndexOffset   = kHeaderSize + 2;
+const int kInstDescriptorClassParamOffset_0     = kHeaderSize + 3;
+const int kInstDescriptorClassParamOffset_1     = kHeaderSize + 4;
 
 // Buffer device addresses
 // ---
@@ -105,9 +107,9 @@ const int kInstDescriptorClassParamOffset_1 = kHeaderSize + 4;
 // two 32-bit pieces, lower bits first.
 const int kInstBuffAddrUnallocDescPtrLoOffset = kHeaderSize;
 const int kInstBuffAddrUnallocDescPtrHiOffset = kHeaderSize + 1;
-const int kInstBuffAddrAccessByteSizeOffset = kHeaderSize + 2;
-const int kInstBuffAddrAccessOpcodeOffset = kHeaderSize + 3;
-const int kInstBuffAddrAccessAlignmentOffset = kHeaderSize + 4;
+const int kInstBuffAddrAccessByteSizeOffset   = kHeaderSize + 2;
+const int kInstBuffAddrAccessOpcodeOffset     = kHeaderSize + 3;
+const int kInstBuffAddrAccessAlignmentOffset  = kHeaderSize + 4;
 
 // Ray query
 // ---
@@ -122,20 +124,21 @@ const int kPreActionParamOffset_3 = kHeaderSize + 3;
 
 // Sizes/Counts
 // -------------------
-const int kErrorRecordSize = kHeaderSize + 5;
-const int kErrorRecordCounts = 4096;  // Maximum number of errors a command buffer can hold. Arbitrary value
-const int kErrorBufferByteSize = 4 * kErrorRecordSize * kErrorRecordCounts + 2 * 4;  // 2 * 4 bytes to store flags and errors count
+const int kErrorRecordSize   = kHeaderSize + 5;
+const int kErrorRecordCounts = 4096; // Maximum number of errors a command buffer can hold. Arbitrary value
+const int kErrorBufferByteSize =
+    4 * kErrorRecordSize * kErrorRecordCounts + 2 * 4; // 2 * 4 bytes to store flags and errors count
 
 #ifdef __cplusplus
-}  // namespace glsl
+} // namespace glsl
 #endif
 
 // DebugPrintf
 // ---
 const int kDebugPrintfOutputBufferDWordsCount = 0;
-const int kDebugPrintfOutputBufferData = 1;
+const int kDebugPrintfOutputBufferData        = 1;
 
 #ifdef __cplusplus
-}  // namespace gpuav
+} // namespace gpuav
 #endif
 #endif

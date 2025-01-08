@@ -14,26 +14,29 @@
  */
 #pragma once
 
-#include <stdint.h>
-#include <stddef.h>
-#include <vector>
 #include "containers/custom_containers.h"
 #include <spirv/unified1/spirv.hpp>
+#include <stddef.h>
+#include <stdint.h>
+#include <vector>
 
 struct OperandInfo;
 
 // Need to use until we have native std::span in c++20
 using spirv_iterator = vvl::enumeration<const uint32_t, const uint32_t*>::iterator;
 
-namespace gpuav {
-namespace spirv {
+namespace gpuav
+{
+namespace spirv
+{
 
 static constexpr uint32_t kLinkedInstruction = std::numeric_limits<uint32_t>::max();
 
 class Module;
 
 // Represents a single Spv::Op instruction
-struct Instruction {
+struct Instruction
+{
     Instruction(spirv_iterator it, uint32_t position);
 
     // Assumes caller will fill remaining words
@@ -68,7 +71,8 @@ struct Instruction {
     bool IsAccessChain() const;
 
     // SPIR-V spec: "A string is interpreted as a nul-terminated stream of characters"
-    char const* GetAsString(uint32_t index) const {
+    char const* GetAsString(uint32_t index) const
+    {
         assert(index < Length());
         return (char const*)&words_[index];
     }
@@ -80,10 +84,10 @@ struct Instruction {
 
     // Store minimal extra data
     uint32_t result_id_index_ = 0;
-    uint32_t type_id_index_ = 0;
-    uint32_t operand_index_ = 1;
+    uint32_t type_id_index_   = 0;
+    uint32_t operand_index_   = 1;
     // used to find original position of instruction in shader, pre-instrumented
-    uint32_t position_index_ = 0;
+    uint32_t           position_index_ = 0;
     const OperandInfo& operand_info_;
 
     // When this class was created, for SPIR-V Instructions that could be used in Vulkan,
@@ -108,5 +112,5 @@ struct Instruction {
 #endif
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

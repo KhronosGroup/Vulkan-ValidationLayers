@@ -18,24 +18,32 @@
 
 #include <vulkan/vulkan_core.h>
 
-namespace rt {
+namespace rt
+{
 
-enum class BuildType { Device, Host };
+enum class BuildType
+{
+    Device,
+    Host
+};
 
 // Compute scratch buffer size the idiomatic way.
 // Note: range_infos must be an array of build_info.geometryCount elements
-VkDeviceSize ComputeScratchSize(BuildType build_type, const VkDevice device,
-                                const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
-                                const VkAccelerationStructureBuildRangeInfoKHR *range_infos);
+VkDeviceSize ComputeScratchSize(BuildType                                          build_type,
+                                const VkDevice                                     device,
+                                const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
+                                const VkAccelerationStructureBuildRangeInfoKHR*    range_infos);
 
 // Compute acceleration structure size the idiomatic way.
 // Note: range_infos must be an array of build_info.geometryCount elements
-VkDeviceSize ComputeAccelerationStructureSize(BuildType build_type, const VkDevice device,
-                                              const VkAccelerationStructureBuildGeometryInfoKHR &build_info,
-                                              const VkAccelerationStructureBuildRangeInfoKHR *range_infos);
+VkDeviceSize ComputeAccelerationStructureSize(BuildType                                          build_type,
+                                              const VkDevice                                     device,
+                                              const VkAccelerationStructureBuildGeometryInfoKHR& build_info,
+                                              const VkAccelerationStructureBuildRangeInfoKHR*    range_infos);
 
-inline const VkAccelerationStructureGeometryKHR &GetGeometry(const VkAccelerationStructureBuildGeometryInfoKHR &info,
-                                                             uint32_t geometry_i) {
+inline const VkAccelerationStructureGeometryKHR& GetGeometry(const VkAccelerationStructureBuildGeometryInfoKHR& info,
+                                                             uint32_t geometry_i)
+{
     return info.pGeometries ? info.pGeometries[geometry_i] : *info.ppGeometries[geometry_i];
 }
-}  // namespace rt
+} // namespace rt

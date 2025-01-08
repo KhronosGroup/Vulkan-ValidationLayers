@@ -17,82 +17,105 @@
  */
 #include "error_location.h"
 
-void Location::AppendFields(std::ostream& out) const {
-    if (prev) {
+void Location::AppendFields(std::ostream& out) const
+{
+    if (prev)
+    {
         // When apply a .dot(sub_index) we duplicate the field item
         // Instead of dealing with partial non-const Location, just do the check here
-        const Location& prev_loc = (prev->field == field && prev->index == kNoIndex && prev->prev) ? *prev->prev : *prev;
+        const Location& prev_loc =
+            (prev->field == field && prev->index == kNoIndex && prev->prev) ? *prev->prev : *prev;
 
         // Work back and print for Locaiton first
         prev_loc.AppendFields(out);
 
         // check if need connector from last item
-        if (prev_loc.structure != vvl::Struct::Empty || prev_loc.field != vvl::Field::Empty) {
+        if (prev_loc.structure != vvl::Struct::Empty || prev_loc.field != vvl::Field::Empty)
+        {
             out << ((prev_loc.index == kNoIndex && IsFieldPointer(prev_loc.field)) ? "->" : ".");
         }
     }
-    if (isPNext && structure != vvl::Struct::Empty) {
+    if (isPNext && structure != vvl::Struct::Empty)
+    {
         out << "pNext<" << vvl::String(structure) << (field != vvl::Field::Empty ? ">." : ">");
     }
-    if (field != vvl::Field::Empty) {
+    if (field != vvl::Field::Empty)
+    {
         out << vvl::String(field);
-        if (index != kNoIndex) {
+        if (index != kNoIndex)
+        {
             out << "[" << index << "]";
         }
     }
 }
 
-std::string Location::Fields() const {
+std::string Location::Fields() const
+{
     std::stringstream out;
     AppendFields(out);
     return out.str();
 }
 
-std::string Location::Message() const {
+std::string Location::Message() const
+{
     std::stringstream out;
-    if (debug_region && !debug_region->empty()) {
+    if (debug_region && !debug_region->empty())
+    {
         out << "[ Debug region: " << *debug_region << " ] ";
     }
     out << StringFunc() << "(): ";
     AppendFields(out);
     std::string message = out.str();
     // Remove space in the end when no fields are added
-    if (message.back() == ' ') {
+    if (message.back() == ' ')
+    {
         message.pop_back();
     }
     return message;
 }
 
-namespace vvl {
-LocationCapture::LocationCapture(const Location& loc) { Capture(loc, 1); }
+namespace vvl
+{
+LocationCapture::LocationCapture(const Location& loc)
+{
+    Capture(loc, 1);
+}
 
-LocationCapture::LocationCapture(const LocationCapture& other)
-    : capture(other.capture) {
-    if (capture.empty()) {
+LocationCapture::LocationCapture(const LocationCapture& other) : capture(other.capture)
+{
+    if (capture.empty())
+    {
         return;
     }
     capture[0].prev = nullptr;
-    for (CaptureStore::size_type i = 1; i < capture.size(); i++) {
+    for (CaptureStore::size_type i = 1; i < capture.size(); i++)
+    {
         capture[i].prev = &capture[i - 1];
     }
 }
 
-LocationCapture::LocationCapture(LocationCapture&& other)
-    : capture(std::move(other.capture)) {
-    if (capture.empty()) {
+LocationCapture::LocationCapture(LocationCapture&& other) : capture(std::move(other.capture))
+{
+    if (capture.empty())
+    {
         return;
     }
     capture[0].prev = nullptr;
-    for (CaptureStore::size_type i = 1; i < capture.size(); i++) {
+    for (CaptureStore::size_type i = 1; i < capture.size(); i++)
+    {
         capture[i].prev = &capture[i - 1];
     }
 }
 
-const Location* LocationCapture::Capture(const Location& loc, CaptureStore::size_type depth) {
+const Location* LocationCapture::Capture(const Location& loc, CaptureStore::size_type depth)
+{
     const Location* prev_capture = nullptr;
-    if (loc.prev) {
+    if (loc.prev)
+    {
         prev_capture = Capture(*loc.prev, depth + 1);
-    } else {
+    }
+    else
+    {
         capture.reserve(depth);
     }
 
@@ -101,62 +124,86 @@ const Location* LocationCapture::Capture(const Location& loc, CaptureStore::size
     return &(capture.back());
 }
 
-bool operator<(const Key& lhs, const Key& rhs) {
-    if (lhs.function < rhs.function) {
+bool operator<(const Key& lhs, const Key& rhs)
+{
+    if (lhs.function < rhs.function)
+    {
         return true;
-    } else if (lhs.function > rhs.function) {
+    }
+    else if (lhs.function > rhs.function)
+    {
         return false;
     }
 
-    if (lhs.structure < rhs.structure) {
+    if (lhs.structure < rhs.structure)
+    {
         return true;
-    } else if (lhs.structure > rhs.structure) {
+    }
+    else if (lhs.structure > rhs.structure)
+    {
         return false;
     }
 
-    if (lhs.field < rhs.field) {
+    if (lhs.field < rhs.field)
+    {
         return true;
-    } else if (lhs.field > rhs.field) {
+    }
+    else if (lhs.field > rhs.field)
+    {
         return false;
     }
 
-    if (lhs.recurse_field < rhs.recurse_field) {
+    if (lhs.recurse_field < rhs.recurse_field)
+    {
         return true;
-    } else if (lhs.recurse_field > rhs.recurse_field) {
+    }
+    else if (lhs.recurse_field > rhs.recurse_field)
+    {
         return false;
     }
 
     return false;
 }
 
-bool operator==(const Key& lhs, const Key& rhs) {
+bool operator==(const Key& lhs, const Key& rhs)
+{
     return lhs.function == rhs.function && lhs.structure == rhs.structure && lhs.field == rhs.field &&
            lhs.recurse_field == rhs.recurse_field;
 }
 
-bool operator==(const Key& key, const Location& loc) {
+bool operator==(const Key& key, const Location& loc)
+{
     assert(key.function != Func::Empty || key.structure != Struct::Empty);
     assert(loc.function != Func::Empty);
-    if (key.function != Func::Empty) {
-        if (key.function != loc.function) {
+    if (key.function != Func::Empty)
+    {
+        if (key.function != loc.function)
+        {
             return false;
         }
     }
-    if (key.structure != Struct::Empty) {
-        if (key.structure != loc.structure) {
+    if (key.structure != Struct::Empty)
+    {
+        if (key.structure != loc.structure)
+        {
             return false;
         }
     }
-    if (key.field == Field::Empty) {
+    if (key.field == Field::Empty)
+    {
         return true;
     }
-    if (key.field == loc.field) {
+    if (key.field == loc.field)
+    {
         return true;
     }
-    if (key.recurse_field) {
-        const Location *prev = loc.prev;
-        while (prev != nullptr) {
-            if (key.field == prev->field) {
+    if (key.recurse_field)
+    {
+        const Location* prev = loc.prev;
+        while (prev != nullptr)
+        {
+            if (key.field == prev->field)
+            {
                 return true;
             }
             prev = prev->prev;
@@ -165,4 +212,4 @@ bool operator==(const Key& key, const Location& loc) {
     return false;
 }
 
-}  // namespace vvl
+} // namespace vvl

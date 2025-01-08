@@ -20,7 +20,8 @@
 #include "drawdispatch_vuids.h"
 #include "containers/custom_containers.h"
 
-namespace vvl {
+namespace vvl
+{
 // clang-format off
 struct DispatchVuidsCmdDraw : DrawDispatchVuid {
     DispatchVuidsCmdDraw() : DrawDispatchVuid(Func::vkCmdDraw) {
@@ -4327,14 +4328,18 @@ static const auto kDrawdispatchVuid = vvl::unordered_map<Func, DrawDispatchVuid>
 }
 // clang-format on
 
-// Getter function to provide kVUIDUndefined in case an invalid function is passed in. Likely if new extension adds command and
-// VUIDs are not added yet
-const DrawDispatchVuid& GetDrawDispatchVuid(Func function) {
+// Getter function to provide kVUIDUndefined in case an invalid function is passed in. Likely if new extension adds
+// command and VUIDs are not added yet
+const DrawDispatchVuid& GetDrawDispatchVuid(Func function)
+{
     const vvl::unordered_map<Func, DrawDispatchVuid>& vuids = GetDrawDispatchVuid();
-    if (vuids.find(function) != vuids.cend()) {
+    if (vuids.find(function) != vuids.cend())
+    {
         return vuids.at(function);
-    } else {
+    }
+    else
+    {
         return vuids.at(Func::Empty);
     }
 }
-}  // namespace vvl
+} // namespace vvl

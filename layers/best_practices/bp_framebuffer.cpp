@@ -21,17 +21,22 @@
 #include "best_practices/bp_state.h"
 #include "state_tracker/render_pass_state.h"
 
-bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachment_count,
-                                        const VkImageView* attachments, const Location& loc) const {
+bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci,
+                                        uint32_t                       attachment_count,
+                                        const VkImageView*             attachments,
+                                        const Location&                loc) const
+{
     bool skip = false;
 
     // Check for non-transient attachments that should be transient and vice versa
-    for (uint32_t i = 0; i < attachment_count; ++i) {
+    for (uint32_t i = 0; i < attachment_count; ++i)
+    {
         const auto& attachment = rpci->pAttachments[i];
-        bool attachment_should_be_transient =
+        bool        attachment_should_be_transient =
             (attachment.loadOp != VK_ATTACHMENT_LOAD_OP_LOAD && attachment.storeOp != VK_ATTACHMENT_STORE_OP_STORE);
 
-        if (vkuFormatHasStencil(attachment.format)) {
+        if (vkuFormatHasStencil(attachment.format))
+        {
             attachment_should_be_transient &= (attachment.stencilLoadOp != VK_ATTACHMENT_LOAD_OP_LOAD &&
                                                attachment.stencilStoreOp != VK_ATTACHMENT_STORE_OP_STORE);
         }
@@ -44,27 +49,35 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         const bool image_is_transient = (ici.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
 
         // The check for an image that should not be transient applies to all GPUs
-        if (!attachment_should_be_transient && image_is_transient) {
-            skip |=
-                LogPerformanceWarning("BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient", device, loc,
-                                      "Attachment %u in VkFramebuffer uses loadOp/storeOps which need to access physical memory, "
-                                      "but the image backing the image view has VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
-                                      "Physical memory will need to be backed lazily to this image, potentially causing stalls.",
-                                      i);
+        if (!attachment_should_be_transient && image_is_transient)
+        {
+            skip |= LogPerformanceWarning(
+                "BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient",
+                device,
+                loc,
+                "Attachment %u in VkFramebuffer uses loadOp/storeOps which need to access physical memory, "
+                "but the image backing the image view has VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
+                "Physical memory will need to be backed lazily to this image, potentially causing stalls.",
+                i);
         }
 
         bool supports_lazy = false;
-        for (uint32_t j = 0; j < phys_dev_mem_props.memoryTypeCount; j++) {
-            if (phys_dev_mem_props.memoryTypes[j].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
+        for (uint32_t j = 0; j < phys_dev_mem_props.memoryTypeCount; j++)
+        {
+            if (phys_dev_mem_props.memoryTypes[j].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
+            {
                 supports_lazy = true;
             }
         }
 
         // The check for an image that should be transient only applies to GPUs supporting
         // lazily allocated memory
-        if (supports_lazy && attachment_should_be_transient && !image_is_transient) {
+        if (supports_lazy && attachment_should_be_transient && !image_is_transient)
+        {
             skip |= LogPerformanceWarning(
-                "BestPractices-vkCreateFramebuffer-attachment-should-be-transient", device, loc,
+                "BestPractices-vkCreateFramebuffer-attachment-should-be-transient",
+                device,
+                loc,
                 "Attachment %u in VkFramebuffer uses loadOp/storeOps which never have to be backed by physical memory, "
                 "but the image backing the image view does not have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
                 "You can save physical memory by using transient attachment backed by lazily allocated memory here.",
@@ -74,16 +87,20 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
     return skip;
 }
 
-bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
-                                                     const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
-                                                     const ErrorObject& error_obj) const {
+bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice                       device,
+                                                     const VkFramebufferCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks*   pAllocator,
+                                                     VkFramebuffer*                 pFramebuffer,
+                                                     const ErrorObject&             error_obj) const
+{
     bool skip = false;
 
     auto rp_state = Get<vvl::RenderPass>(pCreateInfo->renderPass);
     ASSERT_AND_RETURN_SKIP(rp_state);
-    if (!(pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
-        skip |= ValidateAttachments(rp_state->create_info.ptr(), pCreateInfo->attachmentCount, pCreateInfo->pAttachments,
-                                    error_obj.location);
+    if (!(pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT))
+    {
+        skip |= ValidateAttachments(
+            rp_state->create_info.ptr(), pCreateInfo->attachmentCount, pCreateInfo->pAttachments, error_obj.location);
     }
 
     return skip;

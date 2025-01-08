@@ -14,16 +14,19 @@
  */
 #pragma once
 
-#include <stdint.h>
 #include "pass.h"
+#include <stdint.h>
 
-namespace gpuav {
-namespace spirv {
+namespace gpuav
+{
+namespace spirv
+{
 
 struct Type;
 
 // Create a pass to instrument NonSemantic.DebugPrintf (GL_EXT_debug_printf) instructions
-class DebugPrintfPass : public Pass {
+class DebugPrintfPass : public Pass
+{
   public:
     DebugPrintfPass(Module& module, uint32_t binding_slot = 0) : Pass(module), binding_slot_(binding_slot) {}
     const char* Name() const final { return "DebugPrintfPass"; }
@@ -34,8 +37,11 @@ class DebugPrintfPass : public Pass {
   private:
     bool RequiresInstrumentation(const Instruction& inst);
     void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it);
-    void CreateFunctionParams(uint32_t argument_id, const Type& argument_type, std::vector<uint32_t>& params, BasicBlock& block,
-                              InstructionIt* inst_it);
+    void CreateFunctionParams(uint32_t               argument_id,
+                              const Type&            argument_type,
+                              std::vector<uint32_t>& params,
+                              BasicBlock&            block,
+                              InstructionIt*         inst_it);
     void CreateDescriptorSet();
     void CreateBufferWriteFunction(uint32_t argument_count, uint32_t function_id);
     void Reset() final;
@@ -43,23 +49,23 @@ class DebugPrintfPass : public Pass {
     bool Validate(const Function& current_function);
 
     const uint32_t binding_slot_;
-    uint32_t ext_import_id_ = 0;
+    uint32_t       ext_import_id_ = 0;
 
     // <number of arguments in the function call, function id>
     vvl::unordered_map<uint32_t, uint32_t> function_id_map_;
-    uint32_t GetLinkFunctionId(uint32_t argument_count);
+    uint32_t                               GetLinkFunctionId(uint32_t argument_count);
 
     uint32_t output_buffer_variable_id_ = 0;
 
     // Used to detect where 64-bit floats are
     uint32_t double_bitmask_ = 0;
     // Used to detect where signed ints are 8 or 16 bits
-    uint32_t signed_8_bitmask_ = 0;
+    uint32_t signed_8_bitmask_  = 0;
     uint32_t signed_16_bitmask_ = 0;
     // Count number of parameters the CPU will need to print out
     // This expands vectors and accounts for 64-bit parameters
     uint32_t expanded_parameter_count_ = 0;
 };
 
-}  // namespace spirv
-}  // namespace gpuav
+} // namespace spirv
+} // namespace gpuav

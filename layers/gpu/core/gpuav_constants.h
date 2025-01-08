@@ -19,8 +19,10 @@
 
 #include <cstdint>
 
-namespace gpuav {
-namespace cst {
+namespace gpuav
+{
+namespace cst
+{
 
 // Number of indices held in the buffer used to index commands and validation resources
 inline constexpr uint32_t indices_count = 16384;
@@ -48,5 +50,5 @@ inline constexpr uint32_t stream_output_size_offset = 1;
 // error. The format of the records is documented below.
 inline constexpr uint32_t stream_output_data_offset = 2;
 
-}  // namespace cst
-}  // namespace gpuav
+} // namespace cst
+} // namespace gpuav

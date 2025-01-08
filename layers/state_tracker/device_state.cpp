@@ -18,28 +18,32 @@
 #include "state_tracker/device_state.h"
 #include "generated/dispatch_functions.h"
 
-namespace vvl {
+namespace vvl
+{
 
-const std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProps(VkPhysicalDevice phys_dev) {
+const std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProps(VkPhysicalDevice phys_dev)
+{
     std::vector<VkQueueFamilyProperties> result;
-    uint32_t count;
+    uint32_t                             count;
     DispatchGetPhysicalDeviceQueueFamilyProperties(phys_dev, &count, nullptr);
     result.resize(count);
     DispatchGetPhysicalDeviceQueueFamilyProperties(phys_dev, &count, result.data());
     return result;
 }
 
-VkQueueFlags PhysicalDevice::GetSupportedQueues() {
+VkQueueFlags PhysicalDevice::GetSupportedQueues()
+{
     VkQueueFlags flag = 0;
-    for (const auto& prop : queue_family_properties) {
+    for (const auto& prop : queue_family_properties)
+    {
         flag |= prop.queueFlags;
     }
     return flag;
 }
 
-PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle)
-    : StateObject(handle, kVulkanObjectTypePhysicalDevice),
-      queue_family_properties(GetQueueFamilyProps(handle)),
-      supported_queues(GetSupportedQueues()) {}
+PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle) :
+    StateObject(handle, kVulkanObjectTypePhysicalDevice), queue_family_properties(GetQueueFamilyProps(handle)),
+    supported_queues(GetSupportedQueues())
+{}
 
-}  // namespace vvl
+} // namespace vvl

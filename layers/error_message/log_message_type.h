@@ -22,11 +22,12 @@
 // These aim to follow VkDebugReportFlagBitsEXT but were created prior
 // Could replace with VkDebugReportFlagBitsEXT, but would be a LOT of churn and these
 // names are less verbose and desired.
-enum LogMessageTypeBits {
-    kInformationBit = 0x00000001,
-    kWarningBit = 0x00000002,
+enum LogMessageTypeBits
+{
+    kInformationBit        = 0x00000001,
+    kWarningBit            = 0x00000002,
     kPerformanceWarningBit = 0x00000004,
-    kErrorBit = 0x00000008,
-    kVerboseBit = 0x00000010,
+    kErrorBit              = 0x00000008,
+    kVerboseBit            = 0x00000010,
 };
 using LogMessageTypeFlags = VkFlags;

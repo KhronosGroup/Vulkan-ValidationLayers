@@ -24,11 +24,11 @@
 
 // NOLINTBEGIN
 
+#include "chassis/validation_object.h"
+
 #include <array>
 #include <cstring>
 #include <mutex>
-
-#include "chassis/validation_object.h"
 
 thread_local WriteLockGuard* ValidationObject::record_guard{};
 

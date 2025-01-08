@@ -19,34 +19,41 @@
 
 #include "state_tracker/device_generated_commands_state.h"
 
-vvl::IndirectExecutionSet::IndirectExecutionSet(ValidationStateTracker &dev, VkIndirectExecutionSetEXT handle,
-                                                const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo)
-    : StateObject(handle, kVulkanObjectTypeIndirectExecutionSetEXT),
-      safe_create_info(pCreateInfo),
-      create_info(*safe_create_info.ptr()),
-      is_pipeline(pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT),
-      is_shader_objects(pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT) {
-    if (is_pipeline && pCreateInfo->info.pPipelineInfo) {
-        const VkIndirectExecutionSetPipelineInfoEXT &pipeline_info = *pCreateInfo->info.pPipelineInfo;
-        max_pipeline_count = pipeline_info.maxPipelineCount;
-    } else if (is_shader_objects && pCreateInfo->info.pShaderInfo) {
-        const VkIndirectExecutionSetShaderInfoEXT &shader_info = *pCreateInfo->info.pShaderInfo;
-        max_shader_count = shader_info.maxShaderCount;
+vvl::IndirectExecutionSet::IndirectExecutionSet(ValidationStateTracker&                    dev,
+                                                VkIndirectExecutionSetEXT                  handle,
+                                                const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo) :
+    StateObject(handle, kVulkanObjectTypeIndirectExecutionSetEXT),
+    safe_create_info(pCreateInfo), create_info(*safe_create_info.ptr()),
+    is_pipeline(pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT),
+    is_shader_objects(pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT)
+{
+    if (is_pipeline && pCreateInfo->info.pPipelineInfo)
+    {
+        const VkIndirectExecutionSetPipelineInfoEXT& pipeline_info = *pCreateInfo->info.pPipelineInfo;
+        max_pipeline_count                                         = pipeline_info.maxPipelineCount;
+    }
+    else if (is_shader_objects && pCreateInfo->info.pShaderInfo)
+    {
+        const VkIndirectExecutionSetShaderInfoEXT& shader_info = *pCreateInfo->info.pShaderInfo;
+        max_shader_count                                       = shader_info.maxShaderCount;
     }
 }
 
-vvl::IndirectCommandsLayout::IndirectCommandsLayout(ValidationStateTracker &dev, VkIndirectCommandsLayoutEXT handle,
-                                                    const VkIndirectCommandsLayoutCreateInfoEXT *pCreateInfo)
-    : StateObject(handle, kVulkanObjectTypeIndirectCommandsLayoutEXT),
-      safe_create_info(pCreateInfo),
-      create_info(*safe_create_info.ptr()),
-      // default to graphics as it is most common and has most cases
-      bind_point(VK_PIPELINE_BIND_POINT_GRAPHICS) {
-    for (uint32_t i = 0; i < pCreateInfo->tokenCount; i++) {
-        const VkIndirectCommandsLayoutTokenEXT &token = pCreateInfo->pTokens[i];
-        switch (token.type) {
+vvl::IndirectCommandsLayout::IndirectCommandsLayout(ValidationStateTracker&                      dev,
+                                                    VkIndirectCommandsLayoutEXT                  handle,
+                                                    const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo) :
+    StateObject(handle, kVulkanObjectTypeIndirectCommandsLayoutEXT),
+    safe_create_info(pCreateInfo), create_info(*safe_create_info.ptr()),
+    // default to graphics as it is most common and has most cases
+    bind_point(VK_PIPELINE_BIND_POINT_GRAPHICS)
+{
+    for (uint32_t i = 0; i < pCreateInfo->tokenCount; i++)
+    {
+        const VkIndirectCommandsLayoutTokenEXT& token = pCreateInfo->pTokens[i];
+        switch (token.type)
+        {
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT:
-                has_execution_set_token = true;
+                has_execution_set_token                = true;
                 execution_set_token_shader_stage_flags = token.data.pExecutionSet->shaderStages;
                 break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_EXT:
@@ -56,7 +63,7 @@ vvl::IndirectCommandsLayout::IndirectCommandsLayout(ValidationStateTracker &dev,
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_COUNT_EXT:
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_EXT:
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_COUNT_NV_EXT:
-                has_draw_token = true;
+                has_draw_token             = true;
                 has_multi_draw_count_token = true;
                 break;
             case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_EXT:

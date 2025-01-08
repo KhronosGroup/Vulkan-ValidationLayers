@@ -15,81 +15,104 @@
  * limitations under the License.
  */
 #include "sync/sync_utils.h"
-#include "state_tracker/state_tracker.h"
 #include "generated/enum_flag_bits.h"
+#include "state_tracker/state_tracker.h"
 
-namespace sync_utils {
+namespace sync_utils
+{
 static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2) * 8;
 
-VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, const DeviceExtensions& device_extensions) {
+VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures& features, const DeviceExtensions& device_extensions)
+{
     VkPipelineStageFlags2 result = 0;
-    if (!features.geometryShader) {
+    if (!features.geometryShader)
+    {
         result |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
     }
-    if (!features.tessellationShader) {
-        result |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+    if (!features.tessellationShader)
+    {
+        result |=
+            VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
     }
-    if (!features.conditionalRendering) {
+    if (!features.conditionalRendering)
+    {
         result |= VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
     }
-    if (!features.fragmentDensityMap) {
+    if (!features.fragmentDensityMap)
+    {
         result |= VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT;
     }
-    if (!features.transformFeedback) {
+    if (!features.transformFeedback)
+    {
         result |= VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
     }
-    if (!features.meshShader) {
+    if (!features.meshShader)
+    {
         result |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
     }
-    if (!features.taskShader) {
+    if (!features.taskShader)
+    {
         result |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT;
     }
-    if (!features.attachmentFragmentShadingRate && !features.shadingRateImage) {
+    if (!features.attachmentFragmentShadingRate && !features.shadingRateImage)
+    {
         result |= VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
     }
-    if (!features.subpassShading) {
+    if (!features.subpassShading)
+    {
         result |= VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI;
     }
-    if (!features.invocationMask) {
+    if (!features.invocationMask)
+    {
         result |= VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI;
     }
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing) && !features.rayTracingPipeline) {
+    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing) && !features.rayTracingPipeline)
+    {
         result |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
     }
     // TODO: VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
     return result;
 }
 
-VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQueueFlags queue_flags,
-                                           const VkPipelineStageFlags2 disabled_feature_mask) {
+VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2       stage_mask,
+                                           VkQueueFlags                queue_flags,
+                                           const VkPipelineStageFlags2 disabled_feature_mask)
+{
     VkPipelineStageFlags2 expanded = stage_mask;
 
-    if (VK_PIPELINE_STAGE_ALL_COMMANDS_BIT & stage_mask) {
+    if (VK_PIPELINE_STAGE_ALL_COMMANDS_BIT & stage_mask)
+    {
         expanded &= ~VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-        for (const auto &all_commands : syncAllCommandStagesByQueueFlags()) {
-            if (all_commands.first & queue_flags) {
+        for (const auto& all_commands : syncAllCommandStagesByQueueFlags())
+        {
+            if (all_commands.first & queue_flags)
+            {
                 expanded |= all_commands.second & ~disabled_feature_mask;
             }
         }
     }
-    if (VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT & stage_mask) {
+    if (VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT & stage_mask)
+    {
         expanded &= ~VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
         // Make sure we don't pull in the HOST stage from expansion, but keep it if set by the caller.
         // The syncAllCommandStagesByQueueFlags table includes HOST for all queue types since it is
         // allowed but it shouldn't be part of ALL_GRAPHICS
-        expanded |=
-            syncAllCommandStagesByQueueFlags().at(VK_QUEUE_GRAPHICS_BIT) & ~disabled_feature_mask & ~VK_PIPELINE_STAGE_HOST_BIT;
+        expanded |= syncAllCommandStagesByQueueFlags().at(VK_QUEUE_GRAPHICS_BIT) & ~disabled_feature_mask &
+                    ~VK_PIPELINE_STAGE_HOST_BIT;
     }
-    if (VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT & stage_mask) {
+    if (VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT & stage_mask)
+    {
         expanded &= ~VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
         expanded |= VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT |
                     VK_PIPELINE_STAGE_2_CLEAR_BIT;
     }
-    if (VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT & stage_mask) {
+    if (VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT & stage_mask)
+    {
         expanded &= ~VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT;
         expanded |= VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT | VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
     }
-    if (VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT & stage_mask) {
+    if (VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT & stage_mask)
+    {
         expanded &= ~VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT;
         expanded |= VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT |
                     VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT;
@@ -98,15 +121,18 @@ VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQ
     return expanded;
 }
 
-VkAccessFlags2 ExpandAccessFlags(VkAccessFlags2 access_mask) {
+VkAccessFlags2 ExpandAccessFlags(VkAccessFlags2 access_mask)
+{
     VkAccessFlags2 expanded = access_mask;
 
-    if (VK_ACCESS_2_SHADER_READ_BIT & access_mask) {
+    if (VK_ACCESS_2_SHADER_READ_BIT & access_mask)
+    {
         expanded = expanded & ~VK_ACCESS_2_SHADER_READ_BIT;
         expanded |= kShaderReadExpandBits;
     }
 
-    if (VK_ACCESS_2_SHADER_WRITE_BIT & access_mask) {
+    if (VK_ACCESS_2_SHADER_WRITE_BIT & access_mask)
+    {
         expanded = expanded & ~VK_ACCESS_2_SHADER_WRITE_BIT;
         expanded |= kShaderWriteExpandBits;
     }
@@ -114,14 +140,18 @@ VkAccessFlags2 ExpandAccessFlags(VkAccessFlags2 access_mask) {
     return expanded;
 }
 
-VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask) {
+VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask)
+{
     VkAccessFlags2 result = 0;
-    stage_mask = ExpandPipelineStages(stage_mask);
-    for (size_t i = 0; i < kNumPipelineStageBits; i++) {
+    stage_mask            = ExpandPipelineStages(stage_mask);
+    for (size_t i = 0; i < kNumPipelineStageBits; i++)
+    {
         VkPipelineStageFlags2 bit = 1ULL << i;
-        if (stage_mask & bit) {
+        if (stage_mask & bit)
+        {
             auto access_rec = syncDirectStageToAccessMask().find(bit);
-            if (access_rec != syncDirectStageToAccessMask().end()) {
+            if (access_rec != syncDirectStageToAccessMask().end())
+            {
                 result |= access_rec->second;
                 continue;
             }
@@ -129,52 +159,65 @@ VkAccessFlags2 CompatibleAccessMask(VkPipelineStageFlags2 stage_mask) {
     }
 
     // put the meta-access bits back on
-    if (result & kShaderReadExpandBits) {
+    if (result & kShaderReadExpandBits)
+    {
         result |= VK_ACCESS_2_SHADER_READ_BIT;
     }
 
-    if (result & kShaderWriteExpandBits) {
+    if (result & kShaderWriteExpandBits)
+    {
         result |= VK_ACCESS_2_SHADER_WRITE_BIT;
     }
 
     return result;
 }
 
-static VkPipelineStageFlags2 RelatedPipelineStages(
-    VkPipelineStageFlags2 stage_mask, const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2> &map) {
+static VkPipelineStageFlags2
+RelatedPipelineStages(VkPipelineStageFlags2                                                   stage_mask,
+                      const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2>& map)
+{
     VkPipelineStageFlags2 unscanned = stage_mask;
-    VkPipelineStageFlags2 related = 0;
-    for (const auto &entry : map) {
-        const auto &stage = entry.first;
-        if (stage & unscanned) {
-            related = related | entry.second;
+    VkPipelineStageFlags2 related   = 0;
+    for (const auto& entry : map)
+    {
+        const auto& stage = entry.first;
+        if (stage & unscanned)
+        {
+            related   = related | entry.second;
             unscanned = unscanned & ~stage;
-            if (!unscanned) break;
+            if (!unscanned)
+                break;
         }
     }
     return related;
 }
 
-VkPipelineStageFlags2 WithEarlierPipelineStages(VkPipelineStageFlags2 stage_mask) {
+VkPipelineStageFlags2 WithEarlierPipelineStages(VkPipelineStageFlags2 stage_mask)
+{
     return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyEarlierStages());
 }
 
-VkPipelineStageFlags2 WithLaterPipelineStages(VkPipelineStageFlags2 stage_mask) {
+VkPipelineStageFlags2 WithLaterPipelineStages(VkPipelineStageFlags2 stage_mask)
+{
     return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages());
 }
 
 // helper to extract the union of the stage masks in all of the barriers
-ExecScopes GetGlobalStageMasks(const VkDependencyInfo &dep_info) {
+ExecScopes GetGlobalStageMasks(const VkDependencyInfo& dep_info)
+{
     ExecScopes result{};
-    for (uint32_t i = 0; i < dep_info.memoryBarrierCount; i++) {
+    for (uint32_t i = 0; i < dep_info.memoryBarrierCount; i++)
+    {
         result.src |= dep_info.pMemoryBarriers[i].srcStageMask;
         result.dst |= dep_info.pMemoryBarriers[i].dstStageMask;
     }
-    for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
+    for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++)
+    {
         result.src |= dep_info.pBufferMemoryBarriers[i].srcStageMask;
         result.dst |= dep_info.pBufferMemoryBarriers[i].dstStageMask;
     }
-    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
+    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++)
+    {
         result.src |= dep_info.pImageMemoryBarriers[i].srcStageMask;
         result.dst |= dep_info.pImageMemoryBarriers[i].dstStageMask;
     }
@@ -186,23 +229,28 @@ ExecScopes GetGlobalStageMasks(const VkDependencyInfo &dep_info) {
 // print the old strings. There are common code paths where we need
 // to print masks as strings and this makes the output less confusing
 // for people not using synchronization2.
-std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask) {
+std::string StringPipelineStageFlags(VkPipelineStageFlags2 mask)
+{
     VkPipelineStageFlags sync1_mask = static_cast<VkPipelineStageFlags>(mask & AllVkPipelineStageFlagBits);
-    if (sync1_mask) {
+    if (sync1_mask)
+    {
         return string_VkPipelineStageFlags(sync1_mask);
     }
     return string_VkPipelineStageFlags2(mask);
 }
 
-std::string StringAccessFlags(VkAccessFlags2 mask) {
+std::string StringAccessFlags(VkAccessFlags2 mask)
+{
     VkAccessFlags sync1_mask = static_cast<VkAccessFlags>(mask & AllVkAccessFlagBits);
-    if (sync1_mask) {
+    if (sync1_mask)
+    {
         return string_VkAccessFlags(sync1_mask);
     }
     return string_VkAccessFlags2(mask);
 }
 
-ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage) {
+ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage)
+{
     static const vvl::unordered_map<VkShaderStageFlagBits, ShaderStageAccesses> map = {
         // clang-format off
         {VK_SHADER_STAGE_VERTEX_BIT, {
@@ -296,4 +344,4 @@ ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage) {
     return it->second;
 }
 
-}  // namespace sync_utils
+} // namespace sync_utils

@@ -20,30 +20,32 @@
 #define GPU_ERROR_CODES_H
 
 #ifdef __cplusplus
-namespace gpuav {
-namespace glsl {
+namespace gpuav
+{
+namespace glsl
+{
 #endif
 
 // Error Groups
 //
 // These will match one-for-one with the file found in gpu_shader folder
 const int kErrorGroupInstDescriptorIndexingOOB = 1;
-const int kErrorGroupInstBufferDeviceAddress = 2;
-const int kErrorGroupInstRayQuery = 3;
-const int kErrorGroupGpuPreDraw = 4;
-const int kErrorGroupGpuPreDispatch = 5;
-const int kErrorGroupGpuPreTraceRays = 6;
-const int kErrorGroupGpuCopyBufferToImage = 7;
-const int kErrorGroupInstDescriptorClass = 8;
+const int kErrorGroupInstBufferDeviceAddress   = 2;
+const int kErrorGroupInstRayQuery              = 3;
+const int kErrorGroupGpuPreDraw                = 4;
+const int kErrorGroupGpuPreDispatch            = 5;
+const int kErrorGroupGpuPreTraceRays           = 6;
+const int kErrorGroupGpuCopyBufferToImage      = 7;
+const int kErrorGroupInstDescriptorClass       = 8;
 
 // Used for MultiEntry and there is no single stage set
-const int kHeaderStageIdMultiEntryPoint = 0x7fffffff;  // same as spv::ExecutionModelMax
+const int kHeaderStageIdMultiEntryPoint = 0x7fffffff; // same as spv::ExecutionModelMax
 
 // Descriptor Indexing
 //
-const int kErrorSubCodeDescriptorIndexingBounds = 1;
+const int kErrorSubCodeDescriptorIndexingBounds        = 1;
 const int kErrorSubCodeDescriptorIndexingUninitialized = 2;
-const int kErrorSubCodeDescriptorIndexingDestroyed = 3;
+const int kErrorSubCodeDescriptorIndexingDestroyed     = 3;
 
 // Descriptor Class specific errors
 //
@@ -55,21 +57,21 @@ const int kErrorSubCodeDescriptorClassTexelBufferBounds = 2;
 // Buffer Device Address
 //
 const int kErrorSubCodeBufferDeviceAddressUnallocRef = 1;
-const int kErrorSubCodeBufferDeviceAddressAlignment = 2;
+const int kErrorSubCodeBufferDeviceAddressAlignment  = 2;
 
 // Ray Query
 //
-const int kErrorSubCodeRayQueryNegativeMin = 1;
-const int kErrorSubCodeRayQueryNegativeMax = 2;
-const int kErrorSubCodeRayQueryBothSkip = 3;
-const int kErrorSubCodeRayQuerySkipCull = 4;
-const int kErrorSubCodeRayQueryOpaque = 5;
-const int kErrorSubCodeRayQueryMinMax = 6;
-const int kErrorSubCodeRayQueryMinNaN = 7;
-const int kErrorSubCodeRayQueryMaxNaN = 8;
-const int kErrorSubCodeRayQueryOriginNaN = 9;
-const int kErrorSubCodeRayQueryDirectionNaN = 10;
-const int kErrorSubCodeRayQueryOriginFinite = 11;
+const int kErrorSubCodeRayQueryNegativeMin     = 1;
+const int kErrorSubCodeRayQueryNegativeMax     = 2;
+const int kErrorSubCodeRayQueryBothSkip        = 3;
+const int kErrorSubCodeRayQuerySkipCull        = 4;
+const int kErrorSubCodeRayQueryOpaque          = 5;
+const int kErrorSubCodeRayQueryMinMax          = 6;
+const int kErrorSubCodeRayQueryMinNaN          = 7;
+const int kErrorSubCodeRayQueryMaxNaN          = 8;
+const int kErrorSubCodeRayQueryOriginNaN       = 9;
+const int kErrorSubCodeRayQueryDirectionNaN    = 10;
+const int kErrorSubCodeRayQueryOriginFinite    = 11;
 const int kErrorSubCodeRayQueryDirectionFinite = 12;
 
 // Pre Draw
@@ -81,9 +83,9 @@ const int kErrorSubCodePreDraw_DrawCountLimit = 2;
 // A firstInstance field was non-zero
 const int kErrorSubCodePreDrawFirstInstance = 3;
 // Mesh limit checks
-const int kErrorSubCodePreDrawGroupCountX = 4;
-const int kErrorSubCodePreDrawGroupCountY = 5;
-const int kErrorSubCodePreDrawGroupCountZ = 6;
+const int kErrorSubCodePreDrawGroupCountX     = 4;
+const int kErrorSubCodePreDrawGroupCountY     = 5;
+const int kErrorSubCodePreDrawGroupCountZ     = 6;
 const int kErrorSubCodePreDrawGroupCountTotal = 7;
 // The index count exceeded the index buffer size
 const int kErrorSubCode_OobIndexBuffer = 8;
@@ -98,16 +100,16 @@ const int kErrorSubCodePreDispatchCountLimitZ = 3;
 
 // Pre Tracy Rays
 //
-const int kErrorSubCodePreTraceRaysLimitWidth = 1;
+const int kErrorSubCodePreTraceRaysLimitWidth  = 1;
 const int kErrorSubCodePreTraceRaysLimitHeight = 2;
-const int kErrorSubCodePreTraceRaysLimitDepth = 3;
+const int kErrorSubCodePreTraceRaysLimitDepth  = 3;
 const int kErrorSubCodePreTraceRaysLimitVolume = 4;
 // Pre Copy Buffer To Image
 //
 const int kErrorSubCodePreCopyBufferToImageBufferTexel = 1;
 
 #ifdef __cplusplus
-}  // namespace glsl
-}  // namespace gpuav
+} // namespace glsl
+} // namespace gpuav
 #endif
 #endif

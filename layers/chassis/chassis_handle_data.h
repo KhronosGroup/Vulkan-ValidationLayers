@@ -17,17 +17,20 @@
 
 #pragma once
 
-namespace chassis {
+namespace chassis
+{
 
-struct CommandBufferData {
+struct CommandBufferData
+{
     bool is_secondary;
 };
 
 // Some handles need their own "private data" that everyone needs (even statless chassis layers)
 // The goal is to have the chassis do the state tracking once, and pass down this selective information to everyone.
 // Using an union, we can leverage the ErrorObject/RecordObject to get the data everywhere
-union HandleData {
+union HandleData
+{
     CommandBufferData command_buffer;
 };
 
-}  // namespace chassis
+} // namespace chassis

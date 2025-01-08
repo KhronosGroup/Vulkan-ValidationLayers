@@ -18,36 +18,47 @@
  */
 #include "state_tracker/state_object.h"
 
-vvl::StateObject::~StateObject() { Destroy(); }
+vvl::StateObject::~StateObject()
+{
+    Destroy();
+}
 
-void vvl::StateObject::Destroy() {
+void vvl::StateObject::Destroy()
+{
     Invalidate();
     destroyed_ = true;
 }
 
-const VulkanTypedHandle* vvl::StateObject::InUse() const {
+const VulkanTypedHandle* vvl::StateObject::InUse() const
+{
     // NOTE: for performance reasons, this method calls up the tree
     // with the read lock held.
     auto guard = ReadLockTree();
-    for (auto& item : parent_nodes_) {
+    for (auto& item : parent_nodes_)
+    {
         auto node = item.second.lock();
-        if (!node) {
+        if (!node)
+        {
             continue;
         }
-        if (node->InUse()) {
+        if (node->InUse())
+        {
             return &node->Handle();
         }
     }
     return nullptr;
 }
 
-bool vvl::StateObject::AddParent(StateObject* parent_node) {
+bool vvl::StateObject::AddParent(StateObject* parent_node)
+{
     auto guard = WriteLockTree();
-    auto result = parent_nodes_.emplace(parent_node->Handle(), std::weak_ptr<StateObject>(parent_node->shared_from_this()));
+    auto result =
+        parent_nodes_.emplace(parent_node->Handle(), std::weak_ptr<StateObject>(parent_node->shared_from_this()));
     return result.second;
 }
 
-void vvl::StateObject::RemoveParent(StateObject* parent_node) {
+void vvl::StateObject::RemoveParent(StateObject* parent_node)
+{
     assert(parent_node);
     auto guard = WriteLockTree();
     parent_nodes_.erase(parent_node->Handle());
@@ -55,25 +66,31 @@ void vvl::StateObject::RemoveParent(StateObject* parent_node) {
 
 // copy the current set of parents so that we don't need to hold the lock
 // while calling NotifyInvalidate on them, as that would lead to recursive locking.
-vvl::StateObject::NodeMap vvl::StateObject::GetParentsForInvalidate(bool unlink) {
+vvl::StateObject::NodeMap vvl::StateObject::GetParentsForInvalidate(bool unlink)
+{
     NodeMap result;
-    if (unlink) {
+    if (unlink)
+    {
         auto guard = WriteLockTree();
-        result = std::move(parent_nodes_);
+        result     = std::move(parent_nodes_);
         parent_nodes_.clear();
-    } else {
+    }
+    else
+    {
         auto guard = ReadLockTree();
-        result = parent_nodes_;
+        result     = parent_nodes_;
     }
     return result;
 }
 
-vvl::StateObject::NodeMap vvl::StateObject::ObjectBindings() const {
+vvl::StateObject::NodeMap vvl::StateObject::ObjectBindings() const
+{
     auto guard = ReadLockTree();
     return parent_nodes_;
 }
 
-void vvl::StateObject::Invalidate(bool unlink) {
+void vvl::StateObject::Invalidate(bool unlink)
+{
     NodeList empty;
     // We do not want to call the virtual method here because any special handling
     // in an overriden NotifyInvalidate() is for when a child node has become invalid.
@@ -82,17 +99,21 @@ void vvl::StateObject::Invalidate(bool unlink) {
     StateObject::NotifyInvalidate(empty, unlink);
 }
 
-void vvl::StateObject::NotifyInvalidate(const NodeList& invalid_nodes, bool unlink) {
+void vvl::StateObject::NotifyInvalidate(const NodeList& invalid_nodes, bool unlink)
+{
     auto current_parents = GetParentsForInvalidate(unlink);
-    if (current_parents.empty()) {
+    if (current_parents.empty())
+    {
         return;
     }
 
     NodeList up_nodes = invalid_nodes;
     up_nodes.emplace_back(shared_from_this());
-    for (auto& item : current_parents) {
+    for (auto& item : current_parents)
+    {
         auto node = item.second.lock();
-        if (node && !node->Destroyed()) {
+        if (node && !node->Destroyed())
+        {
             node->NotifyInvalidate(up_nodes, unlink);
         }
     }

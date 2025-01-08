@@ -25,88 +25,103 @@
 #include <vector>
 
 struct Location;
-namespace gpuav {
+namespace gpuav
+{
 class Validator;
 
-namespace vko {
+namespace vko
+{
 
-class DescriptorSetManager {
+class DescriptorSetManager
+{
   public:
     DescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set);
     ~DescriptorSetManager();
 
-    VkResult GetDescriptorSet(VkDescriptorPool *out_desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *out_desc_sets);
-    VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
-                               std::vector<VkDescriptorSet> *out_desc_sets);
-    void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
+    VkResult
+    GetDescriptorSet(VkDescriptorPool* out_desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet* out_desc_sets);
+    VkResult GetDescriptorSets(uint32_t                      count,
+                               VkDescriptorPool*             out_pool,
+                               VkDescriptorSetLayout         ds_layout,
+                               std::vector<VkDescriptorSet>* out_desc_sets);
+    void     PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
 
   private:
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
 
-    struct PoolTracker {
+    struct PoolTracker
+    {
         uint32_t size;
         uint32_t used;
     };
-    VkDevice device;
-    uint32_t num_bindings_in_set;
+    VkDevice                                          device;
+    uint32_t                                          num_bindings_in_set;
     vvl::unordered_map<VkDescriptorPool, PoolTracker> desc_pool_map_;
-    mutable std::mutex lock_;
+    mutable std::mutex                                lock_;
 };
 
-class Buffer {
+class Buffer
+{
   public:
-    explicit Buffer(Validator &gpuav) : gpuav(gpuav) {}
+    explicit Buffer(Validator& gpuav) : gpuav(gpuav) {}
 
     // Warps VMA calls to simplify error reporting.
     // No error propagation, but if hitting a VMA error, GPU-AV is likely not going to recover anyway.
 
-    [[nodiscard]] void *MapMemory(const Location &loc) const;
-    void UnmapMemory() const;
-    void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
-    void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
+    [[nodiscard]] void* MapMemory(const Location& loc) const;
+    void                UnmapMemory() const;
+    void FlushAllocation(const Location& loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
+    void InvalidateAllocation(const Location& loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
 
-    [[nodiscard]] bool Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                              const VmaAllocationCreateInfo *allocation_create_info);
-    void Destroy();
+    [[nodiscard]] bool Create(const Location&                loc,
+                              const VkBufferCreateInfo*      buffer_create_info,
+                              const VmaAllocationCreateInfo* allocation_create_info);
+    void               Destroy();
 
-    bool IsDestroyed() const { return buffer == VK_NULL_HANDLE; }
-    const VkBuffer &VkHandle() const { return buffer; }
-    const VmaAllocation &Allocation() const { return allocation; }
-    VkDeviceAddress Address() const { return device_address; };
+    bool                 IsDestroyed() const { return buffer == VK_NULL_HANDLE; }
+    const VkBuffer&      VkHandle() const { return buffer; }
+    const VmaAllocation& Allocation() const { return allocation; }
+    VkDeviceAddress      Address() const { return device_address; };
 
   private:
-    const Validator &gpuav;
-    VkBuffer buffer = VK_NULL_HANDLE;
-    VmaAllocation allocation = VK_NULL_HANDLE;
+    const Validator& gpuav;
+    VkBuffer         buffer     = VK_NULL_HANDLE;
+    VmaAllocation    allocation = VK_NULL_HANDLE;
     // If buffer was not created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT then this will not be zero
     VkDeviceAddress device_address = 0;
 };
 
-class GpuResourcesManager {
+class GpuResourcesManager
+{
   public:
-    explicit GpuResourcesManager(DescriptorSetManager &descriptor_set_manager) : descriptor_set_manager_(descriptor_set_manager) {}
+    explicit GpuResourcesManager(DescriptorSetManager& descriptor_set_manager) :
+        descriptor_set_manager_(descriptor_set_manager)
+    {}
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
-    void ManageBuffer(Buffer mem_buffer);
+    void            ManageBuffer(Buffer mem_buffer);
 
     void DestroyResources();
 
   private:
-    DescriptorSetManager &descriptor_set_manager_;
+    DescriptorSetManager&                                     descriptor_set_manager_;
     std::vector<std::pair<VkDescriptorPool, VkDescriptorSet>> descriptors_;
-    std::vector<vko::Buffer> buffers_;
+    std::vector<vko::Buffer>                                  buffers_;
 };
 
 // Cache a single object of type T. Key is *only* based on typeid(T)
-class SharedResourcesCache {
+class SharedResourcesCache
+{
   public:
     template <typename T>
-    T *TryGet() {
+    T* TryGet()
+    {
         auto entry = shared_validation_resources_map_.find(typeid(T));
-        if (entry == shared_validation_resources_map_.cend()) {
+        if (entry == shared_validation_resources_map_.cend())
+        {
             return nullptr;
         }
-        T *t = reinterpret_cast<T *>(entry->second.first);
+        T* t = reinterpret_cast<T*>(entry->second.first);
         return t;
     }
 
@@ -115,34 +130,38 @@ class SharedResourcesCache {
     // => Successive calls to Get<T> with different parameters will NOT give different objects,
     // only the entry cached upon the first call to Get<T> will be retrieved
     template <typename T, class... ConstructorTypes>
-    T &Get(ConstructorTypes &&...args) {
-        T *t = TryGet<T>();
-        if (t) return *t;
+    T& Get(ConstructorTypes&&... args)
+    {
+        T* t = TryGet<T>();
+        if (t)
+            return *t;
 
-        auto entry =
-            shared_validation_resources_map_.insert({typeid(T), {new T(std::forward<ConstructorTypes>(args)...), [](void *ptr) {
-                                                                     auto obj = static_cast<T *>(ptr);
-                                                                     delete obj;
-                                                                 }}});
-        return *static_cast<T *>(entry.first->second.first);
+        auto entry = shared_validation_resources_map_.insert(
+            { typeid(T), { new T(std::forward<ConstructorTypes>(args)...), [](void* ptr) {
+                              auto obj = static_cast<T*>(ptr);
+                              delete obj;
+                          } } });
+        return *static_cast<T*>(entry.first->second.first);
     }
 
     void Clear();
 
   private:
     using TypeInfoRef = std::reference_wrapper<const std::type_info>;
-    struct Hasher {
+    struct Hasher
+    {
         std::size_t operator()(TypeInfoRef code) const { return code.get().hash_code(); }
     };
-    struct EqualTo {
+    struct EqualTo
+    {
         bool operator()(TypeInfoRef lhs, TypeInfoRef rhs) const { return lhs.get() == rhs.get(); }
     };
 
     // Tried to use vvl::unordered_map, but fails to compile on Windows currently
-    std::unordered_map<TypeInfoRef, std::pair<void * /*object*/, void (*)(void *) /*object destructor*/>, Hasher, EqualTo>
+    std::unordered_map<TypeInfoRef, std::pair<void* /*object*/, void (*)(void*) /*object destructor*/>, Hasher, EqualTo>
         shared_validation_resources_map_;
 };
 
-}  // namespace vko
+} // namespace vko
 
-}  // namespace gpuav
+} // namespace gpuav

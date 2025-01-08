@@ -18,31 +18,35 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
-#include <vulkan/utility/vk_safe_struct.hpp>
 #include <vector>
+#include <vulkan/utility/vk_safe_struct.hpp>
 
-class QueueFamilyPerfCounters {
+class QueueFamilyPerfCounters
+{
   public:
     std::vector<VkPerformanceCounterKHR> counters;
 };
 
-class SurfacelessQueryState {
+class SurfacelessQueryState
+{
   public:
     std::vector<vku::safe_VkSurfaceFormat2KHR> formats;
-    std::vector<VkPresentModeKHR> present_modes;
-    vku::safe_VkSurfaceCapabilities2KHR capabilities;
+    std::vector<VkPresentModeKHR>              present_modes;
+    vku::safe_VkSurfaceCapabilities2KHR        capabilities;
 };
 
-namespace vvl {
+namespace vvl
+{
 
-class PhysicalDevice : public StateObject {
+class PhysicalDevice : public StateObject
+{
   public:
-    uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
+    uint32_t queue_family_known_count = 1; // spec implies one QF must always be supported
     const std::vector<VkQueueFamilyProperties> queue_family_properties;
-    const VkQueueFlags supported_queues;
+    const VkQueueFlags                         supported_queues;
     // TODO These are currently used by CoreChecks, but should probably be refactored
-    bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
-    uint32_t display_plane_property_count = 0;
+    bool     vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
+    uint32_t display_plane_property_count                        = 0;
 
     // Map of queue family index to QueueFamilyPerfCounters
     unordered_map<uint32_t, std::unique_ptr<QueueFamilyPerfCounters>> perf_counters;
@@ -56,17 +60,19 @@ class PhysicalDevice : public StateObject {
 
   private:
     const std::vector<VkQueueFamilyProperties> GetQueueFamilyProps(VkPhysicalDevice phys_dev);
-    VkQueueFlags GetSupportedQueues();
+    VkQueueFlags                               GetSupportedQueues();
 };
 
-class DisplayMode : public StateObject {
+class DisplayMode : public StateObject
+{
   public:
     const VkPhysicalDevice physical_device;
 
-    DisplayMode(VkDisplayModeKHR handle, VkPhysicalDevice phys_dev)
-        : StateObject(handle, kVulkanObjectTypeDisplayModeKHR), physical_device(phys_dev) {}
+    DisplayMode(VkDisplayModeKHR handle, VkPhysicalDevice phys_dev) :
+        StateObject(handle, kVulkanObjectTypeDisplayModeKHR), physical_device(phys_dev)
+    {}
 
     VkDisplayModeKHR VkHandle() const { return handle_.Cast<VkDisplayModeKHR>(); }
 };
 
-}  // namespace vvl
+} // namespace vvl
