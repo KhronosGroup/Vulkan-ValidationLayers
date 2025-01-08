@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -4250,4 +4250,93 @@ TEST_F(NegativeSyncObject, BinarySyncDependsOnTimelineWait5) {
 
     m_second_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(timeline_semaphore, 1));
     m_device->Wait();
+}
+
+TEST_F(NegativeSyncObject, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
+    TEST_DESCRIPTION("Using CmdWaitEvents2KHR when synchronization2 is not enabled");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    VkEvent event_handle = event.handle();
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-synchronization2-03836");
+    vk::CmdWaitEvents2KHR(m_command_buffer.handle(), 1, &event_handle, &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-synchronization2-03836");
+        vk::CmdWaitEvents2(m_command_buffer.handle(), 1, &event_handle, &dependency_info);
+        m_errorMonitor->VerifyFound();
+    }
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncObject, Sync2FeatureDisabled) {
+    TEST_DESCRIPTION("Call sync2 functions when the feature is disabled");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
+    bool timestamp = false;
+
+    uint32_t queue_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_count, NULL);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_count, queue_props.data());
+    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits > 0) {
+        timestamp = true;
+    }
+
+    m_command_buffer.Begin();
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-synchronization2-03848");
+    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    vkt::Event event(*m_device);
+
+    VkPipelineStageFlagBits2 stage = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent2-synchronization2-03829");
+    vk::CmdResetEvent2KHR(m_command_buffer.handle(), event.handle(), stage);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent2-synchronization2-03824");
+    vk::CmdSetEvent2KHR(m_command_buffer.handle(), event.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    if (timestamp) {
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp2-synchronization2-03858");
+        vk::CmdWriteTimestamp2KHR(m_command_buffer.handle(), stage, query_pool.handle(), 0);
+        m_errorMonitor->VerifyFound();
+        if (vulkan_13) {
+            m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp2-synchronization2-03858");
+            vk::CmdWriteTimestamp2(m_command_buffer.handle(), stage, query_pool.handle(), 0);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+    if (vulkan_13) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-synchronization2-03848");
+        vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent2-synchronization2-03829");
+        vk::CmdResetEvent2(m_command_buffer.handle(), event.handle(), stage);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent2-synchronization2-03824");
+        vk::CmdSetEvent2(m_command_buffer.handle(), event.handle(), &dependency_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_command_buffer.End();
 }
