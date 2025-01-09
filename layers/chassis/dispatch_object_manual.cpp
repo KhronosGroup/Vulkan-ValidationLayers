@@ -35,21 +35,15 @@ vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> HandleWrapper
 bool HandleWrapper::wrap_handles{true};
 
 // Generally we expect to get the same device and instance, so we keep them handy
-static thread_local Instance *last_used_instance_data = nullptr;
 static std::shared_mutex instance_mutex;
 static vvl::unordered_map<void *, std::unique_ptr<Instance>> instance_data;
 
-static thread_local Device *last_used_device_data = nullptr;
 static std::shared_mutex device_mutex;
 static vvl::unordered_map<void *, std::unique_ptr<Device>> device_data;
 
 static Instance *GetInstanceFromKey(void *key) {
-    if (last_used_instance_data && GetDispatchKey(last_used_instance_data->instance) == key) {
-        return last_used_instance_data;
-    }
     ReadLockGuard lock(instance_mutex);
-    last_used_instance_data = instance_data[key].get();
-    return last_used_instance_data;
+    return instance_data[key].get();
 }
 
 Instance *GetData(VkInstance instance) { return GetInstanceFromKey(GetDispatchKey(instance)); }
@@ -65,16 +59,11 @@ void SetData(VkInstance instance, std::unique_ptr<Instance> &&data) {
 void FreeData(void *key, VkInstance instance) {
     WriteLockGuard lock(instance_mutex);
     instance_data.erase(key);
-    last_used_instance_data = nullptr;
 }
 
 static Device *GetDeviceFromKey(void *key) {
-    if (last_used_device_data && GetDispatchKey(last_used_device_data->device) == key) {
-        return last_used_device_data;
-    }
     ReadLockGuard lock(device_mutex);
-    last_used_device_data = device_data[key].get();
-    return last_used_device_data;
+    return device_data[key].get();
 }
 
 Device *GetData(VkDevice device) { return GetDeviceFromKey(GetDispatchKey(device)); }
@@ -92,7 +81,6 @@ void SetData(VkDevice device, std::unique_ptr<Device> &&data) {
 void FreeData(void *key, VkDevice device) {
     WriteLockGuard lock(device_mutex);
     device_data.erase(key);
-    last_used_device_data = nullptr;
 }
 
 void FreeAllData() {
