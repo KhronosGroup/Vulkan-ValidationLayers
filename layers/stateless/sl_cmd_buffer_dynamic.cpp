@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,8 +21,9 @@
 
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                                         const VkViewport *pViewports,
-                                                                        const ErrorObject &error_obj) const {
+                                                                        const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (!enabled_features.multiViewport) {
         if (viewportCount != 1) {
@@ -53,8 +54,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkComman
 
 bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
                                                                        const VkRect2D *pScissors,
-                                                                       const ErrorObject &error_obj) const {
+                                                                       const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     if (!enabled_features.multiViewport) {
         if (scissorCount != 1) {
             skip |= LogError("VUID-vkCmdSetScissorWithCount-scissorCount-03398", commandBuffer,
@@ -119,8 +121,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCount(VkCommand
 bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
     const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
-    const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions, const ErrorObject &error_obj) const {
+    const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions, const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
         skip |= LogError("VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791", commandBuffer,
@@ -271,8 +274,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkComm
                                                                           uint32_t firstDiscardRectangle,
                                                                           uint32_t discardRectangleCount,
                                                                           const VkRect2D *pDiscardRectangles,
-                                                                          const ErrorObject &error_obj) const {
+                                                                          const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (!pDiscardRectangles) {
         return skip;
@@ -301,8 +305,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkComm
 
 bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer,
                                                                                 VkBool32 discardRectangleEnable,
-                                                                                const ErrorObject &error_obj) const {
+                                                                                const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     if (discard_rectangles_extension_version < 2) {
         skip |= LogError("VUID-vkCmdSetDiscardRectangleEnableEXT-specVersion-07851", commandBuffer, error_obj.location,
                          "Requires support for version 2 of VK_EXT_discard_rectangles.");
@@ -312,8 +317,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(
 
 bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleModeEXT(VkCommandBuffer commandBuffer,
                                                                               VkDiscardRectangleModeEXT discardRectangleMode,
-                                                                              const ErrorObject &error_obj) const {
+                                                                              const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     if (discard_rectangles_extension_version < 2) {
         skip |= LogError("VUID-vkCmdSetDiscardRectangleModeEXT-specVersion-07852", commandBuffer, error_obj.location,
                          "Requires support for version 2 of VK_EXT_discard_rectangles.");
@@ -325,8 +331,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorEnableNV(V
                                                                                uint32_t firstExclusiveScissor,
                                                                                uint32_t exclusiveScissorCount,
                                                                                const VkBool32 *pExclusiveScissorEnables,
-                                                                               const ErrorObject &error_obj) const {
+                                                                               const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     if (scissor_exclusive_extension_version < 2) {
         skip |= LogError("VUID-vkCmdSetExclusiveScissorEnableNV-exclusiveScissor-07853", commandBuffer, error_obj.location,
                          "Requires support for version 2 of VK_NV_scissor_exclusive.");
@@ -338,8 +345,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
                                                                          uint32_t firstExclusiveScissor,
                                                                          uint32_t exclusiveScissorCount,
                                                                          const VkRect2D *pExclusiveScissors,
-                                                                         const ErrorObject &error_obj) const {
+                                                                         const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (!enabled_features.multiViewport) {
         if (firstExclusiveScissor != 0) {
@@ -399,8 +407,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                          uint32_t viewportCount,
                                                                          const VkViewportWScalingNV *pViewportWScalings,
-                                                                         const ErrorObject &error_obj) const {
+                                                                         const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
     if ((sum < 1) || (sum > device_limits.maxViewports)) {
         skip |= LogError("VUID-vkCmdSetViewportWScalingNV-firstViewport-01324", commandBuffer, error_obj.location,
@@ -414,8 +423,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkComma
 
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(
     VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-    const VkShadingRatePaletteNV *pShadingRatePalettes, const ErrorObject &error_obj) const {
+    const VkShadingRatePaletteNV *pShadingRatePalettes, const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (!enabled_features.multiViewport) {
         if (firstViewport != 0) {
@@ -445,8 +455,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetCoarseSampleOrderNV(VkComm
                                                                           VkCoarseSampleOrderTypeNV sampleOrderType,
                                                                           uint32_t customSampleOrderCount,
                                                                           const VkCoarseSampleOrderCustomNV *pCustomSampleOrders,
-                                                                          const ErrorObject &error_obj) const {
+                                                                          const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (sampleOrderType != VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV && customSampleOrderCount != 0) {
         skip |= LogError("VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-02081", commandBuffer, error_obj.location,
@@ -464,8 +475,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetCoarseSampleOrderNV(VkComm
 
 bool StatelessValidation::manual_PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                uint32_t viewportCount, const VkViewport *pViewports,
-                                                               const ErrorObject &error_obj) const {
+                                                               const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (!enabled_features.multiViewport) {
         if (firstViewport != 0) {
@@ -501,8 +513,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewport(VkCommandBuffer c
 bool StatelessValidation::manual_PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer,
                                                                          VkDepthClampModeEXT depthClampMode,
                                                                          const VkDepthClampRangeEXT *pDepthClampRange,
-                                                                         const ErrorObject &error_obj) const {
+                                                                         const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     if (depthClampMode == VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT) {
         if (!pDepthClampRange) {
             skip |= LogError("VUID-vkCmdSetDepthClampRangeEXT-pDepthClampRange-09647", device,
@@ -516,8 +529,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDepthClampRangeEXT(VkComma
 
 bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor,
                                                               uint32_t scissorCount, const VkRect2D *pScissors,
-                                                              const ErrorObject &error_obj) const {
+                                                              const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (!enabled_features.multiViewport) {
         if (firstScissor != 0) {
@@ -573,8 +587,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer co
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth,
-                                                                const ErrorObject &error_obj) const {
+                                                                const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (!enabled_features.wideLines && (lineWidth != 1.0f)) {
         skip |= LogError("VUID-vkCmdSetLineWidth-lineWidth-00788", commandBuffer, error_obj.location.dot(Field::lineWidth),
@@ -585,8 +600,10 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer 
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                                  uint16_t lineStipplePattern, const ErrorObject &error_obj) const {
+                                                                  uint16_t lineStipplePattern,
+                                                                  const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (lineStippleFactor < 1 || lineStippleFactor > 256) {
         skip |= LogError("VUID-vkCmdSetLineStipple-lineStippleFactor-02776", commandBuffer,

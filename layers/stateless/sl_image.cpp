@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,8 +24,9 @@
 
 bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkImage *pImage,
-                                                            const ErrorObject &error_obj) const {
+                                                            const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (pCreateInfo == nullptr) {
         return skip;
@@ -48,17 +49,17 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
         }
     }
 
-    skip |= ValidateNotZero(pCreateInfo->extent.width == 0, "VUID-VkImageCreateInfo-extent-00944",
-                            create_info_loc.dot(Field::extent).dot(Field::width));
-    skip |= ValidateNotZero(pCreateInfo->extent.height == 0, "VUID-VkImageCreateInfo-extent-00945",
-                            create_info_loc.dot(Field::extent).dot(Field::height));
-    skip |= ValidateNotZero(pCreateInfo->extent.depth == 0, "VUID-VkImageCreateInfo-extent-00946",
-                            create_info_loc.dot(Field::extent).dot(Field::depth));
+    skip |= context.ValidateNotZero(pCreateInfo->extent.width == 0, "VUID-VkImageCreateInfo-extent-00944",
+                                    create_info_loc.dot(Field::extent).dot(Field::width));
+    skip |= context.ValidateNotZero(pCreateInfo->extent.height == 0, "VUID-VkImageCreateInfo-extent-00945",
+                                    create_info_loc.dot(Field::extent).dot(Field::height));
+    skip |= context.ValidateNotZero(pCreateInfo->extent.depth == 0, "VUID-VkImageCreateInfo-extent-00946",
+                                    create_info_loc.dot(Field::extent).dot(Field::depth));
 
-    skip |= ValidateNotZero(pCreateInfo->mipLevels == 0, "VUID-VkImageCreateInfo-mipLevels-00947",
-                            create_info_loc.dot(Field::mipLevels));
-    skip |= ValidateNotZero(pCreateInfo->arrayLayers == 0, "VUID-VkImageCreateInfo-arrayLayers-00948",
-                            create_info_loc.dot(Field::arrayLayers));
+    skip |= context.ValidateNotZero(pCreateInfo->mipLevels == 0, "VUID-VkImageCreateInfo-mipLevels-00947",
+                                    create_info_loc.dot(Field::mipLevels));
+    skip |= context.ValidateNotZero(pCreateInfo->arrayLayers == 0, "VUID-VkImageCreateInfo-arrayLayers-00948",
+                                    create_info_loc.dot(Field::arrayLayers));
 
     // InitialLayout must be PREINITIALIZED or UNDEFINED
     if ((pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) &&
@@ -157,7 +158,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     skip |= ValidateCreateImageFragmentShadingRate(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageCornerSampled(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageStencilUsage(*pCreateInfo, create_info_loc);
-    skip |= ValidateCreateImageCompressionControl(*pCreateInfo, create_info_loc);
+    skip |= ValidateCreateImageCompressionControl(context, *pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageSwapchain(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageFormatList(*pCreateInfo, create_info_loc);
     skip |= ValidateCreateImageMetalObject(*pCreateInfo, create_info_loc);
@@ -520,16 +521,17 @@ bool StatelessValidation::ValidateCreateImageStencilUsage(const VkImageCreateInf
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateImageCompressionControl(const VkImageCreateInfo &create_info,
+bool StatelessValidation::ValidateCreateImageCompressionControl(const stateless::Context &context,
+                                                                const VkImageCreateInfo &create_info,
                                                                 const Location &create_info_loc) const {
     bool skip = false;
     const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(create_info.pNext);
     if (!image_compression_control) return skip;
 
-    skip |= ValidateFlags(create_info_loc.pNext(Struct::VkImageCompressionControlEXT, Field::flags),
-                          vvl::FlagBitmask::VkImageCompressionFlagBitsEXT, AllVkImageCompressionFlagBitsEXT,
-                          image_compression_control->flags, kOptionalSingleBit, VK_NULL_HANDLE,
-                          "VUID-VkImageCompressionControlEXT-flags-06747");
+    skip |= context.ValidateFlags(create_info_loc.pNext(Struct::VkImageCompressionControlEXT, Field::flags),
+                                  vvl::FlagBitmask::VkImageCompressionFlagBitsEXT, AllVkImageCompressionFlagBitsEXT,
+                                  image_compression_control->flags, kOptionalSingleBit,
+                                  "VUID-VkImageCompressionControlEXT-flags-06747");
 
     if (image_compression_control->flags == VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT &&
         !image_compression_control->pFixedRateFlags) {
@@ -799,8 +801,9 @@ bool StatelessValidation::ValidateCreateImageDrmFormatModifiers(const VkImageCre
 
 bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator, VkImageView *pView,
-                                                                const ErrorObject &error_obj) const {
+                                                                const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (pCreateInfo == nullptr) {
         return skip;
@@ -866,8 +869,9 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device,
                                                                                 const VkDeviceImageSubresourceInfo *pInfo,
                                                                                 VkSubresourceLayout2 *pLayout,
-                                                                                const ErrorObject &error_obj) const {
+                                                                                const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     const Location info_loc = error_obj.location.dot(Field::pInfo);
     const Location create_info_loc = info_loc.dot(Field::pCreateInfo);
     const Location subresource_loc = info_loc.dot(Field::pSubresource);

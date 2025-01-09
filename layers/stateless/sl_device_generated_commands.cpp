@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,8 @@ static inline bool IsRayTracingCommand(VkIndirectCommandsTokenTypeEXT type) {
                             VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT});
 }
 
-bool StatelessValidation::ValidateIndirectExecutionSetPipelineInfo(const VkIndirectExecutionSetPipelineInfoEXT& pipeline_info,
+bool StatelessValidation::ValidateIndirectExecutionSetPipelineInfo(const stateless::Context& context,
+                                                                   const VkIndirectExecutionSetPipelineInfoEXT& pipeline_info,
                                                                    const Location& pipeline_info_loc) const {
     bool skip = false;
 
@@ -52,12 +53,13 @@ bool StatelessValidation::ValidateIndirectExecutionSetPipelineInfo(const VkIndir
                          props.maxIndirectPipelineCount);
     }
 
-    skip |= ValidateIndirectExecutionSetPipelineInfoEXT(pipeline_info, pipeline_info_loc);
+    skip |= ValidateIndirectExecutionSetPipelineInfoEXT(context, pipeline_info, pipeline_info_loc);
 
     return skip;
 }
 
-bool StatelessValidation::ValidateIndirectExecutionSetShaderInfo(const VkIndirectExecutionSetShaderInfoEXT& shader_info,
+bool StatelessValidation::ValidateIndirectExecutionSetShaderInfo(const stateless::Context& context,
+                                                                 const VkIndirectExecutionSetShaderInfoEXT& shader_info,
                                                                  const Location& shader_info_loc) const {
     bool skip = false;
 
@@ -77,30 +79,31 @@ bool StatelessValidation::ValidateIndirectExecutionSetShaderInfo(const VkIndirec
     }
 
     // implicit checks - done manually as code gen is hard to get correct
-    skip |= ValidateStructType(shader_info_loc, &shader_info, VK_STRUCTURE_TYPE_INDIRECT_EXECUTION_SET_SHADER_INFO_EXT, false,
-                               kVUIDUndefined, "VUID-VkIndirectExecutionSetShaderInfoEXT-sType-sType");
-    skip |= ValidateStructTypeArray(shader_info_loc.dot(Field::shaderCount), shader_info_loc.dot(Field::pSetLayoutInfos),
-                                    shader_info.shaderCount, shader_info.pSetLayoutInfos,
-                                    VK_STRUCTURE_TYPE_INDIRECT_EXECUTION_SET_SHADER_LAYOUT_INFO_EXT, true, false,
-                                    "VUID-VkIndirectExecutionSetShaderLayoutInfoEXT-sType-sType",
-                                    "VUID-VkIndirectExecutionSetShaderInfoEXT-pSetLayoutInfos-parameter",
-                                    "VUID-VkIndirectExecutionSetShaderInfoEXT-shaderCount-arraylength");
+    skip |= context.ValidateStructType(shader_info_loc, &shader_info, VK_STRUCTURE_TYPE_INDIRECT_EXECUTION_SET_SHADER_INFO_EXT,
+                                       false, kVUIDUndefined, "VUID-VkIndirectExecutionSetShaderInfoEXT-sType-sType");
+    skip |= context.ValidateStructTypeArray(shader_info_loc.dot(Field::shaderCount), shader_info_loc.dot(Field::pSetLayoutInfos),
+                                            shader_info.shaderCount, shader_info.pSetLayoutInfos,
+                                            VK_STRUCTURE_TYPE_INDIRECT_EXECUTION_SET_SHADER_LAYOUT_INFO_EXT, true, false,
+                                            "VUID-VkIndirectExecutionSetShaderLayoutInfoEXT-sType-sType",
+                                            "VUID-VkIndirectExecutionSetShaderInfoEXT-pSetLayoutInfos-parameter",
+                                            "VUID-VkIndirectExecutionSetShaderInfoEXT-shaderCount-arraylength");
 
     // Validate shaderCount once above
-    skip |= ValidateArray(shader_info_loc.dot(Field::shaderCount), shader_info_loc.dot(Field::pInitialShaders),
-                          shader_info.shaderCount, &shader_info.pInitialShaders, false, true, kVUIDUndefined,
-                          "VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-parameter");
-    skip |= ValidateArray(shader_info_loc.dot(Field::pushConstantRangeCount), shader_info_loc.dot(Field::pPushConstantRanges),
-                          shader_info.pushConstantRangeCount, &shader_info.pPushConstantRanges, false, true, kVUIDUndefined,
-                          "VUID-VkIndirectExecutionSetShaderInfoEXT-pPushConstantRanges-parameter");
+    skip |= context.ValidateArray(shader_info_loc.dot(Field::shaderCount), shader_info_loc.dot(Field::pInitialShaders),
+                                  shader_info.shaderCount, &shader_info.pInitialShaders, false, true, kVUIDUndefined,
+                                  "VUID-VkIndirectExecutionSetShaderInfoEXT-pInitialShaders-parameter");
+    skip |=
+        context.ValidateArray(shader_info_loc.dot(Field::pushConstantRangeCount), shader_info_loc.dot(Field::pPushConstantRanges),
+                              shader_info.pushConstantRangeCount, &shader_info.pPushConstantRanges, false, true, kVUIDUndefined,
+                              "VUID-VkIndirectExecutionSetShaderInfoEXT-pPushConstantRanges-parameter");
 
     if (shader_info.pPushConstantRanges != nullptr) {
         for (uint32_t i = 0; i < shader_info.pushConstantRangeCount; ++i) {
             const Location pc_range_loc = shader_info_loc.dot(Field::pPushConstantRanges, i);
-            skip |= ValidateFlags(pc_range_loc.dot(Field::stageFlags), vvl::FlagBitmask::VkShaderStageFlagBits,
-                                  AllVkShaderStageFlagBits, shader_info.pPushConstantRanges[i].stageFlags, kRequiredFlags,
-                                  VK_NULL_HANDLE, "VUID-VkPushConstantRange-stageFlags-parameter",
-                                  "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
+            skip |= context.ValidateFlags(pc_range_loc.dot(Field::stageFlags), vvl::FlagBitmask::VkShaderStageFlagBits,
+                                          AllVkShaderStageFlagBits, shader_info.pPushConstantRanges[i].stageFlags, kRequiredFlags,
+                                          "VUID-VkPushConstantRange-stageFlags-parameter",
+                                          "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
         }
     }
 
@@ -109,8 +112,10 @@ bool StatelessValidation::ValidateIndirectExecutionSetShaderInfo(const VkIndirec
 
 bool StatelessValidation::manual_PreCallValidateCreateIndirectExecutionSetEXT(
     VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-    VkIndirectExecutionSetEXT* pIndirectExecutionSet, const ErrorObject& error_obj) const {
+    VkIndirectExecutionSetEXT* pIndirectExecutionSet, const stateless::Context& context) const {
     bool skip = false;
+    const auto& error_obj = context.error_obj;
+
     if (!enabled_features.deviceGeneratedCommands) {
         skip |= LogError("VUID-vkCreateIndirectExecutionSetEXT-deviceGeneratedCommands-11013", device, error_obj.location,
                          "deviceGeneratedCommands feature was not enabled.");
@@ -125,7 +130,8 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectExecutionSetEXT(
                              create_info_loc.dot(Field::type),
                              "is VK_INDIRECT_EXECUTION_SET_INFO_TYPE_PIPELINES_EXT, but info.pPipelineInfo is null.");
         } else {
-            skip |= ValidateIndirectExecutionSetPipelineInfo(*pCreateInfo->info.pPipelineInfo, info_loc.dot(Field::pPipelineInfo));
+            skip |= ValidateIndirectExecutionSetPipelineInfo(context, *pCreateInfo->info.pPipelineInfo,
+                                                             info_loc.dot(Field::pPipelineInfo));
         }
     } else if (pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT) {
         if (!enabled_features.shaderObject) {
@@ -145,21 +151,22 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectExecutionSetEXT(
                 LogError("VUID-VkIndirectExecutionSetCreateInfoEXT-pShaderInfo-parameter", device, create_info_loc.dot(Field::type),
                          "is VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT, but info.pShaderInfo is null.");
         } else {
-            skip |= ValidateIndirectExecutionSetShaderInfo(*pCreateInfo->info.pShaderInfo, info_loc.dot(Field::pShaderInfo));
+            skip |=
+                ValidateIndirectExecutionSetShaderInfo(context, *pCreateInfo->info.pShaderInfo, info_loc.dot(Field::pShaderInfo));
         }
     }
 
     return skip;
-};
+}
 
 bool StatelessValidation::ValidateIndirectCommandsPushConstantToken(
-    const VkIndirectCommandsPushConstantTokenEXT& push_constant_token, VkIndirectCommandsTokenTypeEXT token_type,
-    const Location& push_constant_token_loc) const {
+    const stateless::Context& context, const VkIndirectCommandsPushConstantTokenEXT& push_constant_token,
+    VkIndirectCommandsTokenTypeEXT token_type, const Location& push_constant_token_loc) const {
     bool skip = false;
-    skip |= ValidateFlags(push_constant_token_loc.dot(Field::updateRange).dot(Field::stageFlags),
-                          vvl::FlagBitmask::VkShaderStageFlagBits, AllVkShaderStageFlagBits,
-                          push_constant_token.updateRange.stageFlags, kRequiredFlags, VK_NULL_HANDLE,
-                          "VUID-VkPushConstantRange-stageFlags-parameter", "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
+    skip |= context.ValidateFlags(
+        push_constant_token_loc.dot(Field::updateRange).dot(Field::stageFlags), vvl::FlagBitmask::VkShaderStageFlagBits,
+        AllVkShaderStageFlagBits, push_constant_token.updateRange.stageFlags, kRequiredFlags,
+        "VUID-VkPushConstantRange-stageFlags-parameter", "VUID-VkPushConstantRange-stageFlags-requiredbitmask");
 
     if (token_type == VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT && push_constant_token.updateRange.size != 4) {
         skip |= LogError("VUID-VkIndirectCommandsPushConstantTokenEXT-size-11133", device,
@@ -169,15 +176,16 @@ bool StatelessValidation::ValidateIndirectCommandsPushConstantToken(
     }
 
     return skip;
-};
+}
 
-bool StatelessValidation::ValidateIndirectCommandsIndexBufferToken(const VkIndirectCommandsIndexBufferTokenEXT& index_buffer_token,
+bool StatelessValidation::ValidateIndirectCommandsIndexBufferToken(const stateless::Context& context,
+                                                                   const VkIndirectCommandsIndexBufferTokenEXT& index_buffer_token,
                                                                    const Location& index_buffer_token_loc) const {
     bool skip = false;
-    skip |= ValidateFlags(index_buffer_token_loc.dot(Field::mode), vvl::FlagBitmask::VkIndirectCommandsInputModeFlagBitsEXT,
-                          AllVkIndirectCommandsInputModeFlagBitsEXT, index_buffer_token.mode, kRequiredSingleBit, VK_NULL_HANDLE,
-                          "VUID-VkIndirectCommandsIndexBufferTokenEXT-mode-parameter",
-                          "VUID-VkIndirectCommandsIndexBufferTokenEXT-mode-11135");
+    skip |= context.ValidateFlags(index_buffer_token_loc.dot(Field::mode), vvl::FlagBitmask::VkIndirectCommandsInputModeFlagBitsEXT,
+                                  AllVkIndirectCommandsInputModeFlagBitsEXT, index_buffer_token.mode, kRequiredSingleBit,
+                                  "VUID-VkIndirectCommandsIndexBufferTokenEXT-mode-parameter",
+                                  "VUID-VkIndirectCommandsIndexBufferTokenEXT-mode-11135");
 
     const auto& props = phys_dev_ext_props.device_generated_commands_props;
     if ((index_buffer_token.mode & props.supportedIndirectCommandsInputModes) == 0) {
@@ -187,18 +195,19 @@ bool StatelessValidation::ValidateIndirectCommandsIndexBufferToken(const VkIndir
                          string_VkIndirectCommandsInputModeFlagsEXT(props.supportedIndirectCommandsInputModes).c_str());
     }
     return skip;
-};
+}
 
-bool StatelessValidation::ValidateIndirectCommandsExecutionSetToken(const VkIndirectCommandsExecutionSetTokenEXT& exe_set_token,
+bool StatelessValidation::ValidateIndirectCommandsExecutionSetToken(const stateless::Context& context,
+                                                                    const VkIndirectCommandsExecutionSetTokenEXT& exe_set_token,
                                                                     const Location& exe_set_token_loc) const {
     bool skip = false;
-    skip |= ValidateRangedEnum(exe_set_token_loc.dot(Field::type), vvl::Enum::VkIndirectExecutionSetInfoTypeEXT, exe_set_token.type,
-                               "VUID-VkIndirectCommandsExecutionSetTokenEXT-type-parameter");
+    skip |= context.ValidateRangedEnum(exe_set_token_loc.dot(Field::type), vvl::Enum::VkIndirectExecutionSetInfoTypeEXT,
+                                       exe_set_token.type, "VUID-VkIndirectCommandsExecutionSetTokenEXT-type-parameter");
 
-    skip |= ValidateFlags(exe_set_token_loc.dot(Field::shaderStages), vvl::FlagBitmask::VkShaderStageFlagBits,
-                          AllVkShaderStageFlagBits, exe_set_token.shaderStages, kRequiredFlags, VK_NULL_HANDLE,
-                          "VUID-VkIndirectCommandsExecutionSetTokenEXT-shaderStages-parameter",
-                          "VUID-VkIndirectCommandsExecutionSetTokenEXT-shaderStages-requiredbitmask");
+    skip |= context.ValidateFlags(exe_set_token_loc.dot(Field::shaderStages), vvl::FlagBitmask::VkShaderStageFlagBits,
+                                  AllVkShaderStageFlagBits, exe_set_token.shaderStages, kRequiredFlags,
+                                  "VUID-VkIndirectCommandsExecutionSetTokenEXT-shaderStages-parameter",
+                                  "VUID-VkIndirectCommandsExecutionSetTokenEXT-shaderStages-requiredbitmask");
 
     const auto& props = phys_dev_ext_props.device_generated_commands_props;
     if ((exe_set_token.shaderStages & (props.supportedIndirectCommandsShaderStagesPipelineBinding |
@@ -213,9 +222,10 @@ bool StatelessValidation::ValidateIndirectCommandsExecutionSetToken(const VkIndi
     }
 
     return skip;
-};
+}
 
-bool StatelessValidation::ValidateIndirectCommandsLayoutToken(const VkIndirectCommandsLayoutTokenEXT& token,
+bool StatelessValidation::ValidateIndirectCommandsLayoutToken(const stateless::Context& context,
+                                                              const VkIndirectCommandsLayoutTokenEXT& token,
                                                               const Location& token_loc) const {
     bool skip = false;
 
@@ -228,7 +238,7 @@ bool StatelessValidation::ValidateIndirectCommandsLayoutToken(const VkIndirectCo
                     LogError("VUID-VkIndirectCommandsLayoutTokenEXT-pPushConstant-parameter", device, token_loc.dot(Field::type),
                              "is %s, but data.pPushConstant is null.", string_VkIndirectCommandsTokenTypeEXT(token.type));
             } else {
-                skip |= ValidateIndirectCommandsPushConstantToken(*token.data.pPushConstant, token.type,
+                skip |= ValidateIndirectCommandsPushConstantToken(context, *token.data.pPushConstant, token.type,
                                                                   data_loc.dot(Field::pPushConstant));
             }
             break;
@@ -244,7 +254,8 @@ bool StatelessValidation::ValidateIndirectCommandsLayoutToken(const VkIndirectCo
                 skip |= LogError("VUID-VkIndirectCommandsLayoutTokenEXT-pIndexBuffer-parameter", device, token_loc.dot(Field::type),
                                  "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_EXT, but data.pIndexBuffer is null.");
             } else {
-                skip |= ValidateIndirectCommandsIndexBufferToken(*token.data.pIndexBuffer, data_loc.dot(Field::pIndexBuffer));
+                skip |=
+                    ValidateIndirectCommandsIndexBufferToken(context, *token.data.pIndexBuffer, data_loc.dot(Field::pIndexBuffer));
             }
             break;
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT:
@@ -253,7 +264,8 @@ bool StatelessValidation::ValidateIndirectCommandsLayoutToken(const VkIndirectCo
                     LogError("VUID-VkIndirectCommandsLayoutTokenEXT-pExecutionSet-parameter", device, token_loc.dot(Field::type),
                              "is VK_INDIRECT_COMMANDS_TOKEN_TYPE_EXECUTION_SET_EXT, but data.pExecutionSet is null.");
             } else {
-                skip |= ValidateIndirectCommandsExecutionSetToken(*token.data.pExecutionSet, data_loc.dot(Field::pExecutionSet));
+                skip |= ValidateIndirectCommandsExecutionSetToken(context, *token.data.pExecutionSet,
+                                                                  data_loc.dot(Field::pExecutionSet));
             }
             break;
         default:
@@ -308,7 +320,8 @@ bool StatelessValidation::ValidateIndirectCommandsLayoutToken(const VkIndirectCo
     return skip;
 }
 
-bool StatelessValidation::ValidateIndirectCommandsLayoutStage(const VkIndirectCommandsLayoutTokenEXT& token,
+bool StatelessValidation::ValidateIndirectCommandsLayoutStage(const stateless::Context& context,
+                                                              const VkIndirectCommandsLayoutTokenEXT& token,
                                                               const Location& token_loc, VkShaderStageFlags shader_stages,
                                                               bool has_stage_graphics, bool has_stage_compute,
                                                               bool has_stage_ray_tracing, bool has_stage_mesh) const {
@@ -372,8 +385,9 @@ bool StatelessValidation::ValidateIndirectCommandsLayoutStage(const VkIndirectCo
 
 bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(
     VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-    VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout, const ErrorObject& error_obj) const {
+    VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout, const stateless::Context& context) const {
     bool skip = false;
+    const auto& error_obj = context.error_obj;
 
     if (!enabled_features.deviceGeneratedCommands) {
         skip |= LogError("VUID-vkCreateIndirectCommandsLayoutEXT-deviceGeneratedCommands-11089", device, error_obj.location,
@@ -447,8 +461,8 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(
     for (uint32_t i = 0; i < pCreateInfo->tokenCount; ++i) {
         const Location token_loc = create_info_loc.dot(Field::pTokens, i);
         const auto& token = pCreateInfo->pTokens[i];
-        skip |= ValidateIndirectCommandsLayoutToken(token, token_loc);
-        skip |= ValidateIndirectCommandsLayoutStage(token, token_loc, shader_stages, has_stage_graphics, has_stage_compute,
+        skip |= ValidateIndirectCommandsLayoutToken(context, token, token_loc);
+        skip |= ValidateIndirectCommandsLayoutStage(context, token, token_loc, shader_stages, has_stage_graphics, has_stage_compute,
                                                     has_stage_ray_tracing, has_stage_mesh);
 
         if (token.type != VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT) {
@@ -501,8 +515,9 @@ bool StatelessValidation::ValidateGeneratedCommandsInfo(VkCommandBuffer command_
 
 bool StatelessValidation::manual_PreCallValidateCmdPreprocessGeneratedCommandsEXT(
     VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo, VkCommandBuffer stateCommandBuffer,
-    const ErrorObject& error_obj) const {
+    const stateless::Context& context) const {
     bool skip = false;
+    const auto& error_obj = context.error_obj;
     if (!enabled_features.deviceGeneratedCommands) {
         skip |= LogError("VUID-vkCmdPreprocessGeneratedCommandsEXT-deviceGeneratedCommands-11087", device, error_obj.location,
                          "deviceGeneratedCommands feature was not enabled.");
@@ -526,8 +541,9 @@ bool StatelessValidation::manual_PreCallValidateCmdPreprocessGeneratedCommandsEX
 
 bool StatelessValidation::manual_PreCallValidateCmdExecuteGeneratedCommandsEXT(
     VkCommandBuffer commandBuffer, VkBool32 isPreprocessed, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
-    const ErrorObject& error_obj) const {
+    const stateless::Context& context) const {
     bool skip = false;
+    const auto& error_obj = context.error_obj;
 
     if (!enabled_features.deviceGeneratedCommands) {
         skip |= LogError("VUID-vkCmdExecuteGeneratedCommandsEXT-deviceGeneratedCommands-11059", device, error_obj.location,

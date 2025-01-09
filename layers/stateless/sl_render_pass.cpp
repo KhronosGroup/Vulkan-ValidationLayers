@@ -366,16 +366,17 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                                 const ErrorObject &error_obj) const {
+                                                                 const stateless::Context &context) const {
     vku::safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
-    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, error_obj);
+    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, context.error_obj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
-                                                                  VkRenderPass *pRenderPass, const ErrorObject &error_obj) const {
+                                                                  VkRenderPass *pRenderPass,
+                                                                  const stateless::Context &context) const {
     vku::safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
-    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, error_obj);
+    return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, context.error_obj);
 }
 
 void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo) {
@@ -530,15 +531,15 @@ bool StatelessValidation::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuff
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer,
                                                                    const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents,
-                                                                   const ErrorObject &error_obj) const {
-    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
+                                                                   const stateless::Context &context) const {
+    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, context.error_obj);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
                                                                     const VkRenderPassBeginInfo *pRenderPassBegin,
                                                                     const VkSubpassBeginInfo *,
-                                                                    const ErrorObject &error_obj) const {
-    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, error_obj);
+                                                                    const stateless::Context &context) const {
+    return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, context.error_obj);
 }
 
 static bool UniqueRenderingInfoImageViews(const VkRenderingInfo &rendering_info, VkImageView image_view) {
@@ -577,8 +578,9 @@ static bool UniqueRenderingInfoImageViews(const VkRenderingInfo &rendering_info,
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                                                                   const VkRenderingInfo *pRenderingInfo,
-                                                                  const ErrorObject &error_obj) const {
+                                                                  const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     const Location rendering_info_loc = error_obj.location.dot(Field::pRenderingInfo);
 
     if (!enabled_features.dynamicRendering) {

@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,15 +20,17 @@
 
 bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
-                                                                  VkFramebuffer *pFramebuffer, const ErrorObject &error_obj) const {
+                                                                  VkFramebuffer *pFramebuffer,
+                                                                  const stateless::Context &context) const {
     // Validation for pAttachments which is excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
-        skip |= ValidateArray(create_info_loc.dot(Field::attachmentCount), error_obj.location.dot(Field::pAttachments),
-                              pCreateInfo->attachmentCount, &pCreateInfo->pAttachments, false, true, kVUIDUndefined,
-                              "VUID-VkFramebufferCreateInfo-flags-02778");
+        skip |= context.ValidateArray(create_info_loc.dot(Field::attachmentCount), error_obj.location.dot(Field::pAttachments),
+                                      pCreateInfo->attachmentCount, &pCreateInfo->pAttachments, false, true, kVUIDUndefined,
+                                      "VUID-VkFramebufferCreateInfo-flags-02778");
     } else {
         if (!enabled_features.imagelessFramebuffer) {
             skip |= LogError("VUID-VkFramebufferCreateInfo-flags-03189", device, create_info_loc.dot(Field::flags),

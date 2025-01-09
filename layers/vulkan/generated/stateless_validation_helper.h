@@ -42,8 +42,6 @@ static inline bool IsDuplicatePnext(VkStructureType input_value) {
     }
 }
 
-bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                   VkInstance* pInstance, const ErrorObject& error_obj) const override;
 bool PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
                                     const ErrorObject& error_obj) const override;
 bool PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
@@ -1919,22 +1917,37 @@ bool PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, V
 bool PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                      uint32_t stride, const ErrorObject& error_obj) const override;
-bool ValidatePipelineViewportStateCreateInfo(const VkPipelineViewportStateCreateInfo& info, const Location& loc) const;
-bool ValidatePipelineTessellationStateCreateInfo(const VkPipelineTessellationStateCreateInfo& info, const Location& loc) const;
-bool ValidatePipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo& info, const Location& loc) const;
-bool ValidatePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo& info, const Location& loc) const;
-bool ValidatePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCreateInfo& info, const Location& loc) const;
-bool ValidatePipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilStateCreateInfo& info, const Location& loc) const;
-bool ValidatePipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo& info, const Location& loc) const;
-bool ValidatePipelineRasterizationStateCreateInfo(const VkPipelineRasterizationStateCreateInfo& info, const Location& loc) const;
-bool ValidatePipelineShaderStageCreateInfo(const VkPipelineShaderStageCreateInfo& info, const Location& loc) const;
-bool ValidateCommandBufferInheritanceInfo(const VkCommandBufferInheritanceInfo& info, const Location& loc) const;
-bool ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT& info, const Location& loc) const;
-bool ValidateAccelerationStructureGeometryTrianglesDataKHR(const VkAccelerationStructureGeometryTrianglesDataKHR& info,
+bool ValidatePipelineViewportStateCreateInfo(const stateless::Context& context, const VkPipelineViewportStateCreateInfo& info,
+                                             const Location& loc) const;
+bool ValidatePipelineTessellationStateCreateInfo(const stateless::Context& context,
+                                                 const VkPipelineTessellationStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineVertexInputStateCreateInfo(const stateless::Context& context, const VkPipelineVertexInputStateCreateInfo& info,
+                                                const Location& loc) const;
+bool ValidatePipelineMultisampleStateCreateInfo(const stateless::Context& context, const VkPipelineMultisampleStateCreateInfo& info,
+                                                const Location& loc) const;
+bool ValidatePipelineColorBlendStateCreateInfo(const stateless::Context& context, const VkPipelineColorBlendStateCreateInfo& info,
+                                               const Location& loc) const;
+bool ValidatePipelineDepthStencilStateCreateInfo(const stateless::Context& context,
+                                                 const VkPipelineDepthStencilStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineInputAssemblyStateCreateInfo(const stateless::Context& context,
+                                                  const VkPipelineInputAssemblyStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineRasterizationStateCreateInfo(const stateless::Context& context,
+                                                  const VkPipelineRasterizationStateCreateInfo& info, const Location& loc) const;
+bool ValidatePipelineShaderStageCreateInfo(const stateless::Context& context, const VkPipelineShaderStageCreateInfo& info,
+                                           const Location& loc) const;
+bool ValidateCommandBufferInheritanceInfo(const stateless::Context& context, const VkCommandBufferInheritanceInfo& info,
+                                          const Location& loc) const;
+bool ValidateDescriptorAddressInfoEXT(const stateless::Context& context, const VkDescriptorAddressInfoEXT& info,
+                                      const Location& loc) const;
+bool ValidateAccelerationStructureGeometryTrianglesDataKHR(const stateless::Context& context,
+                                                           const VkAccelerationStructureGeometryTrianglesDataKHR& info,
                                                            const Location& loc) const;
-bool ValidateAccelerationStructureGeometryInstancesDataKHR(const VkAccelerationStructureGeometryInstancesDataKHR& info,
+bool ValidateAccelerationStructureGeometryInstancesDataKHR(const stateless::Context& context,
+                                                           const VkAccelerationStructureGeometryInstancesDataKHR& info,
                                                            const Location& loc) const;
-bool ValidateAccelerationStructureGeometryAabbsDataKHR(const VkAccelerationStructureGeometryAabbsDataKHR& info,
+bool ValidateAccelerationStructureGeometryAabbsDataKHR(const stateless::Context& context,
+                                                       const VkAccelerationStructureGeometryAabbsDataKHR& info,
                                                        const Location& loc) const;
-bool ValidateIndirectExecutionSetPipelineInfoEXT(const VkIndirectExecutionSetPipelineInfoEXT& info, const Location& loc) const;
+bool ValidateIndirectExecutionSetPipelineInfoEXT(const stateless::Context& context,
+                                                 const VkIndirectExecutionSetPipelineInfoEXT& info, const Location& loc) const;
 // NOLINTEND

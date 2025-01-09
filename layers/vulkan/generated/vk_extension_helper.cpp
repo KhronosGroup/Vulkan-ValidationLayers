@@ -2,24 +2,28 @@
 // See extension_helper_generator.py for modifications
 
 /***************************************************************************
- *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ****************************************************************************/
+*
+* Copyright (c) 2015-2025 The Khronos Group Inc.
+* Copyright (c) 2015-2025 Valve Corporation
+* Copyright (c) 2015-2025 LunarG, Inc.
+<<<<<<< HEAD
+* Copyright (c) 2015-2025 Google Inc.
+=======
+* Copyright (c) 2015-2024 Google Inc.
+>>>>>>> a150923ee (stateless: Refactor pNext, flag and enum checking utils)
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+****************************************************************************/
 
 // NOLINTBEGIN
 
@@ -567,11 +571,10 @@ const DeviceExtensions::Info& GetDeviceVersionMap(const char* version) {
     return (info != version_map.cend()) ? info->second : empty_info;
 }
 
-APIVersion InstanceExtensions::InitFromInstanceCreateInfo(APIVersion requested_api_version,
-                                                          const VkInstanceCreateInfo* pCreateInfo) {
+InstanceExtensions::InstanceExtensions(APIVersion requested_api_version, const VkInstanceCreateInfo* pCreateInfo) {
     // Initialize struct data, robust to invalid pCreateInfo
-    auto api_version = NormalizeApiVersion(requested_api_version);
-    if (!api_version.Valid()) return api_version;
+    api_version = NormalizeApiVersion(requested_api_version);
+    if (!api_version.Valid()) return;
 
     const auto promotion_info_map = GetInstancePromotionInfoMap();
     for (const auto& version_it : promotion_info_map) {
@@ -595,18 +598,13 @@ APIVersion InstanceExtensions::InitFromInstanceCreateInfo(APIVersion requested_a
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
         }
     }
-    return api_version;
 }
 
-APIVersion DeviceExtensions::InitFromDeviceCreateInfo(const InstanceExtensions* instance_extensions,
-                                                      APIVersion requested_api_version, const VkDeviceCreateInfo* pCreateInfo) {
-    // Initialize: this to defaults,  base class fields to input.
-    assert(instance_extensions);
-    *this = DeviceExtensions(*instance_extensions);
-
-    // Initialize struct data, robust to invalid pCreateInfo
+DeviceExtensions::DeviceExtensions(const InstanceExtensions& instance_ext, APIVersion requested_api_version,
+                                   const VkDeviceCreateInfo* pCreateInfo)
+    : InstanceExtensions(instance_ext) {
     auto api_version = NormalizeApiVersion(requested_api_version);
-    if (!api_version.Valid()) return api_version;
+    if (!api_version.Valid()) return;
 
     const auto promotion_info_map = GetDevicePromotionInfoMap();
     for (const auto& version_it : promotion_info_map) {
@@ -654,7 +652,55 @@ APIVersion DeviceExtensions::InitFromDeviceCreateInfo(const InstanceExtensions* 
             }
         }
     }
-    return api_version;
+}
+
+DeviceExtensions::DeviceExtensions(const InstanceExtensions& instance_ext, APIVersion requested_api_version,
+                                   const std::vector<VkExtensionProperties>& props)
+    : InstanceExtensions(instance_ext) {
+    auto api_version = NormalizeApiVersion(requested_api_version);
+    if (!api_version.Valid()) return;
+
+    const auto promotion_info_map = GetDevicePromotionInfoMap();
+    for (const auto& version_it : promotion_info_map) {
+        auto info = GetDeviceVersionMap(version_it.second.first);
+        if (api_version >= version_it.first) {
+            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+            for (const auto& extension : version_it.second.second) {
+                info = GetInfo(extension);
+                assert(info.state);
+                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+            }
+        }
+    }
+    for (const auto& prop : props) {
+        vvl::Extension extension = GetExtension(prop.extensionName);
+        auto info = GetInfo(extension);
+        if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+    }
+
+    // Workaround for functions being introduced by multiple extensions, until the layer is fixed to handle this correctly
+    // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5579 and
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5600
+    {
+        constexpr std::array shader_object_interactions = {
+            vvl::Extension::_VK_EXT_extended_dynamic_state,
+            vvl::Extension::_VK_EXT_extended_dynamic_state2,
+            vvl::Extension::_VK_EXT_extended_dynamic_state3,
+            vvl::Extension::_VK_EXT_vertex_input_dynamic_state,
+        };
+        auto info = GetInfo(vvl::Extension::_VK_EXT_shader_object);
+        if (info.state) {
+            if (this->*(info.state) != kNotEnabled) {
+                for (auto interaction_ext : shader_object_interactions) {
+                    info = GetInfo(interaction_ext);
+                    assert(info.state);
+                    if (this->*(info.state) != kEnabledByCreateinfo) {
+                        this->*(info.state) = kEnabledByInteraction;
+                    }
+                }
+            }
+        }
+    }
 }
 
 // NOLINTEND

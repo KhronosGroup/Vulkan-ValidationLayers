@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +20,9 @@
 
 bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
-                                                               const ErrorObject &error_obj) const {
+                                                               const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (!pAllocateInfo) {
         return skip;
@@ -92,8 +93,9 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device,
                                                                                  const VkDeviceImageMemoryRequirements *pInfo,
                                                                                  VkMemoryRequirements2 *pMemoryRequirements,
-                                                                                 const ErrorObject &error_obj) const {
+                                                                                 const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
 
@@ -102,8 +104,9 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements
 
 bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
     VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const ErrorObject &error_obj) const {
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     skip |= ValidateDeviceImageMemoryRequirements(device, *pInfo, error_obj.location.dot(Field::pInfo));
 
@@ -112,8 +115,9 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequir
 
 bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
                                                                 const VkBindSparseInfo *pBindInfo, VkFence fence,
-                                                                const ErrorObject &error_obj) const {
+                                                                const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     for (uint32_t bind_info_i = 0; bind_info_i < bindInfoCount; ++bind_info_i) {
         const VkBindSparseInfo &bind_info = pBindInfo[bind_info_i];
@@ -161,8 +165,9 @@ bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, u
 }
 
 bool StatelessValidation::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
-                                                                           const ErrorObject &error_obj) const {
+                                                                           const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     if (!IsBetweenInclusive(priority, 0.0F, 1.0F)) {
         skip |= LogError("VUID-vkSetDeviceMemoryPriorityEXT-priority-06258", device, error_obj.location.dot(Field::priority),
                          "is %f.", priority);
