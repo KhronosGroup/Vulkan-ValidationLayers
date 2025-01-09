@@ -1148,6 +1148,10 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBuffer &cb_state, c
     }
 
     if (gpuav.enabled_features.robustBufferAccess2) {
+        return;
+    }
+
+    if (gpuav.enabled_features.pipelineRobustness) {
         const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
         const LastBound &last_bound = cb_state.lastBound[lv_bind_point];
         const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
