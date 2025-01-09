@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -4999,38 +4999,6 @@ bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& lo
 
         // No Validation code for VkPhysicalDeviceMaintenance7PropertiesKHR structure members  -- Covers
         // VUID-VkPhysicalDeviceMaintenance7PropertiesKHR-sType-sType
-
-        // Validation code for VkPhysicalDeviceLayeredApiPropertiesListKHR structure members
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_PROPERTIES_LIST_KHR: {  // Covers
-                                                                                   // VUID-VkPhysicalDeviceLayeredApiPropertiesListKHR-sType-sType
-            if (true /* exception where we do not want to check for is_const_param */) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceLayeredApiPropertiesListKHR);
-                if (!IsExtEnabled(device_extensions.vk_khr_maintenance7)) {
-                    skip |=
-                        LogError(pnext_vuid, instance, pNext_loc, "extended struct requires the extensions VK_KHR_maintenance7");
-                }
-                VkPhysicalDeviceLayeredApiPropertiesListKHR* structure = (VkPhysicalDeviceLayeredApiPropertiesListKHR*)header;
-                skip |= ValidateStructTypeArray(
-                    pNext_loc.dot(Field::layeredApiCount), pNext_loc.dot(Field::pLayeredApis), structure->layeredApiCount,
-                    structure->pLayeredApis, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_PROPERTIES_KHR, false, false,
-                    "VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-sType-sType", kVUIDUndefined, kVUIDUndefined);
-
-                if (structure->pLayeredApis != nullptr) {
-                    for (uint32_t layeredApiIndex = 0; layeredApiIndex < structure->layeredApiCount; ++layeredApiIndex) {
-                        [[maybe_unused]] const Location pLayeredApis_loc = pNext_loc.dot(Field::pLayeredApis, layeredApiIndex);
-                        constexpr std::array allowed_structs_VkPhysicalDeviceLayeredApiPropertiesKHR = {
-                            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_API_VULKAN_PROPERTIES_KHR};
-
-                        skip |= ValidateStructPnext(
-                            pLayeredApis_loc, structure->pLayeredApis[layeredApiIndex].pNext,
-                            allowed_structs_VkPhysicalDeviceLayeredApiPropertiesKHR.size(),
-                            allowed_structs_VkPhysicalDeviceLayeredApiPropertiesKHR.data(), GeneratedVulkanHeaderVersion,
-                            "VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-pNext-pNext",
-                            "VUID-VkPhysicalDeviceLayeredApiPropertiesKHR-sType-unique", VK_NULL_HANDLE, false);
-                    }
-                }
-            }
-        } break;
 
         // No Validation code for VkPhysicalDeviceTransformFeedbackPropertiesEXT structure members  -- Covers
         // VUID-VkPhysicalDeviceTransformFeedbackPropertiesEXT-sType-sType

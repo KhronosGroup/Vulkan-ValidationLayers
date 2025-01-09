@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -688,4 +688,23 @@ TEST_F(VkPositiveLayerTest, UnrecognizedFlagOutOfRange2) {
     format_info.type = VK_IMAGE_TYPE_1D;
     format_info.usage = static_cast<VkImageUsageFlags>(0xffffffff);
     vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &format_info, &format_properties);
+}
+
+TEST_F(VkPositiveLayerTest, PhysicalDeviceLayeredApiVulkanProperties) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitFramework());
+    // Don't enable maintenance7 because we are doing this at an instance level
+    // just make sure the extension is there
+    if (!DeviceExtensionSupported(VK_KHR_MAINTENANCE_7_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Did not find the required device extensions";
+    }
+    RETURN_IF_SKIP(InitState());
+
+    VkPhysicalDeviceLayeredApiPropertiesKHR api_props = vku::InitStructHelper();
+    VkPhysicalDeviceLayeredApiPropertiesListKHR api_prop_lists = vku::InitStructHelper();
+    api_prop_lists.layeredApiCount = 1;
+    api_prop_lists.pLayeredApis = &api_props;
+
+    VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper(&api_prop_lists);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &phys_dev_props_2);
 }
