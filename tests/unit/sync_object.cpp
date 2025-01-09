@@ -4413,6 +4413,30 @@ TEST_F(NegativeSyncObject, Sync2FeatureDisabled) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeSyncObject, BufferMemoryBarrierUnbound) {
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.flags = 0u;
+    buffer_ci.size = 256u;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    m_command_buffer.Begin();
+    VkBufferMemoryBarrier bmb = vku::InitStructHelper();
+    bmb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    bmb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    bmb.buffer = buffer.handle();
+    bmb.offset = 0;
+    bmb.size = VK_WHOLE_SIZE;
+    m_errorMonitor->SetDesiredError("VUID-VkBufferMemoryBarrier-buffer-01931");
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u,
+                           nullptr, 1u, &bmb, 0u, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeSyncObject, BufferMemoryBarrierQueueFamilyExternal) {
     RETURN_IF_SKIP(Init());
 
