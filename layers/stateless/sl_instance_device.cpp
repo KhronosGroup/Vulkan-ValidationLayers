@@ -17,6 +17,7 @@
  */
 
 #include "stateless/stateless_validation.h"
+#include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
 
 // Traits objects to allow string_join to operate on collections of const char *
@@ -109,19 +110,31 @@ ExtEnabled ExtensionStateByName(const ExtensionState &extensions, vvl::Extension
     return state;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
-                                                               const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
-                                                               const ErrorObject &error_obj) const {
+bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
+                                                        const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
+                                                        const ErrorObject &error_obj) const {
     bool skip = false;
-    const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
+    Location loc = error_obj.location;
     // Note: From the spec--
     //  Providing a NULL VkInstanceCreateInfo::pApplicationInfo or providing an apiVersion of 0 is equivalent to providing
     //  an apiVersion of VK_MAKE_VERSION(1, 0, 0).  (a.k.a. VK_API_VERSION_1_0)
-    uint32_t local_api_version = (pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->apiVersion)
-                                     ? pCreateInfo->pApplicationInfo->apiVersion
-                                     : VK_API_VERSION_1_0;
+    uint32_t local_api_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
+    // Create and use a local instance extension object, as an actual instance has not been created yet
+    InstanceExtensions local_instance_extensions(local_api_version, pCreateInfo);
+    DeviceExtensions local_device_extensions(local_instance_extensions, local_api_version);
+    stateless::Context context(*this, error_obj, local_device_extensions);
+
+    skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, true,
+                                       "VUID-vkCreateInstance-pCreateInfo-parameter", "VUID-VkInstanceCreateInfo-sType-sType");
+
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pInstance), pInstance, "VUID-vkCreateInstance-pInstance-parameter");
 
     uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(local_api_version), VK_VERSION_MINOR(local_api_version), 0);
+    const Location create_info_loc = loc.dot(Field::pCreateInfo);
     if (api_version != api_version_nopatch) {
         if ((api_version_nopatch < VK_API_VERSION_1_0) && (local_api_version != 0)) {
             skip |= LogError("VUID-VkApplicationInfo-apiVersion-04010", instance,
@@ -137,10 +150,32 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
         }
     }
 
-    // Create and use a local instance extension object, as an actual instance has not been created yet
-    uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-    InstanceExtensions local_instance_extensions;
-    local_instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
+    if (pCreateInfo != nullptr) {
+        skip |= context.ValidateFlags(create_info_loc.dot(Field::flags), vvl::FlagBitmask::VkInstanceCreateFlagBits,
+                                      AllVkInstanceCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
+                                      "VUID-VkInstanceCreateInfo-flags-parameter");
+
+        skip |= context.ValidateStructType(
+            create_info_loc.dot(Field::pApplicationInfo), pCreateInfo->pApplicationInfo, VK_STRUCTURE_TYPE_APPLICATION_INFO, false,
+            "VUID-VkInstanceCreateInfo-pApplicationInfo-parameter", "VUID-VkApplicationInfo-sType-sType");
+
+        if (pCreateInfo->pApplicationInfo != nullptr) {
+            [[maybe_unused]] const Location pApplicationInfo_loc = create_info_loc.dot(Field::pApplicationInfo);
+            skip |= context.ValidateStructPnext(pApplicationInfo_loc, pCreateInfo->pApplicationInfo->pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkApplicationInfo-pNext-pNext", kVUIDUndefined,
+                                                true);
+        }
+
+        skip |= context.ValidateStringArray(create_info_loc.dot(Field::enabledLayerCount),
+                                            create_info_loc.dot(Field::ppEnabledLayerNames), pCreateInfo->enabledLayerCount,
+                                            pCreateInfo->ppEnabledLayerNames, false, true, kVUIDUndefined,
+                                            "VUID-VkInstanceCreateInfo-ppEnabledLayerNames-parameter");
+
+        skip |= context.ValidateStringArray(create_info_loc.dot(Field::enabledExtensionCount),
+                                            create_info_loc.dot(Field::ppEnabledExtensionNames), pCreateInfo->enabledExtensionCount,
+                                            pCreateInfo->ppEnabledExtensionNames, false, true, kVUIDUndefined,
+                                            "VUID-VkInstanceCreateInfo-ppEnabledExtensionNames-parameter");
+    }
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
@@ -154,7 +189,49 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
                          "ppEnabledExtensionNames does not include VK_KHR_portability_enumeration");
     }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(pCreateInfo->pNext);
+    while (export_metal_object_info) {
+        if ((export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT) &&
+            (export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT)) {
+            skip |= LogError("VUID-VkInstanceCreateInfo-pNext-06779", instance, error_obj.location,
+                             "The pNext chain contains a VkExportMetalObjectCreateInfoEXT whose "
+                             "exportObjectType = %s, but only VkExportMetalObjectCreateInfoEXT structs with exportObjectType of "
+                             "VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT or "
+                             "VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT are allowed",
+                             string_VkExportMetalObjectTypeFlagBitsEXT(export_metal_object_info->exportObjectType));
+        }
+        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+    }
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+    // avoid redundant pNext-pNext errors from the cases where we have specific VUs by returning early
+    const auto *debug_report_callback = vku::FindStructInPNextChain<VkDebugReportCallbackCreateInfoEXT>(pCreateInfo->pNext);
+    if (debug_report_callback && !local_instance_extensions.vk_ext_debug_report) {
+        skip |= LogError("VUID-VkInstanceCreateInfo-pNext-04925", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
+                         "does not include VK_EXT_debug_report, but the pNext chain includes VkDebugReportCallbackCreateInfoEXT.");
+        return skip;
+    }
+    const auto *debug_utils_messenger = vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(pCreateInfo->pNext);
+    if (debug_utils_messenger && !local_instance_extensions.vk_ext_debug_utils) {
+        skip |= LogError("VUID-VkInstanceCreateInfo-pNext-04926", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
+                         "does not include VK_EXT_debug_utils, but the pNext chain includes VkDebugUtilsMessengerCreateInfoEXT.");
+        return skip;
+    }
+    const auto *direct_driver_loading_list = vku::FindStructInPNextChain<VkDirectDriverLoadingListLUNARG>(pCreateInfo->pNext);
+    if (direct_driver_loading_list && !local_instance_extensions.vk_lunarg_direct_driver_loading) {
+        skip |= LogError(
+            "VUID-VkInstanceCreateInfo-pNext-09400", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
+            "does not include VK_LUNARG_direct_driver_loading, but the pNext chain includes VkDirectDriverLoadingListLUNARG.");
+        return skip;
+    }
+
     const auto *validation_features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
+    if (validation_features && !local_instance_extensions.vk_ext_validation_features) {
+        skip |= LogError("VUID-VkInstanceCreateInfo-pNext-10243", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
+                         "does not include VK_EXT_validation_features, but the pNext chain includes VkValidationFeaturesEXT");
+        return skip;
+    }
     if (validation_features) {
         bool debug_printf = false;
         bool gpu_assisted = false;
@@ -185,64 +262,17 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
         }
     }
 
-    if (!local_instance_extensions.vk_ext_debug_report &&
-        vku::FindStructInPNextChain<VkDebugReportCallbackCreateInfoEXT>(pCreateInfo->pNext)) {
-        skip |= LogError("VUID-VkInstanceCreateInfo-pNext-04925", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
-                         "does not include VK_EXT_debug_report, but the pNext chain includes VkDebugReportCallbackCreateInfoEXT.");
-    }
-    if (!local_instance_extensions.vk_ext_debug_utils &&
-        vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(pCreateInfo->pNext)) {
-        skip |= LogError("VUID-VkInstanceCreateInfo-pNext-04926", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
-                         "does not include VK_EXT_debug_utils, but the pNext chain includes VkDebugUtilsMessengerCreateInfoEXT.");
-    }
-    if (!local_instance_extensions.vk_lunarg_direct_driver_loading &&
-        vku::FindStructInPNextChain<VkDirectDriverLoadingListLUNARG>(pCreateInfo->pNext)) {
-        skip |= LogError(
-            "VUID-VkInstanceCreateInfo-pNext-09400", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
-            "does not include VK_LUNARG_direct_driver_loading, but the pNext chain includes VkDirectDriverLoadingListLUNARG.");
-    }
+    constexpr std::array allowed_structs_VkInstanceCreateInfo = {VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT,
+                                                                 VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+                                                                 VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG,
+                                                                 VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT,
+                                                                 VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT,
+                                                                 VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
+                                                                 VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT};
 
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(pCreateInfo->pNext);
-    while (export_metal_object_info) {
-        if ((export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT) &&
-            (export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT)) {
-            skip |= LogError("VUID-VkInstanceCreateInfo-pNext-06779", instance, error_obj.location,
-                             "The pNext chain contains a VkExportMetalObjectCreateInfoEXT whose "
-                             "exportObjectType = %s, but only VkExportMetalObjectCreateInfoEXT structs with exportObjectType of "
-                             "VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT or "
-                             "VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT are allowed",
-                             string_VkExportMetalObjectTypeFlagBitsEXT(export_metal_object_info->exportObjectType));
-        }
-        export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
-    }
-#endif  // VK_USE_PLATFORM_METAL_EXT
-
-// These were attempted to be turned on, but ran into a series of issues with CI machines. Basically adding these require our
-// testing to also include the extension, which in turns will fail on machines with an older loader.
-// TODO - Enable these once we have a way to add AddRequiredExtensions(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME); to tests
-#if 0
-    // These are extensions/structs implemented in the Validation Layers itself, in theory, the extension string is not needed, but
-    // good to have for completeness.
-    if (!local_instance_extensions.vk_ext_layer_settings &&
-        vku::FindStructInPNextChain<VkLayerSettingsCreateInfoEXT>(pCreateInfo->pNext)) {
-        skip |= LogWarning("VUID-VkInstanceCreateInfo-pNext-10242", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
-                           "does not include VK_EXT_layer_settings, but the pNext chain includes VkLayerSettingsCreateInfoEXT. "
-                           "(Most layers, including Validation, will still work regardless of the extension included)");
-    }
-    if (!local_instance_extensions.vk_ext_validation_features &&
-        vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pCreateInfo->pNext)) {
-        skip |= LogWarning("VUID-VkInstanceCreateInfo-pNext-10243", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
-                           "does not include VK_EXT_validation_features, but the pNext chain includes VkValidationFeaturesEXT. "
-                           "(Most layers, including Validation, will still work regardless of the extension included)");
-    }
-    if (!local_instance_extensions.vk_ext_validation_flags &&
-        vku::FindStructInPNextChain<VkValidationFlagsEXT>(pCreateInfo->pNext)) {
-        skip |= LogWarning("VUID-VkInstanceCreateInfo-pNext-10244", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
-                           "does not include VK_EXT_validation_flags, but the pNext chain includes VkValidationFlagsEXT. (Most "
-                           "layers, including Validation, will still work regardless of the extension included)");
-    }
-#endif
+    skip |= context.ValidateStructPnext(create_info_loc, pCreateInfo->pNext, allowed_structs_VkInstanceCreateInfo.size(),
+                                        allowed_structs_VkInstanceCreateInfo.data(), GeneratedVulkanHeaderVersion,
+                                        "VUID-VkInstanceCreateInfo-pNext-pNext", "VUID-VkInstanceCreateInfo-sType-unique", true);
 
     return skip;
 }
@@ -259,15 +289,15 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
 
             // Enumerate the Device Ext Properties to save the PhysicalDevice supported extension state
             uint32_t ext_count = 0;
-            vvl::unordered_set<vvl::Extension> dev_exts_enumerated{};
+
             std::vector<VkExtensionProperties> ext_props{};
             DispatchEnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, nullptr);
             ext_props.resize(ext_count);
             DispatchEnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, ext_props.data());
+
+            DeviceExtensions phys_dev_exts(instance_extensions, phys_dev_props->apiVersion, ext_props);
             for (uint32_t j = 0; j < ext_count; j++) {
                 vvl::Extension extension = GetExtension(ext_props[j].extensionName);
-                dev_exts_enumerated.insert(extension);
-
                 if (extension == vvl::Extension::_VK_EXT_discard_rectangles) {
                     discard_rectangles_extension_version = ext_props[j].specVersion;
                 } else if (extension == vvl::Extension::_VK_NV_scissor_exclusive) {
@@ -275,7 +305,7 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
                 }
             }
 
-            device_extensions_enumerated[phys_device] = std::move(dev_exts_enumerated);
+            physical_device_extensions[phys_device] = std::move(phys_dev_exts);
         }
     }
 }
@@ -441,18 +471,20 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 
 bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                                             const ErrorObject &error_obj) const {
+                                                             const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
+
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
-        skip |= ValidateString(create_info_loc.dot(Field::ppEnabledLayerNames),
-                               "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
+        skip |=
+            context.ValidateString(create_info_loc.dot(Field::ppEnabledLayerNames),
+                                   "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
     }
 
     // If this device supports VK_KHR_portability_subset, it must be enabled
-    const auto &exposed_extensions = device_extensions_enumerated.at(physicalDevice);
-    const bool portability_supported =
-        exposed_extensions.find(vvl::Extension::_VK_KHR_portability_subset) != exposed_extensions.end();
+    const auto &exposed_extensions = physical_device_extensions.at(physicalDevice);
+    const bool portability_supported = exposed_extensions.vk_khr_portability_subset;
     bool portability_requested = false;
     bool fragmentmask_requested = false;
 
@@ -460,9 +492,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         enabled_extensions.insert(extension);
-        skip |=
-            ValidateString(create_info_loc.dot(Field::ppEnabledExtensionNames),
-                           "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter", pCreateInfo->ppEnabledExtensionNames[i]);
+        skip |= context.ValidateString(create_info_loc.dot(Field::ppEnabledExtensionNames),
+                                       "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter",
+                                       pCreateInfo->ppEnabledExtensionNames[i]);
         skip |= ValidateExtensionReqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device", extension,
                                       create_info_loc.dot(Field::ppEnabledExtensionNames, i));
         if (extension == vvl::Extension::_VK_KHR_portability_subset) {
@@ -936,8 +968,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
+    VkImageFormatProperties2 *pImageFormatProperties, const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (pImageFormatInfo != nullptr) {
         const Location format_info_loc = error_obj.location.dot(Field::pImageFormatInfo);
@@ -1026,8 +1059,9 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(
     VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
-    VkImageCreateFlags flags, VkImageFormatProperties *pImageFormatProperties, const ErrorObject &error_obj) const {
+    VkImageCreateFlags flags, VkImageFormatProperties *pImageFormatProperties, const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties-tiling-02248", physicalDevice,
@@ -1039,8 +1073,9 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
 
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
                                                                            const VkDebugUtilsObjectNameInfoEXT *pNameInfo,
-                                                                           const ErrorObject &error_obj) const {
+                                                                           const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     const Location name_info_loc = error_obj.location.dot(Field::pNameInfo);
     if (pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= LogError("VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587", device, name_info_loc.dot(Field::objectType),
@@ -1061,8 +1096,9 @@ bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDev
 
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device,
                                                                           const VkDebugUtilsObjectTagInfoEXT *pTagInfo,
-                                                                          const ErrorObject &error_obj) const {
+                                                                          const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     if (pTagInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= LogError("VUID-VkDebugUtilsObjectTagInfoEXT-objectType-01908", device,
                          error_obj.location.dot(Field::pTagInfo).dot(Field::objectType), "cannot be VK_OBJECT_TYPE_UNKNOWN.");
@@ -1072,8 +1108,9 @@ bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevi
 
 bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                                              VkPhysicalDeviceProperties2 *pProperties,
-                                                                             const ErrorObject &error_obj) const {
+                                                                             const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
     const auto *api_props_lists = vku::FindStructInPNextChain<VkPhysicalDeviceLayeredApiPropertiesListKHR>(pProperties->pNext);
     if (api_props_lists && api_props_lists->pLayeredApis) {
         for (uint32_t i = 0; i < api_props_lists->layeredApiCount; i++) {

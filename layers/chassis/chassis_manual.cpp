@@ -1,8 +1,8 @@
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -214,11 +214,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
 
     layer_init_instance_dispatch_table(*pInstance, &instance_dispatch->instance_dispatch_table, fpGetInstanceProcAddr);
 
-    // We need to call this to properly check which device extensions have been promoted when validating query functions
-    // that take as input a physical device, which can be called before a logical device has been created.
-    instance_dispatch->device_extensions.InitFromDeviceCreateInfo(&instance_dispatch->instance_extensions,
-                                                                  instance_dispatch->api_version);
-
     OutputLayerStatusInfo(instance_dispatch.get());
     InstanceExtensionWhitelist(instance_dispatch.get(), pCreateInfo, *pInstance);
     // save a raw pointer since the unique_ptr will be invalidate by the move() below
@@ -323,9 +318,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     record_obj.result = result;
     device_dispatch->device = *pDevice;
     // Save local info in device object
-    device_dispatch->api_version = device_dispatch->device_extensions.InitFromDeviceCreateInfo(
-        &instance_dispatch->instance_extensions, device_dispatch->api_version,
-        reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info));
+    device_dispatch->device_extensions = DeviceExtensions(instance_dispatch->instance_extensions, device_dispatch->api_version,
+                                                          reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info));
     layer_init_device_dispatch_table(*pDevice, &device_dispatch->device_dispatch_table, fpGetDeviceProcAddr);
 
     instance_dispatch->debug_report->device_created++;

@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,222 +22,222 @@
 
 // NOLINTBEGIN
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPipelineCacheHeaderVersion value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkPipelineCacheHeaderVersion value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkImageLayout value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkImageLayout value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkObjectType value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkObjectType value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkFormat value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkFormat value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkImageTiling value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkImageTiling value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkImageType value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkImageType value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkQueryType value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkQueryType value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkSharingMode value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkSharingMode value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkComponentSwizzle value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkComponentSwizzle value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkImageViewType value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkImageViewType value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkBlendFactor value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkBlendFactor value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkBlendOp value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkBlendOp value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkCompareOp value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkCompareOp value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDynamicState value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDynamicState value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkFrontFace value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkFrontFace value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkVertexInputRate value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkVertexInputRate value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPrimitiveTopology value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkPrimitiveTopology value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPolygonMode value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkPolygonMode value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkStencilOp value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkStencilOp value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkLogicOp value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkLogicOp value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkBorderColor value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkBorderColor value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkFilter value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkFilter value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkSamplerAddressMode value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerAddressMode value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkSamplerMipmapMode value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerMipmapMode value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDescriptorType value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDescriptorType value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkAttachmentLoadOp value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkAttachmentLoadOp value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkAttachmentStoreOp value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkAttachmentStoreOp value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPipelineBindPoint value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkPipelineBindPoint value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkCommandBufferLevel value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkCommandBufferLevel value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkIndexType value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkIndexType value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkSubpassContents value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkSubpassContents value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkTessellationDomainOrigin value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkTessellationDomainOrigin value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkSamplerYcbcrModelConversion value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerYcbcrModelConversion value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkSamplerYcbcrRange value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerYcbcrRange value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkChromaLocation value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkChromaLocation value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDescriptorUpdateTemplateType value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDescriptorUpdateTemplateType value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkSamplerReductionMode value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkSamplerReductionMode value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkSemaphoreType value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkSemaphoreType value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPipelineRobustnessBufferBehavior value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkPipelineRobustnessBufferBehavior value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPipelineRobustnessImageBehavior value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkPipelineRobustnessImageBehavior value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkQueueGlobalPriority value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkQueueGlobalPriority value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkLineRasterizationMode value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkLineRasterizationMode value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPresentModeKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkPresentModeKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkColorSpaceKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkColorSpaceKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkFragmentShadingRateCombinerOpKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkFragmentShadingRateCombinerOpKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeTuningModeKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeTuningModeKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeAV1PredictionModeKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeAV1PredictionModeKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkVideoEncodeAV1RateControlGroupKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeAV1RateControlGroupKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkTimeDomainKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkTimeDomainKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDebugReportObjectTypeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDebugReportObjectTypeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkRasterizationOrderAMD value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkRasterizationOrderAMD value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkShaderInfoTypeAMD value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkShaderInfoTypeAMD value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkValidationCheckEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkValidationCheckEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDisplayPowerStateEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDisplayPowerStateEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDeviceEventTypeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDeviceEventTypeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDisplayEventTypeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDisplayEventTypeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkViewportCoordinateSwizzleNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkViewportCoordinateSwizzleNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDiscardRectangleModeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDiscardRectangleModeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkConservativeRasterizationModeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkConservativeRasterizationModeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkBlendOverlapEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkBlendOverlapEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkCoverageModulationModeNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkCoverageModulationModeNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkShadingRatePaletteEntryNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkShadingRatePaletteEntryNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkCoarseSampleOrderTypeNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkCoarseSampleOrderTypeNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkRayTracingShaderGroupTypeKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkRayTracingShaderGroupTypeKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkGeometryTypeKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkGeometryTypeKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkAccelerationStructureTypeKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureTypeKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkCopyAccelerationStructureModeKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkCopyAccelerationStructureModeKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkAccelerationStructureMemoryRequirementsTypeNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureMemoryRequirementsTypeNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkMemoryOverallocationBehaviorAMD value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkMemoryOverallocationBehaviorAMD value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPerformanceConfigurationTypeINTEL value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkPerformanceConfigurationTypeINTEL value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkQueryPoolSamplingModeINTEL value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkQueryPoolSamplingModeINTEL value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPerformanceOverrideTypeINTEL value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkPerformanceOverrideTypeINTEL value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkPerformanceParameterTypeINTEL value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkPerformanceParameterTypeINTEL value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkValidationFeatureEnableEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkValidationFeatureEnableEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkValidationFeatureDisableEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkValidationFeatureDisableEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkCoverageReductionModeNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkCoverageReductionModeNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkProvokingVertexModeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkProvokingVertexModeEXT value) const;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkFullScreenExclusiveEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkFullScreenExclusiveEXT value) const;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkIndirectCommandsTokenTypeNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkIndirectCommandsTokenTypeNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDepthBiasRepresentationEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDepthBiasRepresentationEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkFragmentShadingRateTypeNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkFragmentShadingRateTypeNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkFragmentShadingRateNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkFragmentShadingRateNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkAccelerationStructureMotionInstanceTypeNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureMotionInstanceTypeNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDeviceFaultAddressTypeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDeviceFaultAddressTypeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDeviceFaultVendorBinaryHeaderVersionEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDeviceAddressBindingTypeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDeviceAddressBindingTypeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkMicromapTypeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkMicromapTypeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkBuildMicromapModeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkBuildMicromapModeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkCopyMicromapModeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkCopyMicromapModeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkAccelerationStructureCompatibilityKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureCompatibilityKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkAccelerationStructureBuildTypeKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureBuildTypeKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDirectDriverLoadingModeLUNARG value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDirectDriverLoadingModeLUNARG value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkOpticalFlowPerformanceLevelNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkOpticalFlowPerformanceLevelNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkOpticalFlowSessionBindingPointNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkOpticalFlowSessionBindingPointNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkAntiLagModeAMD value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkAntiLagModeAMD value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkAntiLagStageAMD value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkAntiLagStageAMD value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkShaderCodeTypeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkShaderCodeTypeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDepthClampModeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDepthClampModeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkLayerSettingTypeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkLayerSettingTypeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkLatencyMarkerNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkLatencyMarkerNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkOutOfBandQueueTypeNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkOutOfBandQueueTypeNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkBlockMatchWindowCompareModeQCOM value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkBlockMatchWindowCompareModeQCOM value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkCubicFilterWeightsQCOM value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkCubicFilterWeightsQCOM value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkDisplaySurfaceStereoTypeNV value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkDisplaySurfaceStereoTypeNV value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkIndirectExecutionSetInfoTypeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkIndirectExecutionSetInfoTypeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkIndirectCommandsTokenTypeEXT value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkIndirectCommandsTokenTypeEXT value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkBuildAccelerationStructureModeKHR value) const;
 template <>
-ValidValue StatelessValidation::IsValidEnumValue(VkShaderGroupShaderKHR value) const;
+ValidValue stateless::Context::IsValidEnumValue(VkShaderGroupShaderKHR value) const;
 
 // NOLINTEND

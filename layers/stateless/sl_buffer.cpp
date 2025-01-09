@@ -21,11 +21,12 @@
 
 bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                                             const ErrorObject &error_obj) const {
+                                                             const stateless::Context &context) const {
     bool skip = false;
+    const auto &error_obj = context.error_obj;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-    skip |= ValidateNotZero(pCreateInfo->size == 0, "VUID-VkBufferCreateInfo-size-00912", create_info_loc.dot(Field::size));
+    skip |= context.ValidateNotZero(pCreateInfo->size == 0, "VUID-VkBufferCreateInfo-size-00912", create_info_loc.dot(Field::size));
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
@@ -68,9 +69,9 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
     }
 
     if (!vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext)) {
-        skip |= ValidateFlags(create_info_loc.dot(Field::usage), vvl::FlagBitmask::VkBufferUsageFlagBits, AllVkBufferUsageFlagBits,
-                              pCreateInfo->usage, kRequiredFlags, VK_NULL_HANDLE, "VUID-VkBufferCreateInfo-None-09499",
-                              "VUID-VkBufferCreateInfo-None-09500");
+        skip |= context.ValidateFlags(create_info_loc.dot(Field::usage), vvl::FlagBitmask::VkBufferUsageFlagBits,
+                                      AllVkBufferUsageFlagBits, pCreateInfo->usage, kRequiredFlags,
+                                      "VUID-VkBufferCreateInfo-None-09499", "VUID-VkBufferCreateInfo-None-09500");
     }
 
     if (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) {
@@ -93,12 +94,12 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
 
 bool StatelessValidation::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                                                  const VkAllocationCallbacks *pAllocator, VkBufferView *pBufferView,
-                                                                 const ErrorObject &error_obj) const {
+                                                                 const stateless::Context &context) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    skip |=
-        ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT, "VUID-VkBufferViewCreateInfo-pNext-06782",
-                                    error_obj.location, "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", pCreateInfo->pNext);
+    skip |= ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT,
+                                        "VUID-VkBufferViewCreateInfo-pNext-06782", context.error_obj.location,
+                                        "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", pCreateInfo->pNext);
 #endif  // VK_USE_PLATFORM_METAL_EXT
     return skip;
 }

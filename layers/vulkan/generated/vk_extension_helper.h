@@ -2,24 +2,28 @@
 // See extension_helper_generator.py for modifications
 
 /***************************************************************************
- *
- * Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (c) 2015-2025 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ****************************************************************************/
+*
+* Copyright (c) 2015-2025 The Khronos Group Inc.
+* Copyright (c) 2015-2025 Valve Corporation
+* Copyright (c) 2015-2025 LunarG, Inc.
+<<<<<<< HEAD
+* Copyright (c) 2015-2025 Google Inc.
+=======
+* Copyright (c) 2015-2024 Google Inc.
+>>>>>>> a150923ee (stateless: Refactor pNext, flag and enum checking utils)
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+****************************************************************************/
 
 // NOLINTBEGIN
 
@@ -80,6 +84,7 @@ Times to NOT use it
 [[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) { return (extension == kEnabledByCreateinfo); }
 
 struct InstanceExtensions {
+    APIVersion api_version{};
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
     ExtEnabled vk_feature_version_1_2{kNotEnabled};
     ExtEnabled vk_feature_version_1_3{kNotEnabled};
@@ -278,7 +283,8 @@ struct InstanceExtensions {
         return (info != ext_map.cend()) ? info->second : empty_info;
     }
 
-    APIVersion InitFromInstanceCreateInfo(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo);
+    InstanceExtensions() = default;
+    InstanceExtensions(APIVersion requested_api_version, const VkInstanceCreateInfo *pCreateInfo);
 };
 
 struct DeviceExtensions : public InstanceExtensions {
@@ -1757,8 +1763,10 @@ struct DeviceExtensions : public InstanceExtensions {
     DeviceExtensions() = default;
     DeviceExtensions(const InstanceExtensions &instance_ext) : InstanceExtensions(instance_ext) {}
 
-    APIVersion InitFromDeviceCreateInfo(const InstanceExtensions *instance_extensions, APIVersion requested_api_version,
-                                        const VkDeviceCreateInfo *pCreateInfo = nullptr);
+    DeviceExtensions(const InstanceExtensions &instance_extensions, APIVersion requested_api_version,
+                     const VkDeviceCreateInfo *pCreateInfo = nullptr);
+    DeviceExtensions(const InstanceExtensions &instance_ext, APIVersion requested_api_version,
+                     const std::vector<VkExtensionProperties> &props);
 };
 
 const InstanceExtensions::Info &GetInstanceVersionMap(const char *version);

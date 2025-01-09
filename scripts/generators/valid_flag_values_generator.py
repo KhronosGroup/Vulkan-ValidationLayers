@@ -77,7 +77,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
             ''')
 
         out.append('''
-            vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value, const DeviceExtensions& device_extensions) const {
+            vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value) const {
                 switch(flag_bitmask) {
             ''')
         for bitmask in [x for x in self.vk.bitmasks.values() if x.name not in self.ignoreList and not x.returnedOnly and x.bitWidth == 32]:
@@ -103,7 +103,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
                 extensions = expression.split(',')
                 checkExpression = []
                 for extension in extensions:
-                    checkExpression.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
+                    checkExpression.append(f'!IsExtEnabled(extensions.{extension.lower()})')
                 checkExpression = " && ".join(checkExpression)
                 resultExpression = []
                 for extension in extensions:
@@ -125,7 +125,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
             ''')
 
         out.append('''
-            vvl::Extensions StatelessValidation::IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value, const DeviceExtensions& device_extensions) const {
+            vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const {
                 switch(flag_bitmask) {
             ''')
         for bitmask in [x for x in self.vk.bitmasks.values() if x.name not in self.ignoreList and not x.returnedOnly and x.bitWidth == 64]:
@@ -151,7 +151,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
                 extensions = expression.split(',')
                 checkExpression = []
                 for extension in extensions:
-                    checkExpression.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
+                    checkExpression.append(f'!IsExtEnabled(extensions.{extension.lower()})')
                 checkExpression = " && ".join(checkExpression)
                 resultExpression = []
                 for extension in extensions:
@@ -170,7 +170,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
                 }
             }
 
-            std::string StatelessValidation::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_bitmask, VkFlags value) const {
+            std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_bitmask, VkFlags value) const {
                 switch(flag_bitmask) {
             ''')
         for bitmask in [x for x in self.vk.bitmasks.values() if x.name not in self.ignoreList and not x.returnedOnly and len(x.flags) > 0 and x.bitWidth == 32]:
@@ -186,7 +186,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
                 }
             }
 
-            std::string StatelessValidation::DescribeFlagBitmaskValue64(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const {
+            std::string stateless::Context::DescribeFlagBitmaskValue64(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const {
                 switch(flag_bitmask) {
             ''')
         for bitmask in [x for x in self.vk.bitmasks.values() if x.name not in self.ignoreList and not x.returnedOnly and len(x.flags) > 0 and x.bitWidth == 64]:

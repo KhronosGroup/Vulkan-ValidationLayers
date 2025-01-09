@@ -102,7 +102,8 @@ Instance::Instance(const VkInstanceCreateInfo *pCreateInfo) : HandleWrapper(new 
     api_version = VK_MAKE_API_VERSION(VK_API_VERSION_VARIANT(specified_version), VK_API_VERSION_MAJOR(specified_version),
                                       VK_API_VERSION_MINOR(specified_version), 0);
 
-    instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
+    instance_extensions = InstanceExtensions(specified_version, pCreateInfo);
+    device_extensions = DeviceExtensions(instance_extensions, api_version);
 
     debug_report->instance_pnext_chain = vku::SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(debug_report);
@@ -278,7 +279,7 @@ Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInf
     // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver
     auto effective_api_version = std::min(APIVersion(device_properties.apiVersion), dispatch_instance->api_version);
 
-    device_extensions.InitFromDeviceCreateInfo(&dispatch_instance->instance_extensions, effective_api_version, pCreateInfo);
+    device_extensions = DeviceExtensions(dispatch_instance->instance_extensions, effective_api_version, pCreateInfo);
 
     InitValidationObjects();
     InitObjectDispatchVectors();

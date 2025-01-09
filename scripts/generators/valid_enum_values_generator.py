@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2024 The Khronos Group Inc.
-# Copyright (c) 2015-2024 Valve Corporation
-# Copyright (c) 2015-2024 LunarG, Inc.
+# Copyright (c) 2015-2025 The Khronos Group Inc.
+# Copyright (c) 2015-2025 Valve Corporation
+# Copyright (c) 2015-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,9 +35,9 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2024 The Khronos Group Inc.
-            * Copyright (c) 2015-2024 Valve Corporation
-            * Copyright (c) 2015-2024 LunarG, Inc.
+            * Copyright (c) 2015-2025 The Khronos Group Inc.
+            * Copyright (c) 2015-2025 Valve Corporation
+            * Copyright (c) 2015-2025 LunarG, Inc.
             *
             * Licensed under the Apache License, Version 2.0 (the "License");
             * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
         guard_helper = PlatformGuardHelper()
         for enum in [x for x in self.vk.enums.values() if x.name not in self.ignoreList and not x.returnedOnly]:
             out.extend(guard_helper.add_guard(enum.protect))
-            out.append(f'template<> ValidValue StatelessValidation::IsValidEnumValue({enum.name} value) const;\n')
+            out.append(f'template<> ValidValue stateless::Context::IsValidEnumValue({enum.name} value) const;\n')
         out.extend(guard_helper.add_guard(None))
 
         self.write("".join(out))
@@ -94,7 +94,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
 
         for enum in [x for x in self.vk.enums.values() if x.name not in self.ignoreList and not x.returnedOnly]:
             out.extend(guard_helper.add_guard(enum.protect, extra_newline=True))
-            out.append(f'template<> ValidValue StatelessValidation::IsValidEnumValue({enum.name} value) const {{\n')
+            out.append(f'template<> ValidValue stateless::Context::IsValidEnumValue({enum.name} value) const {{\n')
             out.append('    switch (value) {\n')
             # If the field has same/subset extensions as enum, we count it as "core" for the struct
             coreEnums = [x for x in enum.fields if not x.extensions or (x.extensions and all(e in enum.extensions for e in x.extensions))]
@@ -108,7 +108,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
                 expression = []
                 # Ignore the base extensions needed to use the enum, only focus on the field specific extensions
                 for extension in [x for x in field.extensions if x not in enum.extensions]:
-                    expression.append(f'IsExtEnabled(device_extensions.{extension.name.lower()})')
+                    expression.append(f'IsExtEnabled(extensions.{extension.name.lower()})')
                 if (len(expression) == 0):
                     continue
                 expression = " || ".join(expression)
@@ -132,12 +132,12 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
 
             # Need empty functions to resolve all template variations
             if len(enum.fieldExtensions) <= len(enum.extensions):
-                out.append(f'template<> vvl::Extensions StatelessValidation::GetEnumExtensions({enum.name} value) const {{ return {{}}; }}\n')
-                out.append(f'template<> const char* StatelessValidation::DescribeEnum({enum.name} value) const {{ return nullptr; }}\n')
+                out.append(f'template<> vvl::Extensions stateless::Context::GetEnumExtensions({enum.name} value) const {{ return {{}}; }}\n')
+                out.append(f'template<> const char* stateless::Context::DescribeEnum({enum.name} value) const {{ return nullptr; }}\n')
                 out.extend(guard_helper.add_guard(None, extra_newline=True))
                 continue
 
-            out.append(f'template<> vvl::Extensions StatelessValidation::GetEnumExtensions({enum.name} value) const {{\n')
+            out.append(f'template<> vvl::Extensions stateless::Context::GetEnumExtensions({enum.name} value) const {{\n')
             out.append('    switch (value) {\n')
 
             expressionMap = defaultdict(list)
@@ -161,7 +161,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
                     }
                 ''')
 
-            out.append(f'template<> const char* StatelessValidation::DescribeEnum({enum.name} value) const {{\n')
+            out.append(f'template<> const char* stateless::Context::DescribeEnum({enum.name} value) const {{\n')
             out.append(f'   return string_{enum.name}(value);\n')
             out.append('}\n')
             out.extend(guard_helper.add_guard(None, extra_newline=True))

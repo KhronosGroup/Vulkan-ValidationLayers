@@ -56,7 +56,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         # to those functions of the form 'bool manual_PreCallValidateAPIName', where the 'vk' is dropped.
         # see 'manual_PreCallValidateCreateGraphicsPipelines' as an example.
         self.functionsWithManualChecks = [
-            'vkCreateInstance',
             'vkCreateDevice',
             'vkCreateQueryPool',
             'vkCreateRenderPass',
@@ -227,7 +226,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'vkEnumerateInstanceExtensionProperties',
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateDeviceExtensionProperties',
-            'vkGetDeviceGroupSurfacePresentModes2EXT'
+            # All checking is manual for the below
+            'vkGetDeviceGroupSurfacePresentModes2EXT',
+            'vkCreateInstance',
             ]
 
         # Very rare case when structs are needed prior to setting up everything
@@ -349,7 +350,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         out.extend(guard_helper.add_guard(None))
 
         for struct_name in self.generateStructHelper:
-            out.append(f'bool Validate{struct_name[2:]}(const {struct_name} &info, const Location &loc) const;')
+            out.append(f'bool Validate{struct_name[2:]}(const stateless::Context &context, const {struct_name} &info, const Location &loc) const;')
 
         self.write("".join(out))
 
@@ -410,7 +411,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         # Generate the struct member checking code from the captured data
         for struct in self.vk.structs.values():
             # The string returned will be nested in an if check for a NULL pointer, so needs its indent incremented
-            lines = self.genFuncBody(self.vk.structs[struct.name].members, '{funcName}', '{errorLoc}', '{valuePrefix}', '{displayNamePrefix}', struct.name, False)
+            lines = self.genFuncBody(self.vk.structs[struct.name].members, '{funcName}', '{errorLoc}', '{valuePrefix}', '{displayNamePrefix}', struct.name, '{context}')
             if lines:
                 self.validatedStructs[struct.name] = lines
 
@@ -429,17 +430,16 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         other_structs = [x for x in extended_structs if x not in feature_structs and x not in property_structs and x.name not in self.structsWithManualChecks]
 
         out.append('''
-            bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc,
+            bool stateless::Context::ValidatePnextFeatureStructContents(const Location& loc,
                                                                 const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                const VkPhysicalDevice physicalDevice, bool is_const_param) const {
+                                                                bool is_const_param) const {
                 bool skip = false;
-                const bool is_physdev_api = physicalDevice != VK_NULL_HANDLE;
                 switch(header->sType) {
             ''')
         guard_helper = PlatformGuardHelper()
         for struct in feature_structs:
             out.extend(guard_helper.add_guard(struct.protect))
-            out.extend(self.genStructBody(struct, False))
+            out.extend(self.genStructBody(struct, False, ''))
         out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
@@ -451,17 +451,16 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             ''')
 
         out.append('''
-            bool StatelessValidation::ValidatePnextPropertyStructContents(const Location& loc,
+            bool stateless::Context::ValidatePnextPropertyStructContents(const Location& loc,
                                                                 const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                const VkPhysicalDevice physicalDevice, bool is_const_param) const {
+                                                                bool is_const_param) const {
                 bool skip = false;
-                const bool is_physdev_api = physicalDevice != VK_NULL_HANDLE;
                 switch(header->sType) {
             ''')
         guard_helper = PlatformGuardHelper()
         for struct in property_structs:
             out.extend(guard_helper.add_guard(struct.protect))
-            out.extend(self.genStructBody(struct, False))
+            out.extend(self.genStructBody(struct, False, ''))
         out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
@@ -474,17 +473,16 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         out.append('''
             // All structs that are not a Feature or Property struct
-            bool StatelessValidation::ValidatePnextStructContents(const Location& loc,
-                                                                const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                const VkPhysicalDevice physicalDevice, bool is_const_param) const {
+            bool stateless::Context::ValidatePnextStructContents(const Location& loc,
+                                                               const VkBaseOutStructure* header, const char *pnext_vuid,
+                                                               bool is_const_param) const {
                 bool skip = false;
-                const bool is_physdev_api = physicalDevice != VK_NULL_HANDLE;
                 switch(header->sType) {
             ''')
         guard_helper = PlatformGuardHelper()
         for struct in other_structs:
             out.extend(guard_helper.add_guard(struct.protect))
-            out.extend(self.genStructBody(struct, True))
+            out.extend(self.genStructBody(struct, True, ''))
         out.extend(guard_helper.add_guard(None))
         out.append('''
                     default:
@@ -512,6 +510,14 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             prototype = prototype.replace(')', ', const ErrorObject& error_obj)')
             out.append(f'bool StatelessValidation::PreCallValidate{prototype} const {{\n')
             out.append('    bool skip = false;\n')
+            # TODO: describe how instance_extensions work here
+            if command.params[0].type == 'VkPhysicalDevice':
+                out.append('''
+                    const auto &physdev_extensions = physical_device_extensions.at(physicalDevice);
+                    stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+                ''')
+            else:
+                out.append('    stateless::Context context(*this, error_obj, device_extensions);\n')
 
             # Create a copy here to make the logic simpler passing into ValidatePnextStructContents
             out.append('    [[maybe_unused]] const Location loc = error_obj.location;\n')
@@ -545,7 +551,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             else:
                 # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
                 startIndex = 0 if command.name == 'vkCreateInstance' else 1
-                lines = self.genFuncBody(command.params[startIndex:], command.name, 'loc', '', '', None, isPhysDevice = command.params[0].type == 'VkPhysicalDevice')
+                lines = self.genFuncBody(command.params[startIndex:], command.name, 'loc', '', '', None, 'context.')
 
                 if command.instance and command.version:
                     # check function name so KHR version doesn't trigger flase positive
@@ -567,18 +573,18 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     manualCheckCmd = None
                 if manualCheckCmd:
                     # Generate parameter list for manual fcn and down-chain calls
-                    params_text = ', '.join([x.name for x in command.params]) + ', error_obj'
+                    params_text = ', '.join([x.name for x in command.params]) + ', context'
                     out.append(f'    if (!skip) skip |= manual_PreCallValidate{manualCheckCmd[2:]}({params_text});\n')
             out.append('return skip;\n')
             out.append('}\n')
         out.extend(guard_helper.add_guard(None, extra_newline=True))
 
         for struct_name in self.generateStructHelper:
-            out.append(f'bool StatelessValidation::Validate{struct_name[2:]}(const {struct_name} &info, const Location &loc) const {{\n')
+            out.append(f'bool StatelessValidation::Validate{struct_name[2:]}(const stateless::Context &context, const {struct_name} &info, const Location &loc) const {{\n')
             out.append('    bool skip = false;\n')
             # Only generate validation code if the structure actually exists in the target API
             if struct_name in self.vk.structs:
-                out.extend(self.expandStructCode(struct_name, struct_name, 'loc', 'info.', '', []))
+                out.extend(self.expandStructCode(struct_name, struct_name, 'loc', 'info.', '', [], 'context.'))
             out.append('    return skip;\n')
             out.append('}\n')
 
@@ -627,7 +633,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         return vuid
 
     # Generate the pointer check string
-    def makePointerCheck(self, valuePrefix, member: Member, lengthMember: Member, errorLoc, arrayRequired, counValueRequired, counPtrRequired, funcName, structTypeName):
+    def makePointerCheck(self, valuePrefix, member: Member, lengthMember: Member, errorLoc, arrayRequired, counValueRequired, counPtrRequired, funcName, structTypeName, context):
         checkExpr = []
         callerName = structTypeName if structTypeName else funcName
         if lengthMember:
@@ -640,7 +646,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 # If count and array parameters are optional, there will be no validation
                 if arrayRequired == 'true' or counPtrRequired == 'true' or counValueRequired == 'true':
                     # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
-                    checkExpr.append(f'skip |= ValidatePointerArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {counPtrRequired}, {counValueRequired}, {arrayRequired},{countPtrRequiredVuid}, {countRequiredVuid}, {arrayRequiredVuid});\n')
+                    checkExpr.append(f'skip |= {context}ValidatePointerArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {counPtrRequired}, {counValueRequired}, {arrayRequired},{countPtrRequiredVuid}, {countRequiredVuid}, {arrayRequiredVuid});\n')
             # This is an array with an integer count value
             else:
                 # Can't check if a non-null pointer is a valid pointer in a layer
@@ -649,7 +655,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 if (arrayRequired == 'true' or counValueRequired == 'true') and not unimplementable:
                     if member.type == 'char':
                         # Arrays of strings receive special processing
-                        checkExpr.append(f'skip |= ValidateStringArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
+                        checkExpr.append(f'skip |= {context}ValidateStringArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
                     else:
                         # A valid VU can't use '->' in the middle so the generated VUID from the spec uses '::' instead
                         countRequiredVuid = self.GetVuid(callerName, f"{member.length.replace('->', '::')}-arraylength")
@@ -669,7 +675,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                                 member.length = 'rasterizationSamples'
                         elif ' / ' in member.length:
                             count_loc = f'{errorLoc}.dot(Field::{member.length.split(" / ")[0]})'
-                        checkExpr.append(f'skip |= ValidateArray({count_loc}, {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
+                        checkExpr.append(f'skip |= {context}ValidateArray({count_loc}, {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, &{valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
             if checkExpr and lengthMember and length_deref and member.length.count('->'):
                 # Add checks to ensure the validation call does not dereference a NULL pointer to obtain the count
                 count = member.length.count('->')
@@ -690,13 +696,13 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             # Function pointers need a reinterpret_cast to void*
             ptrRequiredVuid = self.GetVuid(callerName, f"{member.name}-parameter")
             if member.type.startswith('PFN_'):
-                checkExpr.append(f'skip |= ValidateRequiredPointer({errorLoc}.dot(Field::{member.name}), reinterpret_cast<const void*>({valuePrefix}{member.name}), {ptrRequiredVuid});\n')
+                checkExpr.append(f'skip |= {context}ValidateRequiredPointer({errorLoc}.dot(Field::{member.name}), reinterpret_cast<const void*>({valuePrefix}{member.name}), {ptrRequiredVuid});\n')
             else:
-                checkExpr.append(f'skip |= ValidateRequiredPointer({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {ptrRequiredVuid});\n')
+                checkExpr.append(f'skip |= {context}ValidateRequiredPointer({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {ptrRequiredVuid});\n')
         return checkExpr
 
     # Process struct member validation code, performing name substitution if required
-    def processStructMemberCode(self, line, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix):
+    def processStructMemberCode(self, line, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, context):
         # Build format specifier list
         kwargs = {}
         if '{funcName}' in line:
@@ -711,6 +717,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 kwargs['displayNamePrefix'] = memberDisplayNamePrefix[0]
             else:
                 kwargs['displayNamePrefix'] = memberDisplayNamePrefix
+        if '{context}' in line:
+                kwargs['context'] = context
 
         if kwargs:
             # Need to escape the C++ curly braces
@@ -731,31 +739,31 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         return scrubbed_lines
 
     # Process struct validation code for inclusion in function or parent struct validation code
-    def expandStructCode(self, item_type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, output):
+    def expandStructCode(self, item_type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, output, context):
         lines = self.validatedStructs[item_type]
         for line in lines:
             if output:
                 output[-1] += '\n'
             if isinstance(line, list):
                 for sub in line:
-                    output.append(self.processStructMemberCode(sub, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix))
+                    output.append(self.processStructMemberCode(sub, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, context))
             else:
-                output.append(self.processStructMemberCode(line, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix))
+                output.append(self.processStructMemberCode(line, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, context))
         return output
 
     # Generate the parameter checking code
-    def genFuncBody(self, members: list[Member], funcName, errorLoc, valuePrefix, displayNamePrefix, structTypeName, isPhysDevice):
+    def genFuncBody(self, members: list[Member], funcName, errorLoc, valuePrefix, displayNamePrefix, structTypeName, context):
         struct = self.vk.structs[structTypeName] if structTypeName in self.vk.structs else None
         callerName = structTypeName if structTypeName else funcName
         lines = []    # Generated lines of code
         duplicateCountVuid = [] # prevent duplicate VUs being generated
 
-        # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings" (such as "isPhysDevice")
+        # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings" 
         validatePNextRegex = re.compile(r'(.*ValidateStructPnext\(.*)(\).*\n*)', re.M)
 
         # Special struct since lots of functions have this, but it can be all combined to the same call (since it is always from the top level of a funciton)
         if structTypeName == 'VkAllocationCallbacks' :
-            lines.append('skip |= ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);')
+            lines.append(f'skip |= {context}ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);')
             return lines
 
         # Returnedonly structs should have most of their members ignored -- on entry, we only care about validating the sType and
@@ -838,7 +846,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     self.logMsg('diag', f'ParameterValidation: No validation for {callerName} {member.name}')
                 elif countRequiredVuid:
-                    usedLines.append(f'skip |= ValidateArray({errorLoc}.dot(Field::{member.length}), loc, {valuePrefix}{member.length}, &{valuePrefix}{member.name}, true, false, {countRequiredVuid}, kVUIDUndefined);\n')
+                    usedLines.append(f'skip |= {context}ValidateArray({errorLoc}.dot(Field::{member.length}), loc, {valuePrefix}{member.length}, &{valuePrefix}{member.name}, true, false, {countRequiredVuid}, kVUIDUndefined);\n')
                 else:
                     if member.type in self.vk.structs and self.vk.structs[member.type].sType:
                         # If this is a pointer to a struct with an sType field, verify the type
@@ -852,18 +860,18 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                                 paramVuid = 'kVUIDUndefined'
                             # This is an array of struct pointers
                             if member.cDeclaration.count('*') == 2:
-                                usedLines.append(f'skip |= ValidateStructPointerTypeArray({errorLoc}.dot(Field::{lengthMember.name}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{lengthMember.name}, {valuePrefix}{member.name}, {struct.sType}, {counValueRequired}, {arrayRequired}, {sTypeVuid}, {paramVuid}, {countRequiredVuid});\n')
+                                usedLines.append(f'skip |= {context}ValidateStructPointerTypeArray({errorLoc}.dot(Field::{lengthMember.name}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{lengthMember.name}, {valuePrefix}{member.name}, {struct.sType}, {counValueRequired}, {arrayRequired}, {sTypeVuid}, {paramVuid}, {countRequiredVuid});\n')
                             # This is an array with a pointer to a count value
                             elif lengthMember.pointer:
                                 # When the length parameter is a pointer, there is an extra Boolean parameter in the function call to indicate if it is required
                                 countPtrRequiredVuid = self.GetVuid(callerName, f"{member.length}-parameter")
-                                usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {counPtrRequired}, {counValueRequired}, {arrayRequired}, {sTypeVuid}, {paramVuid}, {countPtrRequiredVuid}, {countRequiredVuid});\n')
+                                usedLines.append(f'skip |= {context}ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {counPtrRequired}, {counValueRequired}, {arrayRequired}, {sTypeVuid}, {paramVuid}, {countPtrRequiredVuid}, {countRequiredVuid});\n')
                             # This is an array with an integer count value
                             else:
-                                usedLines.append(f'skip |= ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {counValueRequired}, {arrayRequired}, {sTypeVuid}, {paramVuid}, {countRequiredVuid});\n')
+                                usedLines.append(f'skip |= {context}ValidateStructTypeArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {struct.sType}, {counValueRequired}, {arrayRequired}, {sTypeVuid}, {paramVuid}, {countRequiredVuid});\n')
                         # This is an individual struct
                         else:
-                            usedLines.append(f'skip |= ValidateStructType({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {struct.sType}, {arrayRequired}, {paramVuid}, {sTypeVuid});\n')
+                            usedLines.append(f'skip |= {context}ValidateStructType({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {struct.sType}, {arrayRequired}, {paramVuid}, {sTypeVuid});\n')
                     # If this is an input handle array that is not allowed to contain NULL handles, verify that none of the handles are VK_NULL_HANDLE
                     elif member.type in self.vk.handles and member.const and not self.isHandleOptional(member, lengthMember):
                         if not lengthMember:
@@ -874,7 +882,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             raise Exception('Unsupported parameter validation case: Output handle array elements are not NULL checked')
                         countRequiredVuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         # This is an array with an integer count value
-                        usedLines.append(f'skip |= ValidateHandleArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid});\n')
+                        usedLines.append(f'skip |= {context}ValidateHandleArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid});\n')
                     elif member.type in self.flags and member.const:
                         # Generate check string for an array of VkFlags values
                         flagBitsName = member.type.replace('Flags', 'FlagBits')
@@ -883,16 +891,16 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         allFlags = 'All' + flagBitsName
                         countRequiredVuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         arrayRequiredVuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                        usedLines.append(f'skip |= ValidateFlagsArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlags}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
+                        usedLines.append(f'skip |= {context}ValidateFlagsArray({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlags}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
                     elif member.type == 'VkBool32' and member.const:
                         countRequiredVuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         arrayRequiredVuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                        usedLines.append(f'skip |= ValidateBool32Array({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
+                        usedLines.append(f'skip |= {context}ValidateBool32Array({errorLoc}.dot(Field::{member.length}), {errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
                     elif member.type in self.vk.enums and member.const:
                         lenLoc = 'loc' if member.fixedSizeArray else f'{errorLoc}.dot(Field::{member.length})'
                         countRequiredVuid = self.GetVuid(callerName, f"{member.length}-arraylength")
                         arrayRequiredVuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                        usedLines.append(f'skip |= ValidateRangedEnumArray({lenLoc}, {errorLoc}.dot(Field::{member.name}), vvl::Enum::{member.type}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
+                        usedLines.append(f'skip |= {context}ValidateRangedEnumArray({lenLoc}, {errorLoc}.dot(Field::{member.name}), vvl::Enum::{member.type}, {valuePrefix}{member.length}, {valuePrefix}{member.name}, {counValueRequired}, {arrayRequired}, {countRequiredVuid}, {arrayRequiredVuid});\n')
                     elif member.name == 'pNext':
                         # Generate an array of acceptable VkStructureType values for pNext
                         allowedTypeCount = 0
@@ -909,9 +917,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                                 extendedBy = ", ".join([self.vk.structs[x].sType for x in struct.extendedBy])
                                 usedLines.append(f'constexpr std::array {allowedStructName} = {{ {extendedBy} }};\n')
 
-                            usedLines.append(f'skip |= ValidateStructPnext({errorLoc}, {valuePrefix}{member.name}, {allowedTypeCount}, {allowedTypes}, GeneratedVulkanHeaderVersion, {pNextVuid}, {sTypeVuid});\n')
+                            usedLines.append(f'skip |= {context}ValidateStructPnext({errorLoc}, {valuePrefix}{member.name}, {allowedTypeCount}, {allowedTypes}, GeneratedVulkanHeaderVersion, {pNextVuid}, {sTypeVuid});\n')
                     else:
-                        usedLines += self.makePointerCheck(valuePrefix, member, lengthMember, errorLoc, arrayRequired, counValueRequired, counPtrRequired, funcName, structTypeName)
+                        usedLines += self.makePointerCheck(valuePrefix, member, lengthMember, errorLoc, arrayRequired, counValueRequired, counPtrRequired, funcName, structTypeName, context)
 
                     # Feature structs are large and just wasting time checking booleans that are almost impossible to be invalid
                     isFeatureStruct = member.type in ['VkPhysicalDeviceFeatures', 'VkPhysicalDeviceFeatures2']
@@ -941,7 +949,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             memberDisplayNamePrefix = f'{valueDisplayName}->'
 
                         # Expand the struct validation lines
-                        expr = self.expandStructCode(member.type, funcName, newErrorLoc, memberNamePrefix, memberDisplayNamePrefix, expr)
+                        expr = self.expandStructCode(member.type, funcName, newErrorLoc, memberNamePrefix, memberDisplayNamePrefix, expr, context)
                         # If only 4 lines and no "skip" then this is an empty check
                         hasChecks = len(expr) > 4 or 'skip' in expr[3]
                         hasChecks = hasChecks if member.type != 'VkRect2D' else False # exception that doesn't have check actually
@@ -954,12 +962,11 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             usedLines.append(expr)
 
                     isConstStr = 'true' if member.const else 'false'
-                    isPhysDevice_str = 'physicalDevice' if isPhysDevice else 'VK_NULL_HANDLE'
                     for setter, _, elem in multi_string_iter(usedLines):
                         elem = re.sub(r', (true|false|physicalDevice|VK_NULL_HANDLE)', '', elem)
                         m = validatePNextRegex.match(elem)
                         if m is not None:
-                            setter(f'{m.group(1)}, {isPhysDevice_str}, {isConstStr}{m.group(2)}')
+                            setter(f'{m.group(1)}, {isConstStr}{m.group(2)}')
 
             # Non-pointer types
             else:
@@ -970,28 +977,22 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     # Log a diagnostic message when validation cannot be automatically generated and must be implemented manually
                     self.logMsg('diag', f'ParameterValidation: No validation for {callerName} {member.name}')
                 else:
-                    physicalLevel = "VK_NULL_HANDLE" # maintenance5 allows Physical-device-level functions to pass in out of range values
-                    if (isPhysDevice):
-                        physicalLevel = "physicalDevice"
-                    elif structTypeName and 'PhysicalDevice' in structTypeName:
-                        physicalLevel = "physicalDevice"
-
                     if member.type in self.vk.structs and self.vk.structs[member.type].sType:
                         sTypeVuid = self.GetVuid(member.type, "sType-sType")
                         sType = self.vk.structs[member.type].sType
-                        usedLines.append(f'skip |= ValidateStructType({errorLoc}.dot(Field::{member.name}), &({valuePrefix}{member.name}), {sType}, false, kVUIDUndefined, {sTypeVuid});\n')
+                        usedLines.append(f'skip |= {context}ValidateStructType({errorLoc}.dot(Field::{member.name}), &({valuePrefix}{member.name}), {sType}, false, kVUIDUndefined, {sTypeVuid});\n')
                     elif member.name == 'sType' and structTypeName in self.generateStructHelper:
                         # TODO - This workaround is because this is shared by other pipeline calls that don't need generateStructHelper
                         if structTypeName != 'VkPipelineShaderStageCreateInfo':
                             # special case when dealing with isolated struct helper functions.
                             sTypeVuid = self.GetVuid(struct.name, "sType-sType")
-                            usedLines.append(f'skip |= ValidateStructType(loc, &info, {struct.sType}, false, kVUIDUndefined, {sTypeVuid});\n')
+                            usedLines.append(f'skip |= {context}ValidateStructType(loc, &info, {struct.sType}, false, kVUIDUndefined, {sTypeVuid});\n')
                     elif member.type in self.vk.handles:
                         if not member.optional:
-                            usedLines.append(f'skip |= ValidateRequiredHandle({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
+                            usedLines.append(f'skip |= {context}ValidateRequiredHandle({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
                     elif member.type in self.flags and member.type.replace('Flags', 'FlagBits') not in self.flagBits:
                         vuid = self.GetVuid(callerName, f"{member.name}-zerobitmask")
-                        usedLines.append(f'skip |= ValidateReservedFlags({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {vuid});\n')
+                        usedLines.append(f'skip |= {context}ValidateReservedFlags({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name}, {vuid});\n')
                     elif member.type in self.flags or member.type in self.flagBits:
                         if member.type in self.flags:
                             flagBitsName = member.type.replace('Flags', 'FlagBits')
@@ -1009,17 +1010,17 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                         allFlagsName = 'All' + flagBitsName
                         zeroVuidArg = '' if member.optional else ', ' + zeroVuid
                         condition = [item for item in self.structMemberValidationConditions if (item['struct'] == structTypeName and item['field'] == flagBitsName)]
-                        usedLines.append(f'skip |= ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {physicalLevel}, {invalidVuid}{zeroVuidArg});\n')
+                        usedLines.append(f'skip |= {context}ValidateFlags({errorLoc}.dot(Field::{member.name}), vvl::FlagBitmask::{flagBitsName}, {allFlagsName}, {valuePrefix}{member.name}, {flagsType}, {invalidVuid}{zeroVuidArg});\n')
                     elif member.type == 'VkBool32':
-                        usedLines.append(f'skip |= ValidateBool32({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
+                        usedLines.append(f'skip |= {context}ValidateBool32({errorLoc}.dot(Field::{member.name}), {valuePrefix}{member.name});\n')
                     elif member.type in self.vk.enums and member.type != 'VkStructureType':
                         vuid = self.GetVuid(callerName, f"{member.name}-parameter")
-                        usedLines.append(f'skip |= ValidateRangedEnum({errorLoc}.dot(Field::{member.name}), vvl::Enum::{member.type}, {valuePrefix}{member.name}, {vuid}, {physicalLevel});\n')
+                        usedLines.append(f'skip |= {context}ValidateRangedEnum({errorLoc}.dot(Field::{member.name}), vvl::Enum::{member.type}, {valuePrefix}{member.name}, {vuid});\n')
                     # If this is a struct, see if it contains members that need to be checked
                     if member.type in self.validatedStructs:
                         memberNamePrefix = f'{valuePrefix}{member.name}.'
                         memberDisplayNamePrefix = f'{valueDisplayName}.'
-                        usedLines.append(self.expandStructCode(member.type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, []))
+                        usedLines.append(self.expandStructCode(member.type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, [], context))
             # Append the parameter check to the function body for the current command
             if usedLines:
                 # Apply special conditional checks
@@ -1048,7 +1049,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
 
     # This logic was broken into its own function because we need to fill multiple functions with these structs
-    def genStructBody(self, struct: Struct, nonPropFeature: bool):
+    def genStructBody(self, struct: Struct, nonPropFeature: bool, context: str):
         pNextCase = '\n'
         pNextCheck = ''
 
@@ -1061,21 +1062,16 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         if struct.sType and struct.version and all(not x.promotedTo for x in struct.extensions):
             pNextCheck += f'''
-                if (is_physdev_api) {{
-                    VkPhysicalDeviceProperties device_properties = {{}};
-                    DispatchGetPhysicalDeviceProperties(physicalDevice, &device_properties);
-                    if (device_properties.apiVersion < {struct.version.nameApi}) {{
-                        APIVersion device_api_version(static_cast<uint32_t>(device_properties.apiVersion));
-                        skip |= LogError(
-                                pnext_vuid, instance, loc.dot(Field::pNext),
-                                "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
-                                "current effective API version is %s.", StringAPIVersion(device_api_version).c_str());
-                    }}
+                if (extensions.api_version < {struct.version.nameApi}) {{
+                    skip |= log.LogError(
+                            pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                            "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
+                            "current effective API version is %s.", StringAPIVersion(extensions.api_version).c_str());
                 }}
                 '''
 
-        elif struct.sType in self.stype_version_dict.keys():
-            extNames = self.stype_version_dict[struct.sType]
+        elif struct.sType and len(struct.extensions) > 0:
+            extNames = set([x.name for x in struct.extensions])
 
             # Skip extensions that are not in the target API
             # This check is needed because parts of the base generator code bypass the
@@ -1090,27 +1086,24 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             extNames = sorted(list(extNames)) # make the order deterministic
 
             # Dependent on enabled extension
-            extension_conditinals = list()
+            extension_conditionals = list()
             for ext_name in extNames:
                 extension = self.vk.extensions[ext_name]
-                if extension.device:
-                    extension_conditinals.append( f'((is_physdev_api && !SupportedByPdev(physical_device, vvl::Extension::_{extension.name})) || (!is_physdev_api && !IsExtEnabled(device_extensions.{extension.name.lower()})))' )
-                else:
-                    extension_conditinals.append( f'!IsExtEnabled(instance_extensions.{extension.name.lower()})' )
-            if len(extension_conditinals) == 1 and extension_conditinals[0][0] == '(' and extension_conditinals[0][-1] == ')':
-                extension_conditinals[0] = extension_conditinals[0][1:-1]# strip extraneous parentheses
+                extension_conditionals.append( f'(!IsExtEnabled(extensions.{extension.name.lower()}))' )
+            if len(extension_conditionals) == 1 and extension_conditionals[0][0] == '(' and extension_conditionals[0][-1] == ')':
+                extension_conditionals[0] = extension_conditionals[0][1:-1]# strip extraneous parentheses
 
-            extension_check = f'if ({" && ".join(extension_conditinals)}) {{'
+            extension_check = f'if ({" && ".join(extension_conditionals)}) {{'
             pNextCheck += f'''
                     {extension_check}
-                        skip |= LogError(
-                            pnext_vuid, instance, loc.dot(Field::pNext),
+                        skip |= log.LogError(
+                            pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
                             "includes a pointer to a VkStructureType ({struct.sType}), but its parent extension "
                             "{self.englishJoin(extNames, "or")} has not been enabled.");
                     }}
                 '''
 
-        expr = self.expandStructCode(struct.name, struct.name, 'pNext_loc', 'structure->', '', [])
+        expr = self.expandStructCode(struct.name, struct.name, 'pNext_loc', 'structure->', '', [], '')
         structValidationSource = self.ScrubStructCode(expr)
         if structValidationSource != '':
             # Only reasonable to validate content of structs if const as otherwise the date inside has not been writen to yet
@@ -1130,32 +1123,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 for extend in struct.extends:
                     if not isDeviceStruct(self.vk.structs[extend]):
                         check_for_instance = True
-
-            # We do the extension checking here at the pNext chaining because if the struct is only used in a new extended command,
-            # using that command will always trigger a "missing extension" VU
-            checkExpression = []
-            resultExpression = []
-            for extension in [x.name for x in struct.extensions if x.device]:
-                if check_for_instance:
-                    checkExpression.append(f'(!is_physdev_api && !IsExtEnabled(device_extensions.{extension.lower()}))')
-                else:
-                    checkExpression.append(f'!IsExtEnabled(device_extensions.{extension.lower()})')
-                resultExpression.append(extension)
-            # TODO - Video session creation checks will fail tests if no extensions are found (need to fix test logic)
-            if len(checkExpression) > 0 and 'Video' not in struct.name:
-                # Special message for device features
-                if 'VkPhysicalDeviceFeatures2' in struct.extends and 'VkDeviceCreateInfo' in struct.extends:
-                    pNextCheck += f'''if ({" && ".join(checkExpression)}){{
-                        skip |= LogError(pnext_vuid, instance, pNext_loc,
-                            "includes a pointer to a {struct.name}, but when creating VkDevice, the parent extension "
-                            "({" or ".join(resultExpression)}) was not included in ppEnabledExtensionNames.");
-                        }}
-                    '''
-                else:
-                    pNextCheck += f'''if ({" && ".join(checkExpression)}){{
-                            skip |= LogError(pnext_vuid, instance, pNext_loc, "extended struct requires the extensions {" or ".join(resultExpression)}");
-                        }}
-                        '''
 
             structValidationSource = f'{struct.name} *structure = ({struct.name} *) header;\n{structValidationSource}'
             structValidationSource += '}\n'
