@@ -3565,34 +3565,34 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
             const auto &bind_info = pBindSessionMemoryInfos[i];
             const auto &mem_binding_info = vs_state->GetMemoryBindingInfo(bind_info.memoryBindIndex);
             if (mem_binding_info != nullptr) {
-                if (auto mem_state = Get<vvl::DeviceMemory>(bind_info.memory)) {
-                    if (((1 << mem_state->allocate_info.memoryTypeIndex) & mem_binding_info->requirements.memoryTypeBits) == 0) {
-                        const LogObjectList objlist(videoSession, mem_state->Handle());
+                if (auto memory_state = Get<vvl::DeviceMemory>(bind_info.memory)) {
+                    if (((1 << memory_state->allocate_info.memoryTypeIndex) & mem_binding_info->requirements.memoryTypeBits) == 0) {
+                        const LogObjectList objlist(videoSession, memory_state->Handle());
                         skip |=
                             LogError("VUID-vkBindVideoSessionMemoryKHR-pBindSessionMemoryInfos-07198", objlist, error_obj.location,
                                      "memoryTypeBits (0x%x) for memory binding "
                                      "with index %u of %s are not compatible with the memory type index (%u) of "
                                      "%s specified in pBindSessionMemoryInfos[%u].memory.",
                                      mem_binding_info->requirements.memoryTypeBits, bind_info.memoryBindIndex,
-                                     FormatHandle(videoSession).c_str(), mem_state->allocate_info.memoryTypeIndex,
-                                     FormatHandle(*mem_state).c_str(), i);
+                                     FormatHandle(videoSession).c_str(), memory_state->allocate_info.memoryTypeIndex,
+                                     FormatHandle(*memory_state).c_str(), i);
                     }
 
-                    if (bind_info.memoryOffset >= mem_state->allocate_info.allocationSize) {
-                        const LogObjectList objlist(videoSession, mem_state->Handle());
+                    if (bind_info.memoryOffset >= memory_state->allocate_info.allocationSize) {
+                        const LogObjectList objlist(videoSession, memory_state->Handle());
                         skip |= LogError("VUID-VkBindVideoSessionMemoryInfoKHR-memoryOffset-07201", objlist,
                                          error_obj.location.dot(Field::pBindSessionMemoryInfos, i).dot(Field::memoryOffset),
                                          "(%" PRIuLEAST64 ") must be less than the size (%" PRIuLEAST64 ") of %s.",
-                                         bind_info.memoryOffset, mem_state->allocate_info.allocationSize,
-                                         FormatHandle(*mem_state).c_str());
-                    } else if (bind_info.memoryOffset + bind_info.memorySize > mem_state->allocate_info.allocationSize) {
-                        const LogObjectList objlist(videoSession, mem_state->Handle());
+                                         bind_info.memoryOffset, memory_state->allocate_info.allocationSize,
+                                         FormatHandle(*memory_state).c_str());
+                    } else if (bind_info.memoryOffset + bind_info.memorySize > memory_state->allocate_info.allocationSize) {
+                        const LogObjectList objlist(videoSession, memory_state->Handle());
                         skip |= LogError("VUID-VkBindVideoSessionMemoryInfoKHR-memorySize-07202", objlist,
                                          error_obj.location.dot(Field::pBindSessionMemoryInfos, i).dot(Field::memoryOffset),
                                          "(%" PRIuLEAST64 ") + memory size (%" PRIuLEAST64
                                          ") must be less than or equal to the size (%" PRIuLEAST64 ") of %s.",
-                                         bind_info.memoryOffset, bind_info.memorySize, mem_state->allocate_info.allocationSize,
-                                         FormatHandle(*mem_state).c_str());
+                                         bind_info.memoryOffset, bind_info.memorySize, memory_state->allocate_info.allocationSize,
+                                         FormatHandle(*memory_state).c_str());
                     }
                 }
 

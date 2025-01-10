@@ -1193,7 +1193,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
 
     auto src_image = Get<ImageState>(srcImage);
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
-    const auto dst_mem = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemState()->VkHandle() : VK_NULL_HANDLE;
+    const VkDeviceMemory dst_memory = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemoryState()->VkHandle() : VK_NULL_HANDLE;
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_image) {
@@ -1204,7 +1204,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
                 const auto error = error_messages_.ImageRegionError(hazard, srcImage, true, region, *cb_access_context);
                 skip |= SyncError(hazard.Hazard(), objlist, loc, error);
             }
-            if (dst_mem) {
+            if (dst_memory != VK_NULL_HANDLE) {
                 ResourceAccessRange dst_range = MakeRange(
                     copy_region.bufferOffset,
                     GetBufferSizeFromCopyImage(copy_region, src_image->create_info.format, src_image->create_info.arrayLayers));

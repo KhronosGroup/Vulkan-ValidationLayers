@@ -158,17 +158,17 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
 bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const Location& loc) const {
     bool skip = false;
     auto buffer_state = Get<vvl::Buffer>(buffer);
-    auto mem_state = Get<vvl::DeviceMemory>(memory);
-    ASSERT_AND_RETURN_SKIP(mem_state && buffer_state);
+    auto memory_state = Get<vvl::DeviceMemory>(memory);
+    ASSERT_AND_RETURN_SKIP(memory_state && buffer_state);
 
-    if (mem_state->allocate_info.allocationSize == buffer_state->create_info.size &&
-        mem_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {
+    if (memory_state->allocate_info.allocationSize == buffer_state->create_info.size &&
+        memory_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {
         skip |= LogPerformanceWarning("BestPractices-vkBindBufferMemory-small-dedicated-allocation", device, loc,
                                       "Trying to bind %s to a memory block which is fully consumed by the buffer. "
                                       "The required size of the allocation is %" PRIu64
                                       ", but smaller buffers like this should be sub-allocated from "
                                       "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
-                                      FormatHandle(buffer).c_str(), mem_state->allocate_info.allocationSize,
+                                      FormatHandle(buffer).c_str(), memory_state->allocate_info.allocationSize,
                                       kMinDedicatedAllocationSize);
     }
 
@@ -206,17 +206,17 @@ bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_
 bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const Location& loc) const {
     bool skip = false;
     auto image_state = Get<vvl::Image>(image);
-    auto mem_state = Get<vvl::DeviceMemory>(memory);
-    ASSERT_AND_RETURN_SKIP(mem_state && image_state);
+    auto memory_state = Get<vvl::DeviceMemory>(memory);
+    ASSERT_AND_RETURN_SKIP(memory_state && image_state);
 
-    if (mem_state->allocate_info.allocationSize == image_state->requirements[0].size &&
-        mem_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {
+    if (memory_state->allocate_info.allocationSize == image_state->requirements[0].size &&
+        memory_state->allocate_info.allocationSize < kMinDedicatedAllocationSize) {
         skip |= LogPerformanceWarning("BestPractices-vkBindImageMemory-small-dedicated-allocation", device, loc,
                                       "Trying to bind %s to a memory block which is fully consumed by the image. "
                                       "The required size of the allocation is %" PRIu64
                                       ", but smaller images like this should be sub-allocated from "
                                       "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
-                                      FormatHandle(image).c_str(), mem_state->allocate_info.allocationSize,
+                                      FormatHandle(image).c_str(), memory_state->allocate_info.allocationSize,
                                       kMinDedicatedAllocationSize);
     }
 
@@ -238,7 +238,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
             }
         }
 
-        uint32_t allocated_properties = phys_dev_mem_props.memoryTypes[mem_state->allocate_info.memoryTypeIndex].propertyFlags;
+        uint32_t allocated_properties = phys_dev_mem_props.memoryTypes[memory_state->allocate_info.memoryTypeIndex].propertyFlags;
 
         if (supports_lazy && (allocated_properties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) == 0) {
             skip |= LogPerformanceWarning(
@@ -246,7 +246,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
                 "ttempting to bind memory type %u to VkImage which was created with TRANSIENT_ATTACHMENT_BIT,"
                 "but this memory type is not LAZILY_ALLOCATED_BIT. You should use memory type %u here instead to save "
                 "%" PRIu64 " bytes of physical memory.",
-                mem_state->allocate_info.memoryTypeIndex, suggested_type, image_state->requirements[0].size);
+                memory_state->allocate_info.memoryTypeIndex, suggested_type, image_state->requirements[0].size);
         }
     }
 

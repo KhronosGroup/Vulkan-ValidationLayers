@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,9 +113,10 @@ class BufferAddressValidation {
                                             std::string* out_error_msg) {
         if (!buffer_state->sparse && !buffer_state->IsMemoryBound()) {
             if (out_error_msg) {
-                if (const auto mem_state = buffer_state->MemState(); mem_state && mem_state->Destroyed()) {
+                const auto memory_state = buffer_state->MemoryState();
+                if (memory_state && memory_state->Destroyed()) {
                     *out_error_msg +=
-                        "buffer is bound to memory (" + validator.FormatHandle(mem_state->Handle()) + ") but it has been freed";
+                        "buffer is bound to memory (" + validator.FormatHandle(memory_state->Handle()) + ") but it has been freed";
                 } else {
                     *out_error_msg += "buffer has not been bound to memory";
                 }

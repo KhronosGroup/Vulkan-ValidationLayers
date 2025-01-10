@@ -92,7 +92,7 @@ class DeviceMemory : public StateObject {
 // will be stored in the range_map
 // We need the resource_offset and memory_offset to be able to transform from
 // resource space (in which the range is) to memory space
-struct MEM_BINDING {
+struct MemoryBinding {
     std::shared_ptr<vvl::DeviceMemory> memory_state;
     VkDeviceSize memory_offset;
     VkDeviceSize resource_offset;
@@ -108,7 +108,7 @@ class BindableMemoryTracker {
 
     virtual ~BindableMemoryTracker() {}
     // kept for backwards compatibility, only useful with the Linear tracker
-    virtual const MEM_BINDING *Binding() const = 0;
+    virtual const MemoryBinding *Binding() const = 0;
     virtual unsigned CountDeviceMemory(VkDeviceMemory memory) const = 0;
     virtual bool HasFullRangeBound() const = 0;
 
@@ -124,7 +124,7 @@ class BindableNoMemoryTracker : public BindableMemoryTracker {
   public:
     BindableNoMemoryTracker(const VkMemoryRequirements *) {}
 
-    const MEM_BINDING *Binding() const override { return nullptr; }
+    const MemoryBinding *Binding() const override { return nullptr; }
 
     unsigned CountDeviceMemory(VkDeviceMemory memory) const override { return 0; }
 
@@ -144,14 +144,14 @@ class BindableLinearMemoryTracker : public BindableMemoryTracker {
   public:
     BindableLinearMemoryTracker(const VkMemoryRequirements *) {}
 
-    const MEM_BINDING *Binding() const override { return binding_.memory_state ? &binding_ : nullptr; }
+    const MemoryBinding *Binding() const override { return binding_.memory_state ? &binding_ : nullptr; }
     unsigned CountDeviceMemory(VkDeviceMemory memory) const override {
         return binding_.memory_state && binding_.memory_state->VkHandle() == memory ? 1 : 0;
     }
 
     bool HasFullRangeBound() const override { return binding_.memory_state != nullptr; }
 
-    void BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state, VkDeviceSize memory_offset,
+    void BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &memory_state, VkDeviceSize memory_offset,
                     VkDeviceSize resource_offset, VkDeviceSize size) override;
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
@@ -160,7 +160,7 @@ class BindableLinearMemoryTracker : public BindableMemoryTracker {
     DeviceMemoryState GetBoundMemoryStates() const override;
 
   private:
-    MEM_BINDING binding_;
+    MemoryBinding binding_;
 };
 
 // Sparse bindable memory tracker
@@ -170,13 +170,13 @@ class BindableSparseMemoryTracker : public BindableMemoryTracker {
     BindableSparseMemoryTracker(const VkMemoryRequirements *requirements, bool is_resident)
         : resource_size_(requirements->size), is_resident_(is_resident) {}
 
-    const MEM_BINDING *Binding() const override { return nullptr; }
+    const MemoryBinding *Binding() const override { return nullptr; }
 
     unsigned CountDeviceMemory(VkDeviceMemory memory) const override;
 
     bool HasFullRangeBound() const override;
 
-    void BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state, VkDeviceSize memory_offset,
+    void BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &memory_state, VkDeviceSize memory_offset,
                     VkDeviceSize resource_offset, VkDeviceSize size) override;
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
@@ -192,7 +192,7 @@ class BindableSparseMemoryTracker : public BindableMemoryTracker {
 
   private:
     // This range map uses the range in resource space to know the size of the bound memory
-    using BindingMap = sparse_container::range_map<VkDeviceSize, MEM_BINDING>;
+    using BindingMap = sparse_container::range_map<VkDeviceSize, MemoryBinding>;
     BindingMap binding_map_;
     mutable std::shared_mutex binding_lock_;
     VkDeviceSize resource_size_;
@@ -204,13 +204,13 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
   public:
     BindableMultiplanarMemoryTracker(const VkMemoryRequirements *requirements, uint32_t num_planes);
 
-    const MEM_BINDING *Binding() const override { return nullptr; }
+    const MemoryBinding *Binding() const override { return nullptr; }
 
     unsigned CountDeviceMemory(VkDeviceMemory memory) const override;
 
     bool HasFullRangeBound() const override;
 
-    void BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state, VkDeviceSize memory_offset,
+    void BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &memory_state, VkDeviceSize memory_offset,
                     VkDeviceSize resource_offset, VkDeviceSize size) override;
 
     BoundMemoryRange GetBoundMemoryRange(const MemoryRange &range) const override;
@@ -223,7 +223,7 @@ class BindableMultiplanarMemoryTracker : public BindableMemoryTracker {
 
   private:
     struct Plane {
-        MEM_BINDING binding;
+        MemoryBinding binding;
         VkDeviceSize size;
     };
     std::vector<Plane> planes_;
@@ -261,8 +261,8 @@ class Bindable : public StateObject {
     }
 
     // Will be false if VkBindMemoryStatus had a non-success result
-    const vvl::DeviceMemory *MemState() const {
-        const MEM_BINDING *binding = Binding();
+    const vvl::DeviceMemory *MemoryState() const {
+        const MemoryBinding *binding = Binding();
         return binding ? binding->memory_state.get() : nullptr;
     }
 
@@ -277,8 +277,8 @@ class Bindable : public StateObject {
     }
 
     bool IsMemoryBound() const {
-        const auto mem_state = MemState();
-        return mem_state && !mem_state->Destroyed();
+        const auto memory_state = MemoryState();
+        return memory_state && !memory_state->Destroyed();
     }
 
     void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) override {
@@ -324,7 +324,7 @@ class Bindable : public StateObject {
     }
 
     // Kept for compatibility
-    const MEM_BINDING *Binding() const { return memory_tracker_->Binding(); }
+    const MemoryBinding *Binding() const { return memory_tracker_->Binding(); }
 
     unsigned CountDeviceMemory(VkDeviceMemory memory) const { return memory_tracker_->CountDeviceMemory(memory); }
 

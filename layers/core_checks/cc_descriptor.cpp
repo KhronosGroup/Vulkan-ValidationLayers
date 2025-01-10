@@ -2188,7 +2188,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                 // nullDescriptor feature allows this to be VK_NULL_HANDLE
                 if (auto as_state = Get<vvl::AccelerationStructureNV>(as)) {
                     skip |= VerifyBoundMemoryIsValid(
-                        as_state->MemState(), LogObjectList(as), as_state->Handle(),
+                        as_state->MemoryState(), LogObjectList(as), as_state->Handle(),
                         write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureNV, Field::pAccelerationStructures, di),
                         kVUIDUndefined);
                 }

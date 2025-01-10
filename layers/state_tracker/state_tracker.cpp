@@ -1513,9 +1513,9 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
         for (uint32_t j = 0; j < bind_info.bufferBindCount; j++) {
             for (uint32_t k = 0; k < bind_info.pBufferBinds[j].bindCount; k++) {
                 auto sparse_binding = bind_info.pBufferBinds[j].pBinds[k];
-                auto mem_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
+                auto memory_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
                 if (auto buffer_state = Get<vvl::Buffer>(bind_info.pBufferBinds[j].buffer)) {
-                    buffer_state->BindMemory(buffer_state.get(), mem_state, sparse_binding.memoryOffset,
+                    buffer_state->BindMemory(buffer_state.get(), memory_state, sparse_binding.memoryOffset,
                                              sparse_binding.resourceOffset, sparse_binding.size);
                 }
             }
@@ -1523,7 +1523,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
         for (uint32_t j = 0; j < bind_info.imageOpaqueBindCount; j++) {
             for (uint32_t k = 0; k < bind_info.pImageOpaqueBinds[j].bindCount; k++) {
                 auto sparse_binding = bind_info.pImageOpaqueBinds[j].pBinds[k];
-                auto mem_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
+                auto memory_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
                 if (auto image_state = Get<vvl::Image>(bind_info.pImageOpaqueBinds[j].image)) {
                     // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
                     // See: VUID-vkGetImageSubresourceLayout-image-09432
@@ -1531,7 +1531,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
                         image_state->fragment_encoder =
                             std::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
                     }
-                    image_state->BindMemory(image_state.get(), mem_state, sparse_binding.memoryOffset,
+                    image_state->BindMemory(image_state.get(), memory_state, sparse_binding.memoryOffset,
                                             sparse_binding.resourceOffset, sparse_binding.size);
                 }
             }
@@ -1542,7 +1542,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
                 // TODO: This size is broken for non-opaque bindings, need to update to comprehend full sparse binding data
                 VkDeviceSize size = sparse_binding.extent.depth * sparse_binding.extent.height * sparse_binding.extent.width * 4;
                 VkDeviceSize offset = sparse_binding.offset.z * sparse_binding.offset.y * sparse_binding.offset.x * 4;
-                auto mem_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
+                auto memory_state = Get<vvl::DeviceMemory>(sparse_binding.memory);
                 if (auto image_state = Get<vvl::Image>(bind_info.pImageBinds[j].image)) {
                     // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
                     // See: VUID-vkGetImageSubresourceLayout-image-09432
@@ -1550,7 +1550,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
                         image_state->fragment_encoder =
                             std::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
                     }
-                    image_state->BindMemory(image_state.get(), mem_state, sparse_binding.memoryOffset, offset, size);
+                    image_state->BindMemory(image_state.get(), memory_state, sparse_binding.memoryOffset, offset, size);
                 }
             }
         }
@@ -1783,8 +1783,8 @@ void ValidationStateTracker::UpdateBindBufferMemoryState(const VkBindBufferMemor
     if (!buffer_state) return;
 
     // Track objects tied to memory
-    if (auto mem_state = Get<vvl::DeviceMemory>(bind_info.memory)) {
-        buffer_state->BindMemory(buffer_state.get(), mem_state, bind_info.memoryOffset, 0u, buffer_state->requirements.size);
+    if (auto memory_state = Get<vvl::DeviceMemory>(bind_info.memory)) {
+        buffer_state->BindMemory(buffer_state.get(), memory_state, bind_info.memoryOffset, 0u, buffer_state->requirements.size);
     }
 }
 
@@ -2731,8 +2731,8 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
 
         if (auto as_state = Get<vvl::AccelerationStructureNV>(info.accelerationStructure)) {
             // Track objects tied to memory
-            if (auto mem_state = Get<vvl::DeviceMemory>(info.memory)) {
-                as_state->BindMemory(as_state.get(), mem_state, info.memoryOffset, 0u, as_state->memory_requirements.size);
+            if (auto memory_state = Get<vvl::DeviceMemory>(info.memory)) {
+                as_state->BindMemory(as_state.get(), memory_state, info.memoryOffset, 0u, as_state->memory_requirements.size);
             }
 
             // GPU validation of top level acceleration structure building needs acceleration structure handles.
