@@ -352,7 +352,8 @@ class CoreChecks : public ValidationStateTracker {
     bool IsSupportedVideoFormat(const VkImageCreateInfo& image_ci, const VkVideoProfileInfoKHR* profile) const;
     bool IsVideoFormatSupported(VkFormat format, VkImageUsageFlags image_usage, const VkVideoProfileInfoKHR* profile) const;
     bool IsBufferCompatibleWithVideoSession(const vvl::Buffer& buffer_state, const vvl::VideoSession& vs_state) const;
-    bool IsImageCompatibleWithVideoSession(const vvl::Image& image_state, const vvl::VideoSession& vs_state) const;
+    bool IsImageCompatibleWithVideoSession(const vvl::Image& image_state, const vvl::VideoSession& vs_state,
+                                           std::string& error_message) const;
     void EnqueueVerifyVideoSessionInitialized(vvl::CommandBuffer& cb_state, vvl::VideoSession& vs_state, const Location& loc,
                                               const char* vuid);
     void EnqueueVerifyVideoInlineQueryUnavailable(vvl::CommandBuffer& cb_state, const VkVideoInlineQueryInfoKHR& query_info,

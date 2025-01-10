@@ -107,3 +107,12 @@
 }
 
 [[maybe_unused]] static std::string string_VkBool32(VkBool32 value) { return value ? "VK_TRUE" : "VK_FALSE"; }
+
+[[maybe_unused]] static std::string string_VkVideoProfileInfoKHR(const VkVideoProfileInfoKHR &profile) {
+    std::stringstream ss;
+    ss << "videoCodecOperation = " << string_VkVideoCodecOperationFlagBitsKHR(profile.videoCodecOperation) << '\n';
+    ss << "chromaSubsampling = " << string_VkVideoChromaSubsamplingFlagsKHR(profile.chromaSubsampling) << '\n';
+    ss << "lumaBitDepth = " << string_VkVideoComponentBitDepthFlagsKHR(profile.lumaBitDepth) << '\n';
+    ss << "chromaBitDepth = " << string_VkVideoComponentBitDepthFlagsKHR(profile.chromaBitDepth);
+    return ss.str();
+}

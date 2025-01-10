@@ -1,5 +1,5 @@
-/* Copyright (c) 2022-2024 The Khronos Group Inc.
- * Copyright (c) 2022-2024 RasterGrid Kft.
+/* Copyright (c) 2022-2025 The Khronos Group Inc.
+ * Copyright (c) 2022-2025 RasterGrid Kft.
  * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/state_tracker.h"
 #include "generated/dispatch_functions.h"
+#include "error_message/error_strings.h"
 
 #include <sstream>
 
@@ -39,6 +40,23 @@ VideoProfileDesc::~VideoProfileDesc() {
     if (cache_) {
         cache_->Release(this);
     }
+}
+
+std::string VideoProfileDesc::Describe() const {
+    std::stringstream ss;
+    ss << string_VkVideoProfileInfoKHR(profile_.base) << '\n';
+    if (profile_.is_decode) {
+        ss << "VkVideoDecodeUsageInfoKHR::videoUsageHints = "
+           << string_VkVideoDecodeUsageFlagsKHR(profile_.decode_usage.videoUsageHints) << '\n';
+    } else if (profile_.is_encode) {
+        ss << "VkVideoEncodeUsageInfoKHR::videoUsageHints = "
+           << string_VkVideoEncodeUsageFlagsKHR(profile_.encode_usage.videoUsageHints) << '\n';
+        ss << "VkVideoEncodeUsageInfoKHR::videoContentHints = "
+           << string_VkVideoEncodeContentFlagsKHR(profile_.encode_usage.videoContentHints) << '\n';
+        ss << "VkVideoEncodeUsageInfoKHR::tuningMode = " << string_VkVideoEncodeTuningModeKHR(profile_.encode_usage.tuningMode)
+           << '\n';
+    }
+    return ss.str();
 }
 
 bool VideoProfileDesc::InitProfile(VkVideoProfileInfoKHR const *profile) {

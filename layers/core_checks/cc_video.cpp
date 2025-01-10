@@ -1,5 +1,5 @@
-/* Copyright (c) 2022-2024 The Khronos Group Inc.
- * Copyright (c) 2022-2024 RasterGrid Kft.
+/* Copyright (c) 2022-2025 The Khronos Group Inc.
+ * Copyright (c) 2022-2025 RasterGrid Kft.
  * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -108,12 +108,33 @@ bool CoreChecks::IsBufferCompatibleWithVideoSession(const vvl::Buffer &buffer_st
            buffer_state.supported_video_profiles.find(vs_state.profile) != buffer_state.supported_video_profiles.end();
 }
 
-bool CoreChecks::IsImageCompatibleWithVideoSession(const vvl::Image &image_state, const vvl::VideoSession &vs_state) const {
+bool CoreChecks::IsImageCompatibleWithVideoSession(const vvl::Image &image_state, const vvl::VideoSession &vs_state,
+                                                   std::string &error_message) const {
+    std::ostringstream ss;
+    bool is_compatible = false;
     if (image_state.create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
-        return IsSupportedVideoFormat(image_state.create_info, vs_state.create_info.pVideoProfile);
+        is_compatible = IsSupportedVideoFormat(image_state.create_info, vs_state.create_info.pVideoProfile);
     } else {
-        return image_state.supported_video_profiles.find(vs_state.profile) != image_state.supported_video_profiles.end();
+        is_compatible = image_state.supported_video_profiles.find(vs_state.profile) != image_state.supported_video_profiles.end();
     }
+
+    if (!is_compatible) {
+        ss << "The image was create ";
+        if (image_state.create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
+            ss << "with ";
+        } else {
+            ss << "without ";
+        }
+        ss << "VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR and could not find an profile for the image supported with the "
+              "profile:\n";
+        if (image_state.create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR) {
+            ss << string_VkVideoProfileInfoKHR(*vs_state.create_info.pVideoProfile);
+        } else {
+            ss << vs_state.profile->Describe();
+        }
+        error_message = ss.str();
+    }
+    return is_compatible;
 }
 
 void CoreChecks::EnqueueVerifyVideoSessionInitialized(vvl::CommandBuffer &cb_state, vvl::VideoSession &vs_state,
@@ -2979,13 +3000,14 @@ bool CoreChecks::ValidateVideoEncodeQuantizationMapInfo(const vvl::CommandBuffer
                                   VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR, loc.dot(Field::quantizationMap),
                                   "VUID-vkCmdEncodeVideoKHR-pNext-10314", &hit_error);
 
-        if (!IsImageCompatibleWithVideoSession(*iv_state->image_state, *vs_state)) {
+        std::string error_message;
+        if (!IsImageCompatibleWithVideoSession(*iv_state->image_state, *vs_state, error_message)) {
             const LogObjectList objlist(cb_state.Handle(), vs_state->Handle(), iv_state->Handle());
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10310", objlist, loc.dot(Field::quantizationMap),
                              "(%s created from %s) is not compatible with the video profile the bound "
-                             "video session %s was created with.",
+                             "video session %s was created with.\n%s",
                              FormatHandle(iv_state->Handle()).c_str(), FormatHandle(iv_state->image_state->Handle()).c_str(),
-                             FormatHandle(vs_state->Handle()).c_str());
+                             FormatHandle(vs_state->Handle()).c_str(), error_message.c_str());
         }
     }
 
@@ -4373,15 +4395,16 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
                     skip |= ValidateUnprotectedImage(*cb_state, *reference_resource.image_state, reference_image_view_loc,
                                                      "VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07236");
 
-                    if (!IsImageCompatibleWithVideoSession(*reference_resource.image_state, *vs_state)) {
+                    std::string error_message;
+                    if (!IsImageCompatibleWithVideoSession(*reference_resource.image_state, *vs_state, error_message)) {
                         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession,
                                                     reference_resource.image_view_state->Handle(),
                                                     reference_resource.image_state->Handle());
                         skip |= LogError("VUID-VkVideoBeginCodingInfoKHR-pPictureResource-07240", objlist, reference_image_view_loc,
-                                         "(%s created from %s) is not compatible with the video profile %s was created with.",
+                                         "(%s created from %s) is not compatible with the video profile %s was created with.\n%s",
                                          FormatHandle(reference_resource.image_view_state->Handle()).c_str(),
                                          FormatHandle(reference_resource.image_state->Handle()).c_str(),
-                                         FormatHandle(pBeginInfo->videoSession).c_str());
+                                         FormatHandle(pBeginInfo->videoSession).c_str(), error_message.c_str());
                     }
 
                     if (reference_resource.image_view_state->create_info.format != vs_state->create_info.referencePictureFormat) {
@@ -4866,14 +4889,16 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
         skip |= ValidateUnprotectedImage(*cb_state, *dst_resource.image_state, dst_image_view_loc,
                                          "VUID-vkCmdDecodeVideoKHR-commandBuffer-07148");
 
-        if (!IsImageCompatibleWithVideoSession(*dst_resource.image_state, *vs_state)) {
+        std::string error_message;
+        if (!IsImageCompatibleWithVideoSession(*dst_resource.image_state, *vs_state, error_message)) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), dst_resource.image_view_state->Handle(),
                                         dst_resource.image_state->Handle());
             skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07142", objlist, dst_image_view_loc,
                              "(%s created from %s) is not compatible with the video profile the bound "
-                             "video session %s was created with.",
+                             "video session %s was created with.\n%s",
                              FormatHandle(pDecodeInfo->dstPictureResource.imageViewBinding).c_str(),
-                             FormatHandle(dst_resource.image_state->Handle()).c_str(), FormatHandle(*vs_state).c_str());
+                             FormatHandle(dst_resource.image_state->Handle()).c_str(), FormatHandle(*vs_state).c_str(),
+                             error_message.c_str());
         }
 
         if (dst_resource.image_view_state->create_info.format != vs_state->create_info.pictureFormat) {
@@ -5381,14 +5406,16 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
         skip |= ValidateProtectedImage(*cb_state, *src_resource.image_state, src_image_view_loc,
                                        "VUID-vkCmdEncodeVideoKHR-commandBuffer-08211");
 
-        if (!IsImageCompatibleWithVideoSession(*src_resource.image_state, *vs_state)) {
+        std::string error_message;
+        if (!IsImageCompatibleWithVideoSession(*src_resource.image_state, *vs_state, error_message)) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), src_resource.image_view_state->Handle(),
                                         src_resource.image_state->Handle());
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08206", objlist, src_image_view_loc,
                              "(%s created from %s) is not compatible with the video profile the bound "
-                             "video session %s was created with.",
+                             "video session %s was created with.\n%s",
                              FormatHandle(pEncodeInfo->srcPictureResource.imageViewBinding).c_str(),
-                             FormatHandle(src_resource.image_state->Handle()).c_str(), FormatHandle(*vs_state).c_str());
+                             FormatHandle(src_resource.image_state->Handle()).c_str(), FormatHandle(*vs_state).c_str(),
+                             error_message.c_str());
         }
 
         if (src_resource.image_view_state->create_info.format != vs_state->create_info.pictureFormat) {

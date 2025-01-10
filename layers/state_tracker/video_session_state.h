@@ -1,5 +1,5 @@
-/* Copyright (c) 2022-2024 The Khronos Group Inc.
- * Copyright (c) 2022-2024 RasterGrid Kft.
+/* Copyright (c) 2022-2025 The Khronos Group Inc.
+ * Copyright (c) 2022-2025 RasterGrid Kft.
  * Modifications Copyright (C) 2024 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -104,6 +104,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
     VideoProfileDesc(VkPhysicalDevice physical_device, VkVideoProfileInfoKHR const *profile);
     ~VideoProfileDesc();
 
+    std::string Describe() const;
     const Profile &GetProfile() const { return profile_; }
     const Capabilities &GetCapabilities() const { return capabilities_; }
 
