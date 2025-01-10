@@ -43,8 +43,6 @@
 #include "chassis/chassis_modification_state.h"
 #include "spirv-tools/optimizer.hpp"
 
-ValidationStateTracker::~ValidationStateTracker() { DestroyObjectMaps(); }
-
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.
 static std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
@@ -1254,7 +1252,10 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     disable_internal_pipeline_cache = cache_control && cache_control->disableInternalCache;
 }
 
-void ValidationStateTracker::DestroyObjectMaps() {
+void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
+                                                        const RecordObject &record_obj) {
+    if (!device) return;
+
     command_pool_map_.clear();
     assert(command_buffer_map_.empty());
     pipeline_map_.clear();
@@ -1283,13 +1284,6 @@ void ValidationStateTracker::DestroyObjectMaps() {
         entry.second->Destroy();
     }
     queue_map_.clear();
-}
-
-void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
-                                                        const RecordObject &record_obj) {
-    if (!device) return;
-
-    DestroyObjectMaps();
 }
 
 static void UpdateCmdBufLabelStack(const vvl::CommandBuffer &cb_state, vvl::Queue &queue_state) {

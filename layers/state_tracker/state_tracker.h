@@ -258,12 +258,7 @@ class ValidationStateTracker : public ValidationObject {
         return (MapTraits::kInstanceScope && (this->*map_member).empty()) ? instance_state->*map_member : this->*map_member;
     }
 
-    // Helper to clean up the state object maps in the correct order
-    void DestroyObjectMaps();
-
   public:
-    ~ValidationStateTracker();
-
     template <typename State, typename HandleType = typename state_object::Traits<State>::HandleType>
     void Add(std::shared_ptr<State>&& state_object) {
         auto& map = GetStateMap<State>();
