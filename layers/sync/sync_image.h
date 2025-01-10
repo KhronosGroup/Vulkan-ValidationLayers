@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ class ImageViewState : public vvl::ImageView {
     ImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *ci,
                    VkFormatFeatureFlags2 ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
     const ImageState *GetImageState() const { return static_cast<const syncval_state::ImageState *>(image_state.get()); }
-    ImageRangeGen MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0) const;
+    ImageRangeGen MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent,
+                                    VkImageAspectFlags override_depth_stencil_aspect_mask = 0) const;
     const ImageRangeGen &GetFullViewImageRangeGen() const { return view_range_gen; }
 
   protected:
