@@ -43,7 +43,7 @@
 #include "gpuav/spirv/descriptor_class_texel_buffer_pass.h"
 #include "gpuav/spirv/ray_query_pass.h"
 #include "gpuav/spirv/debug_printf_pass.h"
-#include "gpuav/spirv/post_process_descriptor_indexing.h"
+#include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
 
 #include <cassert>
 #include <fstream>
@@ -1212,30 +1212,30 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     if (gpuav_settings.shader_instrumentation.descriptor_checks) {
         // Will wrap descriptor indexing with if/else to prevent crashing if OOB
         spirv::DescriptorIndexingOOBPass oob_pass(module);
-        modified |= oob_pass.Start();
+        modified |= oob_pass.Run();
 
         // Depending on the DescriptorClass, will add dedicated check
         spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
-        modified |= general_buffer_pass.Start();
+        modified |= general_buffer_pass.Run();
         spirv::DescriptorClassTexelBufferPass texel_buffer_pass(module);
-        modified |= texel_buffer_pass.Start();
+        modified |= texel_buffer_pass.Run();
     }
 
     if (gpuav_settings.shader_instrumentation.buffer_device_address) {
         spirv::BufferDeviceAddressPass pass(module);
-        modified |= pass.Start();
+        modified |= pass.Run();
     }
 
     if (gpuav_settings.shader_instrumentation.ray_query) {
         spirv::RayQueryPass pass(module);
-        modified |= pass.Start();
+        modified |= pass.Run();
     }
 
     // Post Process instrumentation passes assume the things inside are valid, but putting at the end, things above will wrap checks
     // in a if/else, this means they will be gaurded as if they were inside the above passes
     if (gpuav_settings.shader_instrumentation.post_process_descriptor_index) {
         spirv::PostProcessDescriptorIndexingPass pass(module);
-        modified |= pass.Start();
+        modified |= pass.Run();
     }
 
     // If there were GLSL written function injected, we will grab them and link them in here
@@ -1249,7 +1249,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     if (gpuav_settings.debug_printf_enabled) {
         // binding slot allows debug printf to be slotted in the same set as GPU-AV if needed
         spirv::DebugPrintfPass pass(module, glsl::kBindingInstDebugPrintf);
-        modified |= pass.Start();
+        modified |= pass.Run();
     }
 
     // If nothing was instrumented, leave early to save time

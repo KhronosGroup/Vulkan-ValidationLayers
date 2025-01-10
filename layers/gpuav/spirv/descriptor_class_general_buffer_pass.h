@@ -27,7 +27,7 @@ class DescriptorClassGeneralBufferPass : public Pass {
     DescriptorClassGeneralBufferPass(Module& module);
     const char* Name() const final { return "DescriptorClassGeneralBufferPass"; }
 
-    bool Run() final;
+    bool Instrument() final;
     void PrintDebugInfo() const final;
 
   private:
