@@ -691,10 +691,13 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     if (VK_SUCCESS != record_obj.result) return;
 
     // The current object represents the VkInstance, look up / create the object for the device.
-    vvl::dispatch::Device *device_object = vvl::dispatch::GetData(*pDevice);
+    DispatchObject *device_object = GetLayerData(*pDevice);
     ValidationObject *validation_data = device_object->GetValidationObject(this->container_type);
     ValidationStateTracker *device_state = static_cast<ValidationStateTracker *>(validation_data);
 
+    device_state->instance_state = this;
+    // Save local link to this device's physical device state
+    device_state->physical_device_state = Get<vvl::PhysicalDevice>(gpu).get();
     // finish setup in the object representing the device
     device_state->PostCreateDevice(pCreateInfo, record_obj.location);
 }
@@ -2252,11 +2255,12 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
         // vkGetDeferredOperationResultKHR => Store the deferred logic to do that in
         // `deferred_operation_post_check`.
 
-        if (dispatch_device_->wrap_handles) {
-            deferredOperation = dispatch_device_->Unwrap(deferredOperation);
+        auto layer_data = GetLayerData(device);
+        if (dispatch_->wrap_handles) {
+            deferredOperation = layer_data->Unwrap(deferredOperation);
         }
         std::vector<std::function<void(const std::vector<VkPipeline> &)>> cleanup_fn;
-        auto find_res = dispatch_device_->deferred_operation_post_check.pop(deferredOperation);
+        auto find_res = layer_data->deferred_operation_post_check.pop(deferredOperation);
         if (find_res->first) {
             cleanup_fn = std::move(find_res->second);
         }
@@ -2270,7 +2274,7 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(
                 this->Add(std::move(pipeline_states[i]));
             }
         });
-        dispatch_device_->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
+        layer_data->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
     }
 }
 
@@ -4138,6 +4142,7 @@ void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreate
         return;
     }
 
+    instance_state = this;
     uint32_t count = 0;
     // this can fail if the allocator fails
     VkResult result = DispatchEnumeratePhysicalDevices(*pInstance, &count, nullptr);

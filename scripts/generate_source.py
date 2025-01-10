@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2024 The Khronos Group Inc.
-# Copyright (c) 2021-2024 Valve Corporation
-# Copyright (c) 2021-2024 LunarG, Inc.
+# Copyright (c) 2021-2025 The Khronos Group Inc.
+# Copyright (c) 2021-2025 Valve Corporation
+# Copyright (c) 2021-2025 LunarG, Inc.
 # Copyright (c) 2021-2024 Google Inc.
 # Copyright (c) 2023-2024 RasterGrid Kft.
 #
@@ -214,11 +214,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : LayerChassisOutputGenerator,
             'genCombined': True,
         },
-        'dispatch_object_device_methods.h' : {
-            'generator' : DispatchObjectGenerator,
-            'genCombined': True,
-        },
-        'dispatch_object_instance_methods.h' : {
+        'dispatch_object_methods.h' : {
             'generator' : DispatchObjectGenerator,
             'genCombined': True,
         },

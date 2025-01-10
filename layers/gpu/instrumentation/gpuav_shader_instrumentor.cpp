@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+/* Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -647,16 +647,17 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
 
     const bool is_operation_deferred = deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR;
 
+    auto layer_data = GetLayerData(device);
     if (is_operation_deferred) {
         for (uint32_t i = 0; i < count; ++i) {
             UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state->modified_create_infos[i]);
         }
 
-        if (dispatch_device_->wrap_handles) {
-            deferredOperation = dispatch_device_->Unwrap(deferredOperation);
+        if (dispatch_->wrap_handles) {
+            deferredOperation = layer_data->Unwrap(deferredOperation);
         }
 
-        auto found = dispatch_device_->deferred_operation_post_check.pop(deferredOperation);
+        auto found = layer_data->deferred_operation_post_check.pop(deferredOperation);
         std::vector<std::function<void(const std::vector<VkPipeline> &)>> deferred_op_post_checks;
         if (found->first) {
             deferred_op_post_checks = std::move(found->second);
@@ -682,7 +683,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
                     PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, shader_instrumentation_metadata);
                 }
             });
-        dispatch_device_->deferred_operation_post_check.insert(deferredOperation, std::move(deferred_op_post_checks));
+        layer_data->deferred_operation_post_check.insert(deferredOperation, std::move(deferred_op_post_checks));
     } else {
         for (uint32_t i = 0; i < count; ++i) {
             UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state->modified_create_infos[i]);
@@ -1282,7 +1283,7 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
     // Once we encounter an internal issue disconnect everything.
     // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
     // with errors making it hard to see the first error with the real source of the problem).
-    dispatch_device_->ReleaseValidationObject(LayerObjectTypeGpuAssisted);
+    dispatch_->ReleaseDeviceValidationObject(LayerObjectTypeGpuAssisted);
 }
 
 void GpuShaderInstrumentor::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {

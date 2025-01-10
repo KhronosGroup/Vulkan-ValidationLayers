@@ -66,8 +66,7 @@ class CoreChecks : public ValidationStateTracker {
     spvtools::ValidatorOptions spirv_val_options;
     uint32_t spirv_val_option_hash;
 
-    CoreChecks(vvl::dispatch::Device* dev, CoreChecks* instance_vo) : BaseClass(dev, instance_vo, LayerObjectTypeCoreValidation) {}
-    CoreChecks(vvl::dispatch::Instance* inst) : BaseClass(inst, LayerObjectTypeCoreValidation) {}
+    CoreChecks() { container_type = LayerObjectTypeCoreValidation; }
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;

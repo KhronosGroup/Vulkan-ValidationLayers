@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2024 Valve Corporation
-# Copyright (c) 2015-2024 LunarG, Inc.
+# Copyright (c) 2015-2025 Valve Corporation
+# Copyright (c) 2015-2025 LunarG, Inc.
 # Copyright (c) 2015-2024 Google Inc.
 # Copyright (c) 2023-2024 RasterGrid Kft.
 #
@@ -52,10 +52,7 @@ class APISpecific:
 #include "gpu/core/gpuav.h"
 #include "sync/sync_validation.h"
 
-namespace vvl {
-namespace dispatch {
-
-void Device::InitObjectDispatchVectors() {
+void DispatchObject::InitObjectDispatchVectors() {
 
 #define BUILD_DISPATCH_VECTOR(name) \\
     init_object_dispatch_vector(InterceptId ## name, \\
@@ -152,9 +149,9 @@ class DispatchVectorGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2024 The Khronos Group Inc.
-            * Copyright (c) 2015-2024 Valve Corporation
-            * Copyright (c) 2015-2024 LunarG, Inc.
+            * Copyright (c) 2015-2025 The Khronos Group Inc.
+            * Copyright (c) 2015-2025 Valve Corporation
+            * Copyright (c) 2015-2025 LunarG, Inc.
             * Copyright (c) 2015-2024 Google Inc.
             * Copyright (c) 2023-2024 RasterGrid Kft.
             *
@@ -232,6 +229,4 @@ class DispatchVectorGenerator(BaseGenerator):
                 out.append(f'    BUILD_DISPATCH_VECTOR(PostCallRecord{command.name[2:]});\n')
         out.extend(guard_helper.add_guard(None))
         out.append('}\n')
-        out.append('} // namespace dispatch\n')
-        out.append('} // namespace vvl\n')
         self.write("".join(out))

@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,9 +54,7 @@ class Validator : public GpuShaderInstrumentor {
     using Field = vvl::Field;
 
   public:
-    Validator(vvl::dispatch::Device* dev, Validator* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted), indices_buffer_(*this) {}
-    Validator(vvl::dispatch::Instance* inst) : BaseClass(inst, LayerObjectTypeGpuAssisted), indices_buffer_(*this) {}
+    Validator() : indices_buffer_(*this) { container_type = LayerObjectTypeGpuAssisted; }
 
     // gpuav_setup.cpp
     // -------------

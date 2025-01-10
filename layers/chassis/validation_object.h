@@ -1,8 +1,8 @@
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -80,75 +80,47 @@ enum class ValidValue {
 // Layer chassis validation object base class definition
 class ValidationObject : public Logger {
   public:
-    const APIVersion api_version;
-    vvl::dispatch::Instance* dispatch_instance_{};
-    vvl::dispatch::Device* dispatch_device_{};
+    APIVersion api_version;
+    DispatchObject* dispatch_{};
 
-    const InstanceExtensions& instance_extensions;
-    DeviceExtensions device_extensions;
-    const GlobalSettings& global_settings;
-    GpuAVSettings& gpuav_settings;
-    const SyncValSettings& syncval_settings;
+    InstanceExtensions instance_extensions;
+    DeviceExtensions device_extensions = {};
+    GlobalSettings global_settings = {};
+    GpuAVSettings gpuav_settings = {};
+    SyncValSettings syncval_settings = {};
 
-    const CHECK_DISABLED& disabled;
-    const CHECK_ENABLED& enabled;
+    CHECK_DISABLED disabled = {};
+    CHECK_ENABLED enabled = {};
 
     VkInstance instance = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
-
-    const LayerObjectTypeId container_type;
-
     bool is_device_lost = false;
 
-    ValidationObject(vvl::dispatch::Device* dev, LayerObjectTypeId type_id)
-        : Logger(dev->debug_report),
-          api_version(dev->api_version),
-          dispatch_instance_(dev->dispatch_instance),
-          dispatch_device_(dev),
-          instance_extensions(dev->dispatch_instance->instance_extensions),
-          device_extensions(dev->device_extensions),
-          global_settings(dev->settings.global_settings),
-          gpuav_settings(dev->settings.gpuav_settings),
-          syncval_settings(dev->settings.syncval_settings),
-          disabled(dev->settings.disabled),
-          enabled(dev->settings.enabled),
-          instance(dev->dispatch_instance->instance),
-          physical_device(dev->physical_device),
-          device(dev->device),
-          container_type(type_id) {}
+    LayerObjectTypeId container_type;
 
-    ValidationObject(vvl::dispatch::Instance* instance, LayerObjectTypeId type_id)
-        : Logger(instance->debug_report),
-          api_version(instance->api_version),
-          dispatch_instance_(instance),
-          dispatch_device_(nullptr),
-          instance_extensions(instance->instance_extensions),
-          device_extensions(instance->device_extensions),
-          global_settings(instance->settings.global_settings),
-          gpuav_settings(instance->settings.gpuav_settings),
-          syncval_settings(instance->settings.syncval_settings),
-          disabled(instance->settings.disabled),
-          enabled(instance->settings.enabled),
-          instance(instance->instance),
-          physical_device(VK_NULL_HANDLE),
-          device(VK_NULL_HANDLE),
-          container_type(type_id) {}
+    std::string layer_name = "CHASSIS";
 
+    ValidationObject() {}
     virtual ~ValidationObject() {}
 
     void CopyDispatchState() {
-        if (dispatch_device_) {
-            device_extensions = dispatch_device_->device_extensions;
-            instance = dispatch_device_->dispatch_instance->instance;
-            physical_device = dispatch_device_->physical_device;
-            device = dispatch_device_->device;
-        } else {
-            device_extensions = dispatch_instance_->device_extensions;
-            instance = dispatch_instance_->instance;
-            physical_device = VK_NULL_HANDLE;
-            device = VK_NULL_HANDLE;
-        }
+        api_version = dispatch_->api_version;
+        debug_report = dispatch_->debug_report;
+
+        instance_extensions = dispatch_->instance_extensions;
+        device_extensions = dispatch_->device_extensions;
+
+        global_settings = dispatch_->global_settings;
+        gpuav_settings = dispatch_->gpuav_settings;
+        syncval_settings = dispatch_->syncval_settings;
+
+        enabled = dispatch_->enabled;
+        disabled = dispatch_->disabled;
+
+        instance = dispatch_->instance;
+        physical_device = dispatch_->physical_device;
+        device = dispatch_->device;
     }
 
     mutable std::shared_mutex validation_object_mutex;

@@ -652,7 +652,7 @@ void Validator::InternalVmaError(LogObjectList objlist, const Location &loc, con
     // Once we encounter an internal issue disconnect everything.
     // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
     // with errors making it hard to see the first error with the real source of the problem).
-    dispatch_device_->ReleaseValidationObject(LayerObjectTypeGpuAssisted);
+    dispatch_->ReleaseDeviceValidationObject(LayerObjectTypeGpuAssisted);
 }
 
 VkDeviceAddress Validator::GetBufferDeviceAddressHelper(VkBuffer buffer) const {

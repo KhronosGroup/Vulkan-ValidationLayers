@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -191,9 +191,7 @@ class BestPractices : public ValidationStateTracker {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    BestPractices(vvl::dispatch::Device* dev, BestPractices* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeBestPractices) {}
-    BestPractices(vvl::dispatch::Instance* inst) : BaseClass(inst, LayerObjectTypeBestPractices) {}
+    BestPractices() { container_type = LayerObjectTypeBestPractices; }
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;

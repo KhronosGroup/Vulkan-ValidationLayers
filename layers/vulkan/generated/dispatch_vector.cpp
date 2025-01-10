@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -44,10 +44,7 @@
 #include "gpu/core/gpuav.h"
 #include "sync/sync_validation.h"
 
-namespace vvl {
-namespace dispatch {
-
-void Device::InitObjectDispatchVectors() {
+void DispatchObject::InitObjectDispatchVectors() {
 #define BUILD_DISPATCH_VECTOR(name)                                                                                            \
     init_object_dispatch_vector(InterceptId##name, typeid(&ValidationObject::name), typeid(&ThreadSafety::name),               \
                                 typeid(&StatelessValidation::name), typeid(&ObjectLifetimes::name), typeid(&CoreChecks::name), \
@@ -1892,7 +1889,5 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMeshTasksIndirectCountEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMeshTasksIndirectCountEXT);
 }
-}  // namespace dispatch
-}  // namespace vvl
 
 // NOLINTEND

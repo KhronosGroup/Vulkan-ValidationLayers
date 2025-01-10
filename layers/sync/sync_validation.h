@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,9 +41,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    SyncValidator(vvl::dispatch::Device *dev, SyncValidator *instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeSyncValidation), error_messages_(*this) {}
-    SyncValidator(vvl::dispatch::Instance *inst) : BaseClass(inst, LayerObjectTypeSyncValidation), error_messages_(*this) {}
+    SyncValidator() : error_messages_(*this) { container_type = LayerObjectTypeSyncValidation; }
     ~SyncValidator();
 
     syncval::ErrorMessages error_messages_;

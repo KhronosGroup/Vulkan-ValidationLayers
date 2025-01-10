@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2024 Valve Corporation
-# Copyright (c) 2015-2024 LunarG, Inc.
+# Copyright (c) 2015-2025 Valve Corporation
+# Copyright (c) 2015-2025 LunarG, Inc.
 # Copyright (c) 2015-2024 Google Inc.
 # Copyright (c) 2023-2024 RasterGrid Kft.
 #
@@ -134,9 +134,9 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2024 The Khronos Group Inc.
-            * Copyright (c) 2015-2024 Valve Corporation
-            * Copyright (c) 2015-2024 LunarG, Inc.
+            * Copyright (c) 2015-2025 The Khronos Group Inc.
+            * Copyright (c) 2015-2025 Valve Corporation
+            * Copyright (c) 2015-2025 LunarG, Inc.
             * Copyright (c) 2015-2024 Google Inc.
             * Copyright (c) 2023-2024 RasterGrid Kft.
             *
@@ -209,12 +209,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
             for command in self.vk.extensions[extended_query_ext].commands:
                 parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
                 arguments = ','.join([x.name for x in command.params])
-                dispatch = 'dispatch_instance_' if command.instance else 'dispatch_device_'
                 out.append(f'''\n{command.returnType} ValidationObject::Dispatch{command.alias[2:]}Helper({parameters}) const {{
                     if (api_version >= VK_API_VERSION_1_1) {{
-                        return {dispatch}->{command.alias[2:]}({arguments});
+                        return dispatch_->{command.alias[2:]}({arguments});
                     }} else {{
-                        return {dispatch}->{command.name[2:]}({arguments});
+                        return dispatch_->{command.name[2:]}({arguments});
                     }}
                 }}
                 ''')
@@ -292,7 +291,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
     }
 
     assert(physicalDevice);
-    auto layer_data = vvl::dispatch::GetData(physicalDevice);
+    auto layer_data = GetLayerData(physicalDevice);
     return layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pCount, pProperties);
 }
             ''')
@@ -307,7 +306,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             dispatch = 'device_dispatch' if not command.instance else 'instance_dispatch'
             # Setup common to call wrappers. First parameter is always dispatchable
             out.append('VVL_ZoneScoped;\n\n')
-            out.append(f'auto {dispatch} = vvl::dispatch::GetData({command.params[0].name});\n')
+            out.append(f'auto {dispatch} = GetLayerData({command.params[0].name});\n')
 
             # Declare result variable, if any.
             return_map = {

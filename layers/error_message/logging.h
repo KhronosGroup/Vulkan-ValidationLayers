@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -254,7 +254,6 @@ class DebugReport {
 
 class Logger {
   public:
-    Logger(DebugReport *dr) : debug_report(dr) {}
     template <typename T>
     std::string FormatHandle(T &&h) const {
         return debug_report->FormatHandle(std::forward<T>(h));

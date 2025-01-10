@@ -23,13 +23,8 @@ uint64_t object_track_index = 0;
 static std::shared_mutex lifetime_set_mutex;
 static vvl::unordered_set<ObjectLifetimes *> lifetime_set;
 
-ObjectLifetimes::ObjectLifetimes(vvl::dispatch::Device *dev, ObjectLifetimes *instance)
-    : BaseClass(dev, LayerObjectTypeObjectTracker) {
-    WriteLockGuard lock(lifetime_set_mutex);
-    lifetime_set.insert(this);
-}
-
-ObjectLifetimes::ObjectLifetimes(vvl::dispatch::Instance *instance) : BaseClass(instance, LayerObjectTypeObjectTracker) {
+ObjectLifetimes::ObjectLifetimes() : num_objects{}, num_total_objects(0), null_descriptor_enabled(false) {
+    container_type = LayerObjectTypeObjectTracker;
     WriteLockGuard lock(lifetime_set_mutex);
     lifetime_set.insert(this);
 }
@@ -510,8 +505,8 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
                      string_VkDebugReportObjectTypeEXT(debug_object_type), FormatHandle(ObjTrackStateTypedHandle(*node)).c_str());
 
         // Throw errors if any device objects belonging to this instance have not been destroyed
-        auto device_data = vvl::dispatch::GetData(device);
-        auto obj_lifetimes_data = static_cast<ObjectLifetimes *>(device_data->GetValidationObject(LayerObjectTypeObjectTracker));
+        auto device_layer_data = GetLayerData(device);
+        auto obj_lifetimes_data = static_cast<ObjectLifetimes*>(device_layer_data->GetValidationObject(LayerObjectTypeObjectTracker));
         skip |= obj_lifetimes_data->ReportUndestroyedDeviceObjects(device, error_obj.location);
 
         skip |= ValidateDestroyObject(device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyInstance-instance-00630",
@@ -568,7 +563,8 @@ bool ObjectLifetimes::PreCallValidateDestroyDevice(VkDevice device, const VkAllo
 
 void ObjectLifetimes::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                                  const RecordObject &record_obj) {
-    auto object_lifetimes = static_cast<ObjectLifetimes *>(dispatch_instance_->GetValidationObject(LayerObjectTypeObjectTracker));
+    auto instance_data = GetLayerData(physical_device);
+    auto object_lifetimes = static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
     // If ObjectTracker was removed (in an early teardown) this might be null, could search in aborted_object_dispatch but if it is
     // there, no need to record anything else
     if (object_lifetimes) {
@@ -776,7 +772,7 @@ void ObjectLifetimes::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice
     if (record_obj.result < VK_SUCCESS) return;
     CreateObject(*pDevice, kVulkanObjectTypeDevice, pAllocator, record_obj.location);
 
-    auto device_data = vvl::dispatch::GetData(*pDevice);
+    auto device_data = GetLayerData(*pDevice);
     auto object_tracking = static_cast<ObjectLifetimes*>(device_data->GetValidationObject(LayerObjectTypeObjectTracker));
 
     const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
@@ -1397,16 +1393,17 @@ void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesKHR(
                 }
             };
 
-            if (dispatch_device_->wrap_handles) {
-                deferredOperation = dispatch_device_->Unwrap(deferredOperation);
+            auto layer_data = GetLayerData(device);
+            if (dispatch_->wrap_handles) {
+                deferredOperation = layer_data->Unwrap(deferredOperation);
             }
             std::vector<std::function<void(const std::vector<VkPipeline> &)>> cleanup_fn;
-            auto find_res = dispatch_device_->deferred_operation_post_check.pop(deferredOperation);
+            auto find_res = layer_data->deferred_operation_post_check.pop(deferredOperation);
             if (find_res->first) {
                 cleanup_fn = std::move(find_res->second);
             }
             cleanup_fn.emplace_back(register_fn);
-            dispatch_device_->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
+            layer_data->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
         } else {
             for (uint32_t index = 0; index < createInfoCount; index++) {
                 if (!pPipelines[index]) continue;

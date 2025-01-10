@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+/* Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,9 +68,6 @@ struct InstrumentedShader {
 class GpuShaderInstrumentor : public ValidationStateTracker {
     using BaseClass = ValidationStateTracker;
   public:
-    GpuShaderInstrumentor(vvl::dispatch::Device *dev, GpuShaderInstrumentor *instance, LayerObjectTypeId type)
-        : BaseClass(dev, instance, type) {}
-    GpuShaderInstrumentor(vvl::dispatch::Instance *inst, LayerObjectTypeId type) : BaseClass(inst, type) {}
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;

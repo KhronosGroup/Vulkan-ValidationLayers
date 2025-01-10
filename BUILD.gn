@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2021 The ANGLE Project Authors.
-# Copyright (C) 2019-2024 LunarG, Inc.
+# Copyright (C) 2019-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -377,8 +377,7 @@ vvl_sources = [
   "layers/vulkan/generated/device_features.h",
   "layers/vulkan/generated/dispatch_functions.h",
   "layers/vulkan/generated/dispatch_object.cpp",
-  "layers/vulkan/generated/dispatch_object_device_methods.h",
-  "layers/vulkan/generated/dispatch_object_instance_methods.h",
+  "layers/vulkan/generated/dispatch_object_methods.h",
   "layers/vulkan/generated/dispatch_vector.cpp",
   "layers/vulkan/generated/dispatch_vector.h",
   "layers/vulkan/generated/dynamic_state_helper.cpp",
