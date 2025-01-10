@@ -25,10 +25,6 @@
 
 static std::shared_mutex dispatch_lock;
 
-std::atomic<uint64_t> DispatchObject::global_unique_id{1};
-vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> DispatchObject::unique_id_mapping;
-bool DispatchObject::wrap_handles{true};
-
 // Generally we expect to get the same device and instance, so we keep them handy
 static thread_local DispatchObject *last_used_instance_data = nullptr;
 static std::shared_mutex instance_mutex;
@@ -516,7 +512,14 @@ VkResult DispatchObject::CreateRenderPass2(VkDevice device, const VkRenderPassCr
 
 void DispatchObject::DestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyRenderPass(device, renderPass, pAllocator);
-    renderPass = Erase(renderPass);
+    uint64_t renderPass_id = CastToUint64(renderPass);
+
+    auto iter = unique_id_mapping.pop(renderPass_id);
+    if (iter != unique_id_mapping.end()) {
+        renderPass = (VkRenderPass)iter->second;
+    } else {
+        renderPass = (VkRenderPass)0;
+    }
 
     device_dispatch_table.DestroyRenderPass(device, renderPass, pAllocator);
 
@@ -554,12 +557,20 @@ void DispatchObject::DestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapcha
 
     auto &image_array = swapchain_wrapped_image_handle_map[swapchain];
     for (auto &image_handle : image_array) {
-        Erase(image_handle);
+        unique_id_mapping.erase(HandleToUint64(image_handle));
     }
     swapchain_wrapped_image_handle_map.erase(swapchain);
     lock.unlock();
 
-    swapchain = Erase(swapchain);
+    uint64_t swapchain_id = HandleToUint64(swapchain);
+
+    auto iter = unique_id_mapping.pop(swapchain_id);
+    if (iter != unique_id_mapping.end()) {
+        swapchain = (VkSwapchainKHR)iter->second;
+    } else {
+        swapchain = (VkSwapchainKHR)0;
+    }
+
     device_dispatch_table.DestroySwapchainKHR(device, swapchain, pAllocator);
 }
 
@@ -602,12 +613,19 @@ void DispatchObject::DestroyDescriptorPool(VkDevice device, VkDescriptorPool des
 
     // remove references to implicitly freed descriptor sets
     for (auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
-        Erase(descriptor_set);
+        unique_id_mapping.erase(CastToUint64(descriptor_set));
     }
     pool_descriptor_sets_map.erase(descriptorPool);
     lock.unlock();
 
-    descriptorPool = Erase(descriptorPool);
+    uint64_t descriptorPool_id = CastToUint64(descriptorPool);
+
+    auto iter = unique_id_mapping.pop(descriptorPool_id);
+    if (iter != unique_id_mapping.end()) {
+        descriptorPool = (VkDescriptorPool)iter->second;
+    } else {
+        descriptorPool = (VkDescriptorPool)0;
+    }
 
     device_dispatch_table.DestroyDescriptorPool(device, descriptorPool, pAllocator);
 }
@@ -621,7 +639,7 @@ VkResult DispatchObject::ResetDescriptorPool(VkDevice device, VkDescriptorPool d
         WriteLockGuard lock(dispatch_lock);
         // remove references to implicitly freed descriptor sets
         for (auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
-            Erase(descriptor_set);
+            unique_id_mapping.erase(CastToUint64(descriptor_set));
         }
         pool_descriptor_sets_map[descriptorPool].clear();
     }
@@ -685,7 +703,8 @@ VkResult DispatchObject::FreeDescriptorSets(VkDevice device, VkDescriptorPool de
         for (uint32_t index0 = 0; index0 < descriptorSetCount; index0++) {
             VkDescriptorSet handle = pDescriptorSets[index0];
             pool_descriptor_sets.erase(handle);
-            Erase(handle);
+            uint64_t unique_id = CastToUint64(handle);
+            unique_id_mapping.erase(unique_id);
         }
     }
     return result;
@@ -767,7 +786,12 @@ void DispatchObject::DestroyDescriptorUpdateTemplate(VkDevice device, VkDescript
     desc_template_createinfo_map.erase(descriptor_update_template_id);
     lock.unlock();
 
-    descriptorUpdateTemplate = Erase(descriptorUpdateTemplate);
+    auto iter = unique_id_mapping.pop(descriptor_update_template_id);
+    if (iter != unique_id_mapping.end()) {
+        descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)iter->second;
+    } else {
+        descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)0;
+    }
 
     device_dispatch_table.DestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
 }
@@ -782,7 +806,12 @@ void DispatchObject::DestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescr
     desc_template_createinfo_map.erase(descriptor_update_template_id);
     lock.unlock();
 
-    descriptorUpdateTemplate = Erase(descriptorUpdateTemplate);
+    auto iter = unique_id_mapping.pop(descriptor_update_template_id);
+    if (iter != unique_id_mapping.end()) {
+        descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)iter->second;
+    } else {
+        descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)0;
+    }
 
     device_dispatch_table.DestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
 }
@@ -1110,54 +1139,58 @@ VkResult DispatchObject::GetDisplayModeProperties2KHR(VkPhysicalDevice physicalD
 VkResult DispatchObject::DebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT *pTagInfo) {
     if (!wrap_handles) return device_dispatch_table.DebugMarkerSetObjectTagEXT(device, pTagInfo);
     vku::safe_VkDebugMarkerObjectTagInfoEXT local_tag_info(pTagInfo);
-
-    auto unwrapped = Find(local_tag_info.object);
-    if (unwrapped) {
-        local_tag_info.object = unwrapped;
+    {
+        auto it = unique_id_mapping.find(CastToUint64(local_tag_info.object));
+        if (it != unique_id_mapping.end()) {
+            local_tag_info.object = it->second;
+        }
     }
-
-    return device_dispatch_table.DebugMarkerSetObjectTagEXT(device,
-                                                            reinterpret_cast<VkDebugMarkerObjectTagInfoEXT *>(&local_tag_info));
+    VkResult result = device_dispatch_table.DebugMarkerSetObjectTagEXT(
+        device, reinterpret_cast<VkDebugMarkerObjectTagInfoEXT *>(&local_tag_info));
+    return result;
 }
 
 VkResult DispatchObject::DebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
     if (!wrap_handles) return device_dispatch_table.DebugMarkerSetObjectNameEXT(device, pNameInfo);
     vku::safe_VkDebugMarkerObjectNameInfoEXT local_name_info(pNameInfo);
-
-    auto unwrapped = Find(local_name_info.object);
-    if (unwrapped) {
-        local_name_info.object = unwrapped;
+    {
+        auto it = unique_id_mapping.find(CastToUint64(local_name_info.object));
+        if (it != unique_id_mapping.end()) {
+            local_name_info.object = it->second;
+        }
     }
-
-    return device_dispatch_table.DebugMarkerSetObjectNameEXT(device,
-                                                             reinterpret_cast<VkDebugMarkerObjectNameInfoEXT *>(&local_name_info));
+    VkResult result = device_dispatch_table.DebugMarkerSetObjectNameEXT(
+        device, reinterpret_cast<VkDebugMarkerObjectNameInfoEXT *>(&local_name_info));
+    return result;
 }
 
 // VK_EXT_debug_utils
 VkResult DispatchObject::SetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo) {
     if (!wrap_handles) return device_dispatch_table.SetDebugUtilsObjectTagEXT(device, pTagInfo);
     vku::safe_VkDebugUtilsObjectTagInfoEXT local_tag_info(pTagInfo);
-
-    auto unwrapped = Find(local_tag_info.objectHandle);
-    if (unwrapped) {
-        local_tag_info.objectHandle = unwrapped;
+    {
+        auto it = unique_id_mapping.find(CastToUint64(local_tag_info.objectHandle));
+        if (it != unique_id_mapping.end()) {
+            local_tag_info.objectHandle = it->second;
+        }
     }
-
-    return device_dispatch_table.SetDebugUtilsObjectTagEXT(device,
-                                                           reinterpret_cast<const VkDebugUtilsObjectTagInfoEXT *>(&local_tag_info));
+    VkResult result = device_dispatch_table.SetDebugUtilsObjectTagEXT(
+        device, reinterpret_cast<const VkDebugUtilsObjectTagInfoEXT *>(&local_tag_info));
+    return result;
 }
 
 VkResult DispatchObject::SetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
     if (!wrap_handles) return device_dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
     vku::safe_VkDebugUtilsObjectNameInfoEXT local_name_info(pNameInfo);
-
-    auto unwrapped = Find(local_name_info.objectHandle);
-    if (unwrapped) {
-        local_name_info.objectHandle = unwrapped;
+    {
+        auto it = unique_id_mapping.find(CastToUint64(local_name_info.objectHandle));
+        if (it != unique_id_mapping.end()) {
+            local_name_info.objectHandle = it->second;
+        }
     }
-
-    return device_dispatch_table.SetDebugUtilsObjectNameEXT(
+    VkResult result = device_dispatch_table.SetDebugUtilsObjectNameEXT(
         device, reinterpret_cast<const VkDebugUtilsObjectNameInfoEXT *>(&local_name_info));
+    return result;
 }
 
 VkResult DispatchObject::GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
@@ -1221,8 +1254,13 @@ void DispatchObject::FreeCommandBuffers(VkDevice device, VkCommandPool commandPo
 
 void DispatchObject::DestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
     if (!wrap_handles) return device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
-
-    commandPool = Erase(commandPool);
+    uint64_t commandPool_id = CastToUint64(commandPool);
+    auto iter = unique_id_mapping.pop(commandPool_id);
+    if (iter != unique_id_mapping.end()) {
+        commandPool = (VkCommandPool)iter->second;
+    } else {
+        commandPool = (VkCommandPool)0;
+    }
     device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
 
     auto lock = WriteLockGuard(secondary_cb_map_mutex);
