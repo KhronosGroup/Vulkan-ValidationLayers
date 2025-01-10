@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ namespace spirv {
 //    }
 class InjectConditionalFunctionPass : public Pass {
   public:
-    bool Run();
+    bool Run() final;
 
   protected:
     InjectConditionalFunctionPass(Module& module);

@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,7 +174,7 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
     return true;
 }
 
-void DescriptorClassTexelBufferPass::PrintDebugInfo() {
+void DescriptorClassTexelBufferPass::PrintDebugInfo() const {
     std::cout << "DescriptorClassTexelBufferPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 

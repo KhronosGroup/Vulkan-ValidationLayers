@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,17 @@ struct InjectionData {
 };
 
 // Common helpers for all passes
+// The pass takes the Module object and modifies it as needed
 class Pass {
   public:
+    // Needed to know where an error/warning comes from
     virtual const char* Name() const = 0;
+    // Return true if code was instrumented/modified in anyway
+    virtual bool Run() = 0;
+    // Require passes to print info as extremely helpful for debugging
+    virtual void PrintDebugInfo() const = 0;
+    // Wrapper that each pass can use to start
+    bool Start();
 
     // Finds (and creates if needed) decoration and returns the OpVariable it points to
     const Variable& GetBuiltinVariable(uint32_t built_in);

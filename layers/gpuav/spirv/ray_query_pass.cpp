@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,9 @@ bool RayQueryPass::RequiresInstrumentation(const Function& function, const Instr
     return true;
 }
 
-void RayQueryPass::PrintDebugInfo() { std::cout << "RayQueryPass instrumentation count: " << instrumentations_count_ << '\n'; }
+void RayQueryPass::PrintDebugInfo() const {
+    std::cout << "RayQueryPass instrumentation count: " << instrumentations_count_ << '\n';
+}
 
 }  // namespace spirv
 }  // namespace gpuav

@@ -47,6 +47,7 @@ struct Settings {
 
 // This is the "brain" of SPIR-V logic, it stores the memory of all the Instructions and is the main context.
 // There are other helper classes that are charge of handling the various parts of the module.
+// The Module takes SPIR-V, has each pass modify it, then dumps it out into the instrumented SPIR-V
 class Module {
   public:
     Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
@@ -82,16 +83,6 @@ class Module {
 
     // The class is designed to be written out to a binary file.
     void ToBinary(std::vector<uint32_t>& out);
-
-    // Passes that can be ran
-    // Return true if code was instrumented
-    bool RunPassDescriptorIndexingOOB();
-    bool RunPassDescriptorClassGeneralBuffer();
-    bool RunPassDescriptorClassTexelBuffer();
-    bool RunPassBufferDeviceAddress();
-    bool RunPassRayQuery();
-    bool RunPassDebugPrintf(uint32_t binding_slot);
-    bool RunPassPostProcessDescriptorIndexing();
 
     void AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class);
 

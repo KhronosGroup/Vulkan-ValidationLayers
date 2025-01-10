@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,10 @@ namespace spirv {
 class DescriptorClassTexelBufferPass : public Pass {
   public:
     DescriptorClassTexelBufferPass(Module& module);
-    void PrintDebugInfo();
     const char* Name() const final { return "DescriptorClassTexelBufferPass"; }
-    bool Run();
+
+    bool Run() final;
+    void PrintDebugInfo() const final;
 
   private:
     bool RequiresInstrumentation(const Function& function, const Instruction& inst);

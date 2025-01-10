@@ -24,7 +24,6 @@
 #include "generated/vk_extension_helper.h"
 #include "generated/dispatch_functions.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
-#include "gpuav/spirv/module.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "utils/vk_layer_utils.h"
@@ -35,6 +34,16 @@
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/shader_instruction.h"
+
+#include "gpuav/spirv/module.h"
+#include "gpuav/spirv/descriptor_indexing_oob_pass.h"
+#include "gpuav/spirv/buffer_device_address_pass.h"
+#include "gpuav/spirv/descriptor_indexing_oob_pass.h"
+#include "gpuav/spirv/descriptor_class_general_buffer_pass.h"
+#include "gpuav/spirv/descriptor_class_texel_buffer_pass.h"
+#include "gpuav/spirv/ray_query_pass.h"
+#include "gpuav/spirv/debug_printf_pass.h"
+#include "gpuav/spirv/post_process_descriptor_indexing.h"
 
 #include <cassert>
 #include <fstream>
@@ -1202,25 +1211,31 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     if (gpuav_settings.shader_instrumentation.descriptor_checks) {
         // Will wrap descriptor indexing with if/else to prevent crashing if OOB
-        modified |= module.RunPassDescriptorIndexingOOB();
+        spirv::DescriptorIndexingOOBPass oob_pass(module);
+        modified |= oob_pass.Start();
 
         // Depending on the DescriptorClass, will add dedicated check
-        modified |= module.RunPassDescriptorClassGeneralBuffer();
-        modified |= module.RunPassDescriptorClassTexelBuffer();
+        spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
+        modified |= general_buffer_pass.Start();
+        spirv::DescriptorClassTexelBufferPass texel_buffer_pass(module);
+        modified |= texel_buffer_pass.Start();
     }
 
     if (gpuav_settings.shader_instrumentation.buffer_device_address) {
-        modified |= module.RunPassBufferDeviceAddress();
+        spirv::BufferDeviceAddressPass pass(module);
+        modified |= pass.Start();
     }
 
     if (gpuav_settings.shader_instrumentation.ray_query) {
-        modified |= module.RunPassRayQuery();
+        spirv::RayQueryPass pass(module);
+        modified |= pass.Start();
     }
 
     // Post Process instrumentation passes assume the things inside are valid, but putting at the end, things above will wrap checks
     // in a if/else, this means they will be gaurded as if they were inside the above passes
     if (gpuav_settings.shader_instrumentation.post_process_descriptor_index) {
-        modified |= module.RunPassPostProcessDescriptorIndexing();
+        spirv::PostProcessDescriptorIndexingPass pass(module);
+        modified |= pass.Start();
     }
 
     // If there were GLSL written function injected, we will grab them and link them in here
@@ -1232,7 +1247,9 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     // 1. We use buffer device address in it and we don't want to validate the inside of this pass
     // 2. We might want to debug the above passes and want to inject our own debug printf calls
     if (gpuav_settings.debug_printf_enabled) {
-        modified |= module.RunPassDebugPrintf(glsl::kBindingInstDebugPrintf);
+        // binding slot allows debug printf to be slotted in the same set as GPU-AV if needed
+        spirv::DebugPrintfPass pass(module, glsl::kBindingInstDebugPrintf);
+        modified |= pass.Start();
     }
 
     // If nothing was instrumented, leave early to save time

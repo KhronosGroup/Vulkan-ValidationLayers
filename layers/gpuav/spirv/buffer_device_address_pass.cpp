@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     return true;
 }
 
-void BufferDeviceAddressPass::PrintDebugInfo() {
+void BufferDeviceAddressPass::PrintDebugInfo() const {
     std::cout << "BufferDeviceAddressPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 

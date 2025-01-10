@@ -535,7 +535,7 @@ bool DebugPrintfPass::Run() {
     return true;
 }
 
-void DebugPrintfPass::PrintDebugInfo() {
+void DebugPrintfPass::PrintDebugInfo() const {
     std::cout << "DebugPrintfPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 

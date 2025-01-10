@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -167,7 +167,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     return true;
 }
 
-void DescriptorClassGeneralBufferPass::PrintDebugInfo() {
+void DescriptorClassGeneralBufferPass::PrintDebugInfo() const {
     std::cout << "DescriptorClassGeneralBufferPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
