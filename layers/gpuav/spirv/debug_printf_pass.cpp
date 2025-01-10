@@ -20,6 +20,8 @@
 #include <cstring>
 #include <iostream>
 
+#include "generated/device_features.h"
+
 namespace gpuav {
 namespace spirv {
 
@@ -149,7 +151,7 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
                     double_bitmask_ |= 1 << expanded_parameter_count_;
                 }
 
-                if (!module_.support_int64_) {
+                if (!module_.enabled_features_.shaderInt64) {
                     module_.InternalError(
                         "DEBUG-PRINTF-INT64-SUPPORT",
                         "shaderInt64 feature is not supported, but is required to cast a 64-bit float to a 64-bit int "

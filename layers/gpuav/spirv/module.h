@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include "containers/custom_containers.h"
 
 class DebugReport;
+struct DeviceFeatures;
 
 namespace gpuav {
 namespace spirv {
@@ -41,8 +42,6 @@ struct Settings {
     bool print_debug_info;
     uint32_t max_instrumentations_count;
     bool support_non_semantic_info;
-    bool support_int64;
-    bool support_memory_model_device_scope;
     bool has_bindless_descriptors;
 };
 
@@ -51,7 +50,7 @@ struct Settings {
 class Module {
   public:
     Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
-           const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut);
+           const DeviceFeatures& enabled_features, const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut);
 
     // Memory that holds all the actual SPIR-V data, replicate the "Logical Layout of a Module" of SPIR-V.
     // Divided into sections to make easier to modify each part at different times, but still keeps it simple to write out all the
@@ -113,8 +112,7 @@ class Module {
     const uint32_t output_buffer_descriptor_set_;
 
     const bool support_non_semantic_info_;
-    const bool support_int64_;
-    const bool support_memory_model_device_scope_;
+    const DeviceFeatures& enabled_features_;
 
     // TODO - To make things simple to start, decide if the whole shader has anything bindless or not. The next step will be a
     // system to pass in the information from the descriptor set layout to build a LUT of which OpVariable point to bindless

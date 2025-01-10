@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,18 +29,20 @@
 
 #include <iostream>
 
+#include "generated/device_features.h"
+
 namespace gpuav {
 namespace spirv {
 
 Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
+               const DeviceFeatures& enabled_features,
                const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut)
     : type_manager_(*this),
       max_instrumentations_count_(settings.max_instrumentations_count),
       shader_id_(settings.shader_id),
       output_buffer_descriptor_set_(settings.output_buffer_descriptor_set),
       support_non_semantic_info_(settings.support_non_semantic_info),
-      support_int64_(settings.support_int64),
-      support_memory_model_device_scope_(settings.support_memory_model_device_scope),
+      enabled_features_(enabled_features),
       has_bindless_descriptors_(settings.has_bindless_descriptors),
       print_debug_info_(settings.print_debug_info),
       debug_report_(debug_report),
@@ -713,7 +715,7 @@ void Module::PostProcess() {
     // Found that QueueFamily was added to mostly solve this, if a device doesn't support Device scope we could use QueueFamily, the
     // issue is that the GLSL we have is static and if we use QueueFamily then we "need" the MemoryModel enabled
     if (HasCapability(spv::CapabilityVulkanMemoryModel)) {
-        if (!support_memory_model_device_scope_) {
+        if (!enabled_features_.vulkanMemoryModelDeviceScope) {
             InternalError(
                 "GPU-SHADER-INSTRUMENT-SUPPORT",
                 "vulkanMemoryModelDeviceScope feature is not supported, but need to let us call atomicAdd to the output buffer");
