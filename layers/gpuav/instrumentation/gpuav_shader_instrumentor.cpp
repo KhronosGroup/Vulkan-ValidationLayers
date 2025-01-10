@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+/* Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1192,11 +1192,10 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module_settings.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
     module_settings.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
     module_settings.support_non_semantic_info = IsExtEnabled(device_extensions.vk_khr_shader_non_semantic_info);
-    module_settings.support_int64 = enabled_features.shaderInt64;
-    module_settings.support_memory_model_device_scope = enabled_features.vulkanMemoryModelDeviceScope;
     module_settings.has_bindless_descriptors = instrumentation_dsl.has_bindless_descriptors;
 
-    spirv::Module module(input_spirv, debug_report, module_settings, instrumentation_dsl.set_index_to_bindings_layout_lut);
+    spirv::Module module(input_spirv, debug_report, module_settings, enabled_features,
+                         instrumentation_dsl.set_index_to_bindings_layout_lut);
 
     bool modified = false;
 
