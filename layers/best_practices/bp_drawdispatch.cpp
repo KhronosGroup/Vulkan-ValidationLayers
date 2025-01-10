@@ -221,10 +221,10 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cb_sta
     }
 
     const VkIndexType ib_type = cb_state.index_buffer_binding.index_type;
-    const auto ib_mem_state = ib_state->MemState();
-    if (!ib_mem_state) return skip;
+    const auto ib_memory_state = ib_state->MemoryState();
+    if (!ib_memory_state) return skip;
 
-    const void* ib_mem = ib_mem_state->p_driver_data;
+    const void* ib_mem = ib_memory_state->p_driver_data;
 
     const auto& last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
     const bool primitive_restart_enable = last_bound_state.IsPrimitiveRestartEnable();
@@ -233,7 +233,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cb_sta
     if (ib_mem) {
         const uint32_t scan_stride = GetIndexAlignment(ib_type);
         // Check if all indices are within the memory allocation size, if robustness is enabled they might not be
-        if ((firstIndex + indexCount) * scan_stride > ib_mem_state->allocate_info.allocationSize) {
+        if ((firstIndex + indexCount) * scan_stride > ib_memory_state->allocate_info.allocationSize) {
             return skip;
         }
         const uint8_t* scan_begin = static_cast<const uint8_t*>(ib_mem) + firstIndex * scan_stride;

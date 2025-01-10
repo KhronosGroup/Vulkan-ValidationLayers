@@ -28,15 +28,15 @@
 #include "state_tracker/ray_tracing_state.h"
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
-bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *mem_state, const LogObjectList &objlist,
+bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *memory_state, const LogObjectList &objlist,
                                           const VulkanTypedHandle &typed_handle, const Location &loc, const char *vuid) const {
     bool skip = false;
-    if (!mem_state) {
+    if (!memory_state) {
         const char *type_name = string_VulkanObjectType(typed_handle.type);
         skip |=
             LogError(vuid, objlist, loc, "(%s) is used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
                      FormatHandle(typed_handle).c_str(), type_name + 2);
-    } else if (mem_state->Destroyed()) {
+    } else if (memory_state->Destroyed()) {
         skip |= LogError(vuid, objlist, loc,
                          "(%s) is used, but bound memory was freed. Memory must not be freed prior to this operation.",
                          FormatHandle(typed_handle).c_str());
@@ -44,12 +44,12 @@ bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *mem_state, co
     return skip;
 }
 
-bool CoreChecks::VerifyBoundMemoryIsDeviceVisible(const vvl::DeviceMemory *mem_state, const LogObjectList &objlist,
+bool CoreChecks::VerifyBoundMemoryIsDeviceVisible(const vvl::DeviceMemory *memory_state, const LogObjectList &objlist,
                                                   const VulkanTypedHandle &typed_handle, const Location &loc,
                                                   const char *vuid) const {
     bool result = false;
-    if (mem_state) {
-        if ((phys_dev_mem_props.memoryTypes[mem_state->allocate_info.memoryTypeIndex].propertyFlags &
+    if (memory_state) {
+        if ((phys_dev_mem_props.memoryTypes[memory_state->allocate_info.memoryTypeIndex].propertyFlags &
              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) == 0) {
             result |= LogError(vuid, objlist, loc, "(%s) used with memory that is not device visible.",
                                FormatHandle(typed_handle).c_str());
@@ -248,11 +248,10 @@ bool CoreChecks::ValidateAccelStructBufferMemoryIsHostVisible(const vvl::Acceler
     bool result = false;
     result |= ValidateMemoryIsBoundToBuffer(device, *accel_struct.buffer_state, buffer_loc, vuid);
     if (!result) {
-        const auto mem_state = accel_struct.buffer_state->MemState();
-        if (mem_state) {
-            if ((phys_dev_mem_props.memoryTypes[mem_state->allocate_info.memoryTypeIndex].propertyFlags &
+        if (const auto memory_state = accel_struct.buffer_state->MemoryState()) {
+            if ((phys_dev_mem_props.memoryTypes[memory_state->allocate_info.memoryTypeIndex].propertyFlags &
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
-                const LogObjectList objlist(accel_struct.Handle(), accel_struct.buffer_state->Handle(), mem_state->Handle());
+                const LogObjectList objlist(accel_struct.Handle(), accel_struct.buffer_state->Handle(), memory_state->Handle());
                 result |=
                     LogError(vuid, objlist, buffer_loc, "has been created with a buffer whose bound memory is not host visible.");
             }
@@ -264,12 +263,12 @@ bool CoreChecks::ValidateAccelStructBufferMemoryIsHostVisible(const vvl::Acceler
 bool CoreChecks::ValidateAccelStructBufferMemoryIsNotMultiInstance(const vvl::AccelerationStructureKHR &accel_struct,
                                                                    const Location &accel_struct_loc, const char *vuid) const {
     bool skip = false;
-    if (const vvl::DeviceMemory *buffer_mem = accel_struct.buffer_state->MemState()) {
-        if (buffer_mem->multi_instance) {
-            const LogObjectList objlist(accel_struct.Handle(), accel_struct.buffer_state->Handle(), buffer_mem->Handle());
+    if (const vvl::DeviceMemory *memory_state = accel_struct.buffer_state->MemoryState()) {
+        if (memory_state->multi_instance) {
+            const LogObjectList objlist(accel_struct.Handle(), accel_struct.buffer_state->Handle(), memory_state->Handle());
             skip |= LogError(vuid, objlist, accel_struct_loc,
                              "has been created with a buffer bound to memory (%s) that was allocated with multiple instances.",
-                             FormatHandle(buffer_mem->Handle()).c_str());
+                             FormatHandle(memory_state->Handle()).c_str());
         }
     }
     return skip;
@@ -305,7 +304,7 @@ bool CoreChecks::ValidateSetMemBinding(const vvl::DeviceMemory &memory_state, co
                          FormatHandle(memory_state.Handle()).c_str(), FormatHandle(typed_handle).c_str(), handle_type);
     }
 
-    const auto *prev_binding = mem_binding.MemState();
+    const auto *prev_binding = mem_binding.MemoryState();
     if (prev_binding || mem_binding.indeterminate_state) {
         const char *vuid = kVUIDUndefined;
         if (is_buffer) {
@@ -2175,13 +2174,13 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const 
                                           VkDeviceSize resource_size, VkExternalMemoryHandleTypeFlags external_handle_types,
                                           const VulkanTypedHandle &resource_handle, const Location &loc) const {
     bool skip = false;
-    if (auto mem_state = Get<vvl::DeviceMemory>(bind.memory)) {
-        if (!((uint32_t(1) << mem_state->allocate_info.memoryTypeIndex) & requirements.memoryTypeBits)) {
+    if (auto memory_state = Get<vvl::DeviceMemory>(bind.memory)) {
+        if (!((uint32_t(1) << memory_state->allocate_info.memoryTypeIndex) & requirements.memoryTypeBits)) {
             const LogObjectList objlist(bind.memory, resource_handle);
             skip |= LogError("VUID-VkSparseMemoryBind-memory-01096", objlist, loc.dot(Field::memory),
                              "has a type index (%" PRIu32 ") that is not among the allowed types mask (0x%" PRIX32
                              ") for this resource.",
-                             mem_state->allocate_info.memoryTypeIndex, requirements.memoryTypeBits);
+                             memory_state->allocate_info.memoryTypeIndex, requirements.memoryTypeBits);
         }
 
         if (SafeModulo(bind.memoryOffset, requirements.alignment) != 0) {
@@ -2191,46 +2190,46 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const 
                              requirements.alignment);
         }
 
-        if (phys_dev_mem_props.memoryTypes[mem_state->allocate_info.memoryTypeIndex].propertyFlags &
+        if (phys_dev_mem_props.memoryTypes[memory_state->allocate_info.memoryTypeIndex].propertyFlags &
             VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
             const LogObjectList objlist(bind.memory, resource_handle);
             skip |= LogError("VUID-VkSparseMemoryBind-memory-01097", objlist, loc.dot(Field::memory),
                              "type has VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT bit set.");
         }
 
-        if (bind.memoryOffset >= mem_state->allocate_info.allocationSize) {
+        if (bind.memoryOffset >= memory_state->allocate_info.allocationSize) {
             const LogObjectList objlist(bind.memory, resource_handle);
             skip |= LogError("VUID-VkSparseMemoryBind-memoryOffset-01101", objlist, loc.dot(Field::memoryOffset),
                              "(%" PRIu64 ") must be less than the size of memory (%" PRIu64 ")", bind.memoryOffset,
-                             mem_state->allocate_info.allocationSize);
+                             memory_state->allocate_info.allocationSize);
         }
 
-        if ((mem_state->allocate_info.allocationSize - bind.memoryOffset) < bind.size) {
+        if ((memory_state->allocate_info.allocationSize - bind.memoryOffset) < bind.size) {
             const LogObjectList objlist(bind.memory, resource_handle);
             skip |= LogError("VUID-VkSparseMemoryBind-size-01102", objlist, loc.dot(Field::size),
                              "(%" PRIu64 ") must be less than or equal to the size of memory (%" PRIu64
                              ") minus memoryOffset (%" PRIu64 ").",
-                             bind.size, mem_state->allocate_info.allocationSize, bind.memoryOffset);
+                             bind.size, memory_state->allocate_info.allocationSize, bind.memoryOffset);
         }
 
-        if (mem_state->IsExport()) {
-            if (!(mem_state->export_handle_types & external_handle_types)) {
+        if (memory_state->IsExport()) {
+            if (!(memory_state->export_handle_types & external_handle_types)) {
                 const LogObjectList objlist(bind.memory, resource_handle);
                 skip |= LogError("VUID-VkSparseMemoryBind-memory-02730", objlist,
                                  loc.dot(Field::memory).pNext(Struct::VkExportMemoryAllocateInfo).dot(Field::handleTypes),
                                  "is %s, but the external handle types specified in resource are %s.",
-                                 string_VkExternalMemoryHandleTypeFlags(mem_state->export_handle_types).c_str(),
+                                 string_VkExternalMemoryHandleTypeFlags(memory_state->export_handle_types).c_str(),
                                  string_VkExternalMemoryHandleTypeFlags(external_handle_types).c_str());
             }
         }
 
-        if (mem_state->IsImport()) {
-            if (!(*mem_state->import_handle_type & external_handle_types)) {
+        if (memory_state->IsImport()) {
+            if (!(*memory_state->import_handle_type & external_handle_types)) {
                 const LogObjectList objlist(bind.memory, resource_handle);
                 skip |= LogError("VUID-VkSparseMemoryBind-memory-02731", objlist, loc.dot(Field::memory),
                                  "was created with memory import operation, with handle type %s, but the external handle types "
                                  "specified in resource are %s.",
-                                 string_VkExternalMemoryHandleTypeFlagBits(*mem_state->import_handle_type),
+                                 string_VkExternalMemoryHandleTypeFlagBits(*memory_state->import_handle_type),
                                  string_VkExternalMemoryHandleTypeFlags(external_handle_types).c_str());
             }
         }
@@ -2288,13 +2287,13 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
                                                const Location &bind_loc, const Location &memory_loc) const {
     bool skip = false;
 
-    if (auto const mem_state = Get<vvl::DeviceMemory>(bind.memory)) {
+    if (auto const memory_state = Get<vvl::DeviceMemory>(bind.memory)) {
         // TODO: The closest one should be VUID-VkSparseImageMemoryBind-memory-01105 instead of the mentioned
         // one. We also need to check memory_bind.memory
-        if (bind.memoryOffset >= mem_state->allocate_info.allocationSize) {
+        if (bind.memoryOffset >= memory_state->allocate_info.allocationSize) {
             skip |= LogError("VUID-VkSparseMemoryBind-memoryOffset-01101", bind.memory, bind_loc.dot(Field::memoryOffset),
                              "(%" PRIu64 ") is not less than the size (%" PRIu64 ") of memory.", bind.memoryOffset,
-                             mem_state->allocate_info.allocationSize);
+                             memory_state->allocate_info.allocationSize);
         }
 
         // TODO: We cannot validate the requirement size since there is no way
@@ -2307,27 +2306,27 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
                              requirement.alignment);
         }
 
-        skip |= ValidateMemoryTypes(*mem_state.get(), requirement.memoryTypeBits, memory_loc.dot(Field::memory),
+        skip |= ValidateMemoryTypes(*memory_state.get(), requirement.memoryTypeBits, memory_loc.dot(Field::memory),
                                     "VUID-VkSparseImageMemoryBind-memory-01105");
 
-        if (mem_state->IsExport()) {
-            if (!(mem_state->export_handle_types & image_state->external_memory_handle_types)) {
+        if (memory_state->IsExport()) {
+            if (!(memory_state->export_handle_types & image_state->external_memory_handle_types)) {
                 const LogObjectList objlist(bind.memory, image_state->Handle());
                 skip |= LogError("VUID-VkSparseImageMemoryBind-memory-02732", objlist,
                                  memory_loc.dot(Field::memory).pNext(Struct::VkExportMemoryAllocateInfo).dot(Field::handleTypes),
                                  "is %s, but the external handle types specified in resource are %s.",
-                                 string_VkExternalMemoryHandleTypeFlags(mem_state->export_handle_types).c_str(),
+                                 string_VkExternalMemoryHandleTypeFlags(memory_state->export_handle_types).c_str(),
                                  string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle_types).c_str());
             }
         }
 
-        if (mem_state->IsImport()) {
-            if (!(*mem_state->import_handle_type & image_state->external_memory_handle_types)) {
+        if (memory_state->IsImport()) {
+            if (!(*memory_state->import_handle_type & image_state->external_memory_handle_types)) {
                 const LogObjectList objlist(bind.memory, image_state->Handle());
                 skip |= LogError("VUID-VkSparseImageMemoryBind-memory-02733", objlist, memory_loc.dot(Field::memory),
                                  "was created with memory import operation, with handle type %s, but the external handle types "
                                  "specified in resource are %s.",
-                                 string_VkExternalMemoryHandleTypeFlagBits(*mem_state->import_handle_type),
+                                 string_VkExternalMemoryHandleTypeFlagBits(*memory_state->import_handle_type),
                                  string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle_types).c_str());
             }
         }
@@ -2511,7 +2510,7 @@ bool CoreChecks::ValidateMemoryIsBoundToBuffer(LogObjectList objlist, const vvl:
     bool skip = false;
     if (!buffer_state.sparse) {
         objlist.add(buffer_state.Handle());
-        skip |= VerifyBoundMemoryIsValid(buffer_state.MemState(), objlist, buffer_state.Handle(), buffer_loc, vuid);
+        skip |= VerifyBoundMemoryIsValid(buffer_state.MemoryState(), objlist, buffer_state.Handle(), buffer_loc, vuid);
     }
     return skip;
 }

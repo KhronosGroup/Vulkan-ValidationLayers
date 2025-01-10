@@ -149,7 +149,7 @@ class Image : public Bindable {
     bool IsSwapchainImage() const { return create_from_swapchain != VK_NULL_HANDLE; }
 
     // TODO - need to understand if VkBindImageMemorySwapchainInfoKHR counts as "bound"
-    bool HasBeenBound() const { return (MemState() != nullptr) || (bind_swapchain); }
+    bool HasBeenBound() const { return (MemoryState() != nullptr) || (bind_swapchain); }
 
     inline bool IsImageTypeEqual(const VkImageCreateInfo &other_create_info) const {
         return create_info.imageType == other_create_info.imageType;

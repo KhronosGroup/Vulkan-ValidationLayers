@@ -1,4 +1,4 @@
-<!-- Copyright 2021-2024 LunarG, Inc. -->
+<!-- Copyright 2021-2025 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -541,12 +541,12 @@ The `p_driver_data` pointer is only used by Best Practices validation, but it is
 
 
 ```
-    struct MEM_BINDING {
-        std::shared_ptr<vvl::DeviceMemory> mem_state;
+    struct MemoryBinding {
+        std::shared_ptr<vvl::DeviceMemory> memory_state;
         VkDeviceSize offset;
         VkDeviceSize size;
     };
-    using BoundMemoryMap = small_unordered_map<VkDeviceMemory, MEM_BINDING, 1>;
+    using BoundMemoryMap = small_unordered_map<VkDeviceMemory, MemoryBinding, 1>;
     BoundMemoryMap bound_memory_;
 ```
 

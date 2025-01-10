@@ -136,7 +136,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device
     bool skip = false;
 
     if (auto as_state = Get<vvl::AccelerationStructureNV>(accelerationStructure)) {
-        skip |= VerifyBoundMemoryIsValid(as_state->MemState(), LogObjectList(accelerationStructure), as_state->Handle(),
+        skip |= VerifyBoundMemoryIsValid(as_state->MemoryState(), LogObjectList(accelerationStructure), as_state->Handle(),
                                          error_obj.location.dot(Field::accelerationStructure),
                                          "VUID-vkGetAccelerationStructureHandleNV-accelerationStructure-02787");
     }
@@ -1248,7 +1248,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     }
 
     if (dst_as_state) {
-        skip |= VerifyBoundMemoryIsValid(dst_as_state->MemState(), LogObjectList(commandBuffer, dst), dst_as_state->Handle(),
+        skip |= VerifyBoundMemoryIsValid(dst_as_state->MemoryState(), LogObjectList(commandBuffer, dst), dst_as_state->Handle(),
                                          error_obj.location.dot(Field::dst), "VUID-vkCmdBuildAccelerationStructureNV-dst-07787");
     }
 
@@ -1332,15 +1332,15 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
 
     if (dst_as_state) {
         const LogObjectList objlist(commandBuffer, dst);
-        skip |= VerifyBoundMemoryIsValid(dst_as_state->MemState(), objlist, dst_as_state->Handle(),
+        skip |= VerifyBoundMemoryIsValid(dst_as_state->MemoryState(), objlist, dst_as_state->Handle(),
                                          error_obj.location.dot(Field::dst), "VUID-vkCmdCopyAccelerationStructureNV-dst-07792");
-        skip |= VerifyBoundMemoryIsDeviceVisible(dst_as_state->MemState(), objlist, dst_as_state->Handle(),
+        skip |= VerifyBoundMemoryIsDeviceVisible(dst_as_state->MemoryState(), objlist, dst_as_state->Handle(),
                                                  error_obj.location.dot(Field::dst),
                                                  "VUID-vkCmdCopyAccelerationStructureNV-buffer-03719");
     }
     if (src_as_state) {
         const LogObjectList objlist(commandBuffer, src);
-        skip |= VerifyBoundMemoryIsDeviceVisible(src_as_state->MemState(), objlist, src_as_state->Handle(),
+        skip |= VerifyBoundMemoryIsDeviceVisible(src_as_state->MemoryState(), objlist, src_as_state->Handle(),
                                                  error_obj.location.dot(Field::src),
                                                  "VUID-vkCmdCopyAccelerationStructureNV-buffer-03718");
         if (!src_as_state->built) {

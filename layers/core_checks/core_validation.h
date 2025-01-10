@@ -1050,9 +1050,9 @@ class CoreChecks : public ValidationStateTracker {
 
     void UpdateCmdBufImageLayouts(const vvl::CommandBuffer& cb_state);
 
-    bool VerifyBoundMemoryIsValid(const vvl::DeviceMemory* mem_state, const LogObjectList& objlist,
+    bool VerifyBoundMemoryIsValid(const vvl::DeviceMemory* memory_state, const LogObjectList& objlist,
                                   const VulkanTypedHandle& typed_handle, const Location& loc, const char* vuid) const;
-    bool VerifyBoundMemoryIsDeviceVisible(const vvl::DeviceMemory* mem_state, const LogObjectList& objlist,
+    bool VerifyBoundMemoryIsDeviceVisible(const vvl::DeviceMemory* memory_state, const LogObjectList& objlist,
                                           const VulkanTypedHandle& typed_handle, const Location& loc, const char* vuid) const;
 
     bool ValidateLayoutVsAttachmentDescription(const VkImageLayout first_layout, const uint32_t attachment,

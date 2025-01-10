@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -109,12 +109,12 @@ DeviceMemory::DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo *al
 }
 }  // namespace vvl
 
-void vvl::BindableLinearMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
-                                             VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
-    ASSERT_AND_RETURN(mem_state);
+void vvl::BindableLinearMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &memory_state,
+                                                  VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
+    ASSERT_AND_RETURN(memory_state);
 
-    mem_state->AddParent(parent);
-    binding_ = {mem_state, memory_offset, 0u};
+    memory_state->AddParent(parent);
+    binding_ = {memory_state, memory_offset, 0u};
 }
 
 DeviceMemoryState vvl::BindableLinearMemoryTracker::GetBoundMemoryStates() const {
@@ -177,9 +177,9 @@ bool vvl::BindableSparseMemoryTracker::HasFullRangeBound() const {
     return true;
 }
 
-void vvl::BindableSparseMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
-                                             VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
-    MEM_BINDING memory_data{mem_state, memory_offset, resource_offset};
+void vvl::BindableSparseMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &memory_state,
+                                                  VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
+    MemoryBinding memory_data{memory_state, memory_offset, resource_offset};
     BindingMap::value_type item{{resource_offset, resource_offset + size}, memory_data};
 
     auto guard = WriteLockGuard{binding_lock_};
@@ -269,16 +269,16 @@ BoundRanges vvl::BindableSparseMemoryTracker::GetBoundRanges(const BufferRange &
 }
 
 DeviceMemoryState vvl::BindableSparseMemoryTracker::GetBoundMemoryStates() const {
-    DeviceMemoryState dev_mem_states;
+    DeviceMemoryState dev_memory_states;
 
     {
         auto guard = ReadLockGuard{binding_lock_};
         for (auto &binding : binding_map_) {
-            if (binding.second.memory_state) dev_mem_states.emplace(binding.second.memory_state);
+            if (binding.second.memory_state) dev_memory_states.emplace(binding.second.memory_state);
         }
     }
 
-    return dev_mem_states;
+    return dev_memory_states;
 }
 
 
@@ -309,13 +309,14 @@ bool vvl::BindableMultiplanarMemoryTracker::HasFullRangeBound() const {
 }
 
 // resource_offset is the plane index
-void vvl::BindableMultiplanarMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &mem_state,
-                                                  VkDeviceSize memory_offset, VkDeviceSize resource_offset, VkDeviceSize size) {
-    ASSERT_AND_RETURN(mem_state);
+void vvl::BindableMultiplanarMemoryTracker::BindMemory(StateObject *parent, std::shared_ptr<vvl::DeviceMemory> &memory_state,
+                                                       VkDeviceSize memory_offset, VkDeviceSize resource_offset,
+                                                       VkDeviceSize size) {
+    ASSERT_AND_RETURN(memory_state);
 
     assert(resource_offset < planes_.size());
-    mem_state->AddParent(parent);
-    planes_[static_cast<size_t>(resource_offset)].binding = {mem_state, memory_offset, 0u};
+    memory_state->AddParent(parent);
+    planes_[static_cast<size_t>(resource_offset)].binding = {memory_state, memory_offset, 0u};
 }
 
 // range needs to be between [0, planes_[0].size + planes_[1].size + planes_[2].size)
@@ -341,15 +342,15 @@ BoundMemoryRange vvl::BindableMultiplanarMemoryTracker::GetBoundMemoryRange(cons
 }
 
 DeviceMemoryState vvl::BindableMultiplanarMemoryTracker::GetBoundMemoryStates() const {
-    DeviceMemoryState dev_mem_states;
+    DeviceMemoryState dev_memory_states;
 
     for (unsigned i = 0u; i < planes_.size(); ++i) {
         if (planes_[i].binding.memory_state) {
-            dev_mem_states.insert(planes_[i].binding.memory_state);
+            dev_memory_states.insert(planes_[i].binding.memory_state);
         }
     }
 
-    return dev_mem_states;
+    return dev_memory_states;
 }
 
 std::pair<VkDeviceMemory, MemoryRange> vvl::Bindable::GetResourceMemoryOverlap(
