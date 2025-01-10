@@ -4600,3 +4600,86 @@ TEST_F(NegativeSyncObject, ImageMemoryBarrier2QueueFamilyForeign) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncObject, UnsupportedPipelineBarrierStages) {
+    AddOptionalExtensions(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-04091");
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                           VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, 0u, 0u, nullptr, 0u, nullptr, 0u, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    if (IsExtensionsEnabled(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME)) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-04092");
+        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT, 0u, 0u, nullptr, 0u, nullptr, 0u, nullptr);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (IsExtensionsEnabled(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-04093");
+        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT, 0u, 0u, nullptr, 0u, nullptr, 0u, nullptr);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (IsExtensionsEnabled(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-04094");
+        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT, 0u, 0u, nullptr, 0u, nullptr, 0u, nullptr);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-03937");
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0u, 0u, 0u, nullptr, 0u, nullptr, 0u,
+                           nullptr);
+    m_errorMonitor->VerifyFound();
+
+    if (IsExtensionsEnabled(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-07318");
+        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, 0u, 0u, nullptr, 0u, nullptr, 0u,
+                               nullptr);
+        m_errorMonitor->VerifyFound();
+    }
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncObject, UnsupportedBufferMemoryBarrier2Stages) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredExtensions(VK_HUAWEI_SUBPASS_SHADING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_HUAWEI_INVOCATION_MASK_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.buffer = buffer.handle();
+    barrier.size = VK_WHOLE_SIZE;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI;
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.bufferMemoryBarrierCount = 1u;
+    dependency_info.pBufferMemoryBarriers = &barrier;
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-VkBufferMemoryBarrier2-dstStageMask-04957");
+    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI;
+    m_errorMonitor->SetDesiredError("VUID-VkBufferMemoryBarrier2-dstStageMask-04995");
+    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
