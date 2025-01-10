@@ -3582,25 +3582,21 @@ TEST_F(NegativeSyncObject, DetectInterQueueEventUsage2) {
     m_device->Wait();
 }
 
-TEST_F(NegativeSyncObject, QueueForwardProgressFenceWait) {
+TEST_F(NegativeSyncObject, SignalSignaledSemaphore) {
     TEST_DESCRIPTION("Call VkQueueSubmit with a semaphore that is already signaled but not waited on by the queue.");
     RETURN_IF_SKIP(Init());
 
-    // TODO: the test works according to description but that's not what VUID describes
-    const char *queue_forward_progress_message = "VUID-vkQueueSubmit-pCommandBuffers-00065";
-
-    vkt::CommandBuffer cb1(*m_device, m_command_pool);
-    cb1.Begin();
-    cb1.End();
-
     vkt::Semaphore semaphore(*m_device);
-    m_default_queue->Submit(cb1, vkt::Signal(semaphore));
 
-    m_command_buffer.Begin();
-    m_command_buffer.End();
+    // Signal semaphore
+    vkt::CommandBuffer cb(*m_device, m_command_pool);
+    cb.Begin();
+    cb.End();
+    m_default_queue->Submit(cb, vkt::Signal(semaphore));
 
-    m_errorMonitor->SetDesiredError(queue_forward_progress_message);
-    m_default_queue->Submit(m_command_buffer, vkt::Signal(semaphore));
+    // Signal again
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pSignalSemaphores-00067");
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
     m_errorMonitor->VerifyFound();
 
     m_device->Wait();
