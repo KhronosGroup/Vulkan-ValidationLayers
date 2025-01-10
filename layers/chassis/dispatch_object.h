@@ -87,7 +87,7 @@ struct TemplateState {
         : desc_update_template(update_template), create_info(*pCreateInfo), destroyed(false) {}
 };
 
-class DispatchObject : public Logger {
+class DispatchObject {
   public:
     DispatchObject(const VkInstanceCreateInfo* pCreateInfo);
     DispatchObject(DispatchObject* instance_interceptor, VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo);
@@ -99,6 +99,7 @@ class DispatchObject : public Logger {
     const bool is_instance;
 
     APIVersion api_version;
+    DebugReport* debug_report = nullptr;
     VkInstance instance = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
@@ -188,6 +189,71 @@ class DispatchObject : public Logger {
     }
 
     bool IsSecondary(VkCommandBuffer cb) const;
+
+    // Debug Logging Helpers
+    bool DECORATE_PRINTF(5, 6)
+        LogError(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kErrorBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
+
+    // Currently works like LogWarning, but allows developer to better categorize the warning
+    bool DECORATE_PRINTF(5, 6) LogUndefinedValue(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc,
+                                                 const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
+
+    bool DECORATE_PRINTF(5, 6)
+        LogWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kWarningBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
+
+    bool DECORATE_PRINTF(5, 6) LogPerformanceWarning(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc,
+                                                     const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kPerformanceWarningBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
+
+    bool DECORATE_PRINTF(5, 6)
+        LogInfo(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kInformationBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
+
+    bool DECORATE_PRINTF(5, 6)
+        LogVerbose(std::string_view vuid_text, const LogObjectList& objlist, const Location& loc, const char* format, ...) const {
+        va_list argptr;
+        va_start(argptr, format);
+        const bool result = debug_report->LogMsg(kVerboseBit, objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return result;
+    }
+
+    void LogInternalError(std::string_view failure_location, const LogObjectList& obj_list, const Location& loc,
+                          std::string_view entrypoint, VkResult err) const {
+        const std::string_view err_string = string_VkResult(err);
+        std::string vuid = "INTERNAL-ERROR-";
+        vuid += entrypoint;
+        LogError(vuid, obj_list, loc, "at %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
+                 failure_location.data(), entrypoint.data(), err_string.data());
+    }
 
     void UnwrapPnextChainHandles(const void* pNext);
 
