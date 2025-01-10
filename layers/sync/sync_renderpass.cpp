@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2024 The Khronos Group Inc.
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+/* Copyright (c) 2019-2025 The Khronos Group Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -587,23 +587,21 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
         const AttachmentViewGen &view_gen = attachment_views_[depth_stencil_attachment];
         const vvl::ImageView &view_state = *view_gen.GetViewState();
         bool depth_write = false, stencil_write = false;
-        const bool has_depth = 0 != (view_state.normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT);
-        const bool has_stencil = 0 != (view_state.normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT);
+        const bool has_depth = vkuFormatHasDepth(view_state.create_info.format);
+        const bool has_stencil = vkuFormatHasStencil(view_state.create_info.format);
 
         const bool depth_write_enable = last_bound_state.IsDepthWriteEnable();  // implicitly means DepthTestEnable is set
         const bool stencil_test_enable = last_bound_state.IsStencilTestEnable();
 
         // PHASE1 TODO: These validation should be in core_checks.
-        if (has_depth && !vkuFormatIsStencilOnly(view_state.create_info.format) && depth_write_enable &&
-            IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
+        if (has_depth && depth_write_enable && IsImageLayoutDepthWritable(subpass.pDepthStencilAttachment->layout)) {
             depth_write = true;
         }
         // PHASE1 TODO: It needs to check if stencil is writable.
         //              If failOp, passOp, or depthFailOp are not KEEP, and writeMask isn't 0, it's writable.
         //              If depth test is disable, it's considered depth test passes, and then depthFailOp doesn't run.
         // PHASE1 TODO: These validation should be in core_checks.
-        if (has_stencil && !vkuFormatIsDepthOnly(view_state.create_info.format) && stencil_test_enable &&
-            IsImageLayoutStencilWritable(subpass.pDepthStencilAttachment->layout)) {
+        if (has_stencil && stencil_test_enable && IsImageLayoutStencilWritable(subpass.pDepthStencilAttachment->layout)) {
             stencil_write = true;
         }
 
@@ -639,7 +637,6 @@ uint32_t RenderPassAccessContext::GetAttachmentIndex(const VkClearAttachment &cl
 
 VkImageAspectFlags ClearAttachmentInfo::GetAspectsToClear(VkImageAspectFlags clear_aspect_mask, const ImageViewState &view) {
     // Check if clear request is valid.
-    const VkImageAspectFlags view_aspect_mask = view.normalized_subresource_range.aspectMask;
     const bool clear_color = (clear_aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0;
     const bool clear_depth = (clear_aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
     const bool clear_stencil = (clear_aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
@@ -650,16 +647,20 @@ VkImageAspectFlags ClearAttachmentInfo::GetAspectsToClear(VkImageAspectFlags cle
         return 0;  // according to spec it's not allowed
     }
 
+    // Views aspect mask is used only for color attachment.
+    // For depth/stencil attachment view aspect mask is ignored according to spec.
+    const VkImageAspectFlags view_aspect_mask = view.normalized_subresource_range.aspectMask;
+
     // Collect aspects that should be cleared.
     VkImageAspectFlags aspects_to_clear = VK_IMAGE_ASPECT_NONE;
     if (clear_color && (view_aspect_mask & kColorAspects) != 0) {
         assert(GetBitSetCount(view_aspect_mask) == 1);
         aspects_to_clear |= view_aspect_mask;
     }
-    if (clear_depth && (view_aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
+    if (clear_depth && vkuFormatHasDepth(view.create_info.format)) {
         aspects_to_clear |= VK_IMAGE_ASPECT_DEPTH_BIT;
     }
-    if (clear_stencil && (view_aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
+    if (clear_stencil && vkuFormatHasStencil(view.create_info.format)) {
         aspects_to_clear |= VK_IMAGE_ASPECT_STENCIL_BIT;
     }
     return aspects_to_clear;
@@ -976,11 +977,9 @@ syncval_state::DynamicRenderingInfo::Attachment::Attachment(const SyncValidator 
     if (view) {
         if (type == AttachmentType::kColor) {
             view_gen = view->MakeImageRangeGen(offset, extent);
-        } else if (type == AttachmentType::kDepth &&
-                   (view->normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
+        } else if (type == AttachmentType::kDepth) {
             view_gen = view->MakeImageRangeGen(offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT);
-        } else if (type == AttachmentType::kStencil &&
-                   (view->normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
+        } else {
             view_gen = view->MakeImageRangeGen(offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT);
         }
 

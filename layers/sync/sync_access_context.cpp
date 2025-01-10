@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -551,17 +551,27 @@ ResourceUsageTag AccessContext::AsyncReference::StartTag() const { return (tag_ 
 
 AttachmentViewGen::AttachmentViewGen(const syncval_state::ImageViewState *image_view, const VkOffset3D &offset,
                                      const VkExtent3D &extent)
-    : view_(image_view), view_mask_(image_view->normalized_subresource_range.aspectMask), gen_store_() {
+    : view_(image_view) {
     gen_store_[Gen::kViewSubresource].emplace(image_view->GetFullViewImageRangeGen());
-    gen_store_[Gen::kRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent));
 
-    const auto depth = view_mask_ & VK_IMAGE_ASPECT_DEPTH_BIT;
-    if (depth && (depth != view_mask_)) {
-        gen_store_[Gen::kDepthOnlyRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent, depth));
+    const bool has_depth = vkuFormatHasDepth(image_view->create_info.format);
+    const bool has_stencil = vkuFormatHasStencil(image_view->create_info.format);
+
+    // For depth-stencil attachment, the view's aspect flags are ignored according to the spec.
+    // MakeImageRangeGen works with the aspect flags. Derive aspect from format.
+    VkImageAspectFlags override_aspect_flags = 0;
+    if (has_depth || has_stencil) {
+        override_aspect_flags |= has_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
+        override_aspect_flags |= has_stencil ? VK_IMAGE_ASPECT_STENCIL_BIT : 0;
     }
-    const auto stencil = view_mask_ & VK_IMAGE_ASPECT_STENCIL_BIT;
-    if (stencil && (stencil != view_mask_)) {
-        gen_store_[Gen::kStencilOnlyRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent, stencil));
+
+    // Range gen for attachment's render area
+    gen_store_[Gen::kRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent, override_aspect_flags));
+
+    // If attachment has both depth and stencil aspects then add range gens to represent each aspect separately.
+    if (has_depth && has_stencil) {
+        gen_store_[Gen::kDepthOnlyRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT));
+        gen_store_[Gen::kStencilOnlyRenderArea].emplace(image_view->MakeImageRangeGen(offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT));
     }
 }
 
@@ -570,8 +580,8 @@ const std::optional<ImageRangeGen> &AttachmentViewGen::GetRangeGen(AttachmentVie
     // If the view is a depth only view, then the depth only portion of the render area is simply the render area.
     // If the view is a depth stencil view, then the depth only portion of the render area will be a subset,
     // and thus needs the generator function that will produce the address ranges of that subset
-    const bool depth_only = (type == kDepthOnlyRenderArea) && (view_mask_ == VK_IMAGE_ASPECT_DEPTH_BIT);
-    const bool stencil_only = (type == kStencilOnlyRenderArea) && (view_mask_ == VK_IMAGE_ASPECT_STENCIL_BIT);
+    const bool depth_only = (type == kDepthOnlyRenderArea) && vkuFormatIsDepthOnly(view_->create_info.format);
+    const bool stencil_only = (type == kStencilOnlyRenderArea) && vkuFormatIsStencilOnly(view_->create_info.format);
     if (depth_only || stencil_only) {
         type = Gen::kRenderArea;
     }
@@ -580,20 +590,19 @@ const std::optional<ImageRangeGen> &AttachmentViewGen::GetRangeGen(AttachmentVie
 
 AttachmentViewGen::Gen AttachmentViewGen::GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const {
     assert(IsValid());
-    assert(view_mask_ & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
+    assert(vkuFormatIsDepthOrStencil(view_->create_info.format));
     if (depth_op) {
-        assert(view_mask_ & VK_IMAGE_ASPECT_DEPTH_BIT);
+        assert(vkuFormatHasDepth(view_->create_info.format));
         if (stencil_op) {
-            assert(view_mask_ & VK_IMAGE_ASPECT_STENCIL_BIT);
+            assert(vkuFormatHasStencil(view_->create_info.format));
             return kRenderArea;
         }
         return kDepthOnlyRenderArea;
     }
     if (stencil_op) {
-        assert(view_mask_ & VK_IMAGE_ASPECT_STENCIL_BIT);
+        assert(vkuFormatHasStencil(view_->create_info.format));
         return kStencilOnlyRenderArea;
     }
-
     assert(depth_op || stencil_op);
     return kRenderArea;
 }

@@ -3647,16 +3647,15 @@ ImageRangeGen syncval_state::ImageViewState::MakeImageRangeGen() const {
 }
 
 ImageRangeGen syncval_state::ImageViewState::MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent,
-                                                               const VkImageAspectFlags aspect_mask) const {
+                                                               VkImageAspectFlags override_depth_stencil_aspect_mask) const {
     if (Invalid()) ImageRangeGen();
 
-    // Intentional copy
     VkImageSubresourceRange subresource_range = normalized_subresource_range;
-    if (aspect_mask) {
-        subresource_range.aspectMask &= aspect_mask;
-        assert(subresource_range.aspectMask);
+
+    if (override_depth_stencil_aspect_mask != 0) {
+        assert((override_depth_stencil_aspect_mask & kDepthStencilAspects) == override_depth_stencil_aspect_mask);
+        subresource_range.aspectMask = override_depth_stencil_aspect_mask;
     }
 
     return GetImageState()->MakeImageRangeGen(subresource_range, offset, extent, IsDepthSliced());
 }
-
