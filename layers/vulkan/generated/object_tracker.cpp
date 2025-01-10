@@ -3151,7 +3151,7 @@ bool ObjectLifetimes::PreCallValidateCreateSwapchainKHR(VkDevice device, const V
     // Checked by chassis: device: "VUID-vkCreateSwapchainKHR-device-parameter"
     if (pCreateInfo) {
         [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
-        auto instance_data = GetLayerData(instance);
+        auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
         auto instance_object_lifetimes =
             static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
         skip |= instance_object_lifetimes->ValidateObject(
@@ -3279,7 +3279,7 @@ bool ObjectLifetimes::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevi
     bool skip = false;
     // Checked by chassis: device: "VUID-vkGetDeviceGroupSurfacePresentModesKHR-device-parameter"
     // Checked by chassis: device: "VUID-vkGetDeviceGroupSurfacePresentModesKHR-commonparent"
-    auto instance_data = GetLayerData(instance);
+    auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     auto instance_object_lifetimes =
         static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
     skip |= instance_object_lifetimes->ValidateObject(surface, kVulkanObjectTypeSurfaceKHR, false,
@@ -3423,7 +3423,7 @@ bool ObjectLifetimes::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, 
     if (pCreateInfos) {
         for (uint32_t index0 = 0; index0 < swapchainCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
-            auto instance_data = GetLayerData(instance);
+            auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
             auto instance_object_lifetimes =
                 static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
             skip |= instance_object_lifetimes->ValidateObject(
@@ -5116,7 +5116,7 @@ bool ObjectLifetimes::PreCallValidateDisplayPowerControlEXT(VkDevice device, VkD
     bool skip = false;
     // Checked by chassis: device: "VUID-vkDisplayPowerControlEXT-device-parameter"
     // Checked by chassis: device: "VUID-vkDisplayPowerControlEXT-commonparent"
-    auto instance_data = GetLayerData(instance);
+    auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     auto instance_object_lifetimes =
         static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
     skip |= instance_object_lifetimes->ValidateObject(
@@ -5143,7 +5143,7 @@ bool ObjectLifetimes::PreCallValidateRegisterDisplayEventEXT(VkDevice device, Vk
     bool skip = false;
     // Checked by chassis: device: "VUID-vkRegisterDisplayEventEXT-device-parameter"
     // Checked by chassis: device: "VUID-vkRegisterDisplayEventEXT-commonparent"
-    auto instance_data = GetLayerData(instance);
+    auto instance_data = GetLayerDataPtr(GetDispatchKey(instance), layer_data_map);
     auto instance_object_lifetimes =
         static_cast<ObjectLifetimes*>(instance_data->GetValidationObject(LayerObjectTypeObjectTracker));
     skip |= instance_object_lifetimes->ValidateObject(

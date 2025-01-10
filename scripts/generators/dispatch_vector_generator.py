@@ -74,8 +74,7 @@ void DispatchObject::InitObjectDispatchVectors() {
                                               const std::type_info& tbp_typeid,
                                               const std::type_info& tga_typeid,
                                               const std::type_info& tsv_typeid) {
-        for (auto& vo: this->object_dispatch) {
-            auto *item = vo.get();
+        for (auto item : this->object_dispatch) {
             auto intercept_vector = &this->intercept_vectors[id];
             switch (item->container_type) {
             case LayerObjectTypeThreading:

@@ -291,7 +291,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
     }
 
     assert(physicalDevice);
-    auto layer_data = GetLayerData(physicalDevice);
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(physicalDevice), layer_data_map);
     return layer_data->instance_dispatch_table.EnumerateDeviceExtensionProperties(physicalDevice, pLayerName, pCount, pProperties);
 }
             ''')
@@ -306,7 +306,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             dispatch = 'device_dispatch' if not command.instance else 'instance_dispatch'
             # Setup common to call wrappers. First parameter is always dispatchable
             out.append('VVL_ZoneScoped;\n\n')
-            out.append(f'auto {dispatch} = GetLayerData({command.params[0].name});\n')
+            out.append(f'auto {dispatch} = GetLayerDataPtr(GetDispatchKey({command.params[0].name}), layer_data_map);\n')
 
             # Declare result variable, if any.
             return_map = {
@@ -330,9 +330,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                 VVL_ZoneScopedN("PreCallValidate");
             ''')
             if not command.instance:
-                out.append(f'    for (const auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallValidate{command.name[2:]}]) {{\n')
+                out.append(f'    for (const auto* vo : {dispatch}->intercept_vectors[InterceptIdPreCallValidate{command.name[2:]}]) {{\n')
             else:
-                out.append(f'    for (const auto& vo : {dispatch}->object_dispatch) {{\n')
+                out.append(f'    for (const auto* vo : {dispatch}->object_dispatch) {{\n')
             out.append(f'''
                     auto lock = vo->ReadLock();
                         skip |= vo->PreCallValidate{command.name[2:]}({paramsList}, error_obj);
@@ -346,9 +346,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                 VVL_ZoneScopedN("PreCallRecord");
             ''')
             if not command.instance:
-                out.append(f'    for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallRecord{command.name[2:]}]) {{\n')
+                out.append(f'    for (auto* vo : {dispatch}->intercept_vectors[InterceptIdPreCallRecord{command.name[2:]}]) {{\n')
             else:
-                out.append(f'    for (auto& vo : {dispatch}->object_dispatch) {{\n')
+                out.append(f'    for (auto* vo : {dispatch}->object_dispatch) {{\n')
             out.append(f'''
                     auto lock = vo->WriteLock();
                     vo->PreCallRecord{command.name[2:]}({paramsList}, record_obj);
@@ -402,9 +402,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             ''')
 
             if not command.instance:
-                out.append(f'for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPostCallRecord{command.name[2:]}]) {{\n')
+                out.append(f'for (auto* vo : {dispatch}->intercept_vectors[InterceptIdPostCallRecord{command.name[2:]}]) {{\n')
             else:
-                out.append(f'for (auto& vo : {dispatch}->object_dispatch) {{\n')
+                out.append(f'for (auto* vo : {dispatch}->object_dispatch) {{\n')
 
             # These commands perform blocking operations during PostRecord phase. We might need to
             # release ValidationObject's lock for the period of blocking operation to avoid deadlocks.

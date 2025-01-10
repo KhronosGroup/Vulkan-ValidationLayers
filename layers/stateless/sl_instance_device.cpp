@@ -224,7 +224,7 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
 void StatelessValidation::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
                                                        const RecordObject &record_obj) {
-    auto instance_data = GetLayerData(*pInstance);
+    auto instance_data = GetLayerDataPtr(GetDispatchKey(*pInstance), layer_data_map);
     // Copy extension data into local object
     if (record_obj.result != VK_SUCCESS) return;
     this->instance_extensions = instance_data->instance_extensions;
@@ -302,7 +302,7 @@ void StatelessValidation::PreCallRecordDestroyInstance(VkInstance instance, cons
 void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                                      const RecordObject &record_obj) {
-    auto device_data = GetLayerData(*pDevice);
+    auto device_data = GetLayerDataPtr(GetDispatchKey(*pDevice), layer_data_map);
     if (record_obj.result != VK_SUCCESS) return;
     auto stateless_validation = static_cast<StatelessValidation*>(device_data->GetValidationObject(LayerObjectTypeParameterValidation));
 

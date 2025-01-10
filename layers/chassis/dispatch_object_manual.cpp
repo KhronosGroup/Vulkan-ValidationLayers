@@ -23,79 +23,12 @@
 
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
 
-static std::shared_mutex dispatch_lock;
+std::shared_mutex dispatch_lock;
+small_unordered_map<void *, DispatchObject *, 2> layer_data_map;
 
-// Generally we expect to get the same device and instance, so we keep them handy
-static thread_local DispatchObject *last_used_instance_data = nullptr;
-static std::shared_mutex instance_mutex;
-static vvl::unordered_map<void *, std::unique_ptr<DispatchObject>> instance_data;
-
-static thread_local DispatchObject *last_used_device_data = nullptr;
-static std::shared_mutex device_mutex;
-static vvl::unordered_map<void *, std::unique_ptr<DispatchObject>> device_data;
-
-static DispatchObject *GetInstanceFromKey(void *key) {
-    if (last_used_instance_data && GetDispatchKey(last_used_instance_data->instance) == key) {
-        return last_used_instance_data;
-    }
-    ReadLockGuard lock(instance_mutex);
-    last_used_instance_data = instance_data[key].get();
-    return last_used_instance_data;
-}
-
-DispatchObject *GetLayerData(VkInstance instance) { return GetInstanceFromKey(GetDispatchKey(instance)); }
-
-DispatchObject *GetLayerData(VkPhysicalDevice pd) { return GetInstanceFromKey(GetDispatchKey(pd)); }
-
-void SetLayerData(VkInstance instance, std::unique_ptr<DispatchObject> &&data) {
-    void *key = GetDispatchKey(instance);
-    WriteLockGuard lock(instance_mutex);
-    instance_data[key] = std::move(data);
-}
-
-void FreeLayerData(void *key, VkInstance instance) {
-    WriteLockGuard lock(instance_mutex);
-    instance_data.erase(key);
-    last_used_instance_data = nullptr;
-}
-
-static DispatchObject *GetDeviceFromKey(void *key) {
-    if (last_used_device_data && GetDispatchKey(last_used_device_data->device) == key) {
-        return last_used_device_data;
-    }
-    ReadLockGuard lock(device_mutex);
-    last_used_device_data = device_data[key].get();
-    return last_used_device_data;
-}
-
-DispatchObject *GetLayerData(VkDevice device) { return GetDeviceFromKey(GetDispatchKey(device)); }
-
-DispatchObject *GetLayerData(VkQueue queue) { return GetDeviceFromKey(GetDispatchKey(queue)); }
-
-DispatchObject *GetLayerData(VkCommandBuffer cb) { return GetDeviceFromKey(GetDispatchKey(cb)); }
-
-void SetLayerData(VkDevice device, std::unique_ptr<DispatchObject> &&data) {
-    void *key = GetDispatchKey(device);
-    WriteLockGuard lock(device_mutex);
-    device_data[key] = std::move(data);
-}
-
-void FreeLayerData(void *key, VkDevice device) {
-    WriteLockGuard lock(device_mutex);
-    device_data.erase(key);
-    last_used_device_data = nullptr;
-}
-
-void FreeAllLayerData() {
-    {
-        WriteLockGuard lock(device_mutex);
-        device_data.clear();
-    }
-    {
-        WriteLockGuard lock(instance_mutex);
-        instance_data.clear();
-    }
-}
+// Global unique object identifier.
+// Map uniqueID to actual object handle. Accesses to the map itself are
+// internally synchronized.
 
 DispatchObject::DispatchObject(const VkInstanceCreateInfo *pCreateInfo) : is_instance(true) {
     uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
@@ -120,7 +53,7 @@ DispatchObject::DispatchObject(const VkInstanceCreateInfo *pCreateInfo) : is_ins
     // create all enabled validation, which is API specific
     InitInstanceValidationObjects();
 
-    for (auto &vo : object_dispatch) {
+    for (auto* vo : object_dispatch) {
         vo->dispatch_ = this;
         vo->CopyDispatchState();
     }
@@ -152,13 +85,20 @@ DispatchObject::DispatchObject(DispatchObject *instance_dispatch, VkPhysicalDevi
 
     InitDeviceValidationObjects(instance_dispatch);
     InitObjectDispatchVectors();
-    for (auto &vo : object_dispatch) {
+    for (auto *vo : object_dispatch) {
         vo->dispatch_ = this;
         vo->CopyDispatchState();
     }
 }
 
 DispatchObject::~DispatchObject() {
+    for (auto item = object_dispatch.begin(); item != object_dispatch.end(); item++) {
+        delete *item;
+    }
+    for (auto item = aborted_object_dispatch.begin(); item != aborted_object_dispatch.end(); item++) {
+        delete *item;
+    }
+
     if (is_instance) {
         vku::FreePnextChain(debug_report->instance_pnext_chain);
         delete debug_report;
@@ -170,9 +110,9 @@ void DispatchObject::DestroyDevice(VkDevice device, const VkAllocationCallbacks*
 }
 
 ValidationObject* DispatchObject::GetValidationObject(LayerObjectTypeId object_type) const {
-    for (auto &validation_object : object_dispatch) {
+    for (auto validation_object : object_dispatch) {
         if (validation_object->container_type == object_type) {
-            return validation_object.get();
+            return validation_object;
         }
     }
     return nullptr;
@@ -183,7 +123,7 @@ ValidationObject* DispatchObject::GetValidationObject(LayerObjectTypeId object_t
 void DispatchObject::ReleaseDeviceValidationObject(LayerObjectTypeId type_id) const {
     for (auto object_it = object_dispatch.begin(); object_it != object_dispatch.end(); object_it++) {
         if ((*object_it)->container_type == type_id) {
-            auto object = std::move(*object_it);
+            ValidationObject* object = *object_it;
 
             object_dispatch.erase(object_it);
 
@@ -191,7 +131,7 @@ void DispatchObject::ReleaseDeviceValidationObject(LayerObjectTypeId type_id) co
                  intercept_vector_it++) {
                 for (auto intercept_object_it = intercept_vector_it->begin(); intercept_object_it != intercept_vector_it->end();
                      intercept_object_it++) {
-                    if (object.get() == *intercept_object_it) {
+                    if (object == *intercept_object_it) {
                         intercept_vector_it->erase(intercept_object_it);
                         break;
                     }
@@ -200,7 +140,7 @@ void DispatchObject::ReleaseDeviceValidationObject(LayerObjectTypeId type_id) co
 
             // We can't destroy the object itself now as it might be unsafe (things are still being used)
             // If the rare case happens we need to release, we will cleanup later when we normally would have cleaned this up
-            aborted_object_dispatch.push_back(std::move(object));
+            aborted_object_dispatch.push_back(object);
             break;
         }
     }
@@ -215,8 +155,8 @@ void DispatchObject::ReleaseAllValidationObjects() const {
     }
 
     for (auto object_it = object_dispatch.begin(); object_it != object_dispatch.end(); object_it++) {
-        auto object = std::move(*object_it);
-        aborted_object_dispatch.push_back(std::move(object));
+        ValidationObject* object = *object_it;
+        aborted_object_dispatch.push_back(object);
     }
     object_dispatch.clear();
 }

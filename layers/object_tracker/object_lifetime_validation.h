@@ -67,8 +67,10 @@ class ObjectLifetimes : public ValidationObject {
     bool null_descriptor_enabled;
 
     // Constructor for object lifetime tracking
-    ObjectLifetimes();
-    ~ObjectLifetimes();
+    ObjectLifetimes() : num_objects{}, num_total_objects(0), null_descriptor_enabled(false) {
+        container_type = LayerObjectTypeObjectTracker;
+    }
+    ~ObjectLifetimes() {}
 
     template <typename T1>
     void InsertObject(object_map_type &map, T1 object, VulkanObjectType object_type, const Location &loc,

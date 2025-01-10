@@ -647,7 +647,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
 
     const bool is_operation_deferred = deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR;
 
-    auto layer_data = GetLayerData(device);
+    auto layer_data = GetLayerDataPtr(GetDispatchKey(device), layer_data_map);
     if (is_operation_deferred) {
         for (uint32_t i = 0; i < count; ++i) {
             UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state->modified_create_infos[i]);
