@@ -753,7 +753,7 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
             phys_dev_extensions.find(vvl::Extension::_VK_EXT_image_robustness) != phys_dev_extensions.end();
 
         if (IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2) &&
-            phys_dev_extensions.find(vvl::Extension::_VK_EXT_image_robustness) != phys_dev_extensions.end()) {
+            phys_dev_extensions.find(vvl::Extension::_VK_EXT_robustness2) != phys_dev_extensions.end()) {
             VkPhysicalDeviceRobustness2FeaturesEXT robustness_2_features = vku::InitStructHelper();
             VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
             DispatchGetPhysicalDeviceFeatures2Helper(physical_device, &features2);
