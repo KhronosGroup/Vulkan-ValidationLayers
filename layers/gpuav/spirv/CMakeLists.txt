@@ -1,5 +1,5 @@
 # ~~~
-# Copyright (c) 2024 LunarG, Inc.
+# Copyright (c) 2024-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ target_sources(gpu_av_spirv PRIVATE
     ray_query_pass.cpp
     debug_printf_pass.h
     debug_printf_pass.cpp
-    post_process_descriptor_indexing.h
-    post_process_descriptor_indexing.cpp
+    post_process_descriptor_indexing_pass.h
+    post_process_descriptor_indexing_pass.cpp
 
     # Framework
     instruction.h

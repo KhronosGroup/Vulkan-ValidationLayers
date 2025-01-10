@@ -465,7 +465,7 @@ void DebugPrintfPass::Reset() {
     expanded_parameter_count_ = 0;
 }
 
-bool DebugPrintfPass::Run() {
+bool DebugPrintfPass::Instrument() {
     for (const auto& inst : module_.ext_inst_imports_) {
         const char* import_string = inst->GetAsString(2);
         if (strcmp(import_string, "NonSemantic.DebugPrintf") == 0) {

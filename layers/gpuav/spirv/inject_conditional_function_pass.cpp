@@ -114,7 +114,7 @@ BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, B
     return block_it;
 }
 
-bool InjectConditionalFunctionPass::Run() {
+bool InjectConditionalFunctionPass::Instrument() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {

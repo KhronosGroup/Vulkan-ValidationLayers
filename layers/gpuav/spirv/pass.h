@@ -39,11 +39,11 @@ class Pass {
     // Needed to know where an error/warning comes from
     virtual const char* Name() const = 0;
     // Return true if code was instrumented/modified in anyway
-    virtual bool Run() = 0;
-    // Require passes to print info as extremely helpful for debugging
+    virtual bool Instrument() = 0;
+    // Requiring because this becomes important/helpful while debugging
     virtual void PrintDebugInfo() const = 0;
     // Wrapper that each pass can use to start
-    bool Start();
+    bool Run();
 
     // Finds (and creates if needed) decoration and returns the OpVariable it points to
     const Variable& GetBuiltinVariable(uint32_t built_in);

@@ -178,8 +178,8 @@ void DescriptorClassTexelBufferPass::PrintDebugInfo() const {
     std::cout << "DescriptorClassTexelBufferPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
-// Created own Run() because need to control finding the largest offset in a given block
-bool DescriptorClassTexelBufferPass::Run() {
+// Created own Instrument() because need to control finding the largest offset in a given block
+bool DescriptorClassTexelBufferPass::Instrument() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {

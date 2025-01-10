@@ -27,7 +27,7 @@ class DescriptorClassTexelBufferPass : public Pass {
     DescriptorClassTexelBufferPass(Module& module);
     const char* Name() const final { return "DescriptorClassTexelBufferPass"; }
 
-    bool Run() final;
+    bool Instrument() final;
     void PrintDebugInfo() const final;
 
   private:
