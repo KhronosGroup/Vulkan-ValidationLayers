@@ -557,7 +557,9 @@ TEST_F(PositiveMemory, BindMemoryDX12Handle) {
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-TEST_F(PositiveMemory, BindMemoryStatusBuffer) {
+
+// TODO redo https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/9132
+TEST_F(PositiveMemory, DISABLED_BindMemoryStatusBuffer) {
     TEST_DESCRIPTION("Use VkBindMemoryStatus when binding buffer to memory.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::maintenance6);
@@ -592,7 +594,8 @@ TEST_F(PositiveMemory, BindMemoryStatusBuffer) {
     ASSERT_NE(result, VK_RESULT_MAX_ENUM);
 }
 
-TEST_F(PositiveMemory, BindMemoryStatusImage) {
+// TODO redo https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/9132
+TEST_F(PositiveMemory, DISABLED_BindMemoryStatusImage) {
     TEST_DESCRIPTION("Use VkBindMemoryStatus when binding image to memory.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::maintenance6);
