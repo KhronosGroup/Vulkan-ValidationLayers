@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -3806,17 +3806,17 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
             }
             auto color_view_state = Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView);
             ASSERT_AND_CONTINUE(color_view_state);
-            auto color_image_samples = Get<vvl::Image>(color_view_state->create_info.image)->create_info.samples;
-            ASSERT_AND_CONTINUE(color_image_samples);
+            auto color_image_state = Get<vvl::Image>(color_view_state->create_info.image);
+            ASSERT_AND_CONTINUE(color_image_state);
 
-            if (p_attachment_sample_count_info &&
-                (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
+            const VkSampleCountFlagBits samples = color_image_state->create_info.samples;
+            if (p_attachment_sample_count_info && (samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_rendering_color_sample_06185, objlist, vuid.loc(),
                                  "Color attachment (%" PRIu32
                                  ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
                                  "sample count (%s)",
-                                 i, string_VkSampleCountFlagBits(color_image_samples),
+                                 i, string_VkSampleCountFlagBits(samples),
                                  string_VkSampleCountFlagBits(p_attachment_sample_count_info->pColorAttachmentSamples[i]));
             }
         }
@@ -3824,17 +3824,18 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
         if (rendering_info.pDepthAttachment != nullptr) {
             auto depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
             ASSERT_AND_RETURN_SKIP(depth_view_state);
-            auto depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->create_info.samples;
-            ASSERT_AND_RETURN_SKIP(depth_image_samples);
+            auto depth_image_state = Get<vvl::Image>(depth_view_state->create_info.image);
+            ASSERT_AND_RETURN_SKIP(depth_image_state);
 
+            const VkSampleCountFlagBits samples = depth_image_state->create_info.samples;
             if (p_attachment_sample_count_info) {
-                if (depth_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
+                if (samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                     skip |= LogError(vuid.dynamic_rendering_depth_sample_06186, objlist, vuid.loc(),
                                      "Depth attachment sample count (%s) must match corresponding "
                                      "VkAttachmentSampleCountInfoAMD sample "
                                      "count (%s)",
-                                     string_VkSampleCountFlagBits(depth_image_samples),
+                                     string_VkSampleCountFlagBits(samples),
                                      string_VkSampleCountFlagBits(p_attachment_sample_count_info->depthStencilAttachmentSamples));
                 }
             }
@@ -3843,17 +3844,18 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
         if (rendering_info.pStencilAttachment != nullptr) {
             auto stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
             ASSERT_AND_RETURN_SKIP(stencil_view_state);
-            auto stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->create_info.samples;
-            ASSERT_AND_RETURN_SKIP(stencil_image_samples);
+            auto stencil_image_state = Get<vvl::Image>(stencil_view_state->create_info.image);
+            ASSERT_AND_RETURN_SKIP(stencil_image_state);
 
+            const VkSampleCountFlagBits samples = stencil_image_state->create_info.samples;
             if (p_attachment_sample_count_info) {
-                if (stencil_image_samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
+                if (samples != p_attachment_sample_count_info->depthStencilAttachmentSamples) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                     skip |= LogError(vuid.dynamic_rendering_stencil_sample_06187, objlist, vuid.loc(),
                                      "Stencil attachment sample count (%s) must match corresponding "
                                      "VkAttachmentSampleCountInfoAMD "
                                      "sample count (%s)",
-                                     string_VkSampleCountFlagBits(stencil_image_samples),
+                                     string_VkSampleCountFlagBits(samples),
                                      string_VkSampleCountFlagBits(p_attachment_sample_count_info->depthStencilAttachmentSamples));
                 }
             }
@@ -3869,7 +3871,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
             auto image_state = Get<vvl::Image>(view_state->create_info.image);
             ASSERT_AND_CONTINUE(image_state);
 
-            auto samples = image_state->create_info.samples;
+            const VkSampleCountFlagBits samples = image_state->create_info.samples;
             if (samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_rendering_07285, objlist, vuid.loc(),
@@ -3883,32 +3885,32 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
         if ((rendering_info.pDepthAttachment != nullptr) && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
             const auto &depth_view_state = Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView);
             ASSERT_AND_RETURN_SKIP(depth_view_state);
-            const auto &depth_image_samples = Get<vvl::Image>(depth_view_state->create_info.image)->create_info.samples;
-            ASSERT_AND_RETURN_SKIP(depth_image_samples);
+            const auto &depth_image_state = Get<vvl::Image>(depth_view_state->create_info.image);
+            ASSERT_AND_RETURN_SKIP(depth_image_state);
 
-            if (depth_image_samples != rasterization_samples) {
+            const VkSampleCountFlagBits samples = depth_image_state->create_info.samples;
+            if (samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_rendering_07286, objlist, vuid.loc(),
                                  "Depth attachment sample count (%s) must match corresponding "
                                  "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
-                                 string_VkSampleCountFlagBits(depth_image_samples),
-                                 string_VkSampleCountFlagBits(rasterization_samples));
+                                 string_VkSampleCountFlagBits(samples), string_VkSampleCountFlagBits(rasterization_samples));
             }
         }
 
         if ((rendering_info.pStencilAttachment != nullptr) && (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
             const auto &stencil_view_state = Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView);
             ASSERT_AND_RETURN_SKIP(stencil_view_state);
-            const auto &stencil_image_samples = Get<vvl::Image>(stencil_view_state->create_info.image)->create_info.samples;
-            ASSERT_AND_RETURN_SKIP(stencil_image_samples);
+            const auto &stencil_image_state = Get<vvl::Image>(stencil_view_state->create_info.image);
+            ASSERT_AND_RETURN_SKIP(stencil_image_state);
 
-            if (stencil_image_samples != rasterization_samples) {
+            const VkSampleCountFlagBits samples = stencil_image_state->create_info.samples;
+            if (samples != rasterization_samples) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.dynamic_rendering_07287, objlist, vuid.loc(),
                                  "Stencil attachment sample count (%s) must match corresponding "
                                  "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
-                                 string_VkSampleCountFlagBits(stencil_image_samples),
-                                 string_VkSampleCountFlagBits(rasterization_samples));
+                                 string_VkSampleCountFlagBits(samples), string_VkSampleCountFlagBits(rasterization_samples));
             }
         }
     }
