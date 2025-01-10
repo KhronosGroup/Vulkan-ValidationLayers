@@ -44,7 +44,7 @@ uFragColor = value;
 
 The next step is to add the `inst_bindless_descriptor` function into the SPIR-V.
 
-Currently, all these functions are found in `gpu/shaders/instrumentation`
+Currently, all these functions are found in `gpuav/shaders/instrumentation`
 
 ```glsl
 bool inst_bindless_descriptor(const uint inst_num, const uvec4 stage_info, const uint desc_set,

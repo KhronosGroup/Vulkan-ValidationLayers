@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ class BufferDeviceAddressPass : public InjectConditionalFunctionPass {
   public:
     BufferDeviceAddressPass(Module& module) : InjectConditionalFunctionPass(module) {}
     const char* Name() const final { return "BufferDeviceAddressPass"; }
-    void PrintDebugInfo();
+    void PrintDebugInfo() const final;
 
   private:
     bool RequiresInstrumentation(const Function& function, const Instruction& inst) final;

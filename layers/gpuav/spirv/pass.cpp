@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,14 @@
 
 namespace gpuav {
 namespace spirv {
+
+bool Pass::Start() {
+    const bool modified = Run();
+    if (module_.print_debug_info_) {
+        PrintDebugInfo();
+    }
+    return modified;
+}
 
 const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
     uint32_t variable_id = 0;

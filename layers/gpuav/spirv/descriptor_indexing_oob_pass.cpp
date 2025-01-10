@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -272,7 +272,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
     return true;
 }
 
-void DescriptorIndexingOOBPass::PrintDebugInfo() {
+void DescriptorIndexingOOBPass::PrintDebugInfo() const {
     std::cout << "DescriptorIndexingOOBPass instrumentation count: " << instrumentations_count_ << " ("
               << (module_.has_bindless_descriptors_ ? "Bindless version" : "Non Bindless version") << ")\n";
 }

@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ class DebugPrintfPass : public Pass {
     DebugPrintfPass(Module& module, uint32_t binding_slot = 0) : Pass(module), binding_slot_(binding_slot) {}
     const char* Name() const final { return "DebugPrintfPass"; }
 
-    bool Run();
-    void PrintDebugInfo();
+    bool Run() final;
+    void PrintDebugInfo() const final;
 
   private:
     bool RequiresInstrumentation(const Instruction& inst);

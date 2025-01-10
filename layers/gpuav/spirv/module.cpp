@@ -19,14 +19,6 @@
 #include "error_message/logging.h"
 #include "error_message/log_message_type.h"
 
-#include "buffer_device_address_pass.h"
-#include "descriptor_indexing_oob_pass.h"
-#include "descriptor_class_general_buffer_pass.h"
-#include "descriptor_class_texel_buffer_pass.h"
-#include "ray_query_pass.h"
-#include "debug_printf_pass.h"
-#include "post_process_descriptor_indexing.h"
-
 #include <iostream>
 
 #include "generated/device_features.h"
@@ -284,70 +276,6 @@ void Module::AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decora
         new_inst->Fill(operands);
     }
     annotations_.emplace_back(std::move(new_inst));
-}
-
-bool Module::RunPassDescriptorIndexingOOB() {
-    DescriptorIndexingOOBPass pass(*this);
-    const bool changed = pass.Run();
-    if (print_debug_info_) {
-        pass.PrintDebugInfo();
-    }
-    return changed;
-}
-
-bool Module::RunPassDescriptorClassGeneralBuffer() {
-    DescriptorClassGeneralBufferPass pass(*this);
-    const bool changed = pass.Run();
-    if (print_debug_info_) {
-        pass.PrintDebugInfo();
-    }
-    return changed;
-}
-
-bool Module::RunPassDescriptorClassTexelBuffer() {
-    DescriptorClassTexelBufferPass pass(*this);
-    const bool changed = pass.Run();
-    if (print_debug_info_) {
-        pass.PrintDebugInfo();
-    }
-    return changed;
-}
-
-bool Module::RunPassBufferDeviceAddress() {
-    BufferDeviceAddressPass pass(*this);
-    const bool changed = pass.Run();
-    if (print_debug_info_) {
-        pass.PrintDebugInfo();
-    }
-    return changed;
-}
-
-bool Module::RunPassRayQuery() {
-    RayQueryPass pass(*this);
-    const bool changed = pass.Run();
-    if (print_debug_info_) {
-        pass.PrintDebugInfo();
-    }
-    return changed;
-}
-
-// binding slot allows debug printf to be slotted in the same set as GPU-AV if needed
-bool Module::RunPassDebugPrintf(uint32_t binding_slot) {
-    DebugPrintfPass pass(*this, binding_slot);
-    const bool changed = pass.Run();
-    if (print_debug_info_) {
-        pass.PrintDebugInfo();
-    }
-    return changed;
-}
-
-bool Module::RunPassPostProcessDescriptorIndexing() {
-    PostProcessDescriptorIndexingPass pass(*this);
-    const bool changed = pass.Run();
-    if (print_debug_info_) {
-        pass.PrintDebugInfo();
-    }
-    return changed;
 }
 
 uint32_t Module::TakeNextId() {
