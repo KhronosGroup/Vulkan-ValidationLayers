@@ -4607,7 +4607,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                              "swizzle values:\n%s",
                              string_VkComponentMapping(ivci.components).c_str());
         }
-        if ((ivci.viewType == VK_IMAGE_VIEW_TYPE_2D) || (ivci.viewType == VK_IMAGE_VIEW_TYPE_2D)) {
+        if ((ivci.viewType == VK_IMAGE_VIEW_TYPE_2D) || (ivci.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
             auto image_state = Get<vvl::Image>(ivci.image);
             if (image_state && image_state->create_info.imageType == VK_IMAGE_TYPE_3D) {
                 if (vkuFormatIsDepthOrStencil(ivci.format)) {

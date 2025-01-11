@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022-2024 RasterGrid Kft.
  *
@@ -188,14 +188,14 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     if (pCreateInfo->usage & attach_flags) {
         if (pCreateInfo->extent.width > device_limits->maxFramebufferWidth) {
             skip |= LogError("VUID-VkImageCreateInfo-usage-00964", device, create_info_loc.dot(Field::usage),
-                             "(%s) include a frame buffer attachment bit and image width (%" PRIu32
+                             "(%s) includes a frame buffer attachment bit and image width (%" PRIu32
                              ") is greater than maxFramebufferWidth (%" PRIu32 ").",
                              string_VkImageUsageFlags(pCreateInfo->usage).c_str(), pCreateInfo->extent.width,
                              device_limits->maxFramebufferWidth);
         }
         if (pCreateInfo->extent.height > device_limits->maxFramebufferHeight) {
             skip |= LogError("VUID-VkImageCreateInfo-usage-00965", device, create_info_loc.dot(Field::usage),
-                             "(%s) include a frame buffer attachment bit and image height (%" PRIu32
+                             "(%s) includes a frame buffer attachment bit and image height (%" PRIu32
                              ") is greater than maxFramebufferHeight (%" PRIu32 ").",
                              string_VkImageUsageFlags(pCreateInfo->usage).c_str(), pCreateInfo->extent.height,
                              device_limits->maxFramebufferHeight);
