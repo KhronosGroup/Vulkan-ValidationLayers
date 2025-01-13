@@ -20,6 +20,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "generated/error_location_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "generated/dispatch_functions.h"
 #include "state_tracker/image_state.h"
@@ -390,6 +391,39 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             if (last_bound_state.IsDiscardRectangleEnable()) {
                 skip |=
                     ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT, vuid);
+
+                if (has_dynamic_state(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
+                    // For pipelines with VkPipelineDiscardRectangleStateCreateInfoEXT, we compare against discardRectangleCount,
+                    // but for Shader Objects we compare against maxDiscardRectangles (details in
+                    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3400)
+                    uint32_t rect_limit = phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles;
+                    bool use_max_limit = true;
+                    if (has_pipeline) {
+                        if (const auto* discard_rectangle_state =
+                                vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(
+                                    last_bound_state.pipeline_state->GetCreateInfoPNext())) {
+                            rect_limit = discard_rectangle_state->discardRectangleCount;
+                            use_max_limit = false;
+                        }
+                    }
+
+                    // vkCmdSetDiscardRectangleEXT needs to be set on each rectangle
+                    for (uint32_t i = 0; i < rect_limit; i++) {
+                        if (!cb_state.dynamic_state_value.discard_rectangles.test(i)) {
+                            const vvl::Field limit_name =
+                                use_max_limit ? vvl::Field::maxDiscardRectangles : vvl::Field::discardRectangleCount;
+                            const char* vuid2 =
+                                use_max_limit ? vuid.set_discard_rectangle_09236 : vuid.dynamic_discard_rectangle_07751;
+                            skip |= LogError(vuid2, cb_state.Handle(), vuid.loc(),
+                                             "vkCmdSetDiscardRectangleEXT was not set for discard rectangle index %" PRIu32
+                                             " for this command buffer. It needs to be set once for each rectangle in %s (%" PRIu32
+                                             ").%s",
+                                             i, String(limit_name), rect_limit,
+                                             cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT).c_str());
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -550,14 +584,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
                                           vuid.dynamic_line_stipple_enable_07638);
     }
 
-    // VK_EXT_discard_rectangles
-    {
-        if (last_bound_state.IsDiscardRectangleEnable()) {
-            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, cb_state, objlist, loc,
-                                              vuid.dynamic_discard_rectangle_07751);
-        }
-    }
-
     // VK_EXT_vertex_input_dynamic_state
     {
         if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
@@ -597,21 +623,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-
-    // vkCmdSetDiscardRectangleEXT needs to be set on each rectangle
-    const auto* discard_rectangle_state =
-        vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.GetCreateInfoPNext());
-    if (discard_rectangle_state && pipeline.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
-        for (uint32_t i = 0; i < discard_rectangle_state->discardRectangleCount; i++) {
-            if (!cb_state.dynamic_state_value.discard_rectangles.test(i)) {
-                skip |= LogError(vuid.dynamic_discard_rectangle_07751, objlist, vuid.loc(),
-                                 "vkCmdSetDiscardRectangleEXT was not set for discard rectangle index %" PRIu32
-                                 " for this command buffer.%s",
-                                 i, cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT).c_str());
-                break;
-            }
-        }
-    }
 
     // must set the state for all active color attachments in the current subpass
     for (const uint32_t& color_index : cb_state.active_color_attachments_index) {
@@ -1616,13 +1627,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             }
         }
     }
-    if (IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) {
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT) &&
-            cb_state.dynamic_state_value.discard_rectangle_enable) {
-            skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, cb_state,
-                                              objlist, loc, vuid.set_discard_rectangle_09236);
-        }
-    }
+
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
         for (uint32_t stage = 0; stage < kShaderObjectStageCount; ++stage) {
             const auto shader_object = last_bound_state.GetShaderState(static_cast<ShaderObjectStage>(stage));

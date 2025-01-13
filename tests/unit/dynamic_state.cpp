@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2846,6 +2846,43 @@ TEST_F(NegativeDynamicState, DiscardRectanglesNotSet) {
     vk::CmdSetDiscardRectangleEXT(m_command_buffer.handle(), 0, 2, discard_rectangles);
     vk::CmdSetDiscardRectangleEXT(m_command_buffer.handle(), 3, 1, discard_rectangles);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07751");
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, DiscardRectanglesNotSetMaxDiscardRectangles) {
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(discard_rectangle_properties);
+    std::vector<VkRect2D> discard_rectangles(discard_rectangle_properties.maxDiscardRectangles);
+
+    if (discard_rectangle_properties.maxDiscardRectangles < 2) {
+        GTEST_SKIP() << "maxDiscardRectangles too small";
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT);
+    // VkPipelineDiscardRectangleStateCreateInfoEXT is not used now
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer.handle(), VK_TRUE);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-09236");
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdSetDiscardRectangleEXT(m_command_buffer.handle(), 0, discard_rectangles.size() - 1, discard_rectangles.data());
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-09236");
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
