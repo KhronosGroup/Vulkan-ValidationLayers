@@ -1,4 +1,4 @@
-﻿/* Copyright (c) 2021-2024 The Khronos Group Inc.
+﻿/* Copyright (c) 2021-2025 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include <spirv/1.2/GLSL.std.450.h>
 #include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
 #include "error_message/spirv_logging.h"
+#include "utils/vk_layer_utils.h"
 
 namespace spirv {
 
@@ -821,9 +822,13 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
         } else {
             user_defined_interface_variables.push_back(&variable);
 
+            if (variable.base_type.StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
+                has_physical_storage_buffer_interface = true;
+            }
+
             // After creating, make lookup table
             if (variable.interface_slots.empty()) {
-                continue;
+                continue;  // will skip for things like PhysicalStorageBuffer
             }
             for (const auto& slot : variable.interface_slots) {
                 if (variable.storage_class == spv::StorageClassInput) {
@@ -1810,6 +1815,11 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
         return slots;
     }
 
+    if (variable.base_type.StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
+        // PhysicalStorageBuffer interfaces not supported (https://gitlab.khronos.org/spirv/SPIR-V/-/issues/779)
+        return slots;
+    }
+
     if (variable.type_struct_info) {
         // Structs has two options being labeled
         // 1. The block is given a Location, need to walk though and add up starting for that value
@@ -1824,11 +1834,8 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
 
                 // Info needed to test type matching later
                 const Instruction* numerical_type = module_state.GetBaseTypeInstruction(member_id);
-                // TODO 5374 - Handle PhysicalStorageBuffer interfaces
-                if (!numerical_type) {
-                    variable.physical_storage_buffer = true;
-                    break;
-                }
+                ASSERT_AND_CONTINUE(numerical_type);
+
                 const uint32_t numerical_type_opcode = numerical_type->Opcode();
                 // TODO - Handle nested structs
                 if (numerical_type_opcode == spv::OpTypeStruct) {
@@ -1875,7 +1882,7 @@ std::vector<InterfaceSlot> StageInterfaceVariable::GetInterfaceSlots(StageInterf
     } else {
         uint32_t locations = 0;
         // Will have array peeled off already
-        uint32_t type_id = variable.base_type.ResultId();
+        const uint32_t type_id = variable.base_type.ResultId();
 
         locations = module_state.GetLocationsConsumedByType(type_id);
         const uint32_t components = module_state.GetComponentsConsumedByType(type_id);
@@ -1941,7 +1948,6 @@ StageInterfaceVariable::StageInterfaceVariable(const Module& module_state, const
       base_type(FindBaseType(*this, module_state)),
       is_builtin(IsBuiltin(*this, module_state)),
       nested_struct(false),
-      physical_storage_buffer(false),
       interface_slots(GetInterfaceSlots(*this, module_state)),
       builtin_block(GetBuiltinBlock(*this, module_state)),
       total_builtin_components(GetBuiltinComponents(*this, module_state)) {}

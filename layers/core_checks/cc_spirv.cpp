@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1381,6 +1381,26 @@ bool CoreChecks::ValidateShaderFloatControl(const spirv::Module &module_state, c
                              " but the target instruction is using 64-bit floats.\n%s\n",
                              modes, module_state.DescribeInstruction(*target_insn).c_str());
         }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidatePhysicalStorageBuffers(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                                const Location &loc) const {
+    bool skip = false;
+
+    // https://gitlab.khronos.org/spirv/SPIR-V/-/issues/779
+    // This will likely not get resolved for awhile as it will be a LOT of testing and currently it "just works" for simple cases,
+    // but should warn users if trying to do this.
+    // We need to check at vkCreateShaderModule time as we have found some drivers will crash here (from our VVL tests).
+    if (entrypoint.has_physical_storage_buffer_interface) {
+        skip |= LogWarning(
+            "WARNING-PhysicalStorageBuffer-interface", module_state.handle(), loc,
+            "(SPIR-V Interface) Is trying to use PhysicalStorageBuffer as an Input/Output User-Defined Variable in (%s). This "
+            "has unresolved specification discussion and is undefined and caution should be taken. Advice is to use "
+            "int64 or uvec2 instead to pass the pointer betweeen stages.",
+            string_VkShaderStageFlagBits(entrypoint.stage));
     }
 
     return skip;
@@ -3135,6 +3155,7 @@ bool CoreChecks::ValidateSpirvStateless(const spirv::Module &module_state, const
         skip |= ValidateShaderStageInputOutputLimits(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateShaderFloatControl(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateExecutionModes(module_state, *entry_point, stateless_data, loc);
+        skip |= ValidatePhysicalStorageBuffers(module_state, *entry_point, loc);
         skip |= ValidateConservativeRasterization(module_state, *entry_point, stateless_data, loc);
         if (enabled_features.transformFeedback) {
             skip |= ValidateTransformFeedbackEmitStreams(module_state, *entry_point, stateless_data, loc);
