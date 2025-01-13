@@ -1,4 +1,4 @@
-/* Copyright (c) 2021-2024 The Khronos Group Inc.
+/* Copyright (c) 2021-2025 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -359,7 +359,6 @@ struct StageInterfaceVariable : public VariableBase {
     const Instruction &base_type;
     const bool is_builtin;
     bool nested_struct;
-    bool physical_storage_buffer;
 
     const std::vector<InterfaceSlot> interface_slots;  // Only for User Defined variables
     const std::vector<uint32_t> builtin_block;
@@ -528,6 +527,8 @@ struct EntryPoint {
 
     bool has_passthrough{false};
     bool has_alpha_to_coverage_variable{false};  // only for Fragment shaders
+
+    bool has_physical_storage_buffer_interface{false};
 
     EntryPoint(const Module &module_state, const Instruction &entrypoint_insn, const ImageAccessMap &image_access_map,
                const AccessChainVariableMap &access_chain_map, const VariableAccessMap &variable_access_map,

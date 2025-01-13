@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -513,16 +513,17 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
 
     for (const auto &[interface_slot, stage_variable] : producer_entrypoint.output_interface_slots) {
         auto &slot = slot_map[interface_slot.Location()][interface_slot.Component()];
-        if (stage_variable->nested_struct || stage_variable->physical_storage_buffer) {
+        if (stage_variable->nested_struct) {
             return skip;  // TODO workaround
         }
         slot.output = stage_variable;
         slot.output_type = interface_slot.type;
         slot.output_width = interface_slot.bit_width;
     }
+
     for (const auto &[interface_slot, stage_variable] : consumer_entrypoint.input_interface_slots) {
         auto &slot = slot_map[interface_slot.Location()][interface_slot.Component()];
-        if (stage_variable->nested_struct || stage_variable->physical_storage_buffer) {
+        if (stage_variable->nested_struct) {
             return skip;  // TODO workaround
         }
         slot.input = stage_variable;

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1518,4 +1518,38 @@ TEST_F(PositiveShaderInterface, MissingInputAttachmentIndex) {
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderInterface, PhysicalStorageBufferGlslang3) {
+    TEST_DESCRIPTION(
+        "Taken from glslang spv.bufferhandle3.frag test - just creating the shader is valid, interface is tested elsewhere");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    char const *fs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference, std430) buffer t3 {
+            int h;
+        };
+
+        layout(set = 1, binding = 2, buffer_reference, std430) buffer t4 {
+            layout(offset = 0)  int j;
+            t3 k;
+        } x;
+
+        layout(set = 0, binding = 0, std430) buffer t5 {
+            t4 m;
+        } s5;
+
+        layout(location = 0) flat in t4 k;
+
+        t4 foo(t4 y) { return y; }
+        void main() {}
+    )glsl";
+
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 }

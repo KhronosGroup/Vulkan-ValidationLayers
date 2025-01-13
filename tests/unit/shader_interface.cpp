@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1879,47 +1879,7 @@ TEST_F(NegativeShaderInterface, InvalidStaticSpirvMaintenance5Compute) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO - Disabled until https://github.com/KhronosGroup/glslang/issues/3505
-// is resolved in the WG.
-TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBufferGlslang3) {
-    TEST_DESCRIPTION("Taken from glslang spv.bufferhandle3.frag test");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-
-    RETURN_IF_SKIP(Init());
-
-    char const *fsSource = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference : enable
-
-        layout(buffer_reference, std430) buffer t3 {
-            int h;
-        };
-
-        layout(set = 1, binding = 2, buffer_reference, std430) buffer t4 {
-            layout(offset = 0)  int j;
-            t3 k;
-        } x;
-
-        layout(set = 0, binding = 0, std430) buffer t5 {
-            t4 m;
-        } s5;
-
-        layout(location = 0) flat in t4 k;
-
-        t4 foo(t4 y) { return y; }
-        void main() {}
-    )glsl";
-
-    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-    m_errorMonitor->VerifyFound();
-}
-
-// TODO - Disabled until https://github.com/KhronosGroup/glslang/issues/3505
-// is resolved in the WG.
-TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBuffer) {
+TEST_F(NegativeShaderInterface, PhysicalStorageBuffer) {
     TEST_DESCRIPTION("Regression shaders from https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/5349");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
@@ -1960,10 +1920,10 @@ TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBuffer) {
         }
     )glsl";
 
-    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
+    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
+    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -2192,5 +2152,164 @@ TEST_F(NegativeShaderInterface, MissingInputAttachmentIndexShaderObject) {
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-09558");
     const vkt::Shader frag_shader(*m_device,
                                   ShaderCreateInfo(spv, VK_SHADER_STAGE_FRAGMENT_BIT, 1, &descriptor_set.layout_.handle()));
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderInterface, PhysicalStorageBufferArray) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference_uvec2 : enable
+
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            int value2;
+        };
+
+        layout(location=0) out dataBuffer outgoingPtr[3];
+        void main() {
+            outgoingPtr[2] = dataBuffer(uvec2(2.0));
+        }
+    )glsl";
+
+    char const *fs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference_uvec2 : enable
+
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            int value2;
+        };
+
+        layout(location=0) in dataBuffer incomingPtr[3];
+        layout(location=0) out vec4 fragColor;
+        void main() {
+            ivec2 v = ivec2(incomingPtr[1].value1, incomingPtr[2].value2);
+            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderInterface, PhysicalStorageBufferLinkedList) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer dataBuffer;
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            dataBuffer next;
+        };
+
+        layout(location=0) out dataBuffer outgoingPtr;
+        void main() {
+            outgoingPtr.next.value1 = 3;
+        }
+    )glsl";
+
+    char const *fs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer dataBuffer;
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            dataBuffer next;
+        };
+
+        layout(location=0) in dataBuffer incomingPtr;
+        layout(location=0) out vec4 fragColor;
+        void main() {
+            ivec2 v = ivec2(incomingPtr.value1, incomingPtr.next.value1);
+            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderInterface, PhysicalStorageBufferNested) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init())
+    InitRenderTarget();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t2 {
+            int values[];
+        };
+
+        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t1 {
+            t2 c;
+        };
+
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            t1 next;
+        };
+
+        layout(location=0) out dataBuffer outgoingPtr;
+        void main() {
+            outgoingPtr.next.c.values[3] = 3;
+        }
+    )glsl";
+
+    char const *fs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t2 {
+            int values[];
+        };
+
+        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t1 {
+            t2 c;
+        };
+
+        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
+            int value1;
+            t1 next;
+        };
+
+        layout(location=0) in dataBuffer incomingPtr;
+        layout(location=0) out vec4 fragColor;
+        void main() {
+            ivec2 v = ivec2(incomingPtr.value1, incomingPtr.next.c.values[2]);
+            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }
