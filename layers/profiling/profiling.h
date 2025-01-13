@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@
 
 // Print messages
 #define VVL_TracyMessage TracyMessage
+#define VVL_TracyMessageL TracyMessageL
 #define VVL_TracyPlot(name, value) TracyPlot(name, value)
 #define VVL_TracyMessageStream(message)                \
     {                                                  \
@@ -64,6 +65,7 @@
 #define VVL_TracyCZoneEnd(zone_name)
 #define VVL_TracyCFrameMark
 #define VVL_TracyMessage
+#define VVL_TracyMessageL
 #define VVL_TracyPlot(name, value)
 #define VVL_TracyMessageStream(message)
 #define VVL_TracyMessageMap(map, key_printer, value_printer)
@@ -75,4 +77,73 @@
 #else
 #define VVL_TracyAlloc(ptr, size)
 #define VVL_TracyFree(ptr)
+#endif
+
+#if defined(VVL_TRACY_GPU)
+
+#include <vulkan/vulkan.h>
+#include "tracy/TracyVulkan.hpp"
+
+#include <atomic>
+#include <optional>
+
+#define VVL_TracyVkZone(ctx, cmdbuf, name) TracyVkZone(ctx, cmdbuf, name)
+
+void InitTracyVk(VkInstance instance, VkPhysicalDevice gpu, VkDevice device, PFN_vkGetInstanceProcAddr GetInstanceProcAddr,
+                 PFN_vkGetDeviceProcAddr GetDeviceProcAddr, PFN_vkResetCommandBuffer ResetCommandBuffer,
+                 PFN_vkBeginCommandBuffer BeginCommandBuffer, PFN_vkEndCommandBuffer EndCommandBuffer,
+                 PFN_vkQueueSubmit QueueSubmit);
+
+void CleanupTracyVk(VkDevice device);
+
+TracyVkCtx& GetTracyVkCtx();
+
+// One per queue
+class TracyVkCollector {
+  public:
+    static void Create(VkDevice device, VkQueue queue, uint32_t queue_family_i);
+    static void Destroy(TracyVkCollector& collector);
+
+    static TracyVkCollector& GetTracyVkCollector(VkQueue queue);
+    static void TrySubmitCollectCb(VkQueue queue);
+
+    void Collect();
+    std::optional<std::pair<VkCommandBuffer, VkFence>> TryGetCollectCb(VkQueue queue);
+
+    static PFN_vkResetCommandBuffer ResetCommandBuffer;
+    static PFN_vkBeginCommandBuffer BeginCommandBuffer;
+    static PFN_vkEndCommandBuffer EndCommandBuffer;
+    static PFN_vkQueueSubmit QueueSubmit;
+
+    VkDevice device = VK_NULL_HANDLE;  // weak reference
+    VkCommandPool cmd_pool = VK_NULL_HANDLE;
+    VkCommandBuffer cmd_buf = VK_NULL_HANDLE;
+    VkQueue queue = VK_NULL_HANDLE;  // weak reference
+    VkFence fence = VK_NULL_HANDLE;
+
+    bool should_abort = false;
+    bool should_collect = false;
+    std::mutex collect_mutex;
+    std::condition_variable collect_cv;
+    std::thread collect_thread;
+
+    std::mutex collect_cb_mutex;
+    bool collect_cb_ready = false;
+};
+
+void TracyVkZoneStart(tracy::VkCtx* ctx, const tracy::SourceLocationData* srcloc, VkCommandBuffer cmd_buf);
+void TracyVkZoneEnd(VkCommandBuffer cmd_buf);
+
+#define VVL_TracyVkNamedZoneStart(ctx, cmdbuf, name)                                                                               \
+    static constexpr tracy::SourceLocationData TracyConcat(__tracy_gpu_source_location, TracyLine){name, TracyFunction, TracyFile, \
+                                                                                                   (uint32_t)TracyLine, 0};        \
+    TracyVkZoneStart(ctx, &TracyConcat(__tracy_gpu_source_location, TracyLine), cmdbuf);
+#define VVL_TracyVkNamedZoneEnd(cmdbuf) TracyVkZoneEnd(cmdbuf);
+
+#else
+
+#define VVL_TracyVkZone(ctx, cmdbuf, name)
+#define VVL_TracyVkNamedZoneStart(ctx, cmdbuf, name)
+#define VVL_TracyVkNamedZoneEnd(cmdbuf)
+
 #endif

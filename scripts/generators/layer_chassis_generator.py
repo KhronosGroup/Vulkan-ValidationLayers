@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2024 Valve Corporation
-# Copyright (c) 2015-2024 LunarG, Inc.
-# Copyright (c) 2015-2024 Google Inc.
+# Copyright (c) 2015-2025 Valve Corporation
+# Copyright (c) 2015-2025 LunarG, Inc.
+# Copyright (c) 2015-2025 Google Inc.
 # Copyright (c) 2023-2024 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -134,9 +134,9 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2024 The Khronos Group Inc.
-            * Copyright (c) 2015-2024 Valve Corporation
-            * Copyright (c) 2015-2024 LunarG, Inc.
+            * Copyright (c) 2015-2025 The Khronos Group Inc.
+            * Copyright (c) 2015-2025 Valve Corporation
+            * Copyright (c) 2015-2025 LunarG, Inc.
             * Copyright (c) 2015-2024 Google Inc.
             * Copyright (c) 2023-2024 RasterGrid Kft.
             *
@@ -369,17 +369,32 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             # Output dispatch (down-chain) function call
             if (command.returnType != 'void'):
                 out.append(f'{command.returnType} result;')
+            
+            # Tracy profiler
             out.append('''{
                 VVL_ZoneScopedN("Dispatch");
             ''')
+            gpu_begin_render_commands = ["BeginRender"]
+            if any(s in command.name for s in gpu_begin_render_commands):
+                out.append(f'VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), commandBuffer, "gpu_{command.name[10:]}");\n')
+
             assignResult = f'result = ' if (command.returnType != 'void') else ''
             method_name = command.name.replace('vk', f'{dispatch}->')
             out.append(f'        {assignResult}{method_name}({paramsList});\n')
-            out.append('}\n')
+            
+            # Tracy profiler
+            gpu_end_render_commands = ["EndRender"]
+            if any(s in command.name for s in gpu_end_render_commands):
+                out.append(f'VVL_TracyVkNamedZoneEnd(commandBuffer);\n')
 
 
-            if command.name == 'vkQueuePresentKHR':
-                out.append('VVL_TracyCFrameMark;\n')
+            # Tracy submit GPU queries reset command buffer
+            if "QueueSubmit" in command.name:
+                out.append('''#if defined(VVL_TRACY_GPU)
+                    TracyVkCollector::TrySubmitCollectCb(queue);
+                #endif
+                ''')
+            out.append('}\n')    
 
             # Insert post-dispatch debug utils function call
             post_dispatch_debug_utils_functions = {
@@ -441,6 +456,19 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             # Return result variable, if any.
             if command.returnType != 'void':
                 out.append('    return result;\n')
+           
+            # Tracy create GPU queries collectors
+            if command.name == "vkGetDeviceQueue":
+                out.append('''#if defined(VVL_TRACY_GPU)
+                    TracyVkCollector::Create(device, *pQueue, queueFamilyIndex);
+                #endif
+                ''')
+            
+            if command.name == "vkGetDeviceQueue2":
+                out.append('''#if defined(VVL_TRACY_GPU)
+                    TracyVkCollector::Create(device, *pQueue, pQueueInfo->queueFamilyIndex);
+                #endif
+                ''')
             out.append('}\n')
             out.append('\n')
 
