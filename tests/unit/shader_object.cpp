@@ -1616,20 +1616,19 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleModeEXT) {
         GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
     }
     InitDynamicRenderTarget();
+    VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(discard_rectangle_properties);
+    std::vector<VkRect2D> discard_rectangles(discard_rectangle_properties.maxDiscardRectangles);
 
-    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
-
-    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer.handle(), VK_TRUE);
-    VkRect2D discardRectangle;
-    discardRectangle.offset = {};
-    discardRectangle.extent = {100u, 100u};
-    vk::CmdSetDiscardRectangleEXT(m_command_buffer.handle(), 0u, 1u, &discardRectangle);
-    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    vk::CmdSetDiscardRectangleEXT(m_command_buffer.handle(), 0u, discard_rectangles.size(), discard_rectangles.data());
+    m_command_buffer.BindVertFragShader(vert_shader, frag_shader);
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -1649,21 +1648,59 @@ TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleEXT) {
     }
     InitDynamicRenderTarget();
 
-    const vkt::Shader vertShader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
 
-    const vkt::Shader fragShader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                 GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+    const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer.handle(), VK_TRUE);
     vk::CmdSetDiscardRectangleModeEXT(m_command_buffer.handle(), VK_DISCARD_RECTANGLE_MODE_EXCLUSIVE_EXT);
-    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    m_command_buffer.BindVertFragShader(vert_shader, frag_shader);
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, MissingCmdSetDiscardRectangleMaxDiscardRectangles) {
+    AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    if (!DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
+        GTEST_SKIP() << "need VK_EXT_discard_rectangles version 2";
+    }
+    InitDynamicRenderTarget();
+
+    VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(discard_rectangle_properties);
+    if (discard_rectangle_properties.maxDiscardRectangles < 2) {
+        GTEST_SKIP() << "Need at least maxDiscardRectangles of 2";
+    }
+
+    const uint32_t count = discard_rectangle_properties.maxDiscardRectangles - 1;
+    std::vector<VkRect2D> discard_rectangles(count);
+
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                  GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    vk::CmdSetDiscardRectangleModeEXT(m_command_buffer.handle(), VK_DISCARD_RECTANGLE_MODE_EXCLUSIVE_EXT);
+    m_command_buffer.BindVertFragShader(vert_shader, frag_shader);
+
+    vk::CmdSetDiscardRectangleEXT(m_command_buffer.handle(), 0u, count, discard_rectangles.data());
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-09236");
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeShaderObject, MissingCmdSetDepthClampEnableEXT) {
