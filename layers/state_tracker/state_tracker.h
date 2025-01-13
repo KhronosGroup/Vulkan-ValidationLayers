@@ -435,6 +435,9 @@ class ValidationStateTracker : public ValidationObject {
     virtual std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkInstance* pInstance, const RecordObject& record_obj) override;
+    void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
+                                   vku::safe_VkDeviceCreateInfo* modified_create_info) override;
     void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
                                                                     VkMemoryRequirements2* pMemoryRequirements,

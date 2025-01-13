@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2024 Valve Corporation
-# Copyright (c) 2014-2024 LunarG, Inc.
+# Copyright (c) 2014-2025 Valve Corporation
+# Copyright (c) 2014-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -98,6 +98,13 @@ if (VVL_ENABLE_TRACY)
 
     if(VVL_ENABLE_TRACY_CPU_MEMORY)
         add_compile_definitions(VVL_TRACY_CPU_MEMORY)
+    endif()
+
+    if(VVL_ENABLE_TRACY_GPU)
+        add_compile_definitions(
+            VVL_TRACY_GPU
+            TRACY_VK_USE_SYMBOL_TABLE
+        )
     endif()
 endif()
 

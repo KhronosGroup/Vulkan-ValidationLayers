@@ -329,6 +329,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
     DeviceExtensionWhitelist(device_dispatch.get(), pCreateInfo, *pDevice);
     // NOTE: many PostCallRecords expect to be able to look up the device dispatch object so we need to populate the map here.
+#if defined(VVL_TRACY_GPU)
+    InitTracyVk(instance_dispatch->instance, gpu, *pDevice, fpGetInstanceProcAddr, fpGetDeviceProcAddr,
+                device_dispatch->device_dispatch_table.ResetCommandBuffer,
+                device_dispatch->device_dispatch_table.BeginCommandBuffer, device_dispatch->device_dispatch_table.EndCommandBuffer,
+                device_dispatch->device_dispatch_table.QueueSubmit);
+#endif
+
     vvl::dispatch::SetData(*pDevice, std::move(device_dispatch));
     for (auto& vo : instance_dispatch->object_dispatch) {
         auto lock = vo->WriteLock();
@@ -336,6 +343,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         vo->PostCallRecordCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice,
                                        record_obj);
     }
+
     return result;
 }
 
@@ -363,6 +371,10 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         auto lock = vo->WriteLock();
         vo->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
+
+#if defined(VVL_TRACY_GPU)
+    CleanupTracyVk(device);
+#endif
 
     device_dispatch->DestroyDevice(device, pAllocator);
 
@@ -856,6 +868,9 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
         result = device_dispatch->QueuePresentKHR(queue, pPresentInfo);
     }
     VVL_TracyCFrameMark;
+#if defined(VVL_TRACY_GPU)
+    TracyVkCollector::GetTracyVkCollector(queue).Collect();
+#endif
     record_obj.result = result;
     {
         VVL_ZoneScopedN("PostCallRecord");

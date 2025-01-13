@@ -43,6 +43,8 @@
 #include "chassis/chassis_modification_state.h"
 #include "spirv-tools/optimizer.hpp"
 
+#include "chassis/chassis.h"
+
 ValidationStateTracker::~ValidationStateTracker() { DestroyObjectMaps(); }
 
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
@@ -697,6 +699,34 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
     // finish setup in the object representing the device
     device_state->PostCreateDevice(pCreateInfo, record_obj.location);
+
+#if defined(VVL_TRACY_GPU)
+    std::vector<VkTimeDomainKHR> time_domains;
+    uint32_t time_domain_count = 0;
+    VkResult result = DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu, &time_domain_count, nullptr);
+    assert(result == VK_SUCCESS);
+    time_domains.resize(time_domain_count);
+    result = DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu, &time_domain_count, time_domains.data());
+    assert(result == VK_SUCCESS);
+
+    bool found_tracy_required_time_domain = false;
+    for (VkTimeDomainEXT time_domain : time_domains) {
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+        if (time_domain == VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT) {
+            found_tracy_required_time_domain = true;
+            break;
+        }
+#else
+        if (time_domain == VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_EXT) {
+            found_tracy_required_time_domain = true;
+            break;
+        }
+#endif
+    }
+    (void)found_tracy_required_time_domain;
+    assert(found_tracy_required_time_domain);
+
+#endif
 }
 
 std::shared_ptr<vvl::Queue> ValidationStateTracker::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
@@ -4161,6 +4191,51 @@ void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreate
         export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
     }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+}
+
+void ValidationStateTracker::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                                       const RecordObject &record_obj,
+                                                       vku::safe_VkDeviceCreateInfo *modified_create_info) {
+#if defined(VVL_TRACY_GPU)
+    auto ext_already_enabled = [](const vku::safe_VkDeviceCreateInfo *dci, const char *ext_name) {
+        bool ext_enabled = false;
+        for (auto ext : vvl::make_span(dci->ppEnabledExtensionNames, dci->enabledExtensionCount)) {
+            if (strcmp(ext, ext_name) == 0) {
+                ext_enabled = true;
+                break;
+            }
+        }
+        return ext_enabled;
+    };
+
+    auto enable_ext = [](vku::safe_VkDeviceCreateInfo *dci, const char *ext_name) {
+        const char **tmp_ppEnabledExtensionNames = new const char *[dci->enabledExtensionCount + 1];
+        for (uint32_t i = 0; i < dci->enabledExtensionCount; ++i) {
+            tmp_ppEnabledExtensionNames[i] = vku::SafeStringCopy(dci->ppEnabledExtensionNames[i]);
+        }
+        tmp_ppEnabledExtensionNames[dci->enabledExtensionCount] = vku::SafeStringCopy(ext_name);
+        dci->ppEnabledExtensionNames = tmp_ppEnabledExtensionNames;
+        ++dci->enabledExtensionCount;
+    };
+
+    if (!ext_already_enabled(modified_create_info, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
+        enable_ext(modified_create_info, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
+    }
+    auto host_query_reset_feature = const_cast<VkPhysicalDeviceHostQueryResetFeatures *>(
+        vku::FindStructInPNextChain<VkPhysicalDeviceHostQueryResetFeatures>(pCreateInfo->pNext));
+    if (host_query_reset_feature) {
+        host_query_reset_feature->hostQueryReset = VK_TRUE;
+    } else {
+        VkPhysicalDeviceHostQueryResetFeatures new_host_query_reset_feature = vku::InitStructHelper();
+        new_host_query_reset_feature.hostQueryReset = VK_TRUE;
+        vku::AddToPnext(*modified_create_info, new_host_query_reset_feature);
+    }
+
+    if (!ext_already_enabled(modified_create_info, VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
+        enable_ext(modified_create_info, VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+    }
+#endif
 }
 
 // Common function to update state for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
