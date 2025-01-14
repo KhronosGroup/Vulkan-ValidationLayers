@@ -1200,7 +1200,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module_settings.output_buffer_descriptor_set = instrumentation_desc_set_bind_index_;
     module_settings.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
     module_settings.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
-    module_settings.support_non_semantic_info = IsExtEnabled(device_extensions.vk_khr_shader_non_semantic_info);
+    module_settings.support_non_semantic_info = IsExtEnabled(extensions.vk_khr_shader_non_semantic_info);
     module_settings.has_bindless_descriptors = instrumentation_dsl.has_bindless_descriptors;
 
     spirv::Module module(input_spirv, debug_report, module_settings, enabled_features,
@@ -1269,12 +1269,12 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
                          static_cast<std::streamsize>(out_instrumented_spirv.size() * sizeof(uint32_t)));
     }
 
-    spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
+    spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
     // (Maybe) validate the instrumented and linked shader
     if (gpuav_settings.debug_validate_instrumented_shaders) {
         std::string spirv_val_error;
-        if (!GpuValidateShader(out_instrumented_spirv, device_extensions.vk_khr_relaxed_block_layout,
-                               device_extensions.vk_ext_scalar_block_layout, target_env, spirv_val_error)) {
+        if (!GpuValidateShader(out_instrumented_spirv, extensions.vk_khr_relaxed_block_layout,
+                               extensions.vk_ext_scalar_block_layout, target_env, spirv_val_error)) {
             std::ostringstream strm;
             strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
                  << spirv_val_error << " Proceeding with non instrumented shader.";

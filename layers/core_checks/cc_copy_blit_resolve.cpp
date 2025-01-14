@@ -1132,7 +1132,7 @@ bool CoreChecks::ValidateImageCopyData(const HandleT handle, const RegionType &r
     }
 
     // Handle difference between Maintenance 1
-    if (IsExtEnabled(device_extensions.vk_khr_maintenance1) || is_host) {
+    if (IsExtEnabled(extensions.vk_khr_maintenance1) || is_host) {
         if (src_image_state.create_info.imageType == VK_IMAGE_TYPE_3D) {
             const LogObjectList objlist(handle, src_image_state.Handle());
             if ((0 != region.srcSubresource.baseArrayLayer) || (1 != region.srcSubresource.layerCount)) {
@@ -1336,7 +1336,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const vvl::Image 
     }
 
     if (api_version < VK_API_VERSION_1_1) {
-        if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
+        if (!IsExtEnabled(extensions.vk_khr_maintenance1)) {
             // For each region the layerCount member of srcSubresource and dstSubresource must match
             if (region.srcSubresource.layerCount != region.dstSubresource.layerCount) {
                 const LogObjectList objlist(handle, src_image_state.VkHandle(), dst_image_state.VkHandle());
@@ -1346,7 +1346,7 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const vvl::Image 
                                  dst_subresource_loc.dot(Field::layerCount).Fields().c_str(), region.dstSubresource.layerCount);
             }
         }
-        if (!IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+        if (!IsExtEnabled(extensions.vk_khr_sampler_ycbcr_conversion)) {
             // For each region the aspectMask member of srcSubresource and dstSubresource must match
             if (region.srcSubresource.aspectMask != region.dstSubresource.aspectMask) {
                 const LogObjectList objlist(handle, src_image_state.VkHandle(), dst_image_state.VkHandle());
@@ -1548,7 +1548,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             slice_override = (depth_slices != 1);
         }
 
-        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance1)) {
             // No chance of mismatch if we're overriding depth slice count
             if (!slice_override) {
                 // The number of depth slices in srcSubresource and dstSubresource must match
@@ -1860,7 +1860,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     }
 
     // Validate that SRC & DST images have correct usage flags set
-    if (!IsExtEnabled(device_extensions.vk_ext_separate_stencil_usage)) {
+    if (!IsExtEnabled(extensions.vk_ext_separate_stencil_usage)) {
         vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06662" : "VUID-vkCmdCopyImage-aspect-06662";
         skip |=
             ValidateImageUsageFlags(commandBuffer, *src_image_state, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, false, vuid, src_image_loc);
@@ -2304,7 +2304,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
             skip |= LogError(vuid, objlist, src_image_loc, "was created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT.");
         }
 
-        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance1)) {
             vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImage-01998" : "VUID-vkCmdCopyImageToBuffer-srcImage-01998";
             skip |= ValidateImageFormatFeatureFlags(commandBuffer, *src_image_state, VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT,
                                                     src_image_loc, vuid);
@@ -2459,7 +2459,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
             skip |= LogError(vuid, dst_objlist, dst_image_loc, "was created with VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT.");
         }
 
-        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance1)) {
             vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImage-01997" : "VUID-vkCmdCopyBufferToImage-dstImage-01997";
             skip |= ValidateImageFormatFeatureFlags(commandBuffer, *dst_image_state, VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT,
                                                     dst_image_loc, vuid);

@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -301,7 +301,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
             skip |= ValidateCreateComputePipelineAmd(create_info, create_info_loc);
         }
 
-        if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance4)) {
             auto module_state = Get<vvl::ShaderModule>(create_info.stage.module);
             if (module_state &&
                 module_state->spirv->static_data_.has_builtin_workgroup_size) {  // No module if creating from module identifier

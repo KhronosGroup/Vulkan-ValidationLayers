@@ -345,7 +345,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const spirv::Module &modul
                                  max_output_slot.Describe().c_str(), limits.maxTessellationEvaluationOutputComponents);
             }
             // Portability validation
-            if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
+            if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
                 if (is_iso_lines && (VK_FALSE == enabled_features.tessellationIsolines)) {
                     skip |= LogError("VUID-RuntimeSpirv-tessellationShader-06326", module_state.handle(), loc,
                                      "(portability error) SPIR-V (Tessellation evaluation stage)"
@@ -452,7 +452,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const spirv::Module &modul
     //
     // This limit was created from Vulkan 1.0, with the move to bindless, this limit has slowly become less relevant, if using
     // descriptor indexing, the limit should basically be UINT32_MAX
-    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) {
+    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && !IsExtEnabled(extensions.vk_ext_descriptor_indexing)) {
         // Variables can be aliased, so use Location to mark things as unique
         vvl::unordered_set<uint32_t> color_attachments;
         for (const auto *variable : entrypoint.user_defined_interface_variables) {

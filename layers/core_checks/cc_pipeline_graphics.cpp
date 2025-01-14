@@ -98,7 +98,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
         // Check for portability errors
         // Issue raised in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3436
         // The combination of GPL/DynamicRendering and Portability has spec issues that need to be clarified
-        if (IsExtEnabled(device_extensions.vk_khr_portability_subset) && !pipeline.IsGraphicsLibrary()) {
+        if (IsExtEnabled(extensions.vk_khr_portability_subset) && !pipeline.IsGraphicsLibrary()) {
             skip |= ValidateGraphicsPipelinePortability(pipeline, create_info_loc);
         }
     }
@@ -461,7 +461,7 @@ bool CoreChecks::ValidateGraphicsPipelineVertexInputState(const vvl::Pipeline &p
     }
 
     const bool ignore_vertex_input_state = pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
-    const bool ignore_input_assembly_state = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) &&
+    const bool ignore_input_assembly_state = IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) &&
                                              pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE) &&
                                              pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
                                              phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted;
@@ -1450,7 +1450,7 @@ bool CoreChecks::ValidateGraphicsPipelineTessellationState(const vvl::Pipeline &
     if (pipeline.OwnsSubState(pipeline.pre_raster_state) &&
         (pipeline.create_info_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT)) {
         if (!pipeline.TessellationState() && (!pipeline.IsDynamic(CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) ||
-                                              !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3))) {
+                                              !IsExtEnabled(extensions.vk_ext_extended_dynamic_state3))) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-09022", device, create_info_loc.dot(Field::pStages),
                              "includes a tessellation control shader stage, but pTessellationState is NULL.");
         }
@@ -1954,7 +1954,7 @@ bool CoreChecks::ValidateGraphicsPipelineRenderPassRasterization(const vvl::Pipe
             const Location ds_loc = create_info_loc.dot(Field::pDepthStencilState);
             const auto ds_state = pipeline.DepthStencilState();
             if (!ds_state) {
-                if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+                if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(extensions.vk_ext_extended_dynamic_state3)) {
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09028", rp_state.Handle(), ds_loc,
                                      "is NULL when rasterization is enabled "
                                      "and subpass %" PRIu32 " uses a depth/stencil attachment.",
@@ -1968,7 +1968,7 @@ bool CoreChecks::ValidateGraphicsPipelineRenderPassRasterization(const vvl::Pipe
                                  ds_loc.dot(Field::depthBoundsTestEnable), "is VK_TRUE, but depthBounds feature was not enabled.");
                 }
 
-                if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted) &&
+                if (!IsExtEnabled(extensions.vk_ext_depth_range_unrestricted) &&
                     !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS)) {
                     const float minDepthBounds = ds_state->minDepthBounds;
                     const float maxDepthBounds = ds_state->maxDepthBounds;
@@ -2053,9 +2053,8 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
 
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         const uint32_t raster_samples = SampleCountSize(multisample_state->rasterizationSamples);
-        if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
-              IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
-              (enabled_features.multisampledRenderToSingleSampled))) {
+        if (!(IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) ||
+              IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) || (enabled_features.multisampledRenderToSingleSampled))) {
             uint32_t subpass_num_samples = 0;
 
             accum_color_samples(subpass_num_samples);
@@ -2077,7 +2076,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
             }
         }
 
-        if (IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples)) {
+        if (IsExtEnabled(extensions.vk_amd_mixed_attachment_samples)) {
             VkSampleCountFlagBits max_sample_count = static_cast<VkSampleCountFlagBits>(0);
             for (uint32_t i = 0; i < subpass_desc.colorAttachmentCount; ++i) {
                 if (subpass_desc.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
@@ -2098,7 +2097,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
             }
         }
 
-        if (IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) {
+        if (IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples)) {
             uint32_t subpass_color_samples = 0;
 
             accum_color_samples(subpass_color_samples);
@@ -2158,7 +2157,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
             }
         }
 
-        if (IsExtEnabled(device_extensions.vk_nv_coverage_reduction_mode)) {
+        if (IsExtEnabled(extensions.vk_nv_coverage_reduction_mode)) {
             uint32_t subpass_color_samples = 0;
             uint32_t subpass_depth_samples = 0;
 
@@ -2323,7 +2322,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_qcom_render_pass_shader_resolve)) {
+    if (IsExtEnabled(extensions.vk_qcom_render_pass_shader_resolve)) {
         uint32_t subpass_input_attachment_samples = 0;
 
         for (uint32_t i = 0; i < subpass_desc.inputAttachmentCount; i++) {
@@ -2365,7 +2364,7 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline &pipeline
     if (null_rp) {
         if (!pipeline.DepthStencilState()) {
             if (pipeline.fragment_shader_state && !pipeline.fragment_output_state) {
-                if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+                if (!pipeline.IsDepthStencilStateDynamic() || !IsExtEnabled(extensions.vk_ext_extended_dynamic_state3)) {
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09035", device,
                                      create_info_loc.dot(Field::pDepthStencilState), "is NULL.");
                 }
@@ -2373,7 +2372,7 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline &pipeline
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+    if (IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
         if (pipeline.OwnsSubState(pipeline.fragment_output_state) && !pipeline.MultisampleState()) {
             // if VK_KHR_dynamic_rendering is not enabled, can be null renderpass if using GPL
             if (!null_rp) {
@@ -2399,7 +2398,7 @@ bool CoreChecks::ValidateGraphicsPipelineNullState(const vvl::Pipeline &pipeline
 
     if (!pipeline.RasterizationState()) {
         if (!pipeline_ci.pRasterizationState && pipeline.OwnsSubState(pipeline.pre_raster_state)) {
-            if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) ||
+            if (!IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) ||
                 !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT) ||
                 !pipeline.IsDynamic(CB_DYNAMIC_STATE_POLYGON_MODE_EXT) ||
                 !pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ||
@@ -3030,7 +3029,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
             ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
              (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
             !pipeline.DepthStencilState() && !pipeline.IsDepthStencilStateDynamic() &&
-            !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) {
+            !IsExtEnabled(extensions.vk_ext_extended_dynamic_state3)) {
             skip |= LogError(
                 "VUID-VkGraphicsPipelineCreateInfo-renderPass-09033", device, create_info_loc.dot(Field::pDepthStencilState),
                 "is NULL, but %s is %s and stencilAttachmentFormat is %s.",
@@ -4309,9 +4308,8 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
         }
 
         const VkSampleCountFlagBits rasterization_samples = last_bound_state.GetRasterizationSamples();
-        if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
-              IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
-              enabled_features.multisampledRenderToSingleSampled) &&
+        if (!(IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) ||
+              IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) || enabled_features.multisampledRenderToSingleSampled) &&
             ((subpass_num_samples & static_cast<unsigned>(rasterization_samples)) != subpass_num_samples)) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), cb_state.activeRenderPass->Handle());
             skip |= LogError(vuid.msrtss_rasterization_samples_07284, objlist, vuid.loc(),

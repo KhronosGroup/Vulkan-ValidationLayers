@@ -1301,9 +1301,8 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
                                  "was created with %s, but descriptorType is VK_DESCRIPTOR_TYPE_STORAGE_IMAGE.",
                                  string_VkImageUsageFlags(usage).c_str());
 
-            } else if ((VK_IMAGE_LAYOUT_GENERAL != image_layout) &&
-                       (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image) ||
-                        (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout))) {
+            } else if ((VK_IMAGE_LAYOUT_GENERAL != image_layout) && (!IsExtEnabled(extensions.vk_khr_shared_presentable_image) ||
+                                                                     (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout))) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-04152", objlist, image_info_loc.dot(Field::imageView),
                                  "image layout is %s, but descriptorType is VK_DESCRIPTOR_TYPE_STORAGE_IMAGE. (allowed layouts are "
                                  "VK_IMAGE_LAYOUT_GENERAL or VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR).",
@@ -1364,7 +1363,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
             {VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ, &DeviceExtensions::vk_khr_dynamic_rendering_local_read},
         }};
         auto is_layout = [image_layout, this](const ExtensionLayout &ext_layout) {
-            return IsExtEnabled(device_extensions.*(ext_layout.extension)) && (ext_layout.layout == image_layout);
+            return IsExtEnabled(extensions.*(ext_layout.extension)) && (ext_layout.layout == image_layout);
         };
 
         const bool valid_layout = (std::find(valid_layouts.cbegin(), valid_layouts.cend(), image_layout) != valid_layouts.cend()) ||
@@ -1393,7 +1392,7 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
                       << ". Allowed layouts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
                       << "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL";
             for (auto &ext_layout : extended_layouts) {
-                if (IsExtEnabled(device_extensions.*(ext_layout.extension))) {
+                if (IsExtEnabled(extensions.*(ext_layout.extension))) {
                     error_str << ", " << string_VkImageLayout(ext_layout.layout);
                 }
             }
@@ -2082,7 +2081,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
 
                 // Verify portability
                 if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
-                    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
+                    if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
                         if ((VK_FALSE == enabled_features.mutableComparisonSamplers) &&
                             (VK_FALSE != sampler_state->create_info.compareEnable)) {
                             skip |= LogError("VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450", device, write_loc,
@@ -3376,7 +3375,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                              string_VkDescriptorPoolCreateFlags(ds_pool_state->create_info.flags).c_str());
         }
     }
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
+    if (!IsExtEnabled(extensions.vk_khr_maintenance1)) {
         // Track number of descriptorSets allowable in this pool
         if (ds_pool_state->GetAvailableSets() < pAllocateInfo->descriptorSetCount) {
             skip |= LogError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07895", ds_pool_state->Handle(), error_obj.location,
@@ -4285,7 +4284,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     }
 
     // Extension exposes new properties limits
-    if (IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) {
+    if (IsExtEnabled(extensions.vk_ext_descriptor_indexing)) {
         // Max descriptors by type, within a single pipeline stage
         std::valarray<uint32_t> max_descriptors_per_stage_update_after_bind =
             GetDescriptorCountMaxPerStage(&enabled_features, set_layouts, false);
@@ -4534,7 +4533,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     }
 
     // Extension exposes new properties limits
-    if (IsExtEnabled(device_extensions.vk_ext_fragment_density_map2)) {
+    if (IsExtEnabled(extensions.vk_ext_fragment_density_map2)) {
         uint32_t sum_subsampled_samplers = 0;
         for (const auto &dsl : set_layouts) {
             // find the number of subsampled samplers across all stages
@@ -4710,7 +4709,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
+    if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
         if ((VK_FALSE == enabled_features.samplerMipLodBias) && pCreateInfo->mipLodBias != 0) {
             skip |= LogError("VUID-VkSamplerCreateInfo-samplerMipLodBias-04467", device, error_obj.location,
                              "(portability error) mipLodBias is %f, but samplerMipLodBias not supported.", pCreateInfo->mipLodBias);

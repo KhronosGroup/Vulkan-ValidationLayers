@@ -166,7 +166,7 @@ bool CoreChecks::ValidateQueueFamilyIndex(const vvl::PhysicalDevice &pd_state, u
 
     if (requested_queue_family >= pd_state.queue_family_known_count) {
         const char *conditional_ext_cmd =
-            instance_extensions.vk_khr_get_physical_device_properties2 ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]" : "";
+            extensions.vk_khr_get_physical_device_properties2 ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]" : "";
 
         skip |= LogError(vuid, pd_state.Handle(), loc,
                          "(%" PRIu32 ") is not less than any previously obtained pQueueFamilyPropertyCount %" PRIu32
@@ -287,9 +287,8 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_st
             const uint32_t available_queue_count = queue_family_has_props ? requested_queue_family_props.queueCount : 1;
 
             if (requested_queue_count > available_queue_count) {
-                const char *conditional_ext_cmd = instance_extensions.vk_khr_get_physical_device_properties2
-                                                      ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]"
-                                                      : "";
+                const char *conditional_ext_cmd =
+                    extensions.vk_khr_get_physical_device_properties2 ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]" : "";
                 const std::string count_note =
                     queue_family_has_props
                         ? "i.e. is not less than or equal to " + std::to_string(requested_queue_family_props.queueCount)
@@ -343,7 +342,7 @@ void CoreChecks::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const L
     // The state tracker sets up the device state (also if extension and/or features are enabled)
     BaseClass::PostCreateDevice(pCreateInfo, loc);
 
-    AdjustValidatorOptions(device_extensions, enabled_features, spirv_val_options, &spirv_val_option_hash);
+    AdjustValidatorOptions(extensions, enabled_features, spirv_val_options, &spirv_val_option_hash);
 
     // Allocate shader validation cache
     if (!disabled[shader_validation_caching] && !disabled[shader_validation] && !core_validation_cache) {

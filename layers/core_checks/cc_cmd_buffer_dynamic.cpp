@@ -298,7 +298,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_FRONT_FACE, vuid);
         }
 
-        if (IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
+        if (IsExtEnabled(extensions.vk_ext_sample_locations)) {
             skip |=
                 ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT, vuid);
             if (last_bound_state.IsSampleLocationsEnable()) {
@@ -327,7 +327,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         }
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT, vuid);
 
-        if (IsExtEnabled(device_extensions.vk_ext_conservative_rasterization)) {
+        if (IsExtEnabled(extensions.vk_ext_conservative_rasterization)) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
                                               CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT, vuid);
             if (last_bound_state.GetConservativeRasterizationMode() == VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT) {
@@ -336,7 +336,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             }
         }
 
-        if (IsExtEnabled(device_extensions.vk_nv_fragment_coverage_to_color)) {
+        if (IsExtEnabled(extensions.vk_nv_fragment_coverage_to_color)) {
             skip |=
                 ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV, vuid);
             if (last_bound_state.IsCoverageToColorEnabled()) {
@@ -372,7 +372,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV, vuid);
         }
 
-        if (IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) {
+        if (IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples)) {
             skip |=
                 ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV, vuid);
             if (last_bound_state.GetCoverageModulationMode() != VK_COVERAGE_MODULATION_MODE_NONE_NV) {
@@ -385,7 +385,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             }
         }
 
-        if (IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) {
+        if (IsExtEnabled(extensions.vk_ext_discard_rectangles)) {
             skip |=
                 ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT, vuid);
             if (last_bound_state.IsDiscardRectangleEnable()) {
@@ -435,7 +435,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         }
 
         if (vertex_shader_bound) {
-            if (IsExtEnabled(device_extensions.vk_ext_provoking_vertex)) {
+            if (IsExtEnabled(extensions.vk_ext_provoking_vertex)) {
                 skip |=
                     ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT, vuid);
             }
@@ -508,7 +508,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling)) {
+    if (IsExtEnabled(extensions.vk_nv_clip_space_w_scaling)) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV, vuid);
 
         if (last_bound_state.IsViewportWScalingEnable() && has_dynamic_state(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) &&
@@ -525,7 +525,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_nv_viewport_swizzle)) {
+    if (IsExtEnabled(extensions.vk_nv_viewport_swizzle)) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, vuid);
     }
 
@@ -840,9 +840,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     }
 
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-        if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
-            !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) &&
-            !enabled_features.multisampledRenderToSingleSampled) {
+        if (!IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) &&
+            !IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) && !enabled_features.multisampledRenderToSingleSampled) {
             for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
                 const AttachmentInfo& attachment_info = cb_state.active_attachments[i];
                 const auto* attachment = attachment_info.image_view;
@@ -1261,7 +1260,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     }
 
     if (pipeline_state && cb_state.activeRenderPass->UsesDynamicRendering() &&
-        (!IsExtEnabled(device_extensions.vk_ext_shader_object) || !last_bound_state.IsAnyGraphicsShaderBound())) {
+        (!IsExtEnabled(extensions.vk_ext_shader_object) || !last_bound_state.IsAnyGraphicsShaderBound())) {
         skip |= ValidateDrawRenderingAttachmentLocation(cb_state, *pipeline_state, vuid);
         skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, *pipeline_state, vuid);
     }
@@ -1454,8 +1453,8 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                  i, string_VkFormat(attachment->create_info.format), i);
             }
         }
-        if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
-            !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) &&
+        if (!IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) &&
+            !IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) &&
             enabled_features.multisampledRenderToSingleSampled == VK_FALSE &&
             cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
             for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
@@ -1569,7 +1568,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                      DynamicStateToString(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT), i);
                 }
             }
-            if (IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
+            if (IsExtEnabled(extensions.vk_ext_blend_operation_advanced)) {
                 if (!cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) &&
                     !cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
                     skip |= LogError(vuid.set_blend_operation_advance_09416, objlist, loc,
@@ -1578,7 +1577,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                      DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT));
                 }
             }
-            if (IsExtEnabled(device_extensions.vk_nv_fragment_coverage_to_color)) {
+            if (IsExtEnabled(extensions.vk_nv_fragment_coverage_to_color)) {
                 if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV) &&
                     cb_state.dynamic_state_value.coverage_to_color_enable) {
                     if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV)) {
@@ -1616,7 +1615,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_nv_viewport_swizzle)) {
+    if (IsExtEnabled(extensions.vk_nv_viewport_swizzle)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
             if (cb_state.dynamic_state_value.viewport_swizzle_count < cb_state.dynamic_state_value.viewport_count) {
                 skip |=
@@ -1886,7 +1885,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
-    if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
+    if (!IsExtEnabled(extensions.vk_ext_depth_range_unrestricted)) {
         if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
             skip |= LogError(
                 "VUID-vkCmdSetDepthBounds-minDepthBounds-00600", commandBuffer, error_obj.location.dot(Field::minDepthBounds),
@@ -2309,7 +2308,7 @@ bool CoreChecks::PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuff
                          "is %s but the "
                          "fillModeNonSolid feature was not enabled.",
                          string_VkPolygonMode(polygonMode));
-    } else if (polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV && !IsExtEnabled(device_extensions.vk_nv_fill_rectangle)) {
+    } else if (polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV && !IsExtEnabled(extensions.vk_nv_fill_rectangle)) {
         skip |= LogError("VUID-vkCmdSetPolygonModeEXT-polygonMode-07425", commandBuffer, error_obj.location.dot(Field::polygonMode),
                          "is VK_POLYGON_MODE_FILL_RECTANGLE_NV but the VK_NV_fill_rectangle "
                          "extension was not enabled.");
@@ -2444,7 +2443,7 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
                          "(%s) and alphaBlendOp (%s) must not be an advanced blending operation.",
                          string_VkBlendOp(equation.colorBlendOp), string_VkBlendOp(equation.alphaBlendOp));
         }
-        if (IsExtEnabled(device_extensions.vk_khr_portability_subset) && !enabled_features.constantAlphaColorBlendFactors) {
+        if (IsExtEnabled(extensions.vk_khr_portability_subset) && !enabled_features.constantAlphaColorBlendFactors) {
             if (equation.srcColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
                 equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
                 skip |= LogError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362", commandBuffer,
@@ -2821,7 +2820,7 @@ bool CoreChecks::PreCallValidateCreateEvent(VkDevice device, const VkEventCreate
                                             const ErrorObject& error_obj) const {
     bool skip = false;
     skip |= ValidateDeviceQueueSupport(error_obj.location);
-    if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
+    if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
         if (VK_FALSE == enabled_features.events) {
             skip |= LogError("VUID-vkCreateEvent-events-04468", device, error_obj.location,
                              "events are not supported via VK_KHR_portability_subset");

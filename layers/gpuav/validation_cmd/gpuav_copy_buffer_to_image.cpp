@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     }
 
     // No need to perform validation if VK_EXT_depth_range_unrestricted is enabled
-    if (IsExtEnabled(gpuav.device_extensions.vk_ext_depth_range_unrestricted)) {
+    if (IsExtEnabled(gpuav.extensions.vk_ext_depth_range_unrestricted)) {
         return;
     }
 

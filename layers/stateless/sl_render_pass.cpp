@@ -688,7 +688,7 @@ bool StatelessValidation::ValidateBeginRenderingColorAttachment(VkCommandBuffer 
             }
         }
 
-        if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
+        if (IsExtEnabled(extensions.vk_khr_maintenance2)) {
             if (image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
                 image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
                 skip |= LogError("VUID-VkRenderingInfo-colorAttachmentCount-06096", commandBuffer,
@@ -753,7 +753,7 @@ bool StatelessValidation::ValidateBeginRenderingDepthAttachment(VkCommandBuffer 
                              string_VkImageLayout(resolve_layout), string_VkResolveModeFlagBits(depth_attachment.resolveMode));
         }
 
-        if (IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
+        if (IsExtEnabled(extensions.vk_khr_maintenance2) &&
             resolve_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
             skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-06098", commandBuffer,
                              attachment_loc.dot(Field::resolveImageLayout),
@@ -801,7 +801,7 @@ bool StatelessValidation::ValidateBeginRenderingStencilAttachment(VkCommandBuffe
                              string_VkImageLayout(resolve_layout), string_VkResolveModeFlagBits(stencil_attachment.resolveMode));
         }
 
-        if (IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
+        if (IsExtEnabled(extensions.vk_khr_maintenance2) &&
             resolve_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
             skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06099", commandBuffer,
                              attachment_loc.dot(Field::resolveImageLayout),

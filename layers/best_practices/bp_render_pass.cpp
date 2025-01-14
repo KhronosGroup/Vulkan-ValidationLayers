@@ -128,7 +128,7 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
+    if (IsExtEnabled(extensions.vk_ext_multisampled_render_to_single_sampled)) {
         for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
             if (!pCreateInfo->pSubpasses[i].pResolveAttachments) continue;
             for (uint32_t j = 0; j < pCreateInfo->pSubpasses[i].colorAttachmentCount; ++j) {

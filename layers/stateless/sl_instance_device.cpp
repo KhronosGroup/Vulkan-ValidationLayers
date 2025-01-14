@@ -120,9 +120,9 @@ bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateIn
     //  an apiVersion of VK_MAKE_VERSION(1, 0, 0).  (a.k.a. VK_API_VERSION_1_0)
     uint32_t local_api_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
     // Create and use a local instance extension object, as an actual instance has not been created yet
-    InstanceExtensions local_instance_extensions(local_api_version, pCreateInfo);
-    DeviceExtensions local_device_extensions(local_instance_extensions, local_api_version);
-    stateless::Context context(*this, error_obj, local_device_extensions);
+    InstanceExtensions instance_extensions(local_api_version, pCreateInfo);
+    DeviceExtensions device_extensions(instance_extensions, local_api_version);
+    stateless::Context context(*this, error_obj, device_extensions);
 
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, true,
                                        "VUID-vkCreateInstance-pCreateInfo-parameter", "VUID-VkInstanceCreateInfo-sType-sType");
@@ -179,11 +179,11 @@ bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateIn
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
-        skip |= ValidateExtensionReqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
+        skip |= ValidateExtensionReqs(instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
                                       extension, create_info_loc.dot(Field::ppEnabledExtensionNames, i));
     }
     if (pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR &&
-        !local_instance_extensions.vk_khr_portability_enumeration) {
+        !instance_extensions.vk_khr_portability_enumeration) {
         skip |= LogError("VUID-VkInstanceCreateInfo-flags-06559", instance, create_info_loc.dot(Field::flags),
                          "has VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR set, but "
                          "ppEnabledExtensionNames does not include VK_KHR_portability_enumeration");
@@ -207,19 +207,19 @@ bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateIn
 
     // avoid redundant pNext-pNext errors from the cases where we have specific VUs by returning early
     const auto *debug_report_callback = vku::FindStructInPNextChain<VkDebugReportCallbackCreateInfoEXT>(pCreateInfo->pNext);
-    if (debug_report_callback && !local_instance_extensions.vk_ext_debug_report) {
+    if (debug_report_callback && !instance_extensions.vk_ext_debug_report) {
         skip |= LogError("VUID-VkInstanceCreateInfo-pNext-04925", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
                          "does not include VK_EXT_debug_report, but the pNext chain includes VkDebugReportCallbackCreateInfoEXT.");
         return skip;
     }
     const auto *debug_utils_messenger = vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(pCreateInfo->pNext);
-    if (debug_utils_messenger && !local_instance_extensions.vk_ext_debug_utils) {
+    if (debug_utils_messenger && !instance_extensions.vk_ext_debug_utils) {
         skip |= LogError("VUID-VkInstanceCreateInfo-pNext-04926", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
                          "does not include VK_EXT_debug_utils, but the pNext chain includes VkDebugUtilsMessengerCreateInfoEXT.");
         return skip;
     }
     const auto *direct_driver_loading_list = vku::FindStructInPNextChain<VkDirectDriverLoadingListLUNARG>(pCreateInfo->pNext);
-    if (direct_driver_loading_list && !local_instance_extensions.vk_lunarg_direct_driver_loading) {
+    if (direct_driver_loading_list && !instance_extensions.vk_lunarg_direct_driver_loading) {
         skip |= LogError(
             "VUID-VkInstanceCreateInfo-pNext-09400", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
             "does not include VK_LUNARG_direct_driver_loading, but the pNext chain includes VkDirectDriverLoadingListLUNARG.");
@@ -227,7 +227,7 @@ bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateIn
     }
 
     const auto *validation_features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
-    if (validation_features && !local_instance_extensions.vk_ext_validation_features) {
+    if (validation_features && !instance_extensions.vk_ext_validation_features) {
         skip |= LogError("VUID-VkInstanceCreateInfo-pNext-10243", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
                          "does not include VK_EXT_validation_features, but the pNext chain includes VkValidationFeaturesEXT");
         return skip;
@@ -295,7 +295,7 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
             ext_props.resize(ext_count);
             DispatchEnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, ext_props.data());
 
-            DeviceExtensions phys_dev_exts(instance_extensions, phys_dev_props->apiVersion, ext_props);
+            DeviceExtensions phys_dev_exts(extensions, phys_dev_props->apiVersion, ext_props);
             for (uint32_t j = 0; j < ext_count; j++) {
                 vvl::Extension extension = GetExtension(ext_props[j].extensionName);
                 if (extension == vvl::Extension::_VK_EXT_discard_rectangles) {
@@ -357,7 +357,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
     DispatchGetPhysicalDeviceProperties(physicalDevice, &device_properties);
     memcpy(&stateless_validation->device_limits, &device_properties.limits, sizeof(VkPhysicalDeviceLimits));
 
-    if (IsExtEnabled(device_extensions.vk_nv_shading_rate_image)) {
+    if (IsExtEnabled(extensions.vk_nv_shading_rate_image)) {
         // Get the needed shading rate image limits
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&shading_rate_image_props);
@@ -365,7 +365,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
 
-    if (IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
+    if (IsExtEnabled(extensions.vk_nv_mesh_shader)) {
         // Get the needed mesh shader limits
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&mesh_shader_props);
@@ -373,7 +373,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.mesh_shader_props_nv = mesh_shader_props;
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
+    if (IsExtEnabled(extensions.vk_ext_mesh_shader)) {
         // Get the needed mesh shader EXT limits
         VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&mesh_shader_props_ext);
@@ -381,7 +381,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.mesh_shader_props_ext = mesh_shader_props_ext;
     }
 
-    if (IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
+    if (IsExtEnabled(extensions.vk_nv_ray_tracing)) {
         // Get the needed ray tracing limits
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&ray_tracing_props);
@@ -389,7 +389,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.ray_tracing_props_nv = ray_tracing_props;
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline)) {
+    if (IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline)) {
         // Get the needed ray tracing limits
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&ray_tracing_props);
@@ -397,7 +397,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.ray_tracing_props_khr = ray_tracing_props;
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_acceleration_structure)) {
+    if (IsExtEnabled(extensions.vk_khr_acceleration_structure)) {
         // Get the needed ray tracing acc structure limits
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&acc_structure_props);
@@ -405,7 +405,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.acc_structure_props = acc_structure_props;
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_transform_feedback)) {
+    if (IsExtEnabled(extensions.vk_ext_transform_feedback)) {
         // Get the needed transform feedback limits
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&transform_feedback_props);
@@ -413,13 +413,13 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_vertex_attribute_divisor)) {
+    if (IsExtEnabled(extensions.vk_khr_vertex_attribute_divisor)) {
         // Get the needed vertex attribute divisor limits
         VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vertex_attribute_divisor_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&vertex_attribute_divisor_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
         phys_dev_ext_props.vertex_attribute_divisor_props = vertex_attribute_divisor_props;
-    } else if (IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor)) {
+    } else if (IsExtEnabled(extensions.vk_ext_vertex_attribute_divisor)) {
         // Get the needed vertex attribute divisor limits
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vertex_attribute_divisor_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&vertex_attribute_divisor_props);
@@ -429,35 +429,35 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
             vertex_attribute_divisor_props.maxVertexAttribDivisor;
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)) {
+    if (IsExtEnabled(extensions.vk_khr_fragment_shading_rate)) {
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&fragment_shading_rate_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
         phys_dev_ext_props.fragment_shading_rate_props = fragment_shading_rate_props;
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
+    if (IsExtEnabled(extensions.vk_khr_depth_stencil_resolve)) {
         VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&depth_stencil_resolve_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
         phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_external_memory_host)) {
+    if (IsExtEnabled(extensions.vk_ext_external_memory_host)) {
         VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&external_memory_host_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
         phys_dev_ext_props.external_memory_host_props = external_memory_host_props;
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_device_generated_commands)) {
+    if (IsExtEnabled(extensions.vk_ext_device_generated_commands)) {
         VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT device_generated_commands_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&device_generated_commands_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
         phys_dev_ext_props.device_generated_commands_props = device_generated_commands_props;
     }
 
-     if (IsExtEnabled(device_extensions.vk_arm_render_pass_striped)) {
+    if (IsExtEnabled(extensions.vk_arm_render_pass_striped)) {
         VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&renderpass_striped_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
@@ -495,7 +495,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         skip |= context.ValidateString(create_info_loc.dot(Field::ppEnabledExtensionNames),
                                        "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter",
                                        pCreateInfo->ppEnabledExtensionNames[i]);
-        skip |= ValidateExtensionReqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device", extension,
+        skip |= ValidateExtensionReqs(extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device", extension,
                                       create_info_loc.dot(Field::ppEnabledExtensionNames, i));
         if (extension == vvl::Extension::_VK_KHR_portability_subset) {
             portability_requested = true;
@@ -511,8 +511,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                          FormatHandle(physicalDevice).c_str());
     }
 
-    if (IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_AMD_negative_viewport_height))) {
-        const bool maint1 = IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_KHR_maintenance1));
+    if (IsExtEnabledByCreateinfo(ExtensionStateByName(extensions, vvl::Extension::_VK_AMD_negative_viewport_height))) {
+        const bool maint1 = IsExtEnabledByCreateinfo(ExtensionStateByName(extensions, vvl::Extension::_VK_KHR_maintenance1));
         // Only need to check for VK_KHR_MAINTENANCE_1_EXTENSION_NAME if api version is 1.0, otherwise it's deprecated due to
         // integration into api version 1.1
         if (api_version >= VK_API_VERSION_1_1) {
@@ -539,9 +539,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     {
         const bool khr_bda =
-            IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_KHR_buffer_device_address));
+            IsExtEnabledByCreateinfo(ExtensionStateByName(extensions, vvl::Extension::_VK_KHR_buffer_device_address));
         const bool ext_bda =
-            IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_EXT_buffer_device_address));
+            IsExtEnabledByCreateinfo(ExtensionStateByName(extensions, vvl::Extension::_VK_EXT_buffer_device_address));
         if (khr_bda && ext_bda) {
             skip |= LogError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-03328", physicalDevice,
                              create_info_loc.dot(Field::ppEnabledExtensionNames),
@@ -678,7 +678,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
 
         if (vulkan_12_features->bufferDeviceAddress == VK_TRUE) {
-            if (IsExtEnabledByCreateinfo(ExtensionStateByName(device_extensions, vvl::Extension::_VK_EXT_buffer_device_address))) {
+            if (IsExtEnabledByCreateinfo(ExtensionStateByName(extensions, vvl::Extension::_VK_EXT_buffer_device_address))) {
                 skip |= LogError("VUID-VkDeviceCreateInfo-pNext-04748", physicalDevice, create_info_loc.dot(Field::pNext),
                                  "chain includes VkPhysicalDeviceVulkan12Features with bufferDeviceAddress "
                                  "set to VK_TRUE and ppEnabledExtensionNames contains VK_EXT_buffer_device_address");

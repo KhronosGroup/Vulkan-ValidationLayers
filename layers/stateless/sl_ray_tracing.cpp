@@ -587,7 +587,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             }
         }
 
-        const bool library_enabled = IsExtEnabled(device_extensions.vk_khr_pipeline_library);
+        const bool library_enabled = IsExtEnabled(extensions.vk_khr_pipeline_library);
         if (!library_enabled) {
             if (create_info.pLibraryInfo) {
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03595", device,

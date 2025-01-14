@@ -889,7 +889,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     bool skip = false;
     const auto &rp_state = cb_state.activeRenderPass;
     RenderPassDepState state(*this, "VUID-vkCmdPipelineBarrier-None-07889", cb_state.GetActiveSubpass(), rp_state->VkHandle(),
-                             enabled_features, device_extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
+                             enabled_features, extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
                              rp_state->create_info.pDependencies);
     if (state.self_dependencies.empty()) {
         skip |= LogError("VUID-vkCmdPipelineBarrier-None-07889", state.rp_handle, outer_loc,
@@ -949,7 +949,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
         return skip;
     }
     RenderPassDepState state(*this, "VUID-vkCmdPipelineBarrier2-None-07889", cb_state.GetActiveSubpass(), rp_state->VkHandle(),
-                             enabled_features, device_extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
+                             enabled_features, extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
                              rp_state->create_info.pDependencies);
 
     if (state.self_dependencies.empty()) {
@@ -1053,11 +1053,11 @@ bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objlis
                                                      VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
     if (!enabled_features.synchronization2 && stage_mask == 0) {
-        const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(stage_mask_loc, 0, device_extensions);
+        const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(stage_mask_loc, 0, extensions);
         skip |= LogError(vuid, objlist, stage_mask_loc, "must not be 0 unless synchronization2 is enabled.");
     }
 
-    auto disabled_stages = sync_utils::DisabledPipelineStages(enabled_features, device_extensions);
+    auto disabled_stages = sync_utils::DisabledPipelineStages(enabled_features, extensions);
     auto bad_bits = stage_mask & disabled_stages;
     if (bad_bits == 0) {
         return skip;
@@ -1065,7 +1065,7 @@ bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objlis
     for (size_t i = 0; i < sizeof(bad_bits) * 8; i++) {
         VkPipelineStageFlags2KHR bit = 1ULL << i;
         if (bit & bad_bits) {
-            const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(stage_mask_loc, bit, device_extensions);
+            const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(stage_mask_loc, bit, extensions);
             skip |=
                 LogError(vuid, objlist, stage_mask_loc, "includes %s when the device does not have %s feature enabled.",
                          sync_utils::StringPipelineStageFlags(bit).c_str(), sync_vuid_maps::GetFeatureNameMap().at(bit).c_str());
@@ -1097,7 +1097,7 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
         const auto illegal_pipeline_stages = AllVkPipelineShaderStageBits2 & ~VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
         if (stage_mask & illegal_pipeline_stages) {
             // Select right vuid based on enabled extensions
-            const auto &vuid = sync_vuid_maps::GetAccessMaskRayQueryVUIDSelector(access_mask_loc, device_extensions);
+            const auto &vuid = sync_vuid_maps::GetAccessMaskRayQueryVUIDSelector(access_mask_loc, extensions);
             skip |= LogError(vuid, objlist, stage_mask_loc, "contains pipeline stages %s.",
                              sync_utils::StringPipelineStageFlags(stage_mask).c_str());
         }
@@ -2251,7 +2251,7 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, cons
     const auto src_queue_family = barrier.srcQueueFamilyIndex;
     const auto dst_queue_family = barrier.dstQueueFamilyIndex;
 
-    if (!IsExtEnabled(device_extensions.vk_khr_external_memory)) {
+    if (!IsExtEnabled(extensions.vk_khr_external_memory)) {
         if (src_queue_family == VK_QUEUE_FAMILY_EXTERNAL) {
             skip |= log_queue_family_error(QueueError::kSrcNoExternalExt, src_queue_family, "srcQueueFamilyIndex");
         } else if (dst_queue_family == VK_QUEUE_FAMILY_EXTERNAL) {
@@ -2277,7 +2277,7 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, cons
         }
     }
 
-    if (!IsExtEnabled(device_extensions.vk_ext_queue_family_foreign)) {
+    if (!IsExtEnabled(extensions.vk_ext_queue_family_foreign)) {
         if (src_queue_family == VK_QUEUE_FAMILY_FOREIGN_EXT) {
             skip |= log_queue_family_error(QueueError::kSrcNoForeignExt, src_queue_family, "srcQueueFamilyIndex");
         } else if (dst_queue_family == VK_QUEUE_FAMILY_FOREIGN_EXT) {

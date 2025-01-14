@@ -1155,7 +1155,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instructio
             } else if (it->second.extension) {
                 // kEnabledByApiLevel is not valid as some extension are promoted with feature bits to be used.
                 // If the new Api Level gives support, it will be caught in the "it->second.version" check instead.
-                if (IsExtEnabledByCreateinfo(device_extensions.*(it->second.extension))) {
+                if (IsExtEnabledByCreateinfo(extensions.*(it->second.extension))) {
                     has_support = true;
                 }
             } else if (it->second.property) {
@@ -1231,7 +1231,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instructio
         }
 
         // Portability checks
-        if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
+        if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
             if ((VK_FALSE == enabled_features.shaderSampleRateInterpolationFunctions) &&
                 (spv::CapabilityInterpolationFunction == insn.Word(1))) {
                 skip |= LogError("VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325", device, loc,
@@ -1277,7 +1277,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instructio
                     has_support = true;
                 }
             } else if (it->second.extension) {
-                if (IsExtEnabled(device_extensions.*(it->second.extension))) {
+                if (IsExtEnabled(extensions.*(it->second.extension))) {
                     has_support = true;
                 }
             }

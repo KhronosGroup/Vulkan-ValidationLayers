@@ -135,7 +135,7 @@ bool StatelessValidation::ValidateSamplerFilterMinMax(const VkSamplerCreateInfo 
                              create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
                              "is %s but samplerFilterMinmax feature was not enabled.",
                              string_VkSamplerReductionMode(sampler_reduction->reductionMode));
-        } else if ((api_version < VK_API_VERSION_1_2) && !IsExtEnabled(device_extensions.vk_ext_sampler_filter_minmax)) {
+        } else if ((api_version < VK_API_VERSION_1_2) && !IsExtEnabled(extensions.vk_ext_sampler_filter_minmax)) {
             // NOTE: technically this VUID is only if the corresponding _feature_ is not enabled, and only if on api_version
             // >= 1.2, but there doesn't appear to be a similar VUID for when api_version < 1.2
             skip |=
@@ -162,7 +162,7 @@ bool StatelessValidation::ValidateSamplerFilterMinMax(const VkSamplerCreateInfo 
 
         // This VU is the one feature difference between the IMG and EXT version of the extension
         if (create_info.magFilter == VK_FILTER_CUBIC_IMG || create_info.minFilter == VK_FILTER_CUBIC_IMG) {
-            if (!IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
+            if (!IsExtEnabled(extensions.vk_ext_filter_cubic)) {
                 skip |= LogError("VUID-VkSamplerCreateInfo-magFilter-07911", device,
                                  create_info_loc.pNext(Struct::VkSamplerReductionModeCreateInfo, Field::reductionMode),
                                  "is %s, magFilter is %s and minFilter is %s, but "
@@ -427,7 +427,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
     }
 
     // Checks for the IMG cubic filtering extension
-    if (IsExtEnabled(device_extensions.vk_img_filter_cubic)) {
+    if (IsExtEnabled(extensions.vk_img_filter_cubic)) {
         if ((pCreateInfo->anisotropyEnable == VK_TRUE) &&
             ((pCreateInfo->minFilter == VK_FILTER_CUBIC_IMG) || (pCreateInfo->magFilter == VK_FILTER_CUBIC_IMG))) {
             skip |= LogError("VUID-VkSamplerCreateInfo-magFilter-01081", device, create_info_loc.dot(Field::anisotropyEnable),

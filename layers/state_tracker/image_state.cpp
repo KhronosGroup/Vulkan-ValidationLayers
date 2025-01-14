@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
@@ -116,7 +116,7 @@ static vvl::Image::MemoryReqs GetMemoryRequirements(const ValidationStateTracker
                 VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper();
 
                 image_plane_req.planeAspect = aspects[i];
-                switch (dev_data.device_extensions.vk_khr_get_memory_requirements2) {
+                switch (dev_data.extensions.vk_khr_get_memory_requirements2) {
                     case kEnabledByApiLevel:
                         DispatchGetImageMemoryRequirements2(dev_data.device, &mem_req_info2, &mem_reqs2);
                         break;

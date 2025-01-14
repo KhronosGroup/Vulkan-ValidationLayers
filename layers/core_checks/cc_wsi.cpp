@@ -315,7 +315,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
 
     // All physical devices and queue families are required to be able to present to any native window on Android; require the
     // application to have established support on any other platform.
-    if (!IsExtEnabled(instance_extensions.vk_khr_android_surface)) {
+    if (!IsExtEnabled(extensions.vk_khr_android_surface)) {
         // restrict search only to queue families of VkDeviceQueueCreateInfos, not the whole physical device
         const bool is_supported = AnyOf<vvl::Queue>([this, surface_state](const vvl::Queue &queue_state) {
             return surface_state->GetQueueSupport(physical_device, queue_state.queue_family_index);
@@ -355,7 +355,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         full_screen_info_copy.pNext = surface_info_pnext;
         surface_info_pnext = &full_screen_info_copy;
 
-        if (IsExtEnabled(device_extensions.vk_khr_win32_surface)) {
+        if (IsExtEnabled(extensions.vk_khr_win32_surface)) {
             const auto *win32_full_screen_info =
                 vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(create_info.pNext);
             if (!win32_full_screen_info) {
@@ -476,9 +476,9 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
 
         vvl::span<const vku::safe_VkSurfaceFormat2KHR> formats{};
         if (surface_state) {
-            formats = surface_state->GetFormats(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
+            formats = surface_state->GetFormats(IsExtEnabled(extensions.vk_khr_get_surface_capabilities2),
                                                 physical_device_state->VkHandle(), surface_info_pnext, create_info_loc, this);
-        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+        } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
             formats = physical_device_state->surfaceless_query_state.formats;
         }
         for (const auto &format : formats) {
@@ -514,7 +514,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     std::vector<VkPresentModeKHR> present_modes{};
     if (surface_state) {
         present_modes = surface_state->GetPresentModes(physical_device, create_info_loc, this);
-    } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+    } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
         present_modes = physical_device_state->surfaceless_query_state.present_modes;
     }
 
@@ -528,7 +528,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
                          ss.str().c_str());
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1)) {
+    if (IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
         skip |= ValidateSwapchainPresentModesCreateInfo(present_mode, create_info_loc, create_info, present_modes, surface_state);
         skip |= ValidateSwapchainPresentScalingCreateInfo(present_mode, create_info_loc, surface_caps, create_info, surface_state);
     }
@@ -829,9 +829,8 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             std::vector<VkImageLayout> layouts;
             if (FindLayouts(*image_state, layouts)) {
                 for (auto layout : layouts) {
-                    if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) &&
-                        (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image) ||
-                         (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
+                    if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) && (!IsExtEnabled(extensions.vk_khr_shared_presentable_image) ||
+                                                                        (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
                         skip |= LogError("VUID-VkPresentInfoKHR-pImageIndices-01430", queue, swapchain_loc,
                                          "images passed to present must be in layout "
                                          "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
@@ -861,7 +860,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         }
 
         // All physical devices and queue families are required to be able to present to any native window on Android
-        if (!IsExtEnabled(instance_extensions.vk_khr_android_surface)) {
+        if (!IsExtEnabled(extensions.vk_khr_android_surface)) {
             auto surface_state = Get<vvl::Surface>(swapchain_data->create_info.surface);
             if (surface_state && !surface_state->GetQueueSupport(physical_device, queue_state->queue_family_index)) {
                 skip |= LogError("VUID-vkQueuePresentKHR-pSwapchains-01292", pPresentInfo->pSwapchains[i], swapchain_loc,
@@ -1140,7 +1139,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
         VkSurfaceCapabilitiesKHR surface_caps{};
         if (swapchain_data->surface) {
             surface_caps = swapchain_data->surface->GetSurfaceCapabilities(physical_device, nullptr);
-        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+        } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
             surface_caps = physical_device_state->surfaceless_query_state.capabilities.surfaceCapabilities;
         }
         auto min_image_count = surface_caps.minImageCount;
@@ -1558,7 +1557,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
     const auto surface_state = Get<vvl::Surface>(pSurfaceInfo->surface);
     ASSERT_AND_RETURN_SKIP(surface_state);
 
-    if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
+    if (IsExtEnabled(extensions.vk_ext_surface_maintenance1)) {
         const auto *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
         if (surface_present_mode) {
             VkPresentModeKHR present_mode = surface_present_mode->presentMode;
@@ -1578,7 +1577,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
     }
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    if (IsExtEnabled(device_extensions.vk_khr_win32_surface) && IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive)) {
+    if (IsExtEnabled(extensions.vk_khr_win32_surface) && IsExtEnabled(extensions.vk_ext_full_screen_exclusive)) {
         if (const auto *full_screen_info = vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveInfoEXT>(pSurfaceInfo->pNext);
             full_screen_info && full_screen_info->fullScreenExclusive == VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT) {
             if (const auto *win32_full_screen_info =
