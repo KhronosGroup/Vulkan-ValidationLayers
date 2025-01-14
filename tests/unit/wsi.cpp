@@ -4134,6 +4134,9 @@ TEST_F(NegativeWsi, PresentWithUnsupportedQueue) {
 
     VkBool32 surface_support;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu_, transfer_qfi, m_surface.Handle(), &surface_support);
+    if (surface_support == VK_TRUE) {
+        GTEST_SKIP() << "Surface is supported";
+    }
 
     const vkt::Semaphore acquire_semaphore(*m_device);
     const vkt::Semaphore submit_semaphore(*m_device);
