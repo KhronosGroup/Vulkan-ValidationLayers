@@ -339,7 +339,7 @@ TEST_F(NegativeParent, Instance_Surface) {
     swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_ci.imageFormat = m_surface_formats[0].format;
     swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_ci.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_ci.imageArrayLayers = 1;
     swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -386,7 +386,7 @@ TEST_F(NegativeParent, Device_OldSwapchain) {
     swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_ci.imageFormat = m_surface_formats[0].format;
     swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_ci.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_ci.imageArrayLayers = 1;
     swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;

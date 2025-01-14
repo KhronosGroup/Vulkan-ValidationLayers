@@ -905,8 +905,7 @@ vkt::Swapchain VkRenderFramework::CreateSwapchain(VkSurfaceKHR surface, VkImageU
     swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
-                                         info.surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = info.surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = imageUsage;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;

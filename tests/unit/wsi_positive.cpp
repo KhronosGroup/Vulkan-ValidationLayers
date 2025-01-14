@@ -760,7 +760,7 @@ TEST_F(PositiveWsi, SwapchainPresentShared) {
     swapchain_create_info.minImageCount = 1;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // implementations must support
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -831,7 +831,7 @@ TEST_F(PositiveWsi, CreateSwapchainFullscreenExclusive) {
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -876,7 +876,7 @@ TEST_F(PositiveWsi, CreateSwapchainFullscreenExclusive2) {
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -992,7 +992,7 @@ TEST_F(PositiveWsi, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = imageUsage;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1106,7 +1106,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = m_surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = imageUsage;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1218,8 +1218,7 @@ TEST_F(PositiveWsi, CreateSwapchainWithPresentModeInfo) {
     swapchain_create_info.minImageCount = surface_caps.surfaceCapabilities.minImageCount;
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {surface_caps.surfaceCapabilities.minImageExtent.width,
-                                         surface_caps.surfaceCapabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = surface_caps.surfaceCapabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // implementations must support
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1316,8 +1315,7 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
     swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
-                                         info.surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = info.surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1687,8 +1685,7 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     swapchain_create_info.minImageCount = surface_caps.surfaceCapabilities.minImageCount;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {surface_caps.surfaceCapabilities.minImageExtent.width,
-                                         surface_caps.surfaceCapabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = surface_caps.surfaceCapabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1734,8 +1731,7 @@ TEST_F(PositiveWsi, ReleaseSwapchainImages) {
     swapchain_create_info.minImageCount = info.surface_capabilities.maxImageCount;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
-    swapchain_create_info.imageExtent = {info.surface_capabilities.minImageExtent.width,
-                                         info.surface_capabilities.minImageExtent.height};
+    swapchain_create_info.imageExtent = info.surface_capabilities.minImageExtent;
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
