@@ -12237,7 +12237,7 @@ bool stateless::Context::ValidatePnextStructContents(const Location& loc, const 
 bool StatelessValidation::PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -12250,7 +12250,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDevices(VkInstance ins
                                                                   VkPhysicalDevice* pPhysicalDevices,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidatePointerArray(loc.dot(Field::pPhysicalDeviceCount), loc.dot(Field::pPhysicalDevices),
                                          pPhysicalDeviceCount, &pPhysicalDevices, true, false, false,
@@ -12371,9 +12371,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
                                                       const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-
-    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
-    stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, true,
                                        "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
@@ -12659,7 +12657,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
 bool StatelessValidation::PreCallValidateDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -12671,7 +12669,7 @@ bool StatelessValidation::PreCallValidateDestroyDevice(VkDevice device, const Vk
 bool StatelessValidation::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
                                                         VkQueue* pQueue, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pQueue), pQueue, "VUID-vkGetDeviceQueue-pQueue-parameter");
     return skip;
@@ -12680,7 +12678,7 @@ bool StatelessValidation::PreCallValidateGetDeviceQueue(VkDevice device, uint32_
 bool StatelessValidation::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
                                                      VkFence fence, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(loc.dot(Field::submitCount), loc.dot(Field::pSubmits), submitCount, pSubmits,
                                             VK_STRUCTURE_TYPE_SUBMIT_INFO, false, true, "VUID-VkSubmitInfo-sType-sType",
@@ -12726,7 +12724,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit(VkQueue queue, uint32_t sub
 
 bool StatelessValidation::PreCallValidateQueueWaitIdle(VkQueue queue, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -12734,7 +12732,7 @@ bool StatelessValidation::PreCallValidateQueueWaitIdle(VkQueue queue, const Erro
 
 bool StatelessValidation::PreCallValidateDeviceWaitIdle(VkDevice device, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -12744,7 +12742,7 @@ bool StatelessValidation::PreCallValidateAllocateMemory(VkDevice device, const V
                                                         const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pAllocateInfo), pAllocateInfo, VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, true,
                                        "VUID-vkAllocateMemory-pAllocateInfo-parameter", "VUID-VkMemoryAllocateInfo-sType-sType");
@@ -12787,7 +12785,7 @@ bool StatelessValidation::PreCallValidateAllocateMemory(VkDevice device, const V
 bool StatelessValidation::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -12799,7 +12797,7 @@ bool StatelessValidation::PreCallValidateFreeMemory(VkDevice device, VkDeviceMem
 bool StatelessValidation::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
                                                    VkMemoryMapFlags flags, void** ppData, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::memory), memory);
     skip |= context.ValidateFlags(loc.dot(Field::flags), vvl::FlagBitmask::VkMemoryMapFlagBits, AllVkMemoryMapFlagBits, flags,
@@ -12810,7 +12808,7 @@ bool StatelessValidation::PreCallValidateMapMemory(VkDevice device, VkDeviceMemo
 
 bool StatelessValidation::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory memory, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::memory), memory);
     return skip;
@@ -12820,7 +12818,7 @@ bool StatelessValidation::PreCallValidateFlushMappedMemoryRanges(VkDevice device
                                                                  const VkMappedMemoryRange* pMemoryRanges,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::memoryRangeCount), loc.dot(Field::pMemoryRanges), memoryRangeCount, pMemoryRanges,
@@ -12843,7 +12841,7 @@ bool StatelessValidation::PreCallValidateInvalidateMappedMemoryRanges(VkDevice d
                                                                       const VkMappedMemoryRange* pMemoryRanges,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(loc.dot(Field::memoryRangeCount), loc.dot(Field::pMemoryRanges), memoryRangeCount,
                                             pMemoryRanges, VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, true, true,
@@ -12867,7 +12865,7 @@ bool StatelessValidation::PreCallValidateGetDeviceMemoryCommitment(VkDevice devi
                                                                    VkDeviceSize* pCommittedMemoryInBytes,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::memory), memory);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pCommittedMemoryInBytes), pCommittedMemoryInBytes,
@@ -12878,7 +12876,7 @@ bool StatelessValidation::PreCallValidateGetDeviceMemoryCommitment(VkDevice devi
 bool StatelessValidation::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
                                                           VkDeviceSize memoryOffset, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::memory), memory);
@@ -12888,7 +12886,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory(VkDevice device, VkBuf
 bool StatelessValidation::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory,
                                                          VkDeviceSize memoryOffset, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::image), image);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::memory), memory);
@@ -12899,7 +12897,7 @@ bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements(VkDevice de
                                                                      VkMemoryRequirements* pMemoryRequirements,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pMemoryRequirements), pMemoryRequirements,
@@ -12911,7 +12909,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements(VkDevice dev
                                                                     VkMemoryRequirements* pMemoryRequirements,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::image), image);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pMemoryRequirements), pMemoryRequirements,
@@ -12923,7 +12921,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements(
     VkDevice device, VkImage image, uint32_t* pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements* pSparseMemoryRequirements, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::image), image);
     skip |=
@@ -12980,7 +12978,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
 bool StatelessValidation::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                                          VkFence fence, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(loc.dot(Field::bindInfoCount), loc.dot(Field::pBindInfo), bindInfoCount, pBindInfo,
                                             VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, false, true, "VUID-VkBindSparseInfo-sType-sType",
@@ -13120,7 +13118,7 @@ bool StatelessValidation::PreCallValidateCreateFence(VkDevice device, const VkFe
                                                      const VkAllocationCallbacks* pAllocator, VkFence* pFence,
                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, true,
                                        "VUID-vkCreateFence-pCreateInfo-parameter", "VUID-VkFenceCreateInfo-sType-sType");
@@ -13148,7 +13146,7 @@ bool StatelessValidation::PreCallValidateCreateFence(VkDevice device, const VkFe
 bool StatelessValidation::PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator,
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13160,7 +13158,7 @@ bool StatelessValidation::PreCallValidateDestroyFence(VkDevice device, VkFence f
 bool StatelessValidation::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences,
                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateHandleArray(loc.dot(Field::fenceCount), loc.dot(Field::pFences), fenceCount, pFences, true, true,
                                         "VUID-vkResetFences-fenceCount-arraylength");
@@ -13169,7 +13167,7 @@ bool StatelessValidation::PreCallValidateResetFences(VkDevice device, uint32_t f
 
 bool StatelessValidation::PreCallValidateGetFenceStatus(VkDevice device, VkFence fence, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::fence), fence);
     return skip;
@@ -13178,7 +13176,7 @@ bool StatelessValidation::PreCallValidateGetFenceStatus(VkDevice device, VkFence
 bool StatelessValidation::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences,
                                                        VkBool32 waitAll, uint64_t timeout, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateHandleArray(loc.dot(Field::fenceCount), loc.dot(Field::pFences), fenceCount, pFences, true, true,
                                         "VUID-vkWaitForFences-fenceCount-arraylength");
@@ -13190,7 +13188,7 @@ bool StatelessValidation::PreCallValidateCreateSemaphore(VkDevice device, const 
                                                          const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, true,
                                        "VUID-vkCreateSemaphore-pCreateInfo-parameter", "VUID-VkSemaphoreCreateInfo-sType-sType");
@@ -13222,7 +13220,7 @@ bool StatelessValidation::PreCallValidateDestroySemaphore(VkDevice device, VkSem
                                                           const VkAllocationCallbacks* pAllocator,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13235,7 +13233,7 @@ bool StatelessValidation::PreCallValidateCreateEvent(VkDevice device, const VkEv
                                                      const VkAllocationCallbacks* pAllocator, VkEvent* pEvent,
                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_EVENT_CREATE_INFO, true,
                                        "VUID-vkCreateEvent-pCreateInfo-parameter", "VUID-VkEventCreateInfo-sType-sType");
@@ -13264,7 +13262,7 @@ bool StatelessValidation::PreCallValidateCreateEvent(VkDevice device, const VkEv
 bool StatelessValidation::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13275,7 +13273,7 @@ bool StatelessValidation::PreCallValidateDestroyEvent(VkDevice device, VkEvent e
 
 bool StatelessValidation::PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::event), event);
     return skip;
@@ -13283,7 +13281,7 @@ bool StatelessValidation::PreCallValidateGetEventStatus(VkDevice device, VkEvent
 
 bool StatelessValidation::PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::event), event);
     return skip;
@@ -13291,7 +13289,7 @@ bool StatelessValidation::PreCallValidateSetEvent(VkDevice device, VkEvent event
 
 bool StatelessValidation::PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::event), event);
     return skip;
@@ -13301,7 +13299,7 @@ bool StatelessValidation::PreCallValidateCreateQueryPool(VkDevice device, const 
                                                          const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO, true,
                                        "VUID-vkCreateQueryPool-pCreateInfo-parameter", "VUID-VkQueryPoolCreateInfo-sType-sType");
@@ -13345,7 +13343,7 @@ bool StatelessValidation::PreCallValidateDestroyQueryPool(VkDevice device, VkQue
                                                           const VkAllocationCallbacks* pAllocator,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13358,7 +13356,7 @@ bool StatelessValidation::PreCallValidateGetQueryPoolResults(VkDevice device, Vk
                                                              uint32_t queryCount, size_t dataSize, void* pData, VkDeviceSize stride,
                                                              VkQueryResultFlags flags, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
     skip |= context.ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pData), dataSize, &pData, true, true,
@@ -13375,7 +13373,7 @@ bool StatelessValidation::PreCallValidateCreateBuffer(VkDevice device, const VkB
                                                       const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, true,
                                        "VUID-vkCreateBuffer-pCreateInfo-parameter", "VUID-VkBufferCreateInfo-sType-sType");
@@ -13413,7 +13411,7 @@ bool StatelessValidation::PreCallValidateCreateBuffer(VkDevice device, const VkB
 bool StatelessValidation::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13426,7 +13424,7 @@ bool StatelessValidation::PreCallValidateCreateBufferView(VkDevice device, const
                                                           const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, true,
                                        "VUID-vkCreateBufferView-pCreateInfo-parameter", "VUID-VkBufferViewCreateInfo-sType-sType");
@@ -13461,7 +13459,7 @@ bool StatelessValidation::PreCallValidateDestroyBufferView(VkDevice device, VkBu
                                                            const VkAllocationCallbacks* pAllocator,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13474,7 +13472,7 @@ bool StatelessValidation::PreCallValidateCreateImage(VkDevice device, const VkIm
                                                      const VkAllocationCallbacks* pAllocator, VkImage* pImage,
                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, true,
                                        "VUID-vkCreateImage-pCreateInfo-parameter", "VUID-VkImageCreateInfo-sType-sType");
@@ -13546,7 +13544,7 @@ bool StatelessValidation::PreCallValidateCreateImage(VkDevice device, const VkIm
 bool StatelessValidation::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13560,7 +13558,7 @@ bool StatelessValidation::PreCallValidateGetImageSubresourceLayout(VkDevice devi
                                                                    VkSubresourceLayout* pLayout,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::image), image);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pSubresource), pSubresource,
@@ -13580,7 +13578,7 @@ bool StatelessValidation::PreCallValidateCreateImageView(VkDevice device, const 
                                                          const VkAllocationCallbacks* pAllocator, VkImageView* pView,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, true,
                                        "VUID-vkCreateImageView-pCreateInfo-parameter", "VUID-VkImageViewCreateInfo-sType-sType");
@@ -13643,7 +13641,7 @@ bool StatelessValidation::PreCallValidateDestroyImageView(VkDevice device, VkIma
                                                           const VkAllocationCallbacks* pAllocator,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13656,7 +13654,7 @@ bool StatelessValidation::PreCallValidateCreateShaderModule(VkDevice device, con
                                                             const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, true,
@@ -13684,7 +13682,7 @@ bool StatelessValidation::PreCallValidateDestroyShaderModule(VkDevice device, Vk
                                                              const VkAllocationCallbacks* pAllocator,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13697,7 +13695,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineCache(VkDevice device, co
                                                              const VkAllocationCallbacks* pAllocator,
                                                              VkPipelineCache* pPipelineCache, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO, true,
                                        "VUID-vkCreatePipelineCache-pCreateInfo-parameter",
@@ -13729,7 +13727,7 @@ bool StatelessValidation::PreCallValidateDestroyPipelineCache(VkDevice device, V
                                                               const VkAllocationCallbacks* pAllocator,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13741,7 +13739,7 @@ bool StatelessValidation::PreCallValidateDestroyPipelineCache(VkDevice device, V
 bool StatelessValidation::PreCallValidateGetPipelineCacheData(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize,
                                                               void* pData, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::pipelineCache), pipelineCache);
     skip |= context.ValidatePointerArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false,
@@ -13754,7 +13752,7 @@ bool StatelessValidation::PreCallValidateMergePipelineCaches(VkDevice device, Vk
                                                              const VkPipelineCache* pSrcCaches,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dstCache), dstCache);
     skip |= context.ValidateHandleArray(loc.dot(Field::srcCacheCount), loc.dot(Field::pSrcCaches), srcCacheCount, pSrcCaches, true,
@@ -13769,7 +13767,7 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(VkDevice device
                                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::createInfoCount), loc.dot(Field::pCreateInfos), createInfoCount, pCreateInfos,
@@ -13845,7 +13843,7 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::createInfoCount), loc.dot(Field::pCreateInfos), createInfoCount, pCreateInfos,
@@ -13939,7 +13937,7 @@ bool StatelessValidation::PreCallValidateDestroyPipeline(VkDevice device, VkPipe
                                                          const VkAllocationCallbacks* pAllocator,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -13953,7 +13951,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineLayout(VkDevice device, c
                                                               VkPipelineLayout* pPipelineLayout,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
                                        true, "VUID-vkCreatePipelineLayout-pCreateInfo-parameter",
@@ -13995,7 +13993,7 @@ bool StatelessValidation::PreCallValidateDestroyPipelineLayout(VkDevice device, 
                                                                const VkAllocationCallbacks* pAllocator,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -14008,7 +14006,7 @@ bool StatelessValidation::PreCallValidateCreateSampler(VkDevice device, const Vk
                                                        const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, true,
                                        "VUID-vkCreateSampler-pCreateInfo-parameter", "VUID-VkSamplerCreateInfo-sType-sType");
@@ -14067,7 +14065,7 @@ bool StatelessValidation::PreCallValidateCreateSampler(VkDevice device, const Vk
 bool StatelessValidation::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -14082,7 +14080,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorSetLayout(VkDevice devi
                                                                    VkDescriptorSetLayout* pSetLayout,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, true,
@@ -14129,7 +14127,7 @@ bool StatelessValidation::PreCallValidateDestroyDescriptorSetLayout(VkDevice dev
                                                                     const VkAllocationCallbacks* pAllocator,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -14143,7 +14141,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorPool(VkDevice device, c
                                                               VkDescriptorPool* pDescriptorPool,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
                                        true, "VUID-vkCreateDescriptorPool-pCreateInfo-parameter",
@@ -14190,7 +14188,7 @@ bool StatelessValidation::PreCallValidateDestroyDescriptorPool(VkDevice device, 
                                                                const VkAllocationCallbacks* pAllocator,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -14202,7 +14200,7 @@ bool StatelessValidation::PreCallValidateDestroyDescriptorPool(VkDevice device, 
 bool StatelessValidation::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                              VkDescriptorPoolResetFlags flags, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::descriptorPool), descriptorPool);
     skip |= context.ValidateReservedFlags(loc.dot(Field::flags), flags, "VUID-vkResetDescriptorPool-flags-zerobitmask");
@@ -14213,7 +14211,7 @@ bool StatelessValidation::PreCallValidateAllocateDescriptorSets(VkDevice device,
                                                                 VkDescriptorSet* pDescriptorSets,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pAllocateInfo), pAllocateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
                                        true, "VUID-vkAllocateDescriptorSets-pAllocateInfo-parameter",
@@ -14248,7 +14246,7 @@ bool StatelessValidation::PreCallValidateFreeDescriptorSets(VkDevice device, VkD
                                                             uint32_t descriptorSetCount, const VkDescriptorSet* pDescriptorSets,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::descriptorPool), descriptorPool);
     skip |= context.ValidateArray(loc.dot(Field::descriptorSetCount), loc, descriptorSetCount, &pDescriptorSets, true, false,
@@ -14264,7 +14262,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSets(VkDevice device, u
                                                               const VkCopyDescriptorSet* pDescriptorCopies,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(loc.dot(Field::descriptorWriteCount), loc.dot(Field::pDescriptorWrites),
                                             descriptorWriteCount, pDescriptorWrites, VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, false,
@@ -14321,7 +14319,7 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(VkDevice device, cons
                                                            const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, true,
@@ -14355,7 +14353,7 @@ bool StatelessValidation::PreCallValidateDestroyFramebuffer(VkDevice device, VkF
                                                             const VkAllocationCallbacks* pAllocator,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -14368,7 +14366,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(VkDevice device, const
                                                           const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, true,
                                        "VUID-vkCreateRenderPass-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo-sType-sType");
@@ -14559,7 +14557,7 @@ bool StatelessValidation::PreCallValidateDestroyRenderPass(VkDevice device, VkRe
                                                            const VkAllocationCallbacks* pAllocator,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -14571,7 +14569,7 @@ bool StatelessValidation::PreCallValidateDestroyRenderPass(VkDevice device, VkRe
 bool StatelessValidation::PreCallValidateGetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass,
                                                                   VkExtent2D* pGranularity, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::renderPass), renderPass);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pGranularity), pGranularity,
@@ -14583,7 +14581,7 @@ bool StatelessValidation::PreCallValidateCreateCommandPool(VkDevice device, cons
                                                            const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, true,
@@ -14610,7 +14608,7 @@ bool StatelessValidation::PreCallValidateDestroyCommandPool(VkDevice device, VkC
                                                             const VkAllocationCallbacks* pAllocator,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -14622,7 +14620,7 @@ bool StatelessValidation::PreCallValidateDestroyCommandPool(VkDevice device, VkC
 bool StatelessValidation::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::commandPool), commandPool);
     skip |= context.ValidateFlags(loc.dot(Field::flags), vvl::FlagBitmask::VkCommandPoolResetFlagBits,
@@ -14634,7 +14632,7 @@ bool StatelessValidation::PreCallValidateAllocateCommandBuffers(VkDevice device,
                                                                 VkCommandBuffer* pCommandBuffers,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pAllocateInfo), pAllocateInfo, VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
                                        true, "VUID-vkAllocateCommandBuffers-pAllocateInfo-parameter",
@@ -14662,7 +14660,7 @@ bool StatelessValidation::PreCallValidateFreeCommandBuffers(VkDevice device, VkC
                                                             const VkCommandBuffer* pCommandBuffers,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::commandPool), commandPool);
     skip |= context.ValidateArray(loc.dot(Field::commandBufferCount), loc, commandBufferCount, &pCommandBuffers, true, false,
@@ -14675,7 +14673,7 @@ bool StatelessValidation::PreCallValidateBeginCommandBuffer(VkCommandBuffer comm
                                                             const VkCommandBufferBeginInfo* pBeginInfo,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
         context.ValidateStructType(loc.dot(Field::pBeginInfo), pBeginInfo, VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, true,
@@ -14699,7 +14697,7 @@ bool StatelessValidation::PreCallValidateBeginCommandBuffer(VkCommandBuffer comm
 
 bool StatelessValidation::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -14708,7 +14706,7 @@ bool StatelessValidation::PreCallValidateEndCommandBuffer(VkCommandBuffer comman
 bool StatelessValidation::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
         context.ValidateFlags(loc.dot(Field::flags), vvl::FlagBitmask::VkCommandBufferResetFlagBits,
@@ -14719,7 +14717,7 @@ bool StatelessValidation::PreCallValidateResetCommandBuffer(VkCommandBuffer comm
 bool StatelessValidation::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                          VkPipeline pipeline, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::pipelineBindPoint), vvl::Enum::VkPipelineBindPoint, pipelineBindPoint,
                                        "VUID-vkCmdBindPipeline-pipelineBindPoint-parameter");
@@ -14731,7 +14729,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewport(VkCommandBuffer commandB
                                                         uint32_t viewportCount, const VkViewport* pViewports,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateArray(loc.dot(Field::viewportCount), loc.dot(Field::pViewports), viewportCount, &pViewports, true, true,
                                   "VUID-vkCmdSetViewport-viewportCount-arraylength", "VUID-vkCmdSetViewport-pViewports-parameter");
@@ -14748,7 +14746,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewport(VkCommandBuffer commandB
 bool StatelessValidation::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
                                                        const VkRect2D* pScissors, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateArray(loc.dot(Field::scissorCount), loc.dot(Field::pScissors), scissorCount, &pScissors, true, true,
                                   "VUID-vkCmdSetScissor-scissorCount-arraylength", "VUID-vkCmdSetScissor-pScissors-parameter");
@@ -14759,7 +14757,7 @@ bool StatelessValidation::PreCallValidateCmdSetScissor(VkCommandBuffer commandBu
 bool StatelessValidation::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     if (!skip) skip |= manual_PreCallValidateCmdSetLineWidth(commandBuffer, lineWidth, context);
@@ -14770,7 +14768,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBias(VkCommandBuffer command
                                                          float depthBiasClamp, float depthBiasSlopeFactor,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -14779,7 +14777,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBias(VkCommandBuffer command
 bool StatelessValidation::PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4],
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -14788,7 +14786,7 @@ bool StatelessValidation::PreCallValidateCmdSetBlendConstants(VkCommandBuffer co
 bool StatelessValidation::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds,
                                                            float maxDepthBounds, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -14797,7 +14795,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBounds(VkCommandBuffer comma
 bool StatelessValidation::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                                   uint32_t compareMask, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateFlags(loc.dot(Field::faceMask), vvl::FlagBitmask::VkStencilFaceFlagBits, AllVkStencilFaceFlagBits,
                                   faceMask, kRequiredFlags, "VUID-vkCmdSetStencilCompareMask-faceMask-parameter",
@@ -14808,7 +14806,7 @@ bool StatelessValidation::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffe
 bool StatelessValidation::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                                 uint32_t writeMask, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateFlags(loc.dot(Field::faceMask), vvl::FlagBitmask::VkStencilFaceFlagBits, AllVkStencilFaceFlagBits,
                                   faceMask, kRequiredFlags, "VUID-vkCmdSetStencilWriteMask-faceMask-parameter",
@@ -14819,7 +14817,7 @@ bool StatelessValidation::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer 
 bool StatelessValidation::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                                 uint32_t reference, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateFlags(loc.dot(Field::faceMask), vvl::FlagBitmask::VkStencilFaceFlagBits, AllVkStencilFaceFlagBits,
                                   faceMask, kRequiredFlags, "VUID-vkCmdSetStencilReference-faceMask-parameter",
@@ -14833,7 +14831,7 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer c
                                                                uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::pipelineBindPoint), vvl::Enum::VkPipelineBindPoint, pipelineBindPoint,
                                        "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-parameter");
@@ -14850,7 +14848,7 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer c
 bool StatelessValidation::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                             VkIndexType indexType, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::indexType), vvl::Enum::VkIndexType, indexType,
                                        "VUID-vkCmdBindIndexBuffer-indexType-parameter");
@@ -14862,7 +14860,7 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer co
                                                               uint32_t bindingCount, const VkBuffer* pBuffers,
                                                               const VkDeviceSize* pOffsets, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateArray(loc.dot(Field::bindingCount), loc.dot(Field::pBuffers), bindingCount, &pBuffers, true, false,
                                   "VUID-vkCmdBindVertexBuffers-bindingCount-arraylength",
@@ -14878,7 +14876,7 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer co
 bool StatelessValidation::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                                  uint32_t firstVertex, uint32_t firstInstance, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -14888,7 +14886,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandB
                                                         uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -14897,7 +14895,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandB
 bool StatelessValidation::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                          uint32_t drawCount, uint32_t stride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     return skip;
@@ -14907,7 +14905,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer 
                                                                 uint32_t drawCount, uint32_t stride,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     return skip;
@@ -14916,7 +14914,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer 
 bool StatelessValidation::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                                      uint32_t groupCountZ, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -14925,7 +14923,7 @@ bool StatelessValidation::PreCallValidateCmdDispatch(VkCommandBuffer commandBuff
 bool StatelessValidation::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     return skip;
@@ -14935,7 +14933,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBu
                                                        uint32_t regionCount, const VkBufferCopy* pRegions,
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::srcBuffer), srcBuffer);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dstBuffer), dstBuffer);
@@ -14955,7 +14953,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuf
                                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                       const VkImageCopy* pRegions, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::srcImage), srcImage);
     skip |= context.ValidateRangedEnum(loc.dot(Field::srcImageLayout), vvl::Enum::VkImageLayout, srcImageLayout,
@@ -14993,7 +14991,7 @@ bool StatelessValidation::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuf
                                                       const VkImageBlit* pRegions, VkFilter filter,
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::srcImage), srcImage);
     skip |= context.ValidateRangedEnum(loc.dot(Field::srcImageLayout), vvl::Enum::VkImageLayout, srcImageLayout,
@@ -15026,7 +15024,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer co
                                                               const VkBufferImageCopy* pRegions,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::srcBuffer), srcBuffer);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dstImage), dstImage);
@@ -15056,7 +15054,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer co
                                                               uint32_t regionCount, const VkBufferImageCopy* pRegions,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::srcImage), srcImage);
     skip |= context.ValidateRangedEnum(loc.dot(Field::srcImageLayout), vvl::Enum::VkImageLayout, srcImageLayout,
@@ -15085,7 +15083,7 @@ bool StatelessValidation::PreCallValidateCmdUpdateBuffer(VkCommandBuffer command
                                                          VkDeviceSize dataSize, const void* pData,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dstBuffer), dstBuffer);
     skip |= context.ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pData), dataSize, &pData, true, true,
@@ -15097,7 +15095,7 @@ bool StatelessValidation::PreCallValidateCmdUpdateBuffer(VkCommandBuffer command
 bool StatelessValidation::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                        VkDeviceSize size, uint32_t data, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dstBuffer), dstBuffer);
     if (!skip) skip |= manual_PreCallValidateCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data, context);
@@ -15109,7 +15107,7 @@ bool StatelessValidation::PreCallValidateCmdClearColorImage(VkCommandBuffer comm
                                                             const VkImageSubresourceRange* pRanges,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::image), image);
     skip |= context.ValidateRangedEnum(loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout, imageLayout,
@@ -15137,7 +15135,7 @@ bool StatelessValidation::PreCallValidateCmdClearDepthStencilImage(VkCommandBuff
                                                                    uint32_t rangeCount, const VkImageSubresourceRange* pRanges,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::image), image);
     skip |= context.ValidateRangedEnum(loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout, imageLayout,
@@ -15163,7 +15161,7 @@ bool StatelessValidation::PreCallValidateCmdClearAttachments(VkCommandBuffer com
                                                              const VkClearAttachment* pAttachments, uint32_t rectCount,
                                                              const VkClearRect* pRects, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateArray(loc.dot(Field::attachmentCount), loc.dot(Field::pAttachments), attachmentCount, &pAttachments,
                                   true, true, "VUID-vkCmdClearAttachments-attachmentCount-arraylength",
@@ -15198,7 +15196,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage(VkCommandBuffer command
                                                          VkImageLayout dstImageLayout, uint32_t regionCount,
                                                          const VkImageResolve* pRegions, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::srcImage), srcImage);
     skip |= context.ValidateRangedEnum(loc.dot(Field::srcImageLayout), vvl::Enum::VkImageLayout, srcImageLayout,
@@ -15234,7 +15232,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage(VkCommandBuffer command
 bool StatelessValidation::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::event), event);
     skip |= context.ValidateFlags(loc.dot(Field::stageMask), vvl::FlagBitmask::VkPipelineStageFlagBits, AllVkPipelineStageFlagBits,
@@ -15245,7 +15243,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuff
 bool StatelessValidation::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::event), event);
     skip |= context.ValidateFlags(loc.dot(Field::stageMask), vvl::FlagBitmask::VkPipelineStageFlagBits, AllVkPipelineStageFlagBits,
@@ -15259,7 +15257,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents(
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
     const VkImageMemoryBarrier* pImageMemoryBarriers, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateHandleArray(loc.dot(Field::eventCount), loc.dot(Field::pEvents), eventCount, pEvents, true, true,
                                         "VUID-vkCmdWaitEvents-eventCount-arraylength");
@@ -15353,7 +15351,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier(
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
     const VkImageMemoryBarrier* pImageMemoryBarriers, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
         context.ValidateFlags(loc.dot(Field::srcStageMask), vvl::FlagBitmask::VkPipelineStageFlagBits, AllVkPipelineStageFlagBits,
@@ -15444,7 +15442,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier(
 bool StatelessValidation::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                                        VkQueryControlFlags flags, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
     skip |= context.ValidateFlags(loc.dot(Field::flags), vvl::FlagBitmask::VkQueryControlFlagBits, AllVkQueryControlFlagBits, flags,
@@ -15455,7 +15453,7 @@ bool StatelessValidation::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBu
 bool StatelessValidation::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
     return skip;
@@ -15465,7 +15463,7 @@ bool StatelessValidation::PreCallValidateCmdResetQueryPool(VkCommandBuffer comma
                                                            uint32_t firstQuery, uint32_t queryCount,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
     return skip;
@@ -15475,7 +15473,7 @@ bool StatelessValidation::PreCallValidateCmdWriteTimestamp(VkCommandBuffer comma
                                                            VkQueryPool queryPool, uint32_t query,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateFlags(
         loc.dot(Field::pipelineStage), vvl::FlagBitmask::VkPipelineStageFlagBits, AllVkPipelineStageFlagBits, pipelineStage,
@@ -15489,7 +15487,7 @@ bool StatelessValidation::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer
                                                                  VkDeviceSize dstOffset, VkDeviceSize stride,
                                                                  VkQueryResultFlags flags, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dstBuffer), dstBuffer);
@@ -15502,7 +15500,7 @@ bool StatelessValidation::PreCallValidateCmdPushConstants(VkCommandBuffer comman
                                                           VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
                                                           const void* pValues, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::layout), layout);
     skip |= context.ValidateFlags(loc.dot(Field::stageFlags), vvl::FlagBitmask::VkShaderStageFlagBits, AllVkShaderStageFlagBits,
@@ -15518,7 +15516,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass(VkCommandBuffer comm
                                                             const VkRenderPassBeginInfo* pRenderPassBegin,
                                                             VkSubpassContents contents, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pRenderPassBegin), pRenderPassBegin, VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
                                        true, "VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter",
@@ -15555,7 +15553,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass(VkCommandBuffer comm
 bool StatelessValidation::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::contents), vvl::Enum::VkSubpassContents, contents,
                                        "VUID-vkCmdNextSubpass-contents-parameter");
@@ -15564,7 +15562,7 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass(VkCommandBuffer commandB
 
 bool StatelessValidation::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -15574,7 +15572,7 @@ bool StatelessValidation::PreCallValidateCmdExecuteCommands(VkCommandBuffer comm
                                                             const VkCommandBuffer* pCommandBuffers,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateHandleArray(loc.dot(Field::commandBufferCount), loc.dot(Field::pCommandBuffers), commandBufferCount,
                                         pCommandBuffers, true, true, "VUID-vkCmdExecuteCommands-commandBufferCount-arraylength");
@@ -15585,7 +15583,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory2(VkDevice device, uint
                                                            const VkBindBufferMemoryInfo* pBindInfos,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::bindInfoCount), loc.dot(Field::pBindInfos), bindInfoCount, pBindInfos,
@@ -15614,7 +15612,7 @@ bool StatelessValidation::PreCallValidateBindImageMemory2(VkDevice device, uint3
                                                           const VkBindImageMemoryInfo* pBindInfos,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::bindInfoCount), loc.dot(Field::pBindInfos), bindInfoCount, pBindInfos,
@@ -15643,7 +15641,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupPeerMemoryFeatures(VkDevi
                                                                           VkPeerMemoryFeatureFlags* pPeerMemoryFeatures,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pPeerMemoryFeatures), pPeerMemoryFeatures,
                                             "VUID-vkGetDeviceGroupPeerMemoryFeatures-pPeerMemoryFeatures-parameter");
@@ -15653,7 +15651,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupPeerMemoryFeatures(VkDevi
 bool StatelessValidation::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -15663,7 +15661,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchBase(VkCommandBuffer command
                                                          uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
                                                          uint32_t groupCountZ, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -15673,7 +15671,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroups(
     VkInstance instance, uint32_t* pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (loc.function == vvl::Func::vkEnumeratePhysicalDeviceGroups &&
         CheckPromotedApiAgainstVulkanVersion(instance, loc, VK_API_VERSION_1_1))
@@ -15700,7 +15698,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2(VkDevice de
                                                                      VkMemoryRequirements2* pMemoryRequirements,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, true,
                                        "VUID-vkGetImageMemoryRequirements2-pInfo-parameter",
@@ -15736,7 +15734,7 @@ bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements2(VkDevice d
                                                                       VkMemoryRequirements2* pMemoryRequirements,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, true,
                                        "VUID-vkGetBufferMemoryRequirements2-pInfo-parameter",
@@ -15767,7 +15765,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2(
     VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo, uint32_t* pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2* pSparseMemoryRequirements, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2,
                                        true, "VUID-vkGetImageSparseMemoryRequirements2-pInfo-parameter",
@@ -16168,7 +16166,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
 bool StatelessValidation::PreCallValidateTrimCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::commandPool), commandPool);
     skip |= context.ValidateReservedFlags(loc.dot(Field::flags), flags, "VUID-vkTrimCommandPool-flags-zerobitmask");
@@ -16178,7 +16176,7 @@ bool StatelessValidation::PreCallValidateTrimCommandPool(VkDevice device, VkComm
 bool StatelessValidation::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pQueueInfo), pQueueInfo, VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2, true,
                                        "VUID-vkGetDeviceQueue2-pQueueInfo-parameter", "VUID-VkDeviceQueueInfo2-sType-sType");
@@ -16201,7 +16199,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversion(VkDevice d
                                                                       VkSamplerYcbcrConversion* pYcbcrConversion,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO, true,
@@ -16267,7 +16265,7 @@ bool StatelessValidation::PreCallValidateDestroySamplerYcbcrConversion(VkDevice 
                                                                        const VkAllocationCallbacks* pAllocator,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -16282,7 +16280,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice
                                                                         VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO, true,
@@ -16331,7 +16329,7 @@ bool StatelessValidation::PreCallValidateDestroyDescriptorUpdateTemplate(VkDevic
                                                                          const VkAllocationCallbacks* pAllocator,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -16344,7 +16342,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevic
                                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                          const void* pData, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::descriptorSet), descriptorSet);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::descriptorUpdateTemplate), descriptorUpdateTemplate);
@@ -16491,7 +16489,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice 
                                                                        VkDescriptorSetLayoutSupport* pSupport,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, true,
@@ -16546,7 +16544,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer co
                                                               uint32_t maxDrawCount, uint32_t stride,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::countBuffer), countBuffer);
@@ -16558,7 +16556,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBu
                                                                      VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                      uint32_t stride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::countBuffer), countBuffer);
@@ -16569,7 +16567,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(VkDevice device, cons
                                                            const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2, true,
@@ -16860,7 +16858,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer com
                                                              const VkSubpassBeginInfo* pSubpassBeginInfo,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pRenderPassBegin), pRenderPassBegin, VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
                                        true, "VUID-vkCmdBeginRenderPass2-pRenderPassBegin-parameter",
@@ -16908,7 +16906,7 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2(VkCommandBuffer command
                                                          const VkSubpassEndInfo* pSubpassEndInfo,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
         context.ValidateStructType(loc.dot(Field::pSubpassBeginInfo), pSubpassBeginInfo, VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, true,
@@ -16939,7 +16937,7 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2(VkCommandBuffer command
 bool StatelessValidation::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pSubpassEndInfo), pSubpassEndInfo, VK_STRUCTURE_TYPE_SUBPASS_END_INFO, true,
                                        "VUID-vkCmdEndRenderPass2-pSubpassEndInfo-parameter", "VUID-VkSubpassEndInfo-sType-sType");
@@ -16958,7 +16956,7 @@ bool StatelessValidation::PreCallValidateCmdEndRenderPass2(VkCommandBuffer comma
 bool StatelessValidation::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                         uint32_t queryCount, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
     return skip;
@@ -16967,7 +16965,7 @@ bool StatelessValidation::PreCallValidateResetQueryPool(VkDevice device, VkQuery
 bool StatelessValidation::PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::semaphore), semaphore);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pValue), pValue, "VUID-vkGetSemaphoreCounterValue-pValue-parameter");
@@ -16977,7 +16975,7 @@ bool StatelessValidation::PreCallValidateGetSemaphoreCounterValue(VkDevice devic
 bool StatelessValidation::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pWaitInfo), pWaitInfo, VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO, true,
                                        "VUID-vkWaitSemaphores-pWaitInfo-parameter", "VUID-VkSemaphoreWaitInfo-sType-sType");
@@ -17005,7 +17003,7 @@ bool StatelessValidation::PreCallValidateWaitSemaphores(VkDevice device, const V
 bool StatelessValidation::PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pSignalInfo), pSignalInfo, VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO, true,
                                        "VUID-vkSignalSemaphore-pSignalInfo-parameter", "VUID-VkSemaphoreSignalInfo-sType-sType");
@@ -17022,7 +17020,7 @@ bool StatelessValidation::PreCallValidateSignalSemaphore(VkDevice device, const 
 bool StatelessValidation::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
         context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true,
@@ -17040,7 +17038,7 @@ bool StatelessValidation::PreCallValidateGetBufferDeviceAddress(VkDevice device,
 bool StatelessValidation::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, true,
                                        "VUID-vkGetBufferOpaqueCaptureAddress-pInfo-parameter",
@@ -17059,7 +17057,7 @@ bool StatelessValidation::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkD
                                                                              const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo,
                                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO,
                                        true, "VUID-vkGetDeviceMemoryOpaqueCaptureAddress-pInfo-parameter",
@@ -17105,7 +17103,7 @@ bool StatelessValidation::PreCallValidateCreatePrivateDataSlot(VkDevice device, 
                                                                VkPrivateDataSlot* pPrivateDataSlot,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO,
                                        true, "VUID-vkCreatePrivateDataSlot-pCreateInfo-parameter",
@@ -17131,7 +17129,7 @@ bool StatelessValidation::PreCallValidateDestroyPrivateDataSlot(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -17144,7 +17142,7 @@ bool StatelessValidation::PreCallValidateSetPrivateData(VkDevice device, VkObjec
                                                         VkPrivateDataSlot privateDataSlot, uint64_t data,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::objectType), vvl::Enum::VkObjectType, objectType,
                                        "VUID-vkSetPrivateData-objectType-parameter");
@@ -17156,7 +17154,7 @@ bool StatelessValidation::PreCallValidateGetPrivateData(VkDevice device, VkObjec
                                                         VkPrivateDataSlot privateDataSlot, uint64_t* pData,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::objectType), vvl::Enum::VkObjectType, objectType,
                                        "VUID-vkGetPrivateData-objectType-parameter");
@@ -17168,7 +17166,7 @@ bool StatelessValidation::PreCallValidateGetPrivateData(VkDevice device, VkObjec
 bool StatelessValidation::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
                                                       const VkDependencyInfo* pDependencyInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::event), event);
     skip |= context.ValidateStructType(loc.dot(Field::pDependencyInfo), pDependencyInfo, VK_STRUCTURE_TYPE_DEPENDENCY_INFO, true,
@@ -17324,7 +17322,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuf
 bool StatelessValidation::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
                                                         VkPipelineStageFlags2 stageMask, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::event), event);
     skip |=
@@ -17337,7 +17335,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandB
                                                         const VkDependencyInfo* pDependencyInfos,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateHandleArray(loc.dot(Field::eventCount), loc.dot(Field::pEvents), eventCount, pEvents, true, true,
                                         "VUID-vkCmdWaitEvents2-eventCount-arraylength");
@@ -17516,7 +17514,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandB
 bool StatelessValidation::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pDependencyInfo), pDependencyInfo, VK_STRUCTURE_TYPE_DEPENDENCY_INFO, true,
                                        "VUID-vkCmdPipelineBarrier2-pDependencyInfo-parameter", "VUID-VkDependencyInfo-sType-sType");
@@ -17672,7 +17670,7 @@ bool StatelessValidation::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer comm
                                                             VkQueryPool queryPool, uint32_t query,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateFlags(loc.dot(Field::stage), vvl::FlagBitmask::VkPipelineStageFlagBits2, AllVkPipelineStageFlagBits2,
                                   stage, kOptionalFlags, "VUID-vkCmdWriteTimestamp2-stage-parameter");
@@ -17683,7 +17681,7 @@ bool StatelessValidation::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer comm
 bool StatelessValidation::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits,
                                                       VkFence fence, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(loc.dot(Field::submitCount), loc.dot(Field::pSubmits), submitCount, pSubmits,
                                             VK_STRUCTURE_TYPE_SUBMIT_INFO_2, false, true, "VUID-VkSubmitInfo2-sType-sType",
@@ -17788,7 +17786,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t su
 bool StatelessValidation::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCopyBufferInfo), pCopyBufferInfo, VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2, true,
                                        "VUID-vkCmdCopyBuffer2-pCopyBufferInfo-parameter", "VUID-VkCopyBufferInfo2-sType-sType");
@@ -17822,7 +17820,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandB
 bool StatelessValidation::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pCopyImageInfo), pCopyImageInfo, VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2, true,
                                        "VUID-vkCmdCopyImage2-pCopyImageInfo-parameter", "VUID-VkCopyImageInfo2-sType-sType");
@@ -17880,7 +17878,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer c
                                                                const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pCopyBufferToImageInfo), pCopyBufferToImageInfo, VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2, true,
@@ -17934,7 +17932,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer c
                                                                const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pCopyImageToBufferInfo), pCopyImageToBufferInfo, VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2, true,
@@ -17987,7 +17985,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer c
 bool StatelessValidation::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pBlitImageInfo), pBlitImageInfo, VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2, true,
                                        "VUID-vkCmdBlitImage2-pBlitImageInfo-parameter", "VUID-VkBlitImageInfo2-sType-sType");
@@ -18048,7 +18046,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage2(VkCommandBuffer comman
                                                           const VkResolveImageInfo2* pResolveImageInfo,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pResolveImageInfo), pResolveImageInfo, VK_STRUCTURE_TYPE_RESOLVE_IMAGE_INFO_2,
                                        true, "VUID-vkCmdResolveImage2-pResolveImageInfo-parameter",
@@ -18108,7 +18106,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage2(VkCommandBuffer comman
 bool StatelessValidation::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pRenderingInfo), pRenderingInfo, VK_STRUCTURE_TYPE_RENDERING_INFO, true,
                                        "VUID-vkCmdBeginRendering-pRenderingInfo-parameter", "VUID-VkRenderingInfo-sType-sType");
@@ -18249,7 +18247,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRendering(VkCommandBuffer comma
 
 bool StatelessValidation::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     return skip;
@@ -18258,7 +18256,7 @@ bool StatelessValidation::PreCallValidateCmdEndRendering(VkCommandBuffer command
 bool StatelessValidation::PreCallValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateFlags(loc.dot(Field::cullMode), vvl::FlagBitmask::VkCullModeFlagBits, AllVkCullModeFlagBits, cullMode,
                                   kOptionalFlags, "VUID-vkCmdSetCullMode-cullMode-parameter");
@@ -18268,7 +18266,7 @@ bool StatelessValidation::PreCallValidateCmdSetCullMode(VkCommandBuffer commandB
 bool StatelessValidation::PreCallValidateCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::frontFace), vvl::Enum::VkFrontFace, frontFace,
                                        "VUID-vkCmdSetFrontFace-frontFace-parameter");
@@ -18279,7 +18277,7 @@ bool StatelessValidation::PreCallValidateCmdSetPrimitiveTopology(VkCommandBuffer
                                                                  VkPrimitiveTopology primitiveTopology,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::primitiveTopology), vvl::Enum::VkPrimitiveTopology, primitiveTopology,
                                        "VUID-vkCmdSetPrimitiveTopology-primitiveTopology-parameter");
@@ -18289,7 +18287,7 @@ bool StatelessValidation::PreCallValidateCmdSetPrimitiveTopology(VkCommandBuffer
 bool StatelessValidation::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
                                                                  const VkViewport* pViewports, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateArray(loc.dot(Field::viewportCount), loc.dot(Field::pViewports), viewportCount, &pViewports, true, true,
                                   "VUID-vkCmdSetViewportWithCount-viewportCount-arraylength",
@@ -18307,7 +18305,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer
 bool StatelessValidation::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
                                                                 const VkRect2D* pScissors, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateArray(loc.dot(Field::scissorCount), loc.dot(Field::pScissors), scissorCount, &pScissors, true, true,
                                   "VUID-vkCmdSetScissorWithCount-scissorCount-arraylength",
@@ -18321,7 +18319,7 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer c
                                                                const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
                                                                const VkDeviceSize* pStrides, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     if (!skip)
@@ -18333,7 +18331,7 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer c
 bool StatelessValidation::PreCallValidateCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateBool32(loc.dot(Field::depthTestEnable), depthTestEnable);
     return skip;
@@ -18342,7 +18340,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthTestEnable(VkCommandBuffer c
 bool StatelessValidation::PreCallValidateCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateBool32(loc.dot(Field::depthWriteEnable), depthWriteEnable);
     return skip;
@@ -18351,7 +18349,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthWriteEnable(VkCommandBuffer 
 bool StatelessValidation::PreCallValidateCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::depthCompareOp), vvl::Enum::VkCompareOp, depthCompareOp,
                                        "VUID-vkCmdSetDepthCompareOp-depthCompareOp-parameter");
@@ -18361,7 +18359,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthCompareOp(VkCommandBuffer co
 bool StatelessValidation::PreCallValidateCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateBool32(loc.dot(Field::depthBoundsTestEnable), depthBoundsTestEnable);
     return skip;
@@ -18370,7 +18368,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBoundsTestEnable(VkCommandBu
 bool StatelessValidation::PreCallValidateCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateBool32(loc.dot(Field::stencilTestEnable), stencilTestEnable);
     return skip;
@@ -18380,7 +18378,7 @@ bool StatelessValidation::PreCallValidateCmdSetStencilOp(VkCommandBuffer command
                                                          VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp,
                                                          VkCompareOp compareOp, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateFlags(loc.dot(Field::faceMask), vvl::FlagBitmask::VkStencilFaceFlagBits, AllVkStencilFaceFlagBits,
                                   faceMask, kRequiredFlags, "VUID-vkCmdSetStencilOp-faceMask-parameter",
@@ -18400,7 +18398,7 @@ bool StatelessValidation::PreCallValidateCmdSetRasterizerDiscardEnable(VkCommand
                                                                        VkBool32 rasterizerDiscardEnable,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateBool32(loc.dot(Field::rasterizerDiscardEnable), rasterizerDiscardEnable);
     return skip;
@@ -18409,7 +18407,7 @@ bool StatelessValidation::PreCallValidateCmdSetRasterizerDiscardEnable(VkCommand
 bool StatelessValidation::PreCallValidateCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateBool32(loc.dot(Field::depthBiasEnable), depthBiasEnable);
     return skip;
@@ -18419,7 +18417,7 @@ bool StatelessValidation::PreCallValidateCmdSetPrimitiveRestartEnable(VkCommandB
                                                                       VkBool32 primitiveRestartEnable,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateBool32(loc.dot(Field::primitiveRestartEnable), primitiveRestartEnable);
     return skip;
@@ -18430,7 +18428,7 @@ bool StatelessValidation::PreCallValidateGetDeviceBufferMemoryRequirements(VkDev
                                                                            VkMemoryRequirements2* pMemoryRequirements,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS, true,
                                        "VUID-vkGetDeviceBufferMemoryRequirements-pInfo-parameter",
@@ -18489,7 +18487,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageMemoryRequirements(VkDevi
                                                                           VkMemoryRequirements2* pMemoryRequirements,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS, true,
                                        "VUID-vkGetDeviceImageMemoryRequirements-pInfo-parameter",
@@ -18585,7 +18583,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirements(
     VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2* pSparseMemoryRequirements, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS, true,
                                        "VUID-vkGetDeviceImageSparseMemoryRequirements-pInfo-parameter",
@@ -18685,7 +18683,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirements(
 bool StatelessValidation::PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                            uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     // No xml-driven validation
     if (!skip) skip |= manual_PreCallValidateCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, context);
@@ -18695,7 +18693,7 @@ bool StatelessValidation::PreCallValidateCmdSetLineStipple(VkCommandBuffer comma
 bool StatelessValidation::PreCallValidateMapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pMemoryMapInfo), pMemoryMapInfo, VK_STRUCTURE_TYPE_MEMORY_MAP_INFO, true,
                                        "VUID-vkMapMemory2-pMemoryMapInfo-parameter", "VUID-VkMemoryMapInfo-sType-sType");
@@ -18720,7 +18718,7 @@ bool StatelessValidation::PreCallValidateMapMemory2(VkDevice device, const VkMem
 bool StatelessValidation::PreCallValidateUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |=
         context.ValidateStructType(loc.dot(Field::pMemoryUnmapInfo), pMemoryUnmapInfo, VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO, true,
@@ -18743,7 +18741,7 @@ bool StatelessValidation::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer com
                                                              VkDeviceSize size, VkIndexType indexType,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::indexType), vvl::Enum::VkIndexType, indexType,
                                        "VUID-vkCmdBindIndexBuffer2-indexType-parameter");
@@ -18754,7 +18752,7 @@ bool StatelessValidation::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer com
 bool StatelessValidation::PreCallValidateGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
                                                                      VkExtent2D* pGranularity, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pRenderingAreaInfo), pRenderingAreaInfo, VK_STRUCTURE_TYPE_RENDERING_AREA_INFO, true,
@@ -18774,7 +18772,7 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSubresourceLayout(VkDevic
                                                                          VkSubresourceLayout2* pLayout,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DEVICE_IMAGE_SUBRESOURCE_INFO, true,
                                        "VUID-vkGetDeviceImageSubresourceLayout-pInfo-parameter",
@@ -18883,7 +18881,7 @@ bool StatelessValidation::PreCallValidateGetImageSubresourceLayout2(VkDevice dev
                                                                     VkSubresourceLayout2* pLayout,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::image), image);
     skip |= context.ValidateStructType(loc.dot(Field::pSubresource), pSubresource, VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2, true,
@@ -18919,7 +18917,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSet(VkCommandBuffer co
                                                               const VkWriteDescriptorSet* pDescriptorWrites,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRangedEnum(loc.dot(Field::pipelineBindPoint), vvl::Enum::VkPipelineBindPoint, pipelineBindPoint,
                                        "VUID-vkCmdPushDescriptorSet-pipelineBindPoint-parameter");
@@ -18962,7 +18960,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetWithTemplate(VkComm
                                                                           VkPipelineLayout layout, uint32_t set, const void* pData,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateRequiredHandle(loc.dot(Field::descriptorUpdateTemplate), descriptorUpdateTemplate);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::layout), layout);
@@ -18973,7 +18971,7 @@ bool StatelessValidation::PreCallValidateCmdSetRenderingAttachmentLocations(VkCo
                                                                             const VkRenderingAttachmentLocationInfo* pLocationInfo,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pLocationInfo), pLocationInfo, VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO, true,
@@ -18985,7 +18983,7 @@ bool StatelessValidation::PreCallValidateCmdSetRenderingInputAttachmentIndices(
     VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pInputAttachmentIndexInfo), pInputAttachmentIndexInfo,
                                        VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO, true,
@@ -18998,7 +18996,7 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer 
                                                                 const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pBindDescriptorSetsInfo), pBindDescriptorSetsInfo, VK_STRUCTURE_TYPE_BIND_DESCRIPTOR_SETS_INFO, true,
@@ -19030,7 +19028,7 @@ bool StatelessValidation::PreCallValidateCmdPushConstants2(VkCommandBuffer comma
                                                            const VkPushConstantsInfo* pPushConstantsInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pPushConstantsInfo), pPushConstantsInfo, VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO, true,
@@ -19061,7 +19059,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer c
                                                                const VkPushDescriptorSetInfo* pPushDescriptorSetInfo,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pPushDescriptorSetInfo), pPushDescriptorSetInfo, VK_STRUCTURE_TYPE_PUSH_DESCRIPTOR_SET_INFO, true,
@@ -19122,7 +19120,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetWithTemplate2(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(loc.dot(Field::pPushDescriptorSetWithTemplateInfo), pPushDescriptorSetWithTemplateInfo,
                                        VK_STRUCTURE_TYPE_PUSH_DESCRIPTOR_SET_WITH_TEMPLATE_INFO, true,
@@ -19153,7 +19151,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetWithTemplate2(
 bool StatelessValidation::PreCallValidateCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pCopyMemoryToImageInfo), pCopyMemoryToImageInfo, VK_STRUCTURE_TYPE_COPY_MEMORY_TO_IMAGE_INFO, true,
@@ -19209,7 +19207,7 @@ bool StatelessValidation::PreCallValidateCopyMemoryToImage(VkDevice device, cons
 bool StatelessValidation::PreCallValidateCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pCopyImageToMemoryInfo), pCopyImageToMemoryInfo, VK_STRUCTURE_TYPE_COPY_IMAGE_TO_MEMORY_INFO, true,
@@ -19265,7 +19263,7 @@ bool StatelessValidation::PreCallValidateCopyImageToMemory(VkDevice device, cons
 bool StatelessValidation::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructType(
         loc.dot(Field::pCopyImageToImageInfo), pCopyImageToImageInfo, VK_STRUCTURE_TYPE_COPY_IMAGE_TO_IMAGE_INFO, true,
@@ -19332,7 +19330,7 @@ bool StatelessValidation::PreCallValidateTransitionImageLayout(VkDevice device, 
                                                                const VkHostImageLayoutTransitionInfo* pTransitions,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::transitionCount), loc.dot(Field::pTransitions), transitionCount, pTransitions,
@@ -19368,9 +19366,9 @@ bool StatelessValidation::PreCallValidateDestroySurfaceKHR(VkInstance instance, 
                                                            const VkAllocationCallbacks* pAllocator,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
+    if (!IsExtEnabled(extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
@@ -19387,7 +19385,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPh
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
+    if (!IsExtEnabled(extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::surface), surface);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pSupported), pSupported,
                                             "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-pSupported-parameter");
@@ -19403,7 +19401,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
+    if (!IsExtEnabled(extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::surface), surface);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pSurfaceCapabilities), pSurfaceCapabilities,
                                             "VUID-vkGetPhysicalDeviceSurfaceCapabilitiesKHR-pSurfaceCapabilities-parameter");
@@ -19419,7 +19417,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPh
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
+    if (!IsExtEnabled(extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     skip |= context.ValidatePointerArray(loc.dot(Field::pSurfaceFormatCount), loc.dot(Field::pSurfaceFormats), pSurfaceFormatCount,
                                          &pSurfaceFormats, true, false, false,
                                          "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-pSurfaceFormatCount-parameter", kVUIDUndefined,
@@ -19445,7 +19443,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
+    if (!IsExtEnabled(extensions.vk_khr_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_surface});
     skip |= context.ValidatePointerArray(loc.dot(Field::pPresentModeCount), loc.dot(Field::pPresentModes), pPresentModeCount,
                                          &pPresentModes, true, false, false,
                                          "VUID-vkGetPhysicalDeviceSurfacePresentModesKHR-pPresentModeCount-parameter",
@@ -19460,9 +19458,9 @@ bool StatelessValidation::PreCallValidateCreateSwapchainKHR(VkDevice device, con
                                                             const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
+    if (!IsExtEnabled(extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, true,
                                    "VUID-vkCreateSwapchainKHR-pCreateInfo-parameter", "VUID-VkSwapchainCreateInfoKHR-sType-sType");
@@ -19538,9 +19536,9 @@ bool StatelessValidation::PreCallValidateDestroySwapchainKHR(VkDevice device, Vk
                                                              const VkAllocationCallbacks* pAllocator,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
+    if (!IsExtEnabled(extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
@@ -19552,9 +19550,9 @@ bool StatelessValidation::PreCallValidateGetSwapchainImagesKHR(VkDevice device, 
                                                                uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
+    if (!IsExtEnabled(extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     skip |= context.ValidatePointerArray(loc.dot(Field::pSwapchainImageCount), loc.dot(Field::pSwapchainImages),
                                          pSwapchainImageCount, &pSwapchainImages, true, false, false,
@@ -19567,9 +19565,9 @@ bool StatelessValidation::PreCallValidateAcquireNextImageKHR(VkDevice device, Vk
                                                              VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
+    if (!IsExtEnabled(extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pImageIndex), pImageIndex,
                                             "VUID-vkAcquireNextImageKHR-pImageIndex-parameter");
@@ -19581,9 +19579,9 @@ bool StatelessValidation::PreCallValidateAcquireNextImageKHR(VkDevice device, Vk
 bool StatelessValidation::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
+    if (!IsExtEnabled(extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
     skip |= context.ValidateStructType(loc.dot(Field::pPresentInfo), pPresentInfo, VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, true,
                                        "VUID-vkQueuePresentKHR-pPresentInfo-parameter", "VUID-VkPresentInfoKHR-sType-sType");
     if (pPresentInfo != nullptr) {
@@ -19627,9 +19625,9 @@ bool StatelessValidation::PreCallValidateQueuePresentKHR(VkQueue queue, const Vk
 bool StatelessValidation::PreCallValidateGetDeviceGroupPresentCapabilitiesKHR(
     VkDevice device, VkDeviceGroupPresentCapabilitiesKHR* pDeviceGroupPresentCapabilities, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_khr_swapchain) || IsExtEnabled(device_extensions.vk_khr_device_group)))
+    if (!(IsExtEnabled(extensions.vk_khr_swapchain) || IsExtEnabled(extensions.vk_khr_device_group)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain, vvl::Extension::_VK_KHR_device_group});
     skip |= context.ValidateStructType(loc.dot(Field::pDeviceGroupPresentCapabilities), pDeviceGroupPresentCapabilities,
                                        VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_CAPABILITIES_KHR, true,
@@ -19648,9 +19646,9 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(Vk
                                                                               VkDeviceGroupPresentModeFlagsKHR* pModes,
                                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_khr_swapchain) || IsExtEnabled(device_extensions.vk_khr_device_group)))
+    if (!(IsExtEnabled(extensions.vk_khr_swapchain) || IsExtEnabled(extensions.vk_khr_device_group)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain, vvl::Extension::_VK_KHR_device_group});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::surface), surface);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pModes), pModes,
@@ -19677,9 +19675,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(V
 bool StatelessValidation::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
                                                               uint32_t* pImageIndex, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_khr_swapchain) || IsExtEnabled(device_extensions.vk_khr_device_group)))
+    if (!(IsExtEnabled(extensions.vk_khr_swapchain) || IsExtEnabled(extensions.vk_khr_device_group)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain, vvl::Extension::_VK_KHR_device_group});
     skip |= context.ValidateStructType(loc.dot(Field::pAcquireInfo), pAcquireInfo, VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR,
                                        true, "VUID-vkAcquireNextImage2KHR-pAcquireInfo-parameter",
@@ -19706,7 +19704,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(V
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |=
         context.ValidatePointerArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties,
                                      true, false, false, "VUID-vkGetPhysicalDeviceDisplayPropertiesKHR-pPropertyCount-parameter",
@@ -19729,7 +19727,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= context.ValidatePointerArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties,
                                          true, false, false,
                                          "VUID-vkGetPhysicalDeviceDisplayPlanePropertiesKHR-pPropertyCount-parameter",
@@ -19751,7 +19749,7 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkP
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= context.ValidatePointerArray(loc.dot(Field::pDisplayCount), loc.dot(Field::pDisplays), pDisplayCount, &pDisplays, true,
                                          false, false, "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-pDisplayCount-parameter",
                                          kVUIDUndefined, "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-pDisplays-parameter");
@@ -19767,7 +19765,7 @@ bool StatelessValidation::PreCallValidateGetDisplayModePropertiesKHR(VkPhysicalD
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::display), display);
     skip |= context.ValidatePointerArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, &pProperties,
                                          true, false, false, "VUID-vkGetDisplayModePropertiesKHR-pPropertyCount-parameter",
@@ -19790,7 +19788,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice p
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::display), display);
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR,
                                        true, "VUID-vkCreateDisplayModeKHR-pCreateInfo-parameter",
@@ -19823,7 +19821,7 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysic
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::mode), mode);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pCapabilities), pCapabilities,
                                             "VUID-vkGetDisplayPlaneCapabilitiesKHR-pCapabilities-parameter");
@@ -19835,9 +19833,9 @@ bool StatelessValidation::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance
                                                                       const VkAllocationCallbacks* pAllocator,
                                                                       VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
+    if (!IsExtEnabled(extensions.vk_khr_display)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR,
                                        true, "VUID-vkCreateDisplayPlaneSurfaceKHR-pCreateInfo-parameter",
                                        "VUID-VkDisplaySurfaceCreateInfoKHR-sType-sType");
@@ -19883,9 +19881,9 @@ bool StatelessValidation::PreCallValidateCreateSharedSwapchainsKHR(VkDevice devi
                                                                    VkSwapchainKHR* pSwapchains,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_display_swapchain))
+    if (!IsExtEnabled(extensions.vk_khr_display_swapchain))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display_swapchain});
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::swapchainCount), loc.dot(Field::pCreateInfos), swapchainCount, pCreateInfos,
@@ -19972,10 +19970,9 @@ bool StatelessValidation::PreCallValidateCreateXlibSurfaceKHR(VkInstance instanc
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_xlib_surface))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xlib_surface});
+    if (!IsExtEnabled(extensions.vk_khr_xlib_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xlib_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
                                        true, "VUID-vkCreateXlibSurfaceKHR-pCreateInfo-parameter",
                                        "VUID-VkXlibSurfaceCreateInfoKHR-sType-sType");
@@ -20005,8 +20002,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceXlibPresentationSuppor
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_xlib_surface))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xlib_surface});
+    if (!IsExtEnabled(extensions.vk_khr_xlib_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xlib_surface});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::dpy), dpy,
                                             "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-dpy-parameter");
     return skip;
@@ -20018,10 +20014,9 @@ bool StatelessValidation::PreCallValidateCreateXcbSurfaceKHR(VkInstance instance
                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_xcb_surface))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xcb_surface});
+    if (!IsExtEnabled(extensions.vk_khr_xcb_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xcb_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
                                        true, "VUID-vkCreateXcbSurfaceKHR-pCreateInfo-parameter",
                                        "VUID-VkXcbSurfaceCreateInfoKHR-sType-sType");
@@ -20052,8 +20047,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceXcbPresentationSupport
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_xcb_surface))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xcb_surface});
+    if (!IsExtEnabled(extensions.vk_khr_xcb_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_xcb_surface});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::connection), connection,
                                             "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-connection-parameter");
     return skip;
@@ -20066,9 +20060,9 @@ bool StatelessValidation::PreCallValidateCreateWaylandSurfaceKHR(VkInstance inst
                                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_wayland_surface))
+    if (!IsExtEnabled(extensions.vk_khr_wayland_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_wayland_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
                                        true, "VUID-vkCreateWaylandSurfaceKHR-pCreateInfo-parameter",
@@ -20100,7 +20094,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceWaylandPresentationSup
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_wayland_surface))
+    if (!IsExtEnabled(extensions.vk_khr_wayland_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_wayland_surface});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::display), display,
                                             "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-display-parameter");
@@ -20114,9 +20108,9 @@ bool StatelessValidation::PreCallValidateCreateAndroidSurfaceKHR(VkInstance inst
                                                                  const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_android_surface))
+    if (!IsExtEnabled(extensions.vk_khr_android_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_android_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
                                        true, "VUID-vkCreateAndroidSurfaceKHR-pCreateInfo-parameter",
@@ -20145,10 +20139,9 @@ bool StatelessValidation::PreCallValidateCreateWin32SurfaceKHR(VkInstance instan
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_win32_surface))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_win32_surface});
+    if (!IsExtEnabled(extensions.vk_khr_win32_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_win32_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
                                        true, "VUID-vkCreateWin32SurfaceKHR-pCreateInfo-parameter",
                                        "VUID-VkWin32SurfaceCreateInfoKHR-sType-sType");
@@ -20177,8 +20170,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceWin32PresentationSuppo
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_win32_surface))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_win32_surface});
+    if (!IsExtEnabled(extensions.vk_khr_win32_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_win32_surface});
     // No xml-driven validation
     return skip;
 }
@@ -20302,10 +20294,9 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionKHR(VkDevice device, 
                                                                VkVideoSessionKHR* pVideoSession,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_queue))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+    if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_VIDEO_SESSION_CREATE_INFO_KHR,
                                        true, "VUID-vkCreateVideoSessionKHR-pCreateInfo-parameter",
                                        "VUID-VkVideoSessionCreateInfoKHR-sType-sType");
@@ -20378,10 +20369,9 @@ bool StatelessValidation::PreCallValidateDestroyVideoSessionKHR(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_queue))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+    if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
@@ -20393,10 +20383,9 @@ bool StatelessValidation::PreCallValidateGetVideoSessionMemoryRequirementsKHR(
     VkDevice device, VkVideoSessionKHR videoSession, uint32_t* pMemoryRequirementsCount,
     VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_queue))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+    if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::videoSession), videoSession);
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::pMemoryRequirementsCount), loc.dot(Field::pMemoryRequirements), pMemoryRequirementsCount,
@@ -20420,10 +20409,9 @@ bool StatelessValidation::PreCallValidateBindVideoSessionMemoryKHR(VkDevice devi
                                                                    const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_queue))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+    if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::videoSession), videoSession);
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::bindSessionMemoryInfoCount), loc.dot(Field::pBindSessionMemoryInfos), bindSessionMemoryInfoCount,
@@ -20452,10 +20440,9 @@ bool StatelessValidation::PreCallValidateCreateVideoSessionParametersKHR(VkDevic
                                                                          VkVideoSessionParametersKHR* pVideoSessionParameters,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_queue))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+    if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_VIDEO_SESSION_PARAMETERS_CREATE_INFO_KHR, true,
         "VUID-vkCreateVideoSessionParametersKHR-pCreateInfo-parameter", "VUID-VkVideoSessionParametersCreateInfoKHR-sType-sType");
@@ -20498,10 +20485,9 @@ bool StatelessValidation::PreCallValidateUpdateVideoSessionParametersKHR(VkDevic
                                                                          const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_queue))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+    if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::videoSessionParameters), videoSessionParameters);
     skip |= context.ValidateStructType(
         loc.dot(Field::pUpdateInfo), pUpdateInfo, VK_STRUCTURE_TYPE_VIDEO_SESSION_PARAMETERS_UPDATE_INFO_KHR, true,
@@ -20528,10 +20514,9 @@ bool StatelessValidation::PreCallValidateDestroyVideoSessionParametersKHR(VkDevi
                                                                           const VkAllocationCallbacks* pAllocator,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_queue))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+    if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
@@ -20543,10 +20528,9 @@ bool StatelessValidation::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer 
                                                                 const VkVideoBeginCodingInfoKHR* pBeginInfo,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_queue))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+    if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     skip |= context.ValidateStructType(loc.dot(Field::pBeginInfo), pBeginInfo, VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR, true,
                                        "VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-parameter",
                                        "VUID-VkVideoBeginCodingInfoKHR-sType-sType");
@@ -20622,10 +20606,9 @@ bool StatelessValidation::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer co
                                                               const VkVideoEndCodingInfoKHR* pEndCodingInfo,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_queue))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+    if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     skip |= context.ValidateStructType(loc.dot(Field::pEndCodingInfo), pEndCodingInfo, VK_STRUCTURE_TYPE_VIDEO_END_CODING_INFO_KHR,
                                        true, "VUID-vkCmdEndVideoCodingKHR-pEndCodingInfo-parameter",
                                        "VUID-VkVideoEndCodingInfoKHR-sType-sType");
@@ -20644,10 +20627,9 @@ bool StatelessValidation::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffe
                                                                   const VkVideoCodingControlInfoKHR* pCodingControlInfo,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_queue))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+    if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCodingControlInfo), pCodingControlInfo, VK_STRUCTURE_TYPE_VIDEO_CODING_CONTROL_INFO_KHR, true,
         "VUID-vkCmdControlVideoCodingKHR-pCodingControlInfo-parameter", "VUID-VkVideoCodingControlInfoKHR-sType-sType");
@@ -20674,9 +20656,9 @@ bool StatelessValidation::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffe
 bool StatelessValidation::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_decode_queue))
+    if (!IsExtEnabled(extensions.vk_khr_video_decode_queue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_decode_queue});
     skip |= context.ValidateStructType(loc.dot(Field::pDecodeInfo), pDecodeInfo, VK_STRUCTURE_TYPE_VIDEO_DECODE_INFO_KHR, true,
                                        "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-parameter", "VUID-VkVideoDecodeInfoKHR-sType-sType");
@@ -20799,9 +20781,9 @@ bool StatelessValidation::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer comma
 bool StatelessValidation::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))
+    if (!IsExtEnabled(extensions.vk_khr_dynamic_rendering))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_dynamic_rendering});
     skip |= PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo, error_obj);
     return skip;
@@ -20809,9 +20791,9 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer co
 
 bool StatelessValidation::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering))
+    if (!IsExtEnabled(extensions.vk_khr_dynamic_rendering))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_dynamic_rendering});
     skip |= PreCallValidateCmdEndRendering(commandBuffer, error_obj);
     return skip;
@@ -20825,7 +20807,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFeatures2KHR(VkPhysica
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, error_obj);
     return skip;
@@ -20839,7 +20821,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2KHR(VkPhysi
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceProperties2(physicalDevice, pProperties, error_obj);
     return skip;
@@ -20853,7 +20835,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties2KHR(V
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, error_obj);
     return skip;
@@ -20867,7 +20849,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |=
         PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties, error_obj);
@@ -20882,7 +20864,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                    pQueueFamilyProperties, error_obj);
@@ -20897,7 +20879,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceMemoryProperties2KHR(V
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties, error_obj);
     return skip;
@@ -20911,7 +20893,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_physical_device_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_physical_device_properties2});
     skip |= PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount, pProperties,
                                                                          error_obj);
@@ -20923,10 +20905,9 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR(VkD
                                                                              VkPeerMemoryFeatureFlags* pPeerMemoryFeatures,
                                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_device_group))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_group});
+    if (!IsExtEnabled(extensions.vk_khr_device_group)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_group});
     skip |= PreCallValidateGetDeviceGroupPeerMemoryFeatures(device, heapIndex, localDeviceIndex, remoteDeviceIndex,
                                                             pPeerMemoryFeatures, error_obj);
     return skip;
@@ -20935,10 +20916,9 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR(VkD
 bool StatelessValidation::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_device_group))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_group});
+    if (!IsExtEnabled(extensions.vk_khr_device_group)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_group});
     skip |= PreCallValidateCmdSetDeviceMask(commandBuffer, deviceMask, error_obj);
     return skip;
 }
@@ -20947,10 +20927,9 @@ bool StatelessValidation::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer comm
                                                             uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
                                                             uint32_t groupCountZ, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_device_group))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_group});
+    if (!IsExtEnabled(extensions.vk_khr_device_group)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_group});
     skip |= PreCallValidateCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
                                            error_obj);
     return skip;
@@ -20959,10 +20938,9 @@ bool StatelessValidation::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer comm
 bool StatelessValidation::PreCallValidateTrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool,
                                                             VkCommandPoolTrimFlags flags, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance1))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance1});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance1)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance1});
     skip |= PreCallValidateTrimCommandPool(device, commandPool, flags, error_obj);
     return skip;
 }
@@ -20971,9 +20949,9 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroupsKHR(
     VkInstance instance, uint32_t* pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_device_group_creation))
+    if (!IsExtEnabled(extensions.vk_khr_device_group_creation))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_device_group_creation});
     skip |= PreCallValidateEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
                                                          error_obj);
@@ -20988,7 +20966,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_external_memory_capabilities))
+    if (!IsExtEnabled(extensions.vk_khr_external_memory_capabilities))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_memory_capabilities});
     skip |= PreCallValidateGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo, pExternalBufferProperties,
                                                                      error_obj);
@@ -21000,9 +20978,9 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device
                                                                  const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                                  HANDLE* pHandle, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_memory_win32))
+    if (!IsExtEnabled(extensions.vk_khr_external_memory_win32))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_memory_win32});
     skip |= context.ValidateStructType(
         loc.dot(Field::pGetWin32HandleInfo), pGetWin32HandleInfo, VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR, true,
@@ -21029,9 +21007,9 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandlePropertiesKHR(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, HANDLE handle,
     VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_memory_win32))
+    if (!IsExtEnabled(extensions.vk_khr_external_memory_win32))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_memory_win32});
     skip |= context.ValidateFlags(loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
                                   AllVkExternalMemoryHandleTypeFlagBits, handleType, kRequiredSingleBit,
@@ -21057,9 +21035,9 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandlePropertiesKHR(
 bool StatelessValidation::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_memory_fd))
+    if (!IsExtEnabled(extensions.vk_khr_external_memory_fd))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_memory_fd});
     skip |= context.ValidateStructType(loc.dot(Field::pGetFdInfo), pGetFdInfo, VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, true,
                                        "VUID-vkGetMemoryFdKHR-pGetFdInfo-parameter", "VUID-VkMemoryGetFdInfoKHR-sType-sType");
@@ -21084,9 +21062,9 @@ bool StatelessValidation::PreCallValidateGetMemoryFdPropertiesKHR(VkDevice devic
                                                                   int fd, VkMemoryFdPropertiesKHR* pMemoryFdProperties,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_memory_fd))
+    if (!IsExtEnabled(extensions.vk_khr_external_memory_fd))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_memory_fd});
     skip |= context.ValidateFlags(loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
                                   AllVkExternalMemoryHandleTypeFlagBits, handleType, kRequiredSingleBit,
@@ -21113,7 +21091,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalSemaphorePrope
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_external_semaphore_capabilities))
+    if (!IsExtEnabled(extensions.vk_khr_external_semaphore_capabilities))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_semaphore_capabilities});
     skip |= PreCallValidateGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
                                                                         pExternalSemaphoreProperties, error_obj);
@@ -21125,9 +21103,9 @@ bool StatelessValidation::PreCallValidateImportSemaphoreWin32HandleKHR(
     VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_semaphore_win32))
+    if (!IsExtEnabled(extensions.vk_khr_external_semaphore_win32))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_semaphore_win32});
     skip |= context.ValidateStructType(loc.dot(Field::pImportSemaphoreWin32HandleInfo), pImportSemaphoreWin32HandleInfo,
                                        VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR, true,
@@ -21155,9 +21133,9 @@ bool StatelessValidation::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice dev
                                                                     const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                                     HANDLE* pHandle, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_semaphore_win32))
+    if (!IsExtEnabled(extensions.vk_khr_external_semaphore_win32))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_semaphore_win32});
     skip |= context.ValidateStructType(
         loc.dot(Field::pGetWin32HandleInfo), pGetWin32HandleInfo, VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR, true,
@@ -21187,9 +21165,9 @@ bool StatelessValidation::PreCallValidateImportSemaphoreFdKHR(VkDevice device,
                                                               const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_semaphore_fd))
+    if (!IsExtEnabled(extensions.vk_khr_external_semaphore_fd))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_semaphore_fd});
     skip |= context.ValidateStructType(
         loc.dot(Field::pImportSemaphoreFdInfo), pImportSemaphoreFdInfo, VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR, true,
@@ -21218,9 +21196,9 @@ bool StatelessValidation::PreCallValidateImportSemaphoreFdKHR(VkDevice device,
 bool StatelessValidation::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_semaphore_fd))
+    if (!IsExtEnabled(extensions.vk_khr_external_semaphore_fd))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_semaphore_fd});
     skip |= context.ValidateStructType(loc.dot(Field::pGetFdInfo), pGetFdInfo, VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR, true,
                                        "VUID-vkGetSemaphoreFdKHR-pGetFdInfo-parameter", "VUID-VkSemaphoreGetFdInfoKHR-sType-sType");
@@ -21247,9 +21225,9 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer
                                                                  const VkWriteDescriptorSet* pDescriptorWrites,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_push_descriptor))
+    if (!IsExtEnabled(extensions.vk_khr_push_descriptor))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_push_descriptor});
     skip |= PreCallValidateCmdPushDescriptorSet(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount,
                                                 pDescriptorWrites, error_obj);
@@ -21262,10 +21240,9 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkC
                                                                              const void* pData,
                                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_khr_push_descriptor) ||
-          IsExtEnabled(device_extensions.vk_khr_descriptor_update_template)))
+    if (!(IsExtEnabled(extensions.vk_khr_push_descriptor) || IsExtEnabled(extensions.vk_khr_descriptor_update_template)))
         skip |= OutputExtensionError(loc,
                                      {vvl::Extension::_VK_KHR_push_descriptor, vvl::Extension::_VK_KHR_descriptor_update_template});
     skip |= PreCallValidateCmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData, error_obj);
@@ -21278,9 +21255,9 @@ bool StatelessValidation::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDev
                                                                            VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_descriptor_update_template))
+    if (!IsExtEnabled(extensions.vk_khr_descriptor_update_template))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_descriptor_update_template});
     skip |= PreCallValidateCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, error_obj);
     return skip;
@@ -21291,9 +21268,9 @@ bool StatelessValidation::PreCallValidateDestroyDescriptorUpdateTemplateKHR(VkDe
                                                                             const VkAllocationCallbacks* pAllocator,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_descriptor_update_template))
+    if (!IsExtEnabled(extensions.vk_khr_descriptor_update_template))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_descriptor_update_template});
     skip |= PreCallValidateDestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator, error_obj);
     return skip;
@@ -21303,9 +21280,9 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDe
                                                                             VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                             const void* pData, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_descriptor_update_template))
+    if (!IsExtEnabled(extensions.vk_khr_descriptor_update_template))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_descriptor_update_template});
     skip |= PreCallValidateUpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate, pData, error_obj);
     return skip;
@@ -21315,9 +21292,9 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(VkDevice device, c
                                                               const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2))
+    if (!IsExtEnabled(extensions.vk_khr_create_renderpass2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_create_renderpass2});
     skip |= PreCallValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, error_obj);
     return skip;
@@ -21328,9 +21305,9 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer 
                                                                 const VkSubpassBeginInfo* pSubpassBeginInfo,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2))
+    if (!IsExtEnabled(extensions.vk_khr_create_renderpass2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_create_renderpass2});
     skip |= PreCallValidateCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, error_obj);
     return skip;
@@ -21341,9 +21318,9 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer comm
                                                             const VkSubpassEndInfo* pSubpassEndInfo,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2))
+    if (!IsExtEnabled(extensions.vk_khr_create_renderpass2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_create_renderpass2});
     skip |= PreCallValidateCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, error_obj);
     return skip;
@@ -21353,9 +21330,9 @@ bool StatelessValidation::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer co
                                                               const VkSubpassEndInfo* pSubpassEndInfo,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_create_renderpass2))
+    if (!IsExtEnabled(extensions.vk_khr_create_renderpass2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_create_renderpass2});
     skip |= PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, error_obj);
     return skip;
@@ -21364,9 +21341,9 @@ bool StatelessValidation::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer co
 bool StatelessValidation::PreCallValidateGetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
+    if (!IsExtEnabled(extensions.vk_khr_shared_presentable_image))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_shared_presentable_image});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     return skip;
@@ -21380,7 +21357,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFencePropertie
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_external_fence_capabilities))
+    if (!IsExtEnabled(extensions.vk_khr_external_fence_capabilities))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_fence_capabilities});
     skip |= PreCallValidateGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties,
                                                                     error_obj);
@@ -21391,9 +21368,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFencePropertie
 bool StatelessValidation::PreCallValidateImportFenceWin32HandleKHR(
     VkDevice device, const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_fence_win32))
+    if (!IsExtEnabled(extensions.vk_khr_external_fence_win32))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_fence_win32});
     skip |= context.ValidateStructType(loc.dot(Field::pImportFenceWin32HandleInfo), pImportFenceWin32HandleInfo,
                                        VK_STRUCTURE_TYPE_IMPORT_FENCE_WIN32_HANDLE_INFO_KHR, true,
@@ -21420,9 +21397,9 @@ bool StatelessValidation::PreCallValidateGetFenceWin32HandleKHR(VkDevice device,
                                                                 const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                                 HANDLE* pHandle, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_fence_win32))
+    if (!IsExtEnabled(extensions.vk_khr_external_fence_win32))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_fence_win32});
     skip |= context.ValidateStructType(
         loc.dot(Field::pGetWin32HandleInfo), pGetWin32HandleInfo, VK_STRUCTURE_TYPE_FENCE_GET_WIN32_HANDLE_INFO_KHR, true,
@@ -21449,9 +21426,9 @@ bool StatelessValidation::PreCallValidateGetFenceWin32HandleKHR(VkDevice device,
 bool StatelessValidation::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_fence_fd))
+    if (!IsExtEnabled(extensions.vk_khr_external_fence_fd))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_fence_fd});
     skip |= context.ValidateStructType(
         loc.dot(Field::pImportFenceFdInfo), pImportFenceFdInfo, VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR, true,
@@ -21480,9 +21457,9 @@ bool StatelessValidation::PreCallValidateImportFenceFdKHR(VkDevice device, const
 bool StatelessValidation::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd,
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_external_fence_fd))
+    if (!IsExtEnabled(extensions.vk_khr_external_fence_fd))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_external_fence_fd});
     skip |= context.ValidateStructType(loc.dot(Field::pGetFdInfo), pGetFdInfo, VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR, true,
                                        "VUID-vkGetFenceFdKHR-pGetFdInfo-parameter", "VUID-VkFenceGetFdInfoKHR-sType-sType");
@@ -21568,9 +21545,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyPerformance
 bool StatelessValidation::PreCallValidateAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_performance_query))
+    if (!IsExtEnabled(extensions.vk_khr_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_performance_query});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR, true,
                                        "VUID-vkAcquireProfilingLockKHR-pInfo-parameter",
@@ -21588,9 +21565,9 @@ bool StatelessValidation::PreCallValidateAcquireProfilingLockKHR(VkDevice device
 
 bool StatelessValidation::PreCallValidateReleaseProfilingLockKHR(VkDevice device, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_performance_query))
+    if (!IsExtEnabled(extensions.vk_khr_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_performance_query});
     // No xml-driven validation
     return skip;
@@ -21604,7 +21581,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KH
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2))
+    if (!IsExtEnabled(extensions.vk_khr_get_surface_capabilities2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_surface_capabilities2});
     skip |=
         context.ValidateStructType(loc.dot(Field::pSurfaceInfo), pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR,
@@ -21658,7 +21635,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkP
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2))
+    if (!IsExtEnabled(extensions.vk_khr_get_surface_capabilities2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_surface_capabilities2});
     skip |= context.ValidateStructType(
         loc.dot(Field::pSurfaceInfo), pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
@@ -21704,7 +21681,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_display_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_display_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_display_properties2});
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, pProperties,
@@ -21730,7 +21707,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_display_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_display_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_display_properties2});
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, pProperties,
@@ -21756,7 +21733,7 @@ bool StatelessValidation::PreCallValidateGetDisplayModeProperties2KHR(VkPhysical
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_display_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_display_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_display_properties2});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::display), display);
     skip |= context.ValidateStructTypeArray(loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount,
@@ -21787,7 +21764,7 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysi
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_khr_get_display_properties2))
+    if (!IsExtEnabled(extensions.vk_khr_get_display_properties2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_display_properties2});
     skip |= context.ValidateStructType(
         loc.dot(Field::pDisplayPlaneInfo), pDisplayPlaneInfo, VK_STRUCTURE_TYPE_DISPLAY_PLANE_INFO_2_KHR, true,
@@ -21816,9 +21793,9 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice
                                                                         VkMemoryRequirements2* pMemoryRequirements,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_get_memory_requirements2))
+    if (!IsExtEnabled(extensions.vk_khr_get_memory_requirements2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_memory_requirements2});
     skip |= PreCallValidateGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements, error_obj);
     return skip;
@@ -21829,9 +21806,9 @@ bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements2KHR(VkDevic
                                                                          VkMemoryRequirements2* pMemoryRequirements,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_get_memory_requirements2))
+    if (!IsExtEnabled(extensions.vk_khr_get_memory_requirements2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_memory_requirements2});
     skip |= PreCallValidateGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements, error_obj);
     return skip;
@@ -21841,9 +21818,9 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2KHR(
     VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo, uint32_t* pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2* pSparseMemoryRequirements, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_get_memory_requirements2))
+    if (!IsExtEnabled(extensions.vk_khr_get_memory_requirements2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_get_memory_requirements2});
     skip |= PreCallValidateGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
                                                              pSparseMemoryRequirements, error_obj);
@@ -21856,9 +21833,9 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevic
                                                                          VkSamplerYcbcrConversion* pYcbcrConversion,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))
+    if (!IsExtEnabled(extensions.vk_khr_sampler_ycbcr_conversion))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_sampler_ycbcr_conversion});
     skip |= PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, error_obj);
     return skip;
@@ -21868,9 +21845,9 @@ bool StatelessValidation::PreCallValidateDestroySamplerYcbcrConversionKHR(VkDevi
                                                                           const VkAllocationCallbacks* pAllocator,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion))
+    if (!IsExtEnabled(extensions.vk_khr_sampler_ycbcr_conversion))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_sampler_ycbcr_conversion});
     skip |= PreCallValidateDestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator, error_obj);
     return skip;
@@ -21880,10 +21857,9 @@ bool StatelessValidation::PreCallValidateBindBufferMemory2KHR(VkDevice device, u
                                                               const VkBindBufferMemoryInfo* pBindInfos,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_bind_memory2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_bind_memory2});
+    if (!IsExtEnabled(extensions.vk_khr_bind_memory2)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_bind_memory2});
     skip |= PreCallValidateBindBufferMemory2(device, bindInfoCount, pBindInfos, error_obj);
     return skip;
 }
@@ -21892,10 +21868,9 @@ bool StatelessValidation::PreCallValidateBindImageMemory2KHR(VkDevice device, ui
                                                              const VkBindImageMemoryInfo* pBindInfos,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_bind_memory2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_bind_memory2});
+    if (!IsExtEnabled(extensions.vk_khr_bind_memory2)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_bind_memory2});
     skip |= PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos, error_obj);
     return skip;
 }
@@ -21905,10 +21880,9 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupportKHR(VkDevi
                                                                           VkDescriptorSetLayoutSupport* pSupport,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance3))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance3});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance3)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance3});
     skip |= PreCallValidateGetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport, error_obj);
     return skip;
 }
@@ -21918,9 +21892,9 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer
                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                  uint32_t stride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_draw_indirect_count))
+    if (!IsExtEnabled(extensions.vk_khr_draw_indirect_count))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_draw_indirect_count});
     skip |= PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                                 error_obj);
@@ -21932,9 +21906,9 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkComman
                                                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                         uint32_t stride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_draw_indirect_count))
+    if (!IsExtEnabled(extensions.vk_khr_draw_indirect_count))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_draw_indirect_count});
     skip |= PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                        stride, error_obj);
@@ -21944,9 +21918,9 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkComman
 bool StatelessValidation::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t* pValue,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))
+    if (!IsExtEnabled(extensions.vk_khr_timeline_semaphore))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_timeline_semaphore});
     skip |= PreCallValidateGetSemaphoreCounterValue(device, semaphore, pValue, error_obj);
     return skip;
@@ -21955,9 +21929,9 @@ bool StatelessValidation::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice de
 bool StatelessValidation::PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))
+    if (!IsExtEnabled(extensions.vk_khr_timeline_semaphore))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_timeline_semaphore});
     skip |= PreCallValidateWaitSemaphores(device, pWaitInfo, timeout, error_obj);
     return skip;
@@ -21966,9 +21940,9 @@ bool StatelessValidation::PreCallValidateWaitSemaphoresKHR(VkDevice device, cons
 bool StatelessValidation::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_timeline_semaphore))
+    if (!IsExtEnabled(extensions.vk_khr_timeline_semaphore))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_timeline_semaphore});
     skip |= PreCallValidateSignalSemaphore(device, pSignalInfo, error_obj);
     return skip;
@@ -22005,9 +21979,9 @@ bool StatelessValidation::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandB
                                                                       const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate))
+    if (!IsExtEnabled(extensions.vk_khr_fragment_shading_rate))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_fragment_shading_rate});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pFragmentSize), pFragmentSize,
                                             "VUID-vkCmdSetFragmentShadingRateKHR-pFragmentSize-parameter");
@@ -22020,9 +21994,9 @@ bool StatelessValidation::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandB
 bool StatelessValidation::PreCallValidateCmdSetRenderingAttachmentLocationsKHR(
     VkCommandBuffer commandBuffer, const VkRenderingAttachmentLocationInfo* pLocationInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering_local_read))
+    if (!IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_dynamic_rendering_local_read});
     skip |= PreCallValidateCmdSetRenderingAttachmentLocations(commandBuffer, pLocationInfo, error_obj);
     return skip;
@@ -22032,9 +22006,9 @@ bool StatelessValidation::PreCallValidateCmdSetRenderingInputAttachmentIndicesKH
     VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering_local_read))
+    if (!IsExtEnabled(extensions.vk_khr_dynamic_rendering_local_read))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_dynamic_rendering_local_read});
     skip |= PreCallValidateCmdSetRenderingInputAttachmentIndices(commandBuffer, pInputAttachmentIndexInfo, error_obj);
     return skip;
@@ -22043,10 +22017,9 @@ bool StatelessValidation::PreCallValidateCmdSetRenderingInputAttachmentIndicesKH
 bool StatelessValidation::PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId,
                                                            uint64_t timeout, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_present_wait))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_present_wait});
+    if (!IsExtEnabled(extensions.vk_khr_present_wait)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_present_wait});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     return skip;
 }
@@ -22054,9 +22027,9 @@ bool StatelessValidation::PreCallValidateWaitForPresentKHR(VkDevice device, VkSw
 bool StatelessValidation::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address))
+    if (!IsExtEnabled(extensions.vk_khr_buffer_device_address))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_buffer_device_address});
     skip |= PreCallValidateGetBufferDeviceAddress(device, pInfo, error_obj);
     return skip;
@@ -22065,9 +22038,9 @@ bool StatelessValidation::PreCallValidateGetBufferDeviceAddressKHR(VkDevice devi
 bool StatelessValidation::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address))
+    if (!IsExtEnabled(extensions.vk_khr_buffer_device_address))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_buffer_device_address});
     skip |= PreCallValidateGetBufferOpaqueCaptureAddress(device, pInfo, error_obj);
     return skip;
@@ -22077,9 +22050,9 @@ bool StatelessValidation::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
                                                                                 const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo,
                                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address))
+    if (!IsExtEnabled(extensions.vk_khr_buffer_device_address))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_buffer_device_address});
     skip |= PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(device, pInfo, error_obj);
     return skip;
@@ -22089,9 +22062,9 @@ bool StatelessValidation::PreCallValidateCreateDeferredOperationKHR(VkDevice dev
                                                                     VkDeferredOperationKHR* pDeferredOperation,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_deferred_host_operations))
+    if (!IsExtEnabled(extensions.vk_khr_deferred_host_operations))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_deferred_host_operations});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -22106,9 +22079,9 @@ bool StatelessValidation::PreCallValidateDestroyDeferredOperationKHR(VkDevice de
                                                                      const VkAllocationCallbacks* pAllocator,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_deferred_host_operations))
+    if (!IsExtEnabled(extensions.vk_khr_deferred_host_operations))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_deferred_host_operations});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -22120,9 +22093,9 @@ bool StatelessValidation::PreCallValidateDestroyDeferredOperationKHR(VkDevice de
 bool StatelessValidation::PreCallValidateGetDeferredOperationMaxConcurrencyKHR(VkDevice device, VkDeferredOperationKHR operation,
                                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_deferred_host_operations))
+    if (!IsExtEnabled(extensions.vk_khr_deferred_host_operations))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_deferred_host_operations});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::operation), operation);
     return skip;
@@ -22131,9 +22104,9 @@ bool StatelessValidation::PreCallValidateGetDeferredOperationMaxConcurrencyKHR(V
 bool StatelessValidation::PreCallValidateGetDeferredOperationResultKHR(VkDevice device, VkDeferredOperationKHR operation,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_deferred_host_operations))
+    if (!IsExtEnabled(extensions.vk_khr_deferred_host_operations))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_deferred_host_operations});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::operation), operation);
     return skip;
@@ -22142,9 +22115,9 @@ bool StatelessValidation::PreCallValidateGetDeferredOperationResultKHR(VkDevice 
 bool StatelessValidation::PreCallValidateDeferredOperationJoinKHR(VkDevice device, VkDeferredOperationKHR operation,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_deferred_host_operations))
+    if (!IsExtEnabled(extensions.vk_khr_deferred_host_operations))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_deferred_host_operations});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::operation), operation);
     return skip;
@@ -22155,9 +22128,9 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDe
                                                                             VkPipelineExecutablePropertiesKHR* pProperties,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_pipeline_executable_properties))
+    if (!IsExtEnabled(extensions.vk_khr_pipeline_executable_properties))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_pipeline_executable_properties});
     skip |= context.ValidateStructType(loc.dot(Field::pPipelineInfo), pPipelineInfo, VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR, true,
                                        "VUID-vkGetPipelineExecutablePropertiesKHR-pPipelineInfo-parameter",
@@ -22190,9 +22163,9 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDe
                                                                             VkPipelineExecutableStatisticKHR* pStatistics,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_pipeline_executable_properties))
+    if (!IsExtEnabled(extensions.vk_khr_pipeline_executable_properties))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_pipeline_executable_properties});
     skip |= context.ValidateStructType(
         loc.dot(Field::pExecutableInfo), pExecutableInfo, VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR, true,
@@ -22223,9 +22196,9 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableInternalRepresenta
     VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo, uint32_t* pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_pipeline_executable_properties))
+    if (!IsExtEnabled(extensions.vk_khr_pipeline_executable_properties))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_pipeline_executable_properties});
     skip |=
         context.ValidateStructType(loc.dot(Field::pExecutableInfo), pExecutableInfo, VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR,
@@ -22260,10 +22233,9 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableInternalRepresenta
 bool StatelessValidation::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_map_memory2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_map_memory2});
+    if (!IsExtEnabled(extensions.vk_khr_map_memory2)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_map_memory2});
     skip |= PreCallValidateMapMemory2(device, pMemoryMapInfo, ppData, error_obj);
     return skip;
 }
@@ -22271,10 +22243,9 @@ bool StatelessValidation::PreCallValidateMapMemory2KHR(VkDevice device, const Vk
 bool StatelessValidation::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_map_memory2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_map_memory2});
+    if (!IsExtEnabled(extensions.vk_khr_map_memory2)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_map_memory2});
     skip |= PreCallValidateUnmapMemory2(device, pMemoryUnmapInfo, error_obj);
     return skip;
 }
@@ -22353,9 +22324,9 @@ bool StatelessValidation::PreCallValidateGetEncodedVideoSessionParametersKHR(
     VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_encode_queue))
+    if (!IsExtEnabled(extensions.vk_khr_video_encode_queue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_encode_queue});
     skip |= context.ValidateStructType(loc.dot(Field::pVideoSessionParametersInfo), pVideoSessionParametersInfo,
                                        VK_STRUCTURE_TYPE_VIDEO_ENCODE_SESSION_PARAMETERS_GET_INFO_KHR, true,
@@ -22402,9 +22373,9 @@ bool StatelessValidation::PreCallValidateGetEncodedVideoSessionParametersKHR(
 bool StatelessValidation::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_video_encode_queue))
+    if (!IsExtEnabled(extensions.vk_khr_video_encode_queue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_encode_queue});
     skip |= context.ValidateStructType(loc.dot(Field::pEncodeInfo), pEncodeInfo, VK_STRUCTURE_TYPE_VIDEO_ENCODE_INFO_KHR, true,
                                        "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-parameter", "VUID-VkVideoEncodeInfoKHR-sType-sType");
@@ -22530,9 +22501,9 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer command
                                                          const VkDependencyInfo* pDependencyInfo,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2))
+    if (!IsExtEnabled(extensions.vk_khr_synchronization2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_synchronization2});
     skip |= PreCallValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, error_obj);
     return skip;
@@ -22541,9 +22512,9 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer command
 bool StatelessValidation::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                                            VkPipelineStageFlags2 stageMask, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2))
+    if (!IsExtEnabled(extensions.vk_khr_synchronization2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_synchronization2});
     skip |= PreCallValidateCmdResetEvent2(commandBuffer, event, stageMask, error_obj);
     return skip;
@@ -22553,9 +22524,9 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer comma
                                                            const VkEvent* pEvents, const VkDependencyInfo* pDependencyInfos,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2))
+    if (!IsExtEnabled(extensions.vk_khr_synchronization2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_synchronization2});
     skip |= PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, error_obj);
     return skip;
@@ -22565,9 +22536,9 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer 
                                                                 const VkDependencyInfo* pDependencyInfo,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2))
+    if (!IsExtEnabled(extensions.vk_khr_synchronization2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_synchronization2});
     skip |= PreCallValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, error_obj);
     return skip;
@@ -22577,9 +22548,9 @@ bool StatelessValidation::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer c
                                                                VkQueryPool queryPool, uint32_t query,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2))
+    if (!IsExtEnabled(extensions.vk_khr_synchronization2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_synchronization2});
     skip |= PreCallValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, error_obj);
     return skip;
@@ -22588,9 +22559,9 @@ bool StatelessValidation::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer c
 bool StatelessValidation::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits,
                                                          VkFence fence, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2))
+    if (!IsExtEnabled(extensions.vk_khr_synchronization2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_synchronization2});
     skip |= PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
     return skip;
@@ -22599,9 +22570,9 @@ bool StatelessValidation::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t
 bool StatelessValidation::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_copy_commands2))
+    if (!IsExtEnabled(extensions.vk_khr_copy_commands2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_copy_commands2});
     skip |= PreCallValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, error_obj);
     return skip;
@@ -22610,9 +22581,9 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer comma
 bool StatelessValidation::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_copy_commands2))
+    if (!IsExtEnabled(extensions.vk_khr_copy_commands2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_copy_commands2});
     skip |= PreCallValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, error_obj);
     return skip;
@@ -22622,9 +22593,9 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffe
                                                                   const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_copy_commands2))
+    if (!IsExtEnabled(extensions.vk_khr_copy_commands2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_copy_commands2});
     skip |= PreCallValidateCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, error_obj);
     return skip;
@@ -22634,9 +22605,9 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffe
                                                                   const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_copy_commands2))
+    if (!IsExtEnabled(extensions.vk_khr_copy_commands2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_copy_commands2});
     skip |= PreCallValidateCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, error_obj);
     return skip;
@@ -22645,9 +22616,9 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffe
 bool StatelessValidation::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_copy_commands2))
+    if (!IsExtEnabled(extensions.vk_khr_copy_commands2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_copy_commands2});
     skip |= PreCallValidateCmdBlitImage2(commandBuffer, pBlitImageInfo, error_obj);
     return skip;
@@ -22657,9 +22628,9 @@ bool StatelessValidation::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer com
                                                              const VkResolveImageInfo2* pResolveImageInfo,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_copy_commands2))
+    if (!IsExtEnabled(extensions.vk_khr_copy_commands2))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_copy_commands2});
     skip |= PreCallValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, error_obj);
     return skip;
@@ -22669,9 +22640,9 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffe
                                                                   VkDeviceAddress indirectDeviceAddress,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_maintenance1))
+    if (!IsExtEnabled(extensions.vk_khr_ray_tracing_maintenance1))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_maintenance1});
     // No xml-driven validation
     if (!skip) skip |= manual_PreCallValidateCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress, context);
@@ -22683,10 +22654,9 @@ bool StatelessValidation::PreCallValidateGetDeviceBufferMemoryRequirementsKHR(Vk
                                                                               VkMemoryRequirements2* pMemoryRequirements,
                                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance4))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance4});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance4)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance4});
     skip |= PreCallValidateGetDeviceBufferMemoryRequirements(device, pInfo, pMemoryRequirements, error_obj);
     return skip;
 }
@@ -22696,10 +22666,9 @@ bool StatelessValidation::PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkD
                                                                              VkMemoryRequirements2* pMemoryRequirements,
                                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance4))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance4});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance4)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance4});
     skip |= PreCallValidateGetDeviceImageMemoryRequirements(device, pInfo, pMemoryRequirements, error_obj);
     return skip;
 }
@@ -22708,10 +22677,9 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSparseMemoryRequirementsK
     VkDevice device, const VkDeviceImageMemoryRequirements* pInfo, uint32_t* pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2* pSparseMemoryRequirements, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance4))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance4});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance4)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance4});
     skip |= PreCallValidateGetDeviceImageSparseMemoryRequirements(device, pInfo, pSparseMemoryRequirementCount,
                                                                   pSparseMemoryRequirements, error_obj);
     return skip;
@@ -22721,10 +22689,9 @@ bool StatelessValidation::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer 
                                                                 VkDeviceSize size, VkIndexType indexType,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance5))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance5});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance5)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance5});
     skip |= PreCallValidateCmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType, error_obj);
     return skip;
 }
@@ -22734,10 +22701,9 @@ bool StatelessValidation::PreCallValidateGetRenderingAreaGranularityKHR(VkDevice
                                                                         VkExtent2D* pGranularity,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance5))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance5});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance5)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance5});
     skip |= PreCallValidateGetRenderingAreaGranularity(device, pRenderingAreaInfo, pGranularity, error_obj);
     return skip;
 }
@@ -22747,10 +22713,9 @@ bool StatelessValidation::PreCallValidateGetDeviceImageSubresourceLayoutKHR(VkDe
                                                                             VkSubresourceLayout2* pLayout,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance5))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance5});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance5)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance5});
     skip |= PreCallValidateGetDeviceImageSubresourceLayout(device, pInfo, pLayout, error_obj);
     return skip;
 }
@@ -22760,10 +22725,9 @@ bool StatelessValidation::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice 
                                                                        VkSubresourceLayout2* pLayout,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance5))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance5});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance5)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance5});
     skip |= PreCallValidateGetImageSubresourceLayout2(device, image, pSubresource, pLayout, error_obj);
     return skip;
 }
@@ -22774,9 +22738,9 @@ bool StatelessValidation::PreCallValidateCreatePipelineBinariesKHR(VkDevice devi
                                                                    VkPipelineBinaryHandlesInfoKHR* pBinaries,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_pipeline_binary))
+    if (!IsExtEnabled(extensions.vk_khr_pipeline_binary))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_pipeline_binary});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_PIPELINE_BINARY_CREATE_INFO_KHR,
                                        true, "VUID-vkCreatePipelineBinariesKHR-pCreateInfo-parameter",
@@ -22848,9 +22812,9 @@ bool StatelessValidation::PreCallValidateDestroyPipelineBinaryKHR(VkDevice devic
                                                                   const VkAllocationCallbacks* pAllocator,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_pipeline_binary))
+    if (!IsExtEnabled(extensions.vk_khr_pipeline_binary))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_pipeline_binary});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -22863,9 +22827,9 @@ bool StatelessValidation::PreCallValidateGetPipelineKeyKHR(VkDevice device, cons
                                                            VkPipelineBinaryKeyKHR* pPipelineKey,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_pipeline_binary))
+    if (!IsExtEnabled(extensions.vk_khr_pipeline_binary))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_pipeline_binary});
     skip |= context.ValidateStructType(
         loc.dot(Field::pPipelineCreateInfo), pPipelineCreateInfo, VK_STRUCTURE_TYPE_PIPELINE_CREATE_INFO_KHR, false,
@@ -22886,9 +22850,9 @@ bool StatelessValidation::PreCallValidateGetPipelineBinaryDataKHR(VkDevice devic
                                                                   size_t* pPipelineBinaryDataSize, void* pPipelineBinaryData,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_pipeline_binary))
+    if (!IsExtEnabled(extensions.vk_khr_pipeline_binary))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_pipeline_binary});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_PIPELINE_BINARY_DATA_INFO_KHR, true,
                                        "VUID-vkGetPipelineBinaryDataKHR-pInfo-parameter",
@@ -22921,9 +22885,9 @@ bool StatelessValidation::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice
                                                                         const VkAllocationCallbacks* pAllocator,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_pipeline_binary))
+    if (!IsExtEnabled(extensions.vk_khr_pipeline_binary))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_pipeline_binary});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_RELEASE_CAPTURED_PIPELINE_DATA_INFO_KHR,
                                        true, "VUID-vkReleaseCapturedPipelineDataKHR-pInfo-parameter",
@@ -22969,9 +22933,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceCooperativeMatrixPrope
 bool StatelessValidation::PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                               uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_line_rasterization))
+    if (!IsExtEnabled(extensions.vk_khr_line_rasterization))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_line_rasterization});
     skip |= PreCallValidateCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, error_obj);
     return skip;
@@ -22998,9 +22962,9 @@ bool StatelessValidation::PreCallValidateGetCalibratedTimestampsKHR(VkDevice dev
                                                                     uint64_t* pTimestamps, uint64_t* pMaxDeviation,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_calibrated_timestamps) && loc.function == vvl::Func::vkGetCalibratedTimestampsKHR)
+    if (!IsExtEnabled(extensions.vk_khr_calibrated_timestamps) && loc.function == vvl::Func::vkGetCalibratedTimestampsKHR)
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_calibrated_timestamps});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::timestampCount), loc.dot(Field::pTimestampInfos), timestampCount,
                                             pTimestampInfos, VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_KHR, true, true,
@@ -23031,10 +22995,9 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuff
                                                                    const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance6))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance6)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
     skip |= PreCallValidateCmdBindDescriptorSets2(commandBuffer, pBindDescriptorSetsInfo, error_obj);
     return skip;
 }
@@ -23043,10 +23006,9 @@ bool StatelessValidation::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer co
                                                               const VkPushConstantsInfo* pPushConstantsInfo,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance6))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance6)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
     skip |= PreCallValidateCmdPushConstants2(commandBuffer, pPushConstantsInfo, error_obj);
     return skip;
 }
@@ -23055,10 +23017,9 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffe
                                                                   const VkPushDescriptorSetInfo* pPushDescriptorSetInfo,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance6))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance6)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
     skip |= PreCallValidateCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, error_obj);
     return skip;
 }
@@ -23067,10 +23028,9 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance6))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance6)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
     skip |= PreCallValidateCmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo, error_obj);
     return skip;
 }
@@ -23079,10 +23039,9 @@ bool StatelessValidation::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
     VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance6))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance6)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
     skip |= context.ValidateStructType(loc.dot(Field::pSetDescriptorBufferOffsetsInfo), pSetDescriptorBufferOffsetsInfo,
                                        VK_STRUCTURE_TYPE_SET_DESCRIPTOR_BUFFER_OFFSETS_INFO_EXT, true,
                                        "VUID-vkCmdSetDescriptorBufferOffsets2EXT-pSetDescriptorBufferOffsetsInfo-parameter",
@@ -23124,10 +23083,9 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_maintenance6))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
+    if (!IsExtEnabled(extensions.vk_khr_maintenance6)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance6});
     skip |= context.ValidateStructType(
         loc.dot(Field::pBindDescriptorBufferEmbeddedSamplersInfo), pBindDescriptorBufferEmbeddedSamplersInfo,
         VK_STRUCTURE_TYPE_BIND_DESCRIPTOR_BUFFER_EMBEDDED_SAMPLERS_INFO_EXT, true,
@@ -23164,10 +23122,9 @@ bool StatelessValidation::PreCallValidateCreateDebugReportCallbackEXT(VkInstance
                                                                       VkDebugReportCallbackEXT* pCallback,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_report))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
+    if (!IsExtEnabled(extensions.vk_ext_debug_report)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, true,
         "VUID-vkCreateDebugReportCallbackEXT-pCreateInfo-parameter", "VUID-VkDebugReportCallbackCreateInfoEXT-sType-sType");
@@ -23194,10 +23151,9 @@ bool StatelessValidation::PreCallValidateDestroyDebugReportCallbackEXT(VkInstanc
                                                                        const VkAllocationCallbacks* pAllocator,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_report))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
+    if (!IsExtEnabled(extensions.vk_ext_debug_report)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
@@ -23210,10 +23166,9 @@ bool StatelessValidation::PreCallValidateDebugReportMessageEXT(VkInstance instan
                                                                size_t location, int32_t messageCode, const char* pLayerPrefix,
                                                                const char* pMessage, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_report))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
+    if (!IsExtEnabled(extensions.vk_ext_debug_report)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_report});
     skip |= context.ValidateFlags(loc.dot(Field::flags), vvl::FlagBitmask::VkDebugReportFlagBitsEXT, AllVkDebugReportFlagBitsEXT,
                                   flags, kRequiredFlags, "VUID-vkDebugReportMessageEXT-flags-parameter",
                                   "VUID-vkDebugReportMessageEXT-flags-requiredbitmask");
@@ -23228,10 +23183,9 @@ bool StatelessValidation::PreCallValidateDebugReportMessageEXT(VkInstance instan
 bool StatelessValidation::PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_debug_marker))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_marker});
+    if (!IsExtEnabled(extensions.vk_ext_debug_marker)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_marker});
     skip |= context.ValidateStructType(loc.dot(Field::pTagInfo), pTagInfo, VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_TAG_INFO_EXT, true,
                                        "VUID-vkDebugMarkerSetObjectTagEXT-pTagInfo-parameter",
                                        "VUID-VkDebugMarkerObjectTagInfoEXT-sType-sType");
@@ -23254,10 +23208,9 @@ bool StatelessValidation::PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice de
                                                                      const VkDebugMarkerObjectNameInfoEXT* pNameInfo,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_debug_marker))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_marker});
+    if (!IsExtEnabled(extensions.vk_ext_debug_marker)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_marker});
     skip |= context.ValidateStructType(loc.dot(Field::pNameInfo), pNameInfo, VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT,
                                        true, "VUID-vkDebugMarkerSetObjectNameEXT-pNameInfo-parameter",
                                        "VUID-VkDebugMarkerObjectNameInfoEXT-sType-sType");
@@ -23279,10 +23232,9 @@ bool StatelessValidation::PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer 
                                                                 const VkDebugMarkerMarkerInfoEXT* pMarkerInfo,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_debug_marker))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_marker});
+    if (!IsExtEnabled(extensions.vk_ext_debug_marker)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_marker});
     skip |= context.ValidateStructType(loc.dot(Field::pMarkerInfo), pMarkerInfo, VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT,
                                        true, "VUID-vkCmdDebugMarkerBeginEXT-pMarkerInfo-parameter",
                                        "VUID-VkDebugMarkerMarkerInfoEXT-sType-sType");
@@ -23299,10 +23251,9 @@ bool StatelessValidation::PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer 
 
 bool StatelessValidation::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_debug_marker))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_marker});
+    if (!IsExtEnabled(extensions.vk_ext_debug_marker)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_marker});
     // No xml-driven validation
     return skip;
 }
@@ -23311,10 +23262,9 @@ bool StatelessValidation::PreCallValidateCmdDebugMarkerInsertEXT(VkCommandBuffer
                                                                  const VkDebugMarkerMarkerInfoEXT* pMarkerInfo,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_debug_marker))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_marker});
+    if (!IsExtEnabled(extensions.vk_ext_debug_marker)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_marker});
     skip |= context.ValidateStructType(loc.dot(Field::pMarkerInfo), pMarkerInfo, VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT,
                                        true, "VUID-vkCmdDebugMarkerInsertEXT-pMarkerInfo-parameter",
                                        "VUID-VkDebugMarkerMarkerInfoEXT-sType-sType");
@@ -23335,9 +23285,9 @@ bool StatelessValidation::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCo
                                                                             const VkDeviceSize* pSizes,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_transform_feedback))
+    if (!IsExtEnabled(extensions.vk_ext_transform_feedback))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_transform_feedback});
     skip |= context.ValidateHandleArray(loc.dot(Field::bindingCount), loc.dot(Field::pBuffers), bindingCount, pBuffers, true, true,
                                         "VUID-vkCmdBindTransformFeedbackBuffersEXT-bindingCount-arraylength");
@@ -23357,9 +23307,9 @@ bool StatelessValidation::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandB
                                                                       const VkDeviceSize* pCounterBufferOffsets,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_transform_feedback))
+    if (!IsExtEnabled(extensions.vk_ext_transform_feedback))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_transform_feedback});
     // No xml-driven validation
     if (!skip)
@@ -23373,9 +23323,9 @@ bool StatelessValidation::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuf
                                                                     const VkDeviceSize* pCounterBufferOffsets,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_transform_feedback))
+    if (!IsExtEnabled(extensions.vk_ext_transform_feedback))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_transform_feedback});
     // No xml-driven validation
     if (!skip)
@@ -23388,9 +23338,9 @@ bool StatelessValidation::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer
                                                                  uint32_t query, VkQueryControlFlags flags, uint32_t index,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_transform_feedback))
+    if (!IsExtEnabled(extensions.vk_ext_transform_feedback))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_transform_feedback});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
     skip |= context.ValidateFlags(loc.dot(Field::flags), vvl::FlagBitmask::VkQueryControlFlagBits, AllVkQueryControlFlagBits, flags,
@@ -23401,9 +23351,9 @@ bool StatelessValidation::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer
 bool StatelessValidation::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                                                uint32_t index, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_transform_feedback))
+    if (!IsExtEnabled(extensions.vk_ext_transform_feedback))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_transform_feedback});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::queryPool), queryPool);
     return skip;
@@ -23414,9 +23364,9 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBu
                                                                      VkDeviceSize counterBufferOffset, uint32_t counterOffset,
                                                                      uint32_t vertexStride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_transform_feedback))
+    if (!IsExtEnabled(extensions.vk_ext_transform_feedback))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_transform_feedback});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::counterBuffer), counterBuffer);
     return skip;
@@ -23426,10 +23376,9 @@ bool StatelessValidation::PreCallValidateCreateCuModuleNVX(VkDevice device, cons
                                                            const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nvx_binary_import))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
+    if (!IsExtEnabled(extensions.vk_nvx_binary_import)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_CU_MODULE_CREATE_INFO_NVX, true,
                                    "VUID-vkCreateCuModuleNVX-pCreateInfo-parameter", "VUID-VkCuModuleCreateInfoNVX-sType-sType");
@@ -23458,10 +23407,9 @@ bool StatelessValidation::PreCallValidateCreateCuFunctionNVX(VkDevice device, co
                                                              const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nvx_binary_import))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
+    if (!IsExtEnabled(extensions.vk_nvx_binary_import)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_CU_FUNCTION_CREATE_INFO_NVX,
                                        true, "VUID-vkCreateCuFunctionNVX-pCreateInfo-parameter",
                                        "VUID-VkCuFunctionCreateInfoNVX-sType-sType");
@@ -23487,10 +23435,9 @@ bool StatelessValidation::PreCallValidateDestroyCuModuleNVX(VkDevice device, VkC
                                                             const VkAllocationCallbacks* pAllocator,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nvx_binary_import))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
+    if (!IsExtEnabled(extensions.vk_nvx_binary_import)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::module), module);
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -23503,10 +23450,9 @@ bool StatelessValidation::PreCallValidateDestroyCuFunctionNVX(VkDevice device, V
                                                               const VkAllocationCallbacks* pAllocator,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nvx_binary_import))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
+    if (!IsExtEnabled(extensions.vk_nvx_binary_import)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::function), function);
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -23518,10 +23464,9 @@ bool StatelessValidation::PreCallValidateDestroyCuFunctionNVX(VkDevice device, V
 bool StatelessValidation::PreCallValidateCmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nvx_binary_import))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
+    if (!IsExtEnabled(extensions.vk_nvx_binary_import)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
     skip |= context.ValidateStructType(loc.dot(Field::pLaunchInfo), pLaunchInfo, VK_STRUCTURE_TYPE_CU_LAUNCH_INFO_NVX, true,
                                        "VUID-vkCmdCuLaunchKernelNVX-pLaunchInfo-parameter", "VUID-VkCuLaunchInfoNVX-sType-sType");
     if (pLaunchInfo != nullptr) {
@@ -23545,9 +23490,9 @@ bool StatelessValidation::PreCallValidateCmdCuLaunchKernelNVX(VkCommandBuffer co
 bool StatelessValidation::PreCallValidateGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nvx_image_view_handle))
+    if (!IsExtEnabled(extensions.vk_nvx_image_view_handle))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_image_view_handle});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX, true,
                                        "VUID-vkGetImageViewHandleNVX-pInfo-parameter", "VUID-VkImageViewHandleInfoNVX-sType-sType");
@@ -23567,9 +23512,9 @@ bool StatelessValidation::PreCallValidateGetImageViewHandleNVX(VkDevice device, 
 bool StatelessValidation::PreCallValidateGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nvx_image_view_handle))
+    if (!IsExtEnabled(extensions.vk_nvx_image_view_handle))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_image_view_handle});
     skip |=
         context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX, true,
@@ -23591,9 +23536,9 @@ bool StatelessValidation::PreCallValidateGetImageViewAddressNVX(VkDevice device,
                                                                 VkImageViewAddressPropertiesNVX* pProperties,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nvx_image_view_handle))
+    if (!IsExtEnabled(extensions.vk_nvx_image_view_handle))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_image_view_handle});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::imageView), imageView);
     skip |= context.ValidateStructType(
@@ -23612,9 +23557,9 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer
                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                  uint32_t stride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amd_draw_indirect_count))
+    if (!IsExtEnabled(extensions.vk_amd_draw_indirect_count))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_draw_indirect_count});
     skip |= PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                                 error_obj);
@@ -23626,9 +23571,9 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountAMD(VkComman
                                                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                         uint32_t stride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amd_draw_indirect_count))
+    if (!IsExtEnabled(extensions.vk_amd_draw_indirect_count))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_draw_indirect_count});
     skip |= PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                        stride, error_obj);
@@ -23639,10 +23584,9 @@ bool StatelessValidation::PreCallValidateGetShaderInfoAMD(VkDevice device, VkPip
                                                           VkShaderInfoTypeAMD infoType, size_t* pInfoSize, void* pInfo,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amd_shader_info))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_shader_info});
+    if (!IsExtEnabled(extensions.vk_amd_shader_info)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_shader_info});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::pipeline), pipeline);
     skip |= context.ValidateFlags(loc.dot(Field::shaderStage), vvl::FlagBitmask::VkShaderStageFlagBits, AllVkShaderStageFlagBits,
                                   shaderStage, kRequiredSingleBit, "VUID-vkGetShaderInfoAMD-shaderStage-parameter",
@@ -23662,9 +23606,9 @@ bool StatelessValidation::PreCallValidateCreateStreamDescriptorSurfaceGGP(VkInst
                                                                           VkSurfaceKHR* pSurface,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ggp_stream_descriptor_surface))
+    if (!IsExtEnabled(extensions.vk_ggp_stream_descriptor_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_GGP_stream_descriptor_surface});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_STREAM_DESCRIPTOR_SURFACE_CREATE_INFO_GGP, true,
@@ -23696,7 +23640,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalImageFormatPro
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_nv_external_memory_capabilities))
+    if (!IsExtEnabled(extensions.vk_nv_external_memory_capabilities))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_external_memory_capabilities});
     skip |= context.ValidateRangedEnum(loc.dot(Field::format), vvl::Enum::VkFormat, format,
                                        "VUID-vkGetPhysicalDeviceExternalImageFormatPropertiesNV-format-parameter");
@@ -23723,9 +23667,9 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandleNV(VkDevice device,
                                                                 VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_external_memory_win32))
+    if (!IsExtEnabled(extensions.vk_nv_external_memory_win32))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_external_memory_win32});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::memory), memory);
     skip |= context.ValidateFlags(loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBitsNV,
@@ -23742,9 +23686,9 @@ bool StatelessValidation::PreCallValidateCreateViSurfaceNN(VkInstance instance, 
                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_nn_vi_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NN_vi_surface});
+    if (!IsExtEnabled(extensions.vk_nn_vi_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NN_vi_surface});
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_VI_SURFACE_CREATE_INFO_NN, true,
                                    "VUID-vkCreateViSurfaceNN-pCreateInfo-parameter", "VUID-VkViSurfaceCreateInfoNN-sType-sType");
@@ -23769,9 +23713,9 @@ bool StatelessValidation::PreCallValidateCmdBeginConditionalRenderingEXT(
     VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_conditional_rendering))
+    if (!IsExtEnabled(extensions.vk_ext_conditional_rendering))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_conditional_rendering});
     skip |= context.ValidateStructType(loc.dot(Field::pConditionalRenderingBegin), pConditionalRenderingBegin,
                                        VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_EXT, true,
@@ -23798,9 +23742,9 @@ bool StatelessValidation::PreCallValidateCmdBeginConditionalRenderingEXT(
 bool StatelessValidation::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_conditional_rendering))
+    if (!IsExtEnabled(extensions.vk_ext_conditional_rendering))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_conditional_rendering});
     // No xml-driven validation
     return skip;
@@ -23811,9 +23755,9 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffe
                                                                   const VkViewportWScalingNV* pViewportWScalings,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_clip_space_w_scaling))
+    if (!IsExtEnabled(extensions.vk_nv_clip_space_w_scaling))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_clip_space_w_scaling});
     skip |= context.ValidateArray(loc.dot(Field::viewportCount), loc.dot(Field::pViewportWScalings), viewportCount,
                                   &pViewportWScalings, true, true, "VUID-vkCmdSetViewportWScalingNV-viewportCount-arraylength",
@@ -23837,7 +23781,7 @@ bool StatelessValidation::PreCallValidateReleaseDisplayEXT(VkPhysicalDevice phys
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_direct_mode_display))
+    if (!IsExtEnabled(extensions.vk_ext_direct_mode_display))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_direct_mode_display});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::display), display);
     return skip;
@@ -23851,7 +23795,7 @@ bool StatelessValidation::PreCallValidateAcquireXlibDisplayEXT(VkPhysicalDevice 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_acquire_xlib_display))
+    if (!IsExtEnabled(extensions.vk_ext_acquire_xlib_display))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_acquire_xlib_display});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::dpy), dpy, "VUID-vkAcquireXlibDisplayEXT-dpy-parameter");
     skip |= context.ValidateRequiredHandle(loc.dot(Field::display), display);
@@ -23865,7 +23809,7 @@ bool StatelessValidation::PreCallValidateGetRandROutputDisplayEXT(VkPhysicalDevi
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_acquire_xlib_display))
+    if (!IsExtEnabled(extensions.vk_ext_acquire_xlib_display))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_acquire_xlib_display});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::dpy), dpy, "VUID-vkGetRandROutputDisplayEXT-dpy-parameter");
     skip |=
@@ -23883,7 +23827,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EX
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_display_surface_counter))
+    if (!IsExtEnabled(extensions.vk_ext_display_surface_counter))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_display_surface_counter});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::surface), surface);
     skip |= context.ValidateStructType(loc.dot(Field::pSurfaceCapabilities), pSurfaceCapabilities,
@@ -23903,9 +23847,9 @@ bool StatelessValidation::PreCallValidateDisplayPowerControlEXT(VkDevice device,
                                                                 const VkDisplayPowerInfoEXT* pDisplayPowerInfo,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_display_control))
+    if (!IsExtEnabled(extensions.vk_ext_display_control))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_display_control});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::display), display);
     skip |= context.ValidateStructType(
@@ -23927,9 +23871,9 @@ bool StatelessValidation::PreCallValidateRegisterDeviceEventEXT(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator, VkFence* pFence,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_display_control))
+    if (!IsExtEnabled(extensions.vk_ext_display_control))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_display_control});
     skip |= context.ValidateStructType(loc.dot(Field::pDeviceEventInfo), pDeviceEventInfo, VK_STRUCTURE_TYPE_DEVICE_EVENT_INFO_EXT,
                                        true, "VUID-vkRegisterDeviceEventEXT-pDeviceEventInfo-parameter",
@@ -23955,9 +23899,9 @@ bool StatelessValidation::PreCallValidateRegisterDisplayEventEXT(VkDevice device
                                                                  const VkAllocationCallbacks* pAllocator, VkFence* pFence,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_display_control))
+    if (!IsExtEnabled(extensions.vk_ext_display_control))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_display_control});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::display), display);
     skip |= context.ValidateStructType(
@@ -23984,9 +23928,9 @@ bool StatelessValidation::PreCallValidateGetSwapchainCounterEXT(VkDevice device,
                                                                 VkSurfaceCounterFlagBitsEXT counter, uint64_t* pCounterValue,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_display_control))
+    if (!IsExtEnabled(extensions.vk_ext_display_control))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_display_control});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     skip |= context.ValidateFlags(
@@ -24001,9 +23945,9 @@ bool StatelessValidation::PreCallValidateGetRefreshCycleDurationGOOGLE(VkDevice 
                                                                        VkRefreshCycleDurationGOOGLE* pDisplayTimingProperties,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_google_display_timing))
+    if (!IsExtEnabled(extensions.vk_google_display_timing))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_GOOGLE_display_timing});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pDisplayTimingProperties), pDisplayTimingProperties,
@@ -24016,9 +23960,9 @@ bool StatelessValidation::PreCallValidateGetPastPresentationTimingGOOGLE(VkDevic
                                                                          VkPastPresentationTimingGOOGLE* pPresentationTimings,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_google_display_timing))
+    if (!IsExtEnabled(extensions.vk_google_display_timing))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_GOOGLE_display_timing});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     skip |= context.ValidatePointerArray(loc.dot(Field::pPresentationTimingCount), loc.dot(Field::pPresentationTimings),
@@ -24041,9 +23985,9 @@ bool StatelessValidation::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuff
                                                                    const VkRect2D* pDiscardRectangles,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_discard_rectangles))
+    if (!IsExtEnabled(extensions.vk_ext_discard_rectangles))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_discard_rectangles});
     skip |=
         context.ValidateArray(loc.dot(Field::discardRectangleCount), loc.dot(Field::pDiscardRectangles), discardRectangleCount,
@@ -24059,9 +24003,9 @@ bool StatelessValidation::PreCallValidateCmdSetDiscardRectangleEnableEXT(VkComma
                                                                          VkBool32 discardRectangleEnable,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_discard_rectangles))
+    if (!IsExtEnabled(extensions.vk_ext_discard_rectangles))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_discard_rectangles});
     skip |= context.ValidateBool32(loc.dot(Field::discardRectangleEnable), discardRectangleEnable);
     if (!skip) skip |= manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(commandBuffer, discardRectangleEnable, context);
@@ -24072,9 +24016,9 @@ bool StatelessValidation::PreCallValidateCmdSetDiscardRectangleModeEXT(VkCommand
                                                                        VkDiscardRectangleModeEXT discardRectangleMode,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_discard_rectangles))
+    if (!IsExtEnabled(extensions.vk_ext_discard_rectangles))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_discard_rectangles});
     skip |= context.ValidateRangedEnum(loc.dot(Field::discardRectangleMode), vvl::Enum::VkDiscardRectangleModeEXT,
                                        discardRectangleMode, "VUID-vkCmdSetDiscardRectangleModeEXT-discardRectangleMode-parameter");
@@ -24086,10 +24030,9 @@ bool StatelessValidation::PreCallValidateSetHdrMetadataEXT(VkDevice device, uint
                                                            const VkSwapchainKHR* pSwapchains, const VkHdrMetadataEXT* pMetadata,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_hdr_metadata))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_hdr_metadata});
+    if (!IsExtEnabled(extensions.vk_ext_hdr_metadata)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_hdr_metadata});
     skip |= context.ValidateHandleArray(loc.dot(Field::swapchainCount), loc.dot(Field::pSwapchains), swapchainCount, pSwapchains,
                                         true, true, "VUID-vkSetHdrMetadataEXT-swapchainCount-arraylength");
     skip |= context.ValidateStructTypeArray(loc.dot(Field::swapchainCount), loc.dot(Field::pMetadata), swapchainCount, pMetadata,
@@ -24115,10 +24058,9 @@ bool StatelessValidation::PreCallValidateCreateIOSSurfaceMVK(VkInstance instance
                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_mvk_ios_surface))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_MVK_ios_surface});
+    if (!IsExtEnabled(extensions.vk_mvk_ios_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_MVK_ios_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_IOS_SURFACE_CREATE_INFO_MVK,
                                        true, "VUID-vkCreateIOSSurfaceMVK-pCreateInfo-parameter",
                                        "VUID-VkIOSSurfaceCreateInfoMVK-sType-sType");
@@ -24144,10 +24086,9 @@ bool StatelessValidation::PreCallValidateCreateMacOSSurfaceMVK(VkInstance instan
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_mvk_macos_surface))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_MVK_macos_surface});
+    if (!IsExtEnabled(extensions.vk_mvk_macos_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_MVK_macos_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK,
                                        true, "VUID-vkCreateMacOSSurfaceMVK-pCreateInfo-parameter",
                                        "VUID-VkMacOSSurfaceCreateInfoMVK-sType-sType");
@@ -24171,10 +24112,9 @@ bool StatelessValidation::PreCallValidateCreateMacOSSurfaceMVK(VkInstance instan
 bool StatelessValidation::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pNameInfo), pNameInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
                                        true, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-parameter",
                                        "VUID-VkDebugUtilsObjectNameInfoEXT-sType-sType");
@@ -24190,10 +24130,9 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice dev
 bool StatelessValidation::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pTagInfo), pTagInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT, true,
                                        "VUID-vkSetDebugUtilsObjectTagEXT-pTagInfo-parameter",
                                        "VUID-VkDebugUtilsObjectTagInfoEXT-sType-sType");
@@ -24216,10 +24155,9 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice devi
 bool StatelessValidation::PreCallValidateQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pLabelInfo), pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                        "VUID-vkQueueBeginDebugUtilsLabelEXT-pLabelInfo-parameter",
                                        "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -24236,10 +24174,9 @@ bool StatelessValidation::PreCallValidateQueueBeginDebugUtilsLabelEXT(VkQueue qu
 
 bool StatelessValidation::PreCallValidateQueueEndDebugUtilsLabelEXT(VkQueue queue, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     // No xml-driven validation
     return skip;
 }
@@ -24247,10 +24184,9 @@ bool StatelessValidation::PreCallValidateQueueEndDebugUtilsLabelEXT(VkQueue queu
 bool StatelessValidation::PreCallValidateQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pLabelInfo), pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                        "VUID-vkQueueInsertDebugUtilsLabelEXT-pLabelInfo-parameter",
                                        "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -24269,10 +24205,9 @@ bool StatelessValidation::PreCallValidateCmdBeginDebugUtilsLabelEXT(VkCommandBuf
                                                                     const VkDebugUtilsLabelEXT* pLabelInfo,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pLabelInfo), pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                        "VUID-vkCmdBeginDebugUtilsLabelEXT-pLabelInfo-parameter",
                                        "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -24290,10 +24225,9 @@ bool StatelessValidation::PreCallValidateCmdBeginDebugUtilsLabelEXT(VkCommandBuf
 bool StatelessValidation::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     // No xml-driven validation
     return skip;
 }
@@ -24302,10 +24236,9 @@ bool StatelessValidation::PreCallValidateCmdInsertDebugUtilsLabelEXT(VkCommandBu
                                                                      const VkDebugUtilsLabelEXT* pLabelInfo,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pLabelInfo), pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                        "VUID-vkCmdInsertDebugUtilsLabelEXT-pLabelInfo-parameter",
                                        "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -24326,10 +24259,9 @@ bool StatelessValidation::PreCallValidateCreateDebugUtilsMessengerEXT(VkInstance
                                                                       VkDebugUtilsMessengerEXT* pMessenger,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, true,
         "VUID-vkCreateDebugUtilsMessengerEXT-pCreateInfo-parameter", "VUID-VkDebugUtilsMessengerCreateInfoEXT-sType-sType");
@@ -24366,10 +24298,9 @@ bool StatelessValidation::PreCallValidateDestroyDebugUtilsMessengerEXT(VkInstanc
                                                                        const VkAllocationCallbacks* pAllocator,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
@@ -24383,10 +24314,9 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(VkInstance i
                                                                     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_debug_utils))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
+    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateFlags(loc.dot(Field::messageSeverity), vvl::FlagBitmask::VkDebugUtilsMessageSeverityFlagBitsEXT,
                                   AllVkDebugUtilsMessageSeverityFlagBitsEXT, messageSeverity, kRequiredSingleBit,
                                   "VUID-vkSubmitDebugUtilsMessageEXT-messageSeverity-parameter",
@@ -24473,9 +24403,9 @@ bool StatelessValidation::PreCallValidateGetAndroidHardwareBufferPropertiesANDRO
     VkDevice device, const struct AHardwareBuffer* buffer, VkAndroidHardwareBufferPropertiesANDROID* pProperties,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer))
+    if (!IsExtEnabled(extensions.vk_android_external_memory_android_hardware_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ANDROID_external_memory_android_hardware_buffer});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::buffer), buffer,
                                             "VUID-vkGetAndroidHardwareBufferPropertiesANDROID-buffer-parameter");
@@ -24503,9 +24433,9 @@ bool StatelessValidation::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(
     VkDevice device, const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo, struct AHardwareBuffer** pBuffer,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer))
+    if (!IsExtEnabled(extensions.vk_android_external_memory_android_hardware_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ANDROID_external_memory_android_hardware_buffer});
     skip |=
         context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_MEMORY_GET_ANDROID_HARDWARE_BUFFER_INFO_ANDROID,
@@ -24530,9 +24460,9 @@ bool StatelessValidation::PreCallValidateCreateExecutionGraphPipelinesAMDX(
     const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue))
+    if (!IsExtEnabled(extensions.vk_amdx_shader_enqueue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMDX_shader_enqueue});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::createInfoCount), loc.dot(Field::pCreateInfos), createInfoCount,
                                             pCreateInfos, VK_STRUCTURE_TYPE_EXECUTION_GRAPH_PIPELINE_CREATE_INFO_AMDX, true, true,
@@ -24651,9 +24581,9 @@ bool StatelessValidation::PreCallValidateGetExecutionGraphPipelineScratchSizeAMD
     VkDevice device, VkPipeline executionGraph, VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue))
+    if (!IsExtEnabled(extensions.vk_amdx_shader_enqueue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMDX_shader_enqueue});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::executionGraph), executionGraph);
     skip |= context.ValidateStructType(loc.dot(Field::pSizeInfo), pSizeInfo,
@@ -24667,9 +24597,9 @@ bool StatelessValidation::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(
     VkDevice device, VkPipeline executionGraph, const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo, uint32_t* pNodeIndex,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue))
+    if (!IsExtEnabled(extensions.vk_amdx_shader_enqueue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMDX_shader_enqueue});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::executionGraph), executionGraph);
     skip |= context.ValidateStructType(loc.dot(Field::pNodeInfo), pNodeInfo,
@@ -24686,9 +24616,9 @@ bool StatelessValidation::PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkC
                                                                              VkDeviceSize scratchSize,
                                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue))
+    if (!IsExtEnabled(extensions.vk_amdx_shader_enqueue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMDX_shader_enqueue});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::executionGraph), executionGraph);
     return skip;
@@ -24699,9 +24629,9 @@ bool StatelessValidation::PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer co
                                                               const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue))
+    if (!IsExtEnabled(extensions.vk_amdx_shader_enqueue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMDX_shader_enqueue});
     skip |=
         context.ValidateRequiredPointer(loc.dot(Field::pCountInfo), pCountInfo, "VUID-vkCmdDispatchGraphAMDX-pCountInfo-parameter");
@@ -24713,9 +24643,9 @@ bool StatelessValidation::PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandB
                                                                       const VkDispatchGraphCountInfoAMDX* pCountInfo,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue))
+    if (!IsExtEnabled(extensions.vk_amdx_shader_enqueue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMDX_shader_enqueue});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pCountInfo), pCountInfo,
                                             "VUID-vkCmdDispatchGraphIndirectAMDX-pCountInfo-parameter");
@@ -24726,9 +24656,9 @@ bool StatelessValidation::PreCallValidateCmdDispatchGraphIndirectCountAMDX(VkCom
                                                                            VkDeviceSize scratchSize, VkDeviceAddress countInfo,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amdx_shader_enqueue))
+    if (!IsExtEnabled(extensions.vk_amdx_shader_enqueue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMDX_shader_enqueue});
     // No xml-driven validation
     return skip;
@@ -24739,9 +24669,9 @@ bool StatelessValidation::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffe
                                                                   const VkSampleLocationsInfoEXT* pSampleLocationsInfo,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_sample_locations))
+    if (!IsExtEnabled(extensions.vk_ext_sample_locations))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_sample_locations});
     skip |= context.ValidateStructType(
         loc.dot(Field::pSampleLocationsInfo), pSampleLocationsInfo, VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT, true,
@@ -24795,9 +24725,9 @@ bool StatelessValidation::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(
                                                                                 VkImageDrmFormatModifierPropertiesEXT* pProperties,
                                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier))
+    if (!IsExtEnabled(extensions.vk_ext_image_drm_format_modifier))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_image_drm_format_modifier});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::image), image);
     skip |= context.ValidateStructType(loc.dot(Field::pProperties), pProperties,
@@ -24818,9 +24748,9 @@ bool StatelessValidation::PreCallValidateCreateValidationCacheEXT(VkDevice devic
                                                                   VkValidationCacheEXT* pValidationCache,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_validation_cache))
+    if (!IsExtEnabled(extensions.vk_ext_validation_cache))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_validation_cache});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT,
                                        true, "VUID-vkCreateValidationCacheEXT-pCreateInfo-parameter",
@@ -24850,9 +24780,9 @@ bool StatelessValidation::PreCallValidateDestroyValidationCacheEXT(VkDevice devi
                                                                    const VkAllocationCallbacks* pAllocator,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_validation_cache))
+    if (!IsExtEnabled(extensions.vk_ext_validation_cache))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_validation_cache});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -24865,9 +24795,9 @@ bool StatelessValidation::PreCallValidateMergeValidationCachesEXT(VkDevice devic
                                                                   uint32_t srcCacheCount, const VkValidationCacheEXT* pSrcCaches,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_validation_cache))
+    if (!IsExtEnabled(extensions.vk_ext_validation_cache))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_validation_cache});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dstCache), dstCache);
     skip |= context.ValidateHandleArray(loc.dot(Field::srcCacheCount), loc.dot(Field::pSrcCaches), srcCacheCount, pSrcCaches, true,
@@ -24879,9 +24809,9 @@ bool StatelessValidation::PreCallValidateGetValidationCacheDataEXT(VkDevice devi
                                                                    size_t* pDataSize, void* pData,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_validation_cache))
+    if (!IsExtEnabled(extensions.vk_ext_validation_cache))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_validation_cache});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::validationCache), validationCache);
     skip |= context.ValidatePointerArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false,
@@ -24893,9 +24823,9 @@ bool StatelessValidation::PreCallValidateGetValidationCacheDataEXT(VkDevice devi
 bool StatelessValidation::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
                                                                    VkImageLayout imageLayout, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_shading_rate_image))
+    if (!IsExtEnabled(extensions.vk_nv_shading_rate_image))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_shading_rate_image});
     skip |= context.ValidateRangedEnum(loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout, imageLayout,
                                        "VUID-vkCmdBindShadingRateImageNV-imageLayout-parameter");
@@ -24907,9 +24837,9 @@ bool StatelessValidation::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCo
                                                                             const VkShadingRatePaletteNV* pShadingRatePalettes,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_shading_rate_image))
+    if (!IsExtEnabled(extensions.vk_nv_shading_rate_image))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_shading_rate_image});
     skip |= context.ValidateArray(loc.dot(Field::viewportCount), loc.dot(Field::pShadingRatePalettes), viewportCount,
                                   &pShadingRatePalettes, true, true,
@@ -24939,9 +24869,9 @@ bool StatelessValidation::PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuff
                                                                    const VkCoarseSampleOrderCustomNV* pCustomSampleOrders,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_shading_rate_image))
+    if (!IsExtEnabled(extensions.vk_nv_shading_rate_image))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_shading_rate_image});
     skip |= context.ValidateRangedEnum(loc.dot(Field::sampleOrderType), vvl::Enum::VkCoarseSampleOrderTypeNV, sampleOrderType,
                                        "VUID-vkCmdSetCoarseSampleOrderNV-sampleOrderType-parameter");
@@ -24984,9 +24914,9 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureNV(VkDevice 
                                                                        VkAccelerationStructureNV* pAccelerationStructure,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV, true,
         "VUID-vkCreateAccelerationStructureNV-pCreateInfo-parameter", "VUID-VkAccelerationStructureCreateInfoNV-sType-sType");
@@ -25070,9 +25000,9 @@ bool StatelessValidation::PreCallValidateDestroyAccelerationStructureNV(VkDevice
                                                                         const VkAllocationCallbacks* pAllocator,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
@@ -25084,9 +25014,9 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureMemoryRequireme
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2KHR* pMemoryRequirements,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo,
                                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV, true,
                                        "VUID-vkGetAccelerationStructureMemoryRequirementsNV-pInfo-parameter",
@@ -25111,9 +25041,9 @@ bool StatelessValidation::PreCallValidateBindAccelerationStructureMemoryNV(
     VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::bindInfoCount), loc.dot(Field::pBindInfos), bindInfoCount, pBindInfos,
                                             VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV, true, true,
                                             "VUID-VkBindAccelerationStructureMemoryInfoNV-sType-sType",
@@ -25145,9 +25075,9 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureNV(
     VkBool32 update, VkAccelerationStructureNV dst, VkAccelerationStructureNV src, VkBuffer scratch, VkDeviceSize scratchOffset,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV, true,
                                        "VUID-vkCmdBuildAccelerationStructureNV-pInfo-parameter",
                                        "VUID-VkAccelerationStructureInfoNV-sType-sType");
@@ -25217,9 +25147,9 @@ bool StatelessValidation::PreCallValidateCmdCopyAccelerationStructureNV(VkComman
                                                                         VkCopyAccelerationStructureModeKHR mode,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dst), dst);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::src), src);
     skip |= context.ValidateRangedEnum(loc.dot(Field::mode), vvl::Enum::VkCopyAccelerationStructureModeKHR, mode,
@@ -25234,9 +25164,9 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysNV(
     VkBuffer callableShaderBindingTableBuffer, VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
     uint32_t width, uint32_t height, uint32_t depth, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::raygenShaderBindingTableBuffer), raygenShaderBindingTableBuffer);
     return skip;
 }
@@ -25247,9 +25177,9 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(VkDevice de
                                                                      const VkAllocationCallbacks* pAllocator,
                                                                      VkPipeline* pPipelines, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::createInfoCount), loc.dot(Field::pCreateInfos), createInfoCount,
                                             pCreateInfos, VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV, true, true,
                                             "VUID-VkRayTracingPipelineCreateInfoNV-sType-sType",
@@ -25375,10 +25305,9 @@ bool StatelessValidation::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDe
                                                                             size_t dataSize, void* pData,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline) &&
-        loc.function == vvl::Func::vkGetRayTracingShaderGroupHandlesKHR)
+    if (!IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline) && loc.function == vvl::Func::vkGetRayTracingShaderGroupHandlesKHR)
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_pipeline});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::pipeline), pipeline);
     skip |= context.ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pData), dataSize, &pData, true, true,
@@ -25392,9 +25321,9 @@ bool StatelessValidation::PreCallValidateGetRayTracingShaderGroupHandlesNV(VkDev
                                                                            size_t dataSize, void* pData,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= PreCallValidateGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData, error_obj);
     return skip;
 }
@@ -25404,9 +25333,9 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureHandleNV(VkDevi
                                                                           size_t dataSize, void* pData,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::accelerationStructure), accelerationStructure);
     skip |= context.ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pData), dataSize, &pData, true, true,
                                   "VUID-vkGetAccelerationStructureHandleNV-dataSize-arraylength",
@@ -25420,9 +25349,9 @@ bool StatelessValidation::PreCallValidateCmdWriteAccelerationStructuresPropertie
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureNV* pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= context.ValidateHandleArray(loc.dot(Field::accelerationStructureCount), loc.dot(Field::pAccelerationStructures),
                                         accelerationStructureCount, pAccelerationStructures, true, true,
                                         "VUID-vkCmdWriteAccelerationStructuresPropertiesNV-accelerationStructureCount-arraylength");
@@ -25438,9 +25367,9 @@ bool StatelessValidation::PreCallValidateCmdWriteAccelerationStructuresPropertie
 bool StatelessValidation::PreCallValidateCompileDeferredNV(VkDevice device, VkPipeline pipeline, uint32_t shader,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+    if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::pipeline), pipeline);
     return skip;
 }
@@ -25449,9 +25378,9 @@ bool StatelessValidation::PreCallValidateGetMemoryHostPointerPropertiesEXT(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, const void* pHostPointer,
     VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_external_memory_host))
+    if (!IsExtEnabled(extensions.vk_ext_external_memory_host))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_external_memory_host});
     skip |= context.ValidateFlags(loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
                                   AllVkExternalMemoryHandleTypeFlagBits, handleType, kRequiredSingleBit,
@@ -25480,10 +25409,9 @@ bool StatelessValidation::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer
                                                                  VkDeviceSize dstOffset, uint32_t marker,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amd_buffer_marker))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_buffer_marker});
+    if (!IsExtEnabled(extensions.vk_amd_buffer_marker)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_buffer_marker});
     skip |=
         context.ValidateFlags(loc.dot(Field::pipelineStage), vvl::FlagBitmask::VkPipelineStageFlagBits, AllVkPipelineStageFlagBits,
                               pipelineStage, kOptionalSingleBit, "VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-parameter");
@@ -25495,10 +25423,9 @@ bool StatelessValidation::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffe
                                                                   VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amd_buffer_marker))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_buffer_marker});
+    if (!IsExtEnabled(extensions.vk_amd_buffer_marker)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_buffer_marker});
     skip |= context.ValidateFlags(loc.dot(Field::stage), vvl::FlagBitmask::VkPipelineStageFlagBits2, AllVkPipelineStageFlagBits2,
                                   stage, kOptionalFlags, "VUID-vkCmdWriteBufferMarker2AMD-stage-parameter");
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dstBuffer), dstBuffer);
@@ -25523,9 +25450,9 @@ bool StatelessValidation::PreCallValidateGetCalibratedTimestampsEXT(VkDevice dev
                                                                     uint64_t* pTimestamps, uint64_t* pMaxDeviation,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_calibrated_timestamps))
+    if (!IsExtEnabled(extensions.vk_ext_calibrated_timestamps))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_calibrated_timestamps});
     skip |=
         PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation, error_obj);
@@ -25535,9 +25462,9 @@ bool StatelessValidation::PreCallValidateGetCalibratedTimestampsEXT(VkDevice dev
 bool StatelessValidation::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_mesh_shader)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_mesh_shader});
+    if (!IsExtEnabled(extensions.vk_nv_mesh_shader)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_mesh_shader});
     // No xml-driven validation
     return skip;
 }
@@ -25546,9 +25473,9 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuf
                                                                     VkDeviceSize offset, uint32_t drawCount, uint32_t stride,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_mesh_shader)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_mesh_shader});
+    if (!IsExtEnabled(extensions.vk_nv_mesh_shader)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_mesh_shader});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     return skip;
 }
@@ -25558,9 +25485,9 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkComma
                                                                          VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                          uint32_t stride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_mesh_shader)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_mesh_shader});
+    if (!IsExtEnabled(extensions.vk_nv_mesh_shader)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_mesh_shader});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::countBuffer), countBuffer);
     return skip;
@@ -25572,9 +25499,9 @@ bool StatelessValidation::PreCallValidateCmdSetExclusiveScissorEnableNV(VkComman
                                                                         const VkBool32* pExclusiveScissorEnables,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_scissor_exclusive))
+    if (!IsExtEnabled(extensions.vk_nv_scissor_exclusive))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_scissor_exclusive});
     skip |= context.ValidateBool32Array(loc.dot(Field::exclusiveScissorCount), loc.dot(Field::pExclusiveScissorEnables),
                                         exclusiveScissorCount, pExclusiveScissorEnables, true, true,
@@ -25591,9 +25518,9 @@ bool StatelessValidation::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffe
                                                                   const VkRect2D* pExclusiveScissors,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_scissor_exclusive))
+    if (!IsExtEnabled(extensions.vk_nv_scissor_exclusive))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_scissor_exclusive});
     skip |=
         context.ValidateArray(loc.dot(Field::exclusiveScissorCount), loc.dot(Field::pExclusiveScissors), exclusiveScissorCount,
@@ -25608,9 +25535,9 @@ bool StatelessValidation::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffe
 bool StatelessValidation::PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_diagnostic_checkpoints))
+    if (!IsExtEnabled(extensions.vk_nv_device_diagnostic_checkpoints))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_diagnostic_checkpoints});
     // No xml-driven validation
     return skip;
@@ -25620,9 +25547,9 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointDataNV(VkQueue queue,
                                                                   VkCheckpointDataNV* pCheckpointData,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_diagnostic_checkpoints))
+    if (!IsExtEnabled(extensions.vk_nv_device_diagnostic_checkpoints))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_diagnostic_checkpoints});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::pCheckpointDataCount), loc.dot(Field::pCheckpointData),
                                             pCheckpointDataCount, pCheckpointData, VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV, true,
@@ -25643,9 +25570,9 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointData2NV(VkQueue queue
                                                                    VkCheckpointData2NV* pCheckpointData,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_diagnostic_checkpoints))
+    if (!IsExtEnabled(extensions.vk_nv_device_diagnostic_checkpoints))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_diagnostic_checkpoints});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::pCheckpointDataCount), loc.dot(Field::pCheckpointData),
                                             pCheckpointDataCount, pCheckpointData, VK_STRUCTURE_TYPE_CHECKPOINT_DATA_2_NV, true,
@@ -25666,9 +25593,9 @@ bool StatelessValidation::PreCallValidateInitializePerformanceApiINTEL(VkDevice 
                                                                        const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_intel_performance_query))
+    if (!IsExtEnabled(extensions.vk_intel_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_INTEL_performance_query});
     skip |= context.ValidateStructType(
         loc.dot(Field::pInitializeInfo), pInitializeInfo, VK_STRUCTURE_TYPE_INITIALIZE_PERFORMANCE_API_INFO_INTEL, true,
@@ -25683,9 +25610,9 @@ bool StatelessValidation::PreCallValidateInitializePerformanceApiINTEL(VkDevice 
 
 bool StatelessValidation::PreCallValidateUninitializePerformanceApiINTEL(VkDevice device, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_intel_performance_query))
+    if (!IsExtEnabled(extensions.vk_intel_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_INTEL_performance_query});
     // No xml-driven validation
     return skip;
@@ -25695,9 +25622,9 @@ bool StatelessValidation::PreCallValidateCmdSetPerformanceMarkerINTEL(VkCommandB
                                                                       const VkPerformanceMarkerInfoINTEL* pMarkerInfo,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_intel_performance_query))
+    if (!IsExtEnabled(extensions.vk_intel_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_INTEL_performance_query});
     skip |= context.ValidateStructType(loc.dot(Field::pMarkerInfo), pMarkerInfo, VK_STRUCTURE_TYPE_PERFORMANCE_MARKER_INFO_INTEL,
                                        true, "VUID-vkCmdSetPerformanceMarkerINTEL-pMarkerInfo-parameter",
@@ -25714,9 +25641,9 @@ bool StatelessValidation::PreCallValidateCmdSetPerformanceStreamMarkerINTEL(VkCo
                                                                             const VkPerformanceStreamMarkerInfoINTEL* pMarkerInfo,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_intel_performance_query))
+    if (!IsExtEnabled(extensions.vk_intel_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_INTEL_performance_query});
     skip |= context.ValidateStructType(
         loc.dot(Field::pMarkerInfo), pMarkerInfo, VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL, true,
@@ -25733,9 +25660,9 @@ bool StatelessValidation::PreCallValidateCmdSetPerformanceOverrideINTEL(VkComman
                                                                         const VkPerformanceOverrideInfoINTEL* pOverrideInfo,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_intel_performance_query))
+    if (!IsExtEnabled(extensions.vk_intel_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_INTEL_performance_query});
     skip |= context.ValidateStructType(
         loc.dot(Field::pOverrideInfo), pOverrideInfo, VK_STRUCTURE_TYPE_PERFORMANCE_OVERRIDE_INFO_INTEL, true,
@@ -25757,9 +25684,9 @@ bool StatelessValidation::PreCallValidateAcquirePerformanceConfigurationINTEL(
     VkDevice device, const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
     VkPerformanceConfigurationINTEL* pConfiguration, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_intel_performance_query))
+    if (!IsExtEnabled(extensions.vk_intel_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_INTEL_performance_query});
     skip |= context.ValidateStructType(loc.dot(Field::pAcquireInfo), pAcquireInfo,
                                        VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL, true,
@@ -25782,9 +25709,9 @@ bool StatelessValidation::PreCallValidateReleasePerformanceConfigurationINTEL(Vk
                                                                               VkPerformanceConfigurationINTEL configuration,
                                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_intel_performance_query))
+    if (!IsExtEnabled(extensions.vk_intel_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_INTEL_performance_query});
     // No xml-driven validation
     return skip;
@@ -25794,9 +25721,9 @@ bool StatelessValidation::PreCallValidateQueueSetPerformanceConfigurationINTEL(V
                                                                                VkPerformanceConfigurationINTEL configuration,
                                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_intel_performance_query))
+    if (!IsExtEnabled(extensions.vk_intel_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_INTEL_performance_query});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::configuration), configuration);
     return skip;
@@ -25806,9 +25733,9 @@ bool StatelessValidation::PreCallValidateGetPerformanceParameterINTEL(VkDevice d
                                                                       VkPerformanceValueINTEL* pValue,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_intel_performance_query))
+    if (!IsExtEnabled(extensions.vk_intel_performance_query))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_INTEL_performance_query});
     skip |= context.ValidateRangedEnum(loc.dot(Field::parameter), vvl::Enum::VkPerformanceParameterTypeINTEL, parameter,
                                        "VUID-vkGetPerformanceParameterINTEL-parameter-parameter");
@@ -25819,9 +25746,9 @@ bool StatelessValidation::PreCallValidateGetPerformanceParameterINTEL(VkDevice d
 bool StatelessValidation::PreCallValidateSetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amd_display_native_hdr))
+    if (!IsExtEnabled(extensions.vk_amd_display_native_hdr))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_display_native_hdr});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapChain), swapChain);
     skip |= context.ValidateBool32(loc.dot(Field::localDimmingEnable), localDimmingEnable);
@@ -25834,9 +25761,9 @@ bool StatelessValidation::PreCallValidateCreateImagePipeSurfaceFUCHSIA(VkInstanc
                                                                        const VkAllocationCallbacks* pAllocator,
                                                                        VkSurfaceKHR* pSurface, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_fuchsia_imagepipe_surface))
+    if (!IsExtEnabled(extensions.vk_fuchsia_imagepipe_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_imagepipe_surface});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_IMAGEPIPE_SURFACE_CREATE_INFO_FUCHSIA, true,
@@ -25864,10 +25791,9 @@ bool StatelessValidation::PreCallValidateCreateMetalSurfaceEXT(VkInstance instan
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_metal_surface))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_metal_surface});
+    if (!IsExtEnabled(extensions.vk_ext_metal_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_metal_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT,
                                        true, "VUID-vkCreateMetalSurfaceEXT-pCreateInfo-parameter",
                                        "VUID-VkMetalSurfaceCreateInfoEXT-sType-sType");
@@ -25891,9 +25817,9 @@ bool StatelessValidation::PreCallValidateCreateMetalSurfaceEXT(VkInstance instan
 bool StatelessValidation::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_buffer_device_address))
+    if (!IsExtEnabled(extensions.vk_ext_buffer_device_address))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_buffer_device_address});
     skip |= PreCallValidateGetBufferDeviceAddress(device, pInfo, error_obj);
     return skip;
@@ -25995,9 +25921,9 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EX
 bool StatelessValidation::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive))
+    if (!IsExtEnabled(extensions.vk_ext_full_screen_exclusive))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_full_screen_exclusive});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     return skip;
@@ -26006,9 +25932,9 @@ bool StatelessValidation::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDev
 bool StatelessValidation::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive))
+    if (!IsExtEnabled(extensions.vk_ext_full_screen_exclusive))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_full_screen_exclusive});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     return skip;
@@ -26020,9 +25946,9 @@ bool StatelessValidation::PreCallValidateCreateHeadlessSurfaceEXT(VkInstance ins
                                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_headless_surface))
+    if (!IsExtEnabled(extensions.vk_ext_headless_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_headless_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT,
                                        true, "VUID-vkCreateHeadlessSurfaceEXT-pCreateInfo-parameter",
@@ -26047,9 +25973,9 @@ bool StatelessValidation::PreCallValidateCreateHeadlessSurfaceEXT(VkInstance ins
 bool StatelessValidation::PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                               uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_line_rasterization))
+    if (!IsExtEnabled(extensions.vk_ext_line_rasterization))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_line_rasterization});
     skip |= PreCallValidateCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, error_obj);
     return skip;
@@ -26058,9 +25984,9 @@ bool StatelessValidation::PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer co
 bool StatelessValidation::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                            uint32_t queryCount, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_host_query_reset))
+    if (!IsExtEnabled(extensions.vk_ext_host_query_reset))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_host_query_reset});
     skip |= PreCallValidateResetQueryPool(device, queryPool, firstQuery, queryCount, error_obj);
     return skip;
@@ -26069,9 +25995,9 @@ bool StatelessValidation::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQu
 bool StatelessValidation::PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetCullMode(commandBuffer, cullMode, error_obj);
     return skip;
@@ -26080,9 +26006,9 @@ bool StatelessValidation::PreCallValidateCmdSetCullModeEXT(VkCommandBuffer comma
 bool StatelessValidation::PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetFrontFace(commandBuffer, frontFace, error_obj);
     return skip;
@@ -26092,9 +26018,9 @@ bool StatelessValidation::PreCallValidateCmdSetPrimitiveTopologyEXT(VkCommandBuf
                                                                     VkPrimitiveTopology primitiveTopology,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetPrimitiveTopology(commandBuffer, primitiveTopology, error_obj);
     return skip;
@@ -26104,9 +26030,9 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuf
                                                                     const VkViewport* pViewports,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, error_obj);
     return skip;
@@ -26115,9 +26041,9 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuf
 bool StatelessValidation::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
                                                                    const VkRect2D* pScissors, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, error_obj);
     return skip;
@@ -26129,9 +26055,9 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffe
                                                                   const VkDeviceSize* pStrides,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
                                                  error_obj);
@@ -26141,9 +26067,9 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffe
 bool StatelessValidation::PreCallValidateCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetDepthTestEnable(commandBuffer, depthTestEnable, error_obj);
     return skip;
@@ -26152,9 +26078,9 @@ bool StatelessValidation::PreCallValidateCmdSetDepthTestEnableEXT(VkCommandBuffe
 bool StatelessValidation::PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetDepthWriteEnable(commandBuffer, depthWriteEnable, error_obj);
     return skip;
@@ -26163,9 +26089,9 @@ bool StatelessValidation::PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuff
 bool StatelessValidation::PreCallValidateCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetDepthCompareOp(commandBuffer, depthCompareOp, error_obj);
     return skip;
@@ -26175,9 +26101,9 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkComman
                                                                         VkBool32 depthBoundsTestEnable,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetDepthBoundsTestEnable(commandBuffer, depthBoundsTestEnable, error_obj);
     return skip;
@@ -26186,9 +26112,9 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkComman
 bool StatelessValidation::PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetStencilTestEnable(commandBuffer, stencilTestEnable, error_obj);
     return skip;
@@ -26198,9 +26124,9 @@ bool StatelessValidation::PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer comm
                                                             VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp,
                                                             VkCompareOp compareOp, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetStencilOp(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp, error_obj);
     return skip;
@@ -26210,9 +26136,9 @@ bool StatelessValidation::PreCallValidateCopyMemoryToImageEXT(VkDevice device,
                                                               const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_host_image_copy))
+    if (!IsExtEnabled(extensions.vk_ext_host_image_copy))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_host_image_copy});
     skip |= PreCallValidateCopyMemoryToImage(device, pCopyMemoryToImageInfo, error_obj);
     return skip;
@@ -26222,9 +26148,9 @@ bool StatelessValidation::PreCallValidateCopyImageToMemoryEXT(VkDevice device,
                                                               const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_host_image_copy))
+    if (!IsExtEnabled(extensions.vk_ext_host_image_copy))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_host_image_copy});
     skip |= PreCallValidateCopyImageToMemory(device, pCopyImageToMemoryInfo, error_obj);
     return skip;
@@ -26233,9 +26159,9 @@ bool StatelessValidation::PreCallValidateCopyImageToMemoryEXT(VkDevice device,
 bool StatelessValidation::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_host_image_copy))
+    if (!IsExtEnabled(extensions.vk_ext_host_image_copy))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_host_image_copy});
     skip |= PreCallValidateCopyImageToImage(device, pCopyImageToImageInfo, error_obj);
     return skip;
@@ -26245,9 +26171,9 @@ bool StatelessValidation::PreCallValidateTransitionImageLayoutEXT(VkDevice devic
                                                                   const VkHostImageLayoutTransitionInfo* pTransitions,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_host_image_copy))
+    if (!IsExtEnabled(extensions.vk_ext_host_image_copy))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_host_image_copy});
     skip |= PreCallValidateTransitionImageLayout(device, transitionCount, pTransitions, error_obj);
     return skip;
@@ -26258,10 +26184,9 @@ bool StatelessValidation::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice 
                                                                        VkSubresourceLayout2* pLayout,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_host_image_copy) ||
-          IsExtEnabled(device_extensions.vk_ext_image_compression_control)))
+    if (!(IsExtEnabled(extensions.vk_ext_host_image_copy) || IsExtEnabled(extensions.vk_ext_image_compression_control)))
         skip |=
             OutputExtensionError(loc, {vvl::Extension::_VK_EXT_host_image_copy, vvl::Extension::_VK_EXT_image_compression_control});
     skip |= PreCallValidateGetImageSubresourceLayout2(device, image, pSubresource, pLayout, error_obj);
@@ -26272,9 +26197,9 @@ bool StatelessValidation::PreCallValidateReleaseSwapchainImagesEXT(VkDevice devi
                                                                    const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1))
+    if (!IsExtEnabled(extensions.vk_ext_swapchain_maintenance1))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_swapchain_maintenance1});
     skip |= context.ValidateStructType(
         loc.dot(Field::pReleaseInfo), pReleaseInfo, VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_EXT, true,
@@ -26299,9 +26224,9 @@ bool StatelessValidation::PreCallValidateGetGeneratedCommandsMemoryRequirementsN
     VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_nv_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands});
     skip |=
         context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_MEMORY_REQUIREMENTS_INFO_NV,
@@ -26337,9 +26262,9 @@ bool StatelessValidation::PreCallValidateCmdPreprocessGeneratedCommandsNV(VkComm
                                                                           const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_nv_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands});
     skip |= context.ValidateStructType(
         loc.dot(Field::pGeneratedCommandsInfo), pGeneratedCommandsInfo, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_INFO_NV, true,
@@ -26380,9 +26305,9 @@ bool StatelessValidation::PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommand
                                                                        const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_nv_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands});
     skip |= context.ValidateBool32(loc.dot(Field::isPreprocessed), isPreprocessed);
     skip |= context.ValidateStructType(
@@ -26424,9 +26349,9 @@ bool StatelessValidation::PreCallValidateCmdBindPipelineShaderGroupNV(VkCommandB
                                                                       VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                                                       uint32_t groupIndex, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_nv_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands});
     skip |= context.ValidateRangedEnum(loc.dot(Field::pipelineBindPoint), vvl::Enum::VkPipelineBindPoint, pipelineBindPoint,
                                        "VUID-vkCmdBindPipelineShaderGroupNV-pipelineBindPoint-parameter");
@@ -26440,9 +26365,9 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice
                                                                         VkIndirectCommandsLayoutNV* pIndirectCommandsLayout,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_nv_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_NV, true,
@@ -26521,9 +26446,9 @@ bool StatelessValidation::PreCallValidateDestroyIndirectCommandsLayoutNV(VkDevic
                                                                          const VkAllocationCallbacks* pAllocator,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_nv_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -26536,9 +26461,9 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer com
                                                              const VkDepthBiasInfoEXT* pDepthBiasInfo,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_depth_bias_control))
+    if (!IsExtEnabled(extensions.vk_ext_depth_bias_control))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_depth_bias_control});
     skip |=
         context.ValidateStructType(loc.dot(Field::pDepthBiasInfo), pDepthBiasInfo, VK_STRUCTURE_TYPE_DEPTH_BIAS_INFO_EXT, true,
@@ -26561,7 +26486,7 @@ bool StatelessValidation::PreCallValidateAcquireDrmDisplayEXT(VkPhysicalDevice p
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_acquire_drm_display))
+    if (!IsExtEnabled(extensions.vk_ext_acquire_drm_display))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_acquire_drm_display});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::display), display);
     return skip;
@@ -26574,7 +26499,7 @@ bool StatelessValidation::PreCallValidateGetDrmDisplayEXT(VkPhysicalDevice physi
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_acquire_drm_display))
+    if (!IsExtEnabled(extensions.vk_ext_acquire_drm_display))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_acquire_drm_display});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::display), display, "VUID-vkGetDrmDisplayEXT-display-parameter");
     return skip;
@@ -26585,10 +26510,9 @@ bool StatelessValidation::PreCallValidateCreatePrivateDataSlotEXT(VkDevice devic
                                                                   VkPrivateDataSlot* pPrivateDataSlot,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_private_data))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_private_data});
+    if (!IsExtEnabled(extensions.vk_ext_private_data)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_private_data});
     skip |= PreCallValidateCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, error_obj);
     return skip;
 }
@@ -26597,10 +26521,9 @@ bool StatelessValidation::PreCallValidateDestroyPrivateDataSlotEXT(VkDevice devi
                                                                    const VkAllocationCallbacks* pAllocator,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_private_data))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_private_data});
+    if (!IsExtEnabled(extensions.vk_ext_private_data)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_private_data});
     skip |= PreCallValidateDestroyPrivateDataSlot(device, privateDataSlot, pAllocator, error_obj);
     return skip;
 }
@@ -26609,10 +26532,9 @@ bool StatelessValidation::PreCallValidateSetPrivateDataEXT(VkDevice device, VkOb
                                                            VkPrivateDataSlot privateDataSlot, uint64_t data,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_private_data))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_private_data});
+    if (!IsExtEnabled(extensions.vk_ext_private_data)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_private_data});
     skip |= PreCallValidateSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, error_obj);
     return skip;
 }
@@ -26621,10 +26543,9 @@ bool StatelessValidation::PreCallValidateGetPrivateDataEXT(VkDevice device, VkOb
                                                            VkPrivateDataSlot privateDataSlot, uint64_t* pData,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_private_data))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_private_data});
+    if (!IsExtEnabled(extensions.vk_ext_private_data)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_private_data});
     skip |= PreCallValidateGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, error_obj);
     return skip;
 }
@@ -26633,9 +26554,9 @@ bool StatelessValidation::PreCallValidateCreateCudaModuleNV(VkDevice device, con
                                                             const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch))
+    if (!IsExtEnabled(extensions.vk_nv_cuda_kernel_launch))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cuda_kernel_launch});
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_CUDA_MODULE_CREATE_INFO_NV, true,
@@ -26660,9 +26581,9 @@ bool StatelessValidation::PreCallValidateCreateCudaModuleNV(VkDevice device, con
 bool StatelessValidation::PreCallValidateGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize,
                                                               void* pCacheData, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch))
+    if (!IsExtEnabled(extensions.vk_nv_cuda_kernel_launch))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cuda_kernel_launch});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::module), module);
     skip |= context.ValidatePointerArray(loc.dot(Field::pCacheSize), loc.dot(Field::pCacheData), pCacheSize, &pCacheData, true,
@@ -26675,9 +26596,9 @@ bool StatelessValidation::PreCallValidateCreateCudaFunctionNV(VkDevice device, c
                                                               const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch))
+    if (!IsExtEnabled(extensions.vk_nv_cuda_kernel_launch))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cuda_kernel_launch});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_CUDA_FUNCTION_CREATE_INFO_NV,
                                        true, "VUID-vkCreateCudaFunctionNV-pCreateInfo-parameter",
@@ -26705,9 +26626,9 @@ bool StatelessValidation::PreCallValidateDestroyCudaModuleNV(VkDevice device, Vk
                                                              const VkAllocationCallbacks* pAllocator,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch))
+    if (!IsExtEnabled(extensions.vk_nv_cuda_kernel_launch))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cuda_kernel_launch});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::module), module);
     if (pAllocator != nullptr) {
@@ -26721,9 +26642,9 @@ bool StatelessValidation::PreCallValidateDestroyCudaFunctionNV(VkDevice device, 
                                                                const VkAllocationCallbacks* pAllocator,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch))
+    if (!IsExtEnabled(extensions.vk_nv_cuda_kernel_launch))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cuda_kernel_launch});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::function), function);
     if (pAllocator != nullptr) {
@@ -26736,9 +26657,9 @@ bool StatelessValidation::PreCallValidateDestroyCudaFunctionNV(VkDevice device, 
 bool StatelessValidation::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_cuda_kernel_launch))
+    if (!IsExtEnabled(extensions.vk_nv_cuda_kernel_launch))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cuda_kernel_launch});
     skip |= context.ValidateStructType(loc.dot(Field::pLaunchInfo), pLaunchInfo, VK_STRUCTURE_TYPE_CUDA_LAUNCH_INFO_NV, true,
                                        "VUID-vkCmdCudaLaunchKernelNV-pLaunchInfo-parameter", "VUID-VkCudaLaunchInfoNV-sType-sType");
@@ -26756,10 +26677,9 @@ bool StatelessValidation::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer c
 bool StatelessValidation::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_metal_objects))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_metal_objects});
+    if (!IsExtEnabled(extensions.vk_ext_metal_objects)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_metal_objects});
     skip |= context.ValidateStructType(
         loc.dot(Field::pMetalObjectsInfo), pMetalObjectsInfo, VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT, true,
         "VUID-vkExportMetalObjectsEXT-pMetalObjectsInfo-parameter", "VUID-VkExportMetalObjectsInfoEXT-sType-sType");
@@ -26783,9 +26703,9 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice 
                                                                        VkDeviceSize* pLayoutSizeInBytes,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::layout), layout);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pLayoutSizeInBytes), pLayoutSizeInBytes,
@@ -26797,9 +26717,9 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(
                                                                                 uint32_t binding, VkDeviceSize* pOffset,
                                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::layout), layout);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pOffset), pOffset,
@@ -26810,9 +26730,9 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(
 bool StatelessValidation::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo,
                                                           size_t dataSize, void* pDescriptor, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateStructType(loc.dot(Field::pDescriptorInfo), pDescriptorInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
                                        true, "VUID-vkGetDescriptorEXT-pDescriptorInfo-parameter",
@@ -26835,9 +26755,9 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBu
                                                                      const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::bufferCount), loc.dot(Field::pBindingInfos), bufferCount, pBindingInfos,
@@ -26864,9 +26784,9 @@ bool StatelessValidation::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(
     VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet,
     uint32_t setCount, const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateRangedEnum(loc.dot(Field::pipelineBindPoint), vvl::Enum::VkPipelineBindPoint, pipelineBindPoint,
                                        "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-parameter");
@@ -26885,9 +26805,9 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers
                                                                                     VkPipelineLayout layout, uint32_t set,
                                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateRangedEnum(loc.dot(Field::pipelineBindPoint), vvl::Enum::VkPipelineBindPoint, pipelineBindPoint,
                                        "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-pipelineBindPoint-parameter");
@@ -26899,9 +26819,9 @@ bool StatelessValidation::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT
                                                                                  const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
                                                                                  void* pData, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_BUFFER_CAPTURE_DESCRIPTOR_DATA_INFO_EXT,
                                        true, "VUID-vkGetBufferOpaqueCaptureDescriptorDataEXT-pInfo-parameter",
@@ -26922,9 +26842,9 @@ bool StatelessValidation::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(
                                                                                 const VkImageCaptureDescriptorDataInfoEXT* pInfo,
                                                                                 void* pData, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_IMAGE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT, true,
                                        "VUID-vkGetImageOpaqueCaptureDescriptorDataEXT-pInfo-parameter",
@@ -26944,9 +26864,9 @@ bool StatelessValidation::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(
 bool StatelessValidation::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(
     VkDevice device, const VkImageViewCaptureDescriptorDataInfoEXT* pInfo, void* pData, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_IMAGE_VIEW_CAPTURE_DESCRIPTOR_DATA_INFO_EXT,
                                        true, "VUID-vkGetImageViewOpaqueCaptureDescriptorDataEXT-pInfo-parameter",
@@ -26966,9 +26886,9 @@ bool StatelessValidation::PreCallValidateGetImageViewOpaqueCaptureDescriptorData
 bool StatelessValidation::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(
     VkDevice device, const VkSamplerCaptureDescriptorDataInfoEXT* pInfo, void* pData, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_SAMPLER_CAPTURE_DESCRIPTOR_DATA_INFO_EXT,
                                        true, "VUID-vkGetSamplerOpaqueCaptureDescriptorDataEXT-pInfo-parameter",
@@ -26989,9 +26909,9 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureOpaqueCaptureDe
     VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer))
+    if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_descriptor_buffer});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo,
                                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT, true,
@@ -27013,9 +26933,9 @@ bool StatelessValidation::PreCallValidateCmdSetFragmentShadingRateEnumNV(VkComma
                                                                          const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_fragment_shading_rate_enums))
+    if (!IsExtEnabled(extensions.vk_nv_fragment_shading_rate_enums))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_fragment_shading_rate_enums});
     skip |= context.ValidateRangedEnum(loc.dot(Field::shadingRate), vvl::Enum::VkFragmentShadingRateNV, shadingRate,
                                        "VUID-vkCmdSetFragmentShadingRateEnumNV-shadingRate-parameter");
@@ -27029,10 +26949,9 @@ bool StatelessValidation::PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, 
                                                                VkDeviceFaultInfoEXT* pFaultInfo,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_device_fault))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_fault});
+    if (!IsExtEnabled(extensions.vk_ext_device_fault)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_fault});
     skip |= context.ValidateStructType(loc.dot(Field::pFaultCounts), pFaultCounts, VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT, true,
                                        "VUID-vkGetDeviceFaultInfoEXT-pFaultCounts-parameter",
                                        "VUID-VkDeviceFaultCountsEXT-sType-sType");
@@ -27082,9 +27001,9 @@ bool StatelessValidation::PreCallValidateCreateDirectFBSurfaceEXT(VkInstance ins
                                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_directfb_surface))
+    if (!IsExtEnabled(extensions.vk_ext_directfb_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_directfb_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT,
                                        true, "VUID-vkCreateDirectFBSurfaceEXT-pCreateInfo-parameter",
@@ -27114,7 +27033,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDirectFBPresentationSu
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_ext_directfb_surface))
+    if (!IsExtEnabled(extensions.vk_ext_directfb_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_directfb_surface});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::dfb), dfb,
                                             "VUID-vkGetPhysicalDeviceDirectFBPresentationSupportEXT-dfb-parameter");
@@ -27127,10 +27046,9 @@ bool StatelessValidation::PreCallValidateCmdSetVertexInputEXT(
     const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
     const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_vertex_input_dynamic_state) ||
-          IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_vertex_input_dynamic_state) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |=
             OutputExtensionError(loc, {vvl::Extension::_VK_EXT_vertex_input_dynamic_state, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::vertexBindingDescriptionCount),
@@ -27174,9 +27092,9 @@ bool StatelessValidation::PreCallValidateGetMemoryZirconHandleFUCHSIA(
     VkDevice device, const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_fuchsia_external_memory))
+    if (!IsExtEnabled(extensions.vk_fuchsia_external_memory))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_external_memory});
     skip |= context.ValidateStructType(loc.dot(Field::pGetZirconHandleInfo), pGetZirconHandleInfo,
                                        VK_STRUCTURE_TYPE_MEMORY_GET_ZIRCON_HANDLE_INFO_FUCHSIA, true,
@@ -27205,9 +27123,9 @@ bool StatelessValidation::PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
     VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_fuchsia_external_memory))
+    if (!IsExtEnabled(extensions.vk_fuchsia_external_memory))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_external_memory});
     skip |= context.ValidateFlags(loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
                                   AllVkExternalMemoryHandleTypeFlagBits, handleType, kRequiredSingleBit,
@@ -27230,9 +27148,9 @@ bool StatelessValidation::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_fuchsia_external_semaphore))
+    if (!IsExtEnabled(extensions.vk_fuchsia_external_semaphore))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_external_semaphore});
     skip |= context.ValidateStructType(loc.dot(Field::pImportSemaphoreZirconHandleInfo), pImportSemaphoreZirconHandleInfo,
                                        VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_ZIRCON_HANDLE_INFO_FUCHSIA, true,
@@ -27265,9 +27183,9 @@ bool StatelessValidation::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo, zx_handle_t* pZirconHandle,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_fuchsia_external_semaphore))
+    if (!IsExtEnabled(extensions.vk_fuchsia_external_semaphore))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_external_semaphore});
     skip |= context.ValidateStructType(loc.dot(Field::pGetZirconHandleInfo), pGetZirconHandleInfo,
                                        VK_STRUCTURE_TYPE_SEMAPHORE_GET_ZIRCON_HANDLE_INFO_FUCHSIA, true,
@@ -27298,9 +27216,9 @@ bool StatelessValidation::PreCallValidateCreateBufferCollectionFUCHSIA(VkDevice 
                                                                        VkBufferCollectionFUCHSIA* pCollection,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_fuchsia_buffer_collection))
+    if (!IsExtEnabled(extensions.vk_fuchsia_buffer_collection))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_buffer_collection});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA, true,
@@ -27323,9 +27241,9 @@ bool StatelessValidation::PreCallValidateSetBufferCollectionImageConstraintsFUCH
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_fuchsia_buffer_collection))
+    if (!IsExtEnabled(extensions.vk_fuchsia_buffer_collection))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_buffer_collection});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::collection), collection);
     skip |= context.ValidateStructType(loc.dot(Field::pImageConstraintsInfo), pImageConstraintsInfo,
@@ -27485,9 +27403,9 @@ bool StatelessValidation::PreCallValidateSetBufferCollectionBufferConstraintsFUC
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_fuchsia_buffer_collection))
+    if (!IsExtEnabled(extensions.vk_fuchsia_buffer_collection))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_buffer_collection});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::collection), collection);
     skip |= context.ValidateStructType(loc.dot(Field::pBufferConstraintsInfo), pBufferConstraintsInfo,
@@ -27547,9 +27465,9 @@ bool StatelessValidation::PreCallValidateDestroyBufferCollectionFUCHSIA(VkDevice
                                                                         const VkAllocationCallbacks* pAllocator,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_fuchsia_buffer_collection))
+    if (!IsExtEnabled(extensions.vk_fuchsia_buffer_collection))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_buffer_collection});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::collection), collection);
     if (pAllocator != nullptr) {
@@ -27563,9 +27481,9 @@ bool StatelessValidation::PreCallValidateGetBufferCollectionPropertiesFUCHSIA(Vk
                                                                               VkBufferCollectionPropertiesFUCHSIA* pProperties,
                                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_fuchsia_buffer_collection))
+    if (!IsExtEnabled(extensions.vk_fuchsia_buffer_collection))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_buffer_collection});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::collection), collection);
     skip |=
@@ -27585,9 +27503,9 @@ bool StatelessValidation::PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSize
                                                                                        VkExtent2D* pMaxWorkgroupSize,
                                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_huawei_subpass_shading))
+    if (!IsExtEnabled(extensions.vk_huawei_subpass_shading))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_HUAWEI_subpass_shading});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::renderpass), renderpass);
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pMaxWorkgroupSize), pMaxWorkgroupSize,
@@ -27598,9 +27516,9 @@ bool StatelessValidation::PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSize
 bool StatelessValidation::PreCallValidateCmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_huawei_subpass_shading))
+    if (!IsExtEnabled(extensions.vk_huawei_subpass_shading))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_HUAWEI_subpass_shading});
     // No xml-driven validation
     return skip;
@@ -27610,9 +27528,9 @@ bool StatelessValidation::PreCallValidateCmdBindInvocationMaskHUAWEI(VkCommandBu
                                                                      VkImageLayout imageLayout,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_huawei_invocation_mask))
+    if (!IsExtEnabled(extensions.vk_huawei_invocation_mask))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_HUAWEI_invocation_mask});
     skip |= context.ValidateRangedEnum(loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout, imageLayout,
                                        "VUID-vkCmdBindInvocationMaskHUAWEI-imageLayout-parameter");
@@ -27623,9 +27541,9 @@ bool StatelessValidation::PreCallValidateGetMemoryRemoteAddressNV(VkDevice devic
                                                                   const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
                                                                   VkRemoteAddressNV* pAddress, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_external_memory_rdma))
+    if (!IsExtEnabled(extensions.vk_nv_external_memory_rdma))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_external_memory_rdma});
     skip |= context.ValidateStructType(loc.dot(Field::pMemoryGetRemoteAddressInfo), pMemoryGetRemoteAddressInfo,
                                        VK_STRUCTURE_TYPE_MEMORY_GET_REMOTE_ADDRESS_INFO_NV, true,
@@ -27654,9 +27572,9 @@ bool StatelessValidation::PreCallValidateGetPipelinePropertiesEXT(VkDevice devic
                                                                   VkBaseOutStructure* pPipelineProperties,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_pipeline_properties))
+    if (!IsExtEnabled(extensions.vk_ext_pipeline_properties))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_pipeline_properties});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pPipelineInfo), pPipelineInfo,
                                             "VUID-vkGetPipelinePropertiesEXT-pPipelineInfo-parameter");
@@ -27667,9 +27585,9 @@ bool StatelessValidation::PreCallValidateGetPipelinePropertiesEXT(VkDevice devic
 bool StatelessValidation::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state2) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state2) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state2, vvl::Extension::_VK_EXT_shader_object});
     // No xml-driven validation
     return skip;
@@ -27679,9 +27597,9 @@ bool StatelessValidation::PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkComm
                                                                           VkBool32 rasterizerDiscardEnable,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state2) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state2) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state2, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetRasterizerDiscardEnable(commandBuffer, rasterizerDiscardEnable, error_obj);
     return skip;
@@ -27690,9 +27608,9 @@ bool StatelessValidation::PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkComm
 bool StatelessValidation::PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state2) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state2) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state2, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetDepthBiasEnable(commandBuffer, depthBiasEnable, error_obj);
     return skip;
@@ -27701,9 +27619,9 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffe
 bool StatelessValidation::PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state2) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state2) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state2, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateRangedEnum(loc.dot(Field::logicOp), vvl::Enum::VkLogicOp, logicOp,
                                        "VUID-vkCmdSetLogicOpEXT-logicOp-parameter");
@@ -27714,9 +27632,9 @@ bool StatelessValidation::PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkComma
                                                                          VkBool32 primitiveRestartEnable,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state2) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state2) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state2, vvl::Extension::_VK_EXT_shader_object});
     skip |= PreCallValidateCmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable, error_obj);
     return skip;
@@ -27728,9 +27646,9 @@ bool StatelessValidation::PreCallValidateCreateScreenSurfaceQNX(VkInstance insta
                                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_qnx_screen_surface))
+    if (!IsExtEnabled(extensions.vk_qnx_screen_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QNX_screen_surface});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SCREEN_SURFACE_CREATE_INFO_QNX,
                                        true, "VUID-vkCreateScreenSurfaceQNX-pCreateInfo-parameter",
@@ -27760,7 +27678,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceScreenPresentationSupp
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(instance_extensions.vk_qnx_screen_surface))
+    if (!IsExtEnabled(extensions.vk_qnx_screen_surface))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QNX_screen_surface});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::window), window,
                                             "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-window-parameter");
@@ -27772,9 +27690,9 @@ bool StatelessValidation::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuff
                                                                    const VkBool32* pColorWriteEnables,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_color_write_enable))
+    if (!IsExtEnabled(extensions.vk_ext_color_write_enable))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_color_write_enable});
     skip |=
         context.ValidateBool32Array(loc.dot(Field::attachmentCount), loc.dot(Field::pColorWriteEnables), attachmentCount,
@@ -27788,9 +27706,9 @@ bool StatelessValidation::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer command
                                                          uint32_t firstInstance, uint32_t stride,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_multi_draw)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_multi_draw});
+    if (!IsExtEnabled(extensions.vk_ext_multi_draw)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_multi_draw});
     // No xml-driven validation
     return skip;
 }
@@ -27800,9 +27718,9 @@ bool StatelessValidation::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer 
                                                                 uint32_t firstInstance, uint32_t stride,
                                                                 const int32_t* pVertexOffset, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_multi_draw)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_multi_draw});
+    if (!IsExtEnabled(extensions.vk_ext_multi_draw)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_multi_draw});
     // No xml-driven validation
     return skip;
 }
@@ -27811,9 +27729,9 @@ bool StatelessValidation::PreCallValidateCreateMicromapEXT(VkDevice device, cons
                                                            const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_MICROMAP_CREATE_INFO_EXT, true,
@@ -27845,9 +27763,9 @@ bool StatelessValidation::PreCallValidateDestroyMicromapEXT(VkDevice device, VkM
                                                             const VkAllocationCallbacks* pAllocator,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -27861,9 +27779,9 @@ bool StatelessValidation::PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer co
                                                               const VkMicromapBuildInfoEXT* pInfos,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::infoCount), loc.dot(Field::pInfos), infoCount, pInfos, VK_STRUCTURE_TYPE_MICROMAP_BUILD_INFO_EXT, true, true,
@@ -27905,9 +27823,9 @@ bool StatelessValidation::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDe
                                                            uint32_t infoCount, const VkMicromapBuildInfoEXT* pInfos,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::infoCount), loc.dot(Field::pInfos), infoCount, pInfos,
                                             VK_STRUCTURE_TYPE_MICROMAP_BUILD_INFO_EXT, true, true,
@@ -27948,9 +27866,9 @@ bool StatelessValidation::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDe
 bool StatelessValidation::PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                          const VkCopyMicromapInfoEXT* pInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_MICROMAP_INFO_EXT, true,
                                        "VUID-vkCopyMicromapEXT-pInfo-parameter", "VUID-VkCopyMicromapInfoEXT-sType-sType");
@@ -27974,9 +27892,9 @@ bool StatelessValidation::PreCallValidateCopyMicromapToMemoryEXT(VkDevice device
                                                                  const VkCopyMicromapToMemoryInfoEXT* pInfo,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_MICROMAP_TO_MEMORY_INFO_EXT, true,
                                        "VUID-vkCopyMicromapToMemoryEXT-pInfo-parameter",
@@ -27999,9 +27917,9 @@ bool StatelessValidation::PreCallValidateCopyMemoryToMicromapEXT(VkDevice device
                                                                  const VkCopyMemoryToMicromapInfoEXT* pInfo,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_MEMORY_TO_MICROMAP_INFO_EXT, true,
                                        "VUID-vkCopyMemoryToMicromapEXT-pInfo-parameter",
@@ -28025,9 +27943,9 @@ bool StatelessValidation::PreCallValidateWriteMicromapsPropertiesEXT(VkDevice de
                                                                      size_t dataSize, void* pData, size_t stride,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateHandleArray(loc.dot(Field::micromapCount), loc.dot(Field::pMicromaps), micromapCount, pMicromaps, true,
                                         true, "VUID-vkWriteMicromapsPropertiesEXT-micromapCount-arraylength");
@@ -28045,9 +27963,9 @@ bool StatelessValidation::PreCallValidateWriteMicromapsPropertiesEXT(VkDevice de
 bool StatelessValidation::PreCallValidateCmdCopyMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapInfoEXT* pInfo,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_MICROMAP_INFO_EXT, true,
                                        "VUID-vkCmdCopyMicromapEXT-pInfo-parameter", "VUID-VkCopyMicromapInfoEXT-sType-sType");
@@ -28071,9 +27989,9 @@ bool StatelessValidation::PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuf
                                                                     const VkCopyMicromapToMemoryInfoEXT* pInfo,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_MICROMAP_TO_MEMORY_INFO_EXT, true,
                                        "VUID-vkCmdCopyMicromapToMemoryEXT-pInfo-parameter",
@@ -28096,9 +28014,9 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuf
                                                                     const VkCopyMemoryToMicromapInfoEXT* pInfo,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_MEMORY_TO_MICROMAP_INFO_EXT, true,
                                        "VUID-vkCmdCopyMemoryToMicromapEXT-pInfo-parameter",
@@ -28122,9 +28040,9 @@ bool StatelessValidation::PreCallValidateCmdWriteMicromapsPropertiesEXT(VkComman
                                                                         VkQueryPool queryPool, uint32_t firstQuery,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateHandleArray(loc.dot(Field::micromapCount), loc.dot(Field::pMicromaps), micromapCount, pMicromaps, true,
                                         true, "VUID-vkCmdWriteMicromapsPropertiesEXT-micromapCount-arraylength");
@@ -28142,9 +28060,9 @@ bool StatelessValidation::PreCallValidateGetDeviceMicromapCompatibilityEXT(VkDev
                                                                            VkAccelerationStructureCompatibilityKHR* pCompatibility,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateStructType(loc.dot(Field::pVersionInfo), pVersionInfo, VK_STRUCTURE_TYPE_MICROMAP_VERSION_INFO_EXT,
                                        true, "VUID-vkGetDeviceMicromapCompatibilityEXT-pVersionInfo-parameter",
@@ -28168,9 +28086,9 @@ bool StatelessValidation::PreCallValidateGetMicromapBuildSizesEXT(VkDevice devic
                                                                   VkMicromapBuildSizesInfoEXT* pSizeInfo,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_opacity_micromap))
+    if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
     skip |= context.ValidateRangedEnum(loc.dot(Field::buildType), vvl::Enum::VkAccelerationStructureBuildTypeKHR, buildType,
                                        "VUID-vkGetMicromapBuildSizesEXT-buildType-parameter");
@@ -28221,9 +28139,9 @@ bool StatelessValidation::PreCallValidateCmdDrawClusterHUAWEI(VkCommandBuffer co
                                                               uint32_t groupCountY, uint32_t groupCountZ,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_huawei_cluster_culling_shader))
+    if (!IsExtEnabled(extensions.vk_huawei_cluster_culling_shader))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_HUAWEI_cluster_culling_shader});
     // No xml-driven validation
     return skip;
@@ -28232,9 +28150,9 @@ bool StatelessValidation::PreCallValidateCmdDrawClusterHUAWEI(VkCommandBuffer co
 bool StatelessValidation::PreCallValidateCmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                       VkDeviceSize offset, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_huawei_cluster_culling_shader))
+    if (!IsExtEnabled(extensions.vk_huawei_cluster_culling_shader))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_HUAWEI_cluster_culling_shader});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     return skip;
@@ -28243,9 +28161,9 @@ bool StatelessValidation::PreCallValidateCmdDrawClusterIndirectHUAWEI(VkCommandB
 bool StatelessValidation::PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory))
+    if (!IsExtEnabled(extensions.vk_ext_pageable_device_local_memory))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_pageable_device_local_memory});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::memory), memory);
     if (!skip) skip |= manual_PreCallValidateSetDeviceMemoryPriorityEXT(device, memory, priority, context);
@@ -28256,9 +28174,9 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutHostMappingInfoVA
     VkDevice device, const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
     VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_valve_descriptor_set_host_mapping))
+    if (!IsExtEnabled(extensions.vk_valve_descriptor_set_host_mapping))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_VALVE_descriptor_set_host_mapping});
     skip |= context.ValidateStructType(loc.dot(Field::pBindingReference), pBindingReference,
                                        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_BINDING_REFERENCE_VALVE, true,
@@ -28288,9 +28206,9 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutHostMappingInfoVA
 bool StatelessValidation::PreCallValidateGetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet,
                                                                           void** ppData, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_valve_descriptor_set_host_mapping))
+    if (!IsExtEnabled(extensions.vk_valve_descriptor_set_host_mapping))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_VALVE_descriptor_set_host_mapping});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::descriptorSet), descriptorSet);
     skip |=
@@ -28302,9 +28220,9 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryIndirectNV(VkCommandBuffer
                                                                  uint32_t copyCount, uint32_t stride,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_copy_memory_indirect))
+    if (!IsExtEnabled(extensions.vk_nv_copy_memory_indirect))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_copy_memory_indirect});
     // No xml-driven validation
     return skip;
@@ -28314,9 +28232,9 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryToImageIndirectNV(
     VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, VkImage dstImage,
     VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_copy_memory_indirect))
+    if (!IsExtEnabled(extensions.vk_nv_copy_memory_indirect))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_copy_memory_indirect});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::dstImage), dstImage);
     skip |= context.ValidateRangedEnum(loc.dot(Field::dstImageLayout), vvl::Enum::VkImageLayout, dstImageLayout,
@@ -28340,9 +28258,9 @@ bool StatelessValidation::PreCallValidateCmdDecompressMemoryNV(VkCommandBuffer c
                                                                const VkDecompressMemoryRegionNV* pDecompressMemoryRegions,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_memory_decompression))
+    if (!IsExtEnabled(extensions.vk_nv_memory_decompression))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_memory_decompression});
     skip |= context.ValidateArray(loc.dot(Field::decompressRegionCount), loc.dot(Field::pDecompressMemoryRegions),
                                   decompressRegionCount, &pDecompressMemoryRegions, true, true,
@@ -28368,9 +28286,9 @@ bool StatelessValidation::PreCallValidateCmdDecompressMemoryIndirectCountNV(VkCo
                                                                             VkDeviceAddress indirectCommandsCountAddress,
                                                                             uint32_t stride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_memory_decompression))
+    if (!IsExtEnabled(extensions.vk_nv_memory_decompression))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_memory_decompression});
     // No xml-driven validation
     return skip;
@@ -28381,9 +28299,9 @@ bool StatelessValidation::PreCallValidateGetPipelineIndirectMemoryRequirementsNV
                                                                                  VkMemoryRequirements2* pMemoryRequirements,
                                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands_compute))
+    if (!IsExtEnabled(extensions.vk_nv_device_generated_commands_compute))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands_compute});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
                                        true, "VUID-vkGetPipelineIndirectMemoryRequirementsNV-pCreateInfo-parameter",
@@ -28475,9 +28393,9 @@ bool StatelessValidation::PreCallValidateCmdUpdatePipelineIndirectBufferNV(VkCom
                                                                            VkPipeline pipeline,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands_compute))
+    if (!IsExtEnabled(extensions.vk_nv_device_generated_commands_compute))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands_compute});
     skip |= context.ValidateRangedEnum(loc.dot(Field::pipelineBindPoint), vvl::Enum::VkPipelineBindPoint, pipelineBindPoint,
                                        "VUID-vkCmdUpdatePipelineIndirectBufferNV-pipelineBindPoint-parameter");
@@ -28489,9 +28407,9 @@ bool StatelessValidation::PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDe
                                                                             const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_device_generated_commands_compute))
+    if (!IsExtEnabled(extensions.vk_nv_device_generated_commands_compute))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands_compute});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_PIPELINE_INDIRECT_DEVICE_ADDRESS_INFO_NV,
                                        true, "VUID-vkGetPipelineIndirectDeviceAddressNV-pInfo-parameter",
@@ -28513,9 +28431,9 @@ bool StatelessValidation::PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDe
 bool StatelessValidation::PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::depthClampEnable), depthClampEnable);
     return skip;
@@ -28524,9 +28442,9 @@ bool StatelessValidation::PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuff
 bool StatelessValidation::PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,
                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateRangedEnum(loc.dot(Field::polygonMode), vvl::Enum::VkPolygonMode, polygonMode,
                                        "VUID-vkCmdSetPolygonModeEXT-polygonMode-parameter");
@@ -28537,9 +28455,9 @@ bool StatelessValidation::PreCallValidateCmdSetRasterizationSamplesEXT(VkCommand
                                                                        VkSampleCountFlagBits rasterizationSamples,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateFlags(loc.dot(Field::rasterizationSamples), vvl::FlagBitmask::VkSampleCountFlagBits,
                                   AllVkSampleCountFlagBits, rasterizationSamples, kRequiredSingleBit,
@@ -28551,9 +28469,9 @@ bool StatelessValidation::PreCallValidateCmdSetRasterizationSamplesEXT(VkCommand
 bool StatelessValidation::PreCallValidateCmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples,
                                                              const VkSampleMask* pSampleMask, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateFlags(loc.dot(Field::samples), vvl::FlagBitmask::VkSampleCountFlagBits, AllVkSampleCountFlagBits,
                                   samples, kRequiredSingleBit, "VUID-vkCmdSetSampleMaskEXT-samples-parameter",
@@ -28567,9 +28485,9 @@ bool StatelessValidation::PreCallValidateCmdSetAlphaToCoverageEnableEXT(VkComman
                                                                         VkBool32 alphaToCoverageEnable,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::alphaToCoverageEnable), alphaToCoverageEnable);
     return skip;
@@ -28578,9 +28496,9 @@ bool StatelessValidation::PreCallValidateCmdSetAlphaToCoverageEnableEXT(VkComman
 bool StatelessValidation::PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::alphaToOneEnable), alphaToOneEnable);
     return skip;
@@ -28589,9 +28507,9 @@ bool StatelessValidation::PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuff
 bool StatelessValidation::PreCallValidateCmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::logicOpEnable), logicOpEnable);
     return skip;
@@ -28601,9 +28519,9 @@ bool StatelessValidation::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuff
                                                                    uint32_t attachmentCount, const VkBool32* pColorBlendEnables,
                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |=
         context.ValidateBool32Array(loc.dot(Field::attachmentCount), loc.dot(Field::pColorBlendEnables), attachmentCount,
@@ -28617,9 +28535,9 @@ bool StatelessValidation::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBu
                                                                      const VkColorBlendEquationEXT* pColorBlendEquations,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |=
         context.ValidateArray(loc.dot(Field::attachmentCount), loc.dot(Field::pColorBlendEquations), attachmentCount,
@@ -28661,9 +28579,9 @@ bool StatelessValidation::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer
                                                                  const VkColorComponentFlags* pColorWriteMasks,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateFlagsArray(loc.dot(Field::attachmentCount), loc.dot(Field::pColorWriteMasks),
                                        vvl::FlagBitmask::VkColorComponentFlagBits, AllVkColorComponentFlagBits, attachmentCount,
@@ -28676,9 +28594,9 @@ bool StatelessValidation::PreCallValidateCmdSetTessellationDomainOriginEXT(VkCom
                                                                            VkTessellationDomainOrigin domainOrigin,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateRangedEnum(loc.dot(Field::domainOrigin), vvl::Enum::VkTessellationDomainOrigin, domainOrigin,
                                        "VUID-vkCmdSetTessellationDomainOriginEXT-domainOrigin-parameter");
@@ -28688,9 +28606,9 @@ bool StatelessValidation::PreCallValidateCmdSetTessellationDomainOriginEXT(VkCom
 bool StatelessValidation::PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     // No xml-driven validation
     return skip;
@@ -28700,9 +28618,9 @@ bool StatelessValidation::PreCallValidateCmdSetConservativeRasterizationModeEXT(
     VkCommandBuffer commandBuffer, VkConservativeRasterizationModeEXT conservativeRasterizationMode,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateRangedEnum(loc.dot(Field::conservativeRasterizationMode), vvl::Enum::VkConservativeRasterizationModeEXT,
                                        conservativeRasterizationMode,
@@ -28714,9 +28632,9 @@ bool StatelessValidation::PreCallValidateCmdSetExtraPrimitiveOverestimationSizeE
                                                                                    float extraPrimitiveOverestimationSize,
                                                                                    const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     // No xml-driven validation
     return skip;
@@ -28725,9 +28643,9 @@ bool StatelessValidation::PreCallValidateCmdSetExtraPrimitiveOverestimationSizeE
 bool StatelessValidation::PreCallValidateCmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClipEnable,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::depthClipEnable), depthClipEnable);
     return skip;
@@ -28737,9 +28655,9 @@ bool StatelessValidation::PreCallValidateCmdSetSampleLocationsEnableEXT(VkComman
                                                                         VkBool32 sampleLocationsEnable,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::sampleLocationsEnable), sampleLocationsEnable);
     return skip;
@@ -28750,9 +28668,9 @@ bool StatelessValidation::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBu
                                                                      const VkColorBlendAdvancedEXT* pColorBlendAdvanced,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |=
         context.ValidateArray(loc.dot(Field::attachmentCount), loc.dot(Field::pColorBlendAdvanced), attachmentCount,
@@ -28786,9 +28704,9 @@ bool StatelessValidation::PreCallValidateCmdSetProvokingVertexModeEXT(VkCommandB
                                                                       VkProvokingVertexModeEXT provokingVertexMode,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateRangedEnum(loc.dot(Field::provokingVertexMode), vvl::Enum::VkProvokingVertexModeEXT,
                                        provokingVertexMode, "VUID-vkCmdSetProvokingVertexModeEXT-provokingVertexMode-parameter");
@@ -28799,9 +28717,9 @@ bool StatelessValidation::PreCallValidateCmdSetLineRasterizationModeEXT(VkComman
                                                                         VkLineRasterizationModeEXT lineRasterizationMode,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     // No xml-driven validation
     return skip;
@@ -28810,9 +28728,9 @@ bool StatelessValidation::PreCallValidateCmdSetLineRasterizationModeEXT(VkComman
 bool StatelessValidation::PreCallValidateCmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::stippledLineEnable), stippledLineEnable);
     return skip;
@@ -28822,9 +28740,9 @@ bool StatelessValidation::PreCallValidateCmdSetDepthClipNegativeOneToOneEXT(VkCo
                                                                             VkBool32 negativeOneToOne,
                                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::negativeOneToOne), negativeOneToOne);
     return skip;
@@ -28834,9 +28752,9 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWScalingEnableNV(VkComman
                                                                         VkBool32 viewportWScalingEnable,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::viewportWScalingEnable), viewportWScalingEnable);
     return skip;
@@ -28847,9 +28765,9 @@ bool StatelessValidation::PreCallValidateCmdSetViewportSwizzleNV(VkCommandBuffer
                                                                  const VkViewportSwizzleNV* pViewportSwizzles,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateArray(loc.dot(Field::viewportCount), loc.dot(Field::pViewportSwizzles), viewportCount,
                                   &pViewportSwizzles, true, true, "VUID-vkCmdSetViewportSwizzleNV-viewportCount-arraylength",
@@ -28877,9 +28795,9 @@ bool StatelessValidation::PreCallValidateCmdSetCoverageToColorEnableNV(VkCommand
                                                                        VkBool32 coverageToColorEnable,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::coverageToColorEnable), coverageToColorEnable);
     return skip;
@@ -28889,9 +28807,9 @@ bool StatelessValidation::PreCallValidateCmdSetCoverageToColorLocationNV(VkComma
                                                                          uint32_t coverageToColorLocation,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     // No xml-driven validation
     return skip;
@@ -28901,9 +28819,9 @@ bool StatelessValidation::PreCallValidateCmdSetCoverageModulationModeNV(VkComman
                                                                         VkCoverageModulationModeNV coverageModulationMode,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateRangedEnum(loc.dot(Field::coverageModulationMode), vvl::Enum::VkCoverageModulationModeNV,
                                        coverageModulationMode,
@@ -28915,9 +28833,9 @@ bool StatelessValidation::PreCallValidateCmdSetCoverageModulationTableEnableNV(V
                                                                                VkBool32 coverageModulationTableEnable,
                                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::coverageModulationTableEnable), coverageModulationTableEnable);
     return skip;
@@ -28928,9 +28846,9 @@ bool StatelessValidation::PreCallValidateCmdSetCoverageModulationTableNV(VkComma
                                                                          const float* pCoverageModulationTable,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateArray(loc.dot(Field::coverageModulationTableCount), loc.dot(Field::pCoverageModulationTable),
                                   coverageModulationTableCount, &pCoverageModulationTable, true, true,
@@ -28943,9 +28861,9 @@ bool StatelessValidation::PreCallValidateCmdSetShadingRateImageEnableNV(VkComman
                                                                         VkBool32 shadingRateImageEnable,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::shadingRateImageEnable), shadingRateImageEnable);
     return skip;
@@ -28955,9 +28873,9 @@ bool StatelessValidation::PreCallValidateCmdSetRepresentativeFragmentTestEnableN
                                                                                   VkBool32 representativeFragmentTestEnable,
                                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateBool32(loc.dot(Field::representativeFragmentTestEnable), representativeFragmentTestEnable);
     return skip;
@@ -28967,9 +28885,9 @@ bool StatelessValidation::PreCallValidateCmdSetCoverageReductionModeNV(VkCommand
                                                                        VkCoverageReductionModeNV coverageReductionMode,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(device_extensions.vk_ext_shader_object)))
+    if (!(IsExtEnabled(extensions.vk_ext_extended_dynamic_state3) || IsExtEnabled(extensions.vk_ext_shader_object)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object});
     skip |=
         context.ValidateRangedEnum(loc.dot(Field::coverageReductionMode), vvl::Enum::VkCoverageReductionModeNV,
@@ -28981,9 +28899,9 @@ bool StatelessValidation::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice d
                                                                       VkShaderModuleIdentifierEXT* pIdentifier,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_shader_module_identifier))
+    if (!IsExtEnabled(extensions.vk_ext_shader_module_identifier))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_module_identifier});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::shaderModule), shaderModule);
     skip |= context.ValidateStructType(loc.dot(Field::pIdentifier), pIdentifier, VK_STRUCTURE_TYPE_SHADER_MODULE_IDENTIFIER_EXT,
@@ -29002,9 +28920,9 @@ bool StatelessValidation::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(
                                                                                 VkShaderModuleIdentifierEXT* pIdentifier,
                                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_shader_module_identifier))
+    if (!IsExtEnabled(extensions.vk_ext_shader_module_identifier))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_module_identifier});
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, true,
                                        "VUID-vkGetShaderModuleCreateInfoIdentifierEXT-pCreateInfo-parameter",
@@ -29070,10 +28988,9 @@ bool StatelessValidation::PreCallValidateCreateOpticalFlowSessionNV(VkDevice dev
                                                                     VkOpticalFlowSessionNV* pSession,
                                                                     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_optical_flow))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_optical_flow});
+    if (!IsExtEnabled(extensions.vk_nv_optical_flow)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_optical_flow});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_OPTICAL_FLOW_SESSION_CREATE_INFO_NV, true,
         "VUID-vkCreateOpticalFlowSessionNV-pCreateInfo-parameter", "VUID-VkOpticalFlowSessionCreateInfoNV-sType-sType");
@@ -29127,10 +29044,9 @@ bool StatelessValidation::PreCallValidateDestroyOpticalFlowSessionNV(VkDevice de
                                                                      const VkAllocationCallbacks* pAllocator,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_optical_flow))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_optical_flow});
+    if (!IsExtEnabled(extensions.vk_nv_optical_flow)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_optical_flow});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::session), session);
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -29144,10 +29060,9 @@ bool StatelessValidation::PreCallValidateBindOpticalFlowSessionImageNV(VkDevice 
                                                                        VkImageView view, VkImageLayout layout,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_optical_flow))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_optical_flow});
+    if (!IsExtEnabled(extensions.vk_nv_optical_flow)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_optical_flow});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::session), session);
     skip |= context.ValidateRangedEnum(loc.dot(Field::bindingPoint), vvl::Enum::VkOpticalFlowSessionBindingPointNV, bindingPoint,
                                        "VUID-vkBindOpticalFlowSessionImageNV-bindingPoint-parameter");
@@ -29160,10 +29075,9 @@ bool StatelessValidation::PreCallValidateCmdOpticalFlowExecuteNV(VkCommandBuffer
                                                                  const VkOpticalFlowExecuteInfoNV* pExecuteInfo,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_optical_flow))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_optical_flow});
+    if (!IsExtEnabled(extensions.vk_nv_optical_flow)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_optical_flow});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::session), session);
     skip |= context.ValidateStructType(loc.dot(Field::pExecuteInfo), pExecuteInfo, VK_STRUCTURE_TYPE_OPTICAL_FLOW_EXECUTE_INFO_NV,
                                        true, "VUID-vkCmdOpticalFlowExecuteNV-pExecuteInfo-parameter",
@@ -29187,9 +29101,9 @@ bool StatelessValidation::PreCallValidateCmdOpticalFlowExecuteNV(VkCommandBuffer
 bool StatelessValidation::PreCallValidateAntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_amd_anti_lag)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_anti_lag});
+    if (!IsExtEnabled(extensions.vk_amd_anti_lag)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_AMD_anti_lag});
     skip |= context.ValidateStructType(loc.dot(Field::pData), pData, VK_STRUCTURE_TYPE_ANTI_LAG_DATA_AMD, true,
                                        "VUID-vkAntiLagUpdateAMD-pData-parameter", "VUID-VkAntiLagDataAMD-sType-sType");
     if (pData != nullptr) {
@@ -29216,10 +29130,9 @@ bool StatelessValidation::PreCallValidateCreateShadersEXT(VkDevice device, uint3
                                                           const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_shader_object))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object});
+    if (!IsExtEnabled(extensions.vk_ext_shader_object)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::createInfoCount), loc.dot(Field::pCreateInfos), createInfoCount, pCreateInfos,
         VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT, true, true, "VUID-VkShaderCreateInfoEXT-sType-sType",
@@ -29311,10 +29224,9 @@ bool StatelessValidation::PreCallValidateDestroyShaderEXT(VkDevice device, VkSha
                                                           const VkAllocationCallbacks* pAllocator,
                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_shader_object))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object});
+    if (!IsExtEnabled(extensions.vk_ext_shader_object)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
@@ -29325,10 +29237,9 @@ bool StatelessValidation::PreCallValidateDestroyShaderEXT(VkDevice device, VkSha
 bool StatelessValidation::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_shader_object))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object});
+    if (!IsExtEnabled(extensions.vk_ext_shader_object)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::shader), shader);
     skip |= context.ValidatePointerArray(loc.dot(Field::pDataSize), loc.dot(Field::pData), pDataSize, &pData, true, false, false,
                                          "VUID-vkGetShaderBinaryDataEXT-pDataSize-parameter", kVUIDUndefined,
@@ -29341,10 +29252,9 @@ bool StatelessValidation::PreCallValidateCmdBindShadersEXT(VkCommandBuffer comma
                                                            const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders,
                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_shader_object))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object});
+    if (!IsExtEnabled(extensions.vk_ext_shader_object)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object});
     skip |= context.ValidateArray(loc.dot(Field::stageCount), loc.dot(Field::pStages), stageCount, &pStages, true, true,
                                   "VUID-vkCmdBindShadersEXT-stageCount-arraylength", "VUID-vkCmdBindShadersEXT-pStages-parameter");
     skip |= context.ValidateArray(loc.dot(Field::stageCount), loc.dot(Field::pShaders), stageCount, &pShaders, true, false,
@@ -29356,9 +29266,9 @@ bool StatelessValidation::PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffe
                                                                   const VkDepthClampRangeEXT* pDepthClampRange,
                                                                   const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!(IsExtEnabled(device_extensions.vk_ext_shader_object) || IsExtEnabled(device_extensions.vk_ext_depth_clamp_control)))
+    if (!(IsExtEnabled(extensions.vk_ext_shader_object) || IsExtEnabled(extensions.vk_ext_depth_clamp_control)))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_shader_object, vvl::Extension::_VK_EXT_depth_clamp_control});
     skip |= context.ValidateRangedEnum(loc.dot(Field::depthClampMode), vvl::Enum::VkDepthClampModeEXT, depthClampMode,
                                        "VUID-vkCmdSetDepthClampRangeEXT-depthClampMode-parameter");
@@ -29371,9 +29281,9 @@ bool StatelessValidation::PreCallValidateGetFramebufferTilePropertiesQCOM(VkDevi
                                                                           VkTilePropertiesQCOM* pProperties,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_qcom_tile_properties))
+    if (!IsExtEnabled(extensions.vk_qcom_tile_properties))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QCOM_tile_properties});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::framebuffer), framebuffer);
     skip |= context.ValidateStructTypeArray(loc.dot(Field::pPropertiesCount), loc.dot(Field::pProperties), pPropertiesCount,
@@ -29402,9 +29312,9 @@ bool StatelessValidation::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(V
                                                                                VkTilePropertiesQCOM* pProperties,
                                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_qcom_tile_properties))
+    if (!IsExtEnabled(extensions.vk_qcom_tile_properties))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QCOM_tile_properties});
     skip |= context.ValidateStructType(loc.dot(Field::pRenderingInfo), pRenderingInfo, VK_STRUCTURE_TYPE_RENDERING_INFO, true,
                                        "VUID-vkGetDynamicRenderingTilePropertiesQCOM-pRenderingInfo-parameter",
@@ -29561,10 +29471,9 @@ bool StatelessValidation::PreCallValidateSetLatencySleepModeNV(VkDevice device, 
                                                                const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_low_latency2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_low_latency2});
+    if (!IsExtEnabled(extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_low_latency2});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     skip |= context.ValidateStructType(loc.dot(Field::pSleepModeInfo), pSleepModeInfo, VK_STRUCTURE_TYPE_LATENCY_SLEEP_MODE_INFO_NV,
                                        true, "VUID-vkSetLatencySleepModeNV-pSleepModeInfo-parameter",
@@ -29582,10 +29491,9 @@ bool StatelessValidation::PreCallValidateLatencySleepNV(VkDevice device, VkSwapc
                                                         const VkLatencySleepInfoNV* pSleepInfo,
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_low_latency2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_low_latency2});
+    if (!IsExtEnabled(extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_low_latency2});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     skip |= context.ValidateStructType(loc.dot(Field::pSleepInfo), pSleepInfo, VK_STRUCTURE_TYPE_LATENCY_SLEEP_INFO_NV, true,
                                        "VUID-vkLatencySleepNV-pSleepInfo-parameter", "VUID-VkLatencySleepInfoNV-sType-sType");
@@ -29600,10 +29508,9 @@ bool StatelessValidation::PreCallValidateSetLatencyMarkerNV(VkDevice device, VkS
                                                             const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
                                                             const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_low_latency2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_low_latency2});
+    if (!IsExtEnabled(extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_low_latency2});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     skip |= context.ValidateStructType(
         loc.dot(Field::pLatencyMarkerInfo), pLatencyMarkerInfo, VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV, true,
@@ -29620,10 +29527,9 @@ bool StatelessValidation::PreCallValidateGetLatencyTimingsNV(VkDevice device, Vk
                                                              VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_low_latency2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_low_latency2});
+    if (!IsExtEnabled(extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_low_latency2});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
     skip |= context.ValidateStructType(
         loc.dot(Field::pLatencyMarkerInfo), pLatencyMarkerInfo, VK_STRUCTURE_TYPE_GET_LATENCY_MARKER_INFO_NV, true,
@@ -29648,10 +29554,9 @@ bool StatelessValidation::PreCallValidateGetLatencyTimingsNV(VkDevice device, Vk
 bool StatelessValidation::PreCallValidateQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo,
                                                                 const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_nv_low_latency2))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_low_latency2});
+    if (!IsExtEnabled(extensions.vk_nv_low_latency2)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_low_latency2});
     skip |= context.ValidateStructType(
         loc.dot(Field::pQueueTypeInfo), pQueueTypeInfo, VK_STRUCTURE_TYPE_OUT_OF_BAND_QUEUE_TYPE_INFO_NV, true,
         "VUID-vkQueueNotifyOutOfBandNV-pQueueTypeInfo-parameter", "VUID-VkOutOfBandQueueTypeInfoNV-sType-sType");
@@ -29667,9 +29572,9 @@ bool StatelessValidation::PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(V
                                                                                VkImageAspectFlags aspectMask,
                                                                                const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_attachment_feedback_loop_dynamic_state))
+    if (!IsExtEnabled(extensions.vk_ext_attachment_feedback_loop_dynamic_state))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_attachment_feedback_loop_dynamic_state});
     skip |= context.ValidateFlags(loc.dot(Field::aspectMask), vvl::FlagBitmask::VkImageAspectFlagBits, AllVkImageAspectFlagBits,
                                   aspectMask, kOptionalFlags, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-aspectMask-parameter");
@@ -29681,9 +29586,9 @@ bool StatelessValidation::PreCallValidateGetScreenBufferPropertiesQNX(VkDevice d
                                                                       VkScreenBufferPropertiesQNX* pProperties,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_qnx_external_memory_screen_buffer))
+    if (!IsExtEnabled(extensions.vk_qnx_external_memory_screen_buffer))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QNX_external_memory_screen_buffer});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::buffer), buffer, "VUID-vkGetScreenBufferPropertiesQNX-buffer-parameter");
     skip |= context.ValidateStructType(loc.dot(Field::pProperties), pProperties, VK_STRUCTURE_TYPE_SCREEN_BUFFER_PROPERTIES_QNX,
@@ -29706,9 +29611,9 @@ bool StatelessValidation::PreCallValidateGetGeneratedCommandsMemoryRequirementsE
     VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo, VkMemoryRequirements2* pMemoryRequirements,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
     skip |=
         context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_MEMORY_REQUIREMENTS_INFO_EXT,
@@ -29747,9 +29652,9 @@ bool StatelessValidation::PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCom
                                                                            VkCommandBuffer stateCommandBuffer,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
     skip |= context.ValidateStructType(
         loc.dot(Field::pGeneratedCommandsInfo), pGeneratedCommandsInfo, VK_STRUCTURE_TYPE_GENERATED_COMMANDS_INFO_EXT, true,
@@ -29775,9 +29680,9 @@ bool StatelessValidation::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkComman
                                                                         const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
     skip |= context.ValidateBool32(loc.dot(Field::isPreprocessed), isPreprocessed);
     skip |= context.ValidateStructType(
@@ -29805,9 +29710,9 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevic
                                                                          VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_EXT, true,
@@ -29864,9 +29769,9 @@ bool StatelessValidation::PreCallValidateDestroyIndirectCommandsLayoutEXT(VkDevi
                                                                           const VkAllocationCallbacks* pAllocator,
                                                                           const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -29881,9 +29786,9 @@ bool StatelessValidation::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice 
                                                                        VkIndirectExecutionSetEXT* pIndirectExecutionSet,
                                                                        const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INDIRECT_EXECUTION_SET_CREATE_INFO_EXT, true,
@@ -29910,9 +29815,9 @@ bool StatelessValidation::PreCallValidateDestroyIndirectExecutionSetEXT(VkDevice
                                                                         const VkAllocationCallbacks* pAllocator,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -29925,9 +29830,9 @@ bool StatelessValidation::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
     VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount,
     const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::indirectExecutionSet), indirectExecutionSet);
     skip |= context.ValidateStructTypeArray(loc.dot(Field::executionSetWriteCount), loc.dot(Field::pExecutionSetWrites),
@@ -29950,9 +29855,9 @@ bool StatelessValidation::PreCallValidateUpdateIndirectExecutionSetShaderEXT(
     VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount,
     const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_device_generated_commands))
+    if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::indirectExecutionSet), indirectExecutionSet);
     skip |= context.ValidateStructTypeArray(loc.dot(Field::executionSetWriteCount), loc.dot(Field::pExecutionSetWrites),
@@ -30001,9 +29906,9 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureKHR(VkDevice
                                                                         VkAccelerationStructureKHR* pAccelerationStructure,
                                                                         const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR, true,
@@ -30047,9 +29952,9 @@ bool StatelessValidation::PreCallValidateDestroyAccelerationStructureKHR(VkDevic
                                                                          const VkAllocationCallbacks* pAllocator,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
@@ -30063,9 +29968,9 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::infoCount), loc.dot(Field::pInfos), infoCount, pInfos,
                                             VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR, true, true,
@@ -30152,9 +30057,9 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructuresIndirectK
     const VkDeviceAddress* pIndirectDeviceAddresses, const uint32_t* pIndirectStrides, const uint32_t* const* ppMaxPrimitiveCounts,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::infoCount), loc.dot(Field::pInfos), infoCount, pInfos,
                                             VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR, true, true,
@@ -30242,9 +30147,9 @@ bool StatelessValidation::PreCallValidateBuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::infoCount), loc.dot(Field::pInfos), infoCount, pInfos,
                                             VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR, true, true,
@@ -30330,9 +30235,9 @@ bool StatelessValidation::PreCallValidateCopyAccelerationStructureKHR(VkDevice d
                                                                       const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR, true,
                                        "VUID-vkCopyAccelerationStructureKHR-pInfo-parameter",
@@ -30357,9 +30262,9 @@ bool StatelessValidation::PreCallValidateCopyAccelerationStructureToMemoryKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |=
         context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_TO_MEMORY_INFO_KHR,
@@ -30383,9 +30288,9 @@ bool StatelessValidation::PreCallValidateCopyMemoryToAccelerationStructureKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
     const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |=
         context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_MEMORY_TO_ACCELERATION_STRUCTURE_INFO_KHR,
@@ -30409,9 +30314,9 @@ bool StatelessValidation::PreCallValidateWriteAccelerationStructuresPropertiesKH
     VkDevice device, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures,
     VkQueryType queryType, size_t dataSize, void* pData, size_t stride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |= context.ValidateHandleArray(loc.dot(Field::accelerationStructureCount), loc.dot(Field::pAccelerationStructures),
                                         accelerationStructureCount, pAccelerationStructures, true, true,
@@ -30431,9 +30336,9 @@ bool StatelessValidation::PreCallValidateCmdCopyAccelerationStructureKHR(VkComma
                                                                          const VkCopyAccelerationStructureInfoKHR* pInfo,
                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_INFO_KHR, true,
                                        "VUID-vkCmdCopyAccelerationStructureKHR-pInfo-parameter",
@@ -30457,9 +30362,9 @@ bool StatelessValidation::PreCallValidateCmdCopyAccelerationStructureKHR(VkComma
 bool StatelessValidation::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
     VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |=
         context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_ACCELERATION_STRUCTURE_TO_MEMORY_INFO_KHR,
@@ -30482,9 +30387,9 @@ bool StatelessValidation::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR
 bool StatelessValidation::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |=
         context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_COPY_MEMORY_TO_ACCELERATION_STRUCTURE_INFO_KHR,
@@ -30507,9 +30412,9 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR
 bool StatelessValidation::PreCallValidateGetAccelerationStructureDeviceAddressKHR(
     VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |=
         context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR,
@@ -30529,9 +30434,9 @@ bool StatelessValidation::PreCallValidateCmdWriteAccelerationStructuresPropertie
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR* pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |=
         context.ValidateHandleArray(loc.dot(Field::accelerationStructureCount), loc.dot(Field::pAccelerationStructures),
@@ -30550,9 +30455,9 @@ bool StatelessValidation::PreCallValidateGetDeviceAccelerationStructureCompatibi
     VkDevice device, const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
     VkAccelerationStructureCompatibilityKHR* pCompatibility, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |= context.ValidateStructType(loc.dot(Field::pVersionInfo), pVersionInfo,
                                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_VERSION_INFO_KHR, true,
@@ -30577,9 +30482,9 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureBuildSizesKHR(
     VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
     const uint32_t* pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_acceleration_structure))
+    if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
     skip |= context.ValidateRangedEnum(loc.dot(Field::buildType), vvl::Enum::VkAccelerationStructureBuildTypeKHR, buildType,
                                        "VUID-vkGetAccelerationStructureBuildSizesKHR-buildType-parameter");
@@ -30666,9 +30571,9 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer command
                                                          uint32_t width, uint32_t height, uint32_t depth,
                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline))
+    if (!IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_pipeline});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pRaygenShaderBindingTable), pRaygenShaderBindingTable,
                                             "VUID-vkCmdTraceRaysKHR-pRaygenShaderBindingTable-parameter");
@@ -30691,9 +30596,9 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice d
                                                                       const VkAllocationCallbacks* pAllocator,
                                                                       VkPipeline* pPipelines, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline))
+    if (!IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_pipeline});
     skip |= context.ValidateStructTypeArray(loc.dot(Field::createInfoCount), loc.dot(Field::pCreateInfos), createInfoCount,
                                             pCreateInfos, VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR, true, true,
@@ -30870,9 +30775,9 @@ bool StatelessValidation::PreCallValidateGetRayTracingCaptureReplayShaderGroupHa
                                                                                          size_t dataSize, void* pData,
                                                                                          const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline))
+    if (!IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_pipeline});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::pipeline), pipeline);
     skip |= context.ValidateArray(loc.dot(Field::dataSize), loc.dot(Field::pData), dataSize, &pData, true, true,
@@ -30892,9 +30797,9 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer
                                                                  VkDeviceAddress indirectDeviceAddress,
                                                                  const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline))
+    if (!IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_pipeline});
     skip |= context.ValidateRequiredPointer(loc.dot(Field::pRaygenShaderBindingTable), pRaygenShaderBindingTable,
                                             "VUID-vkCmdTraceRaysIndirectKHR-pRaygenShaderBindingTable-parameter");
@@ -30915,9 +30820,9 @@ bool StatelessValidation::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(Vk
                                                                               VkShaderGroupShaderKHR groupShader,
                                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline))
+    if (!IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_pipeline});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::pipeline), pipeline);
     skip |= context.ValidateRangedEnum(loc.dot(Field::groupShader), vvl::Enum::VkShaderGroupShaderKHR, groupShader,
@@ -30929,9 +30834,9 @@ bool StatelessValidation::PreCallValidateCmdSetRayTracingPipelineStackSizeKHR(Vk
                                                                               uint32_t pipelineStackSize,
                                                                               const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline))
+    if (!IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_ray_tracing_pipeline});
     // No xml-driven validation
     return skip;
@@ -30941,10 +30846,9 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer com
                                                              uint32_t groupCountY, uint32_t groupCountZ,
                                                              const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_mesh_shader))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_mesh_shader});
+    if (!IsExtEnabled(extensions.vk_ext_mesh_shader)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_mesh_shader});
     // No xml-driven validation
     return skip;
 }
@@ -30953,10 +30857,9 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBu
                                                                      VkDeviceSize offset, uint32_t drawCount, uint32_t stride,
                                                                      const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_mesh_shader))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_mesh_shader});
+    if (!IsExtEnabled(extensions.vk_ext_mesh_shader)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_mesh_shader});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     return skip;
 }
@@ -30966,10 +30869,9 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkComm
                                                                           VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                           uint32_t stride, const ErrorObject& error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, device_extensions);
+    stateless::Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(device_extensions.vk_ext_mesh_shader))
-        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_mesh_shader});
+    if (!IsExtEnabled(extensions.vk_ext_mesh_shader)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_mesh_shader});
     skip |= context.ValidateRequiredHandle(loc.dot(Field::buffer), buffer);
     skip |= context.ValidateRequiredHandle(loc.dot(Field::countBuffer), countBuffer);
     return skip;

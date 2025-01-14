@@ -510,14 +510,16 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             prototype = prototype.replace(')', ', const ErrorObject& error_obj)')
             out.append(f'bool StatelessValidation::PreCallValidate{prototype} const {{\n')
             out.append('    bool skip = false;\n')
-            # TODO: describe how instance_extensions work here
-            if command.params[0].type == 'VkPhysicalDevice':
+            # For vkCreateDevice, the extensions member has already been set up properly
+            # for other VkPhysicalDevice calls, we need to use their supported extensions rather
+            # than the extensions members, which is how the VkInstance was configured.
+            if command.params[0].type == 'VkPhysicalDevice' and command.name != 'vkCreateDevice':
                 out.append('''
                     const auto &physdev_extensions = physical_device_extensions.at(physicalDevice);
                     stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
                 ''')
             else:
-                out.append('    stateless::Context context(*this, error_obj, device_extensions);\n')
+                out.append('    stateless::Context context(*this, error_obj, extensions);\n')
 
             # Create a copy here to make the logic simpler passing into ValidatePnextStructContents
             out.append('    [[maybe_unused]] const Location loc = error_obj.location;\n')
@@ -528,10 +530,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 outExpression =  []
                 for extension in command.extensions:
                     outExpression.append(f'vvl::Extension::_{extension.name}')
-                    if extension.instance:
-                        cExpression.append(f'IsExtEnabled(instance_extensions.{extension.name.lower()})')
-                    else:
-                        cExpression.append(f'IsExtEnabled(device_extensions.{extension.name.lower()})')
+                    cExpression.append(f'IsExtEnabled(extensions.{extension.name.lower()})')
 
                 cExpression = " || ".join(cExpression)
                 if len(outExpression) > 1:

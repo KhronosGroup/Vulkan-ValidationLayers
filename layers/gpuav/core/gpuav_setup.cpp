@@ -565,9 +565,9 @@ void Validator::InitSettings(const Location &loc) {
     }
 
     if (shader_instrumentation.buffer_device_address) {
-        const bool bda_validation_possible = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
-                                               IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-                                              enabled_features.shaderInt64 && enabled_features.bufferDeviceAddress);
+        const bool bda_validation_possible =
+            ((IsExtEnabled(extensions.vk_ext_buffer_device_address) || IsExtEnabled(extensions.vk_khr_buffer_device_address)) &&
+             enabled_features.shaderInt64 && enabled_features.bufferDeviceAddress);
         if (!bda_validation_possible) {
             shader_instrumentation.buffer_device_address = false;
             if (!enabled_features.shaderInt64) {
@@ -603,7 +603,7 @@ void Validator::InitSettings(const Location &loc) {
         }
     }
 
-    if (IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) {
+    if (IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
         InternalWarning(
             device, loc,
             "VK_EXT_descriptor_buffer is enabled, but GPU-AV does not currently support validation of descriptor buffers. "

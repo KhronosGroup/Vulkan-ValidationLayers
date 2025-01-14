@@ -622,7 +622,7 @@ bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommand
     // height
     bool height_healthy = true;
     const bool negative_height_enabled =
-        IsExtEnabled(device_extensions.vk_khr_maintenance1) || IsExtEnabled(device_extensions.vk_amd_negative_viewport_height);
+        IsExtEnabled(extensions.vk_khr_maintenance1) || IsExtEnabled(extensions.vk_amd_negative_viewport_height);
     const auto max_h = device_limits.maxViewportDimensions[1];
 
     if (!negative_height_enabled && !(viewport.height > 0.0f)) {
@@ -685,7 +685,7 @@ bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommand
         }
     }
 
-    if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
+    if (!IsExtEnabled(extensions.vk_ext_depth_range_unrestricted)) {
         // minDepth
         if (!(viewport.minDepth >= 0.0) || !(viewport.minDepth <= 1.0)) {
             skip |= LogError("VUID-VkViewport-minDepth-01234", object, loc.dot(Field::minDepth), "is %f.", viewport.minDepth);

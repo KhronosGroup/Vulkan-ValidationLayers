@@ -721,7 +721,7 @@ bool StatelessValidation::ValidateCreateImageDrmFormatModifiers(const VkImageCre
                                                                 const Location &create_info_loc,
                                                                 std::vector<uint64_t> &image_create_drm_format_modifiers) const {
     bool skip = false;
-    if (!IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) return skip;
+    if (!IsExtEnabled(extensions.vk_ext_image_drm_format_modifier)) return skip;
 
     const auto drm_format_mod_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(create_info.pNext);
     const auto drm_format_mod_explict =

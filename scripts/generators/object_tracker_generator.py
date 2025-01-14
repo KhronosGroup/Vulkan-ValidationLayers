@@ -935,7 +935,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                         location = f'{errorLoc}.dot(Field::{member.name})'
                         if parentName == 'VkPhysicalDeviceSurfaceInfo2KHR':
                             param_vuid = '"VUID-VkPhysicalDeviceSurfaceInfo2KHR-surface-07919"'
-                            pre_call_validate += 'if (!IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {\n'
+                            pre_call_validate += 'if (!IsExtEnabled(extensions.vk_google_surfaceless_query)) {\n'
                         else:
                             pre_call_validate += '// There should be an explicit VU (if not that is a spec bug)\n'
                             pre_call_validate += '{\n'

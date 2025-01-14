@@ -733,7 +733,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                                          m.Describe().c_str(), print_properties().c_str(), print_flexible_properties().c_str());
                     }
                 }
-                if (IsExtEnabled(device_extensions.vk_nv_cooperative_matrix2)) {
+                if (IsExtEnabled(extensions.vk_nv_cooperative_matrix2)) {
                     if (m.rows > phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixFlexibleDimensionsMaxDimension ||
                         m.cols > phys_dev_ext_props.cooperative_matrix_props2_nv.cooperativeMatrixFlexibleDimensionsMaxDimension) {
                         skip |= LogError(
@@ -1210,7 +1210,7 @@ bool CoreChecks::ValidateShaderFloatControl(const spirv::Module &module_state, c
     bool skip = false;
 
     // Need to wrap otherwise phys_dev_props_core12 can be junk
-    if (!IsExtEnabled(device_extensions.vk_khr_shader_float_controls)) {
+    if (!IsExtEnabled(extensions.vk_khr_shader_float_controls)) {
         return skip;
     }
 
@@ -1417,7 +1417,7 @@ bool CoreChecks::ValidateExecutionModes(const spirv::Module &module_state, const
             skip |= LogError("VUID-RuntimeSpirv-LocalSizeId-06434", module_state.handle(), loc,
                              "SPIR-V OpExecutionMode LocalSizeId is used but maintenance4 feature was not enabled.");
         }
-        if (!IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
+        if (!IsExtEnabled(extensions.vk_khr_maintenance4)) {
             skip |= LogError("VUID-RuntimeSpirv-LocalSizeId-06434", module_state.handle(), loc,
                              "SPIR-V OpExecutionMode LocalSizeId is used but maintenance4 extension is not enabled and used "
                              "Vulkan api version is 1.2 or less.");
@@ -2321,7 +2321,7 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
                                          const Location &loc) const {
     bool skip = false;
 
-    if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) || !IsExtEnabled(device_extensions.vk_ext_shader_tile_image)) {
+    if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) || !IsExtEnabled(extensions.vk_ext_shader_tile_image)) {
         return skip;
     }
 
@@ -2419,7 +2419,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
     // If specialization-constant instructions are present in the shader, the specializations should be applied.
     if (module_state.static_data_.has_specialization_constants) {
         // setup the call back if the optimizer fails
-        spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
+        spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
         spvtools::MessageConsumer consumer = [&skip, &module_state, &stage, loc, this](
                                                  spv_message_level_t level, const char *source, const spv_position_t &position,
@@ -2591,7 +2591,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         if (enabled_features.primitiveFragmentShadingRate) {
             skip |= ValidatePrimitiveRateShaderState(module_state, entrypoint, *pipeline, stage, loc);
         }
-        if (IsExtEnabled(device_extensions.vk_qcom_render_pass_shader_resolve)) {
+        if (IsExtEnabled(extensions.vk_qcom_render_pass_shader_resolve)) {
             skip |= ValidateShaderResolveQCOM(module_state, stage, *pipeline, loc);
         }
         skip |= ValidatePointSizeShaderState(module_state, entrypoint, *pipeline, stage, loc);
@@ -2747,7 +2747,7 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
 
     // Use SPIRV-Tools validator to try and catch any issues with the module itself. If specialization constants are present,
     // the default values will be used during validation.
-    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
+    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
     spv_context ctx = spvContextCreate(spirv_environment);
     spv_diagnostic diag = nullptr;
     const spv_result_t spv_valid = spvValidateWithOptions(ctx, spirv_val_options, &binary, &diag);
@@ -2785,7 +2785,7 @@ bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo &
     if (!create_info.pCode) {
         return skip;  // will be caught elsewhere
     } else if (create_info.pCode[0] != spv::MagicNumber) {
-        if (!IsExtEnabled(device_extensions.vk_nv_glsl_shader)) {
+        if (!IsExtEnabled(extensions.vk_nv_glsl_shader)) {
             skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-07912", device, create_info_loc.dot(Field::pCode),
                              "doesn't point to a SPIR-V module (The first dword is not the SPIR-V MagicNumber 0x07230203).");
         }

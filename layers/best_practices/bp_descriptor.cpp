@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -40,7 +40,7 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
             VendorSpecificTag(kBPVendorArm));
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
+    if (IsExtEnabled(extensions.vk_khr_maintenance1)) {
         // Track number of descriptorSets allowable in this pool
         if (pool_state->GetAvailableSets() < pAllocateInfo->descriptorSetCount) {
             skip |=

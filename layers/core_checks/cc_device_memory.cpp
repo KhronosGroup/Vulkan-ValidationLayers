@@ -413,7 +413,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     }
 
     const Location allocate_info_loc = error_obj.location.dot(Field::pAllocateInfo);
-    if (IsExtEnabled(device_extensions.vk_khr_maintenance3) &&
+    if (IsExtEnabled(extensions.vk_khr_maintenance3) &&
         pAllocateInfo->allocationSize > phys_dev_props_core11.maxMemoryAllocationSize) {
         // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4119 and finalized in
         // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7073 This is a limit the Working Group feels should be alerted
@@ -427,7 +427,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                  pAllocateInfo->allocationSize, phys_dev_props_core11.maxMemoryAllocationSize);
     }
 
-    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+    if (IsExtEnabled(extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateAllocateMemoryANDROID(*pAllocateInfo, allocate_info_loc);
     } else {
         if (!IgnoreAllocationSize(*pAllocateInfo) && 0 == pAllocateInfo->allocationSize) {
@@ -1916,7 +1916,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                          swapchain_info->imageIndex, FormatHandle(swapchain_info->swapchain).c_str(),
                                          swapchain_state->images.size());
                     }
-                    if (IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1) &&
+                    if (IsExtEnabled(extensions.vk_ext_swapchain_maintenance1) &&
                         (swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT)) {
                         if (swapchain_state->images[swapchain_info->imageIndex].acquired == false) {
                             const LogObjectList objlist(bind_info.image, bind_info.memory);

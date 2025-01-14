@@ -233,13 +233,13 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
                                                        const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
     VkFormatFeatureFlags2KHR format_features = 0;
-    if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+    if (IsExtEnabled(extensions.vk_android_external_memory_android_hardware_buffer)) {
         format_features = GetExternalFormatFeaturesANDROID(pCreateInfo->pNext);
     }
     if (format_features == 0) {
-        format_features = GetImageFormatFeatures(physical_device, has_format_feature2,
-                                                 IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier), device, *pImage,
-                                                 pCreateInfo->format, pCreateInfo->tiling);
+        format_features =
+            GetImageFormatFeatures(physical_device, has_format_feature2, IsExtEnabled(extensions.vk_ext_image_drm_format_modifier),
+                                   device, *pImage, pCreateInfo->format, pCreateInfo->tiling);
     }
     Add(CreateImageState(*pImage, pCreateInfo, format_features));
 }
@@ -457,14 +457,14 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
         // The ImageView uses same Image's format feature since they share same AHB
         format_features = image_state->format_features;
     } else {
-        format_features = GetImageFormatFeatures(physical_device, has_format_feature2,
-                                                 IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier), device,
-                                                 image_state->VkHandle(), pCreateInfo->format, image_state->create_info.tiling);
+        format_features =
+            GetImageFormatFeatures(physical_device, has_format_feature2, IsExtEnabled(extensions.vk_ext_image_drm_format_modifier),
+                                   device, image_state->VkHandle(), pCreateInfo->format, image_state->create_info.tiling);
     }
 
     // filter_cubic_props is used in CmdDraw validation. But it takes a lot of performance if it does in CmdDraw.
     VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props = vku::InitStructHelper();
-    if (IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
+    if (IsExtEnabled(extensions.vk_ext_filter_cubic)) {
         VkPhysicalDeviceImageViewImageFormatInfoEXT imageview_format_info = vku::InitStructHelper();
         imageview_format_info.imageViewType = pCreateInfo->viewType;
         VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper(&imageview_format_info);
@@ -637,7 +637,7 @@ VkFormatFeatureFlags2KHR ValidationStateTracker::GetPotentialFormatFeatures(VkFo
         if (has_format_feature2) {
             VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
             auto fmt_props_3 = vku::InitStruct<VkFormatProperties3KHR>(
-                IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier) ? &fmt_drm_props : nullptr);
+                IsExtEnabled(extensions.vk_ext_image_drm_format_modifier) ? &fmt_drm_props : nullptr);
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
 
             DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, format, &fmt_props_2);
@@ -648,7 +648,7 @@ VkFormatFeatureFlags2KHR ValidationStateTracker::GetPotentialFormatFeatures(VkFo
             format_features |= fmt_props_3.linearTilingFeatures;
             format_features |= fmt_props_3.optimalTilingFeatures;
 
-            if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
+            if (IsExtEnabled(extensions.vk_ext_image_drm_format_modifier)) {
                 std::vector<VkDrmFormatModifierProperties2EXT> drm_properties;
                 drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
                 fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
@@ -664,7 +664,7 @@ VkFormatFeatureFlags2KHR ValidationStateTracker::GetPotentialFormatFeatures(VkFo
             format_features |= format_properties.linearTilingFeatures;
             format_features |= format_properties.optimalTilingFeatures;
 
-            if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
+            if (IsExtEnabled(extensions.vk_ext_image_drm_format_modifier)) {
                 VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
                 VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
 
@@ -744,15 +744,15 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
         // requires to have VK_KHR_get_physical_device_properties2 enabled or
         // Vulkan 1.1 (which made this core).
         has_format_feature2 =
-            (api_version >= VK_API_VERSION_1_1 || IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) &&
+            (api_version >= VK_API_VERSION_1_1 || IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) &&
             phys_dev_extensions.find(vvl::Extension::_VK_KHR_format_feature_flags2) != phys_dev_extensions.end();
 
         // feature is required if 1.3 or extension is supported
         has_robust_image_access =
-            (api_version >= VK_API_VERSION_1_3 || IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) &&
+            (api_version >= VK_API_VERSION_1_3 || IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) &&
             phys_dev_extensions.find(vvl::Extension::_VK_EXT_image_robustness) != phys_dev_extensions.end();
 
-        if (IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2) &&
+        if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2) &&
             phys_dev_extensions.find(vvl::Extension::_VK_EXT_robustness2) != phys_dev_extensions.end()) {
             VkPhysicalDeviceRobustness2FeaturesEXT robustness_2_features = vku::InitStructHelper();
             VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
@@ -765,7 +765,7 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
         }
     }
 
-    const auto &dev_ext = device_extensions;
+    const auto &dev_ext = extensions;
     auto *phys_dev_props = &phys_dev_ext_props;
 
     // Vulkan 1.1 and later can get properties from single struct.
@@ -1211,7 +1211,7 @@ void ValidationStateTracker::PostCreateDevice(const VkDeviceCreateInfo *pCreateI
     }
 
     // Query queue family extension properties
-    if (IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) {
+    if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
         uint32_t queue_family_count = (uint32_t)physical_device_state->queue_family_properties.size();
         auto &ext_props = queue_family_ext_props;
         ext_props.resize(queue_family_count);
@@ -3950,8 +3950,8 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
             const auto &image_ci = swapchain->image_create_info;
             for (uint32_t i = 0; i < swapchain_image_count; ++i) {
                 auto format_features = GetImageFormatFeatures(physical_device, has_format_feature2,
-                                                              IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier),
-                                                              device, swapchain_images[i], image_ci.format, image_ci.tiling);
+                                                              IsExtEnabled(extensions.vk_ext_image_drm_format_modifier), device,
+                                                              swapchain_images[i], image_ci.format, image_ci.tiling);
                 auto image_state = CreateImageState(swapchain_images[i], image_ci.ptr(), swapchain->VkHandle(), i, format_features);
                 image_state->SetSwapchain(swapchain, i);
                 image_state->SetInitialLayoutMap();
@@ -4332,7 +4332,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
         ASSERT_AND_RETURN(surface_state);
         if (!pSurfaceInfo->pNext) {
             surface_state->UpdateCapabilitiesCache(physicalDevice, pSurfaceCapabilities->surfaceCapabilities);
-        } else if (IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) {
+        } else if (IsExtEnabled(extensions.vk_ext_surface_maintenance1)) {
             const auto *surface_present_mode = vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
             if (surface_present_mode) {
                 // The surface caps caching should take into account pSurfaceInfo->pNext chain structure,
@@ -4345,7 +4345,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
                 }
             }
         }
-    } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query) &&
+    } else if (IsExtEnabled(extensions.vk_google_surfaceless_query) &&
                vku::FindStructInPNextChain<VkSurfaceProtectedCapabilitiesKHR>(pSurfaceCapabilities->pNext)) {
         auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
         ASSERT_AND_RETURN(pd_state);
@@ -4391,7 +4391,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesK
             auto surface_state = Get<vvl::Surface>(surface);
             ASSERT_AND_RETURN(surface_state);
             surface_state->SetPresentModes(physicalDevice, vvl::span<const VkPresentModeKHR>(pPresentModes, *pPresentModeCount));
-        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+        } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
             ASSERT_AND_RETURN(pd_state);
             pd_state->surfaceless_query_state.present_modes =
@@ -4415,7 +4415,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(Vk
             auto surface_state = Get<vvl::Surface>(surface);
             ASSERT_AND_RETURN(surface_state);
             surface_state->SetFormats(physicalDevice, std::move(formats2));
-        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+        } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
             ASSERT_AND_RETURN(pd_state);
             pd_state->surfaceless_query_state.formats = std::move(formats2);
@@ -4439,7 +4439,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(V
                 formats2[surface_format_index].initialize(&pSurfaceFormats[surface_format_index]);
             }
             surface_state->SetFormats(physicalDevice, std::move(formats2));
-        } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
+        } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
             ASSERT_AND_RETURN(pd_state);
             pd_state->surfaceless_query_state.formats.clear();
@@ -4691,7 +4691,7 @@ void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversion(VkDevice
 
     if (pCreateInfo->format != VK_FORMAT_UNDEFINED) {
         format_features = GetPotentialFormatFeatures(pCreateInfo->format);
-    } else if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
+    } else if (IsExtEnabled(extensions.vk_android_external_memory_android_hardware_buffer)) {
         // If format is VK_FORMAT_UNDEFINED, format_features will be set by external AHB features
         format_features = GetExternalFormatFeaturesANDROID(pCreateInfo->pNext);
     }
@@ -5030,7 +5030,7 @@ void ValidationStateTracker::PreCallRecordCreateShaderModule(VkDevice device, co
     chassis_state.module_state =
         std::make_shared<spirv::Module>(pCreateInfo->codeSize, pCreateInfo->pCode, &chassis_state.stateless_data);
     if (chassis_state.module_state && chassis_state.stateless_data.has_group_decoration) {
-        spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
+        spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));
         spvtools::Optimizer optimizer(spirv_environment);
         optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
         std::vector<uint32_t> optimized_binary;

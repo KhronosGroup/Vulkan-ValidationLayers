@@ -1921,8 +1921,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                         }
                     }
                     if (last_sample_count_attachment != VK_ATTACHMENT_UNUSED) {
-                        if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
-                              IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
+                        if (!(IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) ||
+                              IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) ||
                               (enabled_features.multisampledRenderToSingleSampled && use_rp2))) {
                             VkSampleCountFlagBits last_sample_count =
                                 pCreateInfo->pAttachments[subpass.pColorAttachments[last_sample_count_attachment].attachment]
@@ -1951,7 +1951,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                         const auto depth_stencil_sample_count =
                             pCreateInfo->pAttachments[subpass.pDepthStencilAttachment->attachment].samples;
 
-                        if (IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples)) {
+                        if (IsExtEnabled(extensions.vk_amd_mixed_attachment_samples)) {
                             if (current_sample_count > depth_stencil_sample_count) {
                                 const char *vuid =
                                     use_rp2 ? "VUID-VkSubpassDescription2-None-09456" : "VUID-VkSubpassDescription-None-09431";
@@ -1967,8 +1967,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                             }
                         }
 
-                        if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
-                            !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) &&
+                        if (!IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) &&
+                            !IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) &&
                             !(use_rp2 && enabled_features.multisampledRenderToSingleSampled) &&
                             current_sample_count != depth_stencil_sample_count) {
                             const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872"
@@ -2948,9 +2948,8 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
     }
 
     if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
-        const char *vuid = IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)
-                               ? "VUID-VkRenderingAttachmentInfo-imageView-06143"
-                               : "VUID-VkRenderingAttachmentInfo-imageView-06138";
+        const char *vuid = IsExtEnabled(extensions.vk_khr_fragment_shading_rate) ? "VUID-VkRenderingAttachmentInfo-imageView-06143"
+                                                                                 : "VUID-VkRenderingAttachmentInfo-imageView-06138";
         skip |= LogError(vuid, commandBuffer, attachment_loc.dot(Field::imageLayout),
                          "must not be VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR (or the alias "
                          "VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV)");
@@ -3008,7 +3007,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
         }
 
         if (attachment_info.resolveImageLayout == VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
-            const char *vuid = IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)
+            const char *vuid = IsExtEnabled(extensions.vk_khr_fragment_shading_rate)
                                    ? "VUID-VkRenderingAttachmentInfo-imageView-06144"
                                    : "VUID-VkRenderingAttachmentInfo-imageView-06139";
             skip |= LogError(vuid, commandBuffer, attachment_loc.dot(Field::resolveImageLayout),
@@ -3593,8 +3592,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
                          "must not include VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT in a secondary command buffer.");
     }
 
-    if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
-          IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
+    if (!(IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) || IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) ||
           (enabled_features.multisampledRenderToSingleSampled))) {
         uint32_t first_sample_count_attachment = VK_ATTACHMENT_UNUSED;
         for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
@@ -4543,8 +4541,7 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                                          "height: %" PRIu32 ", the ceiling value: %" PRIu32 "\n",
                                          subresource_range.baseMipLevel, i, i, mip_height, ceiling_height);
                     }
-                    if (view_state->normalized_subresource_range.layerCount != 1 &&
-                        !IsExtEnabled(device_extensions.vk_khr_multiview)) {
+                    if (view_state->normalized_subresource_range.layerCount != 1 && !IsExtEnabled(extensions.vk_khr_multiview)) {
                         LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
                         skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02746", objlist, attachment_loc,
                                          "is referenced by "

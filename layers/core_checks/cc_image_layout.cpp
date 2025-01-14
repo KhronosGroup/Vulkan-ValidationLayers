@@ -307,7 +307,7 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const VkImageLayout first
             skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-02522", device, layout_loc,
                              "(%s) is an invalid for pAttachments[%d] (first attachment to have LOAD_OP_CLEAR).",
                              string_VkImageLayout(first_layout), attachment);
-        } else if ((use_rp2 == false) && IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
+        } else if ((use_rp2 == false) && IsExtEnabled(extensions.vk_khr_maintenance2) &&
                    (first_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL)) {
             skip |= LogError("VUID-VkRenderPassCreateInfo-pAttachments-01566", device, layout_loc,
                              "(%s) is an invalid for pAttachments[%d] (first attachment to have LOAD_OP_CLEAR).",
@@ -328,7 +328,7 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const VkImageLayout first
             skip |= LogError("VUID-VkRenderPassCreateInfo2-pAttachments-02523", device, layout_loc,
                              "(%s) is an invalid for pAttachments[%d] (first attachment to have LOAD_OP_CLEAR).",
                              string_VkImageLayout(first_layout), attachment);
-        } else if ((use_rp2 == false) && IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
+        } else if ((use_rp2 == false) && IsExtEnabled(extensions.vk_khr_maintenance2) &&
                    (first_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)) {
             skip |= LogError("VUID-VkRenderPassCreateInfo-pAttachments-01567", device, layout_loc,
                              "(%s) is an invalid for pAttachments[%d] (first attachment to have LOAD_OP_CLEAR).",

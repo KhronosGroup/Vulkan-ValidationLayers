@@ -62,7 +62,7 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
     }
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        if (!IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory) &&
+        if (!IsExtEnabled(extensions.vk_ext_pageable_device_local_memory) &&
             !vku::FindStructInPNextChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext)) {
             skip |= LogPerformanceWarning(
                 "BestPractices-NVIDIA-AllocateMemory-SetPriority", device, error_obj.location,
@@ -293,7 +293,7 @@ void BestPractices::PostCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, Vk
 bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory, const Location& loc) const {
     bool skip = false;
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA) && IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory)) {
+    if (VendorCheckEnabled(kBPVendorNVIDIA) && IsExtEnabled(extensions.vk_ext_pageable_device_local_memory)) {
         auto mem_info = std::static_pointer_cast<const bp_state::DeviceMemory>(Get<vvl::DeviceMemory>(memory));
         bool has_static_priority = vku::FindStructInPNextChain<VkMemoryPriorityAllocateInfoEXT>(mem_info->allocate_info.pNext);
         if (!mem_info->dynamic_priority && !has_static_priority) {

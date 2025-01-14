@@ -135,16 +135,16 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
                 dev_api_name.c_str());
     }
 
-    std::vector<std::string> extensions;
+    std::vector<std::string> extension_names;
     {
         uint32_t property_count = 0;
         if (DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &property_count, nullptr) == VK_SUCCESS) {
             std::vector<VkExtensionProperties> property_list(property_count);
             if (DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &property_count, property_list.data()) ==
                 VK_SUCCESS) {
-                extensions.reserve(property_list.size());
+                extension_names.reserve(property_list.size());
                 for (const VkExtensionProperties& properties : property_list) {
-                    extensions.emplace_back(properties.extensionName);
+                    extension_names.emplace_back(properties.extensionName);
                 }
             }
         }
@@ -183,9 +183,10 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
             VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorIMG));
     }
 
-    const bool enabled_pageable_device_local_memory = IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory);
+    const bool enabled_pageable_device_local_memory = IsExtEnabled(extensions.vk_ext_pageable_device_local_memory);
     if (VendorCheckEnabled(kBPVendorNVIDIA) && !enabled_pageable_device_local_memory &&
-        std::find(extensions.begin(), extensions.end(), VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME) != extensions.end()) {
+        std::find(extension_names.begin(), extension_names.end(), VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME) !=
+            extension_names.end()) {
         skip |=
             LogPerformanceWarning("BestPractices-NVIDIA-CreateDevice-PageableDeviceLocalMemory", instance, error_obj.location,
                                   "%s called without pageable device local memory. "

@@ -100,11 +100,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             * Copyright (c) 2015-2025 The Khronos Group Inc.
             * Copyright (c) 2015-2025 Valve Corporation
             * Copyright (c) 2015-2025 LunarG, Inc.
-<<<<<<< HEAD
             * Copyright (c) 2015-2025 Google Inc.
-=======
-            * Copyright (c) 2015-2024 Google Inc.
->>>>>>> a150923ee (stateless: Refactor pNext, flag and enum checking utils)
             *
             * Licensed under the Apache License, Version 2.0 (the "License");
             * you may not use this file except in compliance with the License.
@@ -174,9 +170,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             - Checking not enabled
                 - if (!IsExtEnabled(...)) { }
             - Special extensions that being EXPOSED alters the VUs
-                - IsExtEnabled(device_extensions.vk_khr_portability_subset)
+                - IsExtEnabled(extensions.vk_khr_portability_subset)
             - Special extensions that alter behaviour of enabled
-                - IsExtEnabled(device_extensions.vk_khr_maintenance*)
+                - IsExtEnabled(extensions.vk_khr_maintenance*)
 
             Times to NOT use it
                 - If checking if a struct or enum is being used. There are a stateless checks

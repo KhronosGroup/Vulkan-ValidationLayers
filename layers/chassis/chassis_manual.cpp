@@ -111,7 +111,7 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap();
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char* funcName) {
     auto layer_data = vvl::dispatch::GetData(device);
-    if (!ApiParentExtensionEnabled(funcName, &layer_data->device_extensions)) {
+    if (!ApiParentExtensionEnabled(funcName, &layer_data->extensions)) {
         return nullptr;
     }
     const auto& item = GetNameToFuncPtrMap().find(funcName);
@@ -286,10 +286,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     // use a unique pointer to make sure we destroy this object on error
     auto device_dispatch = std::make_unique<vvl::dispatch::Device>(instance_dispatch, gpu, pCreateInfo);
 
-    // This is odd but we need to set the current device_extensions in all of the
+    // This is odd but we need to set the current extensions in all of the
     // instance validation objects so that they are available for validating CreateDevice
     for (auto& vo : instance_dispatch->object_dispatch) {
-        vo->device_extensions = device_dispatch->device_extensions;
+        vo->extensions = device_dispatch->extensions;
     }
 
     // Make copy to modify as some ValidationObjects will want to add extensions/features on
@@ -318,8 +318,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     record_obj.result = result;
     device_dispatch->device = *pDevice;
     // Save local info in device object
-    device_dispatch->device_extensions = DeviceExtensions(instance_dispatch->instance_extensions, device_dispatch->api_version,
-                                                          reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info));
+    device_dispatch->extensions = DeviceExtensions(instance_dispatch->extensions, device_dispatch->api_version,
+                                                   reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info));
     layer_init_device_dispatch_table(*pDevice, &device_dispatch->device_dispatch_table, fpGetDeviceProcAddr);
 
     instance_dispatch->debug_report->device_created++;

@@ -1,8 +1,8 @@
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -179,8 +179,7 @@ class Instance : public HandleWrapper {
     Settings settings;
 
     APIVersion api_version;
-    InstanceExtensions instance_extensions;
-    DeviceExtensions device_extensions = {};
+    DeviceExtensions extensions{};
 
     mutable std::vector<std::unique_ptr<ValidationObject>> object_dispatch;
 
@@ -208,7 +207,7 @@ class Device : public HandleWrapper {
     Instance* dispatch_instance;
 
     APIVersion api_version;
-    DeviceExtensions device_extensions = {};
+    DeviceExtensions extensions = {};
 
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;

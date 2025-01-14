@@ -53,7 +53,7 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
                          pCreateInfo->setLayoutCount, device_limits.maxBoundDescriptorSets);
     }
 
-    if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+    if (!IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
             if (!pCreateInfo->pSetLayouts[i]) {
                 // TODO - Combine with other check in CoreChecks
@@ -442,7 +442,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
             }
         }
 
-        if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+        if (!IsExtEnabled(extensions.vk_ext_graphics_pipeline_library)) {
             if (create_info.stageCount == 0) {
                 // Because not using GPL, this will always have a complete state and require a shader
                 skip |=
@@ -866,7 +866,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                 }
 
                 if (viewport_state.scissorCount != viewport_state.viewportCount) {
-                    if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state) ||
+                    if (!IsExtEnabled(extensions.vk_ext_extended_dynamic_state) ||
                         (!has_dynamic_viewport_with_count && !has_dynamic_scissor_with_count)) {
                         skip |= LogError("VUID-VkPipelineViewportStateCreateInfo-scissorCount-04134", device, viewport_loc,
                                          "scissorCount (%" PRIu32 ") is different to viewportCount (%" PRIu32 ").",
@@ -1000,7 +1000,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
                     }
                 }
             } else if ((!has_dynamic_viewport_with_count || !has_dynamic_scissor_with_count ||
-                        !IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) &&
+                        !IsExtEnabled(extensions.vk_ext_extended_dynamic_state3)) &&
                        (vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) ||
                         (!vvl::Contains(dynamic_state_map, VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE) &&
                          !create_info.pRasterizationState->rasterizerDiscardEnable))) {
@@ -1093,7 +1093,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
             const Location rasterization_loc = create_info_loc.dot(Field::pRasterizationState);
             skip |= ValidatePipelineRasterizationStateCreateInfo(context, *create_info.pRasterizationState, rasterization_loc);
 
-            if (!IsExtEnabled(device_extensions.vk_nv_fill_rectangle)) {
+            if (!IsExtEnabled(extensions.vk_nv_fill_rectangle)) {
                 if (create_info.pRasterizationState->polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV) {
                     skip |= LogError("VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414", device,
                                      rasterization_loc.dot(Field::polygonMode),
@@ -1389,7 +1389,7 @@ bool StatelessValidation::ValidateDepthClampRange(const VkDepthClampRangeEXT &de
                      "(%f) is greater than maxDepthClamp (%f).", depth_clamp_range.minDepthClamp, depth_clamp_range.maxDepthClamp);
     }
 
-    if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted)) {
+    if (!IsExtEnabled(extensions.vk_ext_depth_range_unrestricted)) {
         if (depth_clamp_range.minDepthClamp < 0.0) {
             skip |= LogError("VUID-VkDepthClampRangeEXT-pDepthClampRange-09648", device, loc.dot(Field::minDepth),
                              "(%f) is below 0.0 (and VK_EXT_depth_range_unrestricted is not enabled).",

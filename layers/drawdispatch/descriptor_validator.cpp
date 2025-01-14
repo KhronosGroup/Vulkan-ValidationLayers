@@ -677,7 +677,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                     string_VkFormat(image_view_state->create_info.format));
             }
 
-            if (IsExtEnabled(dev_state.device_extensions.vk_ext_filter_cubic)) {
+            if (IsExtEnabled(dev_state.extensions.vk_ext_filter_cubic)) {
                 const auto reduction_mode_info =
                     vku::FindStructInPNextChain<VkSamplerReductionModeCreateInfo>(sampler_state->create_info.pNext);
                 if (reduction_mode_info &&
@@ -709,7 +709,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 }
             }
 
-            if (IsExtEnabled(dev_state.device_extensions.vk_img_filter_cubic)) {
+            if (IsExtEnabled(dev_state.extensions.vk_img_filter_cubic)) {
                 if (image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_3D ||
                     image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
                     image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {

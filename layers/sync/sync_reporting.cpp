@@ -398,7 +398,7 @@ static std::string FormatHazardState(const HazardResult::HazardState &hazard, Vk
 std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const {
     std::stringstream out;
     assert(hazard.IsHazard());
-    out << FormatHazardState(hazard.State(), queue_flags_, sync_state_.enabled_features, sync_state_.device_extensions, key_values);
+    out << FormatHazardState(hazard.State(), queue_flags_, sync_state_.enabled_features, sync_state_.extensions, key_values);
     out << ", " << FormatUsage(hazard.TagEx()) << ")";
     return out.str();
 }
