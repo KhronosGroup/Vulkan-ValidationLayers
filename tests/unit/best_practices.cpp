@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -103,8 +103,9 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
         // Extra error if VK_EXT_debug_report is used on Android still
         m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");
     }
-    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");
-    m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");
+
+    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");  // VK_KHR_get_physical_device_properties2,
+    m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_debug_utils
     VkInstance dummy;
     auto features = features_;
     auto ici = GetInstanceCreateInfo();
