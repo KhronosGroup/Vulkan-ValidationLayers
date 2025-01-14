@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
- * Copyright (c) 2023-2024 Google, Inc.
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ bool HostImageCopyTest::CopyLayoutSupported(const std::vector<VkImageLayout> &sr
 void HostImageCopyTest::InitHostImageCopyTest() {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::separateDepthStencilLayouts);
     AddRequiredFeature(vkt::Feature::hostImageCopy);
     RETURN_IF_SKIP(Init());
 

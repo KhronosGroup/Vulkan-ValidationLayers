@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
- * Copyright (c) 2023-2024 Google, Inc.
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
+ * Copyright (c) 2023-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2047,6 +2047,7 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutNotSupported) {
 }
 
 TEST_F(NegativeHostImageCopy, TransitionImageLayoutDepthStencil) {
+    // need separateDepthStencilLayouts disabled
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
     if (!CopyLayoutSupported(copy_src_layouts, copy_dst_layouts, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
