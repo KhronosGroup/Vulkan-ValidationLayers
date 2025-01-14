@@ -1495,6 +1495,13 @@ class Surface {
         return *this;
     }
 
+    // This is ONLY for tests that need a way test destroying an instance and leak the Surface object (and calling
+    // vkDestroySurfaceKHR will be invalid)
+    void DestroyExplicitly() {
+        handle_ = VK_NULL_HANDLE;
+        instance_ = VK_NULL_HANDLE;
+    }
+
   private:
     VkInstance instance_ = VK_NULL_HANDLE;
     VkSurfaceKHR handle_ = VK_NULL_HANDLE;

@@ -1584,15 +1584,39 @@ TEST_F(NegativeWsi, LeakASwapchain) {
         GTEST_SKIP() << "Cannot create required surface";
     }
 
-    vkt::Swapchain swapchain =
-        CreateSwapchain(surface.Handle(), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
-    ASSERT_TRUE(swapchain.initialized());
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_device->graphics_queue_node_index_, surface.Handle(), &supported);
+    if (!supported) {
+        GTEST_SKIP() << "Graphics queue does not support present, skipping test";
+    }
+
+    SurfaceInformation info = GetSwapchainInfo(surface.Handle());
+
+    VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper();
+    swapchain_create_info.surface = surface.Handle();
+    swapchain_create_info.minImageCount = info.surface_capabilities.minImageCount;
+    swapchain_create_info.imageFormat = info.surface_formats[0].format;
+    swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
+    swapchain_create_info.imageExtent = info.surface_capabilities.minImageExtent;
+    swapchain_create_info.imageArrayLayers = 1;
+    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_create_info.compositeAlpha = info.surface_composite_alpha;
+    swapchain_create_info.presentMode = info.surface_non_shared_present_mode;
+    swapchain_create_info.clipped = VK_FALSE;
+    swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    VkSwapchainKHR swapchain_handle = VK_NULL_HANDLE;
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain_handle);
 
     // Warn about the surface/swapchain not being destroyed
     m_errorMonitor->SetDesiredError("VUID-vkDestroyInstance-instance-00629");
     m_errorMonitor->SetDesiredError("VUID-vkDestroyDevice-device-05137");
     ShutdownFramework();  // Destroy Instance/Device
     m_errorMonitor->VerifyFound();
+
+    surface.DestroyExplicitly();
 }
 
 TEST_F(NegativeWsi, PresentIdWait) {
