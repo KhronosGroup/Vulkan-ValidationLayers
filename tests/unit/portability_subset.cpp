@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+ * Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -608,10 +608,17 @@ TEST_F(VkPortabilitySubsetTest, PortabilitySubsetColorBlendFactor) {
 
 TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
     TEST_DESCRIPTION("Validate creating instances with VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR.");
+    std::vector<const char *> enabled_extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+                                                    VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME};
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    GTEST_SKIP() << "Android doesn't support Debug Utils";
+#endif
 
     auto ici = GetInstanceCreateInfo();
     ici.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
     ici.enabledExtensionCount = 1;
+    ici.ppEnabledExtensionNames = enabled_extensions.data();
 
     VkInstance local_instance;
 
@@ -620,11 +627,7 @@ TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
     m_errorMonitor->VerifyFound();
 
     if (InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
-        std::vector<const char *> enabled_extensions = {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
-                                                        VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
-        ici.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
-        ici.ppEnabledExtensionNames = enabled_extensions.data();
-
+        ici.enabledExtensionCount = 2;
         ASSERT_EQ(VK_SUCCESS, vk::CreateInstance(&ici, nullptr, &local_instance));
         vk::DestroyInstance(local_instance, nullptr);
     }

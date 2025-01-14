@@ -185,18 +185,18 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
         }
     }
 
-    const auto *debug_report_callback = vku::FindStructInPNextChain<VkDebugReportCallbackCreateInfoEXT>(pCreateInfo->pNext);
-    if (debug_report_callback && !local_instance_extensions.vk_ext_debug_report) {
+    if (!local_instance_extensions.vk_ext_debug_report &&
+        vku::FindStructInPNextChain<VkDebugReportCallbackCreateInfoEXT>(pCreateInfo->pNext)) {
         skip |= LogError("VUID-VkInstanceCreateInfo-pNext-04925", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
                          "does not include VK_EXT_debug_report, but the pNext chain includes VkDebugReportCallbackCreateInfoEXT.");
     }
-    const auto *debug_utils_messenger = vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(pCreateInfo->pNext);
-    if (debug_utils_messenger && !local_instance_extensions.vk_ext_debug_utils) {
+    if (!local_instance_extensions.vk_ext_debug_utils &&
+        vku::FindStructInPNextChain<VkDebugUtilsMessengerCreateInfoEXT>(pCreateInfo->pNext)) {
         skip |= LogError("VUID-VkInstanceCreateInfo-pNext-04926", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
                          "does not include VK_EXT_debug_utils, but the pNext chain includes VkDebugUtilsMessengerCreateInfoEXT.");
     }
-    const auto *direct_driver_loading_list = vku::FindStructInPNextChain<VkDirectDriverLoadingListLUNARG>(pCreateInfo->pNext);
-    if (direct_driver_loading_list && !local_instance_extensions.vk_lunarg_direct_driver_loading) {
+    if (!local_instance_extensions.vk_lunarg_direct_driver_loading &&
+        vku::FindStructInPNextChain<VkDirectDriverLoadingListLUNARG>(pCreateInfo->pNext)) {
         skip |= LogError(
             "VUID-VkInstanceCreateInfo-pNext-09400", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
             "does not include VK_LUNARG_direct_driver_loading, but the pNext chain includes VkDirectDriverLoadingListLUNARG.");
@@ -217,6 +217,32 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
         export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
     }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+// These were attempted to be turned on, but ran into a series of issues with CI machines. Basically adding these require our
+// testing to also include the extension, which in turns will fail on machines with an older loader.
+// TODO - Enable these once we have a way to add AddRequiredExtensions(VK_EXT_LAYER_SETTINGS_EXTENSION_NAME); to tests
+#if 0
+    // These are extensions/structs implemented in the Validation Layers itself, in theory, the extension string is not needed, but
+    // good to have for completeness.
+    if (!local_instance_extensions.vk_ext_layer_settings &&
+        vku::FindStructInPNextChain<VkLayerSettingsCreateInfoEXT>(pCreateInfo->pNext)) {
+        skip |= LogWarning("VUID-VkInstanceCreateInfo-pNext-10242", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
+                           "does not include VK_EXT_layer_settings, but the pNext chain includes VkLayerSettingsCreateInfoEXT. "
+                           "(Most layers, including Validation, will still work regardless of the extension included)");
+    }
+    if (!local_instance_extensions.vk_ext_validation_features &&
+        vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pCreateInfo->pNext)) {
+        skip |= LogWarning("VUID-VkInstanceCreateInfo-pNext-10243", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
+                           "does not include VK_EXT_validation_features, but the pNext chain includes VkValidationFeaturesEXT. "
+                           "(Most layers, including Validation, will still work regardless of the extension included)");
+    }
+    if (!local_instance_extensions.vk_ext_validation_flags &&
+        vku::FindStructInPNextChain<VkValidationFlagsEXT>(pCreateInfo->pNext)) {
+        skip |= LogWarning("VUID-VkInstanceCreateInfo-pNext-10244", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
+                           "does not include VK_EXT_validation_flags, but the pNext chain includes VkValidationFlagsEXT. (Most "
+                           "layers, including Validation, will still work regardless of the extension included)");
+    }
+#endif
 
     return skip;
 }
