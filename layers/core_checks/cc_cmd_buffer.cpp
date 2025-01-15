@@ -886,7 +886,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         } else {
             if (cb_state.activeRenderPass) {
                 if (cb_state.hasRenderPassInstance && cb_state.activeRenderPass->UsesDynamicRendering() &&
-                    sub_cb_state.activeRenderPass->UsesDynamicRendering()) {
+                    sub_cb_state.activeRenderPass && sub_cb_state.activeRenderPass->UsesDynamicRendering()) {
                     const auto *location_info = vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(
                         sub_cb_state.activeRenderPass->inheritance_rendering_info.pNext);
 
