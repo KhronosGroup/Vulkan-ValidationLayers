@@ -486,6 +486,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
 
 TEST_F(PositivePipeline, CoreChecksDisabled) {
     TEST_DESCRIPTION("Test CreatePipeline while the CoreChecks validation object is disabled");
+    AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 
     // Enable KHR validation features extension
     VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};

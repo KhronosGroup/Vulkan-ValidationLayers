@@ -24,8 +24,16 @@ TEST_F(NegativeDynamicRendering, CommandBufferInheritanceRenderingInfo) {
     TEST_DESCRIPTION("VkCommandBufferInheritanceRenderingInfo Dynamic Rendering Tests.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddOptionalExtensions(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
+    AddOptionalExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
+
     RETURN_IF_SKIP(Init());
+    const bool amd_samples = IsExtensionsEnabled(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
+    const bool nv_samples = IsExtensionsEnabled(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
+    if (!amd_samples && !nv_samples) {
+        GTEST_SKIP() << "Test requires either VK_AMD_mixed_attachment_samples or VK_NV_framebuffer_mixed_samples";
+    }
 
     VkPhysicalDeviceMultiviewProperties multiview_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(multiview_props);
@@ -1557,7 +1565,9 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
     bool shading_rate = IsExtensionsEnabled(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(fsr_properties);
+    if (IsExtensionsEnabled(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)) {
+        GetPhysicalDeviceProperties2(fsr_properties);
+    }
 
     InitRenderTarget();
 
@@ -2897,8 +2907,15 @@ TEST_F(NegativeDynamicRendering, LibraryViewMask) {
 
 TEST_F(NegativeDynamicRendering, AttachmentSampleCount) {
     TEST_DESCRIPTION("Create pipeline with invalid color attachment samples");
+    AddOptionalExtensions(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
+    AddOptionalExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicDynamicRendering());
     InitRenderTarget();
+    const bool amd_samples = IsExtensionsEnabled(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
+    const bool nv_samples = IsExtensionsEnabled(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
+    if (!amd_samples && !nv_samples) {
+        GTEST_SKIP() << "Test requires either VK_AMD_mixed_attachment_samples or VK_NV_framebuffer_mixed_samples";
+    }
 
     VkSampleCountFlagBits color_attachment_samples = VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM;
 

@@ -64,6 +64,7 @@ void VkSyncValTest::InitSyncValFramework(const SyncValSettings *p_sync_settings)
     }
     validation_features.pNext = &settings_create_info;
 
+    AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
     InitFramework(&validation_features);
 }
 

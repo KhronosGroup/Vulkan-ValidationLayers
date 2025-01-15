@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -622,6 +622,8 @@ TEST_F(NegativeSparseImage, QueueBindSparseMemoryType3) {
     AddRequiredFeature(vkt::Feature::sparseBinding);
     AddRequiredFeature(vkt::Feature::sparseResidencyBuffer);
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 

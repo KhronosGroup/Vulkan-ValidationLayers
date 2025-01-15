@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2015-2024 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -24,6 +24,8 @@ TEST_F(NegativeExternalMemorySync, CreateBufferIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Creating buffer with incompatible external memory handle types");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -64,6 +66,8 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Creating image with incompatible external memory handle types");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -117,8 +121,11 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypes) {
 TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypesNV) {
     TEST_DESCRIPTION("Creating image with incompatible external memory handle types from NVIDIA extension");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkExternalMemoryImageCreateInfoNV external_memory_info = vku::InitStructHelper();
@@ -159,6 +166,8 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypesNV) {
 TEST_F(NegativeExternalMemorySync, ExportImageHandleType) {
     TEST_DESCRIPTION("Test exporting memory with mismatching handleTypes.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -212,6 +221,8 @@ TEST_F(NegativeExternalMemorySync, ExportImageHandleType) {
 TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
     TEST_DESCRIPTION("Bind buffer memory with unsupported external memory handle type.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -260,6 +271,8 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
 TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Bind buffer memory with incompatible external memory handle types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -299,6 +312,8 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
 TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
     TEST_DESCRIPTION("Bind image memory with unsupported external memory handle type.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -346,6 +361,8 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
 TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
     TEST_DESCRIPTION("Bind image memory with incompatible external memory handle types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -399,6 +416,8 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
 TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     TEST_DESCRIPTION("Test exporting memory with mismatching handleTypes.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -636,6 +655,8 @@ TEST_F(NegativeExternalMemorySync, SyncFdSemaphoreTimelineDependency) {
 TEST_F(NegativeExternalMemorySync, SyncFdExportFromImportedSemaphore) {
     TEST_DESCRIPTION("Export from semaphore with imported payload that does not support export");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
@@ -697,6 +718,8 @@ TEST_F(NegativeExternalMemorySync, SyncFdExportFromImportedFence) {
     TEST_DESCRIPTION("Export from fence with imported payload that does not support export");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -1155,6 +1178,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHandleType) {
     const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
     AddRequiredExtensions(ext_mem_extension_name);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
     if (IsPlatformMockICD()) {
@@ -1417,6 +1442,8 @@ TEST_F(NegativeExternalMemorySync, FenceExportWithIncompatibleHandleType) {
 TEST_F(NegativeExternalMemorySync, SemaphoreExportWithUnsupportedHandleType) {
     TEST_DESCRIPTION("Create semaphore with unsupported external handle type in VkExportSemaphoreCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -1442,6 +1469,8 @@ TEST_F(NegativeExternalMemorySync, SemaphoreExportWithUnsupportedHandleType) {
 TEST_F(NegativeExternalMemorySync, SemaphoreExportWithIncompatibleHandleType) {
     TEST_DESCRIPTION("Create semaphore with incompatible external handle types in VkExportSemaphoreCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -1503,6 +1532,8 @@ TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddOptionalExtensions(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -1885,6 +1916,8 @@ TEST_F(NegativeExternalMemorySync, Win32ExportFromImportedSemaphore) {
     TEST_DESCRIPTION("Export from semaphore with imported payload that does not support export");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -1993,6 +2026,8 @@ TEST_F(NegativeExternalMemorySync, Win32ExportFromImportedFence) {
 TEST_F(NegativeExternalMemorySync, BufferDedicatedAllocation) {
     TEST_DESCRIPTION("Bind external buffer that requires dedicated allocation to non-dedicated memory.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -2018,6 +2053,8 @@ TEST_F(NegativeExternalMemorySync, BufferDedicatedAllocation) {
 TEST_F(NegativeExternalMemorySync, ImageDedicatedAllocation) {
     TEST_DESCRIPTION("Bind external image that requires dedicated allocation to non-dedicated memory.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -2284,6 +2321,8 @@ TEST_F(NegativeExternalMemorySync, FdMemoryHandleProperties) {
 TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferNoDedicated) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -2338,6 +2377,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferNoDedicated) {
 TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -2394,6 +2435,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
 TEST_F(NegativeExternalMemorySync, ImportMemoryFdBadFd) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -2422,6 +2465,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBadFd) {
 TEST_F(NegativeExternalMemorySync, ImportMemoryFdHandleType) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -2451,6 +2496,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferSupport) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::protectedMemory);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
@@ -2480,6 +2527,8 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferSupport) {
 TEST_F(NegativeExternalMemorySync, ImportMemoryFdImageSupport) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 

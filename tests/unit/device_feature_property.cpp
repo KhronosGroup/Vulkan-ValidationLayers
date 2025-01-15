@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+ * Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -248,7 +248,6 @@ TEST_F(NegativeDeviceFeatureProperty, VertexAttributeDivisor) {
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
     m_second_device_ci.pNext = &vadf;
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
@@ -393,7 +392,6 @@ TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceGlobalPriorityQueryFeaturesK
     m_second_device_ci.pNext = &query_feature;
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
@@ -432,15 +430,9 @@ TEST_F(NegativeDeviceFeatureProperty, MissingExtensionPromoted) {
 }
 
 TEST_F(NegativeDeviceFeatureProperty, Features11WithoutVulkan12) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     TEST_DESCRIPTION("VkPhysicalDeviceVulkan11Features was added in Vulkan1.2");
-    if (m_instance_api_version < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "Need 1.2 instance support";
-    }
-    app_info_.apiVersion = m_instance_api_version.Value();
     RETURN_IF_SKIP(InitDeviceFeatureProperty());
-    if (PhysicalDeviceProps().apiVersion > VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Need 1.0/1.1 device support";
-    }
 
     VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
     m_second_device_ci.pNext = &features11;
@@ -449,13 +441,11 @@ TEST_F(NegativeDeviceFeatureProperty, Features11WithoutVulkan12) {
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 
-    if (PhysicalDeviceProps().apiVersion == VK_API_VERSION_1_1) {
-        VkPhysicalDeviceVulkan12Properties bad_version_1_1_struct = vku::InitStructHelper();
-        VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper(&bad_version_1_1_struct);
-        m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceProperties2-pNext-pNext");
-        vk::GetPhysicalDeviceProperties2(Gpu(), &phys_dev_props_2);
-        m_errorMonitor->VerifyFound();
-    }
+    VkPhysicalDeviceVulkan12Properties bad_version_1_1_struct = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper(&bad_version_1_1_struct);
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    vk::GetPhysicalDeviceProperties2(Gpu(), &phys_dev_props_2);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDeviceFeatureProperty, Robustness2WithoutRobustness) {

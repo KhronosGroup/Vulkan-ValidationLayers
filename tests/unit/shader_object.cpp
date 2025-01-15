@@ -6633,6 +6633,7 @@ TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
 TEST_F(NegativeShaderObject, MissingComputeFullSubgroups) {
     TEST_DESCRIPTION("Create shader with invalid flags when computeFullSubgroups is not enabled.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-09405");
 
     RETURN_IF_SKIP(InitBasicShaderObject());
