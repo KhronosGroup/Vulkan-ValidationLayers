@@ -50,6 +50,21 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
                            ". This pool only has %" PRIu32 " descriptorSets remaining.",
                            pAllocateInfo->descriptorSetCount, FormatHandle(*pool_state).c_str(), pool_state->GetAvailableSets());
         }
+        auto ads_pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
+        for (auto it = ads_state_data.required_descriptors_by_type.begin(); it != ads_state_data.required_descriptors_by_type.end();
+             ++it) {
+            auto available_count = ads_pool_state->GetAvailableCount(it->first);
+
+            if (ads_state_data.required_descriptors_by_type.at(it->first) > available_count) {
+                skip |= LogWarning(
+                    "BestPractices-vkAllocateDescriptorSets-EmptyDescriptorPoolType", ads_pool_state->Handle(), error_obj.location,
+                    "Unable to allocate %" PRIu32
+                    " descriptors of type %s from %s"
+                    ". This pool only has %" PRIu32 " descriptors of this type remaining.",
+                    ads_state_data.required_descriptors_by_type.at(it->first), string_VkDescriptorType(VkDescriptorType(it->first)),
+                    FormatHandle(*ads_pool_state).c_str(), available_count);
+            }
+        }
     }
 
     return skip;
@@ -74,8 +89,7 @@ void BestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, 
 
 void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
                                                      const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
-    BaseClass::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets,
-                                                             record_obj);
+    BaseClass::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets, record_obj);
     if (record_obj.result == VK_SUCCESS) {
         // we want to track frees because we're interested in suggesting re-use
         if (auto pool_state = Get<bp_state::DescriptorPool>(descriptorPool)) {
