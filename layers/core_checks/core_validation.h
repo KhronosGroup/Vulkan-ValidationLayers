@@ -1370,6 +1370,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const Location& loc,
                                              const char* vuid) const;
     bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& allocate_info, const Location& allocate_info_loc) const;
+    bool ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo& allocate_info,
+                                     const VkMemoryDedicatedAllocateInfo* dedicated_allocation_info,
+                                     const Location& allocate_info_loc) const;
     bool ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const Location& loc) const;
     bool ValidateBufferImportedHandleANDROID(VkExternalMemoryHandleTypeFlags handle_types, VkDeviceMemory memory, VkBuffer buffer,
                                              const Location& loc) const;
@@ -2059,6 +2062,14 @@ class CoreChecks : public ValidationStateTracker {
                                                        const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
                                                        zx_handle_t* pZirconHandle, const RecordObject& record_obj) override;
 #endif
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    bool PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                void** pHandle, const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                          const void* handle,
+                                                          VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                          const ErrorObject& error_obj) const override;
+#endif  // VK_USE_PLATFORM_METAL_EXT
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                 HANDLE* pHandle, const ErrorObject& error_obj) const override;
