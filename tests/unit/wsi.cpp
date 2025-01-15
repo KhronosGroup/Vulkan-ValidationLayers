@@ -3274,6 +3274,7 @@ TEST_F(NegativeWsi, ImageCompressionControlSwapchainWithoutFeature) {
     TEST_DESCRIPTION("Use image compression control swapchain pNext without feature enabled");
 
     AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();

@@ -2805,6 +2805,10 @@ class VkVideoLayerTest : public VkLayerTest {
 
         protected_no_fault_supported_ = (prot_mem_props.protectedNoFault == VK_TRUE);
 
+        // TODO: these tests use features and capabilities structures for extensions that
+        // aren't enabled on all platforms.
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkDeviceCreateInfo-pNext-pNext");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoCapabilitiesKHR-pNext-pNext");
         RETURN_IF_SKIP(InitState());
 
         uint32_t qf_count;
@@ -3635,7 +3639,10 @@ class PositiveVideo : public VkVideoLayerTest {};
 
 class VkVideoSyncLayerTest : public VkVideoLayerTest {
   public:
-    VkVideoSyncLayerTest() { setInstancePNext(&features_); }
+    VkVideoSyncLayerTest() {
+        setInstancePNext(&features_);
+        AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+    }
 
   private:
     const VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
@@ -3650,7 +3657,10 @@ class PositiveSyncValVideo : public VkVideoSyncLayerTest {};
 
 class VkVideoBestPracticesLayerTest : public VkVideoLayerTest {
   public:
-    VkVideoBestPracticesLayerTest() { setInstancePNext(&features_); }
+    VkVideoBestPracticesLayerTest() {
+        setInstancePNext(&features_);
+        AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+    }
 
   private:
     VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};

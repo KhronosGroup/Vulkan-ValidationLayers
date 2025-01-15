@@ -285,8 +285,7 @@ TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
     pipe.gp_ci_.pTessellationState = &tsci;
     pipe.gp_ci_.pInputAssemblyState = &iasci;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    // one for each struct
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext");
+
     m_errorMonitor->SetDesiredError("VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -1240,9 +1239,11 @@ TEST_F(VkLayerTest, InvalidGetExternalBufferPropertiesUsage) {
 
     VkExternalBufferProperties externalBufferProperties = vku::InitStructHelper();
 
-    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceExternalBufferInfo-None-09499");
-    vk::GetPhysicalDeviceExternalBufferPropertiesKHR(Gpu(), &externalBufferInfo, &externalBufferProperties);
-    m_errorMonitor->VerifyFound();
+    if (!DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
+        m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceExternalBufferInfo-None-09499");
+        vk::GetPhysicalDeviceExternalBufferPropertiesKHR(Gpu(), &externalBufferInfo, &externalBufferProperties);
+        m_errorMonitor->VerifyFound();
+    }
 
     externalBufferInfo.usage = 0u;
     m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceExternalBufferInfo-None-09500");
@@ -1281,7 +1282,6 @@ TEST_F(VkLayerTest, MissingExtensionStruct) {
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buffer_view_ci.range = VK_WHOLE_SIZE;
     buffer_view_ci.buffer = buffer.handle();
-    m_errorMonitor->SetDesiredError("VUID-VkBufferViewCreateInfo-pNext-pNext");
     m_errorMonitor->SetDesiredError("VUID-VkBufferViewCreateInfo-pNext-pNext");
     vkt::BufferView view(*m_device, buffer_view_ci);
     m_errorMonitor->VerifyFound();

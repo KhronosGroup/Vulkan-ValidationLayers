@@ -319,14 +319,13 @@ TEST_F(NegativeInstanceless, ExtensionStructsWithoutExtensions) {
     ici.ppEnabledExtensionNames = m_instance_extension_names.data();
 
     VkInstance instance;
-
     VkDebugReportCallbackCreateInfoEXT debug_report_callback = vku::InitStructHelper();
     debug_report_callback.pfnCallback = callback;
     debug_report_callback.pNext = m_errorMonitor->GetDebugCreateInfo();
     ici.pNext = &debug_report_callback;
-    Monitor().SetDesiredError("VUID-VkInstanceCreateInfo-pNext-04925");
+    m_errorMonitor->SetDesiredError("VUID-VkInstanceCreateInfo-pNext-04925");
     vk::CreateInstance(&ici, nullptr, &instance);
-    Monitor().VerifyFound();
+    m_errorMonitor->VerifyFound();
 
     VkDirectDriverLoadingInfoLUNARG driver = vku::InitStructHelper();
 
@@ -339,6 +338,14 @@ TEST_F(NegativeInstanceless, ExtensionStructsWithoutExtensions) {
     vk::CreateInstance(&ici, nullptr, &instance);
     m_errorMonitor->VerifyFound();
 
+    VkValidationFeaturesEXT features = vku::InitStructHelper();
+    features.pNext = m_errorMonitor->GetDebugCreateInfo();
+    ici.pNext = &features;
+    m_errorMonitor->SetDesiredError("VUID-VkInstanceCreateInfo-pNext-10243");
+    vk::CreateInstance(&ici, nullptr, &instance);
+    m_errorMonitor->VerifyFound();
+
+    // This must be last because it messes up the extension list
     VkDebugUtilsMessengerCreateInfoEXT debug_utils_messenger = vku::InitStructHelper();
     debug_utils_messenger.pNext = m_errorMonitor->GetDebugCreateInfo();
     debug_utils_messenger.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;

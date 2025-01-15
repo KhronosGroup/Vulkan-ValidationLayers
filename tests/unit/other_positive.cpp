@@ -571,6 +571,9 @@ TEST_F(VkPositiveLayerTest, ExtensionPhysicalDeviceFeatureKHR) {
 
 TEST_F(VkPositiveLayerTest, NoExtensionFromInstanceFunction) {
     TEST_DESCRIPTION("Valid because we instance functions don't know which device it needs");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
     VkFormatProperties format_properties;
     // need VK_KHR_sampler_ycbcr_conversion if it was a device function

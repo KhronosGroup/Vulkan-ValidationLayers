@@ -30,6 +30,7 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_che
 
     features_.pNext = &layer_settings_create_info;
 
+    AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
     InitFramework(&features_);
 }
 
@@ -104,9 +105,12 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
         m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");
     }
 
-    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");  // VK_KHR_get_physical_device_properties2,
+    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");  // VK_KHR_get_physical_device_properties2
+    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");  // VK_EXT_validation_features
     m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_debug_utils
-    VkInstance dummy;
+    m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_validation_features
+
+    VkInstance dummy = VK_NULL_HANDLE;
     auto features = features_;
     auto ici = GetInstanceCreateInfo();
     features.pNext = ici.pNext;
@@ -114,9 +118,6 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     vk::CreateInstance(&ici, nullptr, &dummy);
     m_errorMonitor->VerifyFound();
 
-    // Create a 1.0 vulkan instance and request an extension promoted to core in 1.1
-    m_errorMonitor->SetUnexpectedError("khronos-Validation-debug-build-warning-message");
-    m_errorMonitor->SetUnexpectedError("khronos-Validation-fine-grained-locking-warning-message");
     VkApplicationInfo new_info{};
     new_info.apiVersion = VK_API_VERSION_1_0;
     new_info.pApplicationName = ici.pApplicationInfo->pApplicationName;
@@ -124,8 +125,22 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     new_info.pEngineName = ici.pApplicationInfo->pEngineName;
     new_info.engineVersion = ici.pApplicationInfo->engineVersion;
     ici.pApplicationInfo = &new_info;
+
+    // Create a 1.0 vulkan instance and request an extension promoted to core in 1.1
+    if (IsExtensionsEnabled(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
+        // Extra error if VK_EXT_debug_report is used on Android still
+        m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");
+    }
+    m_errorMonitor->SetUnexpectedError("khronos-Validation-debug-build-warning-message");
+    m_errorMonitor->SetUnexpectedError("khronos-Validation-fine-grained-locking-warning-message");
+    m_errorMonitor->SetDesiredWarning("BestPractices-deprecated-extension");  // VK_EXT_validation_features
+    m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_debug_utils
+    m_errorMonitor->SetDesiredWarning("BestPractices-specialuse-extension");  // VK_EXT_validation_features
     vk::CreateInstance(&ici, nullptr, &dummy);
-    vk::DestroyInstance(dummy, nullptr);
+    m_errorMonitor->VerifyFound();
+    if (dummy != VK_NULL_HANDLE) {
+        vk::DestroyInstance(dummy, nullptr);
+    }
 }
 
 TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
