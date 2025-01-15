@@ -4202,6 +4202,21 @@ static inline VkResult DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensi
     auto dispatch = vvl::dispatch::GetData(physicalDevice);
     return dispatch->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(physicalDevice, pPropertyCount, pProperties);
 }
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+static inline VkResult DispatchGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                       void** pHandle) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle);
+}
+
+static inline VkResult DispatchGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                                 const void* pHandle,
+                                                                 VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetMemoryMetalHandlePropertiesEXT(device, handleType, pHandle, pMemoryMetalHandleProperties);
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
 
 static inline VkResult DispatchCreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

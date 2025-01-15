@@ -1830,6 +1830,14 @@ bool PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndir
 bool PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const ErrorObject& error_obj) const override;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+bool PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                            void** pHandle, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                      const void* pHandle,
+                                                      VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                      const ErrorObject& error_obj) const override;
+#endif  // VK_USE_PLATFORM_METAL_EXT
 bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator,
                                                    VkAccelerationStructureKHR* pAccelerationStructure,

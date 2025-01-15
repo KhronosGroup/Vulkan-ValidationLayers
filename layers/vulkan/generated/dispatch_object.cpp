@@ -8249,6 +8249,38 @@ VkResult Instance::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertie
 
     return result;
 }
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+VkResult Device::GetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                         void** pHandle) {
+    if (!wrap_handles) return device_dispatch_table.GetMemoryMetalHandleEXT(device, pGetMetalHandleInfo, pHandle);
+    vku::safe_VkMemoryGetMetalHandleInfoEXT var_local_pGetMetalHandleInfo;
+    vku::safe_VkMemoryGetMetalHandleInfoEXT* local_pGetMetalHandleInfo = nullptr;
+    {
+        if (pGetMetalHandleInfo) {
+            local_pGetMetalHandleInfo = &var_local_pGetMetalHandleInfo;
+            local_pGetMetalHandleInfo->initialize(pGetMetalHandleInfo);
+
+            if (pGetMetalHandleInfo->memory) {
+                local_pGetMetalHandleInfo->memory = Unwrap(pGetMetalHandleInfo->memory);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.GetMemoryMetalHandleEXT(
+        device, (const VkMemoryGetMetalHandleInfoEXT*)local_pGetMetalHandleInfo, pHandle);
+
+    return result;
+}
+
+VkResult Device::GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                   const void* pHandle,
+                                                   VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties) {
+    VkResult result =
+        device_dispatch_table.GetMemoryMetalHandlePropertiesEXT(device, handleType, pHandle, pMemoryMetalHandleProperties);
+
+    return result;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
 
 VkResult Device::CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator,

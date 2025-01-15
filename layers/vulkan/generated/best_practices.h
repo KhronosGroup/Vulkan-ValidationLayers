@@ -1026,6 +1026,16 @@ void PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertie
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const RecordObject& record_obj) override;
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+void PostCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                           void** pHandle, const RecordObject& record_obj) override;
+
+void PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                     const void* pHandle,
+                                                     VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                     const RecordObject& record_obj) override;
+
+#endif  // VK_USE_PLATFORM_METAL_EXT
 void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator,
                                                   VkAccelerationStructureKHR* pAccelerationStructure,

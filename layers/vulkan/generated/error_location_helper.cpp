@@ -564,6 +564,8 @@ const char* String(Func func) {
     {"vkGetMemoryFdKHR", 17},
     {"vkGetMemoryFdPropertiesKHR", 27},
     {"vkGetMemoryHostPointerPropertiesEXT", 36},
+    {"vkGetMemoryMetalHandleEXT", 26},
+    {"vkGetMemoryMetalHandlePropertiesEXT", 36},
     {"vkGetMemoryRemoteAddressNV", 27},
     {"vkGetMemoryWin32HandleKHR", 26},
     {"vkGetMemoryWin32HandleNV", 25},
@@ -1117,6 +1119,7 @@ const char* String(Struct structure) {
     {"VkImportMemoryBufferCollectionFUCHSIA", 38},
     {"VkImportMemoryFdInfoKHR", 24},
     {"VkImportMemoryHostPointerInfoEXT", 33},
+    {"VkImportMemoryMetalHandleInfoEXT", 33},
     {"VkImportMemoryWin32HandleInfoKHR", 33},
     {"VkImportMemoryWin32HandleInfoNV", 32},
     {"VkImportMemoryZirconHandleInfoFUCHSIA", 38},
@@ -1165,6 +1168,7 @@ const char* String(Struct structure) {
     {"VkMemoryFdPropertiesKHR", 24},
     {"VkMemoryGetAndroidHardwareBufferInfoANDROID", 44},
     {"VkMemoryGetFdInfoKHR", 21},
+    {"VkMemoryGetMetalHandleInfoEXT", 30},
     {"VkMemoryGetRemoteAddressInfoNV", 31},
     {"VkMemoryGetWin32HandleInfoKHR", 30},
     {"VkMemoryGetZirconHandleInfoFUCHSIA", 35},
@@ -1172,6 +1176,7 @@ const char* String(Struct structure) {
     {"VkMemoryHostPointerPropertiesEXT", 33},
     {"VkMemoryMapInfo", 16},
     {"VkMemoryMapPlacedInfoEXT", 25},
+    {"VkMemoryMetalHandlePropertiesEXT", 33},
     {"VkMemoryOpaqueCaptureAddressAllocateInfo", 41},
     {"VkMemoryPriorityAllocateInfoEXT", 32},
     {"VkMemoryRequirements", 21},
@@ -3454,6 +3459,7 @@ const char* String(Field field) {
     {"pGeneratedCommandsInfo", 23},
     {"pGeometries", 12},
     {"pGetFdInfo", 11},
+    {"pGetMetalHandleInfo", 20},
     {"pGetWin32HandleInfo", 20},
     {"pGetZirconHandleInfo", 21},
     {"pGranularity", 13},
@@ -3531,6 +3537,7 @@ const char* String(Field field) {
     {"pMemoryGetRemoteAddressInfo", 28},
     {"pMemoryHostPointerProperties", 29},
     {"pMemoryMapInfo", 15},
+    {"pMemoryMetalHandleProperties", 29},
     {"pMemoryProperties", 18},
     {"pMemoryRanges", 14},
     {"pMemoryRequirements", 20},
@@ -5053,6 +5060,7 @@ const char* String(Extension extension) {
     {"VK_EXT_external_memory_acquire_unmodified", 42},
     {"VK_EXT_external_memory_dma_buf", 31},
     {"VK_EXT_external_memory_host", 28},
+    {"VK_EXT_external_memory_metal", 29},
     {"VK_EXT_filter_cubic", 20},
     {"VK_EXT_fragment_density_map", 28},
     {"VK_EXT_fragment_density_map2", 29},
@@ -5380,6 +5388,7 @@ bool IsFieldPointer(Field field) {
     case Field::dfb:
     case Field::displayName:
     case Field::dpy:
+    case Field::handle:
     case Field::hostAddress:
     case Field::opaqueCaptureDescriptorData:
     case Field::pAccelerationStructure:
@@ -5576,6 +5585,7 @@ bool IsFieldPointer(Field field) {
     case Field::pGeneratedCommandsInfo:
     case Field::pGeometries:
     case Field::pGetFdInfo:
+    case Field::pGetMetalHandleInfo:
     case Field::pGetWin32HandleInfo:
     case Field::pGetZirconHandleInfo:
     case Field::pGranularity:
@@ -5653,6 +5663,7 @@ bool IsFieldPointer(Field field) {
     case Field::pMemoryGetRemoteAddressInfo:
     case Field::pMemoryHostPointerProperties:
     case Field::pMemoryMapInfo:
+    case Field::pMemoryMetalHandleProperties:
     case Field::pMemoryProperties:
     case Field::pMemoryRanges:
     case Field::pMemoryRequirements:
