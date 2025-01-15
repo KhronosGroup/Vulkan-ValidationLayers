@@ -1300,6 +1300,47 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkBestPracticesLayerTest, OverAllocateTypeFromDescriptorPool) {
+    TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    ds_type_count.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.flags = 0;
+    ds_pool_ci.maxSets = 2;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding dsl_binding_samp = {};
+    dsl_binding_samp.binding = 0;
+    dsl_binding_samp.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    dsl_binding_samp.descriptorCount = 1;
+    dsl_binding_samp.stageFlags = VK_SHADER_STAGE_ALL;
+    dsl_binding_samp.pImmutableSamplers = NULL;
+
+    const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {dsl_binding_samp});
+
+    // Try to allocate 2 sets when pool only has 1 set
+    VkDescriptorSet descriptor_sets[2];
+    VkDescriptorSetLayout set_layouts[2] = {ds_layout_samp.handle(), ds_layout_samp.handle()};
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.descriptorSetCount = 2;
+    alloc_info.descriptorPool = ds_pool.handle();
+    alloc_info.pSetLayouts = set_layouts;
+    m_errorMonitor->SetDesiredWarning("BestPractices-vkAllocateDescriptorSets-EmptyDescriptorPoolType");
+    vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     TEST_DESCRIPTION("Test for clearing a RenderPass with non-zero clearValueCount without any VK_ATTACHMENT_LOAD_OP_CLEAR");
 
