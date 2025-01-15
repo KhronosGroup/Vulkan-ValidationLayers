@@ -4084,7 +4084,8 @@ bool CoreChecks::ValidateCmdSubpassState(const vvl::CommandBuffer &cb_state, con
          loc.function != Func::vkCmdEndRenderPass && loc.function != Func::vkCmdNextSubpass2 &&
          loc.function != Func::vkCmdNextSubpass2KHR && loc.function != Func::vkCmdEndRenderPass2 &&
          loc.function != Func::vkCmdEndRenderPass2KHR)) {
-        skip |= LogError(vuid, cb_state.Handle(), loc, "cannot be called in a subpass using secondary command buffers.");
+        skip |= LogError(vuid, cb_state.Handle(), loc,
+                         "cannot be called in a subpass using VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS.");
     }
     return skip;
 }
