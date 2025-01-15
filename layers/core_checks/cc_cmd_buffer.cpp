@@ -1327,7 +1327,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 }
 
                 // spec: "A maxCommandBufferNestingLevel of UINT32_MAX means there is no limit to the nesting level"
-                if (enabled_features.nestedCommandBuffer &&
+                if (enabled_features.nestedCommandBuffer && cb_state.IsSecondary() &&
                     phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel != UINT32_MAX) {
                     if (sub_cb_state.nesting_level >= phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel) {
                         skip |= LogError("VUID-vkCmdExecuteCommands-nestedCommandBuffer-09376", pCommandBuffers[i], cb_loc,
