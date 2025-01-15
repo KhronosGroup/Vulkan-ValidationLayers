@@ -4799,3 +4799,20 @@ TEST_F(NegativeSyncObject, UnsupportedBufferMemoryBarrier2Stages) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncObject, SignalSemaphoreTwice) {
+    RETURN_IF_SKIP(Init());
+
+    VkSemaphoreCreateInfo semaphore_create_info = vku::InitStructHelper();
+    vkt::Semaphore semaphore(*m_device, semaphore_create_info);
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.signalSemaphoreCount = 1u;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    vk::QueueSubmit(m_default_queue->handle(), 1u, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_default_queue->handle());
+
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pSignalSemaphores-00067");
+    vk::QueueSubmit(m_default_queue->handle(), 1u, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}
