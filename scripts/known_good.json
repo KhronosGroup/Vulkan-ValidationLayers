@@ -3,19 +3,19 @@
         {
             "name": "Vulkan-Headers",
             "api": "vulkan",
-            "url": "https://github.com/KhronosGroup/Vulkan-Headers.git",
+            "url": "https://github.com/aitor-lunarg/Vulkan-Headers.git",
             "sub_dir": "Vulkan-Headers",
             "build_dir": "Vulkan-Headers/build",
             "install_dir": "Vulkan-Headers/build/install",
-            "commit": "v1.4.304"
+            "commit": "9685d43f59c76fe5f5b3dffe5bf14b5ef639df22"
         },
         {
             "name": "Vulkan-Utility-Libraries",
-            "url": "https://github.com/KhronosGroup/Vulkan-Utility-Libraries.git",
+            "url": "https://github.com/aitor-lunarg/Vulkan-Utility-Libraries.git",
             "sub_dir": "Vulkan-Utility-Libraries",
             "build_dir": "Vulkan-Utility-Libraries/build",
             "install_dir": "Vulkan-Utility-Libraries/build/install",
-            "commit": "v1.4.304",
+            "commit": "20951110ba720c29914d846aa8b2075b20d6f4f5",
             "deps": [
                 {
                     "var_name": "VULKAN_HEADERS_INSTALL_DIR",

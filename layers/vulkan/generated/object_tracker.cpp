@@ -8008,6 +8008,25 @@ bool ObjectLifetimes::PreCallValidateUpdateIndirectExecutionSetShaderEXT(
 // Checked by chassis: physicalDevice:
 // "VUID-vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV-physicalDevice-parameter"
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+bool ObjectLifetimes::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device,
+                                                             const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                             void** pHandle, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: kVUIDUndefined
+    if (pGetMetalHandleInfo) {
+        [[maybe_unused]] const Location pGetMetalHandleInfo_loc = error_obj.location.dot(Field::pGetMetalHandleInfo);
+    }
+
+    return skip;
+}
+
+// vkGetMemoryMetalHandlePropertiesEXT:
+// Checked by chassis: device: kVUIDUndefined
+
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
 bool ObjectLifetimes::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
                                                                     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                                     const VkAllocationCallbacks* pAllocator,

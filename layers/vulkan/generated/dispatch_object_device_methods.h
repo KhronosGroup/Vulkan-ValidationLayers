@@ -924,6 +924,11 @@ void UpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionS
 void UpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
                                          uint32_t executionSetWriteCount,
                                          const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites);
+#ifdef VK_USE_PLATFORM_METAL_EXT
+VkResult GetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo, void** pHandle);
+VkResult GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, const void* pHandle,
+                                           VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties);
+#endif  // VK_USE_PLATFORM_METAL_EXT
 VkResult CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator,
                                         VkAccelerationStructureKHR* pAccelerationStructure);

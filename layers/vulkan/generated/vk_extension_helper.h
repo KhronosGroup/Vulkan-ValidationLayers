@@ -629,6 +629,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_depth_clamp_control{kNotEnabled};
     ExtEnabled vk_huawei_hdr_vivid{kNotEnabled};
     ExtEnabled vk_nv_cooperative_matrix2{kNotEnabled};
+    ExtEnabled vk_ext_external_memory_metal{kNotEnabled};
     ExtEnabled vk_ext_vertex_attribute_robustness{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
@@ -1710,6 +1711,11 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_NV_cooperative_matrix2,
              Info(&DeviceExtensions::vk_nv_cooperative_matrix2,
                   {{{&DeviceExtensions::vk_khr_cooperative_matrix, VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME}}})},
+#ifdef VK_USE_PLATFORM_METAL_EXT
+            {vvl::Extension::_VK_EXT_external_memory_metal,
+             Info(&DeviceExtensions::vk_ext_external_memory_metal,
+                  {{{&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
+#endif  // VK_USE_PLATFORM_METAL_EXT
             {vvl::Extension::_VK_EXT_vertex_attribute_robustness,
              Info(&DeviceExtensions::vk_ext_vertex_attribute_robustness,
                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
@@ -2146,6 +2152,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_depth_clamp_control:
         case vvl::Extension::_VK_HUAWEI_hdr_vivid:
         case vvl::Extension::_VK_NV_cooperative_matrix2:
+        case vvl::Extension::_VK_EXT_external_memory_metal:
         case vvl::Extension::_VK_EXT_vertex_attribute_robustness:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
