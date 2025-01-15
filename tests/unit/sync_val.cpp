@@ -5676,7 +5676,7 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage) {
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "SYNC_ALL_COMMANDS_SHADER_READ");
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "VK_ACCESS_2_SHADER_READ_BIT accesses on VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT stage");
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -5703,7 +5703,7 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage2) {
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "SYNC_ALL_COMMANDS_MEMORY_READ");
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "VK_ACCESS_2_MEMORY_READ_BIT accesses on VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT stage");
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -5730,7 +5730,7 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage3) {
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "SYNC_ALL_COMMANDS_SHADER_WRITE");
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "VK_ACCESS_2_SHADER_WRITE_BIT accesses on VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT stage");
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
