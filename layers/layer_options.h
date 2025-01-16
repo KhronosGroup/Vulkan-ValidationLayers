@@ -1,7 +1,7 @@
-/* Copyright (c) 2022-2024 The Khronos Group Inc.
- * Copyright (c) 2022-2024 Valve Corporation
- * Copyright (c) 2022-2024 LunarG, Inc.
- * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+/* Copyright (c) 2022-2025 The Khronos Group Inc.
+ * Copyright (c) 2022-2025 Valve Corporation
+ * Copyright (c) 2022-2025 LunarG, Inc.
+ * Modifications Copyright (C) 2020-2025 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

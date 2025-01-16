@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2017, 2019-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019-2024 Valve Corporation
- * Copyright (c) 2015-2017, 2019-2024 LunarG, Inc.
- * Modifications Copyright (C) 2022 RasterGrid Kft.
+/* Copyright (c) 2015-2017, 2019-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2025 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2025 LunarG, Inc.
+ * Modifications Copyright (C) 2022-2025 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

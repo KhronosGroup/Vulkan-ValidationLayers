@@ -1,8 +1,8 @@
 /**************************************************************************
  *
- * Copyright 2014-2024 Valve Software
- * Copyright 2015-2024 Google Inc.
- * Copyright 2019-2024 LunarG, Inc.
+ * Copyright 2014-2025 Valve Software
+ * Copyright 2015-2025 Google Inc.
+ * Copyright 2019-2025 LunarG, Inc.
  * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2016 The ANGLE Project Authors.
-# Copyright (c) 2022-2024 LunarG, Inc.
+# Copyright (C) 2016-2025 The ANGLE Project Authors.
+# Copyright (c) 2022-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

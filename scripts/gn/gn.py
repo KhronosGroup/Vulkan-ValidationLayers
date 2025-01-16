@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# Copyright 2023-2024 The Khronos Group Inc.
-# Copyright 2023-2024 Valve Corporation
-# Copyright 2023-2024 LunarG, Inc.
+# Copyright 2023-2025 The Khronos Group Inc.
+# Copyright 2023-2025 Valve Corporation
+# Copyright 2023-2025 LunarG, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 

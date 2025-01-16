@@ -2,7 +2,7 @@
  * Copyright (c) 2020-2025 The Khronos Group Inc.
  * Copyright (c) 2020-2025 Valve Corporation
  * Copyright (c) 2020-2025 LunarG, Inc.
- * Copyright (c) 2020-2022 Google, Inc.
+ * Copyright (c) 2020-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

@@ -1,4 +1,4 @@
-Copyright 2015-2021 LunarG, Inc.
+Copyright 2015-2025 LunarG, Inc.
 
 Diagrams sync_wrr.png and sync_wrw.png were created using 
 
