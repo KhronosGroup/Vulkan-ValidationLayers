@@ -2327,26 +2327,22 @@ TEST_F(NegativeMemory, DISABLED_PartialBoundBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-// Can see test work, but things like lavapipe will not trigger it
-// Hard to really write a test that will work everywhere, but can enable to confirm
-TEST_F(NegativeMemory, DISABLED_MaxMemoryAllocationSize) {
+TEST_F(NegativeMemory, MaxMemoryAllocationSize) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(Init());
-    if (IsPlatformMockICD()) {
-        GTEST_SKIP() << "MockICD may not fail on limit";
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "Can't test well on real hardware";
     }
 
     VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(props11);
 
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.memoryTypeIndex = 0;
     alloc_info.allocationSize = props11.maxMemoryAllocationSize + 64;
 
-    VkDeviceMemory memory;
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkAllocateMemory-pAllocateInfo-01713");  // need to bypass stateless
-    m_errorMonitor->SetDesiredWarning("WARNING-CoreValidation-AllocateMemory-maxMemoryAllocationSize");
-    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkAllocateMemory-maxMemoryAllocationSize");
+    vkt::DeviceMemory memory(*m_device, alloc_info);
     m_errorMonitor->VerifyFound();
 }
 

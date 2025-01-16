@@ -406,13 +406,27 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                                const ErrorObject &error_obj) const {
     bool skip = false;
     if (Count<vvl::DeviceMemory>() >= phys_dev_props.limits.maxMemoryAllocationCount) {
-        skip |= LogError(
-            "VUID-vkAllocateMemory-maxMemoryAllocationCount-04101", device, error_obj.location,
-            "vkAllocateMemory: Number of currently valid memory objects is not less than maxMemoryAllocationCount (%" PRIu32 ").",
-            phys_dev_props.limits.maxMemoryAllocationCount);
+        skip |=
+            LogError("VUID-vkAllocateMemory-maxMemoryAllocationCount-04101", device, error_obj.location,
+                     "The number of currently valid memory objects (%zu) is not less than maxMemoryAllocationCount (%" PRIu32 ").",
+                     Count<vvl::DeviceMemory>(), phys_dev_props.limits.maxMemoryAllocationCount);
     }
 
     const Location allocate_info_loc = error_obj.location.dot(Field::pAllocateInfo);
+    if (IsExtEnabled(device_extensions.vk_khr_maintenance3) &&
+        pAllocateInfo->allocationSize > phys_dev_props_core11.maxMemoryAllocationSize) {
+        // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4119 and finalized in
+        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7073 This is a limit the Working Group feels should be alerted
+        // to the user as if it was a VU. While some drivers should report VK_ERROR_OUT_OF_DEVICE_MEMORY, each platform has small
+        // quirks to it and there is no way for us to test the drivers will return the correct VkError here.
+        LogError("UNASSIGNED-vkAllocateMemory-maxMemoryAllocationSize", device, allocate_info_loc.dot(Field::allocationSize),
+                 "(%" PRIu64 ") is larger than maxMemoryAllocationSize (%" PRIu64
+                 "). While this might work locally on your machine, there are many external factors each platform has that is used "
+                 "to determine this limit. You should receive VK_ERROR_OUT_OF_DEVICE_MEMORY from this call, but even if you do "
+                 "not, it is highly advised from all hardware vendors to not ignore this limit.",
+                 pAllocateInfo->allocationSize, phys_dev_props_core11.maxMemoryAllocationSize);
+    }
+
     if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateAllocateMemoryANDROID(*pAllocateInfo, allocate_info_loc);
     } else {
@@ -755,25 +769,6 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     }
 #endif
     return skip;
-}
-
-void CoreChecks::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
-                                              const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
-                                              const RecordObject &record_obj) {
-    BaseClass::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
-
-    if (VK_SUCCESS != record_obj.result) {
-        // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4119
-        // We should help hint the application if this is the reason they fail.
-        // Note, some drivers don't properly report VK_ERROR_OUT_OF_DEVICE_MEMORY so check any error code
-        if (IsExtEnabled(device_extensions.vk_khr_maintenance3) &&
-            pAllocateInfo->allocationSize > phys_dev_props_core11.maxMemoryAllocationSize) {
-            LogWarning("WARNING-CoreValidation-AllocateMemory-maxMemoryAllocationSize", device,
-                       record_obj.location.dot(Field::pAllocateInfo).dot(Field::allocationSize),
-                       "(%" PRIu64 ") is larger than maxMemoryAllocationSize (%" PRIu64 ") and likely why the allocation failed.",
-                       pAllocateInfo->allocationSize, phys_dev_props_core11.maxMemoryAllocationSize);
-        }
-    }
 }
 
 bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks *pAllocator,
