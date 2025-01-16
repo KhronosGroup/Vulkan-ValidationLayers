@@ -63,7 +63,7 @@ void Instance::InitValidationObjects() {
         object_dispatch.emplace_back(new gpuav::Validator(this));
     }
     if (settings.enabled[sync_validation]) {
-        object_dispatch.emplace_back(new SyncValidator(this));
+        object_dispatch.emplace_back(new syncval::Instance(this));
     }
 }
 
@@ -96,7 +96,7 @@ void Device::InitValidationObjects() {
     }
     if (settings.enabled[sync_validation]) {
         object_dispatch.emplace_back(new SyncValidator(
-            this, static_cast<SyncValidator*>(dispatch_instance->GetValidationObject(LayerObjectTypeSyncValidation))));
+            this, static_cast<syncval::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeSyncValidation))));
     }
 }
 

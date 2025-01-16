@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,14 @@
 #include "sync/sync_stats.h"
 #include "sync/sync_submit.h"
 
+namespace syncval {
+// sync validation has no instance-level functionality
+class Instance : public ValidationStateTracker {
+  public:
+    Instance(vvl::dispatch::Instance *dispatch) : ValidationStateTracker(dispatch, LayerObjectTypeSyncValidation) {}
+};
+}  // namespace syncval
+
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, syncval_state::ImageState, vvl::Image)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, syncval_state::ImageViewState, vvl::ImageView)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, vvl::CommandBuffer)
@@ -41,7 +49,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    SyncValidator(vvl::dispatch::Device *dev, SyncValidator *instance_vo)
+    SyncValidator(vvl::dispatch::Device *dev, syncval::Instance *instance_vo)
         : BaseClass(dev, instance_vo, LayerObjectTypeSyncValidation), error_messages_(*this) {}
     SyncValidator(vvl::dispatch::Instance *inst) : BaseClass(inst, LayerObjectTypeSyncValidation), error_messages_(*this) {}
     ~SyncValidator();
