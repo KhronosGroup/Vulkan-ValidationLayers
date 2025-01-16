@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+/* Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -323,12 +323,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 string_SpvDim(dim), is_image_array);
         }
 
-        // Because you can have a runtime array with different types in it, without extensive GPU-AV tracking, we have no way to
-        // detect if the types match up in a given index
-        const bool is_descriptor_potentially_aliased =
-            resource_variable.array_length == spirv::kRuntimeArray || (is_gpu_av && resource_variable.array_length > 1);
-        if (!is_descriptor_potentially_aliased &&
-            ((resource_variable.info.image_format_type & image_view_state->descriptor_format_bits) == 0)) {
+        if ((resource_variable.info.image_format_type & image_view_state->descriptor_format_bits) == 0) {
             const bool signed_override =
                 ((resource_variable.info.image_format_type & spirv::NumericTypeUint) && resource_variable.info.is_sign_extended);
             const bool unsigned_override =
