@@ -1298,9 +1298,6 @@ class CoreChecks : public ValidationStateTracker {
     void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                               VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
                                               vvl::AllocateDescriptorSetsData& ads_state) override;
-    void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
-                                      const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
-                                      const RecordObject& record_obj) override;
     bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
