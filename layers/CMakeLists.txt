@@ -207,7 +207,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/dispatch_object.cpp
     ${API_TYPE}/generated/validation_object.cpp
     ${API_TYPE}/generated/object_tracker.cpp
-    ${API_TYPE}/generated/object_tracker.h
+    ${API_TYPE}/generated/object_tracker_device_methods.h
+    ${API_TYPE}/generated/object_tracker_instance_methods.h
     ${API_TYPE}/generated/spirv_grammar_helper.cpp
     ${API_TYPE}/generated/spirv_validation_helper.cpp
     ${API_TYPE}/generated/stateless_validation_helper.cpp

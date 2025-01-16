@@ -300,8 +300,10 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.filename == 'object_tracker.h':
-            self.generateHeader()
+        if self.filename == 'object_tracker_device_methods.h':
+            self.generateDeviceHeader()
+        elif self.filename == 'object_tracker_instance_methods.h':
+            self.generateInstanceHeader()
         elif self.filename == 'object_tracker.cpp':
             self.generateSource()
         else:
@@ -310,10 +312,12 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
 
-    def generateHeader(self):
+    def generateHeader(self, want_instance):
         out = []
         guard_helper = PlatformGuardHelper()
         for command in self.vk.commands.values():
+            if command.instance != want_instance:
+                continue
             out.extend(guard_helper.add_guard(command.protect))
             (pre_call_validate, pre_call_record, post_call_record) = self.generateFunctionBody(command)
 
@@ -340,15 +344,27 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
                 out.append(f'void PostCallRecord{prototype}{terminator}')
 
         out.extend(guard_helper.add_guard(None))
+        self.write("".join(out))
 
+    def generateDeviceHeader(self):
+        self.generateHeader(False)
+        out = []
+        # These are Post/Pre call that normally would not be created but we need have manual object tracking logic for them
+        out.append('''
+            void PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags, const RecordObject& record_obj) override;
+            void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers, const RecordObject& record_obj) override;
+            void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets, const RecordObject& record_obj) override;
+            ''')
+        self.write("".join(out))
+
+    def generateInstanceHeader(self):
+        self.generateHeader(True)
+        out = []
         # These are Post/Pre call that normally would not be created but we need have manual object tracking logic for them
         out.append('''
 
             void PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator, const RecordObject& record_obj) override;
-            void PreCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags, const RecordObject& record_obj) override;
             void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties *pQueueFamilyProperties, const RecordObject& record_obj) override;
-            void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers, const RecordObject& record_obj) override;
-            void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets, const RecordObject& record_obj) override;
             void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties, const RecordObject& record_obj) override;
             void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2 *pQueueFamilyProperties, const RecordObject& record_obj) override;
             void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkDisplayPlanePropertiesKHR* pProperties, const RecordObject& record_obj) override;
@@ -358,14 +374,15 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
 
     def generateSource(self):
         out = []
-        out.append('// clang-format off')
         out.append('''
 #include "object_tracker/object_lifetime_validation.h"
-ReadLockGuard ObjectLifetimes::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
-WriteLockGuard ObjectLifetimes::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
+
+namespace object_lifetimes {
+ReadLockGuard Device::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
+WriteLockGuard Device::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
 
 // ObjectTracker undestroyed objects validation function
-bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, const Location& loc) const {
+bool Instance::ReportUndestroyedObjects(const Location& loc) const {
     bool skip = false;
     const std::string error_code = "VUID-vkDestroyInstance-instance-00629";
 ''')
@@ -373,12 +390,12 @@ bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, cons
             comment_prefix = ''
             if APISpecific.IsImplicitlyDestroyed(self.targetApiName, handle.name):
                 comment_prefix = '// No destroy API or implicitly freed/destroyed -- do not report: '
-            out.append(f'    {comment_prefix}skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectType{handle.name[2:]}, error_code, loc);\n')
+            out.append(f'    {comment_prefix}skip |= ReportLeakedObjects(kVulkanObjectType{handle.name[2:]}, error_code, loc);\n')
         out.append('    return skip;\n')
         out.append('}\n')
 
         out.append('''
-bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Location& loc) const {
+bool Device::ReportUndestroyedObjects(const Location& loc) const {
     bool skip = false;
     const std::string error_code = "VUID-vkDestroyDevice-device-05137";
 ''')
@@ -386,31 +403,34 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
         comment_prefix = ''
         if APISpecific.IsImplicitlyDestroyed(self.targetApiName, 'VkCommandBuffer'):
             comment_prefix = '// No destroy API or implicitly freed/destroyed -- do not report: '
-        out.append(f'    {comment_prefix}skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandBuffer, error_code, loc);\n')
+        out.append(f'    {comment_prefix}skip |= ReportLeakedObjects(kVulkanObjectTypeCommandBuffer, error_code, loc);\n')
 
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable and self.isParentDevice(x)]:
             comment_prefix = ''
             if APISpecific.IsImplicitlyDestroyed(self.targetApiName, handle.name):
                 comment_prefix = '// No destroy API or implicitly freed/destroyed -- do not report: '
-            out.append(f'    {comment_prefix}skip |= ReportLeakedDeviceObjects(device, kVulkanObjectType{handle.name[2:]}, error_code, loc);\n')
+            out.append(f'    {comment_prefix}skip |= ReportLeakedObjects(kVulkanObjectType{handle.name[2:]}, error_code, loc);\n')
         out.append('    return skip;\n')
         out.append('}\n')
 
-        out.append('\nvoid ObjectLifetimes::DestroyLeakedInstanceObjects() {\n')
+        out.append('\nvoid Instance::DestroyLeakedObjects() {\n')
+        out.append('    const Location loc = Func::vkDestroyInstance;\n')
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable and not self.isParentDevice(x)]:
-            out.append(f'    DestroyUndestroyedObjects(kVulkanObjectType{handle.name[2:]});\n')
+            out.append(f'    DestroyUndestroyedObjects(kVulkanObjectType{handle.name[2:]}, loc);\n')
         out.append('}\n')
 
-        out.append('\nvoid ObjectLifetimes::DestroyLeakedDeviceObjects() {\n')
-        out.append('    DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer);\n')
+        out.append('\nvoid Device::DestroyLeakedObjects() {\n')
+        out.append('    const Location loc = Func::vkDestroyDevice;\n')
+        out.append('    DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer, loc);\n')
         for handle in [x for x in self.vk.handles.values() if not x.dispatchable and self.isParentDevice(x)]:
-            out.append(f'    DestroyUndestroyedObjects(kVulkanObjectType{handle.name[2:]});\n')
+            out.append(f'    DestroyUndestroyedObjects(kVulkanObjectType{handle.name[2:]}, loc);\n')
         out.append('}\n')
 
-        out.append('// clang-format on')
         guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
             out.extend(guard_helper.add_guard(command.protect))
+
+            class_name = "Device" if not command.instance else "Instance"
 
             # Generate object handling code
             (pre_call_validate, pre_call_record, post_call_record) = self.generateFunctionBody(command)
@@ -431,13 +451,13 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                     paramList.append('error_obj')
                     params = ', '.join(paramList)
                     out.append(f'''
-                        bool ObjectLifetimes::PreCallValidate{prePrototype} const {{
+                        bool {class_name}::PreCallValidate{prePrototype} const {{
                             return PreCallValidate{command.alias[2:]}({params});
                         }}
                         ''')
                 else:
                     out.append(f'''
-                        bool ObjectLifetimes::PreCallValidate{prePrototype} const {{
+                        bool {class_name}::PreCallValidate{prePrototype} const {{
                             bool skip = false;
                             {pre_call_validate}
                             return skip;
@@ -448,7 +468,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             if pre_call_record and command.name not in self.no_pre_record_autogen_list:
                 postPrototype = prototype.replace(')', ', const RecordObject& record_obj)')
                 out.append(f'''
-                    void ObjectLifetimes::PreCallRecord{postPrototype} {{
+                    void {class_name}::PreCallRecord{postPrototype} {{
                         {pre_call_record}
                     }}
                     ''')
@@ -456,7 +476,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             # Output PostCallRecordAPI function if necessary
             if post_call_record and command.name not in self.no_post_record_autogen_list:
                 out.append('\n')
-                postPrototype = f'void ObjectLifetimes::PostCallRecord{prototype} {{\n'
+                postPrototype = f'void {class_name}::PostCallRecord{prototype} {{\n'
                 postPrototype = postPrototype.replace(')', ', const RecordObject& record_obj)')
                 if command.returnType == 'VkResult':
                     # The two createpipelines APIs may create on failure -- skip the success result check
@@ -468,6 +488,9 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 out.append('}\n')
 
         out.extend(guard_helper.add_guard(None))
+        out.append('''
+        } // namespace object_lifetimes
+        ''')
 
         self.write("".join(out))
 
@@ -945,7 +968,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                     location = f'{errorLoc}.dot(Field::{member.name})'
                     if self.vk.commands[topCommand].device and self.vk.handles[member.type].instance:
                         # Use case when for device-level API call we should use instance-level validation object
-                        pre_call_validate += 'auto instance_object_lifetimes = static_cast<ObjectLifetimes*>(dispatch_instance_->GetValidationObject(LayerObjectTypeObjectTracker));\n'
+                        pre_call_validate += 'auto instance_object_lifetimes = static_cast<Instance*>(dispatch_instance_->GetValidationObject(container_type));\n'
                         pre_call_validate += f'skip |= instance_object_lifetimes->ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
                     else:
                         pre_call_validate += f'skip |= ValidateObject({prefix}{member.name}, kVulkanObjectType{member.type[2:]}, {nullAllowed}, {param_vuid}, {parent_vuid}, {location}{parent_object_type});\n'
@@ -1053,8 +1076,8 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
                 allocator = command.params[-2].name if command.params[-2].type == 'VkAllocationCallbacks' else 'nullptr'
                 objectDest = f'{command.params[-1].name}[index]' if objectArray else f'*{command.params[-1].name}'
                 location = f'record_obj.location.dot(Field::{command.params[-1].name}, index)' if objectArray else 'record_obj.location'
-
-                post_call_record += f'CreateObject({objectDest}, kVulkanObjectType{handle_type[2:]}, {allocator}, {location});\n'
+                parent = command.params[0].name
+                post_call_record += f'tracker.CreateObject({objectDest}, kVulkanObjectType{handle_type[2:]}, {allocator}, {location}, {parent});\n'
                 if objectArray:
                     post_call_record += '}\n'
                     post_call_record += '}\n'
@@ -1078,7 +1101,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const Loca
             if handle_param.type in self.vk.handles:
                 # Call Destroy a single time
                 pre_call_validate += f'skip |= ValidateDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]}, {allocator}, {compatallocVUID}, {nullallocVUID}, error_obj.location);\n'
-                pre_call_record += f'RecordDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]});\n'
+                pre_call_record += f'RecordDestroyObject({handle_param.name}, kVulkanObjectType{handle_param.type[2:]}, record_obj.location);\n'
 
         return pre_call_validate, pre_call_record, post_call_record
 

@@ -51,7 +51,7 @@ void Instance::InitValidationObjects() {
         object_dispatch.emplace_back(new StatelessValidation(this));
     }
     if (!settings.disabled[object_tracking]) {
-        object_dispatch.emplace_back(new ObjectLifetimes(this));
+        object_dispatch.emplace_back(new object_lifetimes::Instance(this));
     }
     if (!settings.disabled[core_checks]) {
         object_dispatch.emplace_back(new CoreChecks(this));
@@ -79,8 +79,8 @@ void Device::InitValidationObjects() {
             this, static_cast<StatelessValidation*>(dispatch_instance->GetValidationObject(LayerObjectTypeParameterValidation))));
     }
     if (!settings.disabled[object_tracking]) {
-        object_dispatch.emplace_back(new ObjectLifetimes(
-            this, static_cast<ObjectLifetimes*>(dispatch_instance->GetValidationObject(LayerObjectTypeObjectTracker))));
+        object_dispatch.emplace_back(new object_lifetimes::Device(
+            this, static_cast<object_lifetimes::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeObjectTracker))));
     }
     if (!settings.disabled[core_checks]) {
         object_dispatch.emplace_back(

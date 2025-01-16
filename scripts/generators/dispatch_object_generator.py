@@ -54,8 +54,8 @@ class APISpecific:
                     },
                     {
                         'include': 'object_tracker/object_lifetime_validation.h',
-                        'device': 'ObjectLifetimes',
-                        'instance': 'ObjectLifetimes',
+                        'device': 'object_lifetimes::Device',
+                        'instance': 'object_lifetimes::Instance',
                         'type': 'LayerObjectTypeObjectTracker',
                         'enabled': '!settings.disabled[object_tracking]'
                     },
