@@ -136,7 +136,12 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : ValidFlagValuesOutputGenerator,
             'genCombined': True,
         },
-        'object_tracker.h' : {
+        'object_tracker_device_methods.h' : {
+            'generator' : ObjectTrackerOutputGenerator,
+            'genCombined': True,
+            'options' : [valid_usage_file],
+        },
+        'object_tracker_instance_methods.h' : {
             'generator' : ObjectTrackerOutputGenerator,
             'genCombined': True,
             'options' : [valid_usage_file],

@@ -62,7 +62,7 @@ void Device::InitObjectDispatchVectors() {
                                 typeid(&ValidationObject::name), \\
                                 typeid(&threadsafety::Device::name), \\
                                 typeid(&StatelessValidation::name), \\
-                                typeid(&ObjectLifetimes::name), \\
+                                typeid(&object_lifetimes::Device::name), \\
                                 typeid(&CoreChecks::name), \\
                                 typeid(&BestPractices::name), \\
                                 typeid(&gpuav::Validator::name), \\

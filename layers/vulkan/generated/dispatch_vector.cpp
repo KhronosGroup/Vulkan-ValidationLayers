@@ -48,10 +48,11 @@ namespace vvl {
 namespace dispatch {
 
 void Device::InitObjectDispatchVectors() {
-#define BUILD_DISPATCH_VECTOR(name)                                                                                            \
-    init_object_dispatch_vector(InterceptId##name, typeid(&ValidationObject::name), typeid(&threadsafety::Device::name),       \
-                                typeid(&StatelessValidation::name), typeid(&ObjectLifetimes::name), typeid(&CoreChecks::name), \
-                                typeid(&BestPractices::name), typeid(&gpuav::Validator::name), typeid(&SyncValidator::name));
+#define BUILD_DISPATCH_VECTOR(name)                                                                                       \
+    init_object_dispatch_vector(InterceptId##name, typeid(&ValidationObject::name), typeid(&threadsafety::Device::name),  \
+                                typeid(&StatelessValidation::name), typeid(&object_lifetimes::Device::name),              \
+                                typeid(&CoreChecks::name), typeid(&BestPractices::name), typeid(&gpuav::Validator::name), \
+                                typeid(&SyncValidator::name));
 
     auto init_object_dispatch_vector = [this](InterceptId id, const std::type_info& vo_typeid, const std::type_info& tt_typeid,
                                               const std::type_info& tpv_typeid, const std::type_info& tot_typeid,
