@@ -1145,6 +1145,14 @@
                             "type": "BOOL",
                             "default": false,
                             "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
+                        },
+                        {
+                            "key": "debug_stable_messages",
+                            "label": "Stable messages",
+                            "view": "ADVANCED",
+                            "description": "Improves the reproducibility of error messages by removing fields that can vary between application runs (e.g., dispatchable handles) for comparison purposes.",
+                            "type": "BOOL",
+                            "default": false
                         }
                     ]
                 },
