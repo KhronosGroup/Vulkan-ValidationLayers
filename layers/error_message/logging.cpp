@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -214,11 +214,14 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
     uint32_t index = 0;
     for (const auto &src_object : object_name_infos) {
         if (0 != src_object.objectHandle) {
-            oss << "Object " << index++ << ": handle = 0x" << std::hex << src_object.objectHandle;
+            oss << "Object " << index++ << ": ";
+            if (!debug_stable_messages) {
+                oss << "handle = 0x" << std::hex << src_object.objectHandle << ", ";
+            }
             if (src_object.pObjectName) {
-                oss << ", name = " << src_object.pObjectName << ", type = ";
+                oss << "name = " << src_object.pObjectName << ", type = ";
             } else {
-                oss << ", type = ";
+                oss << "type = ";
             }
             oss << string_VkObjectType(src_object.objectType) << "; ";
         } else {
@@ -321,8 +324,22 @@ std::string DebugReport::FormatHandle(const char *handle_type_name, uint64_t han
         handle_name = GetMarkerObjectNameNoLock(handle);
     }
 
+    bool print_handle = true;
+    if (debug_stable_messages) {
+        if (!strcmp(handle_type_name, "VkInstance") || !strcmp(handle_type_name, "VkPhysicalDevice") ||
+            !strcmp(handle_type_name, "VkDevice") || !strcmp(handle_type_name, "VkQueue") ||
+            !strcmp(handle_type_name, "VkCommandBuffer")) {
+            // In stable message mode do not print dispatchable handles because they vary
+            print_handle = false;
+        }
+    }
+
     std::ostringstream str;
-    str << handle_type_name << " 0x" << std::hex << handle << "[" << handle_name.c_str() << "]";
+    str << handle_type_name << " ";
+    if (print_handle) {
+        str << "0x" << std::hex << handle;
+    }
+    str << "[" << handle_name.c_str() << "]";
     return str.str();
 }
 
