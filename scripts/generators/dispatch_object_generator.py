@@ -40,45 +40,52 @@ class APISpecific:
                 return [
                     {
                         'include': 'thread_tracker/thread_safety_validation.h',
-                        'class': 'ThreadSafety',
-                        'enabled': '!settings.disabled[thread_safety]',
+                        'device': 'ThreadSafety',
+                        'instance': 'ThreadSafety',
                         'type': 'LayerObjectTypeThreading',
+                        'enabled': '!settings.disabled[thread_safety]'
                     },
                     {
                         'include': 'stateless/stateless_validation.h',
-                        'class': 'StatelessValidation',
-                        'enabled': '!settings.disabled[stateless_checks]',
+                        'device': 'StatelessValidation',
+                        'instance': 'StatelessValidation',
                         'type': 'LayerObjectTypeParameterValidation',
+                        'enabled': '!settings.disabled[stateless_checks]'
                     },
                     {
                         'include': 'object_tracker/object_lifetime_validation.h',
-                        'class': 'ObjectLifetimes',
-                        'enabled': '!settings.disabled[object_tracking]',
+                        'device': 'ObjectLifetimes',
+                        'instance': 'ObjectLifetimes',
                         'type': 'LayerObjectTypeObjectTracker',
+                        'enabled': '!settings.disabled[object_tracking]'
                     },
                     {
                         'include': 'core_checks/core_validation.h',
-                        'class': 'CoreChecks',
-                        'enabled': '!settings.disabled[core_checks]',
+                        'device': 'CoreChecks',
+                        'instance': 'CoreChecks',
                         'type': 'LayerObjectTypeCoreValidation',
+                        'enabled': '!settings.disabled[core_checks]'
                     },
                     {
                         'include': 'best_practices/best_practices_validation.h',
-                        'class': 'BestPractices',
-                        'enabled': 'settings.enabled[best_practices]',
+                        'device': 'BestPractices',
+                        'instance': 'BestPractices',
                         'type': 'LayerObjectTypeBestPractices',
+                        'enabled': 'settings.enabled[best_practices]'
                     },
                     {
                         'include': 'gpuav/core/gpuav.h',
-                        'class': 'gpuav::Validator',
-                        'enabled': 'settings.enabled[gpu_validation] || settings.enabled[debug_printf_validation]',
+                        'device': 'gpuav::Validator',
+                        'instance': 'gpuav::Validator',
                         'type': 'LayerObjectTypeGpuAssisted',
+                        'enabled': 'settings.enabled[gpu_validation] || settings.enabled[debug_printf_validation]'
                     },
                     {
                         'include': 'sync/sync_validation.h',
-                        'class': 'SyncValidator',
-                        'enabled': 'settings.enabled[sync_validation]',
+                        'device': 'SyncValidator',
+                        'instance': 'syncval::Instance',
                         'type': 'LayerObjectTypeSyncValidation',
+                        'enabled': 'settings.enabled[sync_validation]'
                     }
                 ]
 
@@ -337,7 +344,7 @@ class DispatchObjectGenerator(BaseGenerator):
                  // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
              ''')
         for layer in APISpecific.getValidationLayerList(self.targetApiName):
-             classname = layer['class']
+             classname = layer['instance']
              out.append(f'''
                  if ({layer["enabled"]}) {{
                      object_dispatch.emplace_back(new {classname}(this));
@@ -350,12 +357,13 @@ class DispatchObjectGenerator(BaseGenerator):
                  // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
              ''')
         for layer in APISpecific.getValidationLayerList(self.targetApiName):
-             classname = layer['class']
-             typeid= layer['type']
-             instance = f'static_cast<{classname}*>(dispatch_instance->GetValidationObject({typeid}))'
+             classname = layer['device']
+             layer_type = layer['type']
+             instance = layer['instance']
+             instance_arg = f'static_cast<{instance}*>(dispatch_instance->GetValidationObject({layer_type}))'
              out.append(f'''
                  if ({layer["enabled"]}) {{
-                     object_dispatch.emplace_back(new {classname}(this, {instance}));
+                     object_dispatch.emplace_back(new {classname}(this, {instance_arg}));
                  }}''')
         out.append('\n')
         out.append('}\n')
