@@ -2443,7 +2443,7 @@ TEST_F(NegativeWsi, SwapchainMaintenance1ExtensionRelease) {
     uint32_t release_index = 0;
     VkReleaseSwapchainImagesInfoEXT release_info = vku::InitStructHelper();
     release_info.swapchain = m_swapchain;
-    release_info.imageIndexCount = static_cast<uint32_t>(swapchain_images.size());
+    release_info.imageIndexCount = 1;
     release_info.pImageIndices = &release_index;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07785");
     m_errorMonitor->SetDesiredError("VUID-VkReleaseSwapchainImagesInfoEXT-pImageIndices-07786");
