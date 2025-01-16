@@ -1445,10 +1445,9 @@ TEST_F(PositiveShaderInterface, MultipleFragmentAttachment) {
     rp.AddColorAttachment(1);
     rp.CreateRenderPass();
 
-    VkPipelineColorBlendAttachmentState cb_as[2] = {{VK_FALSE, VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD,
-                                                     VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD, 0xf},
-                                                    {VK_FALSE, VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD,
-                                                     VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD, 0xf}};
+    VkPipelineColorBlendAttachmentState cb_as[2];
+    cb_as[0] = DefaultColorBlendAttachmentState();
+    cb_as[1] = DefaultColorBlendAttachmentState();
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
