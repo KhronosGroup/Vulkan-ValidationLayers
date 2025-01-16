@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -455,4 +455,32 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
         ASSERT_TRUE(data[2] == 20);
         buffer_data.Memory().Unmap();
     }
+}
+
+TEST_F(PositiveDescriptorBuffer, BindingInfoUsage2) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9228");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
+    buffer_ci.size = 4096;
+
+    VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
+    allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
+    vkt::Buffer buffer(*m_device, buffer_ci, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                       &allocate_flag_info);
+
+    VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
+    dbbi.address = buffer.Address();
+    dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
+    m_command_buffer.End();
 }
