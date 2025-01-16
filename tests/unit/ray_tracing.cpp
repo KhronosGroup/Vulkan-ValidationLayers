@@ -3843,3 +3843,35 @@ TEST_F(NegativeRayTracing, AccelerationStructureGeometry) {
                                               &max_primitives_count, &build_sizes_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeRayTracing, CopyAccelerationStructureMode) {
+    TEST_DESCRIPTION("Test VkAccelerationStructureGeometryKHR parameters");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureHostCommands);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas1 = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
+    blas1.BuildHost();
+
+    auto blas2 = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, 4096);
+    blas2->Build();
+
+    VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
+    copy_info.src = blas1.GetDstAS()->handle();
+    copy_info.dst = blas2->handle();
+
+    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-mode-03410");
+    vk::CopyAccelerationStructureKHR(device(), VK_NULL_HANDLE, &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR;
+    m_errorMonitor->SetDesiredError("VUID-VkCopyAccelerationStructureInfoKHR-src-03411");
+    vk::CopyAccelerationStructureKHR(device(), VK_NULL_HANDLE, &copy_info);
+    m_errorMonitor->VerifyFound();
+}
