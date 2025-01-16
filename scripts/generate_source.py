@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2024 The Khronos Group Inc.
-# Copyright (c) 2021-2024 Valve Corporation
-# Copyright (c) 2021-2024 LunarG, Inc.
+# Copyright (c) 2021-2025 The Khronos Group Inc.
+# Copyright (c) 2021-2025 Valve Corporation
+# Copyright (c) 2021-2025 LunarG, Inc.
 # Copyright (c) 2021-2024 Google Inc.
 # Copyright (c) 2023-2024 RasterGrid Kft.
 #
@@ -97,19 +97,11 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     # Build up a list of all generators
     # Note: Options variable names MUST match order of constructor variable in generator
     generators = {
-        'thread_safety_counter_definitions.h' : {
+        'thread_safety_instance_defs.h' : {
             'generator' : ThreadSafetyOutputGenerator,
             'genCombined': True,
         },
-        'thread_safety_counter_instances.h' : {
-            'generator' : ThreadSafetyOutputGenerator,
-            'genCombined': True,
-        },
-        'thread_safety_counter_bodies.h' : {
-            'generator' : ThreadSafetyOutputGenerator,
-            'genCombined': True,
-        },
-        'thread_safety_commands.h' : {
+        'thread_safety_device_defs.h' : {
             'generator' : ThreadSafetyOutputGenerator,
             'genCombined': True,
         },

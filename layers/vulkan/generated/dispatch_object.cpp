@@ -45,7 +45,7 @@ void Instance::InitValidationObjects() {
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
 
     if (!settings.disabled[thread_safety]) {
-        object_dispatch.emplace_back(new ThreadSafety(this));
+        object_dispatch.emplace_back(new threadsafety::Instance(this));
     }
     if (!settings.disabled[stateless_checks]) {
         object_dispatch.emplace_back(new StatelessValidation(this));
@@ -71,8 +71,8 @@ void Device::InitValidationObjects() {
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
 
     if (!settings.disabled[thread_safety]) {
-        object_dispatch.emplace_back(
-            new ThreadSafety(this, static_cast<ThreadSafety*>(dispatch_instance->GetValidationObject(LayerObjectTypeThreading))));
+        object_dispatch.emplace_back(new threadsafety::Device(
+            this, static_cast<threadsafety::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeThreading))));
     }
     if (!settings.disabled[stateless_checks]) {
         object_dispatch.emplace_back(new StatelessValidation(

@@ -40,8 +40,8 @@ class APISpecific:
                 return [
                     {
                         'include': 'thread_tracker/thread_safety_validation.h',
-                        'device': 'ThreadSafety',
-                        'instance': 'ThreadSafety',
+                        'device': 'threadsafety::Device',
+                        'instance': 'threadsafety::Instance',
                         'type': 'LayerObjectTypeThreading',
                         'enabled': '!settings.disabled[thread_safety]'
                     },
