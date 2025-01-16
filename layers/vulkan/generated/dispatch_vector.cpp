@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2015-2024 Google Inc.
  * Copyright (c) 2023-2024 RasterGrid Kft.
  *
@@ -49,7 +49,7 @@ namespace dispatch {
 
 void Device::InitObjectDispatchVectors() {
 #define BUILD_DISPATCH_VECTOR(name)                                                                                            \
-    init_object_dispatch_vector(InterceptId##name, typeid(&ValidationObject::name), typeid(&ThreadSafety::name),               \
+    init_object_dispatch_vector(InterceptId##name, typeid(&ValidationObject::name), typeid(&threadsafety::Device::name),       \
                                 typeid(&StatelessValidation::name), typeid(&ObjectLifetimes::name), typeid(&CoreChecks::name), \
                                 typeid(&BestPractices::name), typeid(&gpuav::Validator::name), typeid(&SyncValidator::name));
 

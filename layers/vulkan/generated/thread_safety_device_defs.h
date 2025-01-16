@@ -22,38 +22,174 @@
  ****************************************************************************/
 
 // NOLINTBEGIN
-void PreCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                 VkInstance* pInstance, const RecordObject& record_obj) override;
+Counter<VkQueue> c_VkQueue;
+Counter<VkCommandBuffer> c_VkCommandBuffer;
+#ifdef DISTINCT_NONDISPATCHABLE_HANDLES
+Counter<VkBuffer> c_VkBuffer;
+Counter<VkImage> c_VkImage;
+Counter<VkSemaphore> c_VkSemaphore;
+Counter<VkFence> c_VkFence;
+Counter<VkDeviceMemory> c_VkDeviceMemory;
+Counter<VkEvent> c_VkEvent;
+Counter<VkQueryPool> c_VkQueryPool;
+Counter<VkBufferView> c_VkBufferView;
+Counter<VkImageView> c_VkImageView;
+Counter<VkShaderModule> c_VkShaderModule;
+Counter<VkPipelineCache> c_VkPipelineCache;
+Counter<VkPipelineLayout> c_VkPipelineLayout;
+Counter<VkPipeline> c_VkPipeline;
+Counter<VkRenderPass> c_VkRenderPass;
+Counter<VkDescriptorSetLayout> c_VkDescriptorSetLayout;
+Counter<VkSampler> c_VkSampler;
+Counter<VkDescriptorSet> c_VkDescriptorSet;
+Counter<VkDescriptorPool> c_VkDescriptorPool;
+Counter<VkFramebuffer> c_VkFramebuffer;
+Counter<VkCommandPool> c_VkCommandPool;
+Counter<VkSamplerYcbcrConversion> c_VkSamplerYcbcrConversion;
+Counter<VkDescriptorUpdateTemplate> c_VkDescriptorUpdateTemplate;
+Counter<VkPrivateDataSlot> c_VkPrivateDataSlot;
+Counter<VkSwapchainKHR> c_VkSwapchainKHR;
+Counter<VkVideoSessionKHR> c_VkVideoSessionKHR;
+Counter<VkVideoSessionParametersKHR> c_VkVideoSessionParametersKHR;
+Counter<VkDeferredOperationKHR> c_VkDeferredOperationKHR;
+Counter<VkPipelineBinaryKHR> c_VkPipelineBinaryKHR;
+Counter<VkCuModuleNVX> c_VkCuModuleNVX;
+Counter<VkCuFunctionNVX> c_VkCuFunctionNVX;
+Counter<VkValidationCacheEXT> c_VkValidationCacheEXT;
+Counter<VkAccelerationStructureNV> c_VkAccelerationStructureNV;
+Counter<VkPerformanceConfigurationINTEL> c_VkPerformanceConfigurationINTEL;
+Counter<VkIndirectCommandsLayoutNV> c_VkIndirectCommandsLayoutNV;
+Counter<VkCudaModuleNV> c_VkCudaModuleNV;
+Counter<VkCudaFunctionNV> c_VkCudaFunctionNV;
+Counter<VkAccelerationStructureKHR> c_VkAccelerationStructureKHR;
+#ifdef VK_USE_PLATFORM_FUCHSIA
+Counter<VkBufferCollectionFUCHSIA> c_VkBufferCollectionFUCHSIA;
+#endif  // VK_USE_PLATFORM_FUCHSIA
+Counter<VkMicromapEXT> c_VkMicromapEXT;
+Counter<VkOpticalFlowSessionNV> c_VkOpticalFlowSessionNV;
+Counter<VkShaderEXT> c_VkShaderEXT;
+Counter<VkIndirectExecutionSetEXT> c_VkIndirectExecutionSetEXT;
+Counter<VkIndirectCommandsLayoutEXT> c_VkIndirectCommandsLayoutEXT;
+#else
+Counter<uint64_t> c_uint64_t;
+#endif  // DISTINCT_NONDISPATCHABLE_HANDLES
 
-void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                  VkInstance* pInstance, const RecordObject& record_obj) override;
+WRAPPER(VkQueue)
+WRAPPER_PARENT_INSTANCE(VkInstance)
+WRAPPER_PARENT_INSTANCE(VkPhysicalDevice)
+WRAPPER_PARENT_INSTANCE(VkDevice)
+#ifdef DISTINCT_NONDISPATCHABLE_HANDLES
+WRAPPER(VkBuffer)
+WRAPPER(VkImage)
+WRAPPER(VkSemaphore)
+WRAPPER(VkFence)
+WRAPPER(VkDeviceMemory)
+WRAPPER(VkEvent)
+WRAPPER(VkQueryPool)
+WRAPPER(VkBufferView)
+WRAPPER(VkImageView)
+WRAPPER(VkShaderModule)
+WRAPPER(VkPipelineCache)
+WRAPPER(VkPipelineLayout)
+WRAPPER(VkPipeline)
+WRAPPER(VkRenderPass)
+WRAPPER(VkDescriptorSetLayout)
+WRAPPER(VkSampler)
+WRAPPER(VkDescriptorSet)
+WRAPPER(VkDescriptorPool)
+WRAPPER(VkFramebuffer)
+WRAPPER(VkCommandPool)
+WRAPPER(VkSamplerYcbcrConversion)
+WRAPPER(VkDescriptorUpdateTemplate)
+WRAPPER(VkPrivateDataSlot)
+WRAPPER(VkSwapchainKHR)
+WRAPPER(VkVideoSessionKHR)
+WRAPPER(VkVideoSessionParametersKHR)
+WRAPPER(VkDeferredOperationKHR)
+WRAPPER(VkPipelineBinaryKHR)
+WRAPPER(VkCuModuleNVX)
+WRAPPER(VkCuFunctionNVX)
+WRAPPER(VkValidationCacheEXT)
+WRAPPER(VkAccelerationStructureNV)
+WRAPPER(VkPerformanceConfigurationINTEL)
+WRAPPER(VkIndirectCommandsLayoutNV)
+WRAPPER(VkCudaModuleNV)
+WRAPPER(VkCudaFunctionNV)
+WRAPPER(VkAccelerationStructureKHR)
+#ifdef VK_USE_PLATFORM_FUCHSIA
+WRAPPER(VkBufferCollectionFUCHSIA)
+#endif  // VK_USE_PLATFORM_FUCHSIA
+WRAPPER(VkMicromapEXT)
+WRAPPER(VkOpticalFlowSessionNV)
+WRAPPER(VkShaderEXT)
+WRAPPER(VkIndirectExecutionSetEXT)
+WRAPPER(VkIndirectCommandsLayoutEXT)
+WRAPPER_PARENT_INSTANCE(VkSurfaceKHR)
+WRAPPER_PARENT_INSTANCE(VkDisplayKHR)
+WRAPPER_PARENT_INSTANCE(VkDisplayModeKHR)
+WRAPPER_PARENT_INSTANCE(VkDebugReportCallbackEXT)
+WRAPPER_PARENT_INSTANCE(VkDebugUtilsMessengerEXT)
+#else
+WRAPPER(uint64_t)
+WRAPPER_PARENT_INSTANCE(uint64_t)
+#endif  // DISTINCT_NONDISPATCHABLE_HANDLES
 
-void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
-                                  const RecordObject& record_obj) override;
-
-void PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
-                                   const RecordObject& record_obj) override;
-
-void PreCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices,
-                                           const RecordObject& record_obj) override;
-
-void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices,
-                                            const RecordObject& record_obj) override;
-
-void PreCallRecordGetInstanceProcAddr(VkInstance instance, const char* pName, const RecordObject& record_obj) override;
-
-void PostCallRecordGetInstanceProcAddr(VkInstance instance, const char* pName, const RecordObject& record_obj) override;
-
+void InitCounters() {
+    c_VkQueue.Init(kVulkanObjectTypeQueue, this);
+    c_VkCommandBuffer.Init(kVulkanObjectTypeCommandBuffer, this);
+#ifdef DISTINCT_NONDISPATCHABLE_HANDLES
+    c_VkBuffer.Init(kVulkanObjectTypeBuffer, this);
+    c_VkImage.Init(kVulkanObjectTypeImage, this);
+    c_VkSemaphore.Init(kVulkanObjectTypeSemaphore, this);
+    c_VkFence.Init(kVulkanObjectTypeFence, this);
+    c_VkDeviceMemory.Init(kVulkanObjectTypeDeviceMemory, this);
+    c_VkEvent.Init(kVulkanObjectTypeEvent, this);
+    c_VkQueryPool.Init(kVulkanObjectTypeQueryPool, this);
+    c_VkBufferView.Init(kVulkanObjectTypeBufferView, this);
+    c_VkImageView.Init(kVulkanObjectTypeImageView, this);
+    c_VkShaderModule.Init(kVulkanObjectTypeShaderModule, this);
+    c_VkPipelineCache.Init(kVulkanObjectTypePipelineCache, this);
+    c_VkPipelineLayout.Init(kVulkanObjectTypePipelineLayout, this);
+    c_VkPipeline.Init(kVulkanObjectTypePipeline, this);
+    c_VkRenderPass.Init(kVulkanObjectTypeRenderPass, this);
+    c_VkDescriptorSetLayout.Init(kVulkanObjectTypeDescriptorSetLayout, this);
+    c_VkSampler.Init(kVulkanObjectTypeSampler, this);
+    c_VkDescriptorSet.Init(kVulkanObjectTypeDescriptorSet, this);
+    c_VkDescriptorPool.Init(kVulkanObjectTypeDescriptorPool, this);
+    c_VkFramebuffer.Init(kVulkanObjectTypeFramebuffer, this);
+    c_VkCommandPool.Init(kVulkanObjectTypeCommandPool, this);
+    c_VkSamplerYcbcrConversion.Init(kVulkanObjectTypeSamplerYcbcrConversion, this);
+    c_VkDescriptorUpdateTemplate.Init(kVulkanObjectTypeDescriptorUpdateTemplate, this);
+    c_VkPrivateDataSlot.Init(kVulkanObjectTypePrivateDataSlot, this);
+    c_VkSwapchainKHR.Init(kVulkanObjectTypeSwapchainKHR, this);
+    c_VkVideoSessionKHR.Init(kVulkanObjectTypeVideoSessionKHR, this);
+    c_VkVideoSessionParametersKHR.Init(kVulkanObjectTypeVideoSessionParametersKHR, this);
+    c_VkDeferredOperationKHR.Init(kVulkanObjectTypeDeferredOperationKHR, this);
+    c_VkPipelineBinaryKHR.Init(kVulkanObjectTypePipelineBinaryKHR, this);
+    c_VkCuModuleNVX.Init(kVulkanObjectTypeCuModuleNVX, this);
+    c_VkCuFunctionNVX.Init(kVulkanObjectTypeCuFunctionNVX, this);
+    c_VkValidationCacheEXT.Init(kVulkanObjectTypeValidationCacheEXT, this);
+    c_VkAccelerationStructureNV.Init(kVulkanObjectTypeAccelerationStructureNV, this);
+    c_VkPerformanceConfigurationINTEL.Init(kVulkanObjectTypePerformanceConfigurationINTEL, this);
+    c_VkIndirectCommandsLayoutNV.Init(kVulkanObjectTypeIndirectCommandsLayoutNV, this);
+    c_VkCudaModuleNV.Init(kVulkanObjectTypeCudaModuleNV, this);
+    c_VkCudaFunctionNV.Init(kVulkanObjectTypeCudaFunctionNV, this);
+    c_VkAccelerationStructureKHR.Init(kVulkanObjectTypeAccelerationStructureKHR, this);
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    c_VkBufferCollectionFUCHSIA.Init(kVulkanObjectTypeBufferCollectionFUCHSIA, this);
+#endif  // VK_USE_PLATFORM_FUCHSIA
+    c_VkMicromapEXT.Init(kVulkanObjectTypeMicromapEXT, this);
+    c_VkOpticalFlowSessionNV.Init(kVulkanObjectTypeOpticalFlowSessionNV, this);
+    c_VkShaderEXT.Init(kVulkanObjectTypeShaderEXT, this);
+    c_VkIndirectExecutionSetEXT.Init(kVulkanObjectTypeIndirectExecutionSetEXT, this);
+    c_VkIndirectCommandsLayoutEXT.Init(kVulkanObjectTypeIndirectCommandsLayoutEXT, this);
+#else
+    c_uint64_t.Init(kVulkanObjectTypeUnknown, this);
+#endif  // DISTINCT_NONDISPATCHABLE_HANDLES
+}
 void PreCallRecordGetDeviceProcAddr(VkDevice device, const char* pName, const RecordObject& record_obj) override;
 
 void PostCallRecordGetDeviceProcAddr(VkDevice device, const char* pName, const RecordObject& record_obj) override;
-
-void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
-                               const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj) override;
-
-void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
-                                const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
-                                const RecordObject& record_obj) override;
 
 void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
 
@@ -860,14 +996,6 @@ void PostCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseG
                                    uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
                                    const RecordObject& record_obj) override;
 
-void PreCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
-                                                const RecordObject& record_obj) override;
-
-void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                 VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
-                                                 const RecordObject& record_obj) override;
-
 void PreCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                               VkMemoryRequirements2* pMemoryRequirements, const RecordObject& record_obj) override;
 
@@ -1381,44 +1509,6 @@ void PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCou
                                          const VkHostImageLayoutTransitionInfo* pTransitions,
                                          const RecordObject& record_obj) override;
 
-void PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator,
-                                    const RecordObject& record_obj) override;
-
-void PostCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator,
-                                     const RecordObject& record_obj) override;
-
-void PreCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                     VkSurfaceKHR surface, VkBool32* pSupported,
-                                                     const RecordObject& record_obj) override;
-
-void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                      VkSurfaceKHR surface, VkBool32* pSupported,
-                                                      const RecordObject& record_obj) override;
-
-void PreCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                          VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
-                                                          const RecordObject& record_obj) override;
-
-void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                           VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
-                                                           const RecordObject& record_obj) override;
-
-void PreCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                     uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
-                                                     const RecordObject& record_obj) override;
-
-void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                      uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
-                                                      const RecordObject& record_obj) override;
-
-void PreCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                          uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
-                                                          const RecordObject& record_obj) override;
-
-void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                           uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
-                                                           const RecordObject& record_obj) override;
-
 void PreCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
                                      const RecordObject& record_obj) override;
@@ -1465,55 +1555,11 @@ void PostCallRecordGetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfa
                                                         VkDeviceGroupPresentModeFlagsKHR* pModes,
                                                         const RecordObject& record_obj) override;
 
-void PreCallRecordGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, uint32_t* pRectCount,
-                                                        VkRect2D* pRects, const RecordObject& record_obj) override;
-
-void PostCallRecordGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                         uint32_t* pRectCount, VkRect2D* pRects,
-                                                         const RecordObject& record_obj) override;
-
 void PreCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex,
                                        const RecordObject& record_obj) override;
 
 void PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex,
                                         const RecordObject& record_obj) override;
-
-void PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex, uint32_t* pDisplayCount,
-                                                      VkDisplayKHR* pDisplays, const RecordObject& record_obj) override;
-
-void PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                       uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
-                                                       const RecordObject& record_obj) override;
-
-void PreCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t* pPropertyCount,
-                                              VkDisplayModePropertiesKHR* pProperties, const RecordObject& record_obj) override;
-
-void PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t* pPropertyCount,
-                                               VkDisplayModePropertiesKHR* pProperties, const RecordObject& record_obj) override;
-
-void PreCallRecordCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                       const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                       VkDisplayModeKHR* pMode, const RecordObject& record_obj) override;
-
-void PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                        const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                        VkDisplayModeKHR* pMode, const RecordObject& record_obj) override;
-
-void PreCallRecordGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
-                                                 VkDisplayPlaneCapabilitiesKHR* pCapabilities,
-                                                 const RecordObject& record_obj) override;
-
-void PostCallRecordGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
-                                                  VkDisplayPlaneCapabilitiesKHR* pCapabilities,
-                                                  const RecordObject& record_obj) override;
-
-void PreCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
-                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                               const RecordObject& record_obj) override;
-
-void PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                const RecordObject& record_obj) override;
 
 void PreCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount, const VkSwapchainCreateInfoKHR* pCreateInfos,
                                             const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
@@ -1523,56 +1569,6 @@ void PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchain
                                              const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
                                              const RecordObject& record_obj) override;
 
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-void PreCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                       const RecordObject& record_obj) override;
-
-void PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                        const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#ifdef VK_USE_PLATFORM_XCB_KHR
-void PreCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
-                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                      const RecordObject& record_obj) override;
-
-void PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                       const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-void PreCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                          const RecordObject& record_obj) override;
-
-void PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                           const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-void PreCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                          const RecordObject& record_obj) override;
-
-void PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                           const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-void PreCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                        const RecordObject& record_obj) override;
-
-void PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                         const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 void PreCallRecordCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession,
                                         const RecordObject& record_obj) override;
@@ -1690,14 +1686,6 @@ void PreCallRecordTrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool,
 
 void PostCallRecordTrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags,
                                       const RecordObject& record_obj) override;
-
-void PreCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                   VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
-                                                   const RecordObject& record_obj) override;
-
-void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                    VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
-                                                    const RecordObject& record_obj) override;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 void PreCallRecordGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
@@ -1862,12 +1850,6 @@ void PostCallRecordAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfi
 void PreCallRecordReleaseProfilingLockKHR(VkDevice device, const RecordObject& record_obj) override;
 
 void PostCallRecordReleaseProfilingLockKHR(VkDevice device, const RecordObject& record_obj) override;
-
-void PreCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t* pPropertyCount,
-                                               VkDisplayModeProperties2KHR* pProperties, const RecordObject& record_obj) override;
-
-void PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t* pPropertyCount,
-                                                VkDisplayModeProperties2KHR* pProperties, const RecordObject& record_obj) override;
 
 void PreCallRecordGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                  VkMemoryRequirements2* pMemoryRequirements,
@@ -2314,28 +2296,6 @@ void PostCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
     const RecordObject& record_obj) override;
 
-void PreCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
-                                               const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback,
-                                               const RecordObject& record_obj) override;
-
-void PostCallRecordCreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback,
-                                                const RecordObject& record_obj) override;
-
-void PreCallRecordDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
-                                                const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
-
-void PostCallRecordDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
-                                                 const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
-
-void PreCallRecordDebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
-                                        uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix,
-                                        const char* pMessage, const RecordObject& record_obj) override;
-
-void PostCallRecordDebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
-                                         uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix,
-                                         const char* pMessage, const RecordObject& record_obj) override;
-
 void PreCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                      const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                                      const VkDeviceSize* pSizes, const RecordObject& record_obj) override;
@@ -2456,16 +2416,6 @@ void PostCallRecordGetShaderInfoAMD(VkDevice device, VkPipeline pipeline, VkShad
                                     VkShaderInfoTypeAMD infoType, size_t* pInfoSize, void* pInfo,
                                     const RecordObject& record_obj) override;
 
-#ifdef VK_USE_PLATFORM_GGP
-void PreCallRecordCreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
-                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                   const RecordObject& record_obj) override;
-
-void PostCallRecordCreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
-                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                    const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_GGP
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 void PreCallRecordGetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory, VkExternalMemoryHandleTypeFlagsNV handleType,
                                          HANDLE* pHandle, const RecordObject& record_obj) override;
@@ -2474,16 +2424,6 @@ void PostCallRecordGetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory
                                           HANDLE* pHandle, const RecordObject& record_obj) override;
 
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_VI_NN
-void PreCallRecordCreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
-                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                    const RecordObject& record_obj) override;
-
-void PostCallRecordCreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                     const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_VI_NN
 void PreCallRecordCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
                                                   const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin,
                                                   const RecordObject& record_obj) override;
@@ -2502,27 +2442,6 @@ void PreCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32
 void PostCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                             const VkViewportWScalingNV* pViewportWScalings,
                                             const RecordObject& record_obj) override;
-
-void PreCallRecordReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display, const RecordObject& record_obj) override;
-
-void PostCallRecordReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                     const RecordObject& record_obj) override;
-
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
-void PreCallRecordAcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display,
-                                        const RecordObject& record_obj) override;
-
-void PostCallRecordAcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display,
-                                         const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-void PreCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                           VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
-                                                           const RecordObject& record_obj) override;
-
-void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                            VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
-                                                            const RecordObject& record_obj) override;
 
 void PreCallRecordDisplayPowerControlEXT(VkDevice device, VkDisplayKHR display, const VkDisplayPowerInfoEXT* pDisplayPowerInfo,
                                          const RecordObject& record_obj) override;
@@ -2594,26 +2513,6 @@ void PreCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, co
 void PostCallRecordSetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, const VkSwapchainKHR* pSwapchains,
                                      const VkHdrMetadataEXT* pMetadata, const RecordObject& record_obj) override;
 
-#ifdef VK_USE_PLATFORM_IOS_MVK
-void PreCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
-                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                      const RecordObject& record_obj) override;
-
-void PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                       const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_IOS_MVK
-#ifdef VK_USE_PLATFORM_MACOS_MVK
-void PreCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                        const RecordObject& record_obj) override;
-
-void PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                         const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_MACOS_MVK
 void PreCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                const RecordObject& record_obj) override;
 
@@ -2645,30 +2544,6 @@ void PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, con
 
 void PostCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                const RecordObject& record_obj) override;
-
-void PreCallRecordCreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                               const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger,
-                                               const RecordObject& record_obj) override;
-
-void PostCallRecordCreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger,
-                                                const RecordObject& record_obj) override;
-
-void PreCallRecordDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
-                                                const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
-
-void PostCallRecordDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
-                                                 const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
-
-void PreCallRecordSubmitDebugUtilsMessageEXT(VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                             VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                             const RecordObject& record_obj) override;
-
-void PostCallRecordSubmitDebugUtilsMessageEXT(VkInstance instance, VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                              VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                              const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                              const RecordObject& record_obj) override;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 void PreCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
@@ -3068,26 +2943,6 @@ void PreCallRecordSetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, 
 void PostCallRecordSetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable,
                                       const RecordObject& record_obj) override;
 
-#ifdef VK_USE_PLATFORM_FUCHSIA
-void PreCallRecordCreateImagePipeSurfaceFUCHSIA(VkInstance instance, const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                const RecordObject& record_obj) override;
-
-void PostCallRecordCreateImagePipeSurfaceFUCHSIA(VkInstance instance, const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                 const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#ifdef VK_USE_PLATFORM_METAL_EXT
-void PreCallRecordCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                        const RecordObject& record_obj) override;
-
-void PostCallRecordCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                         const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_METAL_EXT
 void PreCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                             const RecordObject& record_obj) override;
 
@@ -3116,14 +2971,6 @@ void PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const 
                                                          const RecordObject& record_obj) override;
 
 #endif  // VK_USE_PLATFORM_WIN32_KHR
-void PreCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                           const RecordObject& record_obj) override;
-
-void PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                            const RecordObject& record_obj) override;
-
 void PreCallRecordCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern,
                                        const RecordObject& record_obj) override;
 
@@ -3304,12 +3151,6 @@ void PreCallRecordCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDep
 void PostCallRecordCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT* pDepthBiasInfo,
                                        const RecordObject& record_obj) override;
 
-void PreCallRecordAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display,
-                                       const RecordObject& record_obj) override;
-
-void PostCallRecordAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display,
-                                        const RecordObject& record_obj) override;
-
 void PreCallRecordCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot,
                                            const RecordObject& record_obj) override;
@@ -3474,24 +3315,6 @@ void PreCallRecordGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT*
 void PostCallRecordGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts, VkDeviceFaultInfoEXT* pFaultInfo,
                                          const RecordObject& record_obj) override;
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-void PreCallRecordAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                        const RecordObject& record_obj) override;
-
-void PostCallRecordAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                         const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-void PreCallRecordCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                           const RecordObject& record_obj) override;
-
-void PostCallRecordCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                            const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
 void PreCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
                                        const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
                                        uint32_t vertexAttributeDescriptionCount,
@@ -3634,16 +3457,6 @@ void PreCallRecordCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer,
 void PostCallRecordCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable,
                                                    const RecordObject& record_obj) override;
 
-#ifdef VK_USE_PLATFORM_SCREEN_QNX
-void PreCallRecordCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                         const RecordObject& record_obj) override;
-
-void PostCallRecordCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                          const RecordObject& record_obj) override;
-
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
 void PreCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                             const VkBool32* pColorWriteEnables, const RecordObject& record_obj) override;
 

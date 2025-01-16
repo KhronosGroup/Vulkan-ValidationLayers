@@ -214,10 +214,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/stateless_validation_helper.h
     ${API_TYPE}/generated/sync_validation_types.cpp
     ${API_TYPE}/generated/thread_safety.cpp
-    ${API_TYPE}/generated/thread_safety_commands.h
-    ${API_TYPE}/generated/thread_safety_counter_bodies.h
-    ${API_TYPE}/generated/thread_safety_counter_definitions.h
-    ${API_TYPE}/generated/thread_safety_counter_instances.h
+    ${API_TYPE}/generated/thread_safety_device_defs.h
+    ${API_TYPE}/generated/thread_safety_instance_defs.h
     ${API_TYPE}/generated/validation_cmd_copy_buffer_to_image_comp.h
     ${API_TYPE}/generated/validation_cmd_copy_buffer_to_image_comp.cpp
     ${API_TYPE}/generated/validation_cmd_dispatch_comp.h
