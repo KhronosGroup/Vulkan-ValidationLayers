@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1160,6 +1160,7 @@ const char* String(Struct structure) {
     {"VkMemoryAllocateInfo", 21},
     {"VkMemoryBarrier", 16},
     {"VkMemoryBarrier2", 17},
+    {"VkMemoryBarrierAccessFlags3KHR", 31},
     {"VkMemoryDedicatedAllocateInfo", 30},
     {"VkMemoryDedicatedRequirements", 30},
     {"VkMemoryFdPropertiesKHR", 24},
@@ -1261,7 +1262,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV", 59},
     {"VkPhysicalDeviceDepthBiasControlFeaturesEXT", 44},
     {"VkPhysicalDeviceDepthClampControlFeaturesEXT", 45},
-    {"VkPhysicalDeviceDepthClampZeroOneFeaturesEXT", 45},
+    {"VkPhysicalDeviceDepthClampZeroOneFeaturesKHR", 45},
     {"VkPhysicalDeviceDepthClipControlFeaturesEXT", 44},
     {"VkPhysicalDeviceDepthClipEnableFeaturesEXT", 43},
     {"VkPhysicalDeviceDepthStencilResolveProperties", 46},
@@ -1372,6 +1373,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceMaintenance6Properties", 39},
     {"VkPhysicalDeviceMaintenance7FeaturesKHR", 40},
     {"VkPhysicalDeviceMaintenance7PropertiesKHR", 42},
+    {"VkPhysicalDeviceMaintenance8FeaturesKHR", 40},
     {"VkPhysicalDeviceMapMemoryPlacedFeaturesEXT", 43},
     {"VkPhysicalDeviceMapMemoryPlacedPropertiesEXT", 45},
     {"VkPhysicalDeviceMemoryBudgetPropertiesEXT", 42},
@@ -1410,6 +1412,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePipelineCreationCacheControlFeatures", 53},
     {"VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR", 56},
     {"VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT", 55},
+    {"VkPhysicalDevicePipelineOpacityMicromapFeaturesARM", 51},
     {"VkPhysicalDevicePipelinePropertiesFeaturesEXT", 46},
     {"VkPhysicalDevicePipelineProtectedAccessFeatures", 48},
     {"VkPhysicalDevicePipelineRobustnessFeatures", 43},
@@ -2327,6 +2330,7 @@ const char* String(Field field) {
     {"dst", 4},
     {"dstAccelerationStructure", 25},
     {"dstAccessMask", 14},
+    {"dstAccessMask3", 15},
     {"dstAddress", 11},
     {"dstAlphaBlendFactor", 20},
     {"dstArrayElement", 16},
@@ -2792,6 +2796,7 @@ const char* String(Field field) {
     {"maintenance5", 13},
     {"maintenance6", 13},
     {"maintenance7", 13},
+    {"maintenance8", 13},
     {"major", 6},
     {"mapEntryCount", 14},
     {"marker", 7},
@@ -3846,6 +3851,7 @@ const char* String(Field field) {
     {"pipelineIdentifier", 19},
     {"pipelineLayout", 15},
     {"pipelineLibraryGroupHandles", 28},
+    {"pipelineOpacityMicromap", 24},
     {"pipelinePropertiesIdentifier", 29},
     {"pipelineProtectedAccess", 24},
     {"pipelineRobustness", 19},
@@ -4344,6 +4350,7 @@ const char* String(Field field) {
     {"src", 4},
     {"srcAccelerationStructure", 25},
     {"srcAccessMask", 14},
+    {"srcAccessMask3", 15},
     {"srcAddress", 11},
     {"srcAlphaBlendFactor", 20},
     {"srcArrayElement", 16},
@@ -4836,6 +4843,7 @@ const char* String(FlagBitmask value) {
     {"VkAccelerationStructureCreateFlagBitsKHR", 41},
     {"VkAccessFlagBits", 17},
     {"VkAccessFlagBits2", 18},
+    {"VkAccessFlagBits3KHR", 21},
     {"VkAcquireProfilingLockFlagBitsKHR", 34},
     {"VkAttachmentDescriptionFlagBits", 32},
     {"VkBufferCreateFlagBits", 23},
@@ -5007,6 +5015,7 @@ const char* String(Extension extension) {
     {"VK_AMD_texture_gather_bias_lod", 31},
     {"VK_ANDROID_external_format_resolve", 35},
     {"VK_ANDROID_external_memory_android_hardware_buffer", 51},
+    {"VK_ARM_pipeline_opacity_micromap", 33},
     {"VK_ARM_rasterization_order_attachment_access", 45},
     {"VK_ARM_render_pass_striped", 27},
     {"VK_ARM_scheduling_controls", 27},
@@ -5177,6 +5186,7 @@ const char* String(Extension extension) {
     {"VK_KHR_create_renderpass2", 26},
     {"VK_KHR_dedicated_allocation", 28},
     {"VK_KHR_deferred_host_operations", 32},
+    {"VK_KHR_depth_clamp_zero_one", 28},
     {"VK_KHR_depth_stencil_resolve", 29},
     {"VK_KHR_descriptor_update_template", 34},
     {"VK_KHR_device_group", 20},
@@ -5220,6 +5230,7 @@ const char* String(Extension extension) {
     {"VK_KHR_maintenance5", 20},
     {"VK_KHR_maintenance6", 20},
     {"VK_KHR_maintenance7", 20},
+    {"VK_KHR_maintenance8", 20},
     {"VK_KHR_map_memory2", 19},
     {"VK_KHR_multiview", 17},
     {"VK_KHR_performance_query", 25},

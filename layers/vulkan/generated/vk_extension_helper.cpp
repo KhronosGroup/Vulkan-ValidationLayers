@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -146,6 +146,8 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_KHR_video_encode_quantization_map", vvl::Extension::_VK_KHR_video_encode_quantization_map},
         {"VK_KHR_shader_relaxed_extended_instruction", vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction},
         {"VK_KHR_maintenance7", vvl::Extension::_VK_KHR_maintenance7},
+        {"VK_KHR_maintenance8", vvl::Extension::_VK_KHR_maintenance8},
+        {"VK_KHR_depth_clamp_zero_one", vvl::Extension::_VK_KHR_depth_clamp_zero_one},
         {"VK_EXT_debug_report", vvl::Extension::_VK_EXT_debug_report},
         {"VK_NV_glsl_shader", vvl::Extension::_VK_NV_glsl_shader},
         {"VK_EXT_depth_range_unrestricted", vvl::Extension::_VK_EXT_depth_range_unrestricted},
@@ -410,6 +412,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_EXT_depth_clamp_control", vvl::Extension::_VK_EXT_depth_clamp_control},
         {"VK_HUAWEI_hdr_vivid", vvl::Extension::_VK_HUAWEI_hdr_vivid},
         {"VK_NV_cooperative_matrix2", vvl::Extension::_VK_NV_cooperative_matrix2},
+        {"VK_ARM_pipeline_opacity_micromap", vvl::Extension::_VK_ARM_pipeline_opacity_micromap},
         {"VK_EXT_vertex_attribute_robustness", vvl::Extension::_VK_EXT_vertex_attribute_robustness},
         {"VK_KHR_acceleration_structure", vvl::Extension::_VK_KHR_acceleration_structure},
         {"VK_KHR_ray_tracing_pipeline", vvl::Extension::_VK_KHR_ray_tracing_pipeline},

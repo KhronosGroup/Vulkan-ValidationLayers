@@ -144,7 +144,7 @@ enum class Feature {
     leastRepresentableValueForceUnormRepresentation,
     // VkPhysicalDeviceDepthClampControlFeaturesEXT
     depthClampControl,
-    // VkPhysicalDeviceDepthClampZeroOneFeaturesEXT
+    // VkPhysicalDeviceDepthClampZeroOneFeaturesKHR
     depthClampZeroOne,
     // VkPhysicalDeviceDepthClipControlFeaturesEXT
     depthClipControl,
@@ -522,6 +522,8 @@ enum class Feature {
     maintenance6,
     // VkPhysicalDeviceMaintenance7FeaturesKHR
     maintenance7,
+    // VkPhysicalDeviceMaintenance8FeaturesKHR
+    maintenance8,
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
     memoryMapPlaced,
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
@@ -592,6 +594,8 @@ enum class Feature {
     pipelineExecutableInfo,
     // VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT
     pipelineLibraryGroupHandles,
+    // VkPhysicalDevicePipelineOpacityMicromapFeaturesARM
+    pipelineOpacityMicromap,
     // VkPhysicalDevicePipelinePropertiesFeaturesEXT
     pipelinePropertiesIdentifier,
     // VkPhysicalDevicePipelineProtectedAccessFeatures, VkPhysicalDeviceVulkan14Features

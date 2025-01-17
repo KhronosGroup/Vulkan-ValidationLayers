@@ -3,9 +3,9 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+ * Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -451,6 +451,11 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
                     return {vvl::Extension::_VK_EXT_pipeline_creation_cache_control};
                 }
             }
+            if (value & (VK_PIPELINE_CACHE_CREATE_INTERNALLY_SYNCHRONIZED_MERGE_BIT_KHR)) {
+                if (!IsExtEnabled(device_extensions.vk_khr_maintenance8)) {
+                    return {vvl::Extension::_VK_KHR_maintenance8};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkPipelineCreateFlagBits:
             if (value & (VK_PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT)) {
@@ -696,6 +701,11 @@ vvl::Extensions StatelessValidation::IsValidFlagValue(vvl::FlagBitmask flag_bitm
             if (value & (VK_DEPENDENCY_FEEDBACK_LOOP_BIT_EXT)) {
                 if (!IsExtEnabled(device_extensions.vk_ext_attachment_feedback_loop_layout)) {
                     return {vvl::Extension::_VK_EXT_attachment_feedback_loop_layout};
+                }
+            }
+            if (value & (VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR)) {
+                if (!IsExtEnabled(device_extensions.vk_khr_maintenance8)) {
+                    return {vvl::Extension::_VK_KHR_maintenance8};
                 }
             }
             return {};
@@ -1027,6 +1037,11 @@ vvl::Extensions StatelessValidation::IsValidFlag64Value(vvl::FlagBitmask flag_bi
                     return {vvl::Extension::_VK_EXT_legacy_dithering};
                 }
             }
+            if (value & (VK_PIPELINE_CREATE_2_DISALLOW_OPACITY_MICROMAP_BIT_ARM)) {
+                if (!IsExtEnabled(device_extensions.vk_arm_pipeline_opacity_micromap)) {
+                    return {vvl::Extension::_VK_ARM_pipeline_opacity_micromap};
+                }
+            }
             if (value & (VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR)) {
                 if (!IsExtEnabled(device_extensions.vk_khr_pipeline_binary)) {
                     return {vvl::Extension::_VK_KHR_pipeline_binary};
@@ -1289,6 +1304,8 @@ std::string StatelessValidation::DescribeFlagBitmaskValue64(vvl::FlagBitmask fla
             return string_VkPipelineCreateFlags2(value);
         case vvl::FlagBitmask::VkBufferUsageFlagBits2:
             return string_VkBufferUsageFlags2(value);
+        case vvl::FlagBitmask::VkAccessFlagBits3KHR:
+            return string_VkAccessFlags3KHR(value);
         case vvl::FlagBitmask::VkPhysicalDeviceSchedulingControlsFlagBitsARM:
             return string_VkPhysicalDeviceSchedulingControlsFlagsARM(value);
         case vvl::FlagBitmask::VkMemoryDecompressionMethodFlagBitsNV:

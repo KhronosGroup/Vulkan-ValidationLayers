@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023-2024 Google Inc.
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Google Inc.
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,7 +152,7 @@ struct DeviceFeatures {
     bool leastRepresentableValueForceUnormRepresentation;
     // VkPhysicalDeviceDepthClampControlFeaturesEXT
     bool depthClampControl;
-    // VkPhysicalDeviceDepthClampZeroOneFeaturesEXT
+    // VkPhysicalDeviceDepthClampZeroOneFeaturesKHR
     bool depthClampZeroOne;
     // VkPhysicalDeviceDepthClipControlFeaturesEXT
     bool depthClipControl;
@@ -532,6 +532,8 @@ struct DeviceFeatures {
     bool maintenance6;
     // VkPhysicalDeviceMaintenance7FeaturesKHR
     bool maintenance7;
+    // VkPhysicalDeviceMaintenance8FeaturesKHR
+    bool maintenance8;
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
     bool memoryMapPlaced;
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
@@ -602,6 +604,8 @@ struct DeviceFeatures {
     bool pipelineExecutableInfo;
     // VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT
     bool pipelineLibraryGroupHandles;
+    // VkPhysicalDevicePipelineOpacityMicromapFeaturesARM
+    bool pipelineOpacityMicromap;
     // VkPhysicalDevicePipelinePropertiesFeaturesEXT
     bool pipelinePropertiesIdentifier;
     // VkPhysicalDevicePipelineProtectedAccessFeatures, VkPhysicalDeviceVulkan14Features
