@@ -79,6 +79,19 @@ void VkSyncValTest::InitTimelineSemaphore() {
     RETURN_IF_SKIP(InitSyncVal());
 }
 
+void VkSyncValTest::InitRayTracing() {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+
+    RETURN_IF_SKIP(InitSyncVal());
+}
+
 TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     TEST_DESCRIPTION(
         "Clear one attachment layer and copy to a different one."

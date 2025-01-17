@@ -440,6 +440,11 @@ BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetDeviceScratchOffset(VkDeviceAddre
     return *this;
 }
 
+BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetDeviceScratchAdditionalFlags(VkBufferUsageFlags additional_flags) {
+    device_scratch_additional_flags_ = additional_flags;
+    return *this;
+}
+
 BuildGeometryInfoKHR &BuildGeometryInfoKHR::SetEnableScratchBuild(bool build_scratch) {
     build_scratch_ = build_scratch;
     return *this;
@@ -546,7 +551,8 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
 
                 if (scratch_size > 0) {
                     device_scratch_->init(*device_, scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
-                                          VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                          VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                              device_scratch_additional_flags_,
                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
                 }
             }
