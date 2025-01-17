@@ -178,6 +178,7 @@ class BuildGeometryInfoKHR {
     BuildGeometryInfoKHR& SetScratchBuffer(std::shared_ptr<vkt::Buffer> scratch_buffer);
     BuildGeometryInfoKHR& SetHostScratchBuffer(std::shared_ptr<std::vector<uint8_t>> host_scratch);
     BuildGeometryInfoKHR& SetDeviceScratchOffset(VkDeviceAddress offset);
+    BuildGeometryInfoKHR& SetDeviceScratchAdditionalFlags(VkBufferUsageFlags additional_flags);
     BuildGeometryInfoKHR& SetEnableScratchBuild(bool build_scratch);
     // Should be 0 or 1
     BuildGeometryInfoKHR& SetInfoCount(uint32_t info_count);
@@ -228,6 +229,7 @@ class BuildGeometryInfoKHR {
     std::shared_ptr<AccelerationStructureKHR> src_as_, dst_as_;
     bool build_scratch_ = true;
     VkDeviceAddress device_scratch_offset_ = 0;
+    VkBufferUsageFlags device_scratch_additional_flags_ = 0;
     std::shared_ptr<vkt::Buffer> device_scratch_;
     std::shared_ptr<std::vector<uint8_t>> host_scratch_;
     std::unique_ptr<vkt::Buffer> indirect_buffer_;

@@ -224,6 +224,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/sync_val.cpp
     unit/sync_val_positive.cpp
     unit/sync_val_reporting.cpp
+    unit/sync_val_ray_tracing.cpp
+    unit/sync_val_ray_tracing_positive.cpp
     unit/sync_val_semaphore.cpp
     unit/sync_val_semaphore_positive.cpp
     unit/sync_val_wsi.cpp
