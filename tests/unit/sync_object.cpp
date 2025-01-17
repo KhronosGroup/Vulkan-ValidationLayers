@@ -3982,6 +3982,58 @@ TEST_F(NegativeSyncObject, BufferBarrierStageNotSupportedByQueue) {
     compute_cb.End();
 }
 
+TEST_F(NegativeSyncObject, CmdPipelineBarrierQueueFamilyTransferAllStagesFeature) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
+    if (!compute_only_family.has_value()) {
+        GTEST_SKIP() << "Compute-only queue family is required";
+    }
+    vkt::CommandPool compute_pool(*m_device, compute_only_family.value());
+    vkt::CommandBuffer compute_cb(*m_device, compute_pool);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.srcQueueFamilyIndex = 0;
+    barrier.dstQueueFamilyIndex = 0;
+    barrier.buffer = buffer;
+    barrier.offset = 0;
+    barrier.size = 256;
+
+    compute_cb.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-maintenance8-10206");
+    vk::CmdPipelineBarrier(compute_cb.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR, 0, nullptr, 1, &barrier, 0,
+                           nullptr);
+    m_errorMonitor->VerifyFound();
+    compute_cb.End();
+}
+
+TEST_F(NegativeSyncObject, CmdWaitEvents2QueueFamilyTransferAllStagesFeature) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device, vkt::Event::CreateInfo(0));
+    VkEvent event_handle = event.handle();
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.dependencyFlags = VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-maintenance8-10205");
+    vk::CmdWaitEvents2(m_command_buffer.handle(), 1, &event_handle, &dependency_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeSyncObject, ImageBarrierStageNotSupportedByQueue) {
     TEST_DESCRIPTION("Image memory barrier without ownership transfer uses pipeline stages not supported by the queue family");
     SetTargetApiVersion(VK_API_VERSION_1_3);

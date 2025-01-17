@@ -1401,12 +1401,26 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineCache(VkDevice dev
                                                                     const ErrorObject &error_obj) const {
     bool skip = false;
     const bool has_externally_sync = (pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT) != 0;
+    const bool has_internally_sync = (pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_INTERNALLY_SYNCHRONIZED_MERGE_BIT_KHR) != 0;
 
     if (!enabled_features.pipelineCreationCacheControl && has_externally_sync) {
         skip |= LogError("VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892", device,
                          error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
                          "includes VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT, but pipelineCreationCacheControl "
                          "feature was not enabled");
+    }
+
+    if (!enabled_features.maintenance8 && has_internally_sync) {
+        skip |= LogError(
+            "VUID-VkPipelineCacheCreateInfo-maintenance8-10200", device,
+            error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
+            "includes VK_PIPELINE_CACHE_CREATE_INTERNALLY_SYNCHRONIZED_MERGE_BIT_KHR, but maintenance8 feature was not enabled.");
+    }
+    if (has_externally_sync && has_internally_sync) {
+        skip |= LogError("VUID-VkPipelineCacheCreateInfo-flags-10201", device,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
+                         "includes both VK_PIPELINE_CACHE_CREATE_INTERNALLY_SYNCHRONIZED_MERGE_BIT_KHR and "
+                         "VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT");
     }
     return skip;
 }

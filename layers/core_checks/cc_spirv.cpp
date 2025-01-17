@@ -2144,7 +2144,8 @@ bool CoreChecks::ValidateTexelOffsetLimits(const spirv::Module &module_state, co
     bool skip = false;
 
     const uint32_t opcode = insn.Opcode();
-    if (!ImageGatherOperation(opcode) && !ImageSampleOperation(opcode) && !ImageFetchOperation(opcode)) {
+    const bool is_image_gather = ImageGatherOperation(opcode);
+    if (!is_image_gather && !ImageSampleOperation(opcode) && !ImageFetchOperation(opcode)) {
         return false;
     }
 
@@ -2154,12 +2155,19 @@ bool CoreChecks::ValidateTexelOffsetLimits(const spirv::Module &module_state, co
         return false;
     }
 
-    auto image_operand = insn.Word(image_operand_position);
+    const uint32_t image_operand = insn.Word(image_operand_position);
+    if (!is_image_gather && !enabled_features.maintenance8) {
+        if ((image_operand & spv::ImageOperandsOffsetMask) != 0) {
+            skip |= LogError("VUID-RuntimeSpirv-Offset-10213", module_state.handle(), loc,
+                             "SPIR-V uses %s with Offset operand, but maintenance8 was not enabled.\n%s\n",
+                             string_SpvOpcode(insn.Opcode()), module_state.DescribeInstruction(insn).c_str());
+        }
+    }
+
     // Bits we are validating (sample/fetch only check ConstOffset)
     uint32_t offset_bits =
-        ImageGatherOperation(opcode)
-            ? (spv::ImageOperandsOffsetMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsConstOffsetsMask)
-            : (spv::ImageOperandsConstOffsetMask);
+        is_image_gather ? (spv::ImageOperandsOffsetMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsConstOffsetsMask)
+                        : (spv::ImageOperandsConstOffsetMask);
     if ((image_operand & offset_bits) == 0) {
         return false;
     }
@@ -2192,7 +2200,7 @@ bool CoreChecks::ValidateTexelOffsetLimits(const spirv::Module &module_state, co
                     const bool use_signed = (comp_type->Opcode() == spv::OpTypeInt && comp_type->Word(3) != 0);
 
                     // There are 2 sets of VU being covered where the only main difference is the opcode
-                    if (ImageGatherOperation(opcode)) {
+                    if (is_image_gather) {
                         // min/maxTexelGatherOffset
                         if (use_signed && (signed_offset < phys_dev_props.limits.minTexelGatherOffset)) {
                             skip |=
@@ -2211,6 +2219,7 @@ bool CoreChecks::ValidateTexelOffsetLimits(const spirv::Module &module_state, co
                         }
                     } else {
                         // min/maxTexelOffset
+                        // TODO - maintenance8 added ability to use Offset, but will need validation on GPU side
                         if (use_signed && (signed_offset < phys_dev_props.limits.minTexelOffset)) {
                             skip |= LogError("VUID-RuntimeSpirv-OpImageSample-06435", module_state.handle(), loc,
                                              "SPIR-V uses %s with offset (%" PRId32

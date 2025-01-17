@@ -959,7 +959,7 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicate) {
 
     uint64_t timestamps[2];
     uint64_t max_deviation;
-    m_errorMonitor->SetDesiredError("VUID-vkGetCalibratedTimestampsEXT-timeDomain-09246");
+    m_errorMonitor->SetDesiredError("VUID-vkGetCalibratedTimestampsKHR-timeDomain-09246");
     vk::GetCalibratedTimestampsEXT(device(), 2, timestamp_infos, timestamps, &max_deviation);
     m_errorMonitor->VerifyFound();
 }
@@ -983,7 +983,7 @@ TEST_F(VkLayerTest, GetCalibratedTimestampsDuplicateKHR) {
 
     uint64_t timestamps[2];
     uint64_t max_deviation;
-    m_errorMonitor->SetDesiredError("VUID-vkGetCalibratedTimestampsEXT-timeDomain-09246");
+    m_errorMonitor->SetDesiredError("VUID-vkGetCalibratedTimestampsKHR-timeDomain-09246");
     vk::GetCalibratedTimestampsKHR(device(), 2, timestamp_infos, timestamps, &max_deviation);
     m_errorMonitor->VerifyFound();
 }
