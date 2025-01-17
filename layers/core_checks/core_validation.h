@@ -199,7 +199,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePipelineStageFeatureEnables(const LogObjectList& objlist, const Location& stage_mask_loc,
                                              VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidatePipelineStage(const LogObjectList& objlist, const Location& stage_mask_loc, VkQueueFlags queue_flags,
-                               VkPipelineStageFlags2KHR stage_mask) const;
+                               VkPipelineStageFlags2KHR stage_mask, VkDependencyFlags dependency_flags = 0) const;
     bool ValidatePipelineStageForShaderTileImage(const LogObjectList& objlist, const Location& loc,
                                                  VkPipelineStageFlags2KHR stage_mask, VkDependencyFlags dependency_flags) const;
     bool ValidateAccessMask(const LogObjectList& objlist, const Location& access_mask_loc, const Location& stage_mask_loc,
@@ -960,7 +960,8 @@ class CoreChecks : public ValidationStateTracker {
 
     void RecordQueuedQFOTransfers(vvl::CommandBuffer& cb_state);
 
-    void TransitionImageLayouts(vvl::CommandBuffer& cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers);
+    void TransitionImageLayouts(vvl::CommandBuffer& cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers,
+                                const VkDependencyFlags dependency_flags);
     void TransitionImageLayouts(vvl::CommandBuffer& cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
                                 VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
 

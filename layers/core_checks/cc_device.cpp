@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -731,7 +731,7 @@ bool CoreChecks::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint
         const VkTimeDomainKHR time_domain = pTimestampInfos[i].timeDomain;
         auto it = time_domain_map.find(time_domain);
         if (it != time_domain_map.end()) {
-            skip |= LogError("VUID-vkGetCalibratedTimestampsEXT-timeDomain-09246", device,
+            skip |= LogError("VUID-vkGetCalibratedTimestampsKHR-timeDomain-09246", device,
                              error_obj.location.dot(Field::pTimestampInfos, i).dot(Field::timeDomain),
                              "and pTimestampInfos[%" PRIu32 "].timeDomain are both %s.", it->second,
                              string_VkTimeDomainKHR(time_domain));

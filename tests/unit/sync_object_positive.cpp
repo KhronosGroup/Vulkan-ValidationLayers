@@ -2370,6 +2370,91 @@ TEST_F(PositiveSyncObject, KhronosTimelineSemaphoreExample) {
     }
 }
 
+TEST_F(PositiveSyncObject, BufferBarrierStageNotSupportedByQueue) {
+    TEST_DESCRIPTION("Buffer memory barrier without ownership transfer uses pipeline stages not supported by the queue family");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    // Allows us to do this with new VkDependencyFlagBits
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
+    if (!compute_only_family.has_value()) {
+        GTEST_SKIP() << "Compute-only queue family is required";
+    }
+    vkt::CommandPool compute_pool(*m_device, compute_only_family.value());
+    vkt::CommandBuffer compute_cb(*m_device, compute_pool);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferMemoryBarrier2 barrier_src_gfx = vku::InitStructHelper();
+    barrier_src_gfx.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage
+    barrier_src_gfx.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier_src_gfx.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier_src_gfx.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier_src_gfx.buffer = buffer;
+    barrier_src_gfx.offset = 0;
+    barrier_src_gfx.size = 256;
+
+    VkBufferMemoryBarrier2 barrier_dst_gfx = vku::InitStructHelper();
+    barrier_dst_gfx.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier_dst_gfx.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier_dst_gfx.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage
+    barrier_dst_gfx.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier_dst_gfx.buffer = buffer;
+    barrier_dst_gfx.offset = 0;
+    barrier_dst_gfx.size = 256;
+
+    VkDependencyInfo dep_info_src_gfx = vku::InitStructHelper();
+    dep_info_src_gfx.bufferMemoryBarrierCount = 1;
+    dep_info_src_gfx.pBufferMemoryBarriers = &barrier_src_gfx;
+    dep_info_src_gfx.dependencyFlags = VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
+
+    VkDependencyInfo dep_info_dst_gfx = vku::InitStructHelper();
+    dep_info_dst_gfx.bufferMemoryBarrierCount = 1;
+    dep_info_dst_gfx.pBufferMemoryBarriers = &barrier_dst_gfx;
+    dep_info_dst_gfx.dependencyFlags = VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
+
+    compute_cb.Begin();
+    vk::CmdPipelineBarrier2(compute_cb.handle(), &dep_info_src_gfx);
+    vk::CmdPipelineBarrier2(compute_cb.handle(), &dep_info_dst_gfx);
+    compute_cb.End();
+}
+
+TEST_F(PositiveSyncObject, CmdPipelineBarrierQueueFamilyTransferAllStages) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
+    if (!compute_only_family.has_value()) {
+        GTEST_SKIP() << "Compute-only queue family is required";
+    }
+    vkt::CommandPool compute_pool(*m_device, compute_only_family.value());
+    vkt::CommandBuffer compute_cb(*m_device, compute_pool);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    // The queue family are the same here, so flag is basically a no-op
+    barrier.srcQueueFamilyIndex = 0;
+    barrier.dstQueueFamilyIndex = 0;
+    barrier.buffer = buffer;
+    barrier.offset = 0;
+    barrier.size = 256;
+
+    compute_cb.Begin();
+    vk::CmdPipelineBarrier(compute_cb.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                           VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR, 0, nullptr, 1, &barrier, 0,
+                           nullptr);
+    compute_cb.End();
+}
+
 TEST_F(PositiveSyncObject, BinarySyncAfterResolvedTimelineWait) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8900
     TEST_DESCRIPTION("Test binary wait followed by the previous resolved timeline wait");

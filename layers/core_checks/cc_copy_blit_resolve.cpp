@@ -31,6 +31,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/device_state.h"
 #include "generated/dispatch_functions.h"
+#include "utils/vk_layer_utils.h"
 
 struct ImageRegionIntersection {
     VkImageSubresourceLayers subresource = {};
@@ -1467,6 +1468,27 @@ bool CoreChecks::ValidateCopyImageCommon(HandleT handle, const vvl::Image &src_i
     return skip;
 }
 
+// From table in spec vkspec.html#formats-compatible-zs-color
+// TODO - We should generate the spec and move to format helper in VUL
+static bool IsCompatibleDepthStencilWithColor(VkFormat color_format, VkFormat ds_format) {
+    switch (ds_format) {
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            return IsValueIn(color_format, {VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32_SINT, VK_FORMAT_R32_UINT});
+        case VK_FORMAT_X8_D24_UNORM_PACK32:
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+            return IsValueIn(color_format, {VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32_SINT, VK_FORMAT_R32_UINT});
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+            return IsValueIn(color_format, {VK_FORMAT_R16_SFLOAT, VK_FORMAT_R16_UNORM, VK_FORMAT_R16_SNORM, VK_FORMAT_R16_UINT,
+                                            VK_FORMAT_R16_SINT});
+        case VK_FORMAT_S8_UINT:
+            return IsValueIn(color_format, {VK_FORMAT_R8_UINT, VK_FORMAT_R8_SINT, VK_FORMAT_R8_UNORM, VK_FORMAT_R8_SNORM});
+        default:
+            return false;
+    }
+}
+
 template <typename RegionType>
 bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -1620,12 +1642,13 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         const VkImageAspectFlags dst_aspect = dst_subresource.aspectMask;
         if (!vkuFormatIsMultiplane(src_format) && !vkuFormatIsMultiplane(dst_format)) {
             // If neither image is multi-plane the aspectMask member of src and dst must match
-            if (src_aspect != dst_aspect) {
+            if (src_aspect != dst_aspect && !enabled_features.maintenance8) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01551" : "VUID-vkCmdCopyImage-srcImage-01551";
-                skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask), "(%s) does not match %s (%s).",
-                                 string_VkImageAspectFlags(src_aspect).c_str(),
-                                 dst_subresource_loc.dot(Field::aspectMask).Fields().c_str(),
-                                 string_VkImageAspectFlags(dst_aspect).c_str());
+                skip |= LogError(
+                    vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask),
+                    "(%s) does not match %s (%s). (This can be allowed in some cases if maintenance8 feature is enabled)",
+                    string_VkImageAspectFlags(src_aspect).c_str(), dst_subresource_loc.dot(Field::aspectMask).Fields().c_str(),
+                    string_VkImageAspectFlags(dst_aspect).c_str());
             }
         } else {
             // Source image multiplane checks
@@ -1660,6 +1683,49 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                     LogError(vuid, all_objlist, dst_subresource_loc.dot(Field::aspectMask),
                              "(%s) needs VK_IMAGE_ASPECT_COLOR_BIT\nsrcImage format %s\ndstImage format %s\n.",
                              string_VkImageAspectFlags(aspect).c_str(), string_VkFormat(src_format), string_VkFormat(dst_format));
+            }
+        }
+
+        if (enabled_features.maintenance8) {
+            const VkImageAspectFlags both_depth_and_stencil = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            if (src_aspect == VK_IMAGE_ASPECT_COLOR_BIT) {
+                if ((dst_aspect & both_depth_and_stencil) == both_depth_and_stencil) {
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcSubresource-10214" : "VUID-vkCmdCopyImage-srcSubresource-10214";
+                    skip |=
+                        LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask),
+                                 "is VK_IMAGE_ASPECT_COLOR_BIT but dstSubresource.aspectMask contains both Depth and Stencil (%s).",
+                                 string_VkImageAspectFlags(dst_aspect).c_str());
+                } else if (dst_aspect == VK_IMAGE_ASPECT_DEPTH_BIT || dst_aspect == VK_IMAGE_ASPECT_STENCIL_BIT) {
+                    if (!IsCompatibleDepthStencilWithColor(src_format, dst_format)) {
+                        vuid = is_2 ? "VUID-VkCopyImageInfo2-srcSubresource-10211" : "VUID-vkCmdCopyImage-srcSubresource-10211";
+                        skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask),
+                                         "is VK_IMAGE_ASPECT_COLOR_BIT and dstSubresource.aspectMask is %s, but the src color "
+                                         "format (%s) is not "
+                                         "compatible with the dst depth/stencil format (%s).",
+                                         string_VkImageAspectFlags(dst_aspect).c_str(), string_VkFormat(src_format),
+                                         string_VkFormat(dst_format));
+                    }
+                }
+            }
+
+            if (dst_aspect == VK_IMAGE_ASPECT_COLOR_BIT) {
+                if ((src_aspect & both_depth_and_stencil) == both_depth_and_stencil) {
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-dstSubresource-10215" : "VUID-vkCmdCopyImage-dstSubresource-10215";
+                    skip |=
+                        LogError(vuid, all_objlist, dst_subresource_loc.dot(Field::aspectMask),
+                                 "is VK_IMAGE_ASPECT_COLOR_BIT but srcSubresource.aspectMask contains both Depth and Stencil (%s).",
+                                 string_VkImageAspectFlags(src_aspect).c_str());
+                } else if (src_aspect == VK_IMAGE_ASPECT_DEPTH_BIT || src_aspect == VK_IMAGE_ASPECT_STENCIL_BIT) {
+                    if (!IsCompatibleDepthStencilWithColor(dst_format, src_format)) {
+                        vuid = is_2 ? "VUID-VkCopyImageInfo2-srcSubresource-10212" : "VUID-vkCmdCopyImage-srcSubresource-10212";
+                        skip |= LogError(vuid, all_objlist, dst_subresource_loc.dot(Field::aspectMask),
+                                         "is VK_IMAGE_ASPECT_COLOR_BIT and srcSubresource.aspectMask is (%s), but the src "
+                                         "depth/stencil format (%s) is not "
+                                         "compatible with the dst color format (%s).",
+                                         string_VkImageAspectFlags(dst_aspect).c_str(), string_VkFormat(src_format),
+                                         string_VkFormat(dst_format));
+                    }
+                }
             }
         }
 
@@ -1746,13 +1812,31 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     // because because both texels are 4 bytes in size.
     if (!vkuFormatIsMultiplane(src_format) && !vkuFormatIsMultiplane(dst_format)) {
         const char *compatible_vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01548" : "VUID-vkCmdCopyImage-srcImage-01548";
-        // Depth/stencil formats must match exactly.
-        if (vkuFormatIsDepthOrStencil(src_format) || vkuFormatIsDepthOrStencil(dst_format)) {
+        const bool is_src_depth_stencil = vkuFormatIsDepthOrStencil(src_format);
+        const bool is_dst_depth_stencil = vkuFormatIsDepthOrStencil(dst_format);
+        if (is_src_depth_stencil && is_dst_depth_stencil) {
             if (src_format != dst_format) {
-                skip |= LogError(compatible_vuid, all_objlist, loc, "srcImage format (%s) is different from dstImage format (%s).",
+                skip |= LogError(compatible_vuid, all_objlist, loc,
+                                 "srcImage format (%s) is different from dstImage format (%s). When copying between two depth "
+                                 "stencil formats, they must be the exact same to be size compatible.",
+                                 string_VkFormat(src_format), string_VkFormat(dst_format));
+            }
+        } else if (is_src_depth_stencil) {
+            if (!enabled_features.maintenance8 || !IsCompatibleDepthStencilWithColor(dst_format, src_format)) {
+                skip |= LogError(compatible_vuid, all_objlist, loc,
+                                 "srcImage format (%s) is different from dstImage format (%s). (When copying from a depth stencil "
+                                 "formats, maintenance8 feature must be enabled and the dstImage format be be size compatible).",
+                                 string_VkFormat(src_format), string_VkFormat(dst_format));
+            }
+        } else if (is_dst_depth_stencil) {
+            if (!enabled_features.maintenance8 || !IsCompatibleDepthStencilWithColor(src_format, dst_format)) {
+                skip |= LogError(compatible_vuid, all_objlist, loc,
+                                 "srcImage format (%s) is different from dstImage format (%s). (When copying to a depth stencil "
+                                 "formats, maintenance8 feature must be enabled and the srcImage format be be size compatible).",
                                  string_VkFormat(src_format), string_VkFormat(dst_format));
             }
         } else {
+            // both non-depthStencil formats
             if (vkuFormatElementSize(src_format) != vkuFormatElementSize(dst_format)) {
                 skip |= LogError(compatible_vuid, all_objlist, loc,
                                  "srcImage format %s has size of %" PRIu32 " and dstImage format %s has size of %" PRIu32 ".",
@@ -3279,7 +3363,8 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
             skip |= LogError(vuid, dst_objlist, region_loc, "destination image blit region exceeds image dimensions.");
         }
 
-        if ((src_type == VK_IMAGE_TYPE_3D || dst_type == VK_IMAGE_TYPE_3D)) {
+        // pre-maintenance8 both src/dst had to both match, after we only validate them independently
+        if (!enabled_features.maintenance8 && (src_type == VK_IMAGE_TYPE_3D || dst_type == VK_IMAGE_TYPE_3D)) {
             if ((src_subresource.baseArrayLayer != 0) || (src_subresource.layerCount != 1) ||
                 (dst_subresource.baseArrayLayer != 0) || (dst_subresource.layerCount != 1)) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00240" : "VUID-vkCmdBlitImage-srcImage-00240";
@@ -3291,6 +3376,23 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                  "dstSubresource (baseArrayLayer = %" PRIu32 ", layerCount = %" PRIu32 ")\n",
                                  string_VkImageType(src_type), string_VkImageType(dst_type), src_subresource.baseArrayLayer,
                                  src_subresource.layerCount, dst_subresource.baseArrayLayer, dst_subresource.layerCount);
+            }
+        } else if (enabled_features.maintenance8) {
+            if (src_type == VK_IMAGE_TYPE_3D) {
+                if (src_subresource.baseArrayLayer != 0 || src_subresource.layerCount != 1) {
+                    vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10207" : "VUID-vkCmdBlitImage-maintenance8-10207";
+                    skip |= LogError(vuid, all_objlist, src_subresource_loc,
+                                     "(baseArrayLayer = %" PRIu32 ", layerCount = %" PRIu32 ") but srcImage is VK_IMAGE_TYPE_3D",
+                                     src_subresource.baseArrayLayer, src_subresource.layerCount);
+                }
+            }
+            if (dst_type == VK_IMAGE_TYPE_3D) {
+                if (dst_subresource.baseArrayLayer != 0 || dst_subresource.layerCount != 1) {
+                    vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10208" : "VUID-vkCmdBlitImage-maintenance8-10208";
+                    skip |= LogError(vuid, all_objlist, dst_subresource_loc,
+                                     "(baseArrayLayer = %" PRIu32 ", layerCount = %" PRIu32 ") but dstImage is VK_IMAGE_TYPE_3D",
+                                     src_subresource.baseArrayLayer, src_subresource.layerCount);
+                }
             }
         }
 

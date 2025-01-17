@@ -2606,6 +2606,48 @@ TEST_F(NegativeShaderSpirv, ScalarBlockLayoutShaderCache) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderSpirv, ImageGatherOffsetMaintenance8) {
+    AddRequiredFeature(vkt::Feature::shaderImageGatherExtended);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char *spv_source = R"(
+               OpCapability Shader
+               OpCapability ImageGatherExtended
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %tex
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %tex DescriptorSet 0
+               OpDecorate %tex Binding 2
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+          %8 = OpTypeImage %float 2D 0 0 0 1 Unknown
+          %9 = OpTypeSampledImage %8
+%_ptr_UniformConstant_9 = OpTypePointer UniformConstant %9
+        %tex = OpVariable %_ptr_UniformConstant_9 UniformConstant
+    %v2float = OpTypeVector %float 2
+    %float_0 = OpConstant %float 0
+         %15 = OpConstantComposite %v2float %float_0 %float_0
+        %int = OpTypeInt 32 1
+      %v2int = OpTypeVector %int 2
+      %int_0 = OpConstant %int 0
+         %19 = OpConstantComposite %v2int %int_0 %int_0
+    %v4float = OpTypeVector %float 4
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %12 = OpLoad %9 %tex
+         %21 = OpImageSampleExplicitLod %v4float %12 %15 Lod|Offset %float_0 %19
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    m_errorMonitor->SetAllowedFailureMsg("VUID-StandaloneSpirv-Offset-04663");  // TODO - Remove with new spirv-val
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Offset-10213");
+    VkShaderObj const fs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderSpirv, VkShaderModuleCreateInfoPNext) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
