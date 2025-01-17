@@ -1224,8 +1224,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
         const LogObjectList objlist(commandBuffer, pEvents[i]);
         const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfos, i);
         if (pDependencyInfos[i].dependencyFlags != 0) {
-            // VU being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7089
-            skip |= LogError("UNASSIGNED-vkCmdWaitEvents2-dependencyFlags", objlist, dep_info_loc.dot(Field::dependencyFlags),
+            skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-10394", objlist, dep_info_loc.dot(Field::dependencyFlags),
                              "(%s) must be 0.", string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
         }
         skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, pDependencyInfos[i]);
