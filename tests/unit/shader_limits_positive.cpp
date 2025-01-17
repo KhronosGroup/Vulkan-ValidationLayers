@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -216,8 +216,8 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachments) {
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
         void main() {
-		    c0 = vec4(0.0f);
-		    c1 = vec4(0.0f);
+            c0 = vec4(0.0f);
+            c1 = vec4(0.0f);
         }
     )glsl";
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -262,8 +262,8 @@ TEST_F(PositiveShaderLimits, MaxFragmentDualSrcAttachmentsDynamicEnabled) {
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
         void main() {
-		    c0 = vec4(0.0f);
-		    c1 = vec4(0.0f);
+            c0 = vec4(0.0f);
+            c1 = vec4(0.0f);
         }
     )glsl";
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);

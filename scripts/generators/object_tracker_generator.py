@@ -1,10 +1,10 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2024 The Khronos Group Inc.
-# Copyright (c) 2015-2024 Valve Corporation
-# Copyright (c) 2015-2024 LunarG, Inc.
-# Copyright (c) 2015-2024 Google Inc.
-# Copyright (c) 2023-2024 RasterGrid Kft.
+# Copyright (c) 2015-2025 The Khronos Group Inc.
+# Copyright (c) 2015-2025 Valve Corporation
+# Copyright (c) 2015-2025 LunarG, Inc.
+# Copyright (c) 2015-2025 Google Inc.
+# Copyright (c) 2023-2025 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -189,7 +189,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             "VkGraphicsPipelineCreateInfo-basePipelineHandle": '"VUID-VkGraphicsPipelineCreateInfo-flags-07984"',
             "VkComputePipelineCreateInfo-basePipelineHandle": '"VUID-VkComputePipelineCreateInfo-flags-07984"',
             "VkRayTracingPipelineCreateInfoNV-basePipelineHandle": '"VUID-VkRayTracingPipelineCreateInfoNV-flags-07984"',
-			"VkRayTracingPipelineCreateInfoKHR-basePipelineHandle": '"VUID-VkRayTracingPipelineCreateInfoKHR-flags-07984"',
+            "VkRayTracingPipelineCreateInfoKHR-basePipelineHandle": '"VUID-VkRayTracingPipelineCreateInfoKHR-flags-07984"',
             "VkVideoSessionKHR-videoSession-compatalloc": '"VUID-vkDestroyVideoSessionKHR-videoSession-07193"',
             "VkVideoSessionKHR-videoSession-nullalloc": '"VUID-vkDestroyVideoSessionKHR-videoSession-07194"',
             "VkVideoSessionParametersKHR-videoSessionParameters-compatalloc": '"VUID-vkDestroyVideoSessionParametersKHR-videoSessionParameters-07213"',
@@ -280,11 +280,11 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
 
             /***************************************************************************
             *
-            * Copyright (c) 2015-2024 The Khronos Group Inc.
-            * Copyright (c) 2015-2024 Valve Corporation
-            * Copyright (c) 2015-2024 LunarG, Inc.
-            * Copyright (c) 2015-2024 Google Inc.
-            * Copyright (c) 2015-2024 RasterGrid Kft.
+            * Copyright (c) 2015-2025 The Khronos Group Inc.
+            * Copyright (c) 2015-2025 Valve Corporation
+            * Copyright (c) 2015-2025 LunarG, Inc.
+            * Copyright (c) 2015-2025 Google Inc.
+            * Copyright (c) 2015-2025 RasterGrid Kft.
             *
             * Licensed under the Apache License, Version 2.0 (the "License");
             * you may not use this file except in compliance with the License.

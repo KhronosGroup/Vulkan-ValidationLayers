@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2024 The Khronos Group Inc.
-// Copyright (c) 2021-2024 Valve Corporation
-// Copyright (c) 2021-2024 LunarG, Inc.
+// Copyright (c) 2021-2025 The Khronos Group Inc.
+// Copyright (c) 2021-2025 Valve Corporation
+// Copyright (c) 2021-2025 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,15 +31,15 @@ namespace glsl {
 
 // /---------------------------------
 // | Error header
-// | 	- Record size
-// |	- Shader Id
-// |	- Instruction Id
-// |	- Shader stage Id
-// |	- Shader stage info (3 integers)
-// |	- Action command index in command buffer
+// |    - Record size
+// |    - Shader Id
+// |    - Instruction Id
+// |    - Shader stage Id
+// |    - Shader stage info (3 integers)
+// |    - Action command index in command buffer
 // |    - Command resources index
-// | 	- Error group (Id unique to the shader/instrumentation code that wrote the error)
-// |	- subcode (maps to VUIDs)
+// |    - Error group (Id unique to the shader/instrumentation code that wrote the error)
+// |    - subcode (maps to VUIDs)
 // | --------------------------------
 // | Error specific parameters
 // \---------------------------------

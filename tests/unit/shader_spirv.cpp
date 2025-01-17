@@ -2060,7 +2060,7 @@ TEST_F(NegativeShaderSpirv, DeviceMemoryScope) {
         layout(set = 0, binding = 0) buffer ssbo { uint y; };
         void main() {
             atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
-	   }
+       }
     )glsl";
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-vulkanMemoryModel-06265");
@@ -2082,7 +2082,7 @@ TEST_F(NegativeShaderSpirv, QueueFamilyMemoryScope) {
         layout(set = 0, binding = 0) buffer ssbo { uint y; };
         void main() {
             atomicStore(y, 1u, gl_ScopeQueueFamily, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
-	   }
+       }
     )glsl";
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-vulkanMemoryModel-06266");

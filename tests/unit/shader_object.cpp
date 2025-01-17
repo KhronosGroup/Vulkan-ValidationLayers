@@ -3914,7 +3914,7 @@ TEST_F(NegativeShaderObject, ComputeShaderMissingPushConst) {
     static const char kComputeShaderGlsl[] = R"glsl(
         #version 460
         layout (push_constant) uniform constants {
-	        int value;
+            int value;
         } PushConstants;
         layout(set = 0, binding = 0) buffer foo {
             int x;
@@ -4474,7 +4474,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
         layout(set = 0, binding = 0) buffer ssbo { uint y; };
         void main() {
             atomicStore(y, 1u, gl_ScopeDevice, gl_StorageSemanticsBuffer, gl_SemanticsRelaxed);
-	   }
+       }
     )glsl";
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}});
@@ -5960,8 +5960,8 @@ TEST_F(NegativeShaderObject, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
         void main() {
-		    c0 = vec4(0.0f);
-		    c1 = vec4(0.0f);
+            c0 = vec4(0.0f);
+            c1 = vec4(0.0f);
         }
     )glsl";
 
@@ -6113,7 +6113,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSubdivision) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tesc_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationControl %main "main" %gl_TessLevelOuter %gl_TessLevelInner
@@ -6167,7 +6167,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSubdivision) {
                OpFunctionEnd)";
 
     const char* tese_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationEvaluation %main "main" %_
@@ -6241,7 +6241,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOrientation) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tesc_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationControl %main "main" %gl_TessLevelOuter %gl_TessLevelInner
@@ -6295,7 +6295,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOrientation) {
                OpFunctionEnd)";
 
     const char* tese_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationEvaluation %main "main" %_
@@ -6368,7 +6368,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationPointMode) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tesc_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationControl %main "main" %gl_TessLevelOuter %gl_TessLevelInner
@@ -6422,7 +6422,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationPointMode) {
                OpFunctionEnd)";
 
     const char* tese_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationEvaluation %main "main" %_
@@ -6495,7 +6495,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSpacing) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tesc_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationControl %main "main" %gl_TessLevelOuter %gl_TessLevelInner
@@ -6549,7 +6549,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSpacing) {
                OpFunctionEnd)";
 
     const char* tese_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationEvaluation %main "main" %_
@@ -6727,7 +6727,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSubdivision) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tese_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationEvaluation %main "main" %_
@@ -6793,7 +6793,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationOrientation) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tese_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationEvaluation %main "main" %_
@@ -6859,7 +6859,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSpacing) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const char* tese_src = R"(
-			   OpCapability Tessellation
+               OpCapability Tessellation
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint TessellationEvaluation %main "main" %_

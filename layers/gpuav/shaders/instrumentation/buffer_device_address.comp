@@ -1,6 +1,6 @@
-// Copyright (c) 2024 The Khronos Group Inc.
-// Copyright (c) 2024 Valve Corporation
-// Copyright (c) 2024 LunarG, Inc.
+// Copyright (c) 2024-2025 The Khronos Group Inc.
+// Copyright (c) 2024-2025 Valve Corporation
+// Copyright (c) 2024-2025 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ bool inst_buffer_device_address(
         inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstBufferDeviceAddress;
         inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error_sub_code;
 
-		inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
+        inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
         inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
 
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1693,7 +1693,7 @@ layout(location=0) out vec4 frag_color;
 void main() {
     // Using nonuniformEXT on the index into the image array creates the OpCopyObject instead of an OpLoad, which
     // was causing problems with how constants are identified.
-	frag_color = texture(sampler2D(t[nonuniformEXT(idx)], s), vec2(0.0));
+    frag_color = texture(sampler2D(t[nonuniformEXT(idx)], s), vec2(0.0));
 }
 
     )glsl";

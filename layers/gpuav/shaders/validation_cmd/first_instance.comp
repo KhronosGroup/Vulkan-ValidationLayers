@@ -22,7 +22,7 @@
 
 layout(push_constant)
 uniform PushConstants {
-	FirstInstancePushData pc;
+    FirstInstancePushData pc;
 };
 
 
@@ -31,7 +31,7 @@ readonly buffer DrawBuffer {
     uint draw_indexed_indirect_cmds[];
 };
 
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_CountBuffer) 
+layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_CountBuffer)
 readonly buffer CountBuffer {
     uint count_buffer[];
 };

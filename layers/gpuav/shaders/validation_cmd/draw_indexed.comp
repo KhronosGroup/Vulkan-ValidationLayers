@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2024 The Khronos Group Inc.
-// Copyright (c) 2021-2024 Valve Corporation
-// Copyright (c) 2021-2024 LunarG, Inc.
+// Copyright (c) 2021-2025 The Khronos Group Inc.
+// Copyright (c) 2021-2025 Valve Corporation
+// Copyright (c) 2021-2025 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,13 +38,13 @@ uint get_vertex_index(uint i) {
         const uint packed_16_16 = index_buffer[ load_i + pc.index_buffer_dwords_offset ];
         // if (i % 2) == 0, take first 16 bits, else last 16 bits
         const uint shift = (i % 2) * 16;
-        return (packed_16_16 >> shift) & 0xFFFF;	
+        return (packed_16_16 >> shift) & 0xFFFF;
     } else if (pc.index_width == 8) {
         const uint load_i = i / 4;
         const uint packed_8_8_8_8 = index_buffer[ load_i + pc.index_buffer_dwords_offset ];
         // if (i % 4) == 0, take first 8 bits, if == 1 take second set of 8 bits, etc...
         const uint shift = (i % 4) * 8;
-        return (packed_8_8_8_8 >> shift) & 0xFF;	
+        return (packed_8_8_8_8 >> shift) & 0xFF;
     }
     return 0;
 }

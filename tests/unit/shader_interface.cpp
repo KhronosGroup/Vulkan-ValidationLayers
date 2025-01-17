@@ -1442,7 +1442,7 @@ TEST_F(NegativeShaderInterface, AlphaToCoverageOutputIndex1) {
         #version 460
         layout(location = 0, index = 1) out vec4 c0;
         void main() {
-		    c0 = vec4(0.0f);
+            c0 = vec4(0.0f);
         }
     )glsl";
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);

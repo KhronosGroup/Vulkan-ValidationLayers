@@ -3966,7 +3966,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     vk::UpdateDescriptorSets(device(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
 
     // only descriptor 0 is used, the rest are going to get destroyed
-    char const *shader_source = R"glsl(
+    char const* shader_source = R"glsl(
         #version 450
         layout(set = 0, binding = 0) uniform foo_0 { int val; } doit;
         layout(set = 0, binding = 1) uniform foo_1 { int val; } readit;
@@ -3989,7 +3989,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
                 x = texelFetch(texels, 5);
                 y = texture(sampler2D(img, samp), vec2(0));
                 z = texture(sampled_image, vec2(0));
-	    }
+        }
         }
     )glsl";
 

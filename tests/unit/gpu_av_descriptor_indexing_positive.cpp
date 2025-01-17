@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+/* Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -541,15 +541,15 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ImageMultiBinding) {
     VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
 
     char const *fs_source = R"glsl(
-	#version 450
-	#extension GL_EXT_nonuniform_qualifier : enable
+    #version 450
+    #extension GL_EXT_nonuniform_qualifier : enable
 
-	layout(set = 0, binding = 2) uniform sampler3D tex3d[];
-	layout(set = 0, binding = 2) uniform sampler2D tex[];
-	layout(location = 0) out vec4 uFragColor;
-	layout(location = 0) in flat uint index;
-	void main() {
-	    if ((index & 1) != 0) {
+    layout(set = 0, binding = 2) uniform sampler3D tex3d[];
+    layout(set = 0, binding = 2) uniform sampler2D tex[];
+    layout(location = 0) out vec4 uFragColor;
+    layout(location = 0) in flat uint index;
+    void main() {
+        if ((index & 1) != 0) {
                 uFragColor = texture(tex[index], vec2(0, 0));
             } else {
                 uFragColor = texture(tex3d[index], vec3(0, 0, 0));

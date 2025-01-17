@@ -1072,8 +1072,8 @@ TEST_F(PositiveDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
         void main() {
-		    c0 = vec4(0.0f);
-		    c1 = vec4(0.0f);
+            c0 = vec4(0.0f);
+            c1 = vec4(0.0f);
         }
     )glsl";
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);

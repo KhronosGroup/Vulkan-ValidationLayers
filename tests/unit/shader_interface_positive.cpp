@@ -52,7 +52,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
                 layout(location = 7, component = 3) out float ar3;
 
                 void main() {
-	                    vec2 xy = vec2((gl_VertexIndex >> 1u) & 1u, gl_VertexIndex & 1u);
+                        vec2 xy = vec2((gl_VertexIndex >> 1u) & 1u, gl_VertexIndex & 1u);
                         gl_Position = vec4(xy, 0.0f, 1.0f);
                         out_color_0 = vec4(1.0f, 0.0f, 1.0f, 0.0f);
                         out_color_1 = vec4(0.0f, 1.0f, 0.0f, 1.0f);
@@ -755,7 +755,7 @@ TEST_F(PositiveShaderInterface, AlphaToCoverageOutputIndex0) {
         #version 460
         layout(location = 0, index = 0) out vec4 c0;
         void main() {
-		    c0 = vec4(0.0f);
+            c0 = vec4(0.0f);
         }
     )glsl";
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
