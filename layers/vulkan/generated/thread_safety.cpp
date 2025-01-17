@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -726,27 +726,25 @@ void ThreadSafety::PostCallRecordGetPipelineCacheData(VkDevice device, VkPipelin
 void ThreadSafety::PreCallRecordMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
                                                     const VkPipelineCache* pSrcCaches, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
-    StartWriteObject(dstCache, record_obj.location);
+    StartReadObject(dstCache, record_obj.location);
 
     if (pSrcCaches) {
         for (uint32_t index = 0; index < srcCacheCount; index++) {
             StartReadObject(pSrcCaches[index], record_obj.location);
         }
     }
-    // Host access to dstCache must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
                                                      const VkPipelineCache* pSrcCaches, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
-    FinishWriteObject(dstCache, record_obj.location);
+    FinishReadObject(dstCache, record_obj.location);
 
     if (pSrcCaches) {
         for (uint32_t index = 0; index < srcCacheCount; index++) {
             FinishReadObject(pSrcCaches[index], record_obj.location);
         }
     }
-    // Host access to dstCache must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,

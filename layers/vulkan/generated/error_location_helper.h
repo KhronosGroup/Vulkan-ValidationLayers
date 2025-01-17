@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1154,6 +1154,7 @@ enum class Struct {
     VkMemoryAllocateInfo,
     VkMemoryBarrier,
     VkMemoryBarrier2,
+    VkMemoryBarrierAccessFlags3KHR,
     VkMemoryDedicatedAllocateInfo,
     VkMemoryDedicatedRequirements,
     VkMemoryFdPropertiesKHR,
@@ -1255,7 +1256,7 @@ enum class Struct {
     VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV,
     VkPhysicalDeviceDepthBiasControlFeaturesEXT,
     VkPhysicalDeviceDepthClampControlFeaturesEXT,
-    VkPhysicalDeviceDepthClampZeroOneFeaturesEXT,
+    VkPhysicalDeviceDepthClampZeroOneFeaturesKHR,
     VkPhysicalDeviceDepthClipControlFeaturesEXT,
     VkPhysicalDeviceDepthClipEnableFeaturesEXT,
     VkPhysicalDeviceDepthStencilResolveProperties,
@@ -1366,6 +1367,7 @@ enum class Struct {
     VkPhysicalDeviceMaintenance6Properties,
     VkPhysicalDeviceMaintenance7FeaturesKHR,
     VkPhysicalDeviceMaintenance7PropertiesKHR,
+    VkPhysicalDeviceMaintenance8FeaturesKHR,
     VkPhysicalDeviceMapMemoryPlacedFeaturesEXT,
     VkPhysicalDeviceMapMemoryPlacedPropertiesEXT,
     VkPhysicalDeviceMemoryBudgetPropertiesEXT,
@@ -1404,6 +1406,7 @@ enum class Struct {
     VkPhysicalDevicePipelineCreationCacheControlFeatures,
     VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR,
     VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT,
+    VkPhysicalDevicePipelineOpacityMicromapFeaturesARM,
     VkPhysicalDevicePipelinePropertiesFeaturesEXT,
     VkPhysicalDevicePipelineProtectedAccessFeatures,
     VkPhysicalDevicePipelineRobustnessFeatures,
@@ -2318,6 +2321,7 @@ enum class Field {
     dst,
     dstAccelerationStructure,
     dstAccessMask,
+    dstAccessMask3,
     dstAddress,
     dstAlphaBlendFactor,
     dstArrayElement,
@@ -2783,6 +2787,7 @@ enum class Field {
     maintenance5,
     maintenance6,
     maintenance7,
+    maintenance8,
     major,
     mapEntryCount,
     marker,
@@ -3837,6 +3842,7 @@ enum class Field {
     pipelineIdentifier,
     pipelineLayout,
     pipelineLibraryGroupHandles,
+    pipelineOpacityMicromap,
     pipelinePropertiesIdentifier,
     pipelineProtectedAccess,
     pipelineRobustness,
@@ -4335,6 +4341,7 @@ enum class Field {
     src,
     srcAccelerationStructure,
     srcAccessMask,
+    srcAccessMask3,
     srcAddress,
     srcAlphaBlendFactor,
     srcArrayElement,
@@ -4820,6 +4827,7 @@ enum class FlagBitmask {
     VkAccelerationStructureCreateFlagBitsKHR,
     VkAccessFlagBits,
     VkAccessFlagBits2,
+    VkAccessFlagBits3KHR,
     VkAcquireProfilingLockFlagBitsKHR,
     VkAttachmentDescriptionFlagBits,
     VkBufferCreateFlagBits,
@@ -4989,6 +4997,7 @@ enum class Extension {
     _VK_AMD_texture_gather_bias_lod,
     _VK_ANDROID_external_format_resolve,
     _VK_ANDROID_external_memory_android_hardware_buffer,
+    _VK_ARM_pipeline_opacity_micromap,
     _VK_ARM_rasterization_order_attachment_access,
     _VK_ARM_render_pass_striped,
     _VK_ARM_scheduling_controls,
@@ -5159,6 +5168,7 @@ enum class Extension {
     _VK_KHR_create_renderpass2,
     _VK_KHR_dedicated_allocation,
     _VK_KHR_deferred_host_operations,
+    _VK_KHR_depth_clamp_zero_one,
     _VK_KHR_depth_stencil_resolve,
     _VK_KHR_descriptor_update_template,
     _VK_KHR_device_group,
@@ -5202,6 +5212,7 @@ enum class Extension {
     _VK_KHR_maintenance5,
     _VK_KHR_maintenance6,
     _VK_KHR_maintenance7,
+    _VK_KHR_maintenance8,
     _VK_KHR_map_memory2,
     _VK_KHR_multiview,
     _VK_KHR_performance_query,

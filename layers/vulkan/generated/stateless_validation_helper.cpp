@@ -1976,6 +1976,40 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceMaintenance8FeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_8_FEATURES_KHR: {  // Covers
+                                                                              // VUID-VkPhysicalDeviceMaintenance8FeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMaintenance8FeaturesKHR);
+                if (!IsExtEnabled(device_extensions.vk_khr_maintenance8)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceMaintenance8FeaturesKHR, but when creating VkDevice, "
+                                     "the parent extension "
+                                     "(VK_KHR_maintenance8) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceMaintenance8FeaturesKHR* structure = (VkPhysicalDeviceMaintenance8FeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::maintenance8), structure->maintenance8);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceDepthClampZeroOneFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR: {  // Covers
+                                                                                     // VUID-VkPhysicalDeviceDepthClampZeroOneFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDepthClampZeroOneFeaturesKHR);
+                if (!IsExtEnabled(device_extensions.vk_khr_depth_clamp_zero_one) &&
+                    !IsExtEnabled(device_extensions.vk_ext_depth_clamp_zero_one)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDeviceDepthClampZeroOneFeaturesKHR, but when creating "
+                                     "VkDevice, the parent extension "
+                                     "(VK_KHR_depth_clamp_zero_one or VK_EXT_depth_clamp_zero_one) was not included in "
+                                     "ppEnabledExtensionNames.");
+                }
+                VkPhysicalDeviceDepthClampZeroOneFeaturesKHR* structure = (VkPhysicalDeviceDepthClampZeroOneFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::depthClampZeroOne), structure->depthClampZeroOne);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceTransformFeedbackFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {  // Covers
                                                                                    // VUID-VkPhysicalDeviceTransformFeedbackFeaturesEXT-sType-sType
@@ -3491,22 +3525,6 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
             }
         } break;
 
-        // Validation code for VkPhysicalDeviceDepthClampZeroOneFeaturesEXT structure members
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_EXT: {  // Covers
-                                                                                     // VUID-VkPhysicalDeviceDepthClampZeroOneFeaturesEXT-sType-sType
-            if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDepthClampZeroOneFeaturesEXT);
-                if (!IsExtEnabled(device_extensions.vk_ext_depth_clamp_zero_one)) {
-                    skip |= LogError(pnext_vuid, instance, pNext_loc,
-                                     "includes a pointer to a VkPhysicalDeviceDepthClampZeroOneFeaturesEXT, but when creating "
-                                     "VkDevice, the parent extension "
-                                     "(VK_EXT_depth_clamp_zero_one) was not included in ppEnabledExtensionNames.");
-                }
-                VkPhysicalDeviceDepthClampZeroOneFeaturesEXT* structure = (VkPhysicalDeviceDepthClampZeroOneFeaturesEXT*)header;
-                skip |= ValidateBool32(pNext_loc.dot(Field::depthClampZeroOne), structure->depthClampZeroOne);
-            }
-        } break;
-
         // Validation code for VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NON_SEAMLESS_CUBE_MAP_FEATURES_EXT: {  // Covers
                                                                                       // VUID-VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT-sType-sType
@@ -4410,6 +4428,23 @@ bool StatelessValidation::ValidatePnextFeatureStructContents(const Location& loc
                                        structure->cooperativeMatrixTensorAddressing);
 
                 skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeMatrixBlockLoads), structure->cooperativeMatrixBlockLoads);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDevicePipelineOpacityMicromapFeaturesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_OPACITY_MICROMAP_FEATURES_ARM: {  // Covers
+                                                                                          // VUID-VkPhysicalDevicePipelineOpacityMicromapFeaturesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePipelineOpacityMicromapFeaturesARM);
+                if (!IsExtEnabled(device_extensions.vk_arm_pipeline_opacity_micromap)) {
+                    skip |= LogError(pnext_vuid, instance, pNext_loc,
+                                     "includes a pointer to a VkPhysicalDevicePipelineOpacityMicromapFeaturesARM, but when "
+                                     "creating VkDevice, the parent extension "
+                                     "(VK_ARM_pipeline_opacity_micromap) was not included in ppEnabledExtensionNames.");
+                }
+                VkPhysicalDevicePipelineOpacityMicromapFeaturesARM* structure =
+                    (VkPhysicalDevicePipelineOpacityMicromapFeaturesARM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::pipelineOpacityMicromap), structure->pipelineOpacityMicromap);
             }
         } break;
 
@@ -7947,6 +7982,25 @@ bool StatelessValidation::ValidatePnextStructContents(const Location& loc, const
         // No Validation code for VkPhysicalDeviceLayeredApiVulkanPropertiesKHR structure members  -- Covers
         // VUID-VkPhysicalDeviceLayeredApiVulkanPropertiesKHR-sType-sType
 
+        // Validation code for VkMemoryBarrierAccessFlags3KHR structure members
+        case VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR: {  // Covers VUID-VkMemoryBarrierAccessFlags3KHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkMemoryBarrierAccessFlags3KHR);
+                if (!IsExtEnabled(device_extensions.vk_khr_maintenance8)) {
+                    skip |=
+                        LogError(pnext_vuid, instance, pNext_loc, "extended struct requires the extensions VK_KHR_maintenance8");
+                }
+                VkMemoryBarrierAccessFlags3KHR* structure = (VkMemoryBarrierAccessFlags3KHR*)header;
+                skip |= ValidateFlags(pNext_loc.dot(Field::srcAccessMask3), vvl::FlagBitmask::VkAccessFlagBits3KHR,
+                                      AllVkAccessFlagBits3KHR, structure->srcAccessMask3, kOptionalFlags, VK_NULL_HANDLE,
+                                      "VUID-VkMemoryBarrierAccessFlags3KHR-srcAccessMask3-parameter");
+
+                skip |= ValidateFlags(pNext_loc.dot(Field::dstAccessMask3), vvl::FlagBitmask::VkAccessFlagBits3KHR,
+                                      AllVkAccessFlagBits3KHR, structure->dstAccessMask3, kOptionalFlags, VK_NULL_HANDLE,
+                                      "VUID-VkMemoryBarrierAccessFlags3KHR-dstAccessMask3-parameter");
+            }
+        } break;
+
         // Validation code for VkDebugReportCallbackCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT: {  // Covers
                                                                          // VUID-VkDebugReportCallbackCreateInfoEXT-sType-sType
@@ -10521,7 +10575,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT,
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT,
@@ -10582,6 +10636,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_7_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_8_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAP_MEMORY_PLACED_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT,
@@ -10604,6 +10659,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(VkPhysicalDevice physicalD
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_OPACITY_MICROMAP_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROPERTIES_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROTECTED_ACCESS_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES,
@@ -15090,7 +15146,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuf
                 [[maybe_unused]] const Location pBufferMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pBufferMemoryBarriers, bufferMemoryBarrierIndex);
                 constexpr std::array allowed_structs_VkBufferMemoryBarrier2 = {
-                    VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT};
+                    VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT, VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR};
 
                 skip |= ValidateStructPnext(
                     pBufferMemoryBarriers_loc, pDependencyInfo->pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext,
@@ -15135,7 +15191,8 @@ bool StatelessValidation::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuf
                 [[maybe_unused]] const Location pImageMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pImageMemoryBarriers, imageMemoryBarrierIndex);
                 constexpr std::array allowed_structs_VkImageMemoryBarrier2 = {
-                    VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT, VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT};
+                    VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT, VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR,
+                    VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT};
 
                 skip |= ValidateStructPnext(
                     pImageMemoryBarriers_loc, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext,
@@ -15262,7 +15319,8 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandB
                     [[maybe_unused]] const Location pBufferMemoryBarriers_loc =
                         pDependencyInfos_loc.dot(Field::pBufferMemoryBarriers, bufferMemoryBarrierIndex);
                     constexpr std::array allowed_structs_VkBufferMemoryBarrier2 = {
-                        VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT};
+                        VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT,
+                        VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR};
 
                     skip |= ValidateStructPnext(pBufferMemoryBarriers_loc,
                                                 pDependencyInfos[eventIndex].pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext,
@@ -15311,7 +15369,8 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandB
                     [[maybe_unused]] const Location pImageMemoryBarriers_loc =
                         pDependencyInfos_loc.dot(Field::pImageMemoryBarriers, imageMemoryBarrierIndex);
                     constexpr std::array allowed_structs_VkImageMemoryBarrier2 = {
-                        VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT, VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT};
+                        VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT,
+                        VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR, VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT};
 
                     skip |= ValidateStructPnext(
                         pImageMemoryBarriers_loc, pDependencyInfos[eventIndex].pImageMemoryBarriers[imageMemoryBarrierIndex].pNext,
@@ -15420,7 +15479,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer com
                 [[maybe_unused]] const Location pBufferMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pBufferMemoryBarriers, bufferMemoryBarrierIndex);
                 constexpr std::array allowed_structs_VkBufferMemoryBarrier2 = {
-                    VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT};
+                    VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT, VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR};
 
                 skip |= ValidateStructPnext(
                     pBufferMemoryBarriers_loc, pDependencyInfo->pBufferMemoryBarriers[bufferMemoryBarrierIndex].pNext,
@@ -15465,7 +15524,8 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer com
                 [[maybe_unused]] const Location pImageMemoryBarriers_loc =
                     pDependencyInfo_loc.dot(Field::pImageMemoryBarriers, imageMemoryBarrierIndex);
                 constexpr std::array allowed_structs_VkImageMemoryBarrier2 = {
-                    VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT, VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT};
+                    VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT, VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR,
+                    VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT};
 
                 skip |= ValidateStructPnext(
                     pImageMemoryBarriers_loc, pDependencyInfo->pImageMemoryBarriers[imageMemoryBarrierIndex].pNext,
