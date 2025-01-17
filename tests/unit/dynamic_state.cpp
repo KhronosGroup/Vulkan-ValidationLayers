@@ -2600,8 +2600,8 @@ TEST_F(NegativeDynamicState, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
         layout(location = 0) out vec4 c0;
         layout(location = 1) out vec4 c1;
         void main() {
-		    c0 = vec4(0.0f);
-		    c1 = vec4(0.0f);
+            c0 = vec4(0.0f);
+            c1 = vec4(0.0f);
         }
     )glsl";
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -5478,7 +5478,7 @@ TEST_F(NegativeDynamicState, InterpolateAtSample) {
         layout(location = 0) out vec2 uv;
         void main() {
             uv = vec2(gl_VertexIndex & 1, (gl_VertexIndex >> 1) & 1);
-		    gl_Position = vec4(uv, 0.0f, 1.0f);
+            gl_Position = vec4(uv, 0.0f, 1.0f);
         }
     )glsl";
     static const char fs_src[] = R"glsl(
@@ -5486,7 +5486,7 @@ TEST_F(NegativeDynamicState, InterpolateAtSample) {
         layout(location = 0) out vec4 uFragColor;
         layout(location = 0) in vec2 v;
         void main() {
-		    vec2 sample1 = interpolateAtSample(v, 0);
+            vec2 sample1 = interpolateAtSample(v, 0);
             uFragColor = vec4(0.1f);
         }
     )glsl";

@@ -94,25 +94,25 @@ class GeometryKHR {
     GeometryKHR& AddInstanceHostAccelStructRef(VkAccelerationStructureKHR blas);
     GeometryKHR& SetInstancesDeviceAddress(VkDeviceAddress address);
     GeometryKHR& SetInstanceHostAccelStructRef(VkAccelerationStructureKHR blas, uint32_t instance_i);
-	GeometryKHR& SetInstanceHostAddress(void* address);
-        GeometryKHR& SetInstanceShaderBindingTableRecordOffset(uint32_t instance_i, uint32_t instance_sbt_record_offset);
+    GeometryKHR& SetInstanceHostAddress(void* address);
+    GeometryKHR& SetInstanceShaderBindingTableRecordOffset(uint32_t instance_i, uint32_t instance_sbt_record_offset);
 
-        GeometryKHR& Build();
+    GeometryKHR& Build();
 
-        const auto& GetVkObj() const { return vk_obj_; }
-        VkAccelerationStructureBuildRangeInfoKHR GetFullBuildRange() const;
-        const auto& GetTriangles() const { return triangles_; }
-        const auto& GetAABBs() const { return aabbs_; }
-        auto& GetInstance() { return instances_; }
-        VkGeometryFlagsKHR GetFlags() { return vk_obj_.flags; };
+    const auto& GetVkObj() const { return vk_obj_; }
+    VkAccelerationStructureBuildRangeInfoKHR GetFullBuildRange() const;
+    const auto& GetTriangles() const { return triangles_; }
+    const auto& GetAABBs() const { return aabbs_; }
+    auto& GetInstance() { return instances_; }
+    VkGeometryFlagsKHR GetFlags() { return vk_obj_.flags; };
 
-      private:
-        VkAccelerationStructureGeometryKHR vk_obj_;
-        Type type_ = Type::_INTERNAL_UNSPECIFIED;
-        uint32_t primitive_count_ = 0;
-        Triangles triangles_;
-        AABBs aabbs_;
-        Instances instances_;
+  private:
+    VkAccelerationStructureGeometryKHR vk_obj_;
+    Type type_ = Type::_INTERNAL_UNSPECIFIED;
+    uint32_t primitive_count_ = 0;
+    Triangles triangles_;
+    AABBs aabbs_;
+    Instances instances_;
 };
 
 class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerationStructureKHR> {

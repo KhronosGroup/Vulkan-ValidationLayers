@@ -959,9 +959,9 @@ TEST_F(PositiveRayTracing, BasicTraceRaysDeferredBuild) {
         layout(location = 0) rayPayloadEXT vec3 hit;
 
         void main() {
-		traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+        traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
         }
-		)glsl";
+        )glsl";
     pipeline.SetGlslRayGenShader(ray_gen);
 
     const char* miss = R"glsl(
@@ -971,9 +971,9 @@ TEST_F(PositiveRayTracing, BasicTraceRaysDeferredBuild) {
         layout(location = 0) rayPayloadInEXT vec3 hit;
 
         void main() {
-		hit = vec3(0.1, 0.2, 0.3);
+        hit = vec3(0.1, 0.2, 0.3);
         }
-		)glsl";
+        )glsl";
     pipeline.AddGlslMissShader(miss);
 
     const char* closest_hit = R"glsl(
@@ -984,10 +984,10 @@ TEST_F(PositiveRayTracing, BasicTraceRaysDeferredBuild) {
         hitAttributeEXT vec2 baryCoord;
 
         void main() {
-		const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
-		hit = barycentricCoords;
+        const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+        hit = barycentricCoords;
         }
-		)glsl";
+        )glsl";
     pipeline.AddGlslClosestHitShader(closest_hit);
 
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);

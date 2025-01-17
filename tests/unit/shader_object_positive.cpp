@@ -951,7 +951,7 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
     static const char vert_src[] = R"glsl(
         #version 460
         layout (push_constant) uniform constants {
-	        int pos;
+            int pos;
         } pushConst;
         void main() {
             gl_Position = vec4(pushConst.pos);
@@ -961,7 +961,7 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
     static const char frag_src[] = R"glsl(
         #version 460
         layout (push_constant) uniform constants {
-	        layout(offset = 4) float c;
+            layout(offset = 4) float c;
         } pushConst;
         layout(location = 0) out vec4 uFragColor;
         void main(){
