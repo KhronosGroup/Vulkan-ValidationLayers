@@ -2528,7 +2528,7 @@ TEST_F(NegativeSyncObject, CmdWaitEvents2DependencyFlags) {
     dependency_info.dependencyFlags = VK_DEPENDENCY_VIEW_LOCAL_BIT;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdWaitEvents2-dependencyFlags");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-dependencyFlags-10394");
     vk::CmdWaitEvents2KHR(m_command_buffer.handle(), 1, &event_handle, &dependency_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

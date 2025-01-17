@@ -1,5 +1,5 @@
-/* Copyright (c) 2023-2024 Nintendo
- * Copyright (c) 2023-2024 LunarG, Inc.
+/* Copyright (c) 2023-2025 Nintendo
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -458,21 +458,6 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
             taskStageIndex = i;
         } else if (stage == VK_SHADER_STAGE_MESH_BIT_EXT && shader != VK_NULL_HANDLE) {
             meshStageIndex = i;
-        } else if (enabled_features.tessellationShader == VK_FALSE &&
-                   (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
-                   shader != VK_NULL_HANDLE) {
-            const LogObjectList objlist(commandBuffer, shader);
-            skip |=
-                LogError("VUID-vkCmdBindShadersEXT-pShaders-08474", objlist, stage_loc,
-                         "is %s and pShaders[%" PRIu32 "] is not VK_NULL_HANDLE, but tessellationShader feature was not enabled.",
-                         string_VkShaderStageFlagBits(stage), i);
-        } else if (enabled_features.geometryShader == VK_FALSE && stage == VK_SHADER_STAGE_GEOMETRY_BIT &&
-                   shader != VK_NULL_HANDLE) {
-            const LogObjectList objlist(commandBuffer, shader);
-            skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08475", objlist, stage_loc,
-                             "is VK_SHADER_STAGE_GEOMETRY_BIT and pShaders[%" PRIu32
-                             "] is not VK_NULL_HANDLE, but geometryShader feature was not enabled.",
-                             i);
         } else if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
             if ((cb_state->command_pool->queue_flags & VK_QUEUE_COMPUTE_BIT) == 0) {
                 const LogObjectList objlist(commandBuffer, cb_state->command_pool->Handle());
@@ -504,17 +489,6 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
                                  string_VkShaderStageFlagBits(stage), FormatHandle(commandBuffer).c_str(),
                                  string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
             }
-        }
-        if (stage == VK_SHADER_STAGE_TASK_BIT_EXT && enabled_features.taskShader == VK_FALSE && shader != VK_NULL_HANDLE) {
-            const LogObjectList objlist(commandBuffer, shader);
-            skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08490", objlist, stage_loc,
-                             "is %s and pShaders[%" PRIu32 "] is not VK_NULL_HANDLE, but taskShader feature was not enabled.",
-                             string_VkShaderStageFlagBits(stage), i);
-        } else if (stage == VK_SHADER_STAGE_MESH_BIT_EXT && enabled_features.meshShader == VK_FALSE && shader != VK_NULL_HANDLE) {
-            const LogObjectList objlist(commandBuffer, shader);
-            skip |= LogError("VUID-vkCmdBindShadersEXT-pShaders-08491", objlist, stage_loc,
-                             "is %s and pShaders[%" PRIu32 "] is not VK_NULL_HANDLE, but meshShader feature was not enabled.",
-                             string_VkShaderStageFlagBits(stage), i);
         }
         if (stage == VK_SHADER_STAGE_ALL_GRAPHICS || stage == VK_SHADER_STAGE_ALL) {
             skip |= LogError("VUID-vkCmdBindShadersEXT-pStages-08464", commandBuffer, stage_loc, "is %s.",
