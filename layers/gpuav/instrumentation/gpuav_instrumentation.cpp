@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+/* Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -305,8 +305,13 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
     // bindings of the instrumentation descriptor set
     assert(gpuav.instrumentation_bindings_.size() == 8);
 
+    // If nothing was updated, we don't want bind anything
+    if (!last_bound.WasInstrumented()) return;
+
     if (gpuav.gpuav_settings.debug_printf_enabled) {
         if (!debug_printf::UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, bind_point, loc)) {
+            // TODO - need cleaner way to indicate if we want to return because of an error or because we want to save from doing
+            // unnecessary work
             return;
         }
     }

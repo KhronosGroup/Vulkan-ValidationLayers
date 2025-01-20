@@ -754,6 +754,9 @@ struct LastBound {
     std::string DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
 
     const spirv::EntryPoint *GetFragmentEntryPoint() const;
+
+    // For GPU-AV
+    bool WasInstrumented() const;
 };
 
 // Used to compare 2 layouts independently when not tied to the last bound object
