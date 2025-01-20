@@ -1067,6 +1067,34 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                              "to use protected memory.",
                              FormatHandle(memory).c_str(), FormatHandle(buffer).c_str());
         }
+
+        if (IsExtEnabled(device_extensions.vk_khr_dedicated_allocation)) {
+            VkBufferMemoryRequirementsInfo2 buffer_memory_requirements_info_2 = vku::InitStructHelper();
+            buffer_memory_requirements_info_2.buffer = buffer;
+            VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
+            VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&memory_dedicated_requirements);
+            DispatchGetBufferMemoryRequirements2Helper(device, &buffer_memory_requirements_info_2, &memory_requirements);
+
+            if (memory_dedicated_requirements.requiresDedicatedAllocation) {
+                const auto *memory_dedicated_allocate_info =
+                    vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(mem_info->allocate_info.pNext);
+                const char *vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-buffer-01444" : "VUID-vkBindBufferMemory-buffer-01444";
+                if (!memory_dedicated_allocate_info) {
+                    const LogObjectList objlist(buffer, memory);
+                    skip |= LogError(vuid, objlist, loc.dot(Field::memory),
+                                     "was created without a VkMemoryDedicatedAllocateInfo in the pNext chain, but "
+                                     "vkGetBufferMemoryRequirements2() reports "
+                                     "VkBufferMemoryRequirementsInfo2::requiresDedicatedAllocation = VK_TRUE.");
+                } else if (memory_dedicated_allocate_info->buffer != buffer) {
+                    const LogObjectList objlist(buffer, memory);
+                    skip |=
+                        LogError(vuid, objlist, loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::pNext).dot(Field::buffer),
+                                 "is %s, but VkBindBufferMemoryInfo::buffer is %s.",
+                                 FormatHandle(memory_dedicated_allocate_info->buffer).c_str(), FormatHandle(buffer).c_str());
+                }
+            }
+        }
     }
     return skip;
 }
@@ -2002,6 +2030,34 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                          loc.pNext(Struct::VkBindImagePlaneMemoryInfo, Field::planeAspect),
                                          "is %s but is invalid for %s.", string_VkImageAspectFlags(aspect).c_str(),
                                          string_VkFormat(image_format));
+                    }
+                }
+            }
+
+            if (mem_info && IsExtEnabled(device_extensions.vk_khr_dedicated_allocation)) {
+                VkImageMemoryRequirementsInfo2 image_memory_requirements_info_2 = vku::InitStructHelper();
+                image_memory_requirements_info_2.image = bind_info.image;
+                VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
+                VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&memory_dedicated_requirements);
+                DispatchGetImageMemoryRequirements2Helper(device, &image_memory_requirements_info_2, &memory_requirements);
+
+                if (memory_dedicated_requirements.requiresDedicatedAllocation) {
+                    const auto *memory_dedicated_allocate_info =
+                        vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfo>(mem_info->allocate_info.pNext);
+                    const char *vuid =
+                        bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-image-01445" : "VUID-vkBindImageMemory-image-01445";
+                    if (!memory_dedicated_allocate_info) {
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
+                        skip |= LogError(vuid, objlist, loc.dot(Field::memory),
+                                         "was created without a VkMemoryDedicatedAllocateInfo in the pNext chain, but "
+                                         "vkGetImageMemoryRequirements2() reports "
+                                         "VkImageMemoryRequirementsInfo2::requiresDedicatedAllocation = VK_TRUE.");
+                    } else if (memory_dedicated_allocate_info->image != bind_info.image) {
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
+                        skip |= LogError(
+                            vuid, objlist, loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::pNext).dot(Field::image),
+                            "is %s, but VkBindImageMemoryInfo::image is %s.",
+                            FormatHandle(memory_dedicated_allocate_info->image).c_str(), FormatHandle(bind_info.image).c_str());
                     }
                 }
             }

@@ -108,6 +108,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'VK_KHR_external_semaphore_capabilities',
         'VK_KHR_external_fence_capabilities',
         'VK_KHR_external_memory_capabilities',
+        'VK_KHR_get_memory_requirements2',
     )
 
     def __init__(self):
