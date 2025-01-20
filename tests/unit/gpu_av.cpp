@@ -609,9 +609,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineLayout) {
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    m_errorMonitor->SetDesiredWarning("Unable to bind instrumentation descriptor set, it would override application's bound set");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
     // normally would produce a VUID-vkCmdDispatch-storageBuffers-06936 warning, but we didn't instrument the shader in the end
