@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,7 +150,7 @@ TEST_F(PositiveShaderSpirv, GroupDecorations) {
 
     // CreateDescriptorSetLayout
     VkDescriptorSetLayoutBinding dslb[6] = {};
-    size_t dslb_size = size(dslb);
+    size_t dslb_size = std::size(dslb);
     for (size_t i = 0; i < dslb_size; i++) {
         dslb[i].binding = i;
         dslb[i].descriptorCount = 1;

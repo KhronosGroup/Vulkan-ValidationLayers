@@ -399,7 +399,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
             VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
             nullptr,                              // pNext
             0,                                    // flags
-            static_cast<uint32_t>(size(stages)),  // stageCount
+            size32(stages),  // stageCount
             stages,
             &pipeline_vertex_input_state_create_info,
             &pipeline_input_assembly_state_create_info,
@@ -463,7 +463,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
                                                                    nullptr,                              // pNext
                                                                    0,                                    // flags
-                                                                   static_cast<uint32_t>(size(stages)),  // stageCount
+                                                                   size32(stages),  // stageCount
                                                                    stages,
                                                                    &pipeline_vertex_input_state_create_info,
                                                                    &pipeline_input_assembly_state_create_info,

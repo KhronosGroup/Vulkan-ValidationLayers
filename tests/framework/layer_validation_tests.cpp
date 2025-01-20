@@ -49,7 +49,7 @@ VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice phy) {
 
 VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
     const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
-    for (uint32_t i = 0; i < size(ds_formats); ++i) {
+    for (uint32_t i = 0; i < size32(ds_formats); ++i) {
         VkFormatProperties format_props;
         vk::GetPhysicalDeviceFormatProperties(phy, ds_formats[i], &format_props);
 
