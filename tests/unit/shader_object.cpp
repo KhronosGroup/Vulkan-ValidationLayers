@@ -7275,3 +7275,118 @@ TEST_F(NegativeShaderObject, InvalidRayTracingStage) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
+    TEST_DESCRIPTION("Test drawing using task and mesh shaders without binding anything to vertex stage");
+
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
+
+    VkPhysicalDeviceFeatures features;
+    GetPhysicalDeviceFeatures(&features);
+
+    static const char task_src[] = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        layout (local_size_x=1, local_size_y=1, local_size_z=1) in;
+        void main () {
+            EmitMeshTasksEXT(1u, 1u, 1u);
+        }
+    )glsl";
+
+    static const char mesh_src[] = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        layout(max_vertices = 3) out;
+        layout(max_primitives = 1) out;
+        layout(triangles) out;
+        void main() {
+            SetMeshOutputsEXT(3, 1);
+            gl_MeshVerticesEXT[0].gl_Position = vec4(-1.0, -1.0, 0.0f, 1.0f);
+            gl_MeshVerticesEXT[1].gl_Position = vec4( 3.0, -1.0, 0.0f, 1.0f);
+            gl_MeshVerticesEXT[2].gl_Position = vec4(-1.0,  3.0, 0.0f, 1.0f);
+            gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);
+        }
+    )glsl";
+
+    static const char frag_src[] = R"glsl(
+        #version 460
+        layout(location = 0) out vec4 uFragColor;
+        void main(){
+           uFragColor = vec4(0.2f, 0.4f, 0.6f, 0.8f);
+        }
+    )glsl";
+
+    VkShaderStageFlagBits shaderStages[] = {VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_MESH_BIT_EXT,
+                                            VK_SHADER_STAGE_FRAGMENT_BIT};
+
+    const vkt::Shader taskShader(*m_device, shaderStages[0], GLSLToSPV(shaderStages[0], task_src, SPV_ENV_VULKAN_1_3));
+    const vkt::Shader meshShader(*m_device, shaderStages[1], GLSLToSPV(shaderStages[1], mesh_src, SPV_ENV_VULKAN_1_3));
+    const vkt::Shader fragShader(*m_device, shaderStages[2], GLSLToSPV(shaderStages[2], frag_src));
+
+    VkShaderEXT shaders[3] = {taskShader.handle(), meshShader.handle(), fragShader.handle()};
+
+    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::ImageView view = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = view;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.flags = 0u;
+    begin_rendering_info.renderArea.offset.x = 0;
+    begin_rendering_info.renderArea.offset.y = 0;
+    begin_rendering_info.renderArea.extent.width = static_cast<uint32_t>(m_width);
+    begin_rendering_info.renderArea.extent.height = static_cast<uint32_t>(m_height);
+    begin_rendering_info.layerCount = 1u;
+    begin_rendering_info.viewMask = 0x0;
+    begin_rendering_info.colorAttachmentCount = 1u;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+
+    {
+        VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
+        imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;
+        imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageMemoryBarrier.image = image.handle();
+        imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageMemoryBarrier.subresourceRange.baseMipLevel = 0u;
+        imageMemoryBarrier.subresourceRange.levelCount = 1u;
+        imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
+        imageMemoryBarrier.subresourceRange.layerCount = 1u;
+        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
+                               &imageMemoryBarrier);
+    }
+    vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
+    std::vector<VkShaderStageFlagBits> nullStages;
+    if (features.tessellationShader) {
+        nullStages.push_back(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+        nullStages.push_back(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    }
+    if (features.geometryShader) {
+        nullStages.push_back(VK_SHADER_STAGE_GEOMETRY_BIT);
+    }
+    for (const auto stage : nullStages) {
+        VkShaderEXT nullShader = VK_NULL_HANDLE;
+        vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &stage, &nullShader);
+    }
+
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 3u, shaderStages, shaders);
+    SetDefaultDynamicStatesExclude();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-None-08607");
+    // Todo: should be VUID-vkCmdDrawMeshTasksEXT-None-08684 when it is added into the spec
+    m_errorMonitor->SetDesiredError("VUID_Undefined");
+    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdEndRenderingKHR(m_command_buffer.handle());
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
