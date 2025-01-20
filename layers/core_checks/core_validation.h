@@ -464,6 +464,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageBufferCopyMemoryOverlap(const vvl::CommandBuffer& cb_state, const RegionType& region,
                                               const vvl::Image& image_state, const vvl::Buffer& buffer_state,
                                               const Location& region_loc) const;
+    bool ValidateQueueFamilySupport(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& physical_device_state,
+                                    VkImageAspectFlags aspectMask, const vvl::Image& image_state, const Location& aspect_mask_loc,
+                                    const char* vuid) const;
     bool ValidateCmdSubpassState(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
     bool ValidateCmd(const vvl::CommandBuffer& cb_state, const Location& loc) const;
     bool ValidateIndirectCmd(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& loc) const;
