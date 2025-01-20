@@ -3,7 +3,7 @@
     "profiles": {
         "MAX_PROFILE": {
             "version": 1,
-            "api-version": "1.3.238",
+            "api-version": "1.4.304",
             "label": "Max Profile",
             "description": "Profile that supports everything possible",
             "contributors": {},
@@ -542,6 +542,29 @@
                     "shaderIntegerDotProduct": true,
                     "maintenance4": true
                 },
+                "VkPhysicalDeviceVulkan14Features": {
+                    "globalPriorityQuery" : true,
+                    "shaderSubgroupRotate" : true,
+                    "shaderSubgroupRotateClustered" : true,
+                    "shaderFloatControls2" : true,
+                    "shaderExpectAssume" : true,
+                    "rectangularLines" : true,
+                    "bresenhamLines" : true,
+                    "smoothLines" : true,
+                    "stippledRectangularLines" : true,
+                    "stippledBresenhamLines" : true,
+                    "stippledSmoothLines" : true,
+                    "vertexAttributeInstanceRateDivisor" : true,
+                    "vertexAttributeInstanceRateZeroDivisor" : true,
+                    "indexTypeUint8" : true,
+                    "dynamicRenderingLocalRead" : true,
+                    "maintenance5" : true,
+                    "maintenance6" : true,
+                    "pipelineProtectedAccess" : true,
+                    "pipelineRobustness" : true,
+                    "hostImageCopy" : true,
+                    "pushDescriptor" : true
+                },
                 "VkPhysicalDeviceCoherentMemoryFeaturesAMD": {
                     "deviceCoherentMemory": true
                 },
@@ -932,7 +955,7 @@
             "properties": {
                 "VkPhysicalDeviceProperties": {
                     "vendorID": 1,
-                    "apiVersion": 4206830,
+                    "apiVersion": 4210688,
                     "pipelineCacheUUID": [
                         0,
                         0,
@@ -1753,6 +1776,14 @@
                     "uniformTexelBufferOffsetSingleTexelAlignment": true,
                     "uniformTexelBufferOffsetAlignmentBytes": 16,
                     "maxBufferSize": 1073741824
+                },
+                "VkPhysicalDeviceVulkan14Properties": {
+                    "maxVertexAttribDivisor": 4294967000,
+                    "supportsNonZeroFirstInstance": true,
+                    "maxPushDescriptors": 4294967000,
+                    "blockTexelViewCompatibleMultipleLayers" : true,
+                    "maxCombinedImageSamplerDescriptorCount": 1073741824,
+                    "identicalMemoryTypeRequirements" : true
                 },
                 "VkPhysicalDeviceCustomBorderColorPropertiesEXT": {
                     "maxCustomBorderColorSamplers": 4294967000
