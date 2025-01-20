@@ -947,9 +947,9 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
 }
 
 void CoreChecks::TransitionImageLayouts(vvl::CommandBuffer &cb_state, uint32_t barrier_count,
-                                        const VkImageMemoryBarrier2 *image_barriers, const VkDependencyFlags dependency_flags) {
+                                        const VkImageMemoryBarrier2 *image_barriers) {
     for (uint32_t i = 0; i < barrier_count; i++) {
-        const ImageBarrier barrier(image_barriers[i], dependency_flags);
+        const ImageBarrier barrier(image_barriers[i]);
         RecordTransitionImageLayout(cb_state, barrier);
     }
 }

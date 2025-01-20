@@ -17,6 +17,7 @@
  */
 
 #include "gpuav/descriptor_validation/gpuav_image_layout.h"
+
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/validation_cmd/gpuav_copy_buffer_to_image.h"
@@ -120,9 +121,9 @@ static void RecordTransitionImageLayout(Validator &gpuav, vvl::CommandBuffer &cb
 }
 
 static void TransitionImageLayouts(Validator &gpuav, vvl::CommandBuffer &cb_state, uint32_t barrier_count,
-                                   const VkImageMemoryBarrier2 *image_barriers, VkDependencyFlags dependency_flags) {
+                                   const VkImageMemoryBarrier2 *image_barriers) {
     for (uint32_t i = 0; i < barrier_count; i++) {
-        const sync_utils::ImageBarrier barrier(image_barriers[i], dependency_flags);
+        const sync_utils::ImageBarrier barrier(image_barriers[i]);
         RecordTransitionImageLayout(gpuav, cb_state, barrier);
     }
 }
@@ -248,8 +249,7 @@ static void RecordCmdWaitEvents2(Validator &gpuav, VkCommandBuffer commandBuffer
     auto cb_state = gpuav.GetWrite<vvl::CommandBuffer>(commandBuffer);
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
-        TransitionImageLayouts(gpuav, *cb_state, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers,
-                               dep_info.dependencyFlags);
+        TransitionImageLayouts(gpuav, *cb_state, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
     }
 }
 
@@ -711,7 +711,6 @@ void Validator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, 
     BaseClass::PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(*this, *cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers,
-                           pDependencyInfo->dependencyFlags);
+    TransitionImageLayouts(*this, *cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 }
 }  // namespace gpuav

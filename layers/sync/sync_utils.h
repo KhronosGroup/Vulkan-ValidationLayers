@@ -82,26 +82,22 @@ struct MemoryBarrier {
     VkAccessFlags2 srcAccessMask;
     VkPipelineStageFlags2 dstStageMask;
     VkAccessFlags2 dstAccessMask;
-    VkDependencyFlags dependencyFlags = 0;
 
-    explicit MemoryBarrier(const VkMemoryBarrier2& barrier, VkDependencyFlags dependency_flags)
+    explicit MemoryBarrier(const VkMemoryBarrier2& barrier)
         : srcStageMask(barrier.srcStageMask),
           srcAccessMask(barrier.srcAccessMask),
           dstStageMask(barrier.dstStageMask),
-          dstAccessMask(barrier.dstAccessMask),
-          dependencyFlags(dependency_flags) {}
-    explicit MemoryBarrier(const VkBufferMemoryBarrier2& barrier, VkDependencyFlags dependency_flags)
+          dstAccessMask(barrier.dstAccessMask) {}
+    explicit MemoryBarrier(const VkBufferMemoryBarrier2& barrier)
         : srcStageMask(barrier.srcStageMask),
           srcAccessMask(barrier.srcAccessMask),
           dstStageMask(barrier.dstStageMask),
-          dstAccessMask(barrier.dstAccessMask),
-          dependencyFlags(dependency_flags) {}
-    explicit MemoryBarrier(const VkImageMemoryBarrier2& barrier, VkDependencyFlags dependency_flags)
+          dstAccessMask(barrier.dstAccessMask) {}
+    explicit MemoryBarrier(const VkImageMemoryBarrier2& barrier)
         : srcStageMask(barrier.srcStageMask),
           srcAccessMask(barrier.srcAccessMask),
           dstStageMask(barrier.dstStageMask),
-          dstAccessMask(barrier.dstAccessMask),
-          dependencyFlags(dependency_flags) {}
+          dstAccessMask(barrier.dstAccessMask) {}
     MemoryBarrier(const VkMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
         : srcStageMask(src_stage_mask),
           srcAccessMask(barrier.srcAccessMask),
@@ -127,8 +123,8 @@ struct OwnershipTransferBarrier : MemoryBarrier {
     uint32_t srcQueueFamilyIndex;
     uint32_t dstQueueFamilyIndex;
 
-    OwnershipTransferBarrier(const VkBufferMemoryBarrier2& barrier, VkDependencyFlags dependency_flags)
-        : MemoryBarrier(barrier, dependency_flags),
+    OwnershipTransferBarrier(const VkBufferMemoryBarrier2& barrier)
+        : MemoryBarrier(barrier),
           srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
           dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
     OwnershipTransferBarrier(const VkBufferMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask,
@@ -136,8 +132,8 @@ struct OwnershipTransferBarrier : MemoryBarrier {
         : MemoryBarrier(barrier, src_stage_mask, dst_stage_mask),
           srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
           dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
-    OwnershipTransferBarrier(const VkImageMemoryBarrier2& barrier, VkDependencyFlags dependency_flags)
-        : MemoryBarrier(barrier, dependency_flags),
+    OwnershipTransferBarrier(const VkImageMemoryBarrier2& barrier)
+        : MemoryBarrier(barrier),
           srcQueueFamilyIndex(barrier.srcQueueFamilyIndex),
           dstQueueFamilyIndex(barrier.dstQueueFamilyIndex) {}
     OwnershipTransferBarrier(const VkImageMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask,
@@ -163,8 +159,8 @@ struct BufferBarrier : OwnershipTransferBarrier {
     VkDeviceSize offset;
     VkDeviceSize size;
 
-    explicit BufferBarrier(const VkBufferMemoryBarrier2& barrier, VkDependencyFlags dependency_flags)
-        : OwnershipTransferBarrier(barrier, dependency_flags), buffer(barrier.buffer), offset(barrier.offset), size(barrier.size) {}
+    explicit BufferBarrier(const VkBufferMemoryBarrier2& barrier)
+        : OwnershipTransferBarrier(barrier), buffer(barrier.buffer), offset(barrier.offset), size(barrier.size) {}
     BufferBarrier(const VkBufferMemoryBarrier& barrier, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask)
         : OwnershipTransferBarrier(barrier, src_stage_mask, dst_stage_mask),
           buffer(barrier.buffer),
@@ -178,8 +174,8 @@ struct ImageBarrier : OwnershipTransferBarrier {
     VkImage image;
     VkImageSubresourceRange subresourceRange;
 
-    explicit ImageBarrier(const VkImageMemoryBarrier2& barrier, VkDependencyFlags dependency_flags)
-        : OwnershipTransferBarrier(barrier, dependency_flags),
+    explicit ImageBarrier(const VkImageMemoryBarrier2& barrier)
+        : OwnershipTransferBarrier(barrier),
           oldLayout(barrier.oldLayout),
           newLayout(barrier.newLayout),
           image(barrier.image),

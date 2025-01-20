@@ -2370,71 +2370,12 @@ TEST_F(PositiveSyncObject, KhronosTimelineSemaphoreExample) {
     }
 }
 
-TEST_F(PositiveSyncObject, BufferBarrierStageNotSupportedByQueue) {
-    TEST_DESCRIPTION("Buffer memory barrier without ownership transfer uses pipeline stages not supported by the queue family");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::synchronization2);
-    // Allows us to do this with new VkDependencyFlagBits
+TEST_F(PositiveSyncObject, BarrierWithoutOwnershipTransferUseAllStages) {
+    TEST_DESCRIPTION("Barrier without ownership transfer with USE_ALL_STAGES flag (no-op)");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::maintenance8);
     RETURN_IF_SKIP(Init());
-
-    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
-    if (!compute_only_family.has_value()) {
-        GTEST_SKIP() << "Compute-only queue family is required";
-    }
-    vkt::CommandPool compute_pool(*m_device, compute_only_family.value());
-    vkt::CommandBuffer compute_cb(*m_device, compute_pool);
-
-    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-
-    VkBufferMemoryBarrier2 barrier_src_gfx = vku::InitStructHelper();
-    barrier_src_gfx.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage
-    barrier_src_gfx.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-    barrier_src_gfx.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-    barrier_src_gfx.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    barrier_src_gfx.buffer = buffer;
-    barrier_src_gfx.offset = 0;
-    barrier_src_gfx.size = 256;
-
-    VkBufferMemoryBarrier2 barrier_dst_gfx = vku::InitStructHelper();
-    barrier_dst_gfx.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
-    barrier_dst_gfx.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    barrier_dst_gfx.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage
-    barrier_dst_gfx.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-    barrier_dst_gfx.buffer = buffer;
-    barrier_dst_gfx.offset = 0;
-    barrier_dst_gfx.size = 256;
-
-    VkDependencyInfo dep_info_src_gfx = vku::InitStructHelper();
-    dep_info_src_gfx.bufferMemoryBarrierCount = 1;
-    dep_info_src_gfx.pBufferMemoryBarriers = &barrier_src_gfx;
-    dep_info_src_gfx.dependencyFlags = VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
-
-    VkDependencyInfo dep_info_dst_gfx = vku::InitStructHelper();
-    dep_info_dst_gfx.bufferMemoryBarrierCount = 1;
-    dep_info_dst_gfx.pBufferMemoryBarriers = &barrier_dst_gfx;
-    dep_info_dst_gfx.dependencyFlags = VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
-
-    compute_cb.Begin();
-    vk::CmdPipelineBarrier2(compute_cb.handle(), &dep_info_src_gfx);
-    vk::CmdPipelineBarrier2(compute_cb.handle(), &dep_info_dst_gfx);
-    compute_cb.End();
-}
-
-TEST_F(PositiveSyncObject, CmdPipelineBarrierQueueFamilyTransferAllStages) {
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::synchronization2);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::maintenance8);
-    RETURN_IF_SKIP(Init());
-
-    std::optional<uint32_t> compute_only_family = m_device->ComputeOnlyQueueFamily();
-    if (!compute_only_family.has_value()) {
-        GTEST_SKIP() << "Compute-only queue family is required";
-    }
-    vkt::CommandPool compute_pool(*m_device, compute_only_family.value());
-    vkt::CommandBuffer compute_cb(*m_device, compute_pool);
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
@@ -2448,11 +2389,76 @@ TEST_F(PositiveSyncObject, CmdPipelineBarrierQueueFamilyTransferAllStages) {
     barrier.offset = 0;
     barrier.size = 256;
 
-    compute_cb.Begin();
-    vk::CmdPipelineBarrier(compute_cb.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+    m_command_buffer.Begin();
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                            VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR, 0, nullptr, 1, &barrier, 0,
                            nullptr);
-    compute_cb.End();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncObject, OwnershipTransferUseAllStages) {
+    TEST_DESCRIPTION("Barrier with ownership transfer with USE_ALL_STAGES flag");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    // Enable feature to use stage other than ALL_COMMANDS during ownership transfer
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    RETURN_IF_SKIP(Init());
+
+    std::optional<uint32_t> transfer_only_family = m_device->TransferOnlyQueueFamily();
+    if (!transfer_only_family.has_value()) {
+        GTEST_SKIP() << "Transfer-only queue family is required";
+    }
+    vkt::CommandPool transfer_pool(*m_device, transfer_only_family.value(), VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    vkt::CommandBuffer transfer_cb(*m_device, transfer_pool);
+
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // Acquire operation on transfer queue.
+    // The src stage should be a valid transfer stage.
+    VkBufferMemoryBarrier2 acquire_barrier = vku::InitStructHelper();
+    acquire_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    acquire_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    acquire_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    acquire_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    acquire_barrier.srcQueueFamilyIndex = m_default_queue->family_index;
+    acquire_barrier.dstQueueFamilyIndex = transfer_only_family.value();
+    acquire_barrier.buffer = buffer;
+    acquire_barrier.offset = 0;
+    acquire_barrier.size = 256;
+
+    VkDependencyInfo acquire_dep_info = vku::InitStructHelper();
+    // Use this dependency flag to be able to use src stage other then ALL_COMMANDS
+    acquire_dep_info.dependencyFlags = VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
+    acquire_dep_info.bufferMemoryBarrierCount = 1;
+    acquire_dep_info.pBufferMemoryBarriers = &acquire_barrier;
+
+    transfer_cb.Begin();
+    vk::CmdPipelineBarrier2(transfer_cb, &acquire_dep_info);
+    transfer_cb.End();
+
+    // Release operation on transfer queue.
+    // The dst stage should be a valid transfer stage.
+    VkBufferMemoryBarrier2 release_barrier = vku::InitStructHelper();
+    release_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    release_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    release_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    release_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    release_barrier.srcQueueFamilyIndex = transfer_only_family.value();
+    release_barrier.dstQueueFamilyIndex = m_default_queue->family_index;
+    release_barrier.buffer = buffer;
+    release_barrier.offset = 0;
+    release_barrier.size = 256;
+
+    VkDependencyInfo release_dep_info = vku::InitStructHelper();
+    // Use this dependency flag to be able to use dst stage other then ALL_COMMANDS
+    release_dep_info.dependencyFlags = VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
+    release_dep_info.bufferMemoryBarrierCount = 1;
+    release_dep_info.pBufferMemoryBarriers = &release_barrier;
+
+    transfer_cb.Begin();
+    vk::CmdPipelineBarrier2(transfer_cb, &release_dep_info);
+    transfer_cb.End();
 }
 
 TEST_F(PositiveSyncObject, BinarySyncAfterResolvedTimelineWait) {
