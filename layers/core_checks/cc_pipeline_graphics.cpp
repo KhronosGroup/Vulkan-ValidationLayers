@@ -4169,7 +4169,12 @@ bool CoreChecks::ValidateDrawPipelineVertexAttribute(const vvl::CommandBuffer &c
             const VkDeviceSize attrib_address = vertex_buffer_offset + vertex_buffer_stride + attribute_offset;
 
             VkDeviceSize vtx_attrib_req_alignment = vkuFormatElementSize(attribute_format);
-            if (vkuFormatElementIsTexel(attribute_format)) {
+
+            // TODO - There is no real spec language describing these, but also almost no one supports these formats for vertex
+            // input and this check should probably just removed and do the safe division always. Will need to run against CTS
+            // before-and-after to make sure.
+            if (!vkuFormatIsPacked(attribute_format) && !vkuFormatIsCompressed(attribute_format) &&
+                !vkuFormatIsSinglePlane_422(attribute_format) && !vkuFormatIsMultiplane(attribute_format)) {
                 vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, vkuFormatComponentCount(attribute_format));
             }
 
