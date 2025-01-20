@@ -1805,6 +1805,12 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout, dst_image_loc, vuid);
         skip |= ValidateCopyImageTransferGranularityRequirements(cb_state, *src_image_state, *dst_image_state, region, region_loc);
         skip |= ValidateCopyImageRegionCommon(commandBuffer, *src_image_state, *dst_image_state, region, region_loc);
+        vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-10217" : "VUID-vkCmdCopyImage-commandBuffer-10217";
+        skip |= ValidateQueueFamilySupport(cb_state, *physical_device_state, src_aspect, *src_image_state,
+                                           region_loc.dot(Field::srcSubresource).dot(Field::aspectMask), vuid);
+        vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-10218" : "VUID-vkCmdCopyImage-commandBuffer-10218";
+        skip |= ValidateQueueFamilySupport(cb_state, *physical_device_state, dst_aspect, *dst_image_state,
+                                           region_loc.dot(Field::dstSubresource).dot(Field::aspectMask), vuid);
     }
 
     // The formats of non-multiplane src_image and dst_image must be compatible. Formats are considered compatible if their texel
@@ -2245,6 +2251,21 @@ bool CoreChecks::ValidateImageBufferCopyMemoryOverlap(const vvl::CommandBuffer &
     return skip;
 }
 
+bool CoreChecks::ValidateQueueFamilySupport(const vvl::CommandBuffer &cb_state, const vvl::PhysicalDevice &physical_device_state,
+                                            VkImageAspectFlags aspectMask, const vvl::Image &image_state,
+                                            const Location &aspect_mask_loc, const char *vuid) const {
+    bool skip = false;
+
+    if (!HasRequiredQueueFlags(cb_state, physical_device_state, VK_QUEUE_GRAPHICS_BIT) &&
+        ((aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0)) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        skip |= LogError(vuid, objlist, aspect_mask_loc, "is %s, but is %s", string_VkImageAspectFlags(aspectMask).c_str(),
+                         DescribeRequiredQueueFlag(cb_state, physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
+    }
+
+    return skip;
+}
+
 template <typename RegionType>
 bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkBuffer dstBuffer, uint32_t regionCount, const RegionType *pRegions,
@@ -2337,6 +2358,9 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         skip |= ValidateBufferBounds(commandBuffer, *src_image_state, *dst_buffer_state, region, region_loc);
 
         skip |= ValidateImageBufferCopyMemoryOverlap(cb_state, region, *src_image_state, *dst_buffer_state, region_loc);
+        vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-10216" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-10216";
+        skip |= ValidateQueueFamilySupport(cb_state, *physical_device_state, region.imageSubresource.aspectMask, *src_image_state,
+                                           subresource_loc.dot(Field::aspectMask), vuid);
     }
 
     return skip;
@@ -2491,17 +2515,9 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         skip |= ValidateImageBounds(commandBuffer, *dst_image_state, region, region_loc, vuid, false);
         skip |= ValidateBufferBounds(commandBuffer, *dst_image_state, *src_buffer_state, region, region_loc);
 
-        const VkImageAspectFlags region_aspect_mask = region.imageSubresource.aspectMask;
-        if ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
-            if (!HasRequiredQueueFlags(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT)) {
-                vuid =
-                    is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-07739" : "VUID-vkCmdCopyBufferToImage-commandBuffer-07739";
-                const LogObjectList objlist(cb_state.Handle(), cb_state.command_pool->Handle());
-                skip |= LogError(vuid, objlist, subresource_loc.dot(Field::aspectMask), "is %s, but is %s",
-                                 string_VkImageAspectFlags(region_aspect_mask).c_str(),
-                                 DescribeRequiredQueueFlag(cb_state, *physical_device_state, VK_QUEUE_GRAPHICS_BIT).c_str());
-            }
-        }
+        vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-07739" : "VUID-vkCmdCopyBufferToImage-commandBuffer-07739";
+        skip |= ValidateQueueFamilySupport(cb_state, *physical_device_state, region.imageSubresource.aspectMask, *dst_image_state,
+                                           subresource_loc.dot(Field::aspectMask), vuid);
 
         skip |= ValidateImageBufferCopyMemoryOverlap(cb_state, region, *dst_image_state, *src_buffer_state, region_loc);
     }
