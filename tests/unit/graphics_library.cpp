@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetsLinkOnly) {
         frag_shader_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06615");
@@ -479,7 +479,7 @@ TEST_F(NegativeGraphicsLibrary, LinkOptimization) {
         vertex_input_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -657,7 +657,7 @@ TEST_F(NegativeGraphicsLibrary, DSLShaderBindingsLinkOnly) {
         frag_shader_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo lib_ci = vku::InitStructHelper(&link_info);
@@ -761,7 +761,7 @@ TEST_F(NegativeGraphicsLibrary, ImmutableSamplersIncompatibleDSL) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -1007,7 +1007,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -1308,7 +1308,7 @@ TEST_F(NegativeGraphicsLibrary, PipelineExecutableProperties) {
             frag_out_lib.Handle(),
         };
         VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-        link_info.libraryCount = size(libraries);
+        link_info.libraryCount = size32(libraries);
         link_info.pLibraries = libraries;
 
         VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -1701,7 +1701,7 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
         fo_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_ci = vku::InitStructHelper(&link_info);
@@ -1757,7 +1757,7 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayoutsMultipleSubsets) {
         fo_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_ci = vku::InitStructHelper(&link_info);
@@ -1812,7 +1812,7 @@ TEST_F(NegativeGraphicsLibrary, MissingLinkingLayout) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -1850,7 +1850,7 @@ TEST_F(NegativeGraphicsLibrary, NullLibrary) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -1889,7 +1889,7 @@ TEST_F(NegativeGraphicsLibrary, BadLibrary) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -1934,7 +1934,7 @@ TEST_F(NegativeGraphicsLibrary, DestroyedLibrary) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -1990,7 +1990,7 @@ TEST_F(NegativeGraphicsLibrary, DestroyedLibraryNested) {
         frag_out_lib.Handle(),
     };
 
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -2052,7 +2052,7 @@ TEST_F(NegativeGraphicsLibrary, DynamicPrimitiveTopolgyIngoreState) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkDynamicState dynamic_states[1] = {VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY};
@@ -2111,7 +2111,7 @@ TEST_F(NegativeGraphicsLibrary, PushConstantStages) {
         frag_shader_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
@@ -2155,7 +2155,7 @@ TEST_F(NegativeGraphicsLibrary, PushConstantSize) {
         frag_shader_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
@@ -2199,7 +2199,7 @@ TEST_F(NegativeGraphicsLibrary, PushConstantMultiple) {
         frag_shader_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
@@ -2242,7 +2242,7 @@ TEST_F(NegativeGraphicsLibrary, PushConstantDifferentCount) {
         frag_shader_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06621");
@@ -2335,7 +2335,7 @@ TEST_F(NegativeGraphicsLibrary, SetLayoutCountLinking) {
     };
 
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06613");
@@ -2560,7 +2560,7 @@ TEST_F(NegativeGraphicsLibrary, NullDSLLinking) {
         frag_shader_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -2790,7 +2790,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateBothLibrary) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
@@ -2888,7 +2888,7 @@ TEST_F(NegativeGraphicsLibrary, FragmentShadingRateStateBothLibrary) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06639");
@@ -2945,7 +2945,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateSampleMaskArray) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
@@ -3001,7 +3001,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateSampleMaskArrayNull) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
@@ -3045,7 +3045,7 @@ TEST_F(NegativeGraphicsLibrary, MultisampleStateMultipleSubsets) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pLibraries-06635");
@@ -3129,7 +3129,7 @@ TEST_F(NegativeGraphicsLibrary, MissingPreRasterization) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -3167,7 +3167,7 @@ TEST_F(NegativeGraphicsLibrary, MissingFragmentShader) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -3210,7 +3210,7 @@ TEST_F(NegativeGraphicsLibrary, MissingFragmentOutput) {
         frag_shader_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -3287,7 +3287,7 @@ TEST_F(NegativeGraphicsLibrary, LinkedPipelineIgnoreStages) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -3348,7 +3348,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetLayoutNull) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
@@ -3414,7 +3414,7 @@ TEST_F(NegativeGraphicsLibrary, IndependentSetLayoutCompatible) {
         frag_out_lib.Handle(),
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);

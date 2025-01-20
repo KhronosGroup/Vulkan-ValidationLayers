@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -420,7 +420,7 @@ SimpleGPL::SimpleGPL(VkLayerTest &test, VkPipelineLayout layout, const char *ver
     };
 
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
-    link_info.libraryCount = size(libraries);
+    link_info.libraryCount = size32(libraries);
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);

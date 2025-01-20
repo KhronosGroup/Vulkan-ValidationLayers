@@ -84,16 +84,7 @@ static const VkLayerSettingEXT kDisableMessageLimitSetting = {OBJECT_LAYER_NAME,
 [[maybe_unused]] static VkLayerSettingsCreateInfoEXT kDisableMessageLimit = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT,
                                                                              nullptr, 1, &kDisableMessageLimitSetting};
 
-//--------------------------------------------------------------------------------------
-// Mesh and VertexFormat Data
-//--------------------------------------------------------------------------------------
-
 // Static arrays helper
-template <class ElementT, size_t array_size>
-size_t size(ElementT (&)[array_size]) {
-    return array_size;
-}
-
 template <class ElementT, size_t array_size>
 uint32_t size32(ElementT (&)[array_size]) {
     return static_cast<uint32_t>(array_size);

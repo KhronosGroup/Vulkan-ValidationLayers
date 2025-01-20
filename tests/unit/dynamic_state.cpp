@@ -466,7 +466,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateDisabled) {
         VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE, VK_DYNAMIC_STATE_STENCIL_OP,
     };
     VkPipelineDynamicStateCreateInfo dyn_state_ci = vku::InitStructHelper();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.dynamicStateCount = size32(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;
     pipe.dyn_state_ci_ = dyn_state_ci;
     pipe.vp_state_ci_.viewportCount = 0;
@@ -582,7 +582,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateDuplicate) {
     };
 
     // Verify dupes of every state.
-    for (size_t i = 0; i < size(dyn_states); ++i) {
+    for (size_t i = 0; i < std::size(dyn_states); ++i) {
         CreatePipelineHelper pipe(*this);
         pipe.AddDynamicState(dyn_states[i]);
         pipe.AddDynamicState(dyn_states[i]);
@@ -867,13 +867,13 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateEnabledNoMultiview) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportWithCount-viewportCount-03395");
     VkViewport viewport = {0, 0, 1, 1, 0.0f, 0.0f};
     VkViewport viewports[] = {viewport, viewport};
-    vk::CmdSetViewportWithCountEXT(commandBuffer.handle(), size(viewports), viewports);
+    vk::CmdSetViewportWithCountEXT(commandBuffer.handle(), size32(viewports), viewports);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissorWithCount-scissorCount-03398");
     VkRect2D scissor = {{0, 0}, {1, 1}};
     VkRect2D scissors[] = {scissor, scissor};
-    vk::CmdSetScissorWithCountEXT(commandBuffer.handle(), size(scissors), scissors);
+    vk::CmdSetScissorWithCountEXT(commandBuffer.handle(), size32(scissors), scissors);
     m_errorMonitor->VerifyFound();
 
     commandBuffer.End();
@@ -979,7 +979,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState2Enabled) {
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE,
                                          VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE};
 
-    for (size_t i = 0; i < size(dyn_states); ++i) {
+    for (size_t i = 0; i < std::size(dyn_states); ++i) {
         // Verify duplicates of every dynamic state.
         {
             CreatePipelineHelper pipe(*this);
@@ -1552,7 +1552,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicState3DuplicateStatePipeline) {
                                          VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV};
 
     // Verify dupes of every state.
-    for (size_t i = 0; i < size(dyn_states); ++i) {
+    for (size_t i = 0; i < std::size(dyn_states); ++i) {
         CreatePipelineHelper pipe(*this);
         pipe.AddDynamicState(dyn_states[i]);
         pipe.AddDynamicState(dyn_states[i]);
@@ -3539,7 +3539,7 @@ TEST_F(NegativeDynamicState, DiscardRectanglesVersion) {
 
     const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT};
     VkPipelineDynamicStateCreateInfo dyn_state_ci = vku::InitStructHelper();
-    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.dynamicStateCount = size32(dyn_states);
     dyn_state_ci.pDynamicStates = dyn_states;
 
     CreatePipelineHelper pipe(*this);
@@ -4031,7 +4031,7 @@ TEST_F(NegativeDynamicState, Viewport) {
     for (const auto &test_case : dyn_test_cases) {
         const auto break_vp = [&](CreatePipelineHelper &helper) {
             VkPipelineDynamicStateCreateInfo dyn_state_ci = vku::InitStructHelper();
-            dyn_state_ci.dynamicStateCount = size(dyn_states);
+            dyn_state_ci.dynamicStateCount = size32(dyn_states);
             dyn_state_ci.pDynamicStates = dyn_states;
             helper.dyn_state_ci_ = dyn_state_ci;
 
@@ -4198,7 +4198,7 @@ TEST_F(NegativeDynamicState, MultiViewport) {
     for (const auto &test_case : dyn_test_cases) {
         const auto break_vp = [&](CreatePipelineHelper &helper) {
             VkPipelineDynamicStateCreateInfo dyn_state_ci = vku::InitStructHelper();
-            dyn_state_ci.dynamicStateCount = size(dyn_states);
+            dyn_state_ci.dynamicStateCount = size32(dyn_states);
             dyn_state_ci.pDynamicStates = dyn_states;
             helper.dyn_state_ci_ = dyn_state_ci;
 
