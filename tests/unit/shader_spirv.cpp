@@ -2615,7 +2615,7 @@ TEST_F(NegativeShaderSpirv, ImageGatherOffsetMaintenance8) {
                OpCapability Shader
                OpCapability ImageGatherExtended
                OpMemoryModel Logical GLSL450
-               OpEntryPoint GLCompute %main "main" %tex
+               OpEntryPoint GLCompute %main "main"
                OpExecutionMode %main LocalSize 1 1 1
                OpDecorate %tex DescriptorSet 0
                OpDecorate %tex Binding 2
@@ -2642,7 +2642,6 @@ TEST_F(NegativeShaderSpirv, ImageGatherOffsetMaintenance8) {
                OpFunctionEnd
     )";
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-StandaloneSpirv-Offset-04663");  // TODO - Remove with new spirv-val
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Offset-10213");
     VkShaderObj const fs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();

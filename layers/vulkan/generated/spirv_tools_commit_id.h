@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,4 +23,4 @@
 
 #pragma once
 
-#define SPIRV_TOOLS_COMMIT_ID "4d2f0b40bfe290dea6c6904dafdf7fd8328ba346"
+#define SPIRV_TOOLS_COMMIT_ID "066c3d52c2fca8d9df79ca37055c3f5eddf2ffce"
