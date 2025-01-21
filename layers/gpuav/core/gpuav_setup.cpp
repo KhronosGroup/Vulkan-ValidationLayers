@@ -498,28 +498,32 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         desc_heap_.emplace(*this, num_descs, loc);
     }
 
-    VkBufferCreateInfo error_buffer_ci = vku::InitStructHelper();
-    error_buffer_ci.size = glsl::kErrorBufferByteSize;
-    error_buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    VmaAllocationCreateInfo alloc_create_info = {};
-    alloc_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    uint32_t mem_type_index;
-    result = vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &error_buffer_ci, &alloc_create_info, &mem_type_index);
-    if (result != VK_SUCCESS) {
-        InternalVmaError(device, loc, "Unable to find memory type index.");
-        return;
-    }
-    VmaPoolCreateInfo vma_pool_ci = {};
-    vma_pool_ci.memoryTypeIndex = mem_type_index;
-    vma_pool_ci.blockSize = 0;
-    vma_pool_ci.maxBlockCount = 0;
-    if (gpuav_settings.vma_linear_output) {
-        vma_pool_ci.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
-    }
-    result = vmaCreatePool(vma_allocator_, &vma_pool_ci, &output_buffer_pool_);
-    if (result != VK_SUCCESS) {
-        InternalVmaError(device, loc, "Unable to create VMA memory pool.");
-        return;
+    // Create error logging buffer allocation pool
+    {
+        VkBufferCreateInfo error_buffer_ci = vku::InitStructHelper();
+        error_buffer_ci.size = glsl::kErrorBufferByteSize;
+        error_buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        VmaAllocationCreateInfo error_buffer_alloc_ci = {};
+        error_buffer_alloc_ci.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        error_buffer_alloc_ci.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        uint32_t mem_type_index;
+        result = vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &error_buffer_ci, &error_buffer_alloc_ci, &mem_type_index);
+        if (result != VK_SUCCESS) {
+            InternalVmaError(device, loc, "Unable to find memory type index.");
+            return;
+        }
+        VmaPoolCreateInfo vma_pool_ci = {};
+        vma_pool_ci.memoryTypeIndex = mem_type_index;
+        vma_pool_ci.blockSize = 0;
+        vma_pool_ci.maxBlockCount = 0;
+        if (gpuav_settings.vma_linear_output) {
+            vma_pool_ci.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
+        }
+        result = vmaCreatePool(vma_allocator_, &vma_pool_ci, &output_buffer_pool_);
+        if (result != VK_SUCCESS) {
+            InternalVmaError(device, loc, "Unable to create VMA memory pool.");
+            return;
+        }
     }
 
     // Create command indices buffer
@@ -532,6 +536,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         assert(output_buffer_pool_);
         alloc_info.pool = output_buffer_pool_;
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         const bool success = indices_buffer_.Create(loc, &buffer_info, &alloc_info);
         if (!success) {
             return;
