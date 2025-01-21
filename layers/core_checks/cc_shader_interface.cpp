@@ -52,11 +52,8 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
     }
 
     for (uint32_t i = 0; i < input_state->vertexAttributeDescriptionCount; ++i) {
-        // Vertex input attributes use VkFormat, but only to make use of how they define sizes, things such as
-        // depth/multi-plane/compressed will never be used here because they would mean nothing. So we can ensure these are
-        // "standard" color formats being used
         const VkFormat format = input_state->pVertexAttributeDescriptions[i].format;
-        const uint32_t format_size = vkuFormatElementSize(format);
+        const uint32_t format_size = GetVertexInputFormatSize(format);
         // Vulkan Spec: Location is made up of 16 bytes, never can have 0 Locations
         const uint32_t bytes_in_location = 16;
         const uint32_t num_locations = ((format_size - 1) / bytes_in_location) + 1;

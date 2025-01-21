@@ -839,7 +839,7 @@ static std::optional<SmallestVertexBufferBinding> SmallestVertexAttributesCount(
         // #ARNO_TODO: Should I only loop over vertex attributes actually used by bound pipelines,
         // according to its vertex shader?
         for (const auto &[Location, attrib] : vertex_binding_desc.locations) {
-            const VkDeviceSize attribute_size = vkuFormatElementSize(attrib.desc.format);
+            const VkDeviceSize attribute_size = GetVertexInputFormatSize(attrib.desc.format);
 
             const VkDeviceSize stride =
                 vbb.stride != 0 ? vbb.stride : attribute_size;  // Tracked stride should already handle all possible value origin

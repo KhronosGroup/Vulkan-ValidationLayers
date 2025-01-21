@@ -652,7 +652,7 @@ bool StatelessValidation::ValidateCreateImageFormatList(const VkImageCreateInfo 
         } else if (view_format_class != image_format_class) {
             if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
                 const bool size_compatible =
-                    !vkuFormatIsCompressed(view_format) && vkuFormatElementSize(view_format) == vkuFormatElementSize(image_format);
+                    !vkuFormatIsCompressed(view_format) && AreFormatsSizeCompatible(view_format, image_format);
                 if (!size_compatible) {
                     skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device, format_loc,
                                      "(%s) and VkImageCreateInfo::format (%s) are not compatible or size-compatible.",

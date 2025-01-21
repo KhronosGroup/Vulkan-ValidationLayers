@@ -203,14 +203,14 @@ bool CoreChecks::ValidateGraphicsPipelinePortability(const vvl::Pipeline &pipeli
                 for (const auto &attrib_state : binding_state.second.locations) {
                     const auto &attrib = attrib_state.second.desc;
                     const auto &desc = binding_state.second.desc;
-                    if ((attrib.offset + vkuFormatElementSize(attrib.format)) > desc.stride) {
+                    if ((attrib.offset + GetVertexInputFormatSize(attrib.format)) > desc.stride) {
                         skip |= LogError("VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457", device,
                                          create_info_loc,
                                          "(portability error): attribute.offset (%" PRIu32
                                          ") + "
                                          "sizeof(vertex_description.format) (%" PRIu32
                                          ") is larger than the vertex stride (%" PRIu32 ").",
-                                         attrib.offset, vkuFormatElementSize(attrib.format), desc.stride);
+                                         attrib.offset, GetVertexInputFormatSize(attrib.format), desc.stride);
                     }
                 }
             }
@@ -4152,7 +4152,7 @@ bool CoreChecks::ValidateDrawPipelineVertexAttribute(const vvl::CommandBuffer &c
             const VkFormat attribute_format = attr_desc.format;
             const VkDeviceSize vertex_buffer_stride = vertex_buffer->stride;
             if (pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
-                const VkDeviceSize attribute_binding_extent = attribute_offset + vkuFormatElementSize(attribute_format);
+                const VkDeviceSize attribute_binding_extent = attribute_offset + GetVertexInputFormatSize(attribute_format);
                 if (vertex_buffer_stride != 0 && vertex_buffer_stride < attribute_binding_extent) {
                     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                     skip |= LogError("VUID-vkCmdBindVertexBuffers2-pStrides-06209", objlist, vuid.loc(),
@@ -4168,7 +4168,7 @@ bool CoreChecks::ValidateDrawPipelineVertexAttribute(const vvl::CommandBuffer &c
             // Use 1 as vertex/instance index to use buffer stride as well
             const VkDeviceSize attrib_address = vertex_buffer_offset + vertex_buffer_stride + attribute_offset;
 
-            VkDeviceSize vtx_attrib_req_alignment = vkuFormatElementSize(attribute_format);
+            VkDeviceSize vtx_attrib_req_alignment = GetVertexInputFormatSize(attribute_format);
 
             // TODO - There is no real spec language describing these, but also almost no one supports these formats for vertex
             // input and this check should probably just removed and do the safe division always. Will need to run against CTS

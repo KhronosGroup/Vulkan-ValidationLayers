@@ -2335,7 +2335,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         const bool class_compatible = vkuFormatCompatibilityClass(view_format) == vkuFormatCompatibilityClass(image_format);
         // "uncompressed format that is size-compatible" so if compressed, same as not being compatible
         const bool size_compatible =
-            vkuFormatIsCompressed(view_format) ? false : vkuFormatElementSize(view_format) == vkuFormatElementSize(image_format);
+            vkuFormatIsCompressed(view_format) ? false : AreFormatsSizeCompatible(view_format, image_format);
         if (!class_compatible && !size_compatible) {
             skip |= LogError("VUID-VkImageViewCreateInfo-image-01583", pCreateInfo->image, create_info_loc.dot(Field::image),
                              "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit and "
