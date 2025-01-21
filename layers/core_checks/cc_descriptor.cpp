@@ -3179,19 +3179,20 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     if (address_info && address_info->range != VK_WHOLE_SIZE &&
         (pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
          pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
-        const VKU_FORMAT_INFO format_info = vkuGetFormatInfo(address_info->format);
+        const VkDeviceSize texels_per_block = static_cast<VkDeviceSize>(vkuFormatTexelsPerBlock(address_info->format));
+        const VkDeviceSize texel_block_size = static_cast<VkDeviceSize>(GetTexelBufferFormatSize(address_info->format));
         const VkDeviceSize texels =
-            SafeDivision(address_info->range, format_info.block_size) * static_cast<VkDeviceSize>(format_info.texel_per_block);
+            SafeDivision(address_info->range, texel_block_size) * static_cast<VkDeviceSize>(texels_per_block);
         if (texels > static_cast<VkDeviceSize>(phys_dev_props.limits.maxTexelBufferElements)) {
             const char *vuid = pDescriptorInfo->type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
                                    ? "VUID-VkDescriptorGetInfoEXT-type-09427"
                                    : "VUID-VkDescriptorGetInfoEXT-type-09428";
             skip |= LogError(vuid, device, data_loc.dot(data_field).dot(Field::range),
-                             "(%" PRIuLEAST64 "), %s texel block size (%" PRIu32 "), and texels-per-block (%" PRIu32
+                             "(%" PRIuLEAST64 "), %s texel block size (%" PRIuLEAST64 "), and texels per block (%" PRIuLEAST64
                              ") is a total of (%" PRIuLEAST64
                              ") texels which is more than VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
-                             address_info->range, string_VkFormat(address_info->format), format_info.block_size,
-                             format_info.texel_per_block, texels, phys_dev_props.limits.maxTexelBufferElements);
+                             address_info->range, string_VkFormat(address_info->format), texel_block_size, texels_per_block, texels,
+                             phys_dev_props.limits.maxTexelBufferElements);
         }
     }
 

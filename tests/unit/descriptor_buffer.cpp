@@ -1655,7 +1655,7 @@ TEST_F(NegativeDescriptorBuffer, MaxTexelBufferElements) {
     if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
     }
-    VkDeviceSize format_size = static_cast<VkDeviceSize>(vkuFormatElementSize(VK_FORMAT_R8G8B8A8_UNORM));
+    VkDeviceSize format_size = static_cast<VkDeviceSize>(vkuFormatTexelBlockSize(VK_FORMAT_R8G8B8A8_UNORM));
 
     VkDescriptorAddressInfoEXT dai = vku::InitStructHelper();
     dai.address = 0;

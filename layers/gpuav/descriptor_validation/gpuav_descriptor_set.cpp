@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+/* Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ static glsl::DescriptorState GetInData(const vvl::TexelDescriptor &desc) {
         return glsl::DescriptorState(DescriptorClass::TexelBuffer, glsl::kNullDescriptor, vvl::kU32Max);
     }
     auto view_size = buffer_view_state->Size();
-    uint32_t res_size = static_cast<uint32_t>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
+    uint32_t res_size = static_cast<uint32_t>(view_size / GetTexelBufferFormatSize(buffer_view_state->create_info.format));
     return glsl::DescriptorState(DescriptorClass::TexelBuffer, buffer_view_state->id, res_size);
 }
 
@@ -126,7 +126,7 @@ static glsl::DescriptorState GetInData(const vvl::MutableDescriptor &desc) {
                 return glsl::DescriptorState(desc_class, glsl::kNullDescriptor, vvl::kU32Max);
             }
             auto view_size = buffer_view_state->Size();
-            uint32_t res_size = static_cast<uint32_t>(view_size / vkuFormatElementSize(buffer_view_state->create_info.format));
+            uint32_t res_size = static_cast<uint32_t>(view_size / GetTexelBufferFormatSize(buffer_view_state->create_info.format));
             return glsl::DescriptorState(desc_class, buffer_view_state->id, res_size);
         }
         case DescriptorClass::PlainSampler: {

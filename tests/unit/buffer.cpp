@@ -192,7 +192,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     buff_view_ci.range = 0;
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-range-00928"});
 
-    uint32_t format_size = vkuFormatElementSize(buff_view_ci.format);
+    const uint32_t format_size = vkuFormatTexelBlockSize(buff_view_ci.format);
     // Range must be a multiple of the element size of format, so add one to ensure it is not
     buff_view_ci.range = format_size + 1;
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-range-00929"});
@@ -259,7 +259,7 @@ TEST_F(NegativeBuffer, BufferViewMaxTexelBufferElements) {
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
 
-    uint32_t format_size = vkuFormatElementSize(format_with_uniform_texel_support);
+    const uint32_t format_size = vkuFormatTexelBlockSize(format_with_uniform_texel_support);
     const VkDeviceSize large_resource_size =
         2 * static_cast<VkDeviceSize>(format_size) * static_cast<VkDeviceSize>(dev_limits.maxTexelBufferElements);
     vkt::Buffer large_buffer(*m_device, large_resource_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);

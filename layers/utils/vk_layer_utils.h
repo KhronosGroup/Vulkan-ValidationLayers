@@ -344,6 +344,22 @@ static inline bool IsAnyPlaneAspect(VkImageAspectFlags aspect_mask) {
     return (aspect_mask & valid_planes) != 0;
 }
 
+static inline uint32_t GetVertexInputFormatSize(VkFormat format) {
+    // Vertex input attributes use VkFormat, but only to make use of how they define sizes, things such as
+    // depth/multi-plane/compressed will never be used here because they would mean nothing. So we can ensure these are "standard"
+    // color formats being used. This function is a wrapper to make it more clear of the intent.
+    return vkuFormatTexelBlockSize(format);
+}
+
+static inline uint32_t GetTexelBufferFormatSize(VkFormat format) {
+    // The spec says "If format is a block-compressed format, then bufferFeatures must not support any features for the format"
+    // For Texel Buffers, we can assume the texel blocks are a 1x1x1 extent
+    // See https://gitlab.khronos.org/vulkan/vulkan/-/issues/4155 for more details
+    return vkuFormatTexelBlockSize(format);
+}
+
+bool AreFormatsSizeCompatible(VkFormat a, VkFormat b);
+
 static const VkShaderStageFlags kShaderStageAllGraphics =
     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
     VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
