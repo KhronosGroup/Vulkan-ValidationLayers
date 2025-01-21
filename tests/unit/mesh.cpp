@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,81 +51,21 @@ TEST_F(NegativeMesh, BasicUsage) {
         }
     )glsl";
 
-    // #version 460
-    // #extension GL_EXT_mesh_shader : require
-    // layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-    // layout(max_vertices = 3) out;
-    // layout(max_primitives = 1) out;
-    // layout(triangles) out;
-    // void main() {
-    //       SetMeshOutputsEXT(3,1);
-    //       gl_MeshVerticesEXT[0].gl_Position = vec4(-1.0, -1.0, 0, 1);
-    //       gl_MeshVerticesEXT[1].gl_Position = vec4( 1.0, -1.0, 0, 1);
-    //       gl_MeshVerticesEXT[2].gl_Position = vec4( 0.0,  1.0, 0, 1);
-    //       gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0,1,2);
-    // }
-    static const char mesh_shader_text[] = R"(
-               OpCapability MeshShadingEXT
-               OpExtension "SPV_EXT_mesh_shader"
-          %1 = OpExtInstImport "GLSL.std.450"
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint MeshEXT %main "main" %gl_MeshVerticesEXT %gl_PrimitiveTriangleIndicesEXT
-               OpExecutionMode %main LocalSize 1 1 1
-               OpExecutionMode %main OutputVertices 3
-               OpExecutionMode %main OutputPrimitivesNV 1
-               OpExecutionMode %main OutputTrianglesNV
-               OpMemberDecorate %gl_MeshPerVertexEXT 0 BuiltIn Position
-               OpMemberDecorate %gl_MeshPerVertexEXT 1 BuiltIn PointSize
-               OpMemberDecorate %gl_MeshPerVertexEXT 2 BuiltIn ClipDistance
-               OpMemberDecorate %gl_MeshPerVertexEXT 3 BuiltIn CullDistance
-               OpDecorate %gl_MeshPerVertexEXT Block
-               OpDecorate %gl_PrimitiveTriangleIndicesEXT BuiltIn PrimitiveTriangleIndicesEXT
-       %void = OpTypeVoid
-          %3 = OpTypeFunction %void
-       %uint = OpTypeInt 32 0
-     %uint_1 = OpConstant %uint 1
-     %uint_3 = OpConstant %uint 3
-      %float = OpTypeFloat 32
-    %v4float = OpTypeVector %float 4
-%_arr_float_uint_1 = OpTypeArray %float %uint_1
-%gl_MeshPerVertexEXT = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
-%_arr_gl_MeshPerVertexEXT_uint_3 = OpTypeArray %gl_MeshPerVertexEXT %uint_3
-%_ptr_Output__arr_gl_MeshPerVertexEXT_uint_3 = OpTypePointer Output %_arr_gl_MeshPerVertexEXT_uint_3
-%gl_MeshVerticesEXT = OpVariable %_ptr_Output__arr_gl_MeshPerVertexEXT_uint_3 Output
-        %int = OpTypeInt 32 1
-      %int_0 = OpConstant %int 0
-   %float_n1 = OpConstant %float -1
-    %float_0 = OpConstant %float 0
-    %float_1 = OpConstant %float 1
-         %21 = OpConstantComposite %v4float %float_n1 %float_n1 %float_0 %float_1
-%_ptr_Output_v4float = OpTypePointer Output %v4float
-      %int_1 = OpConstant %int 1
-         %25 = OpConstantComposite %v4float %float_1 %float_n1 %float_0 %float_1
-      %int_2 = OpConstant %int 2
-         %28 = OpConstantComposite %v4float %float_0 %float_1 %float_0 %float_1
-     %v3uint = OpTypeVector %uint 3
-%_arr_v3uint_uint_3 = OpTypeArray %v3uint %uint_3
-%_ptr_Output__arr_v3uint_uint_3 = OpTypePointer Output %_arr_v3uint_uint_3
-%gl_PrimitiveTriangleIndicesEXT = OpVariable %_ptr_Output__arr_v3uint_uint_3 Output
-     %uint_0 = OpConstant %uint 0
-     %uint_2 = OpConstant %uint 2
-         %36 = OpConstantComposite %v3uint %uint_0 %uint_1 %uint_2
-%_ptr_Output_v3uint = OpTypePointer Output %v3uint
-         %39 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
-       %main = OpFunction %void None %3
-          %5 = OpLabel
-               OpSetMeshOutputsEXT %uint_3 %uint_1
-         %23 = OpAccessChain %_ptr_Output_v4float %gl_MeshVerticesEXT %int_0 %int_0
-               OpStore %23 %21
-         %26 = OpAccessChain %_ptr_Output_v4float %gl_MeshVerticesEXT %int_1 %int_0
-               OpStore %26 %25
-         %29 = OpAccessChain %_ptr_Output_v4float %gl_MeshVerticesEXT %int_2 %int_0
-               OpStore %29 %28
-         %38 = OpAccessChain %_ptr_Output_v3uint %gl_PrimitiveTriangleIndicesEXT %int_0
-               OpStore %38 %36
-               OpReturn
-               OpFunctionEnd
-    )";
+    static const char mesh_shader_text[] = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : require
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        layout(max_vertices = 3) out;
+        layout(max_primitives = 1) out;
+        layout(triangles) out;
+        void main() {
+            SetMeshOutputsEXT(3,1);
+            gl_MeshVerticesEXT[0].gl_Position = vec4(-1.0, -1.0, 0, 1);
+            gl_MeshVerticesEXT[1].gl_Position = vec4( 1.0, -1.0, 0, 1);
+            gl_MeshVerticesEXT[2].gl_Position = vec4( 0.0,  1.0, 0, 1);
+            gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0,1,2);
+        }
+    )glsl";
 
     static const char mesh_shader_xfb_text[] = R"(
                OpCapability MeshShadingEXT
@@ -160,7 +100,7 @@ TEST_F(NegativeMesh, BasicUsage) {
     )";
 
     VkShaderObj vs(this, vert_shader_text, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj ms(this, mesh_shader_text, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
+    VkShaderObj ms(this, mesh_shader_text, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
     VkShaderObj ms_xfb(this, mesh_shader_xfb_text, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
     VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
 

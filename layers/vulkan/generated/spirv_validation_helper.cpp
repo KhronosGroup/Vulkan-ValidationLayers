@@ -754,6 +754,14 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "ArithmeticFenceEXT";
         case spv::CapabilitySubgroupBufferPrefetchINTEL:
             return "SubgroupBufferPrefetchINTEL";
+        case spv::CapabilitySubgroup2DBlockIOINTEL:
+            return "Subgroup2DBlockIOINTEL";
+        case spv::CapabilitySubgroup2DBlockTransformINTEL:
+            return "Subgroup2DBlockTransformINTEL";
+        case spv::CapabilitySubgroup2DBlockTransposeINTEL:
+            return "Subgroup2DBlockTransposeINTEL";
+        case spv::CapabilitySubgroupMatrixMultiplyAccumulateINTEL:
+            return "SubgroupMatrixMultiplyAccumulateINTEL";
         case spv::CapabilityGroupUniformArithmeticKHR:
             return "GroupUniformArithmeticKHR";
         default:

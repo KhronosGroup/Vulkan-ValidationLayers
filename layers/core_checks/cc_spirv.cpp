@@ -2156,13 +2156,6 @@ bool CoreChecks::ValidateTexelOffsetLimits(const spirv::Module &module_state, co
     }
 
     const uint32_t image_operand = insn.Word(image_operand_position);
-    if (!is_image_gather && !enabled_features.maintenance8) {
-        if ((image_operand & spv::ImageOperandsOffsetMask) != 0) {
-            skip |= LogError("VUID-RuntimeSpirv-Offset-10213", module_state.handle(), loc,
-                             "SPIR-V uses %s with Offset operand, but maintenance8 was not enabled.\n%s\n",
-                             string_SpvOpcode(insn.Opcode()), module_state.DescribeInstruction(insn).c_str());
-        }
-    }
 
     // Bits we are validating (sample/fetch only check ConstOffset)
     uint32_t offset_bits =

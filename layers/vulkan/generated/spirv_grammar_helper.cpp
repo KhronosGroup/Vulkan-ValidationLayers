@@ -957,6 +957,18 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpArithmeticFenceEXT";
         case spv::OpSubgroupBlockPrefetchINTEL:
             return "OpSubgroupBlockPrefetchINTEL";
+        case spv::OpSubgroup2DBlockLoadINTEL:
+            return "OpSubgroup2DBlockLoadINTEL";
+        case spv::OpSubgroup2DBlockLoadTransformINTEL:
+            return "OpSubgroup2DBlockLoadTransformINTEL";
+        case spv::OpSubgroup2DBlockLoadTransposeINTEL:
+            return "OpSubgroup2DBlockLoadTransposeINTEL";
+        case spv::OpSubgroup2DBlockPrefetchINTEL:
+            return "OpSubgroup2DBlockPrefetchINTEL";
+        case spv::OpSubgroup2DBlockStoreINTEL:
+            return "OpSubgroup2DBlockStoreINTEL";
+        case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
+            return "OpSubgroupMatrixMultiplyAccumulateINTEL";
         case spv::OpGroupIMulKHR:
             return "OpGroupIMulKHR";
         case spv::OpGroupFMulKHR:
@@ -2379,6 +2391,12 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpAtomicFAddEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpArithmeticFenceEXT, {{OperandKind::Id}}},
         {spv::OpSubgroupBlockPrefetchINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
+        {spv::OpSubgroup2DBlockLoadINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpSubgroup2DBlockLoadTransformINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpSubgroup2DBlockLoadTransposeINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpSubgroup2DBlockPrefetchINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpSubgroup2DBlockStoreINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpSubgroupMatrixMultiplyAccumulateINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpGroupIMulKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupFMulKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupBitwiseAndKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
