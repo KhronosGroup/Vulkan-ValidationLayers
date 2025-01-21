@@ -2315,32 +2315,37 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
     if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
         if (!vkuFormatIsCompressed(view_format)) {
+            // Is an uncompressed view format on a compressed image format
             if (normalized_subresource_range.levelCount != 1) {
-                skip |= LogError("VUID-VkImageViewCreateInfo-image-07072", pCreateInfo->image, create_info_loc.dot(Field::image),
-                                 "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
-                                 "and format (%s) is not compressed, but subresourcesRange.levelCount is %s (instead of 1).",
-                                 string_VkFormat(view_format),
-                                 string_LevelCount(image_state.create_info, pCreateInfo->subresourceRange).c_str());
+                skip |= LogError(
+                    "VUID-VkImageViewCreateInfo-image-07072", pCreateInfo->image, create_info_loc.dot(Field::image),
+                    "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
+                    "and the image view format (%s) is uncompressed, but subresourcesRange.levelCount is %s (instead of 1).",
+                    string_VkFormat(view_format),
+                    string_LevelCount(image_state.create_info, pCreateInfo->subresourceRange).c_str());
             }
             if (normalized_subresource_range.layerCount != 1 &&
                 (!IsExtEnabled(extensions.vk_khr_maintenance6) || !phys_dev_props_core14.blockTexelViewCompatibleMultipleLayers)) {
-                skip |= LogError("VUID-VkImageViewCreateInfo-image-09487", pCreateInfo->image, create_info_loc.dot(Field::image),
-                                 "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
-                                 "and format (%s) is not compressed, but subresourcesRange.layerCount is %s (instead of 1).",
-                                 string_VkFormat(view_format),
-                                 string_LayerCount(image_state.create_info, pCreateInfo->subresourceRange).c_str());
+                skip |= LogError(
+                    "VUID-VkImageViewCreateInfo-image-09487", pCreateInfo->image, create_info_loc.dot(Field::image),
+                    "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
+                    "and the image view format (%s) is uncompressed, but subresourcesRange.layerCount is %s (instead of 1).",
+                    string_VkFormat(view_format),
+                    string_LayerCount(image_state.create_info, pCreateInfo->subresourceRange).c_str());
             }
-        }
-
-        const bool class_compatible = vkuFormatCompatibilityClass(view_format) == vkuFormatCompatibilityClass(image_format);
-        // "uncompressed format that is size-compatible" so if compressed, same as not being compatible
-        const bool size_compatible =
-            vkuFormatIsCompressed(view_format) ? false : AreFormatsSizeCompatible(view_format, image_format);
-        if (!class_compatible && !size_compatible) {
-            skip |= LogError("VUID-VkImageViewCreateInfo-image-01583", pCreateInfo->image, create_info_loc.dot(Field::image),
-                             "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit and "
-                             "format (%s), but pCreateInfo->format (%s) are not compatible.",
-                             string_VkFormat(image_format), string_VkFormat(view_format));
+            if (!AreFormatsSizeCompatible(view_format, image_format)) {
+                skip |= LogError("VUID-VkImageViewCreateInfo-image-01583", pCreateInfo->image, create_info_loc.dot(Field::image),
+                                 "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit and "
+                                 "format (%s), but the uncompressed image view format (%s) is not size compatible.",
+                                 string_VkFormat(image_format), string_VkFormat(view_format));
+            }
+        } else {
+            // both image and view are compressed format, the BLOCK_TEXEL_VIEW_COMPATIBLE is set for no reason here
+            if (vkuFormatCompatibilityClass(view_format) != vkuFormatCompatibilityClass(image_format)) {
+                skip |= LogError("VUID-VkImageViewCreateInfo-image-01583", pCreateInfo->image, create_info_loc.dot(Field::format),
+                                 "(%s) and the image format (%s) are not compatible.", string_VkFormat(view_format),
+                                 string_VkFormat(image_format));
+            }
         }
     }
 
