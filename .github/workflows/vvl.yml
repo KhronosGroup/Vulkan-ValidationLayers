@@ -1,5 +1,5 @@
-# Copyright (c) 2021-2024 Valve Corporation
-# Copyright (c) 2021-2024 LunarG, Inc.
+# Copyright (c) 2021-2025 Valve Corporation
+# Copyright (c) 2021-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,30 +48,6 @@ jobs:
         run: clang-format --version
       - name: Execute Source Code Format Checking Script
         run: python3 scripts/check_code_format.py --fetch-main --target-refspec=FETCH_HEAD
-
-  # Ensure we can build on an older Ubuntu distro with an older version of CMake.
-  linux_back_compat:
-    needs: check_vvl
-    runs-on: ubuntu-20.04
-    name: "Ubuntu Backcompat"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Test Minimum CMake Version
-        uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: 3.17.2
-      - uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          key: linux_back_compat
-      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - run: cmake -S . -B build/ -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Debug
-        env:
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
-          # Linker warnings as errors
-          LDFLAGS: -Wl,--fatal-warnings
-      - run: cmake --build build
-      - run: cmake --install build --prefix /tmp
 
   linux:
     needs: check_vvl

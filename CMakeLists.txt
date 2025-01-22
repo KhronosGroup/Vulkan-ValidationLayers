@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-cmake_minimum_required(VERSION 3.17.2)
+cmake_minimum_required(VERSION 3.22.1)
 
 project(VVL LANGUAGES CXX)
 
@@ -85,7 +85,7 @@ if (VVL_ENABLE_TRACY)
         message(FATAL_ERROR "Tracy cannot be used with mimalloc")
     endif()
 
-    if (VVL_TRACY_CALLSTACK STREQUAL "OFF") 
+    if (VVL_TRACY_CALLSTACK STREQUAL "OFF")
         set(VVL_TRACY_CALLSTACK 48)
     endif()
 
