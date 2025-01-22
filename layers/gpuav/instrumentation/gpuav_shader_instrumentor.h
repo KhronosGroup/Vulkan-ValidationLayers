@@ -68,23 +68,15 @@ struct InstrumentedShader {
 class GpuShaderInstrumentor : public ValidationStateTracker {
     using BaseClass = ValidationStateTracker;
   public:
-    GpuShaderInstrumentor(vvl::dispatch::Device *dev, GpuShaderInstrumentor *instance, LayerObjectTypeId type)
+    GpuShaderInstrumentor(vvl::dispatch::Device *dev, ValidationStateTracker *instance, LayerObjectTypeId type)
         : BaseClass(dev, instance, type) {}
-    GpuShaderInstrumentor(vvl::dispatch::Instance *inst, LayerObjectTypeId type) : BaseClass(inst, type) {}
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
+
     void PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
-
-    void ReserveBindingSlot(VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits &limits, const Location &loc);
-    void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                   VkPhysicalDeviceProperties *pPhysicalDeviceProperties,
-                                                   const RecordObject &record_obj) override;
-    void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                    VkPhysicalDeviceProperties2 *pPhysicalDeviceProperties2,
-                                                    const RecordObject &record_obj) override;
 
     bool ValidateCmdWaitEvents(VkCommandBuffer command_buffer, VkPipelineStageFlags2 src_stage_mask, const Location &loc) const;
     bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,

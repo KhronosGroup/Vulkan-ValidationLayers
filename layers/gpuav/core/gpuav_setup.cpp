@@ -211,9 +211,9 @@ static VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical
     return vmaCreateAllocator(&allocator_info, pAllocator);
 }
 
-void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                          const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                          const RecordObject &record_obj, vku::safe_VkDeviceCreateInfo *modified_create_info) {
+void Instance::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                         const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, const RecordObject &record_obj,
+                                         vku::safe_VkDeviceCreateInfo *modified_create_info) {
     BaseClass::PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice, record_obj, modified_create_info);
 
     // GPU-AV requirements not met, exit early or future Vulkan calls may be invalid
@@ -236,15 +236,15 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
     }
     if (enabled_features) {
         if (supported_features.fragmentStoresAndAtomics && !enabled_features->fragmentStoresAndAtomics) {
-            InternalWarning(device, record_obj.location, "Forcing fragmentStoresAndAtomics to VK_TRUE");
+            InternalWarning(instance, record_obj.location, "Forcing fragmentStoresAndAtomics to VK_TRUE");
             enabled_features->fragmentStoresAndAtomics = VK_TRUE;
         }
         if (supported_features.vertexPipelineStoresAndAtomics && !enabled_features->vertexPipelineStoresAndAtomics) {
-            InternalWarning(device, record_obj.location, "Forcing vertexPipelineStoresAndAtomics to VK_TRUE");
+            InternalWarning(instance, record_obj.location, "Forcing vertexPipelineStoresAndAtomics to VK_TRUE");
             enabled_features->vertexPipelineStoresAndAtomics = VK_TRUE;
         }
         if (supported_features.shaderInt64 && !enabled_features->shaderInt64) {
-            InternalWarning(device, record_obj.location, "Forcing shaderInt64 to VK_TRUE");
+            InternalWarning(instance, record_obj.location, "Forcing shaderInt64 to VK_TRUE");
             enabled_features->shaderInt64 = VK_TRUE;
         }
     }
@@ -257,12 +257,12 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         if (auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info))) {
             if (ts_features->timelineSemaphore == VK_FALSE) {
-                InternalWarning(device, record_obj.location,
+                InternalWarning(instance, record_obj.location,
                                 "Forcing VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore to VK_TRUE");
                 ts_features->timelineSemaphore = VK_TRUE;
             }
         } else {
-            InternalWarning(device, record_obj.location,
+            InternalWarning(instance, record_obj.location,
                             "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
             VkPhysicalDeviceTimelineSemaphoreFeatures new_ts_features = vku::InitStructHelper();
             new_ts_features.timelineSemaphore = VK_TRUE;
@@ -273,17 +273,17 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         if (auto *mm_features = const_cast<VkPhysicalDeviceVulkanMemoryModelFeatures *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceVulkanMemoryModelFeatures>(modified_create_info))) {
             if (mm_features->vulkanMemoryModel == VK_FALSE) {
-                InternalWarning(device, record_obj.location,
+                InternalWarning(instance, record_obj.location,
                                 "Forcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModel to VK_TRUE");
                 mm_features->vulkanMemoryModel = VK_TRUE;
             }
             if (mm_features->vulkanMemoryModelDeviceScope == VK_FALSE) {
-                InternalWarning(device, record_obj.location,
+                InternalWarning(instance, record_obj.location,
                                 "Forcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModelDeviceScope to VK_TRUE");
                 mm_features->vulkanMemoryModelDeviceScope = VK_TRUE;
             }
         } else {
-            InternalWarning(device, record_obj.location,
+            InternalWarning(instance, record_obj.location,
                             "Adding a VkPhysicalDeviceVulkanMemoryModelFeatures to pNext with vulkanMemoryModel and "
                             "vulkanMemoryModelDeviceScope set to VK_TRUE");
             VkPhysicalDeviceVulkanMemoryModelFeatures new_mm_features = vku::InitStructHelper();
@@ -297,18 +297,18 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
             if (features12->timelineSemaphore == VK_FALSE) {
-                InternalWarning(device, record_obj.location,
+                InternalWarning(instance, record_obj.location,
                                 "Forcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE");
                 features12->timelineSemaphore = VK_TRUE;
             }
 
             if (features12->vulkanMemoryModel == VK_FALSE) {
-                InternalWarning(device, record_obj.location,
+                InternalWarning(instance, record_obj.location,
                                 "Forcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModel to VK_TRUE");
                 features12->vulkanMemoryModel = VK_TRUE;
             }
             if (features12->vulkanMemoryModelDeviceScope == VK_FALSE) {
-                InternalWarning(device, record_obj.location,
+                InternalWarning(instance, record_obj.location,
                                 "Forcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModelDeviceScope to VK_TRUE");
                 features12->vulkanMemoryModelDeviceScope = VK_TRUE;
             }
@@ -332,13 +332,13 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         if (auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info))) {
             if (!bda_features->bufferDeviceAddress) {
-                InternalWarning(device, record_obj.location,
+                InternalWarning(instance, record_obj.location,
                                 "Forcing VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress to VK_TRUE");
                 bda_features->bufferDeviceAddress = VK_TRUE;
             }
         } else {
             InternalWarning(
-                device, record_obj.location,
+                instance, record_obj.location,
                 "Adding a VkPhysicalDeviceBufferDeviceAddressFeatures to pNext with bufferDeviceAddress set to VK_TRUE");
             VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
             new_bda_features.bufferDeviceAddress = VK_TRUE;
@@ -350,7 +350,7 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
             if (!features12->bufferDeviceAddress) {
-                InternalWarning(device, record_obj.location,
+                InternalWarning(instance, record_obj.location,
                                 "Forcing VkPhysicalDeviceVulkan12Features::bufferDeviceAddress to VK_TRUE");
                 features12->bufferDeviceAddress = VK_TRUE;
             }
@@ -377,12 +377,12 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
                         vku::FindStructInPNextChain<VkPhysicalDevice8BitStorageFeatures>(modified_create_info))) {
                     if (!eight_bit_access_feature->uniformAndStorageBuffer8BitAccess) {
                         InternalWarning(
-                            device, record_obj.location,
+                            instance, record_obj.location,
                             "Forcing VkPhysicalDevice8BitStorageFeatures::uniformAndStorageBuffer8BitAccess to VK_TRUE");
                         eight_bit_access_feature->uniformAndStorageBuffer8BitAccess = VK_TRUE;
                     }
                 } else {
-                    InternalWarning(device, record_obj.location,
+                    InternalWarning(instance, record_obj.location,
                                     "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with uniformAndStorageBuffer8BitAccess "
                                     "set to VK_TRUE");
                     VkPhysicalDevice8BitStorageFeatures new_bda_features = vku::InitStructHelper();
@@ -395,7 +395,7 @@ void Validator::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
                 if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                         vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
                     if (!features12->uniformAndStorageBuffer8BitAccess) {
-                        InternalWarning(device, record_obj.location,
+                        InternalWarning(instance, record_obj.location,
                                         "Forcing VkPhysicalDeviceVulkan12Features::uniformAndStorageBuffer8BitAccess to VK_TRUE");
                         features12->uniformAndStorageBuffer8BitAccess = VK_TRUE;
                     }
@@ -488,7 +488,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     if (gpuav_settings.shader_instrumentation.descriptor_checks) {
         VkPhysicalDeviceDescriptorIndexingProperties desc_indexing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&desc_indexing_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physical_device, &props2);
+        instance_state->DispatchGetPhysicalDeviceProperties2Helper(physical_device, &props2);
 
         uint32_t num_descs = desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools;
         if (num_descs == 0 || num_descs > glsl::kDebugInputBindlessMaxDescriptors) {

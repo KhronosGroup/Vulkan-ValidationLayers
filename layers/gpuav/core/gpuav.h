@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,26 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpuav::Queue, vvl::Queue)
 
 namespace gpuav {
 
+class Instance : public ValidationStateTracker {
+    using BaseClass = ValidationStateTracker;
+
+  public:
+    Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeGpuAssisted) {}
+
+    void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
+                                   vku::safe_VkDeviceCreateInfo* modified_create_info) final;
+    void ReserveBindingSlot(VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits& limits, const Location& loc);
+    void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
+                                                   VkPhysicalDeviceProperties* pPhysicalDeviceProperties,
+                                                   const RecordObject& record_obj) override;
+    void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                    VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2,
+                                                    const RecordObject& record_obj) final;
+    void InternalWarning(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
+    bool timeline_khr_{false};
+};
+
 class Validator : public GpuShaderInstrumentor {
     using BaseClass = GpuShaderInstrumentor;
     using Func = vvl::Func;
@@ -54,9 +74,8 @@ class Validator : public GpuShaderInstrumentor {
     using Field = vvl::Field;
 
   public:
-    Validator(vvl::dispatch::Device* dev, Validator* instance_vo)
+    Validator(vvl::dispatch::Device* dev, Instance* instance_vo)
         : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted), indices_buffer_(*this) {}
-    Validator(vvl::dispatch::Instance* inst) : BaseClass(inst, LayerObjectTypeGpuAssisted), indices_buffer_(*this) {}
 
     // gpuav_setup.cpp
     // -------------
@@ -83,9 +102,6 @@ class Validator : public GpuShaderInstrumentor {
                                             VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties& queueFamilyProperties) override;
 
-    void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
-                                   const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
-                                   vku::safe_VkDeviceCreateInfo* modified_create_info) final;
     void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
 
     void InternalVmaError(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
@@ -320,10 +336,6 @@ class Validator : public GpuShaderInstrumentor {
     void PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
                                                       const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
                                                       const RecordObject& record_obj) final;
-
-    void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                    VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2,
-                                                    const RecordObject& record_obj) final;
 
     // gpuav_image_layout.cpp
     // --------------------

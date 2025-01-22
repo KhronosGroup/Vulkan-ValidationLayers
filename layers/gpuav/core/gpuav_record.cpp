@@ -54,9 +54,40 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
     BaseClass::PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj, chassis_state);
 }
 
-void Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                           VkPhysicalDeviceProperties2 *device_props2,
-                                                           const RecordObject &record_obj) {
+void Instance::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
+    char const *vuid = gpuav_settings.debug_printf_only ? "WARNING-DEBUG-PRINTF" : "WARNING-GPU-Assisted-Validation";
+    LogWarning(vuid, objlist, loc, "Internal Warning: %s", specific_message);
+}
+
+void Instance::ReserveBindingSlot(VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits &limits, const Location &loc) {
+    // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
+    if (limits.maxBoundDescriptorSets == 0) return;
+
+    if (limits.maxBoundDescriptorSets > kMaxAdjustedBoundDescriptorSet) {
+        std::stringstream ss;
+        ss << "A descriptor binding slot is required to store GPU-side information, but the device maxBoundDescriptorSets is "
+           << limits.maxBoundDescriptorSets << " which is too large, so we will be trying to use slot "
+           << kMaxAdjustedBoundDescriptorSet;
+        InternalWarning(physicalDevice, loc, ss.str().c_str());
+    }
+
+    if (enabled[gpu_validation_reserve_binding_slot]) {
+        if (limits.maxBoundDescriptorSets > 1) {
+            limits.maxBoundDescriptorSets -= 1;
+        } else {
+            InternalWarning(physicalDevice, loc, "Unable to reserve descriptor binding slot on a device with only one slot.");
+        }
+    }
+}
+
+void Instance::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties *device_props,
+                                                         const RecordObject &record_obj) {
+    ReserveBindingSlot(physicalDevice, device_props->limits, record_obj.location);
+}
+
+void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                          VkPhysicalDeviceProperties2 *device_props2,
+                                                          const RecordObject &record_obj) {
     // override all possible places maxUpdateAfterBindDescriptorsInAllPools can be set
     auto *desc_indexing_props = vku::FindStructInPNextChain<VkPhysicalDeviceDescriptorIndexingProperties>(device_props2->pNext);
     if (desc_indexing_props &&
@@ -77,7 +108,7 @@ void Validator::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice phys
         vk12_props->maxUpdateAfterBindDescriptorsInAllPools = glsl::kDebugInputBindlessMaxDescSets;
     }
 
-    BaseClass::PostCallRecordGetPhysicalDeviceProperties2(physicalDevice, device_props2, record_obj);
+    ReserveBindingSlot(physicalDevice, device_props2->properties.limits, record_obj.location);
 }
 
 void Validator::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
