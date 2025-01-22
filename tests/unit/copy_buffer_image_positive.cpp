@@ -532,3 +532,103 @@ TEST_F(PositiveCopyBufferImage, CopyColorToDepthMaintenacne8) {
                      &copy_region);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveCopyBufferImage, ImageBufferCopyDepthStencil) {
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    // Verify all needed Depth/Stencil formats are supported
+    bool missing_ds_support = false;
+    VkFormatProperties props = {0, 0, 0};
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), VK_FORMAT_D32_SFLOAT_S8_UINT, &props);
+    missing_ds_support |= (props.bufferFeatures == 0 && props.linearTilingFeatures == 0 && props.optimalTilingFeatures == 0);
+    missing_ds_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0;
+    missing_ds_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), VK_FORMAT_D24_UNORM_S8_UINT, &props);
+    missing_ds_support |= (props.bufferFeatures == 0 && props.linearTilingFeatures == 0 && props.optimalTilingFeatures == 0);
+    missing_ds_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0;
+    missing_ds_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), VK_FORMAT_D16_UNORM, &props);
+    missing_ds_support |= (props.bufferFeatures == 0 && props.linearTilingFeatures == 0 && props.optimalTilingFeatures == 0);
+    missing_ds_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0;
+    missing_ds_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), VK_FORMAT_S8_UINT, &props);
+    missing_ds_support |= (props.bufferFeatures == 0 && props.linearTilingFeatures == 0 && props.optimalTilingFeatures == 0);
+    missing_ds_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0;
+    missing_ds_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
+
+    if (missing_ds_support) {
+        GTEST_SKIP() << "Depth / Stencil formats unsupported";
+    }
+
+    // 256^2 texels, 512kb (256k depth, 64k stencil, 192k pack)
+    vkt::Image ds_image_4D_1S(
+        *m_device, 256, 256, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    ds_image_4D_1S.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    // 256^2 texels, 256kb (192k depth, 64k stencil)
+    vkt::Image ds_image_3D_1S(
+        *m_device, 256, 256, 1, VK_FORMAT_D24_UNORM_S8_UINT,
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    ds_image_3D_1S.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    // 256^2 texels, 128k (128k depth)
+    vkt::Image ds_image_2D(
+        *m_device, 256, 256, 1, VK_FORMAT_D16_UNORM,
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    ds_image_2D.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    // 256^2 texels, 64k (64k stencil)
+    vkt::Image ds_image_1S(
+        *m_device, 256, 256, 1, VK_FORMAT_S8_UINT,
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    ds_image_1S.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_256k(*m_device, 262144, transfer_usage);  // 256k
+    vkt::Buffer buffer_128k(*m_device, 131072, transfer_usage);  // 128k
+    vkt::Buffer buffer_64k(*m_device, 65536, transfer_usage);    // 64k
+
+    VkBufferImageCopy ds_region = {};
+    ds_region.bufferOffset = 0;
+    ds_region.bufferRowLength = 0;
+    ds_region.bufferImageHeight = 0;
+    ds_region.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    ds_region.imageOffset = {0, 0, 0};
+    ds_region.imageExtent = {256, 256, 1};
+
+    VkMemoryBarrier mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_4D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             buffer_256k.handle(), 1, &ds_region);
+
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
+                           &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_3D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             buffer_256k.handle(), 1, &ds_region);
+
+    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_2D.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             buffer_128k.handle(), 1, &ds_region);
+
+    // Stencil
+    ds_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
+                           &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_4D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             buffer_64k.handle(), 1, &ds_region);
+
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
+                           &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_3D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             buffer_64k.handle(), 1, &ds_region);
+
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
+                           &mem_barrier, 0, nullptr, 0, nullptr);
+    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             buffer_64k.handle(), 1, &ds_region);
+}

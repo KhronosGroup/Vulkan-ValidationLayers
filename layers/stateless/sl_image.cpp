@@ -21,6 +21,7 @@
 #include "error_message/error_strings.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
+#include "utils/vk_layer_utils.h"
 
 bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkImage *pImage,
@@ -651,16 +652,15 @@ bool StatelessValidation::ValidateCreateImageFormatList(const VkImageCreateInfo 
             }
         } else if (view_format_class != image_format_class) {
             if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
-                const bool size_compatible =
-                    !vkuFormatIsCompressed(view_format) && AreFormatsSizeCompatible(view_format, image_format);
-                if (!size_compatible) {
+                if (!AreFormatsSizeCompatible(view_format, image_format)) {
                     skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device, format_loc,
-                                     "(%s) and VkImageCreateInfo::format (%s) are not compatible or size-compatible.",
-                                     string_VkFormat(view_format), string_VkFormat(image_format));
+                                     "(%s) and VkImageCreateInfo::format (%s) are not class compatible or size-compatible. %s",
+                                     string_VkFormat(view_format), string_VkFormat(image_format),
+                                     DescribeFormatsSizeCompatible(view_format, image_format).c_str());
                 }
             } else {
                 skip |= LogError("VUID-VkImageCreateInfo-pNext-06722", device, format_loc,
-                                 "(%s) and VkImageCreateInfo::format (%s) are not compatible.", string_VkFormat(view_format),
+                                 "(%s) and VkImageCreateInfo::format (%s) are not class compatible.", string_VkFormat(view_format),
                                  string_VkFormat(image_format));
             }
         }

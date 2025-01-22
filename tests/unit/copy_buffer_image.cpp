@@ -252,10 +252,6 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyDepthStencil) {
     if (missing_ds_support) {
         GTEST_SKIP() << "Depth / Stencil formats unsupported";
     }
-    // 64^2 texels, depth, 16k
-    vkt::Image image_16k_depth(*m_device, 64, 64, 1, VK_FORMAT_D24_UNORM_S8_UINT,
-                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image_16k_depth.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     // 256^2 texels, 512kb (256k depth, 64k stencil, 192k pack)
     vkt::Image ds_image_4D_1S(
@@ -295,24 +291,8 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyDepthStencil) {
     ds_region.imageOffset = {0, 0, 0};
     ds_region.imageExtent = {256, 256, 1};
 
-    VkMemoryBarrier mem_barrier = vku::InitStructHelper();
-    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
     m_command_buffer.Begin();
-    // Depth copies that should succeed
-    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_4D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             buffer_256k.handle(), 1, &ds_region);
 
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
-                           &mem_barrier, 0, nullptr, 0, nullptr);
-    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_3D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             buffer_256k.handle(), 1, &ds_region);
-
-    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_2D.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             buffer_128k.handle(), 1, &ds_region);
-
-    // Depth copies that should fail
     ds_region.bufferOffset = 4;
     m_errorMonitor->SetDesiredError(
         "VUID-vkCmdCopyImageToBuffer-pRegions-00183");  // Extract 4b depth per texel, pack into 256k buffer
@@ -337,27 +317,11 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyDepthStencil) {
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_2D.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              buffer_128k.handle(), 1, &ds_region);
     m_errorMonitor->VerifyFound();
-    ds_region.imageExtent = {256, 256, 1};
 
-    // Stencil copies that should succeed
+    ds_region.imageExtent = {256, 256, 1};
     ds_region.bufferOffset = 0;
     ds_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
-                           &mem_barrier, 0, nullptr, 0, nullptr);
-    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_4D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             buffer_64k.handle(), 1, &ds_region);
 
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
-                           &mem_barrier, 0, nullptr, 0, nullptr);
-    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_3D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             buffer_64k.handle(), 1, &ds_region);
-
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
-                           &mem_barrier, 0, nullptr, 0, nullptr);
-    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             buffer_64k.handle(), 1, &ds_region);
-
-    // Stencil copies that should fail
     m_errorMonitor->SetDesiredError(
         "VUID-vkCmdCopyImageToBuffer-pRegions-00183");  // Extract 1b stencil per texel, pack into 64k buffer
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_4D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -2251,8 +2215,6 @@ TEST_F(NegativeCopyBufferImage, ImageAspectMismatch) {
 
     // Aspect mask doesn't match source image format
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-aspectMask-00142");
-    // Again redundant but unavoidable
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01548");
     vk::CmdCopyImage(m_command_buffer.handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, depth_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
@@ -2261,8 +2223,6 @@ TEST_F(NegativeCopyBufferImage, ImageAspectMismatch) {
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-aspectMask-00143");
-    // Again redundant but unavoidable
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01548");
     vk::CmdCopyImage(m_command_buffer.handle(), color_image.handle(), VK_IMAGE_LAYOUT_GENERAL, depth_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
