@@ -19,9 +19,11 @@
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 
-bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                                             const stateless::Context &context) const {
+namespace stateless {
+
+bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
+                                                const stateless::Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -92,9 +94,9 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                                                 const VkAllocationCallbacks *pAllocator, VkBufferView *pBufferView,
-                                                                 const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator, VkBufferView *pBufferView,
+                                                    const Context &context) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     skip |= ExportMetalObjectsPNextUtil(VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT,
@@ -103,3 +105,4 @@ bool StatelessValidation::manual_PreCallValidateCreateBufferView(VkDevice device
 #endif  // VK_USE_PLATFORM_METAL_EXT
     return skip;
 }
+}  // namespace stateless

@@ -22,10 +22,11 @@
 #include "generated/dispatch_functions.h"
 #include "stateless/sl_vuid_maps.h"
 
-bool StatelessValidation::manual_PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                                   const VkAllocationCallbacks *pAllocator,
-                                                                   VkShaderModule *pShaderModule,
-                                                                   const stateless::Context &context) const {
+namespace stateless {
+
+bool Device::manual_PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                      const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                                      const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -39,10 +40,9 @@ bool StatelessValidation::manual_PreCallValidateCreateShaderModule(VkDevice devi
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                                     const VkAllocationCallbacks *pAllocator,
-                                                                     VkPipelineLayout *pPipelineLayout,
-                                                                     const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
+                                                        const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
+                                                        const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -69,8 +69,8 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
     return skip;
 }
 
-bool StatelessValidation::ValidatePushConstantRange(uint32_t push_constant_range_count,
-                                                    const VkPushConstantRange *push_constant_ranges, const Location &loc) const {
+bool Device::ValidatePushConstantRange(uint32_t push_constant_range_count, const VkPushConstantRange *push_constant_ranges,
+                                       const Location &loc) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < push_constant_range_count; ++i) {
@@ -127,9 +127,8 @@ bool StatelessValidation::ValidatePushConstantRange(uint32_t push_constant_range
 }
 
 // Called from graphics, compute, raytracing, etc
-bool StatelessValidation::ValidatePipelineShaderStageCreateInfoCommon(const stateless::Context &context,
-                                                                      const VkPipelineShaderStageCreateInfo &create_info,
-                                                                      const Location &loc) const {
+bool Device::ValidatePipelineShaderStageCreateInfoCommon(const Context &context, const VkPipelineShaderStageCreateInfo &create_info,
+                                                         const Location &loc) const {
     bool skip = false;
 
     if (create_info.pName) {
@@ -149,8 +148,8 @@ bool StatelessValidation::ValidatePipelineShaderStageCreateInfoCommon(const stat
 }
 
 // Called from graphics, compute, raytracing, etc
-bool StatelessValidation::ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
-                                                     const Location &loc) const {
+bool Device::ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
+                                        const Location &loc) const {
     bool skip = false;
     const auto *temp_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(next);
     const VkPipelineCreateFlags2KHR create_flags_2 =
@@ -209,9 +208,8 @@ bool StatelessValidation::ValidatePipelineBinaryInfo(const void *next, VkPipelin
     return skip;
 }
 
-bool StatelessValidation::ValidatePipelineRenderingCreateInfo(const stateless::Context &context,
-                                                              const VkPipelineRenderingCreateInfo &rendering_struct,
-                                                              const Location &loc) const {
+bool Device::ValidatePipelineRenderingCreateInfo(const Context &context, const VkPipelineRenderingCreateInfo &rendering_struct,
+                                                 const Location &loc) const {
     bool skip = false;
 
     if ((rendering_struct.depthAttachmentFormat != VK_FORMAT_UNDEFINED)) {
@@ -264,8 +262,7 @@ bool StatelessValidation::ValidatePipelineRenderingCreateInfo(const stateless::C
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2KHR flags,
-                                                               const Location &flags_loc) const {
+bool Device::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const {
     bool skip = false;
     if ((flags & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0 &&
         (flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
@@ -358,9 +355,10 @@ bool StatelessValidation::ValidateCreateGraphicsPipelinesFlags(const VkPipelineC
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
-    VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo *pCreateInfos,
-    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                           const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                           const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1245,8 +1243,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2KHR flags,
-                                                              const Location &flags_loc) const {
+bool Device::ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const {
     bool skip = false;
     if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
         if (!enabled_features.shaderEnqueue) {
@@ -1316,9 +1313,10 @@ bool StatelessValidation::ValidateCreateComputePipelinesFlags(const VkPipelineCr
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(
-    VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo *pCreateInfos,
-    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                          const VkComputePipelineCreateInfo *pCreateInfos,
+                                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                          const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1381,7 +1379,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(
     return skip;
 }
 
-bool StatelessValidation::ValidateDepthClampRange(const VkDepthClampRangeEXT &depth_clamp_range, const Location &loc) const {
+bool Device::ValidateDepthClampRange(const VkDepthClampRangeEXT &depth_clamp_range, const Location &loc) const {
     bool skip = false;
     if (depth_clamp_range.minDepthClamp > depth_clamp_range.maxDepthClamp) {
         skip |=
@@ -1404,10 +1402,9 @@ bool StatelessValidation::ValidateDepthClampRange(const VkDepthClampRangeEXT &de
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
-                                                                    const VkAllocationCallbacks *pAllocator,
-                                                                    VkPipelineCache *pPipelineCache,
-                                                                    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkPipelineCache *pPipelineCache,
+                                                       const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     const bool has_externally_sync = (pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT) != 0;
@@ -1435,15 +1432,14 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineCache(VkDevice dev
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache,
-                                                                    uint32_t srcCacheCount, const VkPipelineCache *pSrcCaches,
-                                                                    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
+                                                       const VkPipelineCache *pSrcCaches, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (pSrcCaches) {
         for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
             if (pSrcCaches[index0] == dstCache) {
-                skip |= LogError("VUID-vkMergePipelineCaches-dstCache-00770", instance, error_obj.location.dot(Field::dstCache),
+                skip |= LogError("VUID-vkMergePipelineCaches-dstCache-00770", device, error_obj.location.dot(Field::dstCache),
                                  "%s is in pSrcCaches list.", FormatHandle(dstCache).c_str());
                 break;
             }
@@ -1452,9 +1448,8 @@ bool StatelessValidation::manual_PreCallValidateMergePipelineCaches(VkDevice dev
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT *pPipelineInfo,
-                                                                         VkBaseOutStructure *pPipelineProperties,
-                                                                         const stateless::Context &context) const {
+bool Device::manual_PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT *pPipelineInfo,
+                                                            VkBaseOutStructure *pPipelineProperties, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1479,3 +1474,4 @@ bool StatelessValidation::manual_PreCallValidateGetPipelinePropertiesEXT(VkDevic
     }
     return skip;
 }
+}  // namespace stateless

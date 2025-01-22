@@ -19,11 +19,12 @@
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 
-ReadLockGuard StatelessValidation::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
-WriteLockGuard StatelessValidation::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
+namespace stateless {
+ReadLockGuard Device::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
+WriteLockGuard Device::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
 
-bool StatelessValidation::ValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                     VkIndexType indexType, const Location &loc) const {
+bool Device::ValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType,
+                                        const Location &loc) const {
     bool skip = false;
     const bool is_2 = loc.function != Func::vkCmdBindIndexBuffer;
     const char *vuid;
@@ -52,22 +53,19 @@ bool StatelessValidation::ValidateCmdBindIndexBuffer(VkCommandBuffer commandBuff
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                   VkDeviceSize offset, VkIndexType indexType,
-                                                                   const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                      VkIndexType indexType, const Context &context) const {
     return ValidateCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, context.error_obj.location);
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                    VkDeviceSize offset, VkDeviceSize size, VkIndexType indexType,
-                                                                    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                       VkDeviceSize size, VkIndexType indexType, const Context &context) const {
     return ValidateCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType, context.error_obj.location);
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding,
-                                                                     uint32_t bindingCount, const VkBuffer *pBuffers,
-                                                                     const VkDeviceSize *pOffsets,
-                                                                     const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                        const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
+                                                        const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -105,9 +103,10 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(
-    VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer *pBuffers,
-    const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                      uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                                      const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
+                                                                      const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -157,9 +156,10 @@ bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersE
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(
-    VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer, uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
-    const VkDeviceSize *pCounterBufferOffsets, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                                uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
+                                                                const VkDeviceSize *pCounterBufferOffsets,
+                                                                const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.transformFeedback) {
@@ -185,11 +185,10 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer,
-                                                                           uint32_t firstCounterBuffer, uint32_t counterBufferCount,
-                                                                           const VkBuffer *pCounterBuffers,
-                                                                           const VkDeviceSize *pCounterBufferOffsets,
-                                                                           const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                              uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
+                                                              const VkDeviceSize *pCounterBufferOffsets,
+                                                              const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.transformFeedback) {
@@ -222,11 +221,10 @@ bool StatelessValidation::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCom
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
-                                                                      uint32_t bindingCount, const VkBuffer *pBuffers,
-                                                                      const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
-                                                                      const VkDeviceSize *pStrides,
-                                                                      const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                         uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                         const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
+                                                         const VkDeviceSize *pStrides, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -298,8 +296,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
     return skip;
 }
 
-bool StatelessValidation::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size,
-                                                   const Location &loc) const {
+bool Device::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, uint32_t offset, uint32_t size, const Location &loc) const {
     bool skip = false;
     const bool is_2 = loc.function != Func::vkCmdPushConstants;
     const uint32_t max_push_constants_size = device_limits.maxPushConstantsSize;
@@ -329,15 +326,14 @@ bool StatelessValidation::ValidateCmdPushConstants(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
-                                                                 VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
-                                                                 const void *pValues, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                                    VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
+                                                    const void *pValues, const Context &context) const {
     return ValidateCmdPushConstants(commandBuffer, offset, size, context.error_obj.location);
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer,
-                                                                  const VkPushConstantsInfo *pPushConstantsInfo,
-                                                                  const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo *pPushConstantsInfo,
+                                                     const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     skip |= ValidateCmdPushConstants(commandBuffer, pPushConstantsInfo->offset, pPushConstantsInfo->size,
@@ -355,10 +351,9 @@ bool StatelessValidation::manual_PreCallValidateCmdPushConstants2(VkCommandBuffe
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image,
-                                                                   VkImageLayout imageLayout, const VkClearColorValue *pColor,
-                                                                   uint32_t rangeCount, const VkImageSubresourceRange *pRanges,
-                                                                   const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                      const VkClearColorValue *pColor, uint32_t rangeCount,
+                                                      const VkImageSubresourceRange *pRanges, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!pColor) {
@@ -367,10 +362,9 @@ bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuff
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
-                                                                    uint32_t queryCount, size_t dataSize, void *pData,
-                                                                    VkDeviceSize stride, VkQueryResultFlags flags,
-                                                                    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
+                                                       uint32_t queryCount, size_t dataSize, void *pData, VkDeviceSize stride,
+                                                       VkQueryResultFlags flags, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -382,9 +376,9 @@ bool StatelessValidation::manual_PreCallValidateGetQueryPoolResults(VkDevice dev
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
+bool Device::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
     VkCommandBuffer commandBuffer, const VkConditionalRenderingBeginInfoEXT *pConditionalRenderingBegin,
-    const stateless::Context &context) const {
+    const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -397,10 +391,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginConditionalRenderingEXT(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                                                    const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                                    const VkClearRect *pRects,
-                                                                    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                       const VkClearAttachment *pAttachments, uint32_t rectCount,
+                                                       const VkClearRect *pRects, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     for (uint32_t rect = 0; rect < rectCount; rect++) {
@@ -421,9 +414,8 @@ bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuf
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                                              uint32_t regionCount, const VkBufferCopy *pRegions,
-                                                              const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                                 uint32_t regionCount, const VkBufferCopy *pRegions, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -438,9 +430,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer co
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
-                                                               const VkCopyBufferInfo2 *pCopyBufferInfo,
-                                                               const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
+                                                  const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -456,9 +447,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer c
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer,
-                                                                VkDeviceSize dstOffset, VkDeviceSize dataSize, const void *pData,
-                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                   VkDeviceSize dataSize, const void *pData, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -480,9 +470,8 @@ bool StatelessValidation::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer 
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer,
-                                                              VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data,
-                                                              const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                 VkDeviceSize size, uint32_t data, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -506,9 +495,9 @@ bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer co
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
-                                                                            const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
-                                                                            const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                               const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
+                                                               const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.descriptorBuffer) {
@@ -528,9 +517,9 @@ bool StatelessValidation::manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCo
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceExternalBufferProperties(
+bool Instance::manual_PreCallValidateGetPhysicalDeviceExternalBufferProperties(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo *pExternalBufferInfo,
-    VkExternalBufferProperties *pExternalBufferProperties, const stateless::Context &context) const {
+    VkExternalBufferProperties *pExternalBufferProperties, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -544,17 +533,16 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceExternalBufferP
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer,
-                                                                     VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
-                                                                     uint32_t set, uint32_t descriptorWriteCount,
-                                                                     const VkWriteDescriptorSet *pDescriptorWrites,
-                                                                     const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                        VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                        const VkWriteDescriptorSet *pDescriptorWrites,
+                                                        const Context &context) const {
     return ValidateWriteDescriptorSet(context, context.error_obj.location, descriptorWriteCount, pDescriptorWrites);
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
-                                                                      const VkPushDescriptorSetInfo *pPushDescriptorSetInfo,
-                                                                      const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
+                                                         const VkPushDescriptorSetInfo *pPushDescriptorSetInfo,
+                                                         const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     skip |= ValidateWriteDescriptorSet(context, error_obj.location, pPushDescriptorSetInfo->descriptorWriteCount,
@@ -572,7 +560,7 @@ bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSet2(VkCommandB
     return skip;
 }
 
-bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommandBuffer object, const Location &loc) const {
+bool Device::ValidateViewport(const VkViewport &viewport, VkCommandBuffer object, const Location &loc) const {
     bool skip = false;
 
     // Note: for numerical correctness
@@ -700,10 +688,8 @@ bool StatelessValidation::ValidateViewport(const VkViewport &viewport, VkCommand
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
-                                                                   uint32_t commandBufferCount,
-                                                                   const VkCommandBuffer *pCommandBuffers,
-                                                                   const stateless::Context &context) const {
+bool Device::manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                                      const VkCommandBuffer *pCommandBuffers, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -716,9 +702,8 @@ bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice devi
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
-                                                                   const VkCommandBufferBeginInfo *pBeginInfo,
-                                                                   const stateless::Context &context) const {
+bool Device::manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
+                                                      const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -786,3 +771,4 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
     }
     return skip;
 }
+}  // namespace stateless

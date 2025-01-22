@@ -300,270 +300,29 @@ class Context {
     template <typename T>
     const char *DescribeEnum(T value) const;
 
+    bool IsDuplicatePnext(VkStructureType input_value) const;
+
     // VkFlags values don't have a way overload, so need to use vvl::FlagBitmask
     vvl::Extensions IsValidFlagValue(vvl::FlagBitmask flag_bitmask, VkFlags value) const;
     vvl::Extensions IsValidFlag64Value(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const;
     std::string DescribeFlagBitmaskValue(vvl::FlagBitmask flag_bitmask, VkFlags value) const;
     std::string DescribeFlagBitmaskValue64(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const;
 };
-}  // namespace stateless
 
-class StatelessValidation : public ValidationObject {
+class Instance : public ValidationObject {
     using BaseClass = ValidationObject;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
-    using Context = stateless::Context;  // temporary alias to reduce churn
 
   public:
-    StatelessValidation(vvl::dispatch::Device *dev, StatelessValidation *instance_vo)
-        : BaseClass(dev, LayerObjectTypeParameterValidation) {}
-    StatelessValidation(vvl::dispatch::Instance *inst) : BaseClass(inst, LayerObjectTypeParameterValidation) {}
-    ~StatelessValidation() {}
-
-    VkPhysicalDeviceLimits device_limits = {};
     vvl::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
     vvl::unordered_map<VkPhysicalDevice, DeviceExtensions> physical_device_extensions{};
     // We have a copy of this in Stateless and ValidationStateTracker, could move the ValidationObject, but we don't have a way to
-    // set it at the ValidationObject level
-    DeviceFeatures enabled_features = {};
 
-    // This was a special case where it was decided to use the extension version for validation
-    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5671
-    inline static uint32_t discard_rectangles_extension_version = 0;
-    inline static uint32_t scissor_exclusive_extension_version = 0;
-
-    // Override chassis read/write locks for this validation object
-    // This override takes a deferred lock. i.e. it is not acquired.
-    ReadLockGuard ReadLock() const override;
-    WriteLockGuard WriteLock() override;
-
-    // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
-    struct DeviceExtensionProperties {
-        VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
-        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props_nv;
-        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext;
-        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props_nv;
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props_khr;
-        VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
-        VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
-        VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vertex_attribute_divisor_props;
-        VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
-        VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props;
-        VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props;
-        VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT device_generated_commands_props;
-        VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props;
-    };
-    DeviceExtensionProperties phys_dev_ext_props = {};
-
-    struct SubpassesUsageStates {
-        vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
-        vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
-    };
-
-    // Though this validation object is predominantly statless, the Framebuffer checks are greatly simplified by creating and
-    // updating a map of the renderpass usage states, and these accesses need thread protection. Use a mutex separate from the
-    // parent object's to maintain that functionality.
-    mutable std::mutex renderpass_map_mutex;
-    vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
-
-    bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location &loc, const uint32_t promoted_version) const;
-    bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const Location &loc, const uint32_t promoted_version) const;
-
-    template <typename ExtensionState>
-    bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
-                               vvl::Extension extension, const Location &extension_loc) const;
-
-    bool ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t subpass,
-                                      VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const;
-
-    bool ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                  const ErrorObject &error_obj) const;
-
-    void RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo);
-
-    // Pre/PostCallRecord declarations
-    void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                        const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                        const RecordObject &record_obj) override;
-    void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                            const RecordObject &record_obj) override;
-    void PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
-                                         const RecordObject &record_obj) override;
-    void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                    const RecordObject &record_obj) override;
-
-    void CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice *phys_devices, const int count);
-    void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                                VkPhysicalDevice *pPhysicalDevices, const RecordObject &record_obj) override;
-
-    void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-                                                     VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
-                                                     const RecordObject &record_obj) override;
-
-    bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV &order, const Location &order_loc) const;
-
-    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkAccelerationStructureNV object_handle,
-                                     const Location &loc) const;
-    bool ValidateGeometryAABBNV(const VkGeometryAABBNV &geometry, VkAccelerationStructureNV object_handle,
-                                const Location &loc) const;
-    bool ValidateGeometryNV(const VkGeometryNV &geometry, VkAccelerationStructureNV object_handle, const Location &loc) const;
-    bool ValidateAccelerationStructureInfoNV(const Context &context, const VkAccelerationStructureInfoNV &info,
-                                             VkAccelerationStructureNV object_handle, const Location &loc) const;
-    bool ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const;
-    bool ValidateSwapchainCreateInfo(const Context &context, const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const;
-    bool manual_PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
-                                                         const Context &context) const;
+    Instance(vvl::dispatch::Instance *dispatch) : BaseClass(dispatch, LayerObjectTypeParameterValidation) {}
 
     bool OutputExtensionError(const Location &loc, const vvl::Extensions &exentsions) const;
-
-    void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
-                                      const RecordObject &record_obj) override;
-
-    bool manual_PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                            VkPhysicalDeviceProperties2 *pProperties,
-                                                            const Context &context) const;
-    bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
-                                               const Context &context) const;
-
-    // vkCreateInstance is completely overridden because there are specific VUs for
-    // pNext contents which need to supercede the automatic checking which produces
-    // generic 'pNext-pNext' errors
-    bool PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                       VkInstance *pInstance, const ErrorObject &error_obj) const override;
-
-    bool manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                            const Context &context) const;
-
-    bool manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                            const Context &context) const;
-
-    bool manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage,
-                                           const Context &context) const;
-    bool ValidateCreateImageSparse(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageFragmentShadingRate(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageCornerSampled(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageStencilUsage(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageCompressionControl(const Context &context, const VkImageCreateInfo &create_info,
-                                               const Location &create_info_loc) const;
-    bool ValidateCreateImageSwapchain(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageFormatList(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageMetalObject(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &create_info, const Location &create_info_loc,
-                                               std::vector<uint64_t> &image_create_drm_format_modifiers) const;
-
-    bool manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkImageView *pView,
-                                               const Context &context) const;
-
-    bool manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo *pInfo,
-                                                               VkSubresourceLayout2 *pLayout, const Context &context) const;
-
-    bool ValidateViewport(const VkViewport &viewport, VkCommandBuffer object, const Location &loc) const;
-
-    bool manual_PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                  const Context &context) const;
-    bool manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                                    const Context &context) const;
-    bool ValidatePushConstantRange(uint32_t push_constant_range_count, const VkPushConstantRange *push_constant_ranges,
-                                   const Location &loc) const;
-
-    bool ValidatePipelineShaderStageCreateInfoCommon(const Context &context,
-                                                     const VkPipelineShaderStageCreateInfo &create_info, const Location &loc) const;
-    bool ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
-                                    const Location &loc) const;
-    bool ValidatePipelineRenderingCreateInfo(const Context &context, const VkPipelineRenderingCreateInfo &rendering_struct,
-                                             const Location &loc) const;
-    bool ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
-    bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                       const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       const Context &context) const;
-    bool ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
-    bool manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                      const VkComputePipelineCreateInfo *pCreateInfos,
-                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                      const Context &context) const;
-
-    bool ValidateSamplerFilterMinMax(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateSamplerCustomBoarderColor(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateSamplerSubsampled(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
-    bool ValidateSamplerImageProcessingQCOM(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
-    bool manual_PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
-                                             const Context &context) const;
-    bool ValidateMutableDescriptorTypeCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
-                                                 const VkMutableDescriptorTypeCreateInfoEXT &mutable_create_info,
-                                                 const Location &loc) const;
-    bool ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
-                                               const Location &create_info_loc) const;
-    bool manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
-                                                         const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout,
-                                                         const Context &context) const;
-    bool manual_PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
-                                                             VkDescriptorSetLayoutSupport *pSupport,
-                                                             const Context &context) const;
-
-    bool manual_PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
-                                               const Context &context) const;
-
-    bool manual_PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkEvent *pEvent,
-                                           const Context &context) const;
-
-    bool manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkBufferView *pBufferView,
-                                                const Context &context) const;
-
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    bool ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char *vuid, const Location &loc,
-                                     const char *sType, const void *pNext) const;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-
-    bool ValidateWriteDescriptorSet(const Context &context, const Location &loc, const uint32_t descriptorWriteCount,
-                                    const VkWriteDescriptorSet *pDescriptorWrites) const;
-    bool manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
-                                                    const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
-                                                    const VkCopyDescriptorSet *pDescriptorCopies,
-                                                    const Context &context) const;
-
-    bool manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                                  const VkDescriptorSet *pDescriptorSets, const Context &context) const;
-
-    bool manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                const Context &context) const;
-
-    bool manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                 const Context &context) const;
-
-    bool manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                                  const VkCommandBuffer *pCommandBuffers, const Context &context) const;
-
-    bool manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
-                                                  const Context &context) const;
-
-    bool manual_PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                                              const VkViewport *pViewports, const Context &context) const;
-
-    bool manual_PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
-                                             const VkRect2D *pScissors, const Context &context) const;
-    bool manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth, const Context &context) const;
-
-    bool manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                                   const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                   const VkClearRect *pRects, const Context &context) const;
 
     bool manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                        const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
@@ -575,35 +334,53 @@ class StatelessValidation : public ValidationObject {
                                                                       VkImageFormatProperties *pImageFormatProperties,
                                                                       const Context &context) const;
 
-    bool manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                             uint32_t regionCount, const VkBufferCopy *pRegions, const Context &context) const;
+    bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location &loc, const uint32_t promoted_version) const;
+    bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const Location &loc, const uint32_t promoted_version) const;
 
-    bool manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
-                                              const Context &context) const;
+    bool SupportedByPdev(const VkPhysicalDevice physical_device, vvl::Extension extension, bool skip_gpdp2 = false) const;
 
-    bool manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                               VkDeviceSize dataSize, const void *pData, const Context &context) const;
+    bool ValidatePnextFeatureStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
+                                            VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
+    bool ValidatePnextPropertyStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
+                                             VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
+    bool ValidatePnextStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
+                                     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
 
-    bool manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                             VkDeviceSize size, uint32_t data, const Context &context) const;
+    bool ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count, const VkStructureType *allowed_types,
+                             uint32_t header_version, const char *pnext_vuid, const char *stype_vuid,
+                             VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, const bool is_const_param = true) const;
 
-    bool manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
-                                                           const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
-                                                           const Context &context) const;
+    template <typename ExtensionState>
+    bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
+                               vvl::Extension extension, const Location &extension_loc) const;
+
+    void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                    const RecordObject &record_obj) override;
+
+    bool PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                       VkInstance *pInstance, const ErrorObject &error_obj) const override;
+
+    void CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice *phys_devices, const int count);
+    void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
+                                                VkPhysicalDevice *pPhysicalDevices, const RecordObject &record_obj) override;
+
+    void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
+                                                     VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
+                                                     const RecordObject &record_obj) override;
+    void PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
+                                      const RecordObject &record_obj) override;
+
+    bool manual_PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                            VkPhysicalDeviceProperties2 *pProperties, const Context &context) const;
+    bool manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                            const Context &context) const;
 
     bool manual_PreCallValidateGetPhysicalDeviceExternalBufferProperties(
         VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo *pExternalBufferInfo,
         VkExternalBufferProperties *pExternalBufferProperties, const Context &context) const;
 
-    bool manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
-                                                  const Context &context) const;
-    bool manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
-                                                         const VkSwapchainCreateInfoKHR *pCreateInfos,
-                                                         const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains,
-                                                         const Context &context) const;
-    bool manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
-                                               const Context &context) const;
     bool manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                     const VkDisplayModeCreateInfoKHR *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkDisplayModeKHR *pMode,
@@ -640,13 +417,283 @@ class StatelessValidation : public ValidationObject {
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
+    bool manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                  uint32_t *pSurfaceFormatCount,
+                                                                  VkSurfaceFormatKHR *pSurfaceFormats,
+                                                                  const Context &context) const;
+
+    bool manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                       uint32_t *pPresentModeCount, VkPresentModeKHR *pPresentModes,
+                                                                       const Context &context) const;
+
+    bool manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                        const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                        VkSurfaceCapabilities2KHR *pSurfaceCapabilities,
+                                                                        const Context &context) const;
+
+    bool manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                                   const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                   uint32_t *pSurfaceFormatCount,
+                                                                   VkSurfaceFormat2KHR *pSurfaceFormats,
+                                                                   const Context &context) const;
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    bool manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
+                                                                        const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                        uint32_t *pPresentModeCount,
+                                                                        VkPresentModeKHR *pPresentModes,
+                                                                        const Context &context) const;
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+#include "generated/stateless_instance_methods.h"
+};
+
+class Device : public ValidationObject {
+    using BaseClass = ValidationObject;
+    using Func = vvl::Func;
+    using Struct = vvl::Struct;
+    using Field = vvl::Field;
+
+  public:
+    Device(vvl::dispatch::Device *dev, Instance *instance_vo)
+        : BaseClass(dev, LayerObjectTypeParameterValidation), instance(instance_vo) {}
+    ~Device() {}
+
+    Instance *instance;
+    VkPhysicalDeviceLimits device_limits = {};
+    // We have a copy of this in Stateless and ValidationStateTracker, could move the ValidationDevice, but we don't have a way to
+    // set it at the ValidationObject level
+    DeviceFeatures enabled_features = {};
+
+    // This was a special case where it was decided to use the extension version for validation
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5671
+    uint32_t discard_rectangles_extension_version = 0;
+    uint32_t scissor_exclusive_extension_version = 0;
+
+    // Override chassis read/write locks for this validation object
+    // This override takes a deferred lock. i.e. it is not acquired.
+    ReadLockGuard ReadLock() const override;
+    WriteLockGuard WriteLock() override;
+
+    // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
+    struct DeviceExtensionProperties {
+        VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
+        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props_nv;
+        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext;
+        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props_nv;
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props_khr;
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
+        VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
+        VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vertex_attribute_divisor_props;
+        VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
+        VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props;
+        VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props;
+        VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT device_generated_commands_props;
+        VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props;
+    };
+    DeviceExtensionProperties phys_dev_ext_props = {};
+
+    struct SubpassesUsageStates {
+        vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
+        vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+    };
+
+    // Though this validation object is predominantly statless, the Framebuffer checks are greatly simplified by creating and
+    // updating a map of the renderpass usage states, and these accesses need thread protection. Use a mutex separate from the
+    // parent object's to maintain that functionality.
+    mutable std::mutex renderpass_map_mutex;
+    vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
+
+    bool OutputExtensionError(const Location &loc, const vvl::Extensions &exentsions) const;
+
+    bool ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t subpass,
+                                      VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const;
+
+    bool ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                  const ErrorObject &error_obj) const;
+
+    void RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo);
+
+    // Pre/PostCallRecord declarations
+    void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
+                                        const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                        const RecordObject &record_obj) override;
+    void PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                            const RecordObject &record_obj) override;
+    void PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
+                                         const RecordObject &record_obj) override;
+
+    bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV &order, const Location &order_loc) const;
+
+    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkAccelerationStructureNV object_handle,
+                                     const Location &loc) const;
+    bool ValidateGeometryAABBNV(const VkGeometryAABBNV &geometry, VkAccelerationStructureNV object_handle,
+                                const Location &loc) const;
+    bool ValidateGeometryNV(const VkGeometryNV &geometry, VkAccelerationStructureNV object_handle, const Location &loc) const;
+    bool ValidateAccelerationStructureInfoNV(const Context &context, const VkAccelerationStructureInfoNV &info,
+                                             VkAccelerationStructureNV object_handle, const Location &loc) const;
+    bool ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const;
+    bool ValidateSwapchainCreateInfo(const Context &context, const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const;
+
+    bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
+                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
+                                               const Context &context) const;
+
+    bool manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
+                                            const Context &context) const;
+
+    bool manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
+                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage, const Context &context) const;
+    bool ValidateCreateImageSparse(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateCreateImageFragmentShadingRate(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateCreateImageCornerSampled(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateCreateImageStencilUsage(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateCreateImageCompressionControl(const Context &context, const VkImageCreateInfo &create_info,
+                                               const Location &create_info_loc) const;
+    bool ValidateCreateImageSwapchain(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateCreateImageFormatList(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateCreateImageMetalObject(const VkImageCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &create_info, const Location &create_info_loc,
+                                               std::vector<uint64_t> &image_create_drm_format_modifiers) const;
+
+    bool manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
+                                               const VkAllocationCallbacks *pAllocator, VkImageView *pView,
+                                               const Context &context) const;
+
+    bool manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo *pInfo,
+                                                               VkSubresourceLayout2 *pLayout, const Context &context) const;
+
+    bool ValidateViewport(const VkViewport &viewport, VkCommandBuffer object, const Location &loc) const;
+
+    bool manual_PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                  const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
+                                                  const Context &context) const;
+    bool manual_PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
+                                                    const Context &context) const;
+    bool ValidatePushConstantRange(uint32_t push_constant_range_count, const VkPushConstantRange *push_constant_ranges,
+                                   const Location &loc) const;
+
+    bool ValidatePipelineShaderStageCreateInfoCommon(const Context &context, const VkPipelineShaderStageCreateInfo &create_info,
+                                                     const Location &loc) const;
+    bool ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags flags, VkPipelineCache pipelineCache,
+                                    const Location &loc) const;
+    bool ValidatePipelineRenderingCreateInfo(const Context &context, const VkPipelineRenderingCreateInfo &rendering_struct,
+                                             const Location &loc) const;
+    bool ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
+    bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                       const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                       const Context &context) const;
+    bool ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const;
+    bool manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                      const VkComputePipelineCreateInfo *pCreateInfos,
+                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                      const Context &context) const;
+
+    bool ValidateSamplerFilterMinMax(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateSamplerCustomBoarderColor(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateSamplerSubsampled(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateSamplerImageProcessingQCOM(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
+    bool manual_PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
+                                             const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
+                                             const Context &context) const;
+    bool ValidateMutableDescriptorTypeCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
+                                                 const VkMutableDescriptorTypeCreateInfoEXT &mutable_create_info,
+                                                 const Location &loc) const;
+    bool ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
+                                               const Location &create_info_loc) const;
+    bool manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                         const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout,
+                                                         const Context &context) const;
+    bool manual_PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                             VkDescriptorSetLayoutSupport *pSupport, const Context &context) const;
+
+    bool manual_PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
+                                               const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
+                                               const Context &context) const;
+
+    bool manual_PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
+                                           const VkAllocationCallbacks *pAllocator, VkEvent *pEvent, const Context &context) const;
+
+    bool manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkBufferView *pBufferView,
+                                                const Context &context) const;
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    bool ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char *vuid, const Location &loc,
+                                     const char *sType, const void *pNext) const;
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+    bool ValidateWriteDescriptorSet(const Context &context, const Location &loc, const uint32_t descriptorWriteCount,
+                                    const VkWriteDescriptorSet *pDescriptorWrites) const;
+    bool manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+                                                    const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
+                                                    const VkCopyDescriptorSet *pDescriptorCopies, const Context &context) const;
+
+    bool manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                                                  const VkDescriptorSet *pDescriptorSets, const Context &context) const;
+
+    bool manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                const Context &context) const;
+
+    bool manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                 const Context &context) const;
+
+    bool manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                                  const VkCommandBuffer *pCommandBuffers, const Context &context) const;
+
+    bool manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
+                                                  const Context &context) const;
+
+    bool manual_PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                              const VkViewport *pViewports, const Context &context) const;
+
+    bool manual_PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+                                             const VkRect2D *pScissors, const Context &context) const;
+    bool manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth, const Context &context) const;
+
+    bool manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                   const VkClearAttachment *pAttachments, uint32_t rectCount,
+                                                   const VkClearRect *pRects, const Context &context) const;
+
+    bool manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                             uint32_t regionCount, const VkBufferCopy *pRegions, const Context &context) const;
+
+    bool manual_PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
+                                              const Context &context) const;
+
+    bool manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                               VkDeviceSize dataSize, const void *pData, const Context &context) const;
+
+    bool manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                             VkDeviceSize size, uint32_t data, const Context &context) const;
+
+    bool manual_PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                           const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
+                                                           const Context &context) const;
+
+    bool manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
+                                                  const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
+                                                  const Context &context) const;
+    bool manual_PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
+                                                         const Context &context) const;
+    bool manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
+                                                         const VkSwapchainCreateInfoKHR *pCreateInfos,
+                                                         const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains,
+                                                         const Context &context) const;
+    bool manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, const Context &context) const;
     bool manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
                                                     const Context &context) const;
     bool manual_PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                     VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                    const VkWriteDescriptorSet *pDescriptorWrites,
-                                                    const Context &context) const;
+                                                    const VkWriteDescriptorSet *pDescriptorWrites, const Context &context) const;
     bool manual_PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
                                                      const VkPushDescriptorSetInfo *pPushDescriptorSetInfo,
                                                      const Context &context) const;
@@ -709,20 +756,13 @@ class StatelessValidation : public ValidationObject {
                                                         uint32_t viewportCount, const VkViewportWScalingNV *pViewportWScalings,
                                                         const Context &context) const;
     bool manual_PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
-                                                        const VkDepthClampRangeEXT *pDepthClampRange,
-                                                        const Context &context) const;
+                                                        const VkDepthClampRangeEXT *pDepthClampRange, const Context &context) const;
 
     bool manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                 const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                                 VkShaderEXT *pShaders, const Context &context) const;
     bool manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t *pDataSize, void *pData,
                                                       const Context &context) const;
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                              VkDeviceGroupPresentModeFlagsKHR *pModes,
-                                                              const ErrorObject &error_obj) const override;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
     bool manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
@@ -766,8 +806,7 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                                           uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
-                                                          const VkDeviceSize *pCounterBufferOffsets,
-                                                          const Context &context) const;
+                                                          const VkDeviceSize *pCounterBufferOffsets, const Context &context) const;
 
     bool manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                            uint32_t firstInstance, VkBuffer counterBuffer,
@@ -797,8 +836,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
                                               const Context &context) const;
     bool manual_PreCallValidateGetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
-                                                        VkMemoryFdPropertiesKHR *pMemoryFdProperties,
-                                                        const Context &context) const;
+                                                        VkMemoryFdPropertiesKHR *pMemoryFdProperties, const Context &context) const;
     bool ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const char *vuid, const Location &handle_type_loc,
                                              VkExternalSemaphoreHandleTypeFlagBits handle_type,
                                              VkExternalSemaphoreHandleTypeFlags allowed_types) const;
@@ -828,8 +866,7 @@ class StatelessValidation : public ValidationObject {
                                                                  VkMemoryWin32HandlePropertiesKHR *pMemoryWin32HandleProperties,
                                                                  const Context &context) const;
     bool manual_PreCallValidateImportSemaphoreWin32HandleKHR(
-        VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo,
-        const Context &context) const;
+        VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo, const Context &context) const;
     bool manual_PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
                                                           const VkSemaphoreGetWin32HandleInfoKHR *pGetWin32HandleInfo,
                                                           HANDLE *pHandle, const Context &context) const;
@@ -839,6 +876,10 @@ class StatelessValidation : public ValidationObject {
                                                          const Context &context) const;
     bool manual_PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *pGetWin32HandleInfo,
                                                       HANDLE *pHandle, const Context &context) const;
+
+    bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                              VkDeviceGroupPresentModeFlagsKHR *pModes,
+                                                              const ErrorObject &error_obj) const override;
 #endif
 
     bool manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
@@ -1012,26 +1053,6 @@ class StatelessValidation : public ValidationObject {
     bool ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements &memory_requirements,
                                                const Location &loc) const;
 
-    bool manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                  uint32_t *pSurfaceFormatCount,
-                                                                  VkSurfaceFormatKHR *pSurfaceFormats,
-                                                                  const Context &context) const;
-
-    bool manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                       uint32_t *pPresentModeCount, VkPresentModeKHR *pPresentModes,
-                                                                       const Context &context) const;
-
-    bool manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                                        const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                        VkSurfaceCapabilities2KHR *pSurfaceCapabilities,
-                                                                        const Context &context) const;
-
-    bool manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
-                                                                   const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                   uint32_t *pSurfaceFormatCount,
-                                                                   VkSurfaceFormat2KHR *pSurfaceFormats,
-                                                                   const Context &context) const;
-
     bool manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 discardRectangleEnable,
                                                                const Context &context) const;
     bool manual_PreCallValidateCmdSetDiscardRectangleModeEXT(VkCommandBuffer commandBuffer,
@@ -1044,14 +1065,6 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
                                                           const Context &context) const;
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    bool manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
-                                                                        const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                        uint32_t *pPresentModeCount,
-                                                                        VkPresentModeKHR *pPresentModes,
-                                                                        const Context &context) const;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
 
     bool manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,
                                                                 VkMemoryRequirements2 *pMemoryRequirements,
@@ -1098,8 +1111,7 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
                                                                  const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
-                                                                 VkCommandBuffer stateCommandBuffer,
-                                                                 const Context &context) const;
+                                                                 VkCommandBuffer stateCommandBuffer, const Context &context) const;
 
     bool manual_PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
                                                               const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
@@ -1122,12 +1134,10 @@ class StatelessValidation : public ValidationObject {
                                                const VkCopyMicromapInfoEXT *pInfo, const Context &context) const;
 
     bool manual_PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                       const VkCopyMicromapToMemoryInfoEXT *pInfo,
-                                                       const Context &context) const;
+                                                       const VkCopyMicromapToMemoryInfoEXT *pInfo, const Context &context) const;
 
     bool manual_PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                       const VkCopyMemoryToMicromapInfoEXT *pInfo,
-                                                       const Context &context) const;
+                                                       const VkCopyMemoryToMicromapInfoEXT *pInfo, const Context &context) const;
 
     bool manual_PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapCount, const VkMicromapEXT *pMicromaps,
                                                            VkQueryType queryType, size_t dataSize, void *pData, size_t stride,
@@ -1157,9 +1167,7 @@ class StatelessValidation : public ValidationObject {
 
     bool ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo &allocate_info, VkMemoryAllocateFlags flags,
                                         const Location &allocate_info_loc) const;
-#include "generated/stateless_validation_helper.h"
-};  // Class StatelessValidation
+#include "generated/stateless_device_methods.h"
+};
 
-// This is put outside the class because we were getting errors for:
-//   explicit specialization in non-namespace scope ‘class StatelessValidation’
-#include "generated/valid_enum_values.h"
+}  // namespace stateless

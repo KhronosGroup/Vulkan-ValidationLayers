@@ -20,6 +20,7 @@
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
 
+namespace stateless {
 // Traits objects to allow string_join to operate on collections of const char *
 template <typename String>
 struct StringJoinSizeTrait {
@@ -73,8 +74,8 @@ static inline SepString string_join(const char *sep, const StringCollection &str
 }
 
 template <typename ExtensionState>
-bool StatelessValidation::ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
-                                                vvl::Extension extension, const Location &extension_loc) const {
+bool Instance::ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
+                                     vvl::Extension extension, const Location &extension_loc) const {
     bool skip = false;
     if (extension == vvl::Extension::Empty) {
         return skip;
@@ -110,9 +111,8 @@ ExtEnabled ExtensionStateByName(const ExtensionState &extensions, vvl::Extension
     return state;
 }
 
-bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
-                                                        const VkAllocationCallbacks *pAllocator, VkInstance *pInstance,
-                                                        const ErrorObject &error_obj) const {
+bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+                                             VkInstance *pInstance, const ErrorObject &error_obj) const {
     bool skip = false;
     Location loc = error_obj.location;
     // Note: From the spec--
@@ -122,7 +122,7 @@ bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateIn
     // Create and use a local instance extension object, as an actual instance has not been created yet
     InstanceExtensions instance_extensions(local_api_version, pCreateInfo);
     DeviceExtensions device_extensions(instance_extensions, local_api_version);
-    stateless::Context context(*this, error_obj, device_extensions);
+    Context context(*this, error_obj, device_extensions);
 
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, true,
                                        "VUID-vkCreateInstance-pCreateInfo-parameter", "VUID-VkInstanceCreateInfo-sType-sType");
@@ -277,7 +277,7 @@ bool StatelessValidation::PreCallValidateCreateInstance(const VkInstanceCreateIn
     return skip;
 }
 
-void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice *phys_devices, const int count) {
+void Instance::CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice *phys_devices, const int count) {
     // Assume phys_devices is valid
     assert(phys_devices);
     for (int i = 0; i < count; ++i) {
@@ -296,23 +296,13 @@ void StatelessValidation::CommonPostCallRecordEnumeratePhysicalDevice(const VkPh
             DispatchEnumerateDeviceExtensionProperties(phys_device, nullptr, &ext_count, ext_props.data());
 
             DeviceExtensions phys_dev_exts(extensions, phys_dev_props->apiVersion, ext_props);
-            for (uint32_t j = 0; j < ext_count; j++) {
-                vvl::Extension extension = GetExtension(ext_props[j].extensionName);
-                if (extension == vvl::Extension::_VK_EXT_discard_rectangles) {
-                    discard_rectangles_extension_version = ext_props[j].specVersion;
-                } else if (extension == vvl::Extension::_VK_NV_scissor_exclusive) {
-                    scissor_exclusive_extension_version = ext_props[j].specVersion;
-                }
-            }
-
             physical_device_extensions[phys_device] = std::move(phys_dev_exts);
         }
     }
 }
 
-void StatelessValidation::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                                                 VkPhysicalDevice *pPhysicalDevices,
-                                                                 const RecordObject &record_obj) {
+void Instance::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
+                                                      VkPhysicalDevice *pPhysicalDevices, const RecordObject &record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) {
         return;
     }
@@ -322,9 +312,9 @@ void StatelessValidation::PostCallRecordEnumeratePhysicalDevices(VkInstance inst
     }
 }
 
-void StatelessValidation::PostCallRecordEnumeratePhysicalDeviceGroups(
-    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
-    const RecordObject &record_obj) {
+void Instance::PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
+                                                           VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties,
+                                                           const RecordObject &record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) {
         return;
     }
@@ -337,32 +327,32 @@ void StatelessValidation::PostCallRecordEnumeratePhysicalDeviceGroups(
     }
 }
 
-void StatelessValidation::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
-                                                       const RecordObject &record_obj) {
+void Instance::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator,
+                                            const RecordObject &record_obj) {
     for (auto it = physical_device_properties_map.begin(); it != physical_device_properties_map.end();) {
         delete (it->second);
         it = physical_device_properties_map.erase(it);
     }
 }
 
-void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                                     const RecordObject &record_obj) {
+void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                          const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                          const RecordObject &record_obj) {
     auto device_data = vvl::dispatch::GetData(*pDevice);
     if (record_obj.result != VK_SUCCESS) return;
-    auto stateless_validation = static_cast<StatelessValidation*>(device_data->GetValidationObject(LayerObjectTypeParameterValidation));
+    auto stateless_device = static_cast<Device *>(device_data->GetValidationObject(container_type));
 
     VkPhysicalDeviceProperties device_properties = {};
     // Need to get instance and do a getlayerdata call...
     DispatchGetPhysicalDeviceProperties(physicalDevice, &device_properties);
-    memcpy(&stateless_validation->device_limits, &device_properties.limits, sizeof(VkPhysicalDeviceLimits));
+    memcpy(&stateless_device->device_limits, &device_properties.limits, sizeof(VkPhysicalDeviceLimits));
 
     if (IsExtEnabled(extensions.vk_nv_shading_rate_image)) {
         // Get the needed shading rate image limits
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&shading_rate_image_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
+        stateless_device->phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
 
     if (IsExtEnabled(extensions.vk_nv_mesh_shader)) {
@@ -370,7 +360,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&mesh_shader_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.mesh_shader_props_nv = mesh_shader_props;
+        stateless_device->phys_dev_ext_props.mesh_shader_props_nv = mesh_shader_props;
     }
 
     if (IsExtEnabled(extensions.vk_ext_mesh_shader)) {
@@ -378,7 +368,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&mesh_shader_props_ext);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.mesh_shader_props_ext = mesh_shader_props_ext;
+        stateless_device->phys_dev_ext_props.mesh_shader_props_ext = mesh_shader_props_ext;
     }
 
     if (IsExtEnabled(extensions.vk_nv_ray_tracing)) {
@@ -386,7 +376,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&ray_tracing_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.ray_tracing_props_nv = ray_tracing_props;
+        stateless_device->phys_dev_ext_props.ray_tracing_props_nv = ray_tracing_props;
     }
 
     if (IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline)) {
@@ -394,7 +384,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&ray_tracing_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.ray_tracing_props_khr = ray_tracing_props;
+        stateless_device->phys_dev_ext_props.ray_tracing_props_khr = ray_tracing_props;
     }
 
     if (IsExtEnabled(extensions.vk_khr_acceleration_structure)) {
@@ -402,7 +392,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&acc_structure_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.acc_structure_props = acc_structure_props;
+        stateless_device->phys_dev_ext_props.acc_structure_props = acc_structure_props;
     }
 
     if (IsExtEnabled(extensions.vk_ext_transform_feedback)) {
@@ -410,7 +400,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&transform_feedback_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
+        stateless_device->phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
     }
 
     if (IsExtEnabled(extensions.vk_khr_vertex_attribute_divisor)) {
@@ -418,14 +408,14 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vertex_attribute_divisor_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&vertex_attribute_divisor_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.vertex_attribute_divisor_props = vertex_attribute_divisor_props;
+        stateless_device->phys_dev_ext_props.vertex_attribute_divisor_props = vertex_attribute_divisor_props;
     } else if (IsExtEnabled(extensions.vk_ext_vertex_attribute_divisor)) {
         // Get the needed vertex attribute divisor limits
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vertex_attribute_divisor_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&vertex_attribute_divisor_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.vertex_attribute_divisor_props = vku::InitStructHelper();
-        phys_dev_ext_props.vertex_attribute_divisor_props.maxVertexAttribDivisor =
+        stateless_device->phys_dev_ext_props.vertex_attribute_divisor_props = vku::InitStructHelper();
+        stateless_device->phys_dev_ext_props.vertex_attribute_divisor_props.maxVertexAttribDivisor =
             vertex_attribute_divisor_props.maxVertexAttribDivisor;
     }
 
@@ -433,45 +423,57 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&fragment_shading_rate_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.fragment_shading_rate_props = fragment_shading_rate_props;
+        stateless_device->phys_dev_ext_props.fragment_shading_rate_props = fragment_shading_rate_props;
     }
 
     if (IsExtEnabled(extensions.vk_khr_depth_stencil_resolve)) {
         VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&depth_stencil_resolve_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
+        stateless_device->phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
     }
 
     if (IsExtEnabled(extensions.vk_ext_external_memory_host)) {
         VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&external_memory_host_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.external_memory_host_props = external_memory_host_props;
+        stateless_device->phys_dev_ext_props.external_memory_host_props = external_memory_host_props;
     }
 
     if (IsExtEnabled(extensions.vk_ext_device_generated_commands)) {
         VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT device_generated_commands_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&device_generated_commands_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.device_generated_commands_props = device_generated_commands_props;
+        stateless_device->phys_dev_ext_props.device_generated_commands_props = device_generated_commands_props;
     }
 
     if (IsExtEnabled(extensions.vk_arm_render_pass_striped)) {
         VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&renderpass_striped_props);
         DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
-        phys_dev_ext_props.renderpass_striped_props = renderpass_striped_props;
+        stateless_device->phys_dev_ext_props.renderpass_striped_props = renderpass_striped_props;
     }
 
-    stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
+    GetEnabledDeviceFeatures(pCreateInfo, &stateless_device->enabled_features, api_version);
 
-    GetEnabledDeviceFeatures(pCreateInfo, &stateless_validation->enabled_features, api_version);
+    std::vector<VkExtensionProperties> ext_props{};
+    uint32_t ext_count = 0;
+    DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &ext_count, nullptr);
+    ext_props.resize(ext_count);
+    DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &ext_count, ext_props.data());
+    for (const auto &prop : ext_props) {
+        vvl::Extension extension = GetExtension(prop.extensionName);
+        if (extension == vvl::Extension::_VK_EXT_discard_rectangles) {
+            stateless_device->discard_rectangles_extension_version = prop.specVersion;
+        } else if (extension == vvl::Extension::_VK_NV_scissor_exclusive) {
+            stateless_device->scissor_exclusive_extension_version = prop.specVersion;
+        }
+    }
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                                             const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
+                                                  const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                                  const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -966,9 +968,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
+bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    VkImageFormatProperties2 *pImageFormatProperties, const stateless::Context &context) const {
+    VkImageFormatProperties2 *pImageFormatProperties, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1057,9 +1059,11 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(
-    VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
-    VkImageCreateFlags flags, VkImageFormatProperties *pImageFormatProperties, const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                            VkImageType type, VkImageTiling tiling,
+                                                                            VkImageUsageFlags usage, VkImageCreateFlags flags,
+                                                                            VkImageFormatProperties *pImageFormatProperties,
+                                                                            const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1071,9 +1075,8 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProp
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
-                                                                           const VkDebugUtilsObjectNameInfoEXT *pNameInfo,
-                                                                           const stateless::Context &context) const {
+bool Device::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo,
+                                                              const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     const Location name_info_loc = error_obj.location.dot(Field::pNameInfo);
@@ -1094,9 +1097,8 @@ bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDev
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device,
-                                                                          const VkDebugUtilsObjectTagInfoEXT *pTagInfo,
-                                                                          const stateless::Context &context) const {
+bool Device::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo,
+                                                             const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (pTagInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
@@ -1106,9 +1108,9 @@ bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevi
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                                             VkPhysicalDeviceProperties2 *pProperties,
-                                                                             const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                                  VkPhysicalDeviceProperties2 *pProperties,
+                                                                  const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     const auto *api_props_lists = vku::FindStructInPNextChain<VkPhysicalDeviceLayeredApiPropertiesListKHR>(pProperties->pNext);
@@ -1135,3 +1137,4 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceProperties2(VkP
     }
     return skip;
 }
+}  // namespace stateless

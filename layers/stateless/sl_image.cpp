@@ -23,9 +23,11 @@
 #include "generated/enum_flag_bits.h"
 #include "utils/vk_layer_utils.h"
 
-bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage,
-                                                            const stateless::Context &context) const {
+namespace stateless {
+
+bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
+                                               const VkAllocationCallbacks *pAllocator, VkImage *pImage,
+                                               const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -282,7 +284,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateImageSparse(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+bool Device::ValidateCreateImageSparse(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
     const VkImageCreateFlags image_flags = create_info.flags;
     const VkImageCreateFlags sparse_flags =
@@ -376,8 +378,7 @@ bool StatelessValidation::ValidateCreateImageSparse(const VkImageCreateInfo &cre
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateImageFragmentShadingRate(const VkImageCreateInfo &create_info,
-                                                                 const Location &create_info_loc) const {
+bool Device::ValidateCreateImageFragmentShadingRate(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
     // alias VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV
     if ((create_info.usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) == 0) return skip;
@@ -403,8 +404,7 @@ bool StatelessValidation::ValidateCreateImageFragmentShadingRate(const VkImageCr
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateImageCornerSampled(const VkImageCreateInfo &create_info,
-                                                           const Location &create_info_loc) const {
+bool Device::ValidateCreateImageCornerSampled(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
     if ((create_info.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) == 0) return skip;
 
@@ -438,8 +438,7 @@ bool StatelessValidation::ValidateCreateImageCornerSampled(const VkImageCreateIn
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateImageStencilUsage(const VkImageCreateInfo &create_info,
-                                                          const Location &create_info_loc) const {
+bool Device::ValidateCreateImageStencilUsage(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
     const auto image_stencil_struct = vku::FindStructInPNextChain<VkImageStencilUsageCreateInfo>(create_info.pNext);
     if (!image_stencil_struct) return skip;
@@ -522,9 +521,8 @@ bool StatelessValidation::ValidateCreateImageStencilUsage(const VkImageCreateInf
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateImageCompressionControl(const stateless::Context &context,
-                                                                const VkImageCreateInfo &create_info,
-                                                                const Location &create_info_loc) const {
+bool Device::ValidateCreateImageCompressionControl(const Context &context, const VkImageCreateInfo &create_info,
+                                                   const Location &create_info_loc) const {
     bool skip = false;
     const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(create_info.pNext);
     if (!image_compression_control) return skip;
@@ -545,8 +543,7 @@ bool StatelessValidation::ValidateCreateImageCompressionControl(const stateless:
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateImageSwapchain(const VkImageCreateInfo &create_info,
-                                                       const Location &create_info_loc) const {
+bool Device::ValidateCreateImageSwapchain(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
     const auto swapchain_create_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext);
     if (!swapchain_create_info || swapchain_create_info->swapchain == VK_NULL_HANDLE) return skip;
@@ -591,8 +588,7 @@ bool StatelessValidation::ValidateCreateImageSwapchain(const VkImageCreateInfo &
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateImageFormatList(const VkImageCreateInfo &create_info,
-                                                        const Location &create_info_loc) const {
+bool Device::ValidateCreateImageFormatList(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
     const auto format_list_info = vku::FindStructInPNextChain<VkImageFormatListCreateInfo>(create_info.pNext);
     if (!format_list_info) return skip;
@@ -669,8 +665,7 @@ bool StatelessValidation::ValidateCreateImageFormatList(const VkImageCreateInfo 
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateImageMetalObject(const VkImageCreateInfo &create_info,
-                                                         const Location &create_info_loc) const {
+bool Device::ValidateCreateImageMetalObject(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
     bool skip = false;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     auto export_metal_object_info = vku::FindStructInPNextChain<VkExportMetalObjectCreateInfoEXT>(create_info.pNext);
@@ -717,9 +712,8 @@ bool StatelessValidation::ValidateCreateImageMetalObject(const VkImageCreateInfo
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &create_info,
-                                                                const Location &create_info_loc,
-                                                                std::vector<uint64_t> &image_create_drm_format_modifiers) const {
+bool Device::ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &create_info, const Location &create_info_loc,
+                                                   std::vector<uint64_t> &image_create_drm_format_modifiers) const {
     bool skip = false;
     if (!IsExtEnabled(extensions.vk_ext_image_drm_format_modifier)) return skip;
 
@@ -799,9 +793,9 @@ bool StatelessValidation::ValidateCreateImageDrmFormatModifiers(const VkImageCre
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView,
-                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
+                                                   const VkAllocationCallbacks *pAllocator, VkImageView *pView,
+                                                   const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -866,10 +860,8 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device,
-                                                                                const VkDeviceImageSubresourceInfo *pInfo,
-                                                                                VkSubresourceLayout2 *pLayout,
-                                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo *pInfo,
+                                                                   VkSubresourceLayout2 *pLayout, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     const Location info_loc = error_obj.location.dot(Field::pInfo);
@@ -938,3 +930,4 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageSubresourceLayout(
 
     return skip;
 }
+}  // namespace stateless

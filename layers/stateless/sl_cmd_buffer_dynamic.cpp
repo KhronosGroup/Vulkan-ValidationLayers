@@ -19,9 +19,10 @@
 #include "stateless/stateless_validation.h"
 #include "generated/dispatch_functions.h"
 
-bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                                        const VkViewport *pViewports,
-                                                                        const stateless::Context &context) const {
+namespace stateless {
+
+bool Device::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
+                                                           const VkViewport *pViewports, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -52,9 +53,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkComman
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                                       const VkRect2D *pScissors,
-                                                                       const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
+                                                          const VkRect2D *pScissors, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.multiViewport) {
@@ -118,10 +118,11 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCount(VkCommand
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
-    VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
-    const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
-    const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingDescriptionCount,
+                                                        const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions,
+                                                        uint32_t vertexAttributeDescriptionCount,
+                                                        const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions,
+                                                        const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -270,11 +271,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer,
-                                                                          uint32_t firstDiscardRectangle,
-                                                                          uint32_t discardRectangleCount,
-                                                                          const VkRect2D *pDiscardRectangles,
-                                                                          const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
+                                                             uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles,
+                                                             const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -303,9 +302,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEXT(VkComm
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer,
-                                                                                VkBool32 discardRectangleEnable,
-                                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 discardRectangleEnable,
+                                                                   const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (discard_rectangles_extension_version < 2) {
@@ -315,9 +313,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleEnableEXT(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleModeEXT(VkCommandBuffer commandBuffer,
-                                                                              VkDiscardRectangleModeEXT discardRectangleMode,
-                                                                              const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetDiscardRectangleModeEXT(VkCommandBuffer commandBuffer,
+                                                                 VkDiscardRectangleModeEXT discardRectangleMode,
+                                                                 const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (discard_rectangles_extension_version < 2) {
@@ -327,11 +325,10 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDiscardRectangleModeEXT(Vk
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorEnableNV(VkCommandBuffer commandBuffer,
-                                                                               uint32_t firstExclusiveScissor,
-                                                                               uint32_t exclusiveScissorCount,
-                                                                               const VkBool32 *pExclusiveScissorEnables,
-                                                                               const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetExclusiveScissorEnableNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
+                                                                  uint32_t exclusiveScissorCount,
+                                                                  const VkBool32 *pExclusiveScissorEnables,
+                                                                  const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (scissor_exclusive_extension_version < 2) {
@@ -341,11 +338,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorEnableNV(V
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer,
-                                                                         uint32_t firstExclusiveScissor,
-                                                                         uint32_t exclusiveScissorCount,
-                                                                         const VkRect2D *pExclusiveScissors,
-                                                                         const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
+                                                            uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors,
+                                                            const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -404,10 +399,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
-                                                                         uint32_t viewportCount,
-                                                                         const VkViewportWScalingNV *pViewportWScalings,
-                                                                         const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
+                                                            uint32_t viewportCount, const VkViewportWScalingNV *pViewportWScalings,
+                                                            const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
@@ -421,9 +415,10 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkComma
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(
-    VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-    const VkShadingRatePaletteNV *pShadingRatePalettes, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
+                                                                      uint32_t viewportCount,
+                                                                      const VkShadingRatePaletteNV *pShadingRatePalettes,
+                                                                      const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -451,11 +446,11 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportShadingRatePalette
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer,
-                                                                          VkCoarseSampleOrderTypeNV sampleOrderType,
-                                                                          uint32_t customSampleOrderCount,
-                                                                          const VkCoarseSampleOrderCustomNV *pCustomSampleOrders,
-                                                                          const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer,
+                                                             VkCoarseSampleOrderTypeNV sampleOrderType,
+                                                             uint32_t customSampleOrderCount,
+                                                             const VkCoarseSampleOrderCustomNV *pCustomSampleOrders,
+                                                             const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -473,9 +468,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetCoarseSampleOrderNV(VkComm
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport,
-                                                               uint32_t viewportCount, const VkViewport *pViewports,
-                                                               const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                                  const VkViewport *pViewports, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -510,10 +504,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewport(VkCommandBuffer c
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer,
-                                                                         VkDepthClampModeEXT depthClampMode,
-                                                                         const VkDepthClampRangeEXT *pDepthClampRange,
-                                                                         const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
+                                                            const VkDepthClampRangeEXT *pDepthClampRange,
+                                                            const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (depthClampMode == VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT) {
@@ -527,9 +520,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetDepthClampRangeEXT(VkComma
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor,
-                                                              uint32_t scissorCount, const VkRect2D *pScissors,
-                                                              const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+                                                 const VkRect2D *pScissors, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -586,8 +578,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer co
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth,
-                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -599,9 +590,8 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer 
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                                  uint16_t lineStipplePattern,
-                                                                  const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                     uint16_t lineStipplePattern, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -612,3 +602,4 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineStipple(VkCommandBuffe
 
     return skip;
 }
+}  // namespace stateless

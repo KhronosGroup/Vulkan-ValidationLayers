@@ -16,10 +16,12 @@
 
 #include "stateless/stateless_validation.h"
 
-bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
-                                                                 const VkShaderCreateInfoEXT *pCreateInfos,
-                                                                 const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
-                                                                 const stateless::Context &context) const {
+namespace stateless {
+
+bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
+                                                    const VkShaderCreateInfoEXT *pCreateInfos,
+                                                    const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
+                                                    const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -151,8 +153,8 @@ bool StatelessValidation::manual_PreCallValidateCreateShadersEXT(VkDevice device
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t *pDataSize,
-                                                                       void *pData, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t *pDataSize, void *pData,
+                                                          const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -166,3 +168,4 @@ bool StatelessValidation::manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice 
 
     return skip;
 }
+}  // namespace stateless

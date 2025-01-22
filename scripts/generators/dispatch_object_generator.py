@@ -47,8 +47,8 @@ class APISpecific:
                     },
                     {
                         'include': 'stateless/stateless_validation.h',
-                        'device': 'StatelessValidation',
-                        'instance': 'StatelessValidation',
+                        'device': 'stateless::Device',
+                        'instance': 'stateless::Instance',
                         'type': 'LayerObjectTypeParameterValidation',
                         'enabled': '!settings.disabled[stateless_checks]'
                     },

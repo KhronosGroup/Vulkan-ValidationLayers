@@ -109,7 +109,12 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : ThreadSafetyOutputGenerator,
             'genCombined': True,
         },
-        'stateless_validation_helper.h' : {
+        'stateless_device_methods.h' : {
+            'generator' : StatelessValidationHelperOutputGenerator,
+            'genCombined': False,
+            'options' : [valid_usage_file],
+        },
+        'stateless_instance_methods.h' : {
             'generator' : StatelessValidationHelperOutputGenerator,
             'genCombined': False,
             'options' : [valid_usage_file],

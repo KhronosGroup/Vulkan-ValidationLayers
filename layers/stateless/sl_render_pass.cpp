@@ -20,9 +20,10 @@
 #include "utils/convert_utils.h"
 #include "error_message/error_strings.h"
 
-bool StatelessValidation::ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                       uint32_t subpass, VkPipelineStageFlags2 stages, const char *vuid,
-                                                       const Location &loc) const {
+namespace stateless {
+
+bool Device::ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo, uint32_t subpass,
+                                          VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const {
     bool skip = false;
     // make sure we consider all of the expanded and un-expanded graphics bits to be valid
     const auto kExcludeStages = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT |
@@ -52,9 +53,9 @@ bool StatelessValidation::ValidateSubpassGraphicsFlags(VkDevice device, const Vk
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                   const ErrorObject &error_obj) const {
+bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                      const ErrorObject &error_obj) const {
     bool skip = false;
     uint32_t max_color_attachments = device_limits.maxColorAttachments;
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
@@ -364,22 +365,21 @@ bool StatelessValidation::ValidateCreateRenderPass(VkDevice device, const VkRend
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                                 const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                    const Context &context) const {
     vku::safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
     return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, context.error_obj);
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                                  const VkAllocationCallbacks *pAllocator,
-                                                                  VkRenderPass *pRenderPass,
-                                                                  const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                     const Context &context) const {
     vku::safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     return ValidateCreateRenderPass(device, create_info_2.ptr(), pAllocator, pRenderPass, context.error_obj);
 }
 
-void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo) {
+void Device::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo) {
     std::unique_lock<std::mutex> lock(renderpass_map_mutex);
     auto &renderpass_state = renderpasses_states[renderPass];
     lock.unlock();
@@ -402,32 +402,32 @@ void StatelessValidation::RecordRenderPass(VkRenderPass renderPass, const VkRend
         if (uses_depthstencil) renderpass_state.subpasses_using_depthstencil_attachment.insert(subpass);
     }
 }
-void StatelessValidation::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                                         const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                         const RecordObject &record_obj) {
+void Device::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                            const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) return;
     vku::safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
     RecordRenderPass(*pRenderPass, create_info_2.ptr());
 }
 
-void StatelessValidation::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                             const RecordObject &record_obj) {
+void Device::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                const RecordObject &record_obj) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
     if (record_obj.result != VK_SUCCESS) return;
     vku::safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     RecordRenderPass(*pRenderPass, create_info_2.ptr());
 }
 
-void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
-                                                          const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void Device::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
+                                             const RecordObject &record_obj) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
     std::unique_lock<std::mutex> lock(renderpass_map_mutex);
     renderpasses_states.erase(renderPass);
 }
 
-bool StatelessValidation::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, const void *pNext,
-                                                            const VkRect2D render_area, const Location &loc) const {
+bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, const void *pNext, const VkRect2D render_area,
+                                               const Location &loc) const {
     bool skip = false;
     const auto rp_stripe_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pNext);
     if (!rp_stripe_begin) {
@@ -513,8 +513,8 @@ bool StatelessValidation::ValidateRenderPassStripeBeginInfo(VkCommandBuffer comm
     return skip;
 }
 
-bool StatelessValidation::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
-                                                     const ErrorObject &error_obj) const {
+bool Device::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
+                                        const ErrorObject &error_obj) const {
     bool skip = false;
     if ((rp_begin->clearValueCount != 0) && !rp_begin->pClearValues) {
         const LogObjectList objlist(commandBuffer, rp_begin->renderPass);
@@ -529,16 +529,13 @@ bool StatelessValidation::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuff
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer,
-                                                                   const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents,
-                                                                   const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                      VkSubpassContents, const Context &context) const {
     return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, context.error_obj);
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer,
-                                                                    const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                                    const VkSubpassBeginInfo *,
-                                                                    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                       const VkSubpassBeginInfo *, const Context &context) const {
     return ValidateCmdBeginRenderPass(commandBuffer, pRenderPassBegin, context.error_obj);
 }
 
@@ -576,9 +573,8 @@ static bool UniqueRenderingInfoImageViews(const VkRenderingInfo &rendering_info,
     return unique_views;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
-                                                                  const VkRenderingInfo *pRenderingInfo,
-                                                                  const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
+                                                     const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     const Location rendering_info_loc = error_obj.location.dot(Field::pRenderingInfo);
@@ -661,9 +657,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffe
     return skip;
 }
 
-bool StatelessValidation::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer,
-                                                                const VkRenderingInfo &rendering_info,
-                                                                const Location &rendering_info_loc) const {
+bool Device::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+                                                   const Location &rendering_info_loc) const {
     bool skip = false;
     for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
         const VkRenderingAttachmentInfo &color_attachment = rendering_info.pColorAttachments[i];
@@ -723,9 +718,8 @@ bool StatelessValidation::ValidateBeginRenderingColorAttachment(VkCommandBuffer 
     return skip;
 }
 
-bool StatelessValidation::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer,
-                                                                const VkRenderingInfo &rendering_info,
-                                                                const Location &rendering_info_loc) const {
+bool Device::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+                                                   const Location &rendering_info_loc) const {
     bool skip = false;
     if (!rendering_info.pDepthAttachment || rendering_info.pDepthAttachment->imageView == VK_NULL_HANDLE) return skip;
 
@@ -771,9 +765,8 @@ bool StatelessValidation::ValidateBeginRenderingDepthAttachment(VkCommandBuffer 
     return skip;
 }
 
-bool StatelessValidation::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuffer,
-                                                                  const VkRenderingInfo &rendering_info,
-                                                                  const Location &rendering_info_loc) const {
+bool Device::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
+                                                     const Location &rendering_info_loc) const {
     bool skip = false;
     if (!rendering_info.pStencilAttachment || rendering_info.pStencilAttachment->imageView == VK_NULL_HANDLE) return skip;
 
@@ -819,7 +812,7 @@ bool StatelessValidation::ValidateBeginRenderingStencilAttachment(VkCommandBuffe
     return skip;
 }
 
-bool StatelessValidation::ValidateBeginRenderingFragmentShadingRateAttachment(
+bool Device::ValidateBeginRenderingFragmentShadingRateAttachment(
     VkCommandBuffer commandBuffer, const VkRenderingInfo &rendering_info,
     const VkRenderingFragmentShadingRateAttachmentInfoKHR &rendering_fsr_attachment_info,
     const Location &rendering_info_loc) const {
@@ -935,3 +928,4 @@ bool StatelessValidation::ValidateBeginRenderingFragmentShadingRateAttachment(
 
     return skip;
 }
+}  // namespace stateless
