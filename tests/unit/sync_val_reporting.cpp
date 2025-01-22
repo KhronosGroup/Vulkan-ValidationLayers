@@ -1237,3 +1237,44 @@ TEST_F(NegativeSyncValReporting, DoNotUseShortcutForSimpleAccessMask) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncValReporting, LayoutTrasitionErrorHasImageHandle) {
+    TEST_DESCRIPTION("Ensure that layout transition error contains image handle");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image.SetName("ImageA");
+
+    VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.image = image;
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &image_barrier;
+
+    m_command_buffer.Begin();
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.End();
+
+    m_second_command_buffer.Begin();
+    vk::CmdPipelineBarrier2(m_second_command_buffer, &dep_info);
+    m_second_command_buffer.End();
+
+    m_default_queue->Submit2(m_command_buffer);
+
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-RACING-WRITE", "ImageA");
+    m_second_queue->Submit2(m_second_command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    m_default_queue->Wait();
+}
