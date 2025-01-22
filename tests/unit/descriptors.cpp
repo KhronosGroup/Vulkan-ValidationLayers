@@ -2326,31 +2326,6 @@ TEST_F(NegativeDescriptors, SampleDescriptorUpdate) {
     m_errorMonitor->VerifyFound();
 }
 
-// Need to decide in WG if this is actually valid or not
-// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4125
-TEST_F(NegativeDescriptors, DISABLED_CopyDestroyDescriptor) {
-    RETURN_IF_SKIP(Init());
-    OneOffDescriptorSet src_descriptor_set(m_device, {
-                                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                     });
-    OneOffDescriptorSet dst_descriptor_set(m_device, {
-                                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                     });
-    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    src_descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE);
-    buffer.destroy();
-
-    VkCopyDescriptorSet copy_ds = vku::InitStructHelper();
-    copy_ds.srcSet = src_descriptor_set.set_;
-    copy_ds.srcBinding = 0;
-    copy_ds.srcArrayElement = 0;
-    copy_ds.dstSet = dst_descriptor_set.set_;
-    copy_ds.dstBinding = 0;
-    copy_ds.dstArrayElement = 0;
-    copy_ds.descriptorCount = 1;
-    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_ds);
-}
-
 TEST_F(NegativeDescriptors, ImageViewDescriptorUpdate) {
     // Create a single combined Image/Sampler descriptor and send it an invalid
     // imageView
@@ -4580,100 +4555,6 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
         vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
         m_errorMonitor->VerifyFound();
     }
-}
-
-// Need to decide in WG if this is actually valid or not
-// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4125
-TEST_F(NegativeDescriptors, DISABLED_CopyDestroyedMutableDescriptors) {
-    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::mutableDescriptorType);
-    RETURN_IF_SKIP(Init());
-
-    VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
-
-    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {};
-    mutable_descriptor_type_list.descriptorTypeCount = 1;
-    mutable_descriptor_type_list.pDescriptorTypes = descriptor_types;
-
-    VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
-    mdtci.mutableDescriptorTypeListCount = 1;
-    mdtci.pMutableDescriptorTypeLists = &mutable_descriptor_type_list;
-
-    VkDescriptorPoolSize pool_sizes[2] = {};
-    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    pool_sizes[0].descriptorCount = 2;
-    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    pool_sizes[1].descriptorCount = 2;
-
-    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper(&mdtci);
-    ds_pool_ci.maxSets = 2;
-    ds_pool_ci.poolSizeCount = 2;
-    ds_pool_ci.pPoolSizes = pool_sizes;
-
-    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
-
-    VkDescriptorSetLayoutBinding bindings[2] = {};
-    bindings[0].binding = 0;
-    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-    bindings[0].descriptorCount = 1;
-    bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
-    bindings[0].pImmutableSamplers = nullptr;
-    bindings[1].binding = 1;
-    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    bindings[1].descriptorCount = 1;
-    bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
-    bindings[1].pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutCreateInfo create_info = vku::InitStructHelper(&mdtci);
-    create_info.bindingCount = 2;
-    create_info.pBindings = bindings;
-
-    vkt::DescriptorSetLayout set_layout(*m_device, create_info);
-    VkDescriptorSetLayout set_layout_handle = set_layout.handle();
-
-    VkDescriptorSetLayout layouts[2] = {set_layout_handle, set_layout_handle};
-
-    VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
-    allocate_info.descriptorPool = pool.handle();
-    allocate_info.descriptorSetCount = 2;
-    allocate_info.pSetLayouts = layouts;
-
-    VkDescriptorSet descriptor_sets[2];
-    vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
-
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    vkt::ImageView view = image.CreateView();
-
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    VkSampler sampler;
-    vk::CreateSampler(device(), &sampler_ci, nullptr, &sampler);
-
-    VkDescriptorImageInfo image_info = {};
-    image_info.imageView = view;
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.sampler = sampler;
-
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = descriptor_sets[1];
-    descriptor_write.dstBinding = 1;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_write.pImageInfo = &image_info;
-
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
-
-    VkCopyDescriptorSet copy_set = vku::InitStructHelper();
-    copy_set.srcSet = descriptor_sets[1];
-    copy_set.srcBinding = 1;
-    copy_set.dstSet = descriptor_sets[0];
-    copy_set.dstBinding = 0;
-    copy_set.descriptorCount = 1;
-
-    vk::DestroySampler(device(), sampler, nullptr);
-
-    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00325");
-    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptors, InvalidDescriptorSetLayoutInlineUniformBlockFlags) {
