@@ -76,7 +76,7 @@ class APISpecific:
                     {
                         'include': 'gpuav/core/gpuav.h',
                         'device': 'gpuav::Validator',
-                        'instance': 'gpuav::Validator',
+                        'instance': 'gpuav::Instance',
                         'type': 'LayerObjectTypeGpuAssisted',
                         'enabled': 'settings.enabled[gpu_validation] || settings.enabled[debug_printf_validation]'
                     },

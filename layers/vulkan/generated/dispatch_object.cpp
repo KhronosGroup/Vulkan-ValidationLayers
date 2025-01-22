@@ -60,7 +60,7 @@ void Instance::InitValidationObjects() {
         object_dispatch.emplace_back(new BestPractices(this));
     }
     if (settings.enabled[gpu_validation] || settings.enabled[debug_printf_validation]) {
-        object_dispatch.emplace_back(new gpuav::Validator(this));
+        object_dispatch.emplace_back(new gpuav::Instance(this));
     }
     if (settings.enabled[sync_validation]) {
         object_dispatch.emplace_back(new syncval::Instance(this));
@@ -92,7 +92,7 @@ void Device::InitValidationObjects() {
     }
     if (settings.enabled[gpu_validation] || settings.enabled[debug_printf_validation]) {
         object_dispatch.emplace_back(new gpuav::Validator(
-            this, static_cast<gpuav::Validator*>(dispatch_instance->GetValidationObject(LayerObjectTypeGpuAssisted))));
+            this, static_cast<gpuav::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeGpuAssisted))));
     }
     if (settings.enabled[sync_validation]) {
         object_dispatch.emplace_back(new SyncValidator(

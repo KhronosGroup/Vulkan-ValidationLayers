@@ -163,40 +163,6 @@ void GpuShaderInstrumentor::PreCallRecordDestroyDevice(VkDevice device, const Vk
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 }
 
-void GpuShaderInstrumentor::ReserveBindingSlot(VkPhysicalDevice physicalDevice, VkPhysicalDeviceLimits &limits,
-                                               const Location &loc) {
-    // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (limits.maxBoundDescriptorSets == 0) return;
-
-    if (limits.maxBoundDescriptorSets > kMaxAdjustedBoundDescriptorSet) {
-        std::stringstream ss;
-        ss << "A descriptor binding slot is required to store GPU-side information, but the device maxBoundDescriptorSets is "
-           << limits.maxBoundDescriptorSets << " which is too large, so we will be trying to use slot "
-           << kMaxAdjustedBoundDescriptorSet;
-        InternalWarning(physicalDevice, loc, ss.str().c_str());
-    }
-
-    if (enabled[gpu_validation_reserve_binding_slot]) {
-        if (limits.maxBoundDescriptorSets > 1) {
-            limits.maxBoundDescriptorSets -= 1;
-        } else {
-            InternalWarning(physicalDevice, loc, "Unable to reserve descriptor binding slot on a device with only one slot.");
-        }
-    }
-}
-
-void GpuShaderInstrumentor::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                                      VkPhysicalDeviceProperties *device_props,
-                                                                      const RecordObject &record_obj) {
-    ReserveBindingSlot(physicalDevice, device_props->limits, record_obj.location);
-}
-
-void GpuShaderInstrumentor::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                                       VkPhysicalDeviceProperties2 *device_props2,
-                                                                       const RecordObject &record_obj) {
-    ReserveBindingSlot(physicalDevice, device_props2->properties.limits, record_obj.location);
-}
-
 // Just gives a warning about a possible deadlock.
 bool GpuShaderInstrumentor::ValidateCmdWaitEvents(VkCommandBuffer command_buffer, VkPipelineStageFlags2 src_stage_mask,
                                                   const Location &loc) const {
