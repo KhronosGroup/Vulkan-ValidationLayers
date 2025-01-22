@@ -48,7 +48,7 @@ void Instance::InitValidationObjects() {
         object_dispatch.emplace_back(new threadsafety::Instance(this));
     }
     if (!settings.disabled[stateless_checks]) {
-        object_dispatch.emplace_back(new StatelessValidation(this));
+        object_dispatch.emplace_back(new stateless::Instance(this));
     }
     if (!settings.disabled[object_tracking]) {
         object_dispatch.emplace_back(new object_lifetimes::Instance(this));
@@ -75,8 +75,8 @@ void Device::InitValidationObjects() {
             this, static_cast<threadsafety::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeThreading))));
     }
     if (!settings.disabled[stateless_checks]) {
-        object_dispatch.emplace_back(new StatelessValidation(
-            this, static_cast<StatelessValidation*>(dispatch_instance->GetValidationObject(LayerObjectTypeParameterValidation))));
+        object_dispatch.emplace_back(new stateless::Device(
+            this, static_cast<stateless::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeParameterValidation))));
     }
     if (!settings.disabled[object_tracking]) {
         object_dispatch.emplace_back(new object_lifetimes::Device(

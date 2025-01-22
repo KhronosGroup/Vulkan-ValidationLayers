@@ -20,9 +20,10 @@
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
 
-bool StatelessValidation::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                                                    VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
-                                                                    const stateless::Context &context) const {
+namespace stateless {
+bool Device::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+                                                       VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
+                                                       const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -34,9 +35,8 @@ bool StatelessValidation::manual_PreCallValidateAcquireNextImageKHR(VkDevice dev
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
-                                                                     uint32_t *pImageIndex,
-                                                                     const stateless::Context &context) const {
+bool Device::manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
+                                                        uint32_t *pImageIndex, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -48,8 +48,7 @@ bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice de
     return skip;
 }
 
-bool StatelessValidation::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfoKHR &create_info,
-                                                                  const Location &loc) const {
+bool Device::ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const {
     bool skip = false;
 
     if (enabled_features.swapchainMaintenance1) {
@@ -90,8 +89,8 @@ bool StatelessValidation::ValidateSwapchainCreateInfoMaintenance1(const VkSwapch
     return skip;
 }
 
-bool StatelessValidation::ValidateSwapchainCreateInfo(const stateless::Context &context,
-                                                      const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const {
+bool Device::ValidateSwapchainCreateInfo(const Context &context, const VkSwapchainCreateInfoKHR &create_info,
+                                         const Location &loc) const {
     bool skip = false;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
@@ -173,7 +172,7 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const stateless::Context &
     }
 
     if (create_info.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) {
-        auto stateless_instance = static_cast<StatelessValidation*>(dispatch_instance_->GetValidationObject(container_type));
+        auto stateless_instance = static_cast<Instance *>(dispatch_instance_->GetValidationObject(container_type));
         const auto &physdev_extensions = stateless_instance->physical_device_extensions.at(physical_device);
         const bool is_required_ext_supported = IsExtEnabled(physdev_extensions.vk_khr_surface_protected_capabilities);
         const bool is_required_ext_enabled = IsExtEnabled(extensions.vk_khr_surface_protected_capabilities);
@@ -203,9 +202,8 @@ bool StatelessValidation::ValidateSwapchainCreateInfo(const stateless::Context &
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateReleaseSwapchainImagesEXT(VkDevice device,
-                                                                          const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
-                                                                          const Context &context) const {
+bool Device::manual_PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT *pReleaseInfo,
+                                                             const Context &context) const {
     bool skip = false;
 
     if (!enabled_features.swapchainMaintenance1) {
@@ -216,10 +214,9 @@ bool StatelessValidation::manual_PreCallValidateReleaseSwapchainImagesEXT(VkDevi
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                                                                   const VkAllocationCallbacks *pAllocator,
-                                                                   VkSwapchainKHR *pSwapchain,
-                                                                   const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
+                                                      const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
+                                                      const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -227,11 +224,10 @@ bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice devi
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
-                                                                          const VkSwapchainCreateInfoKHR *pCreateInfos,
-                                                                          const VkAllocationCallbacks *pAllocator,
-                                                                          VkSwapchainKHR *pSwapchains,
-                                                                          const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
+                                                             const VkSwapchainCreateInfoKHR *pCreateInfos,
+                                                             const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains,
+                                                             const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (pCreateInfos) {
@@ -242,8 +238,8 @@ bool StatelessValidation::manual_PreCallValidateCreateSharedSwapchainsKHR(VkDevi
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
-                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo,
+                                                   const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!pPresentInfo) return skip;
@@ -277,11 +273,10 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                                     const VkDisplayModeCreateInfoKHR *pCreateInfo,
-                                                                     const VkAllocationCallbacks *pAllocator,
-                                                                     VkDisplayModeKHR *pMode,
-                                                                     const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
+                                                          const VkDisplayModeCreateInfoKHR *pCreateInfo,
+                                                          const VkAllocationCallbacks *pAllocator, VkDisplayModeKHR *pMode,
+                                                          const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -300,11 +295,10 @@ bool StatelessValidation::manual_PreCallValidateCreateDisplayModeKHR(VkPhysicalD
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice,
-                                                                                   VkSurfaceKHR surface,
-                                                                                   uint32_t *pSurfaceFormatCount,
-                                                                                   VkSurfaceFormatKHR *pSurfaceFormats,
-                                                                                   const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                        uint32_t *pSurfaceFormatCount,
+                                                                        VkSurfaceFormatKHR *pSurfaceFormats,
+                                                                        const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (surface == VK_NULL_HANDLE && !IsExtEnabled(extensions.vk_google_surfaceless_query)) {
@@ -315,11 +309,10 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormatsK
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
-                                                                                        VkSurfaceKHR surface,
-                                                                                        uint32_t *pPresentModeCount,
-                                                                                        VkPresentModeKHR *pPresentModes,
-                                                                                        const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                             uint32_t *pPresentModeCount,
+                                                                             VkPresentModeKHR *pPresentModes,
+                                                                             const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (surface == VK_NULL_HANDLE && !IsExtEnabled(extensions.vk_google_surfaceless_query)) {
@@ -330,9 +323,10 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentM
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-    VkSurfaceCapabilities2KHR *pSurfaceCapabilities, const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                              const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                              VkSurfaceCapabilities2KHR *pSurfaceCapabilities,
+                                                                              const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(extensions.vk_google_surfaceless_query)) {
@@ -390,9 +384,11 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabili
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, uint32_t *pSurfaceFormatCount,
-    VkSurfaceFormat2KHR *pSurfaceFormats, const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                         uint32_t *pSurfaceFormatCount,
+                                                                         VkSurfaceFormat2KHR *pSurfaceFormats,
+                                                                         const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(extensions.vk_google_surfaceless_query)) {
@@ -401,21 +397,21 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
     if (pSurfaceFormats) {
-        for (uint32_t i = 0; i < *pSurfaceFormatCount; ++i) {
-            if (vku::FindStructInPNextChain<VkImageCompressionPropertiesEXT>(pSurfaceFormats[i].pNext) &&
-                !enabled_features.imageCompressionControlSwapchain) {
-                skip |= LogError("VUID-VkSurfaceFormat2KHR-pNext-06750", device, error_obj.location.dot(Field::pNext),
-                                 "contains VkImageCompressionPropertiesEXT, but imageCompressionControlSwapchain is not enabled");
-            }
-        }
+        // TODO: VUID-VkSurfaceFormat2KHR-pNext-06750 was checked here, but it says:
+        //      If the imageCompressionControlSwapchain feature is not enabled, the pNext chain must
+        //      not include an VkImageCompressionPropertiesEXT structure
+        // how can a feature be enabled on a physical device?
+        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7138
     }
     return skip;
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo, uint32_t *pPresentModeCount,
-    VkPresentModeKHR *pPresentModes, const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
+                                                                              const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                              uint32_t *pPresentModeCount,
+                                                                              VkPresentModeKHR *pPresentModes,
+                                                                              const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (pSurfaceInfo && pSurfaceInfo->surface == VK_NULL_HANDLE && !IsExtEnabled(extensions.vk_google_surfaceless_query)) {
@@ -426,11 +422,9 @@ bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceSurfacePresentM
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance,
-                                                                      const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
-                                                                      const VkAllocationCallbacks *pAllocator,
-                                                                      VkSurfaceKHR *pSurface,
-                                                                      const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
+                                                           const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                           const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -441,12 +435,12 @@ bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance
     return skip;
 }
 
-bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
-                                                                               const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                               VkDeviceGroupPresentModeFlagsKHR *pModes,
-                                                                               const ErrorObject &error_obj) const {
+bool Device::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
+                                                                  const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                  VkDeviceGroupPresentModeFlagsKHR *pModes,
+                                                                  const ErrorObject &error_obj) const {
     bool skip = false;
-    stateless::Context context(*this, error_obj, extensions);
+    Context context(*this, error_obj, extensions);
     if (!IsExtEnabled(extensions.vk_khr_swapchain))
         skip |= OutputExtensionError(error_obj.location, {vvl::Extension::_VK_KHR_swapchain});
     if (!IsExtEnabled(extensions.vk_khr_get_surface_capabilities2))
@@ -489,11 +483,9 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-bool StatelessValidation::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance,
-                                                                        const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
-                                                                        const VkAllocationCallbacks *pAllocator,
-                                                                        VkSurfaceKHR *pSurface,
-                                                                        const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
+                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                             const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -515,10 +507,9 @@ bool StatelessValidation::manual_PreCallValidateCreateWaylandSurfaceKHR(VkInstan
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-bool StatelessValidation::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance instance,
-                                                                    const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
-                                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                                    const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
+                                                         const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                         const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -538,11 +529,9 @@ bool StatelessValidation::manual_PreCallValidateCreateXcbSurfaceKHR(VkInstance i
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-bool StatelessValidation::manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance instance,
-                                                                     const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
-                                                                     const VkAllocationCallbacks *pAllocator,
-                                                                     VkSurfaceKHR *pSurface,
-                                                                     const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
+                                                          const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                          const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -562,11 +551,9 @@ bool StatelessValidation::manual_PreCallValidateCreateXlibSurfaceKHR(VkInstance 
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-bool StatelessValidation::manual_PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance,
-                                                                        const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
-                                                                        const VkAllocationCallbacks *pAllocator,
-                                                                        VkSurfaceKHR *pSurface,
-                                                                        const stateless::Context &context) const {
+bool Instance::manual_PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
+                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                             const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (pCreateInfo->window == nullptr) {
@@ -576,3 +563,4 @@ bool StatelessValidation::manual_PreCallValidateCreateAndroidSurfaceKHR(VkInstan
     return skip;
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+}  // namespace stateless

@@ -18,10 +18,11 @@
 
 #include "stateless/stateless_validation.h"
 
-bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
-                                                                  const VkAllocationCallbacks *pAllocator,
-                                                                  VkFramebuffer *pFramebuffer,
-                                                                  const stateless::Context &context) const {
+namespace stateless {
+
+bool Device::manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
+                                                     const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
+                                                     const Context &context) const {
     // Validation for pAttachments which is excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     bool skip = false;
     const auto &error_obj = context.error_obj;
@@ -83,3 +84,4 @@ bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice devic
 
     return skip;
 }
+}  // namespace stateless

@@ -20,6 +20,7 @@
 #include "generated/enum_flag_bits.h"
 #include "utils/vk_layer_utils.h"
 
+namespace stateless {
 static inline bool IsMeshCommand(VkIndirectCommandsTokenTypeEXT type) {
     return IsValueIn(
         type,
@@ -37,9 +38,9 @@ static inline bool IsRayTracingCommand(VkIndirectCommandsTokenTypeEXT type) {
                             VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_EXT, VK_INDIRECT_COMMANDS_TOKEN_TYPE_SEQUENCE_INDEX_EXT});
 }
 
-bool StatelessValidation::ValidateIndirectExecutionSetPipelineInfo(const stateless::Context& context,
-                                                                   const VkIndirectExecutionSetPipelineInfoEXT& pipeline_info,
-                                                                   const Location& pipeline_info_loc) const {
+bool Device::ValidateIndirectExecutionSetPipelineInfo(const Context& context,
+                                                      const VkIndirectExecutionSetPipelineInfoEXT& pipeline_info,
+                                                      const Location& pipeline_info_loc) const {
     bool skip = false;
 
     const auto& props = phys_dev_ext_props.device_generated_commands_props;
@@ -58,9 +59,8 @@ bool StatelessValidation::ValidateIndirectExecutionSetPipelineInfo(const statele
     return skip;
 }
 
-bool StatelessValidation::ValidateIndirectExecutionSetShaderInfo(const stateless::Context& context,
-                                                                 const VkIndirectExecutionSetShaderInfoEXT& shader_info,
-                                                                 const Location& shader_info_loc) const {
+bool Device::ValidateIndirectExecutionSetShaderInfo(const Context& context, const VkIndirectExecutionSetShaderInfoEXT& shader_info,
+                                                    const Location& shader_info_loc) const {
     bool skip = false;
 
     const auto& props = phys_dev_ext_props.device_generated_commands_props;
@@ -110,9 +110,11 @@ bool StatelessValidation::ValidateIndirectExecutionSetShaderInfo(const stateless
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateIndirectExecutionSetEXT(
-    VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-    VkIndirectExecutionSetEXT* pIndirectExecutionSet, const stateless::Context& context) const {
+bool Device::manual_PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device,
+                                                                 const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
+                                                                 const VkAllocationCallbacks* pAllocator,
+                                                                 VkIndirectExecutionSetEXT* pIndirectExecutionSet,
+                                                                 const Context& context) const {
     bool skip = false;
     const auto& error_obj = context.error_obj;
 
@@ -159,9 +161,10 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectExecutionSetEXT(
     return skip;
 }
 
-bool StatelessValidation::ValidateIndirectCommandsPushConstantToken(
-    const stateless::Context& context, const VkIndirectCommandsPushConstantTokenEXT& push_constant_token,
-    VkIndirectCommandsTokenTypeEXT token_type, const Location& push_constant_token_loc) const {
+bool Device::ValidateIndirectCommandsPushConstantToken(const Context& context,
+                                                       const VkIndirectCommandsPushConstantTokenEXT& push_constant_token,
+                                                       VkIndirectCommandsTokenTypeEXT token_type,
+                                                       const Location& push_constant_token_loc) const {
     bool skip = false;
     skip |= context.ValidateFlags(
         push_constant_token_loc.dot(Field::updateRange).dot(Field::stageFlags), vvl::FlagBitmask::VkShaderStageFlagBits,
@@ -178,9 +181,9 @@ bool StatelessValidation::ValidateIndirectCommandsPushConstantToken(
     return skip;
 }
 
-bool StatelessValidation::ValidateIndirectCommandsIndexBufferToken(const stateless::Context& context,
-                                                                   const VkIndirectCommandsIndexBufferTokenEXT& index_buffer_token,
-                                                                   const Location& index_buffer_token_loc) const {
+bool Device::ValidateIndirectCommandsIndexBufferToken(const Context& context,
+                                                      const VkIndirectCommandsIndexBufferTokenEXT& index_buffer_token,
+                                                      const Location& index_buffer_token_loc) const {
     bool skip = false;
     skip |= context.ValidateFlags(index_buffer_token_loc.dot(Field::mode), vvl::FlagBitmask::VkIndirectCommandsInputModeFlagBitsEXT,
                                   AllVkIndirectCommandsInputModeFlagBitsEXT, index_buffer_token.mode, kRequiredSingleBit,
@@ -197,9 +200,9 @@ bool StatelessValidation::ValidateIndirectCommandsIndexBufferToken(const statele
     return skip;
 }
 
-bool StatelessValidation::ValidateIndirectCommandsExecutionSetToken(const stateless::Context& context,
-                                                                    const VkIndirectCommandsExecutionSetTokenEXT& exe_set_token,
-                                                                    const Location& exe_set_token_loc) const {
+bool Device::ValidateIndirectCommandsExecutionSetToken(const Context& context,
+                                                       const VkIndirectCommandsExecutionSetTokenEXT& exe_set_token,
+                                                       const Location& exe_set_token_loc) const {
     bool skip = false;
     skip |= context.ValidateRangedEnum(exe_set_token_loc.dot(Field::type), vvl::Enum::VkIndirectExecutionSetInfoTypeEXT,
                                        exe_set_token.type, "VUID-VkIndirectCommandsExecutionSetTokenEXT-type-parameter");
@@ -224,9 +227,8 @@ bool StatelessValidation::ValidateIndirectCommandsExecutionSetToken(const statel
     return skip;
 }
 
-bool StatelessValidation::ValidateIndirectCommandsLayoutToken(const stateless::Context& context,
-                                                              const VkIndirectCommandsLayoutTokenEXT& token,
-                                                              const Location& token_loc) const {
+bool Device::ValidateIndirectCommandsLayoutToken(const Context& context, const VkIndirectCommandsLayoutTokenEXT& token,
+                                                 const Location& token_loc) const {
     bool skip = false;
 
     const Location data_loc = token_loc.dot(Field::data);
@@ -320,11 +322,10 @@ bool StatelessValidation::ValidateIndirectCommandsLayoutToken(const stateless::C
     return skip;
 }
 
-bool StatelessValidation::ValidateIndirectCommandsLayoutStage(const stateless::Context& context,
-                                                              const VkIndirectCommandsLayoutTokenEXT& token,
-                                                              const Location& token_loc, VkShaderStageFlags shader_stages,
-                                                              bool has_stage_graphics, bool has_stage_compute,
-                                                              bool has_stage_ray_tracing, bool has_stage_mesh) const {
+bool Device::ValidateIndirectCommandsLayoutStage(const Context& context, const VkIndirectCommandsLayoutTokenEXT& token,
+                                                 const Location& token_loc, VkShaderStageFlags shader_stages,
+                                                 bool has_stage_graphics, bool has_stage_compute, bool has_stage_ray_tracing,
+                                                 bool has_stage_mesh) const {
     bool skip = false;
     // Check if type has supported shaderStage
     if (!has_stage_graphics &&
@@ -383,9 +384,11 @@ bool StatelessValidation::ValidateIndirectCommandsLayoutStage(const stateless::C
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(
-    VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-    VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout, const stateless::Context& context) const {
+bool Device::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
+                                                                   const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
+                                                                   const VkAllocationCallbacks* pAllocator,
+                                                                   VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
+                                                                   const Context& context) const {
     bool skip = false;
     const auto& error_obj = context.error_obj;
 
@@ -479,9 +482,9 @@ bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutEXT(
     return skip;
 }
 
-bool StatelessValidation::ValidateGeneratedCommandsInfo(VkCommandBuffer command_buffer,
-                                                        const VkGeneratedCommandsInfoEXT& generated_commands_info,
-                                                        const Location& info_loc) const {
+bool Device::ValidateGeneratedCommandsInfo(VkCommandBuffer command_buffer,
+                                           const VkGeneratedCommandsInfoEXT& generated_commands_info,
+                                           const Location& info_loc) const {
     bool skip = false;
 
     if (generated_commands_info.sequenceCountAddress != 0) {
@@ -513,9 +516,10 @@ bool StatelessValidation::ValidateGeneratedCommandsInfo(VkCommandBuffer command_
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdPreprocessGeneratedCommandsEXT(
-    VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo, VkCommandBuffer stateCommandBuffer,
-    const stateless::Context& context) const {
+bool Device::manual_PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
+                                                                     const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                                     VkCommandBuffer stateCommandBuffer,
+                                                                     const Context& context) const {
     bool skip = false;
     const auto& error_obj = context.error_obj;
     if (!enabled_features.deviceGeneratedCommands) {
@@ -539,9 +543,9 @@ bool StatelessValidation::manual_PreCallValidateCmdPreprocessGeneratedCommandsEX
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdExecuteGeneratedCommandsEXT(
-    VkCommandBuffer commandBuffer, VkBool32 isPreprocessed, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
-    const stateless::Context& context) const {
+bool Device::manual_PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                                  const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
+                                                                  const Context& context) const {
     bool skip = false;
     const auto& error_obj = context.error_obj;
 
@@ -565,3 +569,4 @@ bool StatelessValidation::manual_PreCallValidateCmdExecuteGeneratedCommandsEXT(
 
     return skip;
 }
+}  // namespace stateless

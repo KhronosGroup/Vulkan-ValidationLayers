@@ -312,8 +312,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.filename == 'stateless_validation_helper.h':
-            self.generateHeader()
+        if self.filename == 'stateless_instance_methods.h':
+            self.generateInstanceHeader()
+        elif self.filename == 'stateless_device_methods.h':
+            self.generateDeviceHeader()
         elif self.filename == 'stateless_validation_helper.cpp':
             self.generateSource()
         else:
@@ -321,24 +323,14 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
-    def generateHeader(self):
+    def generateHeader(self, want_instance):
         out = []
         out.append('#pragma once\n')
 
-        out.append('\nstatic inline bool IsDuplicatePnext(VkStructureType input_value) {\n')
-        out.append('    switch (input_value) {\n')
-        for struct in [x for x in self.vk.structs.values() if x.allowDuplicate and x.sType is not None]:
-            # The sType will always be first member of struct
-            out.append(f'        case {struct.sType}:\n')
-        out.append('            return true;\n')
-        out.append('        default:\n')
-        out.append('            return false;\n')
-        out.append('    }\n')
-        out.append('}\n')
-        out.append('\n')
-
         guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist]:
+            if command.instance != want_instance:
+                continue
             out.extend(guard_helper.add_guard(command.protect))
             prototype = command.cPrototype.split('VKAPI_CALL ')[1]
             prototype = f'bool PreCallValidate{prototype[2:]}'
@@ -348,9 +340,16 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             prototype = prototype.replace(')', ',\n    const ErrorObject&                          error_obj)')
             out.append(prototype)
         out.extend(guard_helper.add_guard(None))
+        self.write("".join(out))
 
+    def generateInstanceHeader(self):
+        self.generateHeader(True)
+
+    def generateDeviceHeader(self):
+        self.generateHeader(False)
+        out = []
         for struct_name in self.generateStructHelper:
-            out.append(f'bool Validate{struct_name[2:]}(const stateless::Context &context, const {struct_name} &info, const Location &loc) const;')
+            out.append(f'bool Validate{struct_name[2:]}(const Context &context, const {struct_name} &info, const Location &loc) const;')
 
         self.write("".join(out))
 
@@ -407,6 +406,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                             if (alias not in self.stype_version_dict.keys()):
                                 self.stype_version_dict[alias] = set()
                             self.stype_version_dict[alias].add(extension_name)
+                            self.stype_version_dict[alias].add(extension_name)
 
         # Generate the struct member checking code from the captured data
         for struct in self.vk.structs.values():
@@ -420,7 +420,20 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             #include "stateless/stateless_validation.h"
             #include "generated/enum_flag_bits.h"
             #include "generated/dispatch_functions.h"
+
+            namespace stateless {
             ''')
+        out.append('\nbool Context::IsDuplicatePnext(VkStructureType input_value) const {\n')
+        out.append('    switch (input_value) {\n')
+        for struct in [x for x in self.vk.structs.values() if x.allowDuplicate and x.sType is not None]:
+            # The sType will always be first member of struct
+            out.append(f'        case {struct.sType}:\n')
+        out.append('            return true;\n')
+        out.append('        default:\n')
+        out.append('            return false;\n')
+        out.append('    }\n')
+        out.append('}\n')
+        out.append('\n')
 
         # The reason we split this up into Feature and Properties struct is before be had a 450 case, 10k line function that broke MSVC
         # reference: https://www.asawicki.info/news_1617_how_code_refactoring_can_fix_stack_overflow_error
@@ -430,9 +443,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         other_structs = [x for x in extended_structs if x not in feature_structs and x not in property_structs and x.name not in self.structsWithManualChecks]
 
         out.append('''
-            bool stateless::Context::ValidatePnextFeatureStructContents(const Location& loc,
-                                                                const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                bool is_const_param) const {
+            bool Context::ValidatePnextFeatureStructContents(const Location& loc,
+                                                             const VkBaseOutStructure* header, const char *pnext_vuid,
+                                                             bool is_const_param) const {
                 bool skip = false;
                 switch(header->sType) {
             ''')
@@ -451,9 +464,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             ''')
 
         out.append('''
-            bool stateless::Context::ValidatePnextPropertyStructContents(const Location& loc,
-                                                                const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                                bool is_const_param) const {
+            bool Context::ValidatePnextPropertyStructContents(const Location& loc,
+                                                              const VkBaseOutStructure* header, const char *pnext_vuid,
+                                                              bool is_const_param) const {
                 bool skip = false;
                 switch(header->sType) {
             ''')
@@ -473,9 +486,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
         out.append('''
             // All structs that are not a Feature or Property struct
-            bool stateless::Context::ValidatePnextStructContents(const Location& loc,
-                                                               const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                               bool is_const_param) const {
+            bool Context::ValidatePnextStructContents(const Location& loc,
+                                                      const VkBaseOutStructure* header, const char *pnext_vuid,
+                                                      bool is_const_param) const {
                 bool skip = false;
                 switch(header->sType) {
             ''')
@@ -508,7 +521,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
             prototype = prototype.replace(')', ', const ErrorObject& error_obj)')
-            out.append(f'bool StatelessValidation::PreCallValidate{prototype} const {{\n')
+            classname = 'Instance' if command.instance else 'Device'
+            out.append(f'bool {classname}::PreCallValidate{prototype} const {{\n')
             out.append('    bool skip = false;\n')
             # For vkCreateDevice, the extensions member has already been set up properly
             # for other VkPhysicalDevice calls, we need to use their supported extensions rather
@@ -516,10 +530,10 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             if command.params[0].type == 'VkPhysicalDevice' and command.name != 'vkCreateDevice':
                 out.append('''
                     const auto &physdev_extensions = physical_device_extensions.at(physicalDevice);
-                    stateless::Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+                    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
                 ''')
             else:
-                out.append('    stateless::Context context(*this, error_obj, extensions);\n')
+                out.append('    Context context(*this, error_obj, extensions);\n')
 
             # Create a copy here to make the logic simpler passing into ValidatePnextStructContents
             out.append('    [[maybe_unused]] const Location loc = error_obj.location;\n')
@@ -579,7 +593,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         out.extend(guard_helper.add_guard(None, extra_newline=True))
 
         for struct_name in self.generateStructHelper:
-            out.append(f'bool StatelessValidation::Validate{struct_name[2:]}(const stateless::Context &context, const {struct_name} &info, const Location &loc) const {{\n')
+            out.append(f'bool Device::Validate{struct_name[2:]}(const Context &context, const {struct_name} &info, const Location &loc) const {{\n')
             out.append('    bool skip = false;\n')
             # Only generate validation code if the structure actually exists in the target API
             if struct_name in self.vk.structs:
@@ -587,6 +601,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             out.append('    return skip;\n')
             out.append('}\n')
 
+        out.append('''
+            } // namespace stateless
+        ''')
         self.write("".join(out))
 
     def genType(self, typeinfo, name, alias):

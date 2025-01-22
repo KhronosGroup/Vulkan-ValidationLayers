@@ -18,9 +18,11 @@
 
 #include "stateless/stateless_validation.h"
 
-bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
-                                                               const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
-                                                               const stateless::Context &context) const {
+namespace stateless {
+
+bool Device::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
+                                                  const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
+                                                  const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -55,9 +57,8 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     return skip;
 }
 
-bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
-                                                                const VkDeviceImageMemoryRequirements &memory_requirements,
-                                                                const Location &loc) const {
+bool Device::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements &memory_requirements,
+                                                   const Location &loc) const {
     bool skip = false;
 
     const auto &create_info = *(memory_requirements.pCreateInfo);
@@ -90,10 +91,9 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device,
-                                                                                 const VkDeviceImageMemoryRequirements *pInfo,
-                                                                                 VkMemoryRequirements2 *pMemoryRequirements,
-                                                                                 const stateless::Context &context) const {
+bool Device::manual_PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements *pInfo,
+                                                                    VkMemoryRequirements2 *pMemoryRequirements,
+                                                                    const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -102,9 +102,9 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageMemoryRequirements
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
+bool Device::manual_PreCallValidateGetDeviceImageSparseMemoryRequirements(
     VkDevice device, const VkDeviceImageMemoryRequirements *pInfo, uint32_t *pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const stateless::Context &context) const {
+    VkSparseImageMemoryRequirements2 *pSparseMemoryRequirements, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -113,9 +113,8 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequir
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
-                                                                const VkBindSparseInfo *pBindInfo, VkFence fence,
-                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
+                                                   VkFence fence, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -164,8 +163,8 @@ bool StatelessValidation::manual_PreCallValidateQueueBindSparse(VkQueue queue, u
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
-                                                                           const stateless::Context &context) const {
+bool Device::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
+                                                              const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!IsBetweenInclusive(priority, 0.0F, 1.0F)) {
@@ -174,3 +173,4 @@ bool StatelessValidation::manual_PreCallValidateSetDeviceMemoryPriorityEXT(VkDev
     }
     return skip;
 }
+}  // namespace stateless

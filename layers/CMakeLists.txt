@@ -211,8 +211,9 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/object_tracker_instance_methods.h
     ${API_TYPE}/generated/spirv_grammar_helper.cpp
     ${API_TYPE}/generated/spirv_validation_helper.cpp
+    ${API_TYPE}/generated/stateless_device_methods.h
+    ${API_TYPE}/generated/stateless_instance_methods.h
     ${API_TYPE}/generated/stateless_validation_helper.cpp
-    ${API_TYPE}/generated/stateless_validation_helper.h
     ${API_TYPE}/generated/sync_validation_types.cpp
     ${API_TYPE}/generated/thread_safety.cpp
     ${API_TYPE}/generated/thread_safety_device_defs.h

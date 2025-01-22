@@ -50,7 +50,7 @@ namespace dispatch {
 void Device::InitObjectDispatchVectors() {
 #define BUILD_DISPATCH_VECTOR(name)                                                                                       \
     init_object_dispatch_vector(InterceptId##name, typeid(&ValidationObject::name), typeid(&threadsafety::Device::name),  \
-                                typeid(&StatelessValidation::name), typeid(&object_lifetimes::Device::name),              \
+                                typeid(&stateless::Device::name), typeid(&object_lifetimes::Device::name),                \
                                 typeid(&CoreChecks::name), typeid(&BestPractices::name), typeid(&gpuav::Validator::name), \
                                 typeid(&SyncValidator::name));
 

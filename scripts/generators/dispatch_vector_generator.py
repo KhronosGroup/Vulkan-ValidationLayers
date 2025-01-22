@@ -61,7 +61,7 @@ void Device::InitObjectDispatchVectors() {
     init_object_dispatch_vector(InterceptId ## name, \\
                                 typeid(&ValidationObject::name), \\
                                 typeid(&threadsafety::Device::name), \\
-                                typeid(&StatelessValidation::name), \\
+                                typeid(&stateless::Device::name), \\
                                 typeid(&object_lifetimes::Device::name), \\
                                 typeid(&CoreChecks::name), \\
                                 typeid(&BestPractices::name), \\

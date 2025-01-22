@@ -3698,7 +3698,8 @@ TEST_F(NegativeWsi, SwapchainCreateMissingMaintenanc1Feature) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeWsi, ImageCompressionPropertiesSwapchainWithoutFeature) {
+// TODO: https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7138
+TEST_F(NegativeWsi, DISABLED_ImageCompressionPropertiesSwapchainWithoutFeature) {
     TEST_DESCRIPTION("Use image compression control swapchain pNext without feature enabled");
 
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);

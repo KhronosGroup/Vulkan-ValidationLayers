@@ -21,8 +21,9 @@
 
 #include "utils/ray_tracing_utils.h"
 
-bool StatelessValidation::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles,
-                                                      VkAccelerationStructureNV object_handle, const Location &loc) const {
+namespace stateless {
+bool Device::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkAccelerationStructureNV object_handle,
+                                         const Location &loc) const {
     bool skip = false;
 
     if (triangles.vertexFormat != VK_FORMAT_R32G32B32_SFLOAT && triangles.vertexFormat != VK_FORMAT_R16G16B16_SFLOAT &&
@@ -68,8 +69,8 @@ bool StatelessValidation::ValidateGeometryTrianglesNV(const VkGeometryTrianglesN
     return skip;
 }
 
-bool StatelessValidation::ValidateGeometryAABBNV(const VkGeometryAABBNV &aabbs, VkAccelerationStructureNV object_handle,
-                                                 const Location &loc) const {
+bool Device::ValidateGeometryAABBNV(const VkGeometryAABBNV &aabbs, VkAccelerationStructureNV object_handle,
+                                    const Location &loc) const {
     bool skip = false;
 
     if (SafeModulo(aabbs.offset, 8) != 0) {
@@ -82,8 +83,7 @@ bool StatelessValidation::ValidateGeometryAABBNV(const VkGeometryAABBNV &aabbs, 
     return skip;
 }
 
-bool StatelessValidation::ValidateGeometryNV(const VkGeometryNV &geometry, VkAccelerationStructureNV object_handle,
-                                             const Location &loc) const {
+bool Device::ValidateGeometryNV(const VkGeometryNV &geometry, VkAccelerationStructureNV object_handle, const Location &loc) const {
     bool skip = false;
     if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_NV) {
         skip |= ValidateGeometryTrianglesNV(geometry.geometry.triangles, object_handle, loc);
@@ -93,9 +93,8 @@ bool StatelessValidation::ValidateGeometryNV(const VkGeometryNV &geometry, VkAcc
     return skip;
 }
 
-bool StatelessValidation::ValidateAccelerationStructureInfoNV(const stateless::Context &context,
-                                                              const VkAccelerationStructureInfoNV &info,
-                                                              VkAccelerationStructureNV object_handle, const Location &loc) const {
+bool Device::ValidateAccelerationStructureInfoNV(const Context &context, const VkAccelerationStructureInfoNV &info,
+                                                 VkAccelerationStructureNV object_handle, const Location &loc) const {
     bool skip = false;
 
     bool is_cmd = loc.function == Func::vkCmdBuildAccelerationStructureNV;
@@ -176,9 +175,11 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const stateless::C
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
-    VkDevice device, const VkAccelerationStructureCreateInfoNV *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkAccelerationStructureNV *pAccelerationStructure, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateAccelerationStructureNV(VkDevice device,
+                                                                 const VkAccelerationStructureCreateInfoNV *pCreateInfo,
+                                                                 const VkAllocationCallbacks *pAllocator,
+                                                                 VkAccelerationStructureNV *pAccelerationStructure,
+                                                                 const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -193,10 +194,12 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(
-    VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData, VkDeviceSize instanceOffset,
-    VkBool32 update, VkAccelerationStructureNV dst, VkAccelerationStructureNV src, VkBuffer scratch, VkDeviceSize scratchOffset,
-    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
+                                                                   const VkAccelerationStructureInfoNV *pInfo,
+                                                                   VkBuffer instanceData, VkDeviceSize instanceOffset,
+                                                                   VkBool32 update, VkAccelerationStructureNV dst,
+                                                                   VkAccelerationStructureNV src, VkBuffer scratch,
+                                                                   VkDeviceSize scratchOffset, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -207,9 +210,11 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
-    VkDevice device, const VkAccelerationStructureCreateInfoKHR *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkAccelerationStructureKHR *pAccelerationStructure, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
+                                                                  const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
+                                                                  const VkAllocationCallbacks *pAllocator,
+                                                                  VkAccelerationStructureKHR *pAccelerationStructure,
+                                                                  const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.accelerationStructure) {
@@ -262,10 +267,10 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateDestroyAccelerationStructureKHR(VkDevice device,
-                                                                                VkAccelerationStructureKHR accelerationStructure,
-                                                                                const VkAllocationCallbacks *pAllocator,
-                                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateDestroyAccelerationStructureKHR(VkDevice device,
+                                                                   VkAccelerationStructureKHR accelerationStructure,
+                                                                   const VkAllocationCallbacks *pAllocator,
+                                                                   const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.accelerationStructure) {
@@ -275,10 +280,9 @@ bool StatelessValidation::manual_PreCallValidateDestroyAccelerationStructureKHR(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureHandleNV(VkDevice device,
-                                                                                 VkAccelerationStructureNV accelerationStructure,
-                                                                                 size_t dataSize, void *pData,
-                                                                                 const stateless::Context &context) const {
+bool Device::manual_PreCallValidateGetAccelerationStructureHandleNV(VkDevice device,
+                                                                    VkAccelerationStructureNV accelerationStructure,
+                                                                    size_t dataSize, void *pData, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (dataSize < 8) {
@@ -288,9 +292,9 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureHandleNV
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
+bool Device::manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureNV *pAccelerationStructures,
-    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const stateless::Context &context) const {
+    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (queryType != VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV) {
@@ -301,8 +305,7 @@ bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPr
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateRayTracingPipelinesFlagsNV(const VkPipelineCreateFlags2KHR flags,
-                                                                   const Location &flags_loc) const {
+bool Device::ValidateCreateRayTracingPipelinesFlagsNV(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const {
     bool skip = false;
     if (flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) {
         skip |= LogError("VUID-VkRayTracingPipelineCreateInfoNV-flags-02904", device, flags_loc, "is %s.",
@@ -359,9 +362,11 @@ bool StatelessValidation::ValidateCreateRayTracingPipelinesFlagsNV(const VkPipel
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
-    VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
+                                                               uint32_t createInfoCount,
+                                                               const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                               const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -439,8 +444,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(
     return skip;
 }
 
-bool StatelessValidation::ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipelineCreateFlags2KHR flags,
-                                                                    const Location &flags_loc) const {
+bool Device::ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const {
     bool skip = false;
 
     if (flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) {
@@ -472,10 +476,11 @@ bool StatelessValidation::ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipe
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                                const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
+                                                                const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                                const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -669,9 +674,9 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo,
-    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                        const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo,
+                                                                        const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -694,9 +699,9 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemor
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
-    VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo,
-    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                                           const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo,
+                                                                           const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -719,9 +724,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMe
     return skip;
 }
 
-bool StatelessValidation::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR &as_info,
-                                                                   const VulkanTypedHandle &handle,
-                                                                   const Location &info_loc) const {
+bool Device::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR &as_info,
+                                                      const VulkanTypedHandle &handle, const Location &info_loc) const {
     bool skip = false;
     if (!(as_info.mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR ||
           as_info.mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR)) {
@@ -732,10 +736,9 @@ bool StatelessValidation::ValidateCopyAccelerationStructureInfoKHR(const VkCopyA
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureKHR(VkDevice device,
-                                                                             VkDeferredOperationKHR deferredOperation,
-                                                                             const VkCopyAccelerationStructureInfoKHR *pInfo,
-                                                                             const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                const VkCopyAccelerationStructureInfoKHR *pInfo,
+                                                                const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     skip |= ValidateCopyAccelerationStructureInfoKHR(*pInfo, error_obj.handle, error_obj.location.dot(Field::pInfo));
@@ -746,9 +749,9 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureKHR(VkD
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
-                                                                                const VkCopyAccelerationStructureInfoKHR *pInfo,
-                                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                                   const VkCopyAccelerationStructureInfoKHR *pInfo,
+                                                                   const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -761,8 +764,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureKHR(
     return skip;
 }
 
-bool StatelessValidation::ValidateCopyMemoryToAccelerationStructureInfoKHR(
-    const VkCopyMemoryToAccelerationStructureInfoKHR &as_info, const VulkanTypedHandle &handle, const Location &loc) const {
+bool Device::ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR &as_info,
+                                                              const VulkanTypedHandle &handle, const Location &loc) const {
     bool skip = false;
     if (as_info.mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR) {
         const LogObjectList objlist(handle);
@@ -772,9 +775,9 @@ bool StatelessValidation::ValidateCopyMemoryToAccelerationStructureInfoKHR(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(
-    VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
-    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                                        const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
+                                                                        const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -796,9 +799,9 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructur
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
-    VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
-    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                                           const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
+                                                                           const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -817,9 +820,9 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStruc
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
+bool Device::manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
-    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const stateless::Context &context) const {
+    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -838,9 +841,9 @@ bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPr
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateWriteAccelerationStructuresPropertiesKHR(
+bool Device::manual_PreCallValidateWriteAccelerationStructuresPropertiesKHR(
     VkDevice device, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
-    VkQueryType queryType, size_t dataSize, void *pData, size_t stride, const stateless::Context &context) const {
+    VkQueryType queryType, size_t dataSize, void *pData, size_t stride, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.accelerationStructureHostCommands) {
@@ -917,9 +920,10 @@ bool StatelessValidation::manual_PreCallValidateWriteAccelerationStructuresPrope
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
-    VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void *pData,
-    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline,
+                                                                                   uint32_t firstGroup, uint32_t groupCount,
+                                                                                   size_t dataSize, void *pData,
+                                                                                   const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
@@ -930,9 +934,9 @@ bool StatelessValidation::manual_PreCallValidateGetRayTracingCaptureReplayShader
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(
+bool Device::manual_PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(
     VkDevice device, const VkAccelerationStructureVersionInfoKHR *pVersionInfo,
-    VkAccelerationStructureCompatibilityKHR *pCompatibility, const stateless::Context &context) const {
+    VkAccelerationStructureCompatibilityKHR *pCompatibility, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.accelerationStructure) {
@@ -942,8 +946,8 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCo
     return skip;
 }
 
-bool StatelessValidation::ValidateTotalPrimitivesCount(uint64_t total_triangles_count, uint64_t total_aabbs_count,
-                                                       const VulkanTypedHandle &handle, const Location &loc) const {
+bool Device::ValidateTotalPrimitivesCount(uint64_t total_triangles_count, uint64_t total_aabbs_count,
+                                          const VulkanTypedHandle &handle, const Location &loc) const {
     bool skip = false;
 
     if (total_triangles_count > phys_dev_ext_props.acc_structure_props.maxPrimitiveCount) {
@@ -965,10 +969,9 @@ bool StatelessValidation::ValidateTotalPrimitivesCount(uint64_t total_triangles_
     return skip;
 }
 
-bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(const stateless::Context &context,
-                                                                            const VkAccelerationStructureBuildGeometryInfoKHR &info,
-                                                                            const VulkanTypedHandle &handle,
-                                                                            const Location &info_loc) const {
+bool Device::ValidateAccelerationStructureBuildGeometryInfoKHR(const Context &context,
+                                                               const VkAccelerationStructureBuildGeometryInfoKHR &info,
+                                                               const VulkanTypedHandle &handle, const Location &info_loc) const {
     bool skip = false;
 
     if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR) {
@@ -1136,9 +1139,9 @@ static void ComputeTotalPrimitiveCountWithMaxPrimitivesCount(
     return;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
+bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const stateless::Context &context) const {
+    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1276,10 +1279,10 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
+bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkDeviceAddress *pIndirectDeviceAddresses, const uint32_t *pIndirectStrides, const uint32_t *const *ppMaxPrimitiveCounts,
-    const stateless::Context &context) const {
+    const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1459,10 +1462,10 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
+bool Device::manual_PreCallValidateBuildAccelerationStructuresKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const stateless::Context &context) const {
+    const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1564,10 +1567,9 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSizesKHR(
+bool Device::manual_PreCallValidateGetAccelerationStructureBuildSizesKHR(
     VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR *pBuildInfo,
-    const uint32_t *pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo,
-    const stateless::Context &context) const {
+    const uint32_t *pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1618,9 +1620,9 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
     return skip;
 }
 
-bool StatelessValidation::ValidateTraceRaysRaygenShaderBindingTable(
-    VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR &raygen_shader_binding_table,
-    const Location &table_loc) const {
+bool Device::ValidateTraceRaysRaygenShaderBindingTable(VkCommandBuffer commandBuffer,
+                                                       const VkStridedDeviceAddressRegionKHR &raygen_shader_binding_table,
+                                                       const Location &table_loc) const {
     bool skip = false;
     const bool indirect = table_loc.function == vvl::Func::vkCmdTraceRaysIndirectKHR;
 
@@ -1645,9 +1647,9 @@ bool StatelessValidation::ValidateTraceRaysRaygenShaderBindingTable(
     return skip;
 }
 
-bool StatelessValidation::ValidateTraceRaysMissShaderBindingTable(VkCommandBuffer commandBuffer,
-                                                                  const VkStridedDeviceAddressRegionKHR &miss_shader_binding_table,
-                                                                  const Location &table_loc) const {
+bool Device::ValidateTraceRaysMissShaderBindingTable(VkCommandBuffer commandBuffer,
+                                                     const VkStridedDeviceAddressRegionKHR &miss_shader_binding_table,
+                                                     const Location &table_loc) const {
     bool skip = false;
     const bool indirect = table_loc.function == vvl::Func::vkCmdTraceRaysIndirectKHR;
     auto &props = phys_dev_ext_props.ray_tracing_props_khr;
@@ -1682,9 +1684,9 @@ bool StatelessValidation::ValidateTraceRaysMissShaderBindingTable(VkCommandBuffe
     return skip;
 }
 
-bool StatelessValidation::ValidateTraceRaysHitShaderBindingTable(VkCommandBuffer commandBuffer,
-                                                                 const VkStridedDeviceAddressRegionKHR &hit_shader_binding_table,
-                                                                 const Location &table_loc) const {
+bool Device::ValidateTraceRaysHitShaderBindingTable(VkCommandBuffer commandBuffer,
+                                                    const VkStridedDeviceAddressRegionKHR &hit_shader_binding_table,
+                                                    const Location &table_loc) const {
     bool skip = false;
     const bool indirect = table_loc.function == vvl::Func::vkCmdTraceRaysIndirectKHR;
     auto &props = phys_dev_ext_props.ray_tracing_props_khr;
@@ -1718,9 +1720,9 @@ bool StatelessValidation::ValidateTraceRaysHitShaderBindingTable(VkCommandBuffer
     return skip;
 }
 
-bool StatelessValidation::ValidateTraceRaysCallableShaderBindingTable(
-    VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR &callable_shader_binding_table,
-    const Location &table_loc) const {
+bool Device::ValidateTraceRaysCallableShaderBindingTable(VkCommandBuffer commandBuffer,
+                                                         const VkStridedDeviceAddressRegionKHR &callable_shader_binding_table,
+                                                         const Location &table_loc) const {
     bool skip = false;
     const bool indirect = table_loc.function == vvl::Func::vkCmdTraceRaysIndirectKHR;
     auto &props = phys_dev_ext_props.ray_tracing_props_khr;
@@ -1756,13 +1758,12 @@ bool StatelessValidation::ValidateTraceRaysCallableShaderBindingTable(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                                                const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
-                                                                const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
-                                                                const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-                                                                const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
-                                                                uint32_t width, uint32_t height, uint32_t depth,
-                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                                   const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                   const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                   const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                   const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                   uint32_t width, uint32_t height, uint32_t depth, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (pRaygenShaderBindingTable) {
@@ -1815,11 +1816,12 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer 
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirectKHR(
-    VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
-    const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-    const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress,
-    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                                           const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                           const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                           const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                           const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                           VkDeviceAddress indirectDeviceAddress, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.rayTracingPipelineTraceRaysIndirect) {
@@ -1853,9 +1855,8 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirectKHR(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer,
-                                                                         VkDeviceAddress indirectDeviceAddress,
-                                                                         const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
+                                                            const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
     if (!enabled_features.rayTracingPipelineTraceRaysIndirect2) {
@@ -1871,9 +1872,9 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirect2KHR(VkComma
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT *pCreateInfo,
-                                                                  const VkAllocationCallbacks *pAllocator, VkMicromapEXT *pMicromap,
-                                                                  const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT *pCreateInfo,
+                                                     const VkAllocationCallbacks *pAllocator, VkMicromapEXT *pMicromap,
+                                                     const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1890,9 +1891,8 @@ bool StatelessValidation::manual_PreCallValidateCreateMicromapEXT(VkDevice devic
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateDestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap,
-                                                                   const VkAllocationCallbacks *pAllocator,
-                                                                   const stateless::Context &context) const {
+bool Device::manual_PreCallValidateDestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap,
+                                                      const VkAllocationCallbacks *pAllocator, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1904,9 +1904,8 @@ bool StatelessValidation::manual_PreCallValidateDestroyMicromapEXT(VkDevice devi
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, uint32_t infoCount,
-                                                                     const VkMicromapBuildInfoEXT *pInfos,
-                                                                     const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                        const VkMicromapBuildInfoEXT *pInfos, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1940,9 +1939,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildMicromapsEXT(VkCommandBu
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                                  uint32_t infoCount, const VkMicromapBuildInfoEXT *pInfos,
-                                                                  const stateless::Context &context) const {
+bool Device::manual_PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
+                                                     const VkMicromapBuildInfoEXT *pInfos, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1954,9 +1952,8 @@ bool StatelessValidation::manual_PreCallValidateBuildMicromapsEXT(VkDevice devic
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                                const VkCopyMicromapInfoEXT *pInfo,
-                                                                const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                   const VkCopyMicromapInfoEXT *pInfo, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1975,9 +1972,9 @@ bool StatelessValidation::manual_PreCallValidateCopyMicromapEXT(VkDevice device,
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                                        const VkCopyMicromapToMemoryInfoEXT *pInfo,
-                                                                        const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                           const VkCopyMicromapToMemoryInfoEXT *pInfo,
+                                                           const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -1995,9 +1992,9 @@ bool StatelessValidation::manual_PreCallValidateCopyMicromapToMemoryEXT(VkDevice
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                                        const VkCopyMemoryToMicromapInfoEXT *pInfo,
-                                                                        const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                           const VkCopyMemoryToMicromapInfoEXT *pInfo,
+                                                           const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -2015,10 +2012,10 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToMicromapEXT(VkDevice
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapCount,
-                                                                            const VkMicromapEXT *pMicromaps, VkQueryType queryType,
-                                                                            size_t dataSize, void *pData, size_t stride,
-                                                                            const stateless::Context &context) const {
+bool Device::manual_PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapCount,
+                                                               const VkMicromapEXT *pMicromaps, VkQueryType queryType,
+                                                               size_t dataSize, void *pData, size_t stride,
+                                                               const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -2031,9 +2028,8 @@ bool StatelessValidation::manual_PreCallValidateWriteMicromapsPropertiesEXT(VkDe
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdCopyMicromapEXT(VkCommandBuffer commandBuffer,
-                                                                   const VkCopyMicromapInfoEXT *pInfo,
-                                                                   const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdCopyMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapInfoEXT *pInfo,
+                                                      const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -2047,9 +2043,9 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyMicromapEXT(VkCommandBuff
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuffer,
-                                                                           const VkCopyMicromapToMemoryInfoEXT *pInfo,
-                                                                           const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuffer,
+                                                              const VkCopyMicromapToMemoryInfoEXT *pInfo,
+                                                              const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -2062,9 +2058,9 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyMicromapToMemoryEXT(VkCom
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuffer,
-                                                                           const VkCopyMemoryToMicromapInfoEXT *pInfo,
-                                                                           const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuffer,
+                                                              const VkCopyMemoryToMicromapInfoEXT *pInfo,
+                                                              const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -2077,9 +2073,10 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToMicromapEXT(VkCom
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdWriteMicromapsPropertiesEXT(
-    VkCommandBuffer commandBuffer, uint32_t micromapCount, const VkMicromapEXT *pMicromaps, VkQueryType queryType,
-    VkQueryPool queryPool, uint32_t firstQuery, const stateless::Context &context) const {
+bool Device::manual_PreCallValidateCmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint32_t micromapCount,
+                                                                  const VkMicromapEXT *pMicromaps, VkQueryType queryType,
+                                                                  VkQueryPool queryPool, uint32_t firstQuery,
+                                                                  const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -2092,9 +2089,9 @@ bool StatelessValidation::manual_PreCallValidateCmdWriteMicromapsPropertiesEXT(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetDeviceMicromapCompatibilityEXT(
-    VkDevice device, const VkMicromapVersionInfoEXT *pVersionInfo, VkAccelerationStructureCompatibilityKHR *pCompatibility,
-    const stateless::Context &context) const {
+bool Device::manual_PreCallValidateGetDeviceMicromapCompatibilityEXT(VkDevice device, const VkMicromapVersionInfoEXT *pVersionInfo,
+                                                                     VkAccelerationStructureCompatibilityKHR *pCompatibility,
+                                                                     const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -2106,11 +2103,9 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceMicromapCompatibilityEX
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateGetMicromapBuildSizesEXT(VkDevice device,
-                                                                         VkAccelerationStructureBuildTypeKHR buildType,
-                                                                         const VkMicromapBuildInfoEXT *pBuildInfo,
-                                                                         VkMicromapBuildSizesInfoEXT *pSizeInfo,
-                                                                         const stateless::Context &context) const {
+bool Device::manual_PreCallValidateGetMicromapBuildSizesEXT(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType,
+                                                            const VkMicromapBuildInfoEXT *pBuildInfo,
+                                                            VkMicromapBuildSizesInfoEXT *pSizeInfo, const Context &context) const {
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
@@ -2126,3 +2121,4 @@ bool StatelessValidation::manual_PreCallValidateGetMicromapBuildSizesEXT(VkDevic
 
     return skip;
 }
+}  // namespace stateless
