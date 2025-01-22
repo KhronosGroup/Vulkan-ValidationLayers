@@ -210,7 +210,8 @@ void ApplyBarriers(const std::vector<SyncBufferMemoryBarrier> &barriers, QueueId
 
 void ApplyBarriers(const std::vector<SyncImageMemoryBarrier> &barriers, QueueId queue_id, AccessContext *access_context) {
     for (const SyncImageMemoryBarrier &barrier : barriers) {
-        ApplyBarrierFunctor update_action(PipelineBarrierOp(queue_id, barrier.barrier, barrier.layout_transition));
+        ApplyBarrierFunctor update_action(
+            PipelineBarrierOp(queue_id, barrier.barrier, barrier.layout_transition, barrier.handle_index));
         auto range_gen = barrier.image->MakeImageRangeGen(barrier.subresource_range, false);
         access_context->UpdateMemoryAccessState(update_action, range_gen);
     }
@@ -406,7 +407,7 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
             const Location loc(command_);
             const auto &sync_state = cb_context.GetSyncState();
             const auto error =
-                sync_state.error_messages_.PipelineBarrierError(hazard, cb_context, image_barrier.index, image_state);
+                sync_state.error_messages_.PipelineBarrierError(hazard, cb_context, image_barrier.barrier_index, image_state);
             skip |= sync_state.SyncError(hazard.Hazard(), image_state.Handle(), loc, error);
         }
     }
@@ -418,8 +419,11 @@ ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_co
     for (const auto &buffer_barrier : barrier_set_.buffer_memory_barriers) {
         cb_context->AddCommandHandle(tag, buffer_barrier.buffer->Handle());
     }
-    for (const auto &image_barrier : barrier_set_.image_memory_barriers) {
-        cb_context->AddCommandHandle(tag, image_barrier.image->Handle());
+    for (auto &image_barrier : barrier_set_.image_memory_barriers) {
+        if (image_barrier.layout_transition) {
+            const auto tag_ex = cb_context->AddCommandHandle(tag, image_barrier.image->Handle());
+            image_barrier.handle_index = tag_ex.handle_index;
+        }
     }
     ReplayRecord(*cb_context, tag);
     return tag;
@@ -633,8 +637,8 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                     *image_state, subresource_range, sync_event->scope.exec_scope, src_access_scope, queue_id,
                     sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
                 if (hazard.IsHazard()) {
-                    const auto error =
-                        sync_state.error_messages_.WaitEventsError(hazard, exec_context, image_memory_barrier.index, *image_state);
+                    const auto error = sync_state.error_messages_.WaitEventsError(hazard, exec_context,
+                                                                                  image_memory_barrier.barrier_index, *image_state);
                     skip |= sync_state.SyncError(hazard.Hazard(), image_state->Handle(), loc, error);
                     break;
                 }

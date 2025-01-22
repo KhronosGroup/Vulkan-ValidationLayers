@@ -548,12 +548,14 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
     if (pending_layout_transition) {
         // SetWrite clobbers the last_reads array, and thus we don't have to clear the read_state out.
         const SyncAccessInfo &layout_usage_info = AccessInfo(SYNC_IMAGE_LAYOUT_TRANSITION);
-        SetWrite(layout_usage_info, ResourceUsageTagEx{tag});  // Side effect notes below
-        UpdateFirst(ResourceUsageTagEx{tag}, layout_usage_info, SyncOrdering::kNonAttachment);
+        const ResourceUsageTagEx tag_ex = ResourceUsageTagEx{tag, pending_layout_transition_handle_index};
+        SetWrite(layout_usage_info, tag_ex);  // Side effect notes below
+        UpdateFirst(tag_ex, layout_usage_info, SyncOrdering::kNonAttachment);
         TouchupFirstForLayoutTransition(tag, last_write->GetPendingLayoutOrdering());
 
         last_write->ApplyPendingBarriers();
         pending_layout_transition = false;
+        pending_layout_transition_handle_index = vvl::kNoIndex32;
     } else {
         // Apply the accumulate execution barriers (and thus update chaining information)
         // for layout transition, last_reads is reset by SetWrite, so this will be skipped.

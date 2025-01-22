@@ -128,15 +128,16 @@ struct SyncImageMemoryBarrier {
     SyncBarrier barrier;
     VkImageSubresourceRange subresource_range;
     bool layout_transition;
-    uint32_t index;
+    uint32_t barrier_index;
+    uint32_t handle_index = vvl::kNoIndex32;
 
     SyncImageMemoryBarrier(const std::shared_ptr<const syncval_state::ImageState> &image, const SyncBarrier &barrier,
-                           const VkImageSubresourceRange &subresource_range, bool layout_transition, uint32_t index)
+                           const VkImageSubresourceRange &subresource_range, bool layout_transition, uint32_t barrier_index)
         : image(image),
           barrier(barrier),
           subresource_range(subresource_range),
           layout_transition(layout_transition),
-          index(index) {}
+          barrier_index(barrier_index) {}
 };
 
 struct BarrierSet {
@@ -323,20 +324,30 @@ class SyncOpEndRenderPass : public SyncOpBase {
 struct PipelineBarrierOp {
     SyncBarrier barrier;
     bool layout_transition;
+    uint32_t layout_transition_handle_index;
     ResourceAccessState::QueueScopeOps scope;
-
-    PipelineBarrierOp(QueueId queue_id, const SyncBarrier &barrier_, bool layout_transition_)
-        : barrier(barrier_), layout_transition(layout_transition_), scope(queue_id) {
+    PipelineBarrierOp(QueueId queue_id, const SyncBarrier &barrier_, bool layout_transition_,
+                      uint32_t layout_transition_handle_index = vvl::kNoIndex32)
+        : barrier(barrier_),
+          layout_transition(layout_transition_),
+          layout_transition_handle_index(layout_transition_handle_index),
+          scope(queue_id) {
         if (queue_id != kQueueIdInvalid) {
             // This is a submit time application... supress layout transitions to not taint the QueueBatchContext write state
             layout_transition = false;
+            this->layout_transition_handle_index = vvl::kNoIndex32;
         }
     }
 
     PipelineBarrierOp(const PipelineBarrierOp &rhs)
-        : barrier(rhs.barrier), layout_transition(rhs.layout_transition), scope(rhs.scope) {}
+        : barrier(rhs.barrier),
+          layout_transition(rhs.layout_transition),
+          layout_transition_handle_index(rhs.layout_transition_handle_index),
+          scope(rhs.scope) {}
 
-    void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope, barrier, layout_transition); }
+    void operator()(ResourceAccessState *access_state) const {
+        access_state->ApplyBarrier(scope, barrier, layout_transition, layout_transition_handle_index);
+    }
 };
 
 // Batch barrier ops don't modify in place, and thus don't need to hold pending state, and also are *never* layout transitions.

@@ -359,7 +359,8 @@ class ResourceAccessState : public SyncStageAccess {
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
     void ApplyBarriersImmediate(const std::vector<SyncBarrier> &barriers);
     template <typename ScopeOps>
-    void ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition);
+    void ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition,
+                      uint32_t layout_transition_handle_index = vvl::kNoIndex32);
     void ApplyPendingBarriers(ResourceUsageTag tag);
     void ApplySemaphore(const SemaphoreScope &signal, const SemaphoreScope wait);
 
@@ -510,6 +511,7 @@ class ResourceAccessState : public SyncStageAccess {
     // Not part of the write state, logically.  Can exist when !last_write
     // Pending execution state to support independent parallel barriers
     bool pending_layout_transition;
+    uint32_t pending_layout_transition_handle_index = vvl::kNoIndex32;
 
     FirstAccesses first_accesses_;
     VkPipelineStageFlags2 first_read_stages_;
@@ -527,7 +529,8 @@ using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceA
 // of the batch have been processed. Also, depending on whether layout transition happens, we'll either
 // replace the current write barriers or add to them, so accumulate to pending as well.
 template <typename ScopeOps>
-void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition) {
+void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition,
+                                       uint32_t layout_transition_handle_index) {
     // For independent barriers we need to track what the new barriers and dependency chain *will* be when we're done
     // applying the memory barriers
     // NOTE: We update the write barrier if the write is in the first access scope or if there is a layout
@@ -541,6 +544,7 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
         last_write->UpdatePendingBarriers(barrier);
         last_write->UpdatePendingLayoutOrdering(barrier);
         pending_layout_transition = true;
+        pending_layout_transition_handle_index = layout_transition_handle_index;
     } else {
         if (scope.WriteInScope(barrier, *this)) {
             last_write->UpdatePendingBarriers(barrier);
