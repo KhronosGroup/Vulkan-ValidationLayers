@@ -19,6 +19,7 @@
 
 #include <string.h>
 #include <sys/stat.h>
+#include <vulkan/vk_enum_string_helper.h>
 
 #include "containers/range_vector.h"
 #include "vulkan/vulkan_core.h"
@@ -108,6 +109,12 @@ bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
 
 // Implements the vkspec.html#formats-size-compatibility section of the spec
 bool AreFormatsSizeCompatible(VkFormat a, VkFormat b) {
+    const bool is_a_a8 = a == VK_FORMAT_A8_UNORM;
+    const bool is_b_a8 = b == VK_FORMAT_A8_UNORM;
+    if ((is_a_a8 && !is_b_a8) || (!is_a_a8 && is_b_a8)) {
+        return false;
+    }
+
     const bool is_a_depth_stencil = vkuFormatIsDepthOrStencil(a);
     const bool is_b_depth_stencil = vkuFormatIsDepthOrStencil(b);
     if (is_a_depth_stencil && !is_b_depth_stencil) {
@@ -117,6 +124,36 @@ bool AreFormatsSizeCompatible(VkFormat a, VkFormat b) {
     } else if (is_a_depth_stencil && is_b_depth_stencil) {
         return a == b;
     }
-    // Both non-depth/stencil
+
+    // Color formats are considered compatible if their texel block size in bytes is the same
     return vkuFormatTexelBlockSize(a) == vkuFormatTexelBlockSize(b);
+}
+
+std::string DescribeFormatsSizeCompatible(VkFormat a, VkFormat b) {
+    std::stringstream ss;
+    const bool is_a_a8 = a == VK_FORMAT_A8_UNORM;
+    const bool is_b_a8 = b == VK_FORMAT_A8_UNORM;
+    if ((is_a_a8 && !is_b_a8) || (!is_a_a8 && is_b_a8)) {
+        ss << string_VkFormat(a) << " and " << string_VkFormat(b)
+           << " either both need to be VK_FORMAT_A8_UNORM or neither of them";
+        return ss.str();
+    }
+
+    const bool is_a_depth_stencil = vkuFormatIsDepthOrStencil(a);
+    const bool is_b_depth_stencil = vkuFormatIsDepthOrStencil(b);
+    if (is_a_depth_stencil && is_b_depth_stencil) {
+        ss << string_VkFormat(a) << " and " << string_VkFormat(b)
+           << " are both depth/stencil, therefor they must be the exact same format";
+    } else if (is_a_depth_stencil || is_b_depth_stencil) {
+        if (is_a_depth_stencil && !is_b_depth_stencil) {
+            ss << string_VkFormat(a) << " is a depth/stencil and " << string_VkFormat(b) << " is color";
+        } else if (!is_a_depth_stencil && is_b_depth_stencil) {
+            ss << string_VkFormat(a) << " is a color and " << string_VkFormat(b) << " is depth/stencil";
+        }
+        ss << " (this is only allowed with a certain set of formats during image copy with VK_KHR_maintenance8)";
+    } else {
+        ss << string_VkFormat(a) << " has a texel block size of " << vkuFormatTexelBlockSize(a) << " while " << string_VkFormat(b)
+           << " has a texel block size of " << vkuFormatTexelBlockSize(b);
+    }
+    return ss.str();
 }

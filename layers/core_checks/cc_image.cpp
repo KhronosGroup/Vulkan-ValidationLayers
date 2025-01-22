@@ -20,6 +20,7 @@
  */
 
 #include <string>
+#include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "core_validation.h"
@@ -334,13 +335,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                              format_limits.maxMipLevels, string_VkFormat(pCreateInfo->format));
         }
 
-        uint64_t texel_count = static_cast<uint64_t>(pCreateInfo->extent.width) *
-                               static_cast<uint64_t>(pCreateInfo->extent.height) *
-                               static_cast<uint64_t>(pCreateInfo->extent.depth) * static_cast<uint64_t>(pCreateInfo->arrayLayers) *
-                               static_cast<uint64_t>(pCreateInfo->samples);
-
         // Depth/Stencil formats size can't be accurately calculated
         if (!vkuFormatIsDepthAndStencil(pCreateInfo->format)) {
+            const uint64_t texel_count =
+                static_cast<uint64_t>(pCreateInfo->extent.width) * static_cast<uint64_t>(pCreateInfo->extent.height) *
+                static_cast<uint64_t>(pCreateInfo->extent.depth) * static_cast<uint64_t>(pCreateInfo->arrayLayers) *
+                static_cast<uint64_t>(pCreateInfo->samples);
             uint64_t total_size =
                 static_cast<uint64_t>(std::ceil(vkuFormatTexelSize(pCreateInfo->format) * static_cast<double>(texel_count)));
 
@@ -350,6 +350,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             total_size = (total_size + ig_mask) & ~ig_mask;
 
             if (total_size > format_limits.maxResourceSize) {
+                // This is only a best estimate, it is hard to accurately calculate the size when doing things like mip levels
                 skip |= LogWarning("WARNING-Image-InvalidFormatLimitsViolation", device, error_obj.location,
                                    "resource size exceeds allowable maximum Image resource size = %" PRIu64
                                    ", maximum resource size = %" PRIu64 " for format %s.",
@@ -2336,8 +2337,9 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             if (!AreFormatsSizeCompatible(view_format, image_format)) {
                 skip |= LogError("VUID-VkImageViewCreateInfo-image-01583", pCreateInfo->image, create_info_loc.dot(Field::image),
                                  "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit and "
-                                 "format (%s), but the uncompressed image view format (%s) is not size compatible.",
-                                 string_VkFormat(image_format), string_VkFormat(view_format));
+                                 "format (%s), but the uncompressed image view format (%s) is not size compatible. %s",
+                                 string_VkFormat(image_format), string_VkFormat(view_format),
+                                 DescribeFormatsSizeCompatible(image_format, view_format).c_str());
             }
         } else {
             // both image and view are compressed format, the BLOCK_TEXEL_VIEW_COMPATIBLE is set for no reason here

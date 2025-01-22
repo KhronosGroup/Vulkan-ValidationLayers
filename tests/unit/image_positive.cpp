@@ -592,6 +592,50 @@ TEST_F(PositiveImage, BlockTexelViewCompatibleMultipleLayers) {
     vkt::ImageView view(*m_device, ivci);
 }
 
+TEST_F(PositiveImage, ImageFormatListSizeCompatibleUncompressed) {
+    AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    const VkFormat formats[1] = {VK_FORMAT_R32G32B32A32_UINT};
+    VkImageFormatListCreateInfo format_list = vku::InitStructHelper(nullptr);
+    format_list.viewFormatCount = 1;
+    format_list.pViewFormats = formats;
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.pNext = &format_list;
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
+
+    vkt::Image image(*m_device, image_ci);
+}
+
+TEST_F(PositiveImage, ImageFormatListSizeCompatibleCompressed) {
+    AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    const VkFormat formats[2] = {VK_FORMAT_BC3_UNORM_BLOCK, VK_FORMAT_BC2_UNORM_BLOCK};
+    VkImageFormatListCreateInfo format_list = vku::InitStructHelper(nullptr);
+    format_list.viewFormatCount = 2;
+    format_list.pViewFormats = formats;
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_ci.pNext = &format_list;
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
+
+    vkt::Image image(*m_device, image_ci);
+}
+
 TEST_F(PositiveImage, ImageAlignmentControl) {
     AddRequiredExtensions(VK_MESA_IMAGE_ALIGNMENT_CONTROL_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::imageAlignmentControl);

@@ -359,6 +359,7 @@ static inline uint32_t GetTexelBufferFormatSize(VkFormat format) {
 }
 
 bool AreFormatsSizeCompatible(VkFormat a, VkFormat b);
+std::string DescribeFormatsSizeCompatible(VkFormat a, VkFormat b);
 
 static const VkShaderStageFlags kShaderStageAllGraphics =
     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
