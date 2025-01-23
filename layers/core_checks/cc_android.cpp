@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -419,9 +419,9 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
     return skip;
 }
 
-bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                        const VkImageFormatProperties2 *pImageFormatProperties,
-                                                                        const ErrorObject &error_obj) const {
+bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
+    const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo, const VkImageFormatProperties2 *pImageFormatProperties,
+    const ErrorObject &error_obj) const {
     bool skip = false;
     const auto *ahb_usage = vku::FindStructInPNextChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
     if (ahb_usage) {
@@ -612,9 +612,9 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
     return false;
 }
 
-bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                        const VkImageFormatProperties2 *pImageFormatProperties,
-                                                                        const ErrorObject &error_obj) const {
+bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
+    const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo, const VkImageFormatProperties2 *pImageFormatProperties,
+    const ErrorObject &error_obj) const {
     return false;
 }
 
