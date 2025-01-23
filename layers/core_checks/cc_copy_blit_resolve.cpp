@@ -1673,16 +1673,28 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             const VkFormat dst_plane_format =
                 is_dst_multiplane ? vkuFindMultiplaneCompatibleFormat(dst_format, static_cast<VkImageAspectFlagBits>(dst_aspect))
                                   : dst_format;
-            const size_t src_format_size = vkuFormatTexelBlockSize(src_plane_format);
-            const size_t dst_format_size = vkuFormatTexelBlockSize(dst_plane_format);
+            const uint32_t src_format_size = vkuFormatTexelBlockSize(src_plane_format);
+            const uint32_t dst_format_size = vkuFormatTexelBlockSize(dst_plane_format);
 
             // If size is still zero, then format is invalid and will be caught in another VU
             if ((src_format_size != dst_format_size) && (src_format_size != 0) && (dst_format_size != 0)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-None-01549" : "VUID-vkCmdCopyImage-None-01549";
-                skip |= LogError(vuid, all_objlist, region_loc,
-                                 "srcImage format %s with aspectMask %s is not compatible with dstImage format %s aspectMask %s.",
-                                 string_VkFormat(src_format), string_VkImageAspectFlags(src_aspect).c_str(),
-                                 string_VkFormat(dst_format), string_VkImageAspectFlags(dst_aspect).c_str());
+                std::stringstream ss;
+                ss << "srcImage format " << string_VkFormat(src_plane_format);
+                if (is_src_multiplane) {
+                    ss << " (which is the compatible format for plane "
+                       << vkuGetPlaneIndex(static_cast<VkImageAspectFlagBits>(src_aspect)) << " of " << string_VkFormat(src_format)
+                       << ")";
+                }
+                ss << " has texel block size of " << src_format_size << " which is different than the dstImage format "
+                   << string_VkFormat(dst_plane_format);
+                if (is_dst_multiplane) {
+                    ss << " (which is the compatible format for plane "
+                       << vkuGetPlaneIndex(static_cast<VkImageAspectFlagBits>(dst_aspect)) << " of " << string_VkFormat(dst_format)
+                       << ")";
+                }
+                ss << " which has texel block size of " << dst_format_size;
+                skip |= LogError(vuid, all_objlist, region_loc, "%s", ss.str().c_str());
             }
         }
 
