@@ -569,12 +569,12 @@ void Validator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer,
 
     std::vector<VkBufferImageCopy2> regions_2(regionCount);
     for (const auto [i, region] : vvl::enumerate(pRegions, regionCount)) {
-        regions_2[i].bufferOffset = region->bufferOffset;
-        regions_2[i].bufferRowLength = region->bufferRowLength;
-        regions_2[i].bufferImageHeight = region->bufferImageHeight;
-        regions_2[i].imageSubresource = region->imageSubresource;
-        regions_2[i].imageOffset = region->imageOffset;
-        regions_2[i].imageExtent = region->imageExtent;
+        regions_2[i].bufferOffset = region.bufferOffset;
+        regions_2[i].bufferRowLength = region.bufferRowLength;
+        regions_2[i].bufferImageHeight = region.bufferImageHeight;
+        regions_2[i].imageSubresource = region.imageSubresource;
+        regions_2[i].imageOffset = region.imageOffset;
+        regions_2[i].imageExtent = region.imageExtent;
     }
 
     VkCopyBufferToImageInfo2 copy_buffer_to_image_info = vku::InitStructHelper();

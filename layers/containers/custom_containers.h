@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017, 2019-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019-2024 Valve Corporation
- * Copyright (c) 2015-2017, 2019-2024 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2025 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -864,8 +864,8 @@ class IndexedIterator {
   public:
     IndexedIterator(T *data, IndexType index = 0) : index_(index), data_(data) {}
 
-    IndexedIterator<T, IndexType> &operator*() { return *this; }
-    const IndexedIterator<T, IndexType> &operator*() const { return *this; }
+    std::pair<IndexType, T &> operator*() { return std::pair<IndexType, T &>(index_, *data_); }
+    std::pair<IndexType, T> operator*() const { return std::make_pair(index_, *data_); }
 
     // prefix increment
     IndexedIterator<T, IndexType> &operator++() {
@@ -910,20 +910,26 @@ span<T> make_span(T *begin, T *end) {
 }
 
 template <typename T, typename IndexType>
-enumeration<T, IndexedIterator<T, IndexType>> enumerate(T *begin, IndexType count) {
+auto enumerate(T *begin, IndexType count) {
     return enumeration<T, IndexedIterator<T, IndexType>>(begin, count);
 }
 template <typename T>
-enumeration<T, IndexedIterator<T>> enumerate(T *begin, T *end) {
+auto enumerate(T *begin, T *end) {
     return enumeration<T, IndexedIterator<T>>(begin, end);
 }
 
 template <typename Container>
-enumeration<typename Container::value_type, IndexedIterator<typename Container::value_type, typename Container::size_type>>
-enumerate(Container &container) {
+auto enumerate(Container &container) {
     return enumeration<typename Container::value_type,
                        IndexedIterator<typename Container::value_type, typename Container::size_type>>(container.data(),
                                                                                                        container.size());
+}
+
+template <typename Container>
+auto enumerate(const Container &container) {
+    return enumeration<std::add_const_t<typename Container::value_type>,
+                       IndexedIterator<std::add_const_t<typename Container::value_type>, typename Container::size_type>>(
+        container.data(), container.size());
 }
 
 template <typename BaseType>

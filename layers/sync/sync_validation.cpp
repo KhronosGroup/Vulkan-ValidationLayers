@@ -1997,7 +1997,7 @@ bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
         Location attachment_loc = error_obj.location.dot(Field::pAttachments, attachment_index);
         for (const auto [rect_index, rect] : vvl::enumerate(pRects, rectCount)) {
             Location rect_loc = attachment_loc.dot(Field::pRects, rect_index);
-            skip |= cb_state->access_context.ValidateClearAttachment(rect_loc, *attachment, *rect);
+            skip |= cb_state->access_context.ValidateClearAttachment(rect_loc, attachment, rect);
         }
     }
     return skip;

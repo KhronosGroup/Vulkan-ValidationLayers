@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017, 2019-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019-2024 Valve Corporation
- * Copyright (c) 2015-2017, 2019-2024 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2025 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,25 +38,25 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
         if (input_state->vertexBindingDescriptionCount) {
             for (const auto [i, bd] :
                  vvl::enumerate(input_state->pVertexBindingDescriptions, input_state->vertexBindingDescriptionCount)) {
-                bindings.emplace(bd->binding, VertexBindingState(i, bd));
+                bindings.emplace(bd.binding, VertexBindingState(i, &bd));
             }
             const auto *divisor_info = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(input_state->pNext);
             if (divisor_info) {
                 for (const auto [i, di] :
                      vvl::enumerate(divisor_info->pVertexBindingDivisors, divisor_info->vertexBindingDivisorCount)) {
-                    if (auto *binding_state = vvl::Find(bindings, di->binding)) {
-                        binding_state->desc.divisor = di->divisor;
+                    if (auto *binding_state = vvl::Find(bindings, di.binding)) {
+                        binding_state->desc.divisor = di.divisor;
                     }
                 }
             }
         }
         for (const auto [i, ad] :
              vvl::enumerate(input_state->pVertexAttributeDescriptions, input_state->vertexAttributeDescriptionCount)) {
-            auto *binding_state = vvl::Find(bindings, ad->binding);
+            auto *binding_state = vvl::Find(bindings, ad.binding);
             if (!binding_state) {
                 continue;
             }
-            binding_state->locations.emplace(ad->location, VertexAttrState(i, ad));
+            binding_state->locations.emplace(ad.location, VertexAttrState(i, &ad));
         }
     }
 }
