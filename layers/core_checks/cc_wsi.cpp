@@ -477,7 +477,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         vvl::span<const vku::safe_VkSurfaceFormat2KHR> formats{};
         if (surface_state) {
             formats = surface_state->GetFormats(IsExtEnabled(extensions.vk_khr_get_surface_capabilities2),
-                                                physical_device_state->VkHandle(), surface_info_pnext, create_info_loc, this);
+                                                physical_device_state->VkHandle(), surface_info_pnext);
         } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
             formats = physical_device_state->surfaceless_query_state.formats;
         }
@@ -513,7 +513,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
 
     std::vector<VkPresentModeKHR> present_modes{};
     if (surface_state) {
-        present_modes = surface_state->GetPresentModes(physical_device, create_info_loc, this);
+        present_modes = surface_state->GetPresentModes(physical_device);
     } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
         present_modes = physical_device_state->surfaceless_query_state.present_modes;
     }
@@ -706,7 +706,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
 bool CoreChecks::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
                                                    const ErrorObject &error_obj) const {
-    auto surface_state = Get<vvl::Surface>(pCreateInfo->surface);
+    auto surface_state = instance_state->Get<vvl::Surface>(pCreateInfo->surface);
     auto old_swapchain_state = Get<vvl::Swapchain>(pCreateInfo->oldSwapchain);
     return ValidateCreateSwapchain(*pCreateInfo, surface_state.get(), old_swapchain_state.get(),
                                    error_obj.location.dot(Field::pCreateInfo));
@@ -861,7 +861,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
 
         // All physical devices and queue families are required to be able to present to any native window on Android
         if (!IsExtEnabled(extensions.vk_khr_android_surface)) {
-            auto surface_state = Get<vvl::Surface>(swapchain_data->create_info.surface);
+            auto surface_state = instance_state->Get<vvl::Surface>(swapchain_data->create_info.surface);
             if (surface_state && !surface_state->GetQueueSupport(physical_device, queue_state->queue_family_index)) {
                 skip |= LogError("VUID-vkQueuePresentKHR-pSwapchains-01292", pPresentInfo->pSwapchains[i], swapchain_loc,
                                  "image on queue that cannot present to this surface.");
@@ -1079,7 +1079,7 @@ bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint3
     bool skip = false;
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
-            auto surface_state = Get<vvl::Surface>(pCreateInfos[i].surface);
+            auto surface_state = instance_state->Get<vvl::Surface>(pCreateInfos[i].surface);
             auto old_swapchain_state = Get<vvl::Swapchain>(pCreateInfos[i].oldSwapchain);
             skip |= ValidateCreateSwapchain(pCreateInfos[i], surface_state.get(), old_swapchain_state.get(),
                                             error_obj.location.dot(Field::pCreateInfos, i));
@@ -1146,7 +1146,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
         const VkSwapchainPresentModesCreateInfoEXT *present_modes_ci =
             vku::FindStructInPNextChain<VkSwapchainPresentModesCreateInfoEXT>(swapchain_data->create_info.pNext);
         if (present_modes_ci) {
-            auto surface_state = Get<vvl::Surface>(swapchain_data->create_info.surface);
+            auto surface_state = instance_state->Get<vvl::Surface>(swapchain_data->create_info.surface);
             ASSERT_AND_RETURN_SKIP(surface_state);
             // If a SwapchainPresentModesCreateInfo struct was included, min_image_count becomes the max of the
             // minImageCount values returned via VkSurfaceCapabilitiesKHR for each of the present modes in
@@ -1214,8 +1214,8 @@ bool CoreChecks::PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKH
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
-                                                  const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
+                                                      const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
     bool skip = false;
     auto surface_state = Get<vvl::Surface>(surface);
     if (surface_state && surface_state->swapchain) {
@@ -1226,10 +1226,10 @@ bool CoreChecks::PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurface
 }
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-bool CoreChecks::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
-                                                                               uint32_t queueFamilyIndex,
-                                                                               struct wl_display *display,
-                                                                               const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                                   uint32_t queueFamilyIndex,
+                                                                                   struct wl_display *display,
+                                                                                   const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceWaylandPresentationSupportKHR-queueFamilyIndex-01306",
@@ -1238,9 +1238,9 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(V
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-bool CoreChecks::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
-                                                                             uint32_t queueFamilyIndex,
-                                                                             const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                                 uint32_t queueFamilyIndex,
+                                                                                 const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceWin32PresentationSupportKHR-queueFamilyIndex-01309",
@@ -1249,10 +1249,11 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkP
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-bool CoreChecks::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
-                                                                           uint32_t queueFamilyIndex, xcb_connection_t *connection,
-                                                                           xcb_visualid_t visual_id,
-                                                                           const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                               uint32_t queueFamilyIndex,
+                                                                               xcb_connection_t *connection,
+                                                                               xcb_visualid_t visual_id,
+                                                                               const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceXcbPresentationSupportKHR-queueFamilyIndex-01312",
@@ -1261,9 +1262,10 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhy
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-bool CoreChecks::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
-                                                                            uint32_t queueFamilyIndex, Display *dpy,
-                                                                            VisualID visualID, const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                                uint32_t queueFamilyIndex, Display *dpy,
+                                                                                VisualID visualID,
+                                                                                const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceXlibPresentationSupportKHR-queueFamilyIndex-01315",
@@ -1272,10 +1274,10 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPh
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
-bool CoreChecks::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
-                                                                              uint32_t queueFamilyIndex,
-                                                                              struct _screen_window *window,
-                                                                              const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
+                                                                                  uint32_t queueFamilyIndex,
+                                                                                  struct _screen_window *window,
+                                                                                  const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex,
                                     "VUID-vkGetPhysicalDeviceScreenPresentationSupportQNX-queueFamilyIndex-04743",
@@ -1283,45 +1285,47 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(Vk
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                                   VkSurfaceKHR surface, VkBool32 *pSupported,
-                                                                   const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                                       VkSurfaceKHR surface, VkBool32 *pSupported,
+                                                                       const ErrorObject &error_obj) const {
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     return ValidateQueueFamilyIndex(*pd_state, queueFamilyIndex, "VUID-vkGetPhysicalDeviceSurfaceSupportKHR-queueFamilyIndex-01269",
                                     error_obj.location.dot(Field::queueFamilyIndex));
 }
 
-bool CoreChecks::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                    uint32_t *pDisplayCount, VkDisplayKHR *pDisplays,
+bool core::Instance::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                                        uint32_t *pDisplayCount, VkDisplayKHR *pDisplays,
+                                                                        const ErrorObject &error_obj) const {
+    bool skip = false;
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex,
+                                                                    error_obj.location.dot(Field::planeIndex));
+    return skip;
+}
+
+bool core::Instance::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
+                                                                   uint32_t planeIndex,
+                                                                   VkDisplayPlaneCapabilitiesKHR *pCapabilities,
+                                                                   const ErrorObject &error_obj) const {
+    bool skip = false;
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex,
+                                                                    error_obj.location.dot(Field::planeIndex));
+    return skip;
+}
+
+bool core::Instance::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                    const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
+                                                                    VkDisplayPlaneCapabilities2KHR *pCapabilities,
                                                                     const ErrorObject &error_obj) const {
-    bool skip = false;
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex,
-                                                                    error_obj.location.dot(Field::planeIndex));
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
-                                                               uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR *pCapabilities,
-                                                               const ErrorObject &error_obj) const {
-    bool skip = false;
-    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, planeIndex,
-                                                                    error_obj.location.dot(Field::planeIndex));
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                                const VkDisplayPlaneInfo2KHR *pDisplayPlaneInfo,
-                                                                VkDisplayPlaneCapabilities2KHR *pCapabilities,
-                                                                const ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(
         physicalDevice, pDisplayPlaneInfo->planeIndex, error_obj.location.dot(Field::pDisplayPlaneInfo).dot(Field::planeIndex));
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                             const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance,
+                                                                 const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
+                                                                 const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     const VkDisplayModeKHR display_mode = pCreateInfo->displayMode;
     const uint32_t plane_index = pCreateInfo->planeIndex;
@@ -1442,8 +1446,8 @@ bool CoreChecks::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice devic
 }
 #endif
 
-bool CoreChecks::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const char *vuid,
-                                                      const Location &loc) const {
+bool core::Instance::ValidatePhysicalDeviceSurfaceSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, const char *vuid,
+                                                          const Location &loc) const {
     bool skip = false;
 
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
@@ -1472,26 +1476,27 @@ bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice d
                                                                       const ErrorObject &error_obj) const {
     bool skip = false;
 
+    const auto *core_instance = reinterpret_cast<core::Instance *>(instance_state);
     if (physical_device_count == 1) {
-        skip |= ValidatePhysicalDeviceSurfaceSupport(physical_device, pSurfaceInfo->surface,
-                                                     "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213",
-                                                     error_obj.location);
+        skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
+            physical_device, pSurfaceInfo->surface, "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213",
+            error_obj.location);
     } else {
         for (uint32_t i = 0; i < physical_device_count; ++i) {
-            skip |= ValidatePhysicalDeviceSurfaceSupport(device_group_create_info.pPhysicalDevices[i], pSurfaceInfo->surface,
-                                                         "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213",
-                                                         error_obj.location);
+            skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
+                device_group_create_info.pPhysicalDevices[i], pSurfaceInfo->surface,
+                "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213", error_obj.location);
         }
     }
 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
-                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                         uint32_t *pPresentModeCount,
-                                                                         VkPresentModeKHR *pPresentModes,
-                                                                         const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
+                                                                             const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                             uint32_t *pPresentModeCount,
+                                                                             VkPresentModeKHR *pPresentModes,
+                                                                             const ErrorObject &error_obj) const {
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
@@ -1507,24 +1512,24 @@ bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice de
                                                                      VkDeviceGroupPresentModeFlagsKHR *pModes,
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
-
+    const auto *core_instance = reinterpret_cast<core::Instance *>(instance_state);
     if (physical_device_count == 1) {
-        skip |= ValidatePhysicalDeviceSurfaceSupport(
+        skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
             physical_device, surface, "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212", error_obj.location);
     } else {
         for (uint32_t i = 0; i < physical_device_count; ++i) {
-            skip |= ValidatePhysicalDeviceSurfaceSupport(device_group_create_info.pPhysicalDevices[i], surface,
-                                                         "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212",
-                                                         error_obj.location);
+            skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(device_group_create_info.pPhysicalDevices[i], surface,
+                                                                        "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212",
+                                                                        error_obj.location);
         }
     }
 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                      uint32_t *pRectCount, VkRect2D *pRects,
-                                                                      const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                          uint32_t *pRectCount, VkRect2D *pRects,
+                                                                          const ErrorObject &error_obj) const {
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface,
@@ -1533,9 +1538,9 @@ bool CoreChecks::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(VkPhysical
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                         VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
-                                                                         const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                             VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
+                                                                             const ErrorObject &error_obj) const {
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(
@@ -1544,10 +1549,10 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysi
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                                         const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                         VkSurfaceCapabilities2KHR *pSurfaceCapabilities,
-                                                                         const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                             const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                             VkSurfaceCapabilities2KHR *pSurfaceCapabilities,
+                                                                             const ErrorObject &error_obj) const {
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, pSurfaceInfo->surface,
@@ -1562,11 +1567,11 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
         if (surface_present_mode) {
             VkPresentModeKHR present_mode = surface_present_mode->presentMode;
             std::vector<VkPresentModeKHR> present_modes{};
-            present_modes = surface_state->GetPresentModes(physicalDevice, error_obj.location, this);
+            present_modes = surface_state->GetPresentModes(physicalDevice);
             bool found_match = std::find(present_modes.begin(), present_modes.end(), present_mode) != present_modes.end();
             if (!found_match) {
                 skip |=
-                    LogError("VUID-VkSurfacePresentModeEXT-presentMode-07780", device, error_obj.location,
+                    LogError("VUID-VkSurfacePresentModeEXT-presentMode-07780", physicalDevice, error_obj.location,
                              "is called with VK_EXT_surface_maintenance1 enabled and "
                              "a VkSurfacePresentModeEXT structure included in "
                              "the pNext chain of VkPhysicalDeviceSurfaceInfo2KHR, but the specified presentMode (%s) is not among "
@@ -1597,9 +1602,9 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysi
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                        VkSurfaceCapabilitiesKHR *pSurfaceCapabilities,
-                                                                        const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                            VkSurfaceCapabilitiesKHR *pSurfaceCapabilities,
+                                                                            const ErrorObject &error_obj) const {
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(
@@ -1608,11 +1613,11 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysic
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
-                                                                    const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                    uint32_t *pSurfaceFormatCount,
-                                                                    VkSurfaceFormat2KHR *pSurfaceFormats,
-                                                                    const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                                        const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                        uint32_t *pSurfaceFormatCount,
+                                                                        VkSurfaceFormat2KHR *pSurfaceFormats,
+                                                                        const ErrorObject &error_obj) const {
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(
@@ -1621,10 +1626,10 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDe
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                   uint32_t *pSurfaceFormatCount,
-                                                                   VkSurfaceFormatKHR *pSurfaceFormats,
-                                                                   const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                       uint32_t *pSurfaceFormatCount,
+                                                                       VkSurfaceFormatKHR *pSurfaceFormats,
+                                                                       const ErrorObject &error_obj) const {
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(physicalDevice, surface, "VUID-vkGetPhysicalDeviceSurfaceFormatsKHR-surface-06525",
@@ -1633,10 +1638,10 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDev
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                        uint32_t *pPresentModeCount,
-                                                                        VkPresentModeKHR *pPresentModes,
-                                                                        const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                            uint32_t *pPresentModeCount,
+                                                                            VkPresentModeKHR *pPresentModes,
+                                                                            const ErrorObject &error_obj) const {
     bool skip = false;
 
     skip |= ValidatePhysicalDeviceSurfaceSupport(
@@ -1645,8 +1650,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysic
     return skip;
 }
 
-bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                         const Location &loc) const {
+bool core::Instance::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                                             const Location &loc) const {
     bool skip = false;
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     if (pd_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called) {

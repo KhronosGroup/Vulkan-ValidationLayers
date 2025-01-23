@@ -99,8 +99,8 @@ bool CoreChecks::GetPhysicalDeviceImageFormatProperties(vvl::Image &image_state,
         image_format_info.usage = image_create_info.usage;
         image_format_info.flags = image_create_info.flags;
         VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
-        image_properties_result =
-            DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info, &image_format_properties);
+        image_properties_result = instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(
+            physical_device, &image_format_info, &image_format_properties);
         image_state.image_format_properties = image_format_properties.imageFormatProperties;
     }
     if (image_properties_result != VK_SUCCESS) {
@@ -160,8 +160,8 @@ bool CoreChecks::ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer &cb_sta
     return skip;
 }
 
-bool CoreChecks::ValidateQueueFamilyIndex(const vvl::PhysicalDevice &pd_state, uint32_t requested_queue_family, const char *vuid,
-                                          const Location &loc) const {
+bool core::Instance::ValidateQueueFamilyIndex(const vvl::PhysicalDevice &pd_state, uint32_t requested_queue_family,
+                                              const char *vuid, const Location &loc) const {
     bool skip = false;
 
     if (requested_queue_family >= pd_state.queue_family_known_count) {
@@ -177,8 +177,8 @@ bool CoreChecks::ValidateQueueFamilyIndex(const vvl::PhysicalDevice &pd_state, u
     return skip;
 }
 
-bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_state, uint32_t info_count,
-                                                const VkDeviceQueueCreateInfo *infos, const Location &loc) const {
+bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_state, uint32_t info_count,
+                                                    const VkDeviceQueueCreateInfo *infos, const Location &loc) const {
     bool skip = false;
 
     const uint32_t not_used = std::numeric_limits<uint32_t>::max();
@@ -320,15 +320,15 @@ bool CoreChecks::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &pd_st
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                             const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
+                                                 const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
+                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     // TODO: object_tracker should perhaps do this instead
     //       and it does not seem to currently work anyway -- the loader just crashes before this point
     auto pd_state = Get<vvl::PhysicalDevice>(gpu);
     if (!pd_state) {
-        skip |= LogError("VUID-vkCreateDevice-physicalDevice-parameter", device, error_obj.location,
+        skip |= LogError("VUID-vkCreateDevice-physicalDevice-parameter", instance, error_obj.location,
                          "Have not called vkEnumeratePhysicalDevices() yet.");
         return skip;
     }
@@ -497,14 +497,15 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
     return skip;
 }
 
-bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                 VkImageFormatProperties2 *pImageFormatProperties,
-                                                                 const ErrorObject &error_obj) const {
+bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice gpu,
+                                                                     const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+                                                                     VkImageFormatProperties2 *pImageFormatProperties,
+                                                                     const ErrorObject &error_obj) const {
     bool skip = false;
     const auto *copy_perf_query = vku::FindStructInPNextChain<VkHostImageCopyDevicePerformanceQuery>(pImageFormatProperties->pNext);
     if (copy_perf_query) {
         if ((pImageFormatInfo->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT) == 0) {
-            skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-09004", physical_device, error_obj.location,
+            skip |= LogError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-09004", gpu, error_obj.location,
                              "pImageFormatProperties includes a chained "
                              "VkHostImageCopyDevicePerformanceQuery struct, but pImageFormatInfo->usage (%s) does not contain "
                              "VK_IMAGE_USAGE_HOST_TRANSFER_BIT",
@@ -514,21 +515,19 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2(const VkPhysica
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
-                                                                        const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                        VkImageFormatProperties2 *pImageFormatProperties,
-                                                                        const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+    VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
     bool skip = false;
     skip |= ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(pImageFormatInfo, pImageFormatProperties, error_obj);
-    skip |= ValidateGetPhysicalDeviceImageFormatProperties2(pImageFormatInfo, pImageFormatProperties, error_obj);
+    skip |= ValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties, error_obj);
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                           const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-                                                                           VkImageFormatProperties2 *pImageFormatProperties,
-                                                                           const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+    VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
     return PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                                   error_obj);
 }
@@ -539,7 +538,7 @@ VkFormatProperties3KHR CoreChecks::GetPDFormatProperties(const VkFormat format) 
     VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
 
     if (has_format_feature2) {
-        DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, format, &fmt_props_2);
+        instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, format, &fmt_props_2);
         fmt_props_3.linearTilingFeatures |= fmt_props_2.formatProperties.linearTilingFeatures;
         fmt_props_3.optimalTilingFeatures |= fmt_props_2.formatProperties.optimalTilingFeatures;
         fmt_props_3.bufferFeatures |= fmt_props_2.formatProperties.bufferFeatures;

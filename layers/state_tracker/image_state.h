@@ -392,8 +392,6 @@ struct hash<GpuQueue> {
 };
 }  // namespace std
 
-class ValidationObject;
-
 namespace vvl {
 
 // Parent -> child relationships in the object usage tree:
@@ -418,13 +416,11 @@ class Surface : public StateObject {
     bool GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const;
 
     void SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const VkPresentModeKHR> modes);
-    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev, const Location &loc,
-                                                  const ValidationObject *validation_obj) const;
+    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev) const;
 
     void SetFormats(VkPhysicalDevice phys_dev, std::vector<vku::safe_VkSurfaceFormat2KHR> &&fmts);
     vvl::span<const vku::safe_VkSurfaceFormat2KHR> GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                              const void *surface_info2_pnext, const Location &loc,
-                                                              const ValidationObject *validation_obj) const;
+                                                              const void *surface_info2_pnext) const;
 
     // Cache capabilities that do not depend on the present mode
     void UpdateCapabilitiesCache(VkPhysicalDevice phys_dev, const VkSurfaceCapabilitiesKHR &surface_caps);

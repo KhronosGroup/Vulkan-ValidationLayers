@@ -268,8 +268,8 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
     switch (pCreateInfo->queryType) {
         case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR: {
             if (auto perf_ci = vku::FindStructInPNextChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext)) {
-
-                skip |= ValidateQueueFamilyIndex(
+                auto *core_instance = static_cast<core::Instance *>(instance_state);
+                skip |= core_instance->ValidateQueueFamilyIndex(
                     *physical_device_state, perf_ci->queueFamilyIndex,
                     "VUID-VkQueryPoolPerformanceCreateInfoKHR-queueFamilyIndex-03236",
                     create_info_loc.pNext(Struct::VkQueryPoolPerformanceCreateInfoKHR, Field::queueFamilyIndex));
@@ -291,7 +291,8 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
         }
         case VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR: {
             if (auto video_profile = vku::FindStructInPNextChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext)) {
-                skip |= ValidateVideoProfileInfo(video_profile, device, create_info_loc.pNext(Struct::VkVideoProfileInfoKHR));
+                skip |= core::ValidateVideoProfileInfo(*this, video_profile, error_obj,
+                                                       create_info_loc.pNext(Struct::VkVideoProfileInfoKHR));
             }
             break;
         }
@@ -314,7 +315,8 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
 
             bool video_profile_valid = false;
             if (video_profile) {
-                if (ValidateVideoProfileInfo(video_profile, device, create_info_loc.pNext(Struct::VkVideoProfileInfoKHR))) {
+                if (core::ValidateVideoProfileInfo(*this, video_profile, error_obj,
+                                                   create_info_loc.pNext(Struct::VkVideoProfileInfoKHR))) {
                     skip = true;
                 } else {
                     video_profile_valid = true;
