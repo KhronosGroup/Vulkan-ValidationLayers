@@ -114,41 +114,29 @@ class SyncEventsContext {
 };
 
 struct SyncBufferMemoryBarrier {
-    using Buffer = std::shared_ptr<const vvl::Buffer>;
-    Buffer buffer;
+    std::shared_ptr<const vvl::Buffer> buffer;
     SyncBarrier barrier;
     ResourceAccessRange range;
-    bool IsLayoutTransition() const { return false; }
-    const ResourceAccessRange &Range() const { return range; };
-    const vvl::Buffer *GetState() const { return buffer.get(); }
-    SyncBufferMemoryBarrier(const Buffer &buffer_, const SyncBarrier &barrier_, const ResourceAccessRange &range_)
-        : buffer(buffer_), barrier(barrier_), range(range_) {}
-    SyncBufferMemoryBarrier() = default;
+
+    SyncBufferMemoryBarrier(const std::shared_ptr<const vvl::Buffer> &buffer, const SyncBarrier &barrier,
+                            const ResourceAccessRange &range)
+        : buffer(buffer), barrier(barrier), range(range) {}
 };
 
 struct SyncImageMemoryBarrier {
-    using ImageState = syncval_state::ImageState;
-    using Image = std::shared_ptr<const ImageState>;
-
-    Image image;
-    uint32_t index;
+    std::shared_ptr<const syncval_state::ImageState> image;
     SyncBarrier barrier;
-    VkImageLayout old_layout;
-    VkImageLayout new_layout;
-    VkImageSubresourceRange range;
+    VkImageSubresourceRange subresource_range;
+    bool layout_transition;
+    uint32_t index;
 
-    bool IsLayoutTransition() const { return old_layout != new_layout; }
-    const VkImageSubresourceRange &Range() const { return range; };
-    const ImageState *GetState() const { return image.get(); }
-    SyncImageMemoryBarrier(const Image &image_, uint32_t index_, const SyncBarrier &barrier_, VkImageLayout old_layout_,
-                           VkImageLayout new_layout_, const VkImageSubresourceRange &subresource_range_)
-        : image(image_),
-          index(index_),
-          barrier(barrier_),
-          old_layout(old_layout_),
-          new_layout(new_layout_),
-          range(subresource_range_) {}
-    SyncImageMemoryBarrier() = default;
+    SyncImageMemoryBarrier(const std::shared_ptr<const syncval_state::ImageState> &image, const SyncBarrier &barrier,
+                           const VkImageSubresourceRange &subresource_range, bool layout_transition, uint32_t index)
+        : image(image),
+          barrier(barrier),
+          subresource_range(subresource_range),
+          layout_transition(layout_transition),
+          index(index) {}
 };
 
 class SyncOpBase {
@@ -190,20 +178,17 @@ class SyncOpBarriers : public SyncOpBase {
         std::vector<SyncBufferMemoryBarrier> buffer_memory_barriers;
         std::vector<SyncImageMemoryBarrier> image_memory_barriers;
         bool single_exec_scope;
-        void MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScope &dst, VkDependencyFlags dependencyFlags,
-                                uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers);
+        void MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScope &dst, uint32_t memoryBarrierCount,
+                                const VkMemoryBarrier *pMemoryBarriers);
         void MakeBufferMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
-                                      VkDependencyFlags dependencyFlags, uint32_t bufferMemoryBarrierCount,
-                                      const VkBufferMemoryBarrier *pBufferMemoryBarriers);
+                                      uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers);
         void MakeImageMemoryBarriers(const SyncValidator &sync_state, const SyncExecScope &src, const SyncExecScope &dst,
-                                     VkDependencyFlags dependencyFlags, uint32_t imageMemoryBarrierCount,
-                                     const VkImageMemoryBarrier *pImageMemoryBarriers);
-        void MakeMemoryBarriers(VkQueueFlags queue_flags, VkDependencyFlags dependency_flags, uint32_t barrier_count,
-                                const VkMemoryBarrier2 *barriers);
-        void MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkDependencyFlags dependency_flags,
-                                      uint32_t barrier_count, const VkBufferMemoryBarrier2 *barriers);
-        void MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, VkDependencyFlags dependency_flags,
-                                     uint32_t barrier_count, const VkImageMemoryBarrier2 *barriers);
+                                     uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers);
+        void MakeMemoryBarriers(VkQueueFlags queue_flags, uint32_t barrier_count, const VkMemoryBarrier2 *barriers);
+        void MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
+                                      const VkBufferMemoryBarrier2 *barriers);
+        void MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueueFlags queue_flags, uint32_t barrier_count,
+                                     const VkImageMemoryBarrier2 *barriers);
     };
     std::vector<BarrierSet> barriers_;
 };
