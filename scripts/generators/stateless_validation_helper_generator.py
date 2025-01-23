@@ -439,6 +439,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         # reference: https://www.asawicki.info/news_1617_how_code_refactoring_can_fix_stack_overflow_error
         extended_structs = [x for x in self.vk.structs.values() if x.extends]
         feature_structs = [x for x in extended_structs if x.extends == ["VkPhysicalDeviceFeatures2", "VkDeviceCreateInfo"]]
+        # NOTE: property structs are no longer checked. Previously we only checked if the corresponding extension was supported
+        # by the physical device. Implementations are supposed to ignore unknown pNext values and it is low consequence to query
+        # for unknown properties. https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/9302
         property_structs = [x for x in extended_structs if x.extends == ["VkPhysicalDeviceProperties2"]]
         other_structs = [x for x in extended_structs if x not in feature_structs and x not in property_structs and x.name not in self.structsWithManualChecks]
 
@@ -451,27 +454,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             ''')
         guard_helper = PlatformGuardHelper()
         for struct in feature_structs:
-            out.extend(guard_helper.add_guard(struct.protect))
-            out.extend(self.genStructBody(struct, False, ''))
-        out.extend(guard_helper.add_guard(None))
-        out.append('''
-                    default:
-                        skip = false;
-                }
-                return skip;
-            }
-
-            ''')
-
-        out.append('''
-            bool Context::ValidatePnextPropertyStructContents(const Location& loc,
-                                                              const VkBaseOutStructure* header, const char *pnext_vuid,
-                                                              bool is_const_param) const {
-                bool skip = false;
-                switch(header->sType) {
-            ''')
-        guard_helper = PlatformGuardHelper()
-        for struct in property_structs:
             out.extend(guard_helper.add_guard(struct.protect))
             out.extend(self.genStructBody(struct, False, ''))
         out.extend(guard_helper.add_guard(None))
