@@ -446,6 +446,185 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     m_default_queue->Wait();
 }
 
+// Being worked on if this is valid or not
+// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4159
+TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DImage) {
+    TEST_DESCRIPTION("Copy a 1D image with compressed format");
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    image_ci.format = VK_FORMAT_R16G16B16A16_UNORM;
+    image_ci.extent = {256u, 1u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
+
+    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+    src_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy image_copy;
+    image_copy.srcSubresource = {1u, 0u, 0u, 1u};
+    image_copy.srcOffset = {0, 0, 0};
+    image_copy.dstSubresource = {1u, 0u, 0u, 1u};
+    image_copy.dstOffset = {0, 0, 0};
+    image_copy.extent = {16u, 1u, 1u};
+
+    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+    m_command_buffer.End();
+}
+
+// Being worked on if this is valid or not
+// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4159
+TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DToCompressed2D) {
+    TEST_DESCRIPTION("Copy a 1D compressed format to a 2D compressed format");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    image_ci.extent = {256u, 1u, 1u};
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
+
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.extent = {32u, 32u, 1u};
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+    src_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy image_copy;
+    image_copy.srcSubresource = {1u, 0u, 0u, 1u};
+    image_copy.srcOffset = {0, 0, 0};
+    image_copy.dstSubresource = {1u, 0u, 0u, 1u};
+    image_copy.dstOffset = {0, 0, 0};
+    image_copy.extent = {32u, 4u, 1u};
+
+    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+    m_command_buffer.End();
+}
+
+// Being worked on if this is valid or not
+// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4159
+TEST_F(PositiveCopyBufferImage, DISABLED_CopyBufferTo1DCompressedImage) {
+    TEST_DESCRIPTION("Copy a buffer to 1D image with compressed format");
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_ci.extent = {64u, 1u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+
+    VkBufferImageCopy buffer_image_copy;
+    buffer_image_copy.bufferOffset = 0u;
+    buffer_image_copy.bufferRowLength = 64u;
+    buffer_image_copy.bufferImageHeight = 4u;
+    buffer_image_copy.imageSubresource = {1u, 0u, 0u, 1u};
+    buffer_image_copy.imageOffset = {0, 0, 0};
+    buffer_image_copy.imageExtent = {64u, 4u, 1u};
+
+    m_command_buffer.Begin();
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u,
+                             &buffer_image_copy);
+    m_command_buffer.End();
+}
+
+// Being worked on if this is valid or not
+// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4159
+TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress2DTo1D) {
+    TEST_DESCRIPTION("Copy a compressed 2D image to a compressed 1D image");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = 0u;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_ci.extent = {64u, 64u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
+
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    image_ci.extent = {1024u, 1u, 1u};
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+    src_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy image_copy;
+    image_copy.srcSubresource = {1u, 0u, 0u, 1u};
+    image_copy.srcOffset = {0, 0, 0};
+    image_copy.dstSubresource = {1u, 0u, 0u, 1u};
+    image_copy.dstOffset = {0, 0, 0};
+    image_copy.extent = {64u, 4u, 1u};
+
+    vk::CmdCopyImage(m_command_buffer.handle(), src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveCopyBufferImage, BufferCopiesStressTest) {
     TEST_DESCRIPTION("Do many buffer copies, make sure perf is good");
 
