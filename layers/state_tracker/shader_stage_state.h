@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,8 @@ inline bool operator<(const DescriptorRequirement &a, const DescriptorRequiremen
 // < binding index (of descriptor set) : meta data >
 typedef std::unordered_multimap<uint32_t, DescriptorRequirement> BindingVariableMap;
 
-// Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
+// Capture which slots (set#->bindings) are actually used by the shaders of this pipeline/shaderObject.
+// This is same as "statically used" in vkspec.html#shaders-staticuse
 using ActiveSlotMap = vvl::unordered_map<uint32_t, BindingVariableMap>;
 
 void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spirv::EntryPoint> &entrypoint);
