@@ -192,7 +192,8 @@ target_sources(vvl PRIVATE
     external/vma/vma.h
     external/vma/vma.cpp
     ${API_TYPE}/generated/best_practices.cpp
-    ${API_TYPE}/generated/best_practices.h
+    ${API_TYPE}/generated/best_practices_device_methods.h
+    ${API_TYPE}/generated/best_practices_instance_methods.h
     ${API_TYPE}/generated/chassis.cpp
     ${API_TYPE}/generated/valid_enum_values.cpp
     ${API_TYPE}/generated/valid_enum_values.h

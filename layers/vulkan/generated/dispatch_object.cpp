@@ -57,7 +57,7 @@ void Instance::InitValidationObjects() {
         object_dispatch.emplace_back(new core::Instance(this));
     }
     if (settings.enabled[best_practices]) {
-        object_dispatch.emplace_back(new BestPractices(this));
+        object_dispatch.emplace_back(new bp_state::Instance(this));
     }
     if (settings.enabled[gpu_validation] || settings.enabled[debug_printf_validation]) {
         object_dispatch.emplace_back(new gpuav::Instance(this));
@@ -88,7 +88,7 @@ void Device::InitValidationObjects() {
     }
     if (settings.enabled[best_practices]) {
         object_dispatch.emplace_back(new BestPractices(
-            this, static_cast<BestPractices*>(dispatch_instance->GetValidationObject(LayerObjectTypeBestPractices))));
+            this, static_cast<bp_state::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeBestPractices))));
     }
     if (settings.enabled[gpu_validation] || settings.enabled[debug_printf_validation]) {
         object_dispatch.emplace_back(new gpuav::Validator(

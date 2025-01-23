@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -184,6 +184,140 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkImage, bp_state::Image, vvl::Image)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorPool, bp_state::DescriptorPool, vvl::DescriptorPool)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkPipeline, bp_state::Pipeline, vvl::Pipeline)
 
+namespace bp_state {
+template <typename StateObject, typename Handle>
+void LogResult(const StateObject& state, Handle handle, const RecordObject& record_obj) {
+    if (record_obj.result == VK_SUCCESS) {
+        return;
+    }
+    // Despite being error codes log these results as informational.
+    // That is because they are returned frequently during window resizing.
+    // They are expected to occur during the normal application lifecycle.
+    constexpr std::array common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
+    const auto result_string = string_VkResult(record_obj.result);
+
+    if (record_obj.result > VK_SUCCESS) {
+        state.LogVerbose("BestPractices-Verbose-Success-Logging", handle, record_obj.location, "Returned %s.", result_string);
+    } else if (IsValueIn(record_obj.result, common_failure_codes)) {
+        state.LogInfo("BestPractices-Failure-Result", handle, record_obj.location, "Returned error %s.", result_string);
+    } else {
+        state.LogWarning("BestPractices-Error-Result", handle, record_obj.location, "Returned error %s.", result_string);
+    }
+}
+
+const char* VendorSpecificTag(BPVendorFlags vendors);
+
+bool VendorCheckEnabled(const CHECK_ENABLED& enabled, BPVendorFlags vendors);
+
+class Instance : public ValidationStateTracker {
+    using BaseClass = ValidationStateTracker;
+
+  public:
+    using Func = vvl::Func;
+    using Struct = vvl::Struct;
+    using Field = vvl::Field;
+
+    Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeBestPractices) {}
+    std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle) final;
+
+    bool VendorCheckEnabled(BPVendorFlags vendors) const { return bp_state::VendorCheckEnabled(enabled, vendors); }
+
+    bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                       VkInstance* pInstance, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
+                                     const ErrorObject& error_obj) const override;
+    bool ValidateDeprecatedExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const;
+
+    bool ValidateSpecialUseExtensions(const Location& loc, vvl::Extension extension) const;
+
+    bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, const Location& loc) const;
+    bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                            uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
+                                                            const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
+                                                       VkDisplayPlaneCapabilitiesKHR* pCapabilities,
+                                                       const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                        const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
+                                                        VkDisplayPlaneCapabilities2KHR* pCapabilities,
+                                                        const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                               VkQueueFamilyProperties* pQueueFamilyProperties,
+                                                               const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                uint32_t* pQueueFamilyPropertyCount,
+                                                                VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                   uint32_t* pQueueFamilyPropertyCount,
+                                                                   VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                   const ErrorObject& error_obj) const override;
+    bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                           uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
+                                                           const ErrorObject& error_obj) const override;
+    bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const vvl::PhysicalDevice& pd_state,
+                                                              uint32_t requested_queue_family_property_count,
+                                                              const CALL_STATE call_state, const Location& loc) const;
+    void CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(CALL_STATE& call_state, bool no_pointer);
+    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                              VkQueueFamilyProperties* pQueueFamilyProperties,
+                                                              const RecordObject& record_obj) override;
+
+    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                               VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                               const RecordObject& record_obj) override;
+
+    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                  uint32_t* pQueueFamilyPropertyCount,
+                                                                  VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                  const RecordObject& record_obj) override;
+
+    void PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures,
+                                                 const RecordObject& record_obj) override;
+
+    void PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures,
+                                                  const RecordObject& record_obj) override;
+
+    void PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures,
+                                                     const RecordObject& record_obj) override;
+
+    void ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                     VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
+                                                                     const RecordObject& record_obj);
+
+    void ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                      const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                      VkSurfaceCapabilities2KHR* pSurfaceCapabilities,
+                                                                      const RecordObject& record_obj);
+
+    void ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                      VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
+                                                                      const RecordObject& record_obj);
+
+    void ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                     uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
+                                                                     const RecordObject& record_obj);
+
+    void ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
+                                                                const RecordObject& record_obj);
+
+    void ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                                 const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                 uint32_t* pSurfaceFormatCount,
+                                                                 VkSurfaceFormat2KHR* pSurfaceFormats,
+                                                                 const RecordObject& record_obj);
+
+    void ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                        VkDisplayPlanePropertiesKHR* pProperties,
+                                                                        const RecordObject& record_obj);
+
+// Include code-generated functions
+#include "generated/best_practices_instance_methods.h"
+};
+}  // namespace bp_state
+
 class BestPractices : public ValidationStateTracker {
     using BaseClass = ValidationStateTracker;
   public:
@@ -191,17 +325,13 @@ class BestPractices : public ValidationStateTracker {
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
-    BestPractices(vvl::dispatch::Device* dev, BestPractices* instance_vo)
+    BestPractices(vvl::dispatch::Device* dev, bp_state::Instance* instance_vo)
         : BaseClass(dev, instance_vo, LayerObjectTypeBestPractices) {}
-    BestPractices(vvl::dispatch::Instance* inst) : BaseClass(inst, LayerObjectTypeBestPractices) {}
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
     std::string GetAPIVersionName(uint32_t version) const;
-
-    void LogPositiveSuccessCode(const RecordObject& record_obj) const;
-    void LogErrorCode(const RecordObject& record_obj) const;
 
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Location& loc) const;
 
@@ -211,15 +341,6 @@ class BestPractices : public ValidationStateTracker {
 
     void RecordCmdDrawType(bp_state::CommandBuffer& cb_state, uint32_t draw_count);
 
-    bool ValidateDeprecatedExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const;
-
-    bool ValidateSpecialUseExtensions(const Location& loc, vvl::Extension extension) const;
-
-    bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                       VkInstance* pInstance, const ErrorObject& error_obj) const override;
-    bool PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
-                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
                                      const ErrorObject& error_obj) const override;
@@ -567,34 +688,6 @@ class BestPractices : public ValidationStateTracker {
     void PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                            const RecordObject& record_obj) override;
     bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
-    bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, const Location& loc) const;
-    bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                            uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
-                                                            const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
-                                                       VkDisplayPlaneCapabilitiesKHR* pCapabilities,
-                                                       const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                        const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
-                                                        VkDisplayPlaneCapabilities2KHR* pCapabilities,
-                                                        const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-                                                               VkQueueFamilyProperties* pQueueFamilyProperties,
-                                                               const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                uint32_t* pQueueFamilyPropertyCount,
-                                                                VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                   uint32_t* pQueueFamilyPropertyCount,
-                                                                   VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                   const ErrorObject& error_obj) const override;
-    bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                           uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
-                                                           const ErrorObject& error_obj) const override;
-    bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const vvl::PhysicalDevice& pd_state,
-                                                              uint32_t requested_queue_family_property_count,
-                                                              const CALL_STATE call_state, const Location& loc) const;
     bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                           const ErrorObject& error_obj) const override;
@@ -676,60 +769,6 @@ class BestPractices : public ValidationStateTracker {
 
     bool PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                             VkFence fence, uint32_t* pImageIndex, const ErrorObject& error_obj) const override;
-
-    void CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(CALL_STATE& call_state, bool no_pointer);
-    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-                                                              VkQueueFamilyProperties* pQueueFamilyProperties,
-                                                              const RecordObject& record_obj) override;
-
-    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-                                                               VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                               const RecordObject& record_obj) override;
-
-    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                  uint32_t* pQueueFamilyPropertyCount,
-                                                                  VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                  const RecordObject& record_obj) override;
-
-    void PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures,
-                                                 const RecordObject& record_obj) override;
-
-    void PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures,
-                                                  const RecordObject& record_obj) override;
-
-    void PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures,
-                                                     const RecordObject& record_obj) override;
-
-    void ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                     VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
-                                                                     const RecordObject& record_obj);
-
-    void ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                                      const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                                      VkSurfaceCapabilities2KHR* pSurfaceCapabilities,
-                                                                      const RecordObject& record_obj);
-
-    void ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                      VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
-                                                                      const RecordObject& record_obj);
-
-    void ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                     uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
-                                                                     const RecordObject& record_obj);
-
-    void ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
-                                                                const RecordObject& record_obj);
-
-    void ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
-                                                                 const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                                 uint32_t* pSurfaceFormatCount,
-                                                                 VkSurfaceFormat2KHR* pSurfaceFormats,
-                                                                 const RecordObject& record_obj);
-
-    void ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
-                                                                        VkDisplayPlanePropertiesKHR* pProperties,
-                                                                        const RecordObject& record_obj);
 
     void ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                                    VkImage* pSwapchainImages, const RecordObject& record_obj);
@@ -834,15 +873,13 @@ class BestPractices : public ValidationStateTracker {
                                                           const ErrorObject& error_obj) const override;
 
 // Include code-generated functions
-#include "generated/best_practices.h"
+#include "generated/best_practices_device_methods.h"
   protected:
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
                                                              const VkCommandBufferAllocateInfo* allocate_info,
                                                              const vvl::CommandPool* pool) final;
 
     std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info, VkSwapchainKHR handle) final;
-
-    std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle) final;
 
     std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
                                                  VkFormatFeatureFlags2 features) final;
@@ -886,8 +923,8 @@ class BestPractices : public ValidationStateTracker {
     };
 
     // Check that vendor-specific checks are enabled for at least one of the vendors
-    bool VendorCheckEnabled(BPVendorFlags vendors) const;
-    const char* VendorSpecificTag(BPVendorFlags vendors) const;
+    bool VendorCheckEnabled(BPVendorFlags vendors) const { return bp_state::VendorCheckEnabled(enabled, vendors); }
+    const char* VendorSpecificTag(BPVendorFlags vendors) const { return bp_state::VendorSpecificTag(vendors); }
 
     void RecordCmdDrawTypeArm(bp_state::CommandBuffer& cb_state, uint32_t draw_count);
     void RecordCmdDrawTypeNVIDIA(bp_state::CommandBuffer& cb_state);
