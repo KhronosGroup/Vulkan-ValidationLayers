@@ -45,3 +45,14 @@ TEST_F(PositiveDeviceFeatureProperty, VertexAttributeDivisor) {
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &second_device);
     vk::DestroyDevice(second_device, nullptr);
 }
+
+TEST_F(PositiveDeviceFeatureProperty, PropertyWithoutExtension) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(InitFramework());
+
+    // query several properties which are unlikely to all be supported by the same physical device
+    VkPhysicalDeviceDrmPropertiesEXT drm_props = vku::InitStructHelper();
+    VkPhysicalDeviceLayeredDriverPropertiesMSFT layered_props = vku::InitStructHelper(&drm_props);
+
+    GetPhysicalDeviceProperties2(layered_props);
+}

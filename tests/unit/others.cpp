@@ -242,24 +242,6 @@ TEST_F(VkLayerTest, SpecLinksExplicit) {
 }
 #endif  // ANNOTATED_SPEC_LINK
 
-TEST_F(VkLayerTest, DeviceIDPropertiesUnsupported) {
-    TEST_DESCRIPTION("VkPhysicalDeviceIDProperties cannot be used without extensions in 1.0");
-
-    SetTargetApiVersion(VK_API_VERSION_1_0);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
-        GTEST_SKIP() << "Test's for 1.0 only";
-    }
-
-    VkPhysicalDeviceIDProperties id_props = vku::InitStructHelper();
-    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&id_props);
-    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceProperties2-pNext-pNext");
-    vk::GetPhysicalDeviceProperties2KHR(Gpu(), &props2);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
     TEST_DESCRIPTION(
         "Validate that using VkPipelineTessellationDomainOriginStateCreateInfo in VkPipelineTessellationStateCreateInfo.pNext "
@@ -1204,20 +1186,6 @@ TEST_F(VkLayerTest, ExtensionXmlDependsLogic3) {
     m_errorMonitor->SetDesiredError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
     VkDevice device;
     vk::CreateDevice(gpu_, &dev_info, nullptr, &device);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, MissingExtensionPhysicalDeviceProperties) {
-    TEST_DESCRIPTION("Don't enable instance extension needed");
-
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-
-    // requires VK_KHR_external_fence_capabilities
-    VkPhysicalDeviceIDPropertiesKHR id_properties = vku::InitStructHelper();
-    VkPhysicalDeviceProperties2 properties2 = vku::InitStructHelper(&id_properties);
-    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceProperties2-pNext-pNext");
-    vk::GetPhysicalDeviceProperties2KHR(Gpu(), &properties2);
     m_errorMonitor->VerifyFound();
 }
 
