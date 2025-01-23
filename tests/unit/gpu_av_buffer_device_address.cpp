@@ -1131,13 +1131,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
 
     // Make sure shader wrote values to all nodes but the last
     for (auto [buffer_i, buffer] : vvl::enumerate(storage_buffers.data(), nodes_count - 1)) {
-        auto storage_buffer_ptr = static_cast<float *>(buffer->Memory().Map());
+        auto storage_buffer_ptr = static_cast<float *>(buffer.Memory().Map());
 
         ASSERT_EQ(storage_buffer_ptr[0], float(3 * buffer_i + 1));
         ASSERT_EQ(storage_buffer_ptr[1], float(3 * buffer_i + 2));
         ASSERT_EQ(storage_buffer_ptr[2], float(3 * buffer_i + 3));
 
-        buffer->Memory().Unmap();
+        buffer.Memory().Unmap();
     }
 }
 

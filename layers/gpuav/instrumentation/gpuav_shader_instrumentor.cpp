@@ -835,7 +835,7 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const VkShaderCreateInf
                                                          InstrumentationDescriptorSetLayouts &out_instrumentation_dsl) {
     out_instrumentation_dsl.set_index_to_bindings_layout_lut.resize(create_info.setLayoutCount);
     for (const auto [set_layout_index, set_layout] : vvl::enumerate(create_info.pSetLayouts, create_info.setLayoutCount)) {
-        if (auto set_layout_state = Get<vvl::DescriptorSetLayout>(*set_layout)) {
+        if (auto set_layout_state = Get<vvl::DescriptorSetLayout>(set_layout)) {
             BuildDescriptorSetLayoutInfo(*set_layout_state, set_layout_index, out_instrumentation_dsl);
         }
     }

@@ -293,7 +293,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
             desc_writes[i].dstBinding = static_cast<uint32_t>(i);
             desc_writes[i].descriptorCount = 1;
             desc_writes[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            desc_writes[i].pBufferInfo = desc_buffer_info;
+            desc_writes[i].pBufferInfo = &desc_buffer_info;
             desc_writes[i].dstSet = validation_desc_set;
         }
         DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);

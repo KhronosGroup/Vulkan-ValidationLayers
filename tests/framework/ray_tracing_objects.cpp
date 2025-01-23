@@ -646,8 +646,8 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
 
     pGeometries.reserve(geometries_.size());
     for (const auto [i, geometry] : vvl::enumerate(geometries_)) {
-        pGeometries[i] = &geometry->GetVkObj();
-        ranges_info[i] = geometry->GetFullBuildRange();
+        pGeometries[i] = &geometry.GetVkObj();
+        ranges_info[i] = geometry.GetFullBuildRange();
     }
     if (use_null_geometries_) {
         vk_info_.pGeometries = nullptr;
@@ -714,11 +714,11 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
     }
 
     for (const auto &[geometry_i, geometry] : vvl::enumerate(geometries_)) {
-        primitives_count[geometry_i] = geometry->GetFullBuildRange().primitiveCount;
+        primitives_count[geometry_i] = geometry.GetFullBuildRange().primitiveCount;
         if (use_ppGeometries) {
-            pGeometries.emplace_back(&geometry->GetVkObj());
+            pGeometries.emplace_back(&geometry.GetVkObj());
         } else {
-            geometries.emplace_back(geometry->GetVkObj());
+            geometries.emplace_back(geometry.GetVkObj());
         }
     }
     vk_info_.geometryCount = static_cast<uint32_t>(geometries_.size());
@@ -746,7 +746,7 @@ VkAccelerationStructureBuildSizesInfoKHR BuildGeometryInfoKHR::GetSizeInfo(bool 
 std::vector<VkAccelerationStructureBuildRangeInfoKHR> BuildGeometryInfoKHR::GetBuildRangeInfosFromGeometries() {
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> range_infos(geometries_.size());
     for (const auto [i, geometry] : vvl::enumerate(geometries_)) {
-        range_infos[i] = geometry->GetFullBuildRange();
+        range_infos[i] = geometry.GetFullBuildRange();
     }
 
     return range_infos;

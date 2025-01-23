@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -74,17 +74,16 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
         if (push_constant_ranges->empty()) {
             ss << "Empty\n";
         } else {
-            for (const auto &[pcr_i, pcr] : vvl::enumerate(push_constant_ranges->data(), push_constant_ranges->size())) {
-                ss << "VkPushConstantRange[ " << pcr_i << " ]: " << string_VkPushConstantRange(*pcr) << '\n';
+            for (const auto [pcr_i, pcr] : vvl::enumerate(push_constant_ranges->data(), push_constant_ranges->size())) {
+                ss << "VkPushConstantRange[ " << pcr_i << " ]: " << string_VkPushConstantRange(pcr) << '\n';
             }
         }
         ss << "But pipeline layout of last bound pipeline or last bound shaders has following push constant ranges:\n";
         if (push_constant_ranges->empty()) {
             ss << "Empty\n";
         } else {
-            for (const auto &[pcr_i, pcr] :
-                 vvl::enumerate(other.push_constant_ranges->data(), other.push_constant_ranges->size())) {
-                ss << "VkPushConstantRange[ " << pcr_i << " ]: " << string_VkPushConstantRange(*pcr) << '\n';
+            for (const auto [pcr_i, pcr] : vvl::enumerate(other.push_constant_ranges->data(), other.push_constant_ranges->size())) {
+                ss << "VkPushConstantRange[ " << pcr_i << " ]: " << string_VkPushConstantRange(pcr) << '\n';
             }
         }
     } else {

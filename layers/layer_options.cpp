@@ -482,19 +482,19 @@ static bool ValidateLayerSettingsCreateInfo(const VkLayerSettingsCreateInfoEXT *
     if (layer_settings->pSettings) {
         for (const auto [i, setting] : vvl::enumerate(layer_settings->pSettings, layer_settings->settingCount)) {
             const Location setting_loc = create_info_loc.dot(vvl::Field::pSettings, i);
-            if (setting->valueCount > 0 && !setting->pValues) {
+            if (setting.valueCount > 0 && !setting.pValues) {
                 ss << "[ VUID-VkLayerSettingEXT-valueCount-10070 ] " << setting_loc.dot(vvl::Field::pValues).Message()
                    << " is NULL";
                 printf("Validation Layer Error: %s\n", ss.str().c_str());
                 valid = false;
             }
-            if (!setting->pLayerName) {
+            if (!setting.pLayerName) {
                 ss << "[ VUID-VkLayerSettingEXT-pLayerName-parameter ] " << setting_loc.dot(vvl::Field::pLayerName).Message()
                    << " is NULL";
                 printf("Validation Layer Error: %s\n", ss.str().c_str());
                 valid = false;
             }
-            if (!setting->pSettingName) {
+            if (!setting.pSettingName) {
                 ss << "[ VUID-VkLayerSettingEXT-pSettingName-parameter ] " << setting_loc.dot(vvl::Field::pSettingName).Message()
                    << " is NULL";
                 printf("Validation Layer Error: %s\n", ss.str().c_str());

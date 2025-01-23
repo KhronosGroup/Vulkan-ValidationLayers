@@ -3042,12 +3042,12 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
             !pipeline.IsColorBlendStateDynamic()) {
             for (const auto [i, format] :
                  vvl::enumerate(rendering_struct->pColorAttachmentFormats, rendering_struct->colorAttachmentCount)) {
-                if (*format != VK_FORMAT_UNDEFINED) {
+                if (format != VK_FORMAT_UNDEFINED) {
                     skip |= LogError(
                         "VUID-VkGraphicsPipelineCreateInfo-renderPass-09037", device, create_info_loc.dot(Field::pColorBlendState),
                         "is NULL, but %s is %" PRIu32 " and pColorAttachmentFormats[%" PRIu32 "] is %s.",
                         create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::colorAttachmentCount).Fields().c_str(),
-                        rendering_struct->colorAttachmentCount, i, string_VkFormat(*format));
+                        rendering_struct->colorAttachmentCount, i, string_VkFormat(format));
                 }
             }
         }

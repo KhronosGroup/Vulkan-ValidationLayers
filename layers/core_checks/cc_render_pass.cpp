@@ -1177,11 +1177,11 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
     if (enabled_features.externalFormatResolve && !android_external_format_resolve_null_color_attachment_prop) {
         for (const auto [i, subpass] : vvl::enumerate(render_pass_create_info->pSubpasses, render_pass_create_info->subpassCount)) {
-            if (!subpass->pResolveAttachments || !subpass->pColorAttachments) {
+            if (!subpass.pResolveAttachments || !subpass.pColorAttachments) {
                 continue;
             }
-            const uint32_t resolve_attachment = subpass->pResolveAttachments[0].attachment;
-            const uint32_t color_attachment = subpass->pColorAttachments[0].attachment;
+            const uint32_t resolve_attachment = subpass.pResolveAttachments[0].attachment;
+            const uint32_t color_attachment = subpass.pColorAttachments[0].attachment;
             if (resolve_attachment == VK_ATTACHMENT_UNUSED || color_attachment == VK_ATTACHMENT_UNUSED) {
                 continue;
             }
@@ -4274,14 +4274,14 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                             framebuffer_attachments_create_info->attachmentImageInfoCount)) {
             const Location attachment_image_info_loc =
                 create_info_loc.pNext(Struct::VkFramebufferAttachmentsCreateInfo, Field::pAttachmentImageInfos, i);
-            if (attachment_image_info->pNext != nullptr) {
+            if (attachment_image_info.pNext != nullptr) {
                 skip |= LogError("VUID-VkFramebufferAttachmentImageInfo-pNext-pNext", device,
                                  attachment_image_info_loc.dot(Field::pNext), "is not NULL.");
             }
             for (const auto [j, view_format] :
-                 vvl::enumerate(attachment_image_info->pViewFormats, attachment_image_info->viewFormatCount)) {
+                 vvl::enumerate(attachment_image_info.pViewFormats, attachment_image_info.viewFormatCount)) {
                 // VK_ANDROID_external_format_resolve can have a valid undefined format
-                if (*view_format == VK_FORMAT_UNDEFINED && rp_state->create_info.pAttachments[i].format != VK_FORMAT_UNDEFINED) {
+                if (view_format == VK_FORMAT_UNDEFINED && rp_state->create_info.pAttachments[i].format != VK_FORMAT_UNDEFINED) {
                     skip |= LogError("VUID-VkFramebufferAttachmentImageInfo-viewFormatCount-09536", device,
                                      attachment_image_info_loc.dot(Field::pViewFormats, j), "is VK_FORMAT_UNDEFINED.");
                 }

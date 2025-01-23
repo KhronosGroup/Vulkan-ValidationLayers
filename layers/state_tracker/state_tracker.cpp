@@ -2712,9 +2712,9 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresKHR(
 
     cb_state->RecordCmd(record_obj.location.function);
     for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
-        RecordDeviceAccelerationStructureBuildInfo(*cb_state, *info);
-        if (auto dst_as_state = Get<vvl::AccelerationStructureKHR>(info->dstAccelerationStructure)) {
-            dst_as_state->UpdateBuildRangeInfos(ppBuildRangeInfos[i], info->geometryCount);
+        RecordDeviceAccelerationStructureBuildInfo(*cb_state, info);
+        if (auto dst_as_state = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure)) {
+            dst_as_state->UpdateBuildRangeInfos(ppBuildRangeInfos[i], info.geometryCount);
         }
     }
     cb_state->has_build_as_cmd = true;
@@ -5585,14 +5585,14 @@ void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
     vertex_bindings.clear();
 
     for (const auto [i, bd] : vvl::enumerate(pVertexBindingDescriptions, vertexBindingDescriptionCount)) {
-        vertex_bindings.insert_or_assign(bd->binding, VertexBindingState(i, bd));
+        vertex_bindings.insert_or_assign(bd.binding, VertexBindingState(i, &bd));
 
-        cb_state->current_vertex_buffer_binding_info[bd->binding].stride = bd->stride;
+        cb_state->current_vertex_buffer_binding_info[bd.binding].stride = bd.stride;
     }
 
     for (const auto [i, ad] : vvl::enumerate(pVertexAttributeDescriptions, vertexAttributeDescriptionCount)) {
-        if (auto *binding_state = vvl::Find(vertex_bindings, ad->binding)) {
-            binding_state->locations.insert_or_assign(ad->location, VertexAttrState(i, ad));
+        if (auto *binding_state = vvl::Find(vertex_bindings, ad.binding)) {
+            binding_state->locations.insert_or_assign(ad.location, VertexAttrState(i, &ad));
         }
     }
 }
