@@ -207,8 +207,6 @@ class Context {
 
     bool ValidatePnextFeatureStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
                                             bool is_const_param = true) const;
-    bool ValidatePnextPropertyStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
-                                             bool is_const_param = true) const;
     bool ValidatePnextStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
                                      bool is_const_param = true) const;
 
@@ -341,8 +339,6 @@ class Instance : public ValidationObject {
 
     bool ValidatePnextFeatureStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
                                             VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
-    bool ValidatePnextPropertyStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
-                                             VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
     bool ValidatePnextStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
                                      VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
 

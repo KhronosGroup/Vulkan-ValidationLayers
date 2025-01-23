@@ -248,11 +248,9 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
                         }
                         // Send Location without pNext field so the pNext() connector can be used
                         skip |= ValidatePnextStructContents(loc, current, pnext_vuid, is_const_param);
-                        if (loc.function == Func::vkGetPhysicalDeviceProperties2 ||
-                                loc.function == Func::vkGetPhysicalDeviceProperties2KHR) {
-                            skip |= ValidatePnextPropertyStructContents(loc, current, pnext_vuid, is_const_param);
-                        } else if (loc.function == Func::vkGetPhysicalDeviceFeatures2 ||
-                                loc.function == Func::vkGetPhysicalDeviceFeatures2KHR || loc.function == Func::vkCreateDevice) {
+                        // pNext contents for vkGetPhysicalDeviceProperties2KHR() is no longer checked.
+                        if (loc.function == Func::vkGetPhysicalDeviceFeatures2 ||
+                            loc.function == Func::vkGetPhysicalDeviceFeatures2KHR || loc.function == Func::vkCreateDevice) {
                             skip |= ValidatePnextFeatureStructContents(loc, current, pnext_vuid, is_const_param);
                         }
                     }
