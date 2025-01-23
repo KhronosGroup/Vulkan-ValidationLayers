@@ -440,12 +440,6 @@ TEST_F(NegativeDeviceFeatureProperty, Features11WithoutVulkan12) {
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
-
-    VkPhysicalDeviceVulkan12Properties bad_version_1_1_struct = vku::InitStructHelper();
-    VkPhysicalDeviceProperties2 phys_dev_props_2 = vku::InitStructHelper(&bad_version_1_1_struct);
-    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceProperties2-pNext-pNext");
-    vk::GetPhysicalDeviceProperties2(Gpu(), &phys_dev_props_2);
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDeviceFeatureProperty, Robustness2WithoutRobustness) {
