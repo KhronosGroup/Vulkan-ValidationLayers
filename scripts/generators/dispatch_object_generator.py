@@ -69,7 +69,7 @@ class APISpecific:
                     {
                         'include': 'best_practices/best_practices_validation.h',
                         'device': 'BestPractices',
-                        'instance': 'BestPractices',
+                        'instance': 'bp_state::Instance',
                         'type': 'LayerObjectTypeBestPractices',
                         'enabled': 'settings.enabled[best_practices]'
                     },

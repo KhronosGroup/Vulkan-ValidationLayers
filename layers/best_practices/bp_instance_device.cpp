@@ -22,7 +22,7 @@
 #include "best_practices/bp_state.h"
 #include "state_tracker/queue_state.h"
 
-bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const {
+bool bp_state::Instance::ValidateDeprecatedExtensions(const Location& loc, vvl::Extension extension, APIVersion version) const {
     bool skip = false;
     const auto dep_info = GetDeprecatedData(extension);
     if (dep_info.reason != DeprecationReason::Empty) {
@@ -63,7 +63,7 @@ bool BestPractices::ValidateDeprecatedExtensions(const Location& loc, vvl::Exten
     return skip;
 }
 
-bool BestPractices::ValidateSpecialUseExtensions(const Location& loc, vvl::Extension extension) const {
+bool bp_state::Instance::ValidateSpecialUseExtensions(const Location& loc, vvl::Extension extension) const {
     bool skip = false;
     const std::string special_uses = GetSpecialUse(extension);
 
@@ -96,8 +96,9 @@ bool BestPractices::ValidateSpecialUseExtensions(const Location& loc, vvl::Exten
     return skip;
 }
 
-bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                                  VkInstance* pInstance, const ErrorObject& error_obj) const {
+bool bp_state::Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator, VkInstance* pInstance,
+                                                       const ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
@@ -115,9 +116,9 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
     return skip;
 }
 
-bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
-                                                const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
-                                                const ErrorObject& error_obj) const {
+bool bp_state::Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
+                                                     const ErrorObject& error_obj) const {
     bool skip = false;
 
     // get API version of physical device passed when creating device.
@@ -130,7 +131,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         std::string inst_api_name = StringAPIVersion(api_version);
         std::string dev_api_name = StringAPIVersion(device_api_version);
 
-        LogInfo("BestPractices-vkCreateDevice-API-version-mismatch", device, error_obj.location,
+        LogInfo("BestPractices-vkCreateDevice-API-version-mismatch", instance, error_obj.location,
                 "API Version of current instance, %s is higher than API Version on device, %s", inst_api_name.c_str(),
                 dev_api_name.c_str());
     }
@@ -198,9 +199,10 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
 }
 
 // Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
-bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const vvl::PhysicalDevice& bp_pd_state,
-                                                                         uint32_t requested_queue_family_property_count,
-                                                                         const CALL_STATE call_state, const Location& loc) const {
+bool bp_state::Instance::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const vvl::PhysicalDevice& bp_pd_state,
+                                                                              uint32_t requested_queue_family_property_count,
+                                                                              const CALL_STATE call_state,
+                                                                              const Location& loc) const {
     bool skip = false;
     if (bp_pd_state.queue_family_known_count != requested_queue_family_property_count) {
         skip |= LogWarning("BestPractices-GetPhysicalDeviceQueueFamilyProperties-CountMismatch", bp_pd_state.Handle(), loc,
@@ -215,10 +217,10 @@ bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const v
     return skip;
 }
 
-bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t* pQueueFamilyPropertyCount,
-                                                                          VkQueueFamilyProperties* pQueueFamilyProperties,
-                                                                          const ErrorObject& error_obj) const {
+bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
+                                                                               uint32_t* pQueueFamilyPropertyCount,
+                                                                               VkQueueFamilyProperties* pQueueFamilyProperties,
+                                                                               const ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(*bp_pd_state, *pQueueFamilyPropertyCount,
@@ -228,10 +230,10 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhys
     return false;
 }
 
-bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                           uint32_t* pQueueFamilyPropertyCount,
-                                                                           VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                           const ErrorObject& error_obj) const {
+bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                                uint32_t* pQueueFamilyPropertyCount,
+                                                                                VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                                const ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(*bp_pd_state, *pQueueFamilyPropertyCount,
@@ -241,15 +243,15 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhy
     return false;
 }
 
-bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                              uint32_t* pQueueFamilyPropertyCount,
-                                                                              VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                              const ErrorObject& error_obj) const {
+bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                                   uint32_t* pQueueFamilyPropertyCount,
+                                                                                   VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                                   const ErrorObject& error_obj) const {
     return PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
                                                                   error_obj);
 }
 
-void BestPractices::CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(CALL_STATE& call_state, bool no_pointer) {
+void bp_state::Instance::CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(CALL_STATE& call_state, bool no_pointer) {
     if (no_pointer) {
         if (UNCALLED == call_state) {
             call_state = QUERY_COUNT;
@@ -259,10 +261,10 @@ void BestPractices::CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(C
     }
 }
 
-void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                         uint32_t* pQueueFamilyPropertyCount,
-                                                                         VkQueueFamilyProperties* pQueueFamilyProperties,
-                                                                         const RecordObject& record_obj) {
+void bp_state::Instance::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
+                                                                              uint32_t* pQueueFamilyPropertyCount,
+                                                                              VkQueueFamilyProperties* pQueueFamilyProperties,
+                                                                              const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
                                                                                  pQueueFamilyProperties, record_obj);
     if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
@@ -271,10 +273,10 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysi
     }
 }
 
-void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t* pQueueFamilyPropertyCount,
-                                                                          VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                          const RecordObject& record_obj) {
+void bp_state::Instance::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                               uint32_t* pQueueFamilyPropertyCount,
+                                                                               VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                               const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                                   pQueueFamilyProperties, record_obj);
     if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
@@ -283,33 +285,35 @@ void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhys
     }
 }
 
-void BestPractices::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                             uint32_t* pQueueFamilyPropertyCount,
-                                                                             VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                             const RecordObject& record_obj) {
+void bp_state::Instance::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                                  uint32_t* pQueueFamilyPropertyCount,
+                                                                                  VkQueueFamilyProperties2* pQueueFamilyProperties,
+                                                                                  const RecordObject& record_obj) {
     PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
                                                           record_obj);
 }
 
-void BestPractices::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures,
-                                                            const RecordObject& record_obj) {
+void bp_state::Instance::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice,
+                                                                 VkPhysicalDeviceFeatures* pFeatures,
+                                                                 const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures, record_obj);
     if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
     }
 }
 
-void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures,
-                                                             const RecordObject& record_obj) {
+void bp_state::Instance::PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
+                                                                  VkPhysicalDeviceFeatures2* pFeatures,
+                                                                  const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
     if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
         bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
     }
 }
 
-void BestPractices::PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
-                                                                VkPhysicalDeviceFeatures2* pFeatures,
-                                                                const RecordObject& record_obj) {
+void bp_state::Instance::PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
+                                                                     VkPhysicalDeviceFeatures2* pFeatures,
+                                                                     const RecordObject& record_obj) {
     PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
 }
 
@@ -554,7 +558,7 @@ void BestPractices::ManualPostCallRecordQueueSubmit(VkQueue queue, uint32_t subm
     num_queue_submissions_ += submitCount;
 }
 
-std::shared_ptr<vvl::PhysicalDevice> BestPractices::CreatePhysicalDeviceState(VkPhysicalDevice handle) {
+std::shared_ptr<vvl::PhysicalDevice> bp_state::Instance::CreatePhysicalDeviceState(VkPhysicalDevice handle) {
     return std::static_pointer_cast<vvl::PhysicalDevice>(std::make_shared<bp_state::PhysicalDevice>(handle));
 }
 

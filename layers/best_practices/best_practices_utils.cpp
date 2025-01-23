@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -62,7 +62,7 @@ bp_state::CommandBuffer::CommandBuffer(BestPractices& bp, VkCommandBuffer handle
                                        const vvl::CommandPool* pool)
     : vvl::CommandBuffer(bp, handle, allocate_info, pool) {}
 
-bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
+bool bp_state::VendorCheckEnabled(const CHECK_ENABLED& enabled, BPVendorFlags vendors) {
     for (const auto& vendor : GetVendorInfo()) {
         if (vendors & vendor.first && enabled[vendor.second.vendor_id]) {
             return true;
@@ -71,7 +71,7 @@ bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
     return false;
 }
 
-const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
+const char* bp_state::VendorSpecificTag(BPVendorFlags vendors) {
     // Cache built vendor tags in a map
     static vvl::unordered_map<BPVendorFlags, std::string> tag_map;
 
@@ -98,28 +98,4 @@ const char* BestPractices::VendorSpecificTag(BPVendorFlags vendors) const {
     }
 
     return res->second.c_str();
-}
-
-// Despite the return code being successful this can be a useful utility for some developers in niche debugging situation.
-void BestPractices::LogPositiveSuccessCode(const RecordObject& record_obj) const {
-    assert(record_obj.result > VK_SUCCESS);
-
-    LogVerbose("BestPractices-Verbose-Success-Logging", instance, record_obj.location, "Returned %s.",
-               string_VkResult(record_obj.result));
-}
-
-void BestPractices::LogErrorCode(const RecordObject& record_obj) const {
-    assert(record_obj.result < VK_SUCCESS);  // Anything less than VK_SUCCESS is an error.
-
-    // Despite being error codes log these results as informational.
-    // That is because they are returned frequently during window resizing.
-    // They are expected to occur during the normal application lifecycle.
-    constexpr std::array common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
-    const auto result_string = string_VkResult(record_obj.result);
-
-    if (IsValueIn(record_obj.result, common_failure_codes)) {
-        LogInfo("BestPractices-Failure-Result", instance, record_obj.location, "Returned error %s.", result_string);
-    } else {
-        LogWarning("BestPractices-Error-Result", instance, record_obj.location, "Returned error %s.", result_string);
-    }
 }

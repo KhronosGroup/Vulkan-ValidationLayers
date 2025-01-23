@@ -240,7 +240,11 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : DispatchVectorGenerator,
             'genCombined': True,
         },
-        'best_practices.h' : {
+        'best_practices_device_methods.h' : {
+            'generator' : BestPracticesOutputGenerator,
+            'genCombined': True,
+        },
+        'best_practices_instance_methods.h' : {
             'generator' : BestPracticesOutputGenerator,
             'genCombined': True,
         },
