@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ class ImageView;
 class RenderPass;
 class CommandBuffer;
 }  // namespace vvl
-
-using SyncMemoryBarrier = SyncBarrier;
 
 struct SyncEventState {
     enum IgnoreReason { NotIgnored = 0, ResetWaitRace, Reset2WaitRace, SetRace, MissingStageBits, SetVsWait2, MissingSetEvent };
@@ -167,21 +165,11 @@ class SyncOpBase {
     virtual void ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const = 0;
 
   protected:
-    // Only non-null and valid for SyncOps within a render pass instance  WIP -- think about how to manage for non RPI calls within
-    // RPI and 2ndarys...
-    uint32_t subpass_ = VK_SUBPASS_EXTERNAL;
     vvl::Func command_;
 };
 
 class SyncOpBarriers : public SyncOpBase {
   protected:
-    template <typename Barriers, typename FunctorFactory>
-    static void ApplyBarriers(const Barriers &barriers, const FunctorFactory &factory, QueueId queue_id, ResourceUsageTag tag,
-                              AccessContext *context);
-    template <typename Barriers, typename FunctorFactory>
-    static void ApplyGlobalBarriers(const Barriers &barriers, const FunctorFactory &factory, QueueId queue_id, ResourceUsageTag tag,
-                                    AccessContext *access_context);
-
     SyncOpBarriers(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
                    VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
                    const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
@@ -198,7 +186,7 @@ class SyncOpBarriers : public SyncOpBase {
         VkDependencyFlags dependency_flags;
         SyncExecScope src_exec_scope;
         SyncExecScope dst_exec_scope;
-        std::vector<SyncMemoryBarrier> memory_barriers;
+        std::vector<SyncBarrier> memory_barriers;
         std::vector<SyncBufferMemoryBarrier> buffer_memory_barriers;
         std::vector<SyncImageMemoryBarrier> image_memory_barriers;
         bool single_exec_scope;
