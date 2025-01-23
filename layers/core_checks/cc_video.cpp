@@ -839,32 +839,29 @@ bool CoreChecks::ValidateVideoPictureResource(const vvl::VideoPictureResource &p
     return skip;
 }
 
-template bool CoreChecks::ValidateVideoProfileInfo<VkDevice>(const VkVideoProfileInfoKHR *profile, const VkDevice object,
-                                                             const Location &loc) const;
-template bool CoreChecks::ValidateVideoProfileInfo<VkPhysicalDevice>(const VkVideoProfileInfoKHR *profile,
-                                                                     const VkPhysicalDevice object, const Location &loc) const;
+template <typename StateObject>
+bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfileInfoKHR *profile, const ErrorObject &error_obj,
+                                    const Location &loc) {
+    using Field = vvl::Field;
 
-template <typename HandleT>
-bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, const HandleT object, const Location &loc) const {
     bool skip = false;
 
     const char *profile_pnext_msg = "chain does not contain a %s structure.";
-    const char *codec_feature_not_enabled_msg = "is %s but the %s device feature is not enabled.";
 
     if (GetBitSetCount(profile->chromaSubsampling) != 1) {
-        skip |= LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07013", object, loc.dot(Field::chromaSubsampling),
-                         "must have a single bit set.");
+        skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07013", error_obj.objlist,
+                               loc.dot(Field::chromaSubsampling), "must have a single bit set.");
     }
 
     if (GetBitSetCount(profile->lumaBitDepth) != 1) {
-        skip |= LogError("VUID-VkVideoProfileInfoKHR-lumaBitDepth-07014", object, loc.dot(Field::lumaBitDepth),
-                         "must have a single bit set.");
+        skip |= state.LogError("VUID-VkVideoProfileInfoKHR-lumaBitDepth-07014", error_obj.objlist, loc.dot(Field::lumaBitDepth),
+                               "must have a single bit set.");
     }
 
     if (profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR) {
         if (GetBitSetCount(profile->chromaBitDepth) != 1) {
-            skip |= LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07015", object, loc.dot(Field::chromaBitDepth),
-                             "must have a single bit set.");
+            skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07015", error_obj.objlist,
+                                   loc.dot(Field::chromaBitDepth), "must have a single bit set.");
         }
     }
 
@@ -872,8 +869,8 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
             const auto decode_h264 = vku::FindStructInPNextChain<VkVideoDecodeH264ProfileInfoKHR>(profile->pNext);
             if (decode_h264 == nullptr) {
-                skip |= LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07179", object, loc.dot(Field::pNext),
-                                 profile_pnext_msg, "VkVideoDecodeH264ProfileInfoKHR");
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07179", error_obj.objlist,
+                                       loc.dot(Field::pNext), profile_pnext_msg, "VkVideoDecodeH264ProfileInfoKHR");
             }
             break;
         }
@@ -881,8 +878,8 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
             const auto decode_h265 = vku::FindStructInPNextChain<VkVideoDecodeH265ProfileInfoKHR>(profile->pNext);
             if (decode_h265 == nullptr) {
-                skip |= LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07180", object, loc.dot(Field::pNext),
-                                 profile_pnext_msg, "VkVideoDecodeH265ProfileInfoKHR");
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07180", error_obj.objlist,
+                                       loc.dot(Field::pNext), profile_pnext_msg, "VkVideoDecodeH265ProfileInfoKHR");
             }
             break;
         }
@@ -890,8 +887,8 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
         case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
             const auto decode_av1 = vku::FindStructInPNextChain<VkVideoDecodeAV1ProfileInfoKHR>(profile->pNext);
             if (decode_av1 == nullptr) {
-                skip |= LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-09256", object, loc.dot(Field::pNext),
-                                 profile_pnext_msg, "VkVideoDecodeAV1ProfileInfoKHR");
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-09256", error_obj.objlist,
+                                       loc.dot(Field::pNext), profile_pnext_msg, "VkVideoDecodeAV1ProfileInfoKHR");
             }
             break;
         }
@@ -899,8 +896,8 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
             const auto encode_h264 = vku::FindStructInPNextChain<VkVideoEncodeH264ProfileInfoKHR>(profile->pNext);
             if (encode_h264 == nullptr) {
-                skip |= LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07181", object, loc.dot(Field::pNext),
-                                 profile_pnext_msg, "VkVideoEncodeH264ProfileInfoKHR");
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07181", error_obj.objlist,
+                                       loc.dot(Field::pNext), profile_pnext_msg, "VkVideoEncodeH264ProfileInfoKHR");
             }
             break;
         }
@@ -908,15 +905,17 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
             const auto encode_h265 = vku::FindStructInPNextChain<VkVideoEncodeH265ProfileInfoKHR>(profile->pNext);
             if (encode_h265 == nullptr) {
-                skip |= LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07182", object, loc.dot(Field::pNext),
-                                 profile_pnext_msg, "VkVideoEncodeH265ProfileInfoKHR");
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07182", error_obj.objlist,
+                                       loc.dot(Field::pNext), profile_pnext_msg, "VkVideoEncodeH265ProfileInfoKHR");
             }
             break;
         }
 
         case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
-            if constexpr (std::is_same_v<HandleT, VkDevice>) {
-                if (!enabled_features.videoEncodeAV1) {
+            if constexpr (std::is_same_v<StateObject, CoreChecks>) {
+                using Func = vvl::Func;
+                const char *codec_feature_not_enabled_msg = "is %s but the %s device feature is not enabled.";
+                if (!state.enabled_features.videoEncodeAV1) {
                     const char *vuid = kVUIDUndefined;
                     switch (loc.function) {
                         case Func::vkCreateVideoSessionKHR:
@@ -936,15 +935,16 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
                             assert(false);
                             break;
                     }
-                    skip |= LogError(vuid, object, loc.dot(Field::videoCodecOperation), codec_feature_not_enabled_msg,
-                                     string_VkVideoCodecOperationFlagBitsKHR(profile->videoCodecOperation), "videoEncodeAV1");
+                    skip |=
+                        state.LogError(vuid, error_obj.objlist, loc.dot(Field::videoCodecOperation), codec_feature_not_enabled_msg,
+                                       string_VkVideoCodecOperationFlagBitsKHR(profile->videoCodecOperation), "videoEncodeAV1");
                 }
             }
 
             const auto encode_av1 = vku::FindStructInPNextChain<VkVideoEncodeAV1ProfileInfoKHR>(profile->pNext);
             if (encode_av1 == nullptr) {
-                skip |= LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-10262", object, loc.dot(Field::pNext),
-                                 profile_pnext_msg, "VkVideoEncodeAV1ProfileInfoKHR");
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-10262", error_obj.objlist,
+                                       loc.dot(Field::pNext), profile_pnext_msg, "VkVideoEncodeAV1ProfileInfoKHR");
             }
             break;
         }
@@ -957,19 +957,16 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
 
     return skip;
 }
+template bool core::ValidateVideoProfileInfo<core::Instance>(const core::Instance &state, const VkVideoProfileInfoKHR *profile,
+                                                             const ErrorObject &error_obj, const Location &loc);
+template bool core::ValidateVideoProfileInfo<CoreChecks>(const CoreChecks &state, const VkVideoProfileInfoKHR *profile,
+                                                         const ErrorObject &error_obj, const Location &loc);
 
-template bool CoreChecks::ValidateVideoProfileListInfo<VkDevice>(
-    const VkVideoProfileListInfoKHR *profile_list, const VkDevice object, const Location &loc, bool expect_decode_profile,
-    const char *missing_decode_profile_msg_code, bool expect_encode_profile, const char *missing_encode_profile_msg_code) const;
-template bool CoreChecks::ValidateVideoProfileListInfo<VkPhysicalDevice>(
-    const VkVideoProfileListInfoKHR *profile_list, const VkPhysicalDevice object, const Location &loc, bool expect_decode_profile,
-    const char *missing_decode_profile_msg_code, bool expect_encode_profile, const char *missing_encode_profile_msg_code) const;
-
-template <typename HandleT>
-bool CoreChecks::ValidateVideoProfileListInfo(const VkVideoProfileListInfoKHR *profile_list, const HandleT object,
-                                              const Location &loc, bool expect_decode_profile,
-                                              const char *missing_decode_profile_msg_code, bool expect_encode_profile,
-                                              const char *missing_encode_profile_msg_code) const {
+template <typename StateObject>
+bool core::ValidateVideoProfileListInfo(const StateObject &state, const VkVideoProfileListInfoKHR *profile_list,
+                                        const ErrorObject &error_obj, const Location &loc, bool expect_decode_profile,
+                                        const char *missing_decode_profile_msg_code, bool expect_encode_profile,
+                                        const char *missing_encode_profile_msg_code) {
     bool skip = false;
 
     bool has_decode_profile = false;
@@ -977,15 +974,15 @@ bool CoreChecks::ValidateVideoProfileListInfo(const VkVideoProfileListInfoKHR *p
 
     if (profile_list) {
         for (uint32_t i = 0; i < profile_list->profileCount; ++i) {
-            skip |= ValidateVideoProfileInfo(&profile_list->pProfiles[i], object, loc.dot(Field::pProfiles, i));
+            skip |= ValidateVideoProfileInfo(state, &profile_list->pProfiles[i], error_obj, loc.dot(vvl::Field::pProfiles, i));
 
             switch (profile_list->pProfiles[i].videoCodecOperation) {
                 case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
                 case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
                 case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
                     if (has_decode_profile) {
-                        skip |= LogError("VUID-VkVideoProfileListInfoKHR-pProfiles-06813", object, loc,
-                                         "contains more than one profile with decode codec operation.");
+                        skip |= state.LogError("VUID-VkVideoProfileListInfoKHR-pProfiles-06813", error_obj.objlist, loc,
+                                               "contains more than one profile with decode codec operation.");
                     }
                     has_decode_profile = true;
                     break;
@@ -1005,17 +1002,27 @@ bool CoreChecks::ValidateVideoProfileListInfo(const VkVideoProfileListInfoKHR *p
     }
 
     if (expect_decode_profile && !has_decode_profile) {
-        skip |= LogError(missing_decode_profile_msg_code, object, loc.dot(Field::pProfiles),
-                         "contains no video profile specifying a video decode operation.");
+        skip |= state.LogError(missing_decode_profile_msg_code, error_obj.objlist, loc.dot(vvl::Field::pProfiles),
+                               "contains no video profile specifying a video decode operation.");
     }
 
     if (expect_encode_profile && !has_encode_profile) {
-        skip |= LogError(missing_encode_profile_msg_code, object, loc.dot(Field::pProfiles),
-                         "contains no video profile specifying a video encode operation.");
+        skip |= state.LogError(missing_encode_profile_msg_code, error_obj.objlist, loc.dot(vvl::Field::pProfiles),
+                               "contains no video profile specifying a video encode operation.");
     }
 
     return skip;
 }
+template bool core::ValidateVideoProfileListInfo<core::Instance>(
+    const core::Instance &state, const VkVideoProfileListInfoKHR *profile_list, const ErrorObject &error_obj, const Location &loc,
+    bool expect_decode_profile, const char *missing_decode_profile_msg_code, bool expect_encode_profile,
+    const char *missing_encode_profile_msg_code);
+template bool core::ValidateVideoProfileListInfo<CoreChecks>(const CoreChecks &state, const VkVideoProfileListInfoKHR *profile_list,
+                                                             const ErrorObject &error_obj, const Location &loc,
+                                                             bool expect_decode_profile,
+                                                             const char *missing_decode_profile_msg_code,
+                                                             bool expect_encode_profile,
+                                                             const char *missing_encode_profile_msg_code);
 
 bool CoreChecks::ValidateDecodeH264ParametersAddInfo(const vvl::VideoSession &vs_state,
                                                      const VkVideoDecodeH264SessionParametersAddInfoKHR *add_info, VkDevice device,
@@ -3341,13 +3348,13 @@ bool CoreChecks::ValidateReferencePictureUseCount(const vvl::CommandBuffer &cb_s
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
-                                                                      const VkVideoProfileInfoKHR *pVideoProfile,
-                                                                      VkVideoCapabilitiesKHR *pCapabilities,
-                                                                      const ErrorObject &error_obj) const {
+bool core::Instance::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
+                                                                          const VkVideoProfileInfoKHR *pVideoProfile,
+                                                                          VkVideoCapabilitiesKHR *pCapabilities,
+                                                                          const ErrorObject &error_obj) const {
     bool skip = false;
 
-    skip |= ValidateVideoProfileInfo(pVideoProfile, physicalDevice, error_obj.location.dot(Field::pVideoProfile));
+    skip |= ValidateVideoProfileInfo(*this, pVideoProfile, error_obj, error_obj.location.dot(Field::pVideoProfile));
 
     const char *caps_pnext_msg = "chain does not contain a %s structure.";
 
@@ -3422,7 +3429,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysical
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
+bool core::Instance::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoFormatInfoKHR *pVideoFormatInfo,
     uint32_t *pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR *pVideoFormatProperties, const ErrorObject &error_obj) const {
     bool skip = false;
@@ -3430,7 +3437,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
     const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pVideoFormatInfo->pNext);
     if (video_profiles && video_profiles->profileCount != 0) {
         skip |=
-            ValidateVideoProfileListInfo(video_profiles, physicalDevice,
+            ValidateVideoProfileListInfo(*this, video_profiles, error_obj,
                                          error_obj.location.dot(Field::pVideoFormatInfo).pNext(Struct::VkVideoProfileListInfoKHR),
                                          false, nullptr, false, nullptr);
     } else {
@@ -3444,7 +3451,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
     return skip;
 }
 
-bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
+bool core::Instance::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR *pQualityLevelInfo,
     VkVideoEncodeQualityLevelPropertiesKHR *pQualityLevelProperties, const ErrorObject &error_obj) const {
     bool skip = false;
@@ -3454,8 +3461,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelProperti
 
     const char *props_pnext_msg = "chain does not contain a %s structure.";
 
-    skip |= ValidateVideoProfileInfo(pQualityLevelInfo->pVideoProfile, physicalDevice,
-                                     quality_level_info_loc.dot(Field::pVideoProfile));
+    skip |= core::ValidateVideoProfileInfo(*this, pQualityLevelInfo->pVideoProfile, error_obj,
+                                           quality_level_info_loc.dot(Field::pVideoProfile));
 
     vvl::VideoProfileDesc profile_desc(physicalDevice, pQualityLevelInfo->pVideoProfile);
     const auto &profile_caps = profile_desc.GetCapabilities();
@@ -3517,7 +3524,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
 
-    skip |= ValidateVideoProfileInfo(pCreateInfo->pVideoProfile, device, create_info_loc.dot(Field::pVideoProfile));
+    skip |= core::ValidateVideoProfileInfo(*this, pCreateInfo->pVideoProfile, error_obj, create_info_loc.dot(Field::pVideoProfile));
 
     vvl::VideoProfileDesc profile_desc(physical_device, pCreateInfo->pVideoProfile);
     const auto &profile_caps = profile_desc.GetCapabilities();
