@@ -21,6 +21,8 @@
 
 #include "utils/hash_util.h"
 #include "generated/spirv_grammar_helper.h"
+
+#include <spirv/unified1/spirv.hpp>
 #include <spirv/1.2/GLSL.std.450.h>
 #include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
 #include "error_message/spirv_logging.h"
@@ -346,6 +348,10 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
         case spv::OpAccessChain:
         case spv::OpInBoundsAccessChain:
             result.insert(insn.Word(3));  // base ptr
+            break;
+        case spv::OpArrayLength:
+            // This is not an access of memory, but counts as static usage of the variable
+            result.insert(insn.Word(3));
             break;
         case spv::OpSampledImage:
         case spv::OpImageSampleImplicitLod:

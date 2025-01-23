@@ -116,7 +116,7 @@ class Pipeline : public StateObject {
 
     const vvl::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
 
-    // NOTE: this map is 'almost' const and used in performance critical code paths.
+    // NOTE: this map is used in performance critical code paths.
     // The values of existing entries in the samplers_used_by_image map
     // are updated at various times. Locking requirements are TBD.
     const ActiveSlotMap active_slots;

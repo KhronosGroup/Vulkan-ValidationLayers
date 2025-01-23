@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #include "state_tracker/shader_module.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 
+// Common for both Pipeline and Shader Object
 void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spirv::EntryPoint> &entrypoint) {
     if (!entrypoint) {
         return;
@@ -35,7 +36,7 @@ void GetActiveSlots(ActiveSlotMap &active_slots, const std::shared_ptr<const spi
     }
 }
 
-// static
+// Used by pipeline
 ActiveSlotMap GetActiveSlots(const std::vector<ShaderStageState> &stage_states) {
     ActiveSlotMap active_slots;
     for (const auto &stage : stage_states) {
@@ -44,6 +45,7 @@ ActiveSlotMap GetActiveSlots(const std::vector<ShaderStageState> &stage_states) 
     return active_slots;
 }
 
+// Used by Shader Object
 ActiveSlotMap GetActiveSlots(const std::shared_ptr<const spirv::EntryPoint> &entrypoint) {
     ActiveSlotMap active_slots;
     GetActiveSlots(active_slots, entrypoint);
