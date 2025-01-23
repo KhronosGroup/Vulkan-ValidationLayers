@@ -31,7 +31,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 
-bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format);
+bool IsValidAspectMaskForFormat(VkImageAspectFlags aspect_mask, VkFormat format);
 
 using LayoutRange = image_layout_map::ImageLayoutRegistry::RangeType;
 using LayoutEntry = image_layout_map::ImageLayoutRegistry::LayoutEntry;
@@ -969,7 +969,7 @@ bool CoreChecks::IsCompliantSubresourceRange(const VkImageSubresourceRange &subr
     if ((subres_range.baseArrayLayer + subres_range.layerCount) > image_state.create_info.arrayLayers) {
         return false;
     }
-    if (!VerifyAspectsPresent(subres_range.aspectMask, image_state.create_info.format)) return false;
+    if (!IsValidAspectMaskForFormat(subres_range.aspectMask, image_state.create_info.format)) return false;
     if (((vkuFormatPlaneCount(image_state.create_info.format) < 3) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_2_BIT)) ||
         ((vkuFormatPlaneCount(image_state.create_info.format) < 2) && (subres_range.aspectMask & VK_IMAGE_ASPECT_PLANE_1_BIT))) {
         return false;

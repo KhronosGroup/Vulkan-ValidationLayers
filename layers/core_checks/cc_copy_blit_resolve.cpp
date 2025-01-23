@@ -298,7 +298,7 @@ bool CoreChecks::ValidateImageArrayLayerRange(const HandleT handle, const vvl::I
     return skip;
 }
 
-bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
+bool IsValidAspectMaskForFormat(VkImageAspectFlags aspect_mask, VkFormat format) {
     if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != 0) {
         if (!(vkuFormatIsColor(format) || vkuFormatIsMultiplane(format))) return false;
     }
@@ -312,6 +312,31 @@ bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
         if (vkuFormatPlaneCount(format) == 1) return false;
     }
     return true;
+}
+
+std::string DescribeValidAspectMaskForFormat(VkFormat format) {
+    VkImageAspectFlags aspect_mask = 0;
+    if (vkuFormatIsColor(format)) {
+        aspect_mask |= VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+    if (vkuFormatHasDepth(format)) {
+        aspect_mask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+    if (vkuFormatHasStencil(format)) {
+        aspect_mask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    const uint32_t plane_count = vkuFormatPlaneCount(format);
+    if (plane_count > 1) {
+        // Color bit is "techically" valid, other VUs will warn if/when not allowed to use
+        aspect_mask |= VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
+    }
+    if (plane_count > 2) {
+        aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+    }
+
+    std::stringstream ss;
+    ss << "Valid VkImageAspectFlags are " << string_VkImageAspectFlags(aspect_mask);
+    return ss.str();
 }
 
 template <typename T>
@@ -471,11 +496,12 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const HandleT handle, const Regio
 
     const VkFormat image_format = image_state.create_info.format;
     // image subresource aspect bit must match format
-    if (!VerifyAspectsPresent(region_aspect_mask, image_format)) {
+    if (!IsValidAspectMaskForFormat(region_aspect_mask, image_format)) {
         const LogObjectList objlist(handle, image_state.Handle());
         skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::AspectMask_09105), objlist,
-                         subresource_loc.dot(Field::aspectMask), "%s invalid for image format %s.",
-                         string_VkImageAspectFlags(region_aspect_mask).c_str(), string_VkFormat(image_format));
+                         subresource_loc.dot(Field::aspectMask), "(%s) is invalid for image format %s. (%s)",
+                         string_VkImageAspectFlags(region_aspect_mask).c_str(), string_VkFormat(image_format),
+                         DescribeValidAspectMaskForFormat(image_format).c_str());
     }
 
     const VkExtent3D block_extent = vkuFormatTexelBlockExtent(image_format);
@@ -1281,12 +1307,12 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const vvl::Image 
                                              region.srcSubresource.layerCount, src_subresource_loc);
 
         // For each region, the aspectMask member of srcSubresource must be present in the source image
-        if (!VerifyAspectsPresent(region.srcSubresource.aspectMask, src_format)) {
+        if (!IsValidAspectMaskForFormat(region.srcSubresource.aspectMask, src_format)) {
             const LogObjectList src_objlist(handle, src_image_state.VkHandle());
             skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::SrcSubresource_00142), src_objlist,
-                             src_subresource_loc.dot(Field::aspectMask),
-                             "(%s) cannot specify aspects not present in source image (%s).",
-                             string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str(), string_VkFormat(src_format));
+                             src_subresource_loc.dot(Field::aspectMask), "(%s) is invalid for source image format %s. (%s)",
+                             string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str(), string_VkFormat(src_format),
+                             DescribeValidAspectMaskForFormat(src_format).c_str());
         }
     }
 
@@ -1297,12 +1323,12 @@ bool CoreChecks::ValidateCopyImageRegionCommon(HandleT handle, const vvl::Image 
         skip |= ValidateImageArrayLayerRange(handle, dst_image_state, region.dstSubresource.baseArrayLayer,
                                              region.dstSubresource.layerCount, dst_subresource_loc);
         // For each region, the aspectMask member of dstSubresource must be present in the destination image
-        if (!VerifyAspectsPresent(region.dstSubresource.aspectMask, dst_format)) {
+        if (!IsValidAspectMaskForFormat(region.dstSubresource.aspectMask, dst_format)) {
             const LogObjectList dst_objlist(handle, dst_image_state.VkHandle());
             skip |= LogError(GetCopyImageVUID(region_loc, vvl::CopyError::DstSubresource_00143), dst_objlist,
-                             dst_subresource_loc.dot(Field::aspectMask),
-                             "(%s) cannot specify aspects not present in destination image (%s).",
-                             string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str(), string_VkFormat(dst_format));
+                             dst_subresource_loc.dot(Field::aspectMask), "(%s) is invalid for destination image format %s. (%s)",
+                             string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str(), string_VkFormat(dst_format),
+                             DescribeValidAspectMaskForFormat(dst_format).c_str());
         }
     }
 
@@ -3206,18 +3232,18 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                          string_VkImageAspectFlags(dst_aspect).c_str());
         }
 
-        if (!VerifyAspectsPresent(src_aspect, src_format)) {
+        if (!IsValidAspectMaskForFormat(src_aspect, src_format)) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-aspectMask-00241" : "VUID-vkCmdBlitImage-aspectMask-00241";
             skip |= LogError(vuid, src_objlist, src_subresource_loc.dot(Field::aspectMask),
-                             "(%s) cannot specify aspects not present in source image (%s).",
-                             string_VkImageAspectFlags(src_aspect).c_str(), string_VkFormat(src_format));
+                             "(%s) is invalid for source image format %s. (%s)", string_VkImageAspectFlags(src_aspect).c_str(),
+                             string_VkFormat(src_format), DescribeValidAspectMaskForFormat(src_format).c_str());
         }
 
-        if (!VerifyAspectsPresent(dst_aspect, dst_format)) {
+        if (!IsValidAspectMaskForFormat(dst_aspect, dst_format)) {
             vuid = is_2 ? "VUID-VkBlitImageInfo2-aspectMask-00242" : "VUID-vkCmdBlitImage-aspectMask-00242";
             skip |= LogError(vuid, dst_objlist, dst_subresource_loc.dot(Field::aspectMask),
-                             "(%s) cannot specify aspects not present in destination image (%s).",
-                             string_VkImageAspectFlags(src_aspect).c_str(), string_VkFormat(src_format));
+                             "(%s) is invalid for destination image format %s. (%s)", string_VkImageAspectFlags(src_aspect).c_str(),
+                             string_VkFormat(src_format), DescribeValidAspectMaskForFormat(dst_format).c_str());
         }
 
         // Validate source image offsets

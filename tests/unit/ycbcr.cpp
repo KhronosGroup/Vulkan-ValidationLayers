@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2043,4 +2043,45 @@ TEST_F(NegativeYcbcr, DISABLED_FormatCompatibilityNonMutable) {
     m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-pNext-10062");
     vkt::Image image(*m_device, image_create_info);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeYcbcr, MultiplaneImageCopyAspectMask) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    auto ci = vku::InitStruct<VkImageCreateInfo>();
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    ci.extent = {128, 128, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    if (!ImageFormatIsSupported(instance(), Gpu(), ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Multiplane image format not supported";
+    }
+
+    vkt::Image image(*m_device, ci, vkt::no_mem);
+    vkt::DeviceMemory mem_obj(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
+    vk::BindImageMemory(device(), image, mem_obj, 0);
+
+    VkImageCopy image_copy = {};
+    image_copy.srcSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1};
+    image_copy.srcOffset = {0, 0, 0};
+    image_copy.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    image_copy.dstOffset = {0, 0, 0};
+    image_copy.extent = {16, 16, 1};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-08714");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-aspectMask-00143");
+    image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_IMAGE_LAYOUT_GENERAL);
+    vk::CmdCopyImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &image_copy);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
 }
