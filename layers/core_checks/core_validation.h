@@ -83,8 +83,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateComputePipelineDerivatives(PipelineStates& pipeline_states, uint32_t pipe_index, const Location& loc) const;
     bool ValidateMultiViewShaders(const vvl::Pipeline& pipeline, const Location& multiview_loc, uint32_t view_mask,
                                   bool dynamic_rendering) const;
-    bool ValidateDrawPipelineVertexAttribute(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
-                                             const vvl::DrawDispatchVuid& vuid) const;
     bool ValidateGraphicsPipeline(const vvl::Pipeline& pipeline, const void* pipeline_ci_pnext,
                                   const Location& create_info_loc) const;
     bool ValidImageBufferQueue(const vvl::CommandBuffer& cb_state, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,

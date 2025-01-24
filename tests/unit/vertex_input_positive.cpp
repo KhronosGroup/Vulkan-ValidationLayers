@@ -1101,3 +1101,130 @@ TEST_F(PositiveVertexInput, VertexInputRebinding) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveVertexInput, UnusedInputBinding) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9305");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x;
+        layout(location=1) in vec4 y;
+        void main() {
+           gl_Position = x + y;
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    // input_binding[1] is not accessed from either attributes
+    VkVertexInputBindingDescription input_binding[2] = {{0, 16, VK_VERTEX_INPUT_RATE_VERTEX}, {1, 16, VK_VERTEX_INPUT_RATE_VERTEX}};
+    VkVertexInputAttributeDescription input_attributes[2] = {{0, 0, VK_FORMAT_R8G8B8A8_UNORM, 0},
+                                                             {1, 0, VK_FORMAT_R8G8B8A8_UNORM, 0}};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vi_ci_.vertexBindingDescriptionCount = 2;
+    pipe.vi_ci_.pVertexBindingDescriptions = input_binding;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 2;
+    pipe.vi_ci_.pVertexAttributeDescriptions = input_attributes;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    VkDeviceSize offset = 0;
+    vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    // Only binding 0 is bound because 1 is ignored
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &offset);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveVertexInput, UnusedInputBindingDynamic) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9305");
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) in vec4 x;
+        layout(location=1) in vec4 y;
+        void main() {
+           gl_Position = x + y;
+        }
+    )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.CreateGraphicsPipeline();
+
+    // bindings[1] is not accessed from either attributes
+    VkVertexInputBindingDescription2EXT bindings[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    bindings[0].binding = 0;
+    bindings[0].divisor = 1;
+    bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    bindings[1].binding = 1;
+    bindings[1].divisor = 1;
+    bindings[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription2EXT attributes[2] = {vku::InitStructHelper(), vku::InitStructHelper()};
+    attributes[0].location = 0;
+    attributes[0].binding = 0;
+    attributes[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attributes[0].offset = 0;
+    attributes[1].location = 1;
+    attributes[1].binding = 0;
+    attributes[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attributes[1].offset = 0;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    VkDeviceSize offset = 0;
+    vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 2, bindings, 2, attributes);
+    // Only binding 0 is bound because 1 is ignored
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &offset);
+    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveVertexInput, BindVertexBufferNullDraw) {
+    TEST_DESCRIPTION("Have null vertex but use nullDescriptor feature");
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription bindings = {1, 4, VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription attributes = {0, 1, VK_FORMAT_R8G8B8A8_UNORM, 0};
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexBindingDescriptions = &bindings;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &attributes;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    VkDeviceSize offsets[2] = {0, 0};
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkBuffer buffers[2] = {buffer.handle(), VK_NULL_HANDLE};
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 2, buffers, offsets);
+
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 1);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
