@@ -36,9 +36,9 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
 
     if (input_state) {
         if (input_state->vertexBindingDescriptionCount) {
-            for (const auto [i, bd] :
+            for (const auto [i, description] :
                  vvl::enumerate(input_state->pVertexBindingDescriptions, input_state->vertexBindingDescriptionCount)) {
-                bindings.emplace(bd.binding, VertexBindingState(i, &bd));
+                bindings.emplace(description.binding, VertexBindingState(i, &description));
             }
             const auto *divisor_info = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(input_state->pNext);
             if (divisor_info) {
@@ -50,13 +50,13 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
                 }
             }
         }
-        for (const auto [i, ad] :
+        for (const auto [i, description] :
              vvl::enumerate(input_state->pVertexAttributeDescriptions, input_state->vertexAttributeDescriptionCount)) {
-            auto *binding_state = vvl::Find(bindings, ad.binding);
+            auto *binding_state = vvl::Find(bindings, description.binding);
             if (!binding_state) {
                 continue;
             }
-            binding_state->locations.emplace(ad.location, VertexAttrState(i, &ad));
+            binding_state->locations.emplace(description.location, VertexAttrState(i, &description));
         }
     }
 }

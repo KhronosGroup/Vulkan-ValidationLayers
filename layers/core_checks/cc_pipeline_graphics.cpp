@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -4105,95 +4106,6 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPipelineVertexAttribute(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
-                                                     const vvl::DrawDispatchVuid &vuid) const {
-    bool skip = false;
-    if (enabled_features.robustBufferAccess || pipeline.uses_pipeline_vertex_robustness) {
-        return skip;
-    }
-
-    const auto &vertex_bindings = pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)
-                                      ? cb_state.dynamic_state_value.vertex_bindings
-                                      : pipeline.vertex_input_state->bindings;
-    // Verify vertex attribute address alignment
-    for (const auto &binding_state : vertex_bindings) {
-        const auto &binding_index = binding_state.second.index;
-        const auto &binding_desc = binding_state.second.desc;
-        const auto binding_num = binding_desc.binding;
-
-        const auto *vertex_buffer = vvl::Find(cb_state.current_vertex_buffer_binding_info, binding_num);
-        if (!vertex_buffer) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(vuid.vertex_binding_attribute_02721, objlist, vuid.loc(),
-                             "pVertexBindingDescriptions[%" PRIu32 "] (binding %" PRIu32 " ) was not bound to a buffer.",
-                             binding_index, binding_num);
-            break;
-        }
-        if (vertex_buffer->buffer == VK_NULL_HANDLE && !enabled_features.nullDescriptor) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(vuid.vertex_binding_attribute_02721, objlist, vuid.loc(),
-                             "pVertexBindingDescriptions[%" PRIu32 "] (binding %" PRIu32 ") points to a VK_NULL_HANDLE buffer.",
-                             binding_index, binding_num);
-            break;
-        }
-        auto const buffer_state = Get<vvl::Buffer>(vertex_buffer->buffer);
-        if (!buffer_state) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(vuid.vertex_binding_attribute_02721, objlist, vuid.loc(),
-                             "pVertexBindingDescriptions[%" PRIu32 "] (binding %" PRIu32 ") points to an invalid buffer.",
-                             binding_index, binding_num);
-            break;
-        }
-        for (const auto &location : binding_state.second.locations) {
-            const auto attr_index = location.second.index;
-            const auto &attr_desc = location.second.desc;
-
-            const VkDeviceSize attribute_offset = attr_desc.offset;
-            const VkFormat attribute_format = attr_desc.format;
-            const VkDeviceSize vertex_buffer_stride = vertex_buffer->stride;
-            if (pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
-                const VkDeviceSize attribute_binding_extent = attribute_offset + GetVertexInputFormatSize(attribute_format);
-                if (vertex_buffer_stride != 0 && vertex_buffer_stride < attribute_binding_extent) {
-                    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-                    skip |= LogError("VUID-vkCmdBindVertexBuffers2-pStrides-06209", objlist, vuid.loc(),
-                                     "(binding %" PRIu32 "location %" PRIu32 ") The pStrides value (%" PRIu64
-                                     ") parameter in the last call to %s is not 0 "
-                                     "and less than the extent of the binding for the attribute (%" PRIu64 ").",
-                                     attr_desc.binding, attr_desc.location, vertex_buffer_stride, String(vuid.function),
-                                     attribute_binding_extent);
-                }
-            }
-            const VkDeviceSize vertex_buffer_offset = vertex_buffer->offset;
-
-            // Use 1 as vertex/instance index to use buffer stride as well
-            const VkDeviceSize attrib_address = vertex_buffer_offset + vertex_buffer_stride + attribute_offset;
-
-            VkDeviceSize vtx_attrib_req_alignment = GetVertexInputFormatSize(attribute_format);
-
-            // TODO - There is no real spec language describing these, but also almost no one supports these formats for vertex
-            // input and this check should probably just removed and do the safe division always. Will need to run against CTS
-            // before-and-after to make sure.
-            if (!vkuFormatIsPacked(attribute_format) && !vkuFormatIsCompressed(attribute_format) &&
-                !vkuFormatIsSinglePlane_422(attribute_format) && !vkuFormatIsMultiplane(attribute_format)) {
-                vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, vkuFormatComponentCount(attribute_format));
-            }
-
-            if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
-                const LogObjectList objlist(buffer_state->Handle(), pipeline.Handle());
-                skip |=
-                    LogError(vuid.vertex_binding_attribute_02721, objlist, vuid.loc(),
-                             "Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (%" PRIu64
-                             ") is not aligned in pVertexAttributeDescriptions[%" PRIu32 "] (binding=%" PRIu32 " location=%" PRIu32
-                             ") where attribAddress = vertex buffer offset (%" PRIu64 ") + binding stride (%" PRIu64
-                             ") + attribute offset (%" PRIu64 ").",
-                             string_VkFormat(attribute_format), vtx_attrib_req_alignment, attrib_address, attr_index,
-                             attr_desc.binding, attr_desc.location, vertex_buffer_offset, vertex_buffer_stride, attribute_offset);
-            }
-        }
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
                                                  const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
@@ -4238,31 +4150,106 @@ bool CoreChecks::ValidateDrawPipelineVertexBinding(const vvl::CommandBuffer &cb_
     bool skip = false;
     if (!pipeline.vertex_input_state) return skip;
 
-    const auto &vertex_bindings = pipeline.vertex_input_state->bindings;
+    const bool has_dynamic_descriptions = pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    const auto &vertex_bindings =
+        has_dynamic_descriptions ? cb_state.dynamic_state_value.vertex_bindings : pipeline.vertex_input_state->bindings;
 
-    for (const auto &vertex_buffer_binding : cb_state.current_vertex_buffer_binding_info) {
-        // Only validate the bindings from the last bound pipeline (unlesss it used VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)
-        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) && !vvl::Find(vertex_bindings, vertex_buffer_binding.first)) {
+    auto print_binding = [has_dynamic_descriptions](const VertexBindingState binding_description) {
+        std::stringstream ss;
+        if (has_dynamic_descriptions) {
+            ss << "the last call to vkCmdSetVertexInputEXT";
+        } else {
+            ss << "the last bound pipeline";
+        }
+        ss << " has pVertexBindingDescriptions[" << binding_description.index << "].binding (" << binding_description.desc.binding
+           << ")";
+        return ss.str();
+    };
+
+    // It is ok to have binding descriptions not used, them and find if there is matching buffer tied to it or not
+    for (const auto &[binding_index, binding_description] : vertex_bindings) {
+        // If no attribute points to a binding, it is unused
+        if (binding_description.locations.empty()) continue;
+
+        const auto *vertex_buffer_binding = vvl::Find(cb_state.current_vertex_buffer_binding_info, binding_index);
+        if (!vertex_buffer_binding || !vertex_buffer_binding->bound) {
+            // Likely to not get
+            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+            skip |= LogError(vuid.vertex_binding_04007, objlist, vuid.loc(),
+                             "%s which didn't have a buffer bound from any vkCmdBindVertexBuffers call in this command buffer.",
+                             print_binding(binding_description).c_str());
             continue;
         }
 
-        if (vertex_buffer_binding.second.buffer == VK_NULL_HANDLE) {
+        // This means the app actively set the buffer to null
+        // Going to hit VUID-vkCmdBindVertexBuffers-pBuffers-04001 first anyway
+        if (vertex_buffer_binding->buffer == VK_NULL_HANDLE) {
             if (!enabled_features.nullDescriptor) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
                 skip |= LogError(vuid.vertex_binding_null_04008, objlist, vuid.loc(),
-                                 "Vertex binding %" PRIu32
-                                 " is VK_NULL_HANDLE. (Most likely you forgot to call vkCmdBindVertexBuffers)",
-                                 vertex_buffer_binding.first);
+                                 "%s which was bound with a buffer of VK_NULL_HANDLE, but nullDescriptor is not enabled.",
+                                 print_binding(binding_description).c_str());
             }
-        } else if (!Get<vvl::Buffer>(vertex_buffer_binding.second.buffer)) {
+            continue;
+        }
+
+        const auto vertex_buffer_state = Get<vvl::Buffer>(vertex_buffer_binding->buffer);
+        if (!vertex_buffer_state) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(vuid.vertex_binding_04007, objlist, vuid.loc(),
-                             "Vertex binding %" PRIu32 " is not a valid VkBuffer. (Check the buffer set in vkCmdBindVertexBuffers)",
-                             vertex_buffer_binding.first);
+            skip |= LogError(
+                vuid.vertex_binding_04007, objlist, vuid.loc(),
+                "%s which has an invalid/destroyed buffer bound from a vkCmdBindVertexBuffers call in this command buffer.",
+                print_binding(binding_description).c_str());
+            continue;
+        }
+
+        for (const auto &location : binding_description.locations) {
+            const auto attr_index = location.second.index;
+            const auto &attr_desc = location.second.desc;
+
+            if (pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
+                const VkDeviceSize attribute_binding_extent = attr_desc.offset + GetVertexInputFormatSize(attr_desc.format);
+                if (vertex_buffer_binding->stride != 0 && vertex_buffer_binding->stride < attribute_binding_extent) {
+                    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+                    skip |= LogError("VUID-vkCmdBindVertexBuffers2-pStrides-06209", objlist, vuid.loc(),
+                                     "(attribute binding %" PRIu32 ", attribute location %" PRIu32 ") The pStrides value (%" PRIu64
+                                     ") parameter in the last call to %s is not 0 "
+                                     "and less than the extent of the binding for the attribute (%" PRIu64 ").",
+                                     attr_desc.binding, attr_desc.location, vertex_buffer_binding->stride, String(vuid.function),
+                                     attribute_binding_extent);
+                }
+            }
+
+            if (!enabled_features.robustBufferAccess && !pipeline.uses_pipeline_vertex_robustness) {
+                const VkDeviceSize vertex_buffer_offset = vertex_buffer_binding->offset;
+
+                // Use 1 as vertex/instance index to use buffer stride as well
+                const VkDeviceSize attrib_address = vertex_buffer_offset + vertex_buffer_binding->stride + attr_desc.offset;
+
+                VkDeviceSize vtx_attrib_req_alignment = GetVertexInputFormatSize(attr_desc.format);
+
+                // TODO - There is no real spec language describing these, but also almost no one supports these formats for vertex
+                // input and this check should probably just removed and do the safe division always. Will need to run against CTS
+                // before-and-after to make sure.
+                if (!vkuFormatIsPacked(attr_desc.format) && !vkuFormatIsCompressed(attr_desc.format) &&
+                    !vkuFormatIsSinglePlane_422(attr_desc.format) && !vkuFormatIsMultiplane(attr_desc.format)) {
+                    vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, vkuFormatComponentCount(attr_desc.format));
+                }
+
+                if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
+                    const LogObjectList objlist(cb_state.Handle(), vertex_buffer_state->Handle(), pipeline.Handle());
+                    skip |= LogError(vuid.vertex_binding_attribute_02721, objlist, vuid.loc(),
+                                     "Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (%" PRIu64
+                                     ") is not aligned in pVertexAttributeDescriptions[%" PRIu32 "] (binding=%" PRIu32
+                                     " location=%" PRIu32 ") where attribAddress = vertex buffer offset (%" PRIu64
+                                     ") + binding stride (%" PRIu64 ") + attribute offset (%" PRIu32 ").",
+                                     string_VkFormat(attr_desc.format), vtx_attrib_req_alignment, attrib_address, attr_index,
+                                     attr_desc.binding, attr_desc.location, vertex_buffer_offset, vertex_buffer_binding->stride,
+                                     attr_desc.offset);
+                }
+            }
         }
     }
-
-    skip |= ValidateDrawPipelineVertexAttribute(cb_state, pipeline, vuid);
 
     return skip;
 }
