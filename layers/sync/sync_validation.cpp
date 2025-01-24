@@ -670,9 +670,8 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(
     const auto *cb_access_context = &cb_state->access_context;
 
     SyncOpPipelineBarrier pipeline_barrier(error_obj.location.function, *this, cb_access_context->GetQueueFlags(), srcStageMask,
-                                           dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
-                                           bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
-                                           pImageMemoryBarriers);
+                                           dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+                                           pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
     skip |= pipeline_barrier.Validate(*cb_access_context);
     return skip;
 }
@@ -687,10 +686,9 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier(
     if (!cb_state) return;
     auto *cb_access_context = &cb_state->access_context;
 
-    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(record_obj.location.function, *this, cb_access_context->GetQueueFlags(),
-                                                           srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
-                                                           pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                                           imageMemoryBarrierCount, pImageMemoryBarriers);
+    cb_access_context->RecordSyncOp<SyncOpPipelineBarrier>(
+        record_obj.location.function, *this, cb_access_context->GetQueueFlags(), srcStageMask, dstStageMask, memoryBarrierCount,
+        pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 bool SyncValidator::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
