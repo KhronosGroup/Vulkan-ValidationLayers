@@ -356,6 +356,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
         }
         if (const auto &shader_object_state = Get<vvl::ShaderObject>(pShaders[i])) {
             shader_object_state->instrumentation_data.was_instrumented = true;
+            shader_object_state->instrumentation_data.unique_shader_id = instrumentation_data.unique_shader_id;
         }
 
         instrumented_shaders_map_.insert_or_assign(instrumentation_data.unique_shader_id, VK_NULL_HANDLE, VK_NULL_HANDLE,
@@ -365,10 +366,8 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
 
 void GpuShaderInstrumentor::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader,
                                                           const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
-    auto to_erase =
-        instrumented_shaders_map_.snapshot([shader](const InstrumentedShader &entry) { return entry.shader_object == shader; });
-    for (const auto &entry : to_erase) {
-        instrumented_shaders_map_.erase(entry.first);
+    if (auto shader_object_state = Get<vvl::ShaderObject>(shader)) {
+        instrumented_shaders_map_.pop(shader_object_state->instrumentation_data.unique_shader_id);
     }
     BaseClass::PreCallRecordDestroyShaderEXT(device, shader, pAllocator, record_obj);
 }
@@ -673,15 +672,10 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
 // Remove all the shader trackers associated with this destroyed pipeline.
 void GpuShaderInstrumentor::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline,
                                                          const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
-    auto to_erase =
-        instrumented_shaders_map_.snapshot([pipeline](const InstrumentedShader &entry) { return entry.pipeline == pipeline; });
-    for (const auto &entry : to_erase) {
-        instrumented_shaders_map_.erase(entry.first);
-    }
-
     if (auto pipeline_state = Get<vvl::Pipeline>(pipeline)) {
-        for (auto shader_module : pipeline_state->instrumentation_data.instrumented_shader_module) {
-            DispatchDestroyShaderModule(device, shader_module, pAllocator);
+        for (auto [unique_shader_id, shader_module_handle] : pipeline_state->instrumentation_data.instrumented_shader_modules) {
+            instrumented_shaders_map_.pop(unique_shader_id);
+            DispatchDestroyShaderModule(device, shader_module_handle, pAllocator);
         }
         if (pipeline_state->instrumentation_data.pre_raster_lib != VK_NULL_HANDLE) {
             DispatchDestroyPipeline(device, pipeline_state->instrumentation_data.pre_raster_lib, pAllocator);
@@ -901,7 +895,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                 if (result == VK_SUCCESS) {
                     SetShaderModule(modified_pipeline_ci, *stage_state.pipeline_create_info, instrumented_shader_module,
                                     stage_state_i);
-                    pipeline_state.instrumentation_data.instrumented_shader_module.emplace_back(instrumented_shader_module);
+
+                    pipeline_state.instrumentation_data.instrumented_shader_modules.emplace_back(
+                        std::pair<uint32_t, VkShaderModule>{unique_shader_id, instrumented_shader_module});
                 } else {
                     InternalError(device, loc, "Unable to replace non-instrumented shader with instrumented one.");
                     return false;
@@ -1046,7 +1042,8 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                         modified_pipeline_ci.pStages[stage_state_i] = *modified_stage_state.pipeline_create_info;
                         modified_pipeline_ci.pStages[stage_state_i].module = instrumented_shader_module;
 
-                        modified_lib->instrumentation_data.instrumented_shader_module.emplace_back(instrumented_shader_module);
+                        modified_lib->instrumentation_data.instrumented_shader_modules.emplace_back(
+                            std::pair<uint32_t, VkShaderModule>{unique_shader_id, instrumented_shader_module});
                     } else {
                         InternalError(device, loc, "Unable to replace non-instrumented shader with instrumented one.");
                         return false;
