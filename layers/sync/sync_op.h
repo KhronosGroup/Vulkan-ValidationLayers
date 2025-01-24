@@ -318,11 +318,13 @@ class SyncOpEndRenderPass : public SyncOpBase {
   protected:
     vku::safe_VkSubpassEndInfo subpass_end_info_;
 };
-// The barrier operation for pipeline and subpass dependencies`
+
+// The barrier operation for pipeline and subpass dependencies
 struct PipelineBarrierOp {
     SyncBarrier barrier;
     bool layout_transition;
     ResourceAccessState::QueueScopeOps scope;
+
     PipelineBarrierOp(QueueId queue_id, const SyncBarrier &barrier_, bool layout_transition_)
         : barrier(barrier_), layout_transition(layout_transition_), scope(queue_id) {
         if (queue_id != kQueueIdInvalid) {
@@ -338,12 +340,16 @@ struct PipelineBarrierOp {
 };
 
 // Batch barrier ops don't modify in place, and thus don't need to hold pending state, and also are *never* layout transitions.
-struct BatchBarrierOp : public PipelineBarrierOp {
+struct BatchBarrierOp {
+    SyncBarrier barrier;
+    ResourceAccessState::QueueScopeOps scope;
+
+    BatchBarrierOp(QueueId queue_id, const SyncBarrier &barrier) : barrier(barrier), scope(queue_id) {}
+
     void operator()(ResourceAccessState *access_state) const {
-        access_state->ApplyBarrier(scope, barrier, layout_transition);
+        access_state->ApplyBarrier(scope, barrier, false);
         access_state->ApplyPendingBarriers(kInvalidTag);  // There can't be any need for this tag
     }
-    BatchBarrierOp(QueueId queue_id, const SyncBarrier &barrier_) : PipelineBarrierOp(queue_id, barrier_, false) {}
 };
 
 // The barrier operation for wait events

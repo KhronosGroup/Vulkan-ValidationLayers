@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2024 The Khronos Group Inc.
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+/* Copyright (c) 2019-2025 The Khronos Group Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,15 +114,13 @@ class HazardResult {
 };
 
 struct SyncExecScope {
-    VkPipelineStageFlags2 mask_param;     // the xxxStageMask parameter passed by the caller
-    VkPipelineStageFlags2 expanded_mask;  // all stage bits covered by any 'catch all bits' in the parameter (eg. ALL_GRAPHICS_BIT).
-    VkPipelineStageFlags2 exec_scope;     // all earlier or later stages that would be affected by a barrier using this scope.
-    SyncAccessFlags valid_accesses;       // all valid accesses that can be used with this scope.
+    VkPipelineStageFlags2 mask_param;  // the xxxStageMask parameter passed by the caller
+    VkPipelineStageFlags2 exec_scope;  // all earlier or later stages that would be affected by a barrier using this scope.
+    SyncAccessFlags valid_accesses;    // all valid accesses that can be used with this scope.
 
-    SyncExecScope() : mask_param(0), expanded_mask(0), exec_scope(0), valid_accesses(0) {}
-    SyncExecScope(VkPipelineStageFlags2 mask_param_, VkPipelineStageFlags2 expanded_mask_, VkPipelineStageFlags2 exec_scope_,
-                  const SyncAccessFlags &valid_accesses_)
-        : mask_param(mask_param_), expanded_mask(expanded_mask_), exec_scope(exec_scope_), valid_accesses(valid_accesses_) {}
+    SyncExecScope() : mask_param(0), exec_scope(0), valid_accesses(0) {}
+    SyncExecScope(VkPipelineStageFlags2 mask_param, VkPipelineStageFlags2 exec_scope, const SyncAccessFlags &valid_accesses)
+        : mask_param(mask_param), exec_scope(exec_scope), valid_accesses(valid_accesses) {}
 
     static SyncExecScope MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2 src_stage_mask,
                                  const VkPipelineStageFlags2 disabled_feature_mask = 0);
