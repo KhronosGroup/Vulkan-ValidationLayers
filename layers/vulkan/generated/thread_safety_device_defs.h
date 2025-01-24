@@ -4069,6 +4069,24 @@ void PostCallRecordUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndire
                                                        const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
                                                        const RecordObject& record_obj) override;
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+void PreCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo, void** pHandle,
+                                          const RecordObject& record_obj) override;
+
+void PostCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                           void** pHandle, const RecordObject& record_obj) override;
+
+void PreCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                    const void* pHandle,
+                                                    VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                    const RecordObject& record_obj) override;
+
+void PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                     const void* pHandle,
+                                                     VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                     const RecordObject& record_obj) override;
+
+#endif  // VK_USE_PLATFORM_METAL_EXT
 void PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator,
                                                  VkAccelerationStructureKHR* pAccelerationStructure,

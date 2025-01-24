@@ -564,6 +564,8 @@ const char* String(Func func) {
     {"vkGetMemoryFdKHR", 17},
     {"vkGetMemoryFdPropertiesKHR", 27},
     {"vkGetMemoryHostPointerPropertiesEXT", 36},
+    {"vkGetMemoryMetalHandleEXT", 26},
+    {"vkGetMemoryMetalHandlePropertiesEXT", 36},
     {"vkGetMemoryRemoteAddressNV", 27},
     {"vkGetMemoryWin32HandleKHR", 26},
     {"vkGetMemoryWin32HandleNV", 25},
@@ -1117,6 +1119,7 @@ const char* String(Struct structure) {
     {"VkImportMemoryBufferCollectionFUCHSIA", 38},
     {"VkImportMemoryFdInfoKHR", 24},
     {"VkImportMemoryHostPointerInfoEXT", 33},
+    {"VkImportMemoryMetalHandleInfoEXT", 33},
     {"VkImportMemoryWin32HandleInfoKHR", 33},
     {"VkImportMemoryWin32HandleInfoNV", 32},
     {"VkImportMemoryZirconHandleInfoFUCHSIA", 38},
@@ -1166,6 +1169,7 @@ const char* String(Struct structure) {
     {"VkMemoryFdPropertiesKHR", 24},
     {"VkMemoryGetAndroidHardwareBufferInfoANDROID", 44},
     {"VkMemoryGetFdInfoKHR", 21},
+    {"VkMemoryGetMetalHandleInfoEXT", 30},
     {"VkMemoryGetRemoteAddressInfoNV", 31},
     {"VkMemoryGetWin32HandleInfoKHR", 30},
     {"VkMemoryGetZirconHandleInfoFUCHSIA", 35},
@@ -1173,6 +1177,7 @@ const char* String(Struct structure) {
     {"VkMemoryHostPointerPropertiesEXT", 33},
     {"VkMemoryMapInfo", 16},
     {"VkMemoryMapPlacedInfoEXT", 25},
+    {"VkMemoryMetalHandlePropertiesEXT", 33},
     {"VkMemoryOpaqueCaptureAddressAllocateInfo", 41},
     {"VkMemoryPriorityAllocateInfoEXT", 32},
     {"VkMemoryRequirements", 21},
@@ -1533,6 +1538,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR", 54},
     {"VkPhysicalDeviceVideoFormatInfoKHR", 35},
     {"VkPhysicalDeviceVideoMaintenance1FeaturesKHR", 45},
+    {"VkPhysicalDeviceVideoMaintenance2FeaturesKHR", 45},
     {"VkPhysicalDeviceVulkan11Features", 33},
     {"VkPhysicalDeviceVulkan11Properties", 35},
     {"VkPhysicalDeviceVulkan12Features", 33},
@@ -1781,18 +1787,21 @@ const char* String(Struct structure) {
     {"VkVideoCodingControlInfoKHR", 28},
     {"VkVideoDecodeAV1CapabilitiesKHR", 32},
     {"VkVideoDecodeAV1DpbSlotInfoKHR", 31},
+    {"VkVideoDecodeAV1InlineSessionParametersInfoKHR", 47},
     {"VkVideoDecodeAV1PictureInfoKHR", 31},
     {"VkVideoDecodeAV1ProfileInfoKHR", 31},
     {"VkVideoDecodeAV1SessionParametersCreateInfoKHR", 47},
     {"VkVideoDecodeCapabilitiesKHR", 29},
     {"VkVideoDecodeH264CapabilitiesKHR", 33},
     {"VkVideoDecodeH264DpbSlotInfoKHR", 32},
+    {"VkVideoDecodeH264InlineSessionParametersInfoKHR", 48},
     {"VkVideoDecodeH264PictureInfoKHR", 32},
     {"VkVideoDecodeH264ProfileInfoKHR", 32},
     {"VkVideoDecodeH264SessionParametersAddInfoKHR", 45},
     {"VkVideoDecodeH264SessionParametersCreateInfoKHR", 48},
     {"VkVideoDecodeH265CapabilitiesKHR", 33},
     {"VkVideoDecodeH265DpbSlotInfoKHR", 32},
+    {"VkVideoDecodeH265InlineSessionParametersInfoKHR", 48},
     {"VkVideoDecodeH265PictureInfoKHR", 32},
     {"VkVideoDecodeH265ProfileInfoKHR", 32},
     {"VkVideoDecodeH265SessionParametersAddInfoKHR", 45},
@@ -3459,6 +3468,7 @@ const char* String(Field field) {
     {"pGeneratedCommandsInfo", 23},
     {"pGeometries", 12},
     {"pGetFdInfo", 11},
+    {"pGetMetalHandleInfo", 20},
     {"pGetWin32HandleInfo", 20},
     {"pGetZirconHandleInfo", 21},
     {"pGranularity", 13},
@@ -3536,6 +3546,7 @@ const char* String(Field field) {
     {"pMemoryGetRemoteAddressInfo", 28},
     {"pMemoryHostPointerProperties", 29},
     {"pMemoryMapInfo", 15},
+    {"pMemoryMetalHandleProperties", 29},
     {"pMemoryProperties", 18},
     {"pMemoryRanges", 14},
     {"pMemoryRequirements", 20},
@@ -3695,13 +3706,16 @@ const char* String(Field field) {
     {"pStdDecoderModelInfo", 21},
     {"pStdHeaderVersion", 18},
     {"pStdOperatingPoints", 20},
+    {"pStdPPS", 8},
     {"pStdPPSs", 9},
     {"pStdPictureInfo", 16},
     {"pStdReferenceInfo", 18},
+    {"pStdSPS", 8},
     {"pStdSPSs", 9},
     {"pStdSequenceHeader", 19},
     {"pStdSliceHeader", 16},
     {"pStdSliceSegmentHeader", 23},
+    {"pStdVPS", 8},
     {"pStdVPSs", 9},
     {"pStencilAttachment", 19},
     {"pStencilInputAttachmentIndex", 29},
@@ -4633,6 +4647,7 @@ const char* String(Field field) {
     {"videoEncodeAV1", 15},
     {"videoEncodeQuantizationMap", 27},
     {"videoMaintenance1", 18},
+    {"videoMaintenance2", 18},
     {"videoSession", 13},
     {"videoSessionParameters", 23},
     {"videoSessionParametersTemplate", 31},
@@ -5062,6 +5077,7 @@ const char* String(Extension extension) {
     {"VK_EXT_external_memory_acquire_unmodified", 42},
     {"VK_EXT_external_memory_dma_buf", 31},
     {"VK_EXT_external_memory_host", 28},
+    {"VK_EXT_external_memory_metal", 29},
     {"VK_EXT_filter_cubic", 20},
     {"VK_EXT_fragment_density_map", 28},
     {"VK_EXT_fragment_density_map2", 29},
@@ -5288,6 +5304,7 @@ const char* String(Extension extension) {
     {"VK_KHR_video_encode_quantization_map", 37},
     {"VK_KHR_video_encode_queue", 26},
     {"VK_KHR_video_maintenance1", 26},
+    {"VK_KHR_video_maintenance2", 26},
     {"VK_KHR_video_queue", 19},
     {"VK_KHR_vulkan_memory_model", 27},
     {"VK_KHR_wayland_surface", 23},
@@ -5391,6 +5408,7 @@ bool IsFieldPointer(Field field) {
     case Field::dfb:
     case Field::displayName:
     case Field::dpy:
+    case Field::handle:
     case Field::hostAddress:
     case Field::opaqueCaptureDescriptorData:
     case Field::pAccelerationStructure:
@@ -5587,6 +5605,7 @@ bool IsFieldPointer(Field field) {
     case Field::pGeneratedCommandsInfo:
     case Field::pGeometries:
     case Field::pGetFdInfo:
+    case Field::pGetMetalHandleInfo:
     case Field::pGetWin32HandleInfo:
     case Field::pGetZirconHandleInfo:
     case Field::pGranularity:
@@ -5664,6 +5683,7 @@ bool IsFieldPointer(Field field) {
     case Field::pMemoryGetRemoteAddressInfo:
     case Field::pMemoryHostPointerProperties:
     case Field::pMemoryMapInfo:
+    case Field::pMemoryMetalHandleProperties:
     case Field::pMemoryProperties:
     case Field::pMemoryRanges:
     case Field::pMemoryRequirements:
@@ -5823,13 +5843,16 @@ bool IsFieldPointer(Field field) {
     case Field::pStdDecoderModelInfo:
     case Field::pStdHeaderVersion:
     case Field::pStdOperatingPoints:
+    case Field::pStdPPS:
     case Field::pStdPPSs:
     case Field::pStdPictureInfo:
     case Field::pStdReferenceInfo:
+    case Field::pStdSPS:
     case Field::pStdSPSs:
     case Field::pStdSequenceHeader:
     case Field::pStdSliceHeader:
     case Field::pStdSliceSegmentHeader:
+    case Field::pStdVPS:
     case Field::pStdVPSs:
     case Field::pStencilAttachment:
     case Field::pStencilInputAttachmentIndex:

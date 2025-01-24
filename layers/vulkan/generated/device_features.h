@@ -890,6 +890,8 @@ struct DeviceFeatures {
     bool videoEncodeQuantizationMap;
     // VkPhysicalDeviceVideoMaintenance1FeaturesKHR
     bool videoMaintenance1;
+    // VkPhysicalDeviceVideoMaintenance2FeaturesKHR
+    bool videoMaintenance2;
     // VkPhysicalDeviceVulkan12Features
     bool descriptorIndexing;
     // VkPhysicalDeviceVulkan12Features

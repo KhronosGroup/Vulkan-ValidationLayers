@@ -6798,6 +6798,30 @@ virtual void PreCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPr
 virtual void PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const RecordObject& record_obj) {}
+#ifdef VK_USE_PLATFORM_METAL_EXT
+virtual bool PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                    void** pHandle, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                  void** pHandle, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                   void** pHandle, const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                              const void* pHandle,
+                                                              VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                            const void* pHandle,
+                                                            VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                             const void* pHandle,
+                                                             VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                             const RecordObject& record_obj) {}
+#endif  // VK_USE_PLATFORM_METAL_EXT
 virtual bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,
