@@ -688,8 +688,7 @@ void Surface::SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const VkPrese
 }
 
 // Helper for data obtained from vkGetPhysicalDeviceSurfacePresentModesKHR
-std::vector<VkPresentModeKHR> Surface::GetPresentModes(VkPhysicalDevice phys_dev, const Location &loc,
-                                                       const ValidationObject *validation_obj) const {
+std::vector<VkPresentModeKHR> Surface::GetPresentModes(VkPhysicalDevice phys_dev) const {
     if (auto guard = Lock(); auto cache = GetPhysDevCache(phys_dev)) {
         if (cache->present_modes.has_value()) {
             return cache->present_modes.value();
@@ -713,8 +712,7 @@ void Surface::SetFormats(VkPhysicalDevice phys_dev, std::vector<vku::safe_VkSurf
 }
 
 vvl::span<const vku::safe_VkSurfaceFormat2KHR> Surface::GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                                   const void *surface_info2_pnext, const Location &loc,
-                                                                   const ValidationObject *validation_obj) const {
+                                                                   const void *surface_info2_pnext) const {
     auto guard = Lock();
 
     // TODO: BUG: format also depends on pNext. Rework this function similar to GetSurfaceCapabilities

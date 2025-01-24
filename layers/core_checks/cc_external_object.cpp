@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -29,7 +29,8 @@ bool CoreChecks::CanSemaphoreExportFromImported(VkExternalSemaphoreHandleTypeFla
     VkPhysicalDeviceExternalSemaphoreInfo semaphore_info = vku::InitStructHelper();
     semaphore_info.handleType = export_type;
     VkExternalSemaphoreProperties semaphore_properties = vku::InitStructHelper();
-    DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelper(physical_device, &semaphore_info, &semaphore_properties);
+    instance_state->DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelper(physical_device, &semaphore_info,
+                                                                               &semaphore_properties);
     return (imported_type & semaphore_properties.exportFromImportedHandleTypes) != 0;
 }
 
@@ -38,7 +39,7 @@ bool CoreChecks::CanFenceExportFromImported(VkExternalFenceHandleTypeFlagBits ex
     VkPhysicalDeviceExternalFenceInfo fence_info = vku::InitStructHelper();
     fence_info.handleType = export_type;
     VkExternalFenceProperties fence_properties = vku::InitStructHelper();
-    DispatchGetPhysicalDeviceExternalFencePropertiesHelper(physical_device, &fence_info, &fence_properties);
+    instance_state->DispatchGetPhysicalDeviceExternalFencePropertiesHelper(physical_device, &fence_info, &fence_properties);
     return (imported_type & fence_properties.exportFromImportedHandleTypes) != 0;
 }
 

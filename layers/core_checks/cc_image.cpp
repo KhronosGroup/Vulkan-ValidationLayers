@@ -70,11 +70,11 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
         if (has_format_feature2) {
             VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
-            DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_format, &fmt_props_2);
+            instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_format, &fmt_props_2);
             std::vector<VkDrmFormatModifierProperties2EXT> drm_properties;
             drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
             fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
-            DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_format, &fmt_props_2);
+            instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_format, &fmt_props_2);
 
             for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
                 if (drm_format_modifiers.find(fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier) !=
@@ -85,11 +85,11 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
         } else {
             VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
-            DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_format, &fmt_props_2);
+            instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_format, &fmt_props_2);
             std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
             drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
             fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
-            DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_format, &fmt_props_2);
+            instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_format, &fmt_props_2);
 
             for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
                 if (drm_format_modifiers.find(fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier) !=
@@ -246,8 +246,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     VkResult result = VK_SUCCESS;
     if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) {
-            result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info,
-                                                                           &image_format_properties);
+            result = instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info,
+                                                                                           &image_format_properties);
         } else {
             result = DispatchGetPhysicalDeviceImageFormatProperties(physical_device, pCreateInfo->format, pCreateInfo->imageType,
                                                                     pCreateInfo->tiling, pCreateInfo->usage, pCreateInfo->flags,
@@ -292,8 +292,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         if (modifier_list) {
             for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
                 drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
-                result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info,
-                                                                               &image_format_properties);
+                result = instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info,
+                                                                                               &image_format_properties);
 
                 // The application gives a list of modifier and the driver selects one. If one is valid, stop there.
                 if (result == VK_SUCCESS) {
@@ -302,8 +302,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             }
         } else if (explicit_modifier) {
             drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
-            result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info,
-                                                                           &image_format_properties);
+            result = instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info,
+                                                                                           &image_format_properties);
         }
 
         if (result != VK_SUCCESS) {
@@ -595,7 +595,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_image_properties);
         VkExternalMemoryHandleTypeFlags compatible_types = 0;
         if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info, &image_properties);
+            result = instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info,
+                                                                                           &image_properties);
             compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
         } else {
             auto modifier_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
@@ -609,8 +610,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             if (modifier_list) {
                 for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
                     drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
-                    result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info,
-                                                                                   &image_properties);
+                    result = instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(
+                        physical_device, &image_format_info, &image_properties);
                     if (result == VK_SUCCESS) {
                         compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
                         if ((external_memory_create_info->handleTypes & compatible_types) ==
@@ -621,8 +622,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 if (compatible_types != 0) result = VK_SUCCESS;
             } else if (explicit_modifier) {
                 drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
-                result =
-                    DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info, &image_properties);
+                result = instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &image_format_info,
+                                                                                               &image_properties);
                 compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
             }
         }
@@ -789,7 +790,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             valid_quantization_map_format = false;
         } else {
             const Location profile_info_loc = create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR, Field::pProfiles, 0);
-            skip |= ValidateVideoProfileInfo(&video_profiles->pProfiles[0], device, create_info_loc.dot(Field::pProfiles, 0));
+            skip |= core::ValidateVideoProfileInfo(*this, &video_profiles->pProfiles[0], error_obj,
+                                                   create_info_loc.dot(Field::pProfiles, 0));
 
             vvl::VideoProfileDesc profile_desc(physical_device, &video_profiles->pProfiles[0]);
             const auto &profile_caps = profile_desc.GetCapabilities();
@@ -857,9 +859,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
         // Quantization map video profile list info validation happens in the previous block
         if (!has_quantization_map_usage) {
-            skip |= ValidateVideoProfileListInfo(video_profiles, device, create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR),
-                                                 expect_decode_profile, "VUID-VkImageCreateInfo-usage-04815", expect_encode_profile,
-                                                 "VUID-VkImageCreateInfo-usage-04816");
+            skip |= core::ValidateVideoProfileListInfo(
+                *this, video_profiles, error_obj, create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR), expect_decode_profile,
+                "VUID-VkImageCreateInfo-usage-04815", expect_encode_profile, "VUID-VkImageCreateInfo-usage-04816");
         }
 
         if (video_profiles && video_profiles->profileCount > 0) {
@@ -1744,13 +1746,13 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
         if (has_format_feature2) {
             VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
-            DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, view_format, &fmt_props_2);
+            instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, view_format, &fmt_props_2);
 
             std::vector<VkDrmFormatModifierProperties2EXT> drm_properties;
             drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
             fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
 
-            DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, view_format, &fmt_props_2);
+            instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, view_format, &fmt_props_2);
 
             for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
                 if (fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_properties.drmFormatModifier) {
@@ -1761,13 +1763,13 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
         } else {
             VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
-            DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, view_format, &fmt_props_2);
+            instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, view_format, &fmt_props_2);
 
             std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
             drm_properties.resize(fmt_drm_props.drmFormatModifierCount);
             fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
 
-            DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, view_format, &fmt_props_2);
+            instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, view_format, &fmt_props_2);
 
             for (uint32_t i = 0; i < fmt_drm_props.drmFormatModifierCount; i++) {
                 if (fmt_drm_props.pDrmFormatModifierProperties[i].drmFormatModifier == drm_format_properties.drmFormatModifier) {
@@ -2600,10 +2602,12 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image &image_state
 
             VkDrmFormatModifierPropertiesListEXT fmt_drm_props = vku::InitStructHelper();
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
-            DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_state.create_info.format, &fmt_props_2);
+            instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_state.create_info.format,
+                                                                             &fmt_props_2);
             std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties{fmt_drm_props.drmFormatModifierCount};
             fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
-            DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_state.create_info.format, &fmt_props_2);
+            instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, image_state.create_info.format,
+                                                                             &fmt_props_2);
 
             uint32_t max_plane_count = 0u;
 

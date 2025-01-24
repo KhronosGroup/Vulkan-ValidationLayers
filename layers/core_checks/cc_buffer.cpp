@@ -294,9 +294,9 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         const bool expect_encode_profile = has_encode_usage && !video_profile_independent;
 
         const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
-        skip |= ValidateVideoProfileListInfo(video_profiles, device, create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR),
-                                             expect_decode_profile, "VUID-VkBufferCreateInfo-usage-04813", expect_encode_profile,
-                                             "VUID-VkBufferCreateInfo-usage-04814");
+        skip |= core::ValidateVideoProfileListInfo(
+            *this, video_profiles, error_obj, create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR), expect_decode_profile,
+            "VUID-VkBufferCreateInfo-usage-04813", expect_encode_profile, "VUID-VkBufferCreateInfo-usage-04814");
     }
 
     auto external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
@@ -308,8 +308,8 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         external_buffer_info.usage = VkBufferUsageFlags(pCreateInfo->usage);
         external_buffer_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
         VkExternalBufferProperties external_buffer_properties = vku::InitStructHelper();
-        DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(physical_device, &external_buffer_info,
-                                                                &external_buffer_properties);
+        instance_state->DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(physical_device, &external_buffer_info,
+                                                                                &external_buffer_properties);
         const auto compatible_types = external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
 
         if ((external_memory_info->handleTypes & compatible_types) != external_memory_info->handleTypes) {

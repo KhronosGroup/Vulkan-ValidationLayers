@@ -54,7 +54,7 @@ void Instance::InitValidationObjects() {
         object_dispatch.emplace_back(new object_lifetimes::Instance(this));
     }
     if (!settings.disabled[core_checks]) {
-        object_dispatch.emplace_back(new CoreChecks(this));
+        object_dispatch.emplace_back(new core::Instance(this));
     }
     if (settings.enabled[best_practices]) {
         object_dispatch.emplace_back(new BestPractices(this));
@@ -83,8 +83,8 @@ void Device::InitValidationObjects() {
             this, static_cast<object_lifetimes::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeObjectTracker))));
     }
     if (!settings.disabled[core_checks]) {
-        object_dispatch.emplace_back(
-            new CoreChecks(this, static_cast<CoreChecks*>(dispatch_instance->GetValidationObject(LayerObjectTypeCoreValidation))));
+        object_dispatch.emplace_back(new CoreChecks(
+            this, static_cast<core::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeCoreValidation))));
     }
     if (settings.enabled[best_practices]) {
         object_dispatch.emplace_back(new BestPractices(

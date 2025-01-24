@@ -62,7 +62,7 @@ class APISpecific:
                     {
                         'include': 'core_checks/core_validation.h',
                         'device': 'CoreChecks',
-                        'instance': 'CoreChecks',
+                        'instance': 'core::Instance',
                         'type': 'LayerObjectTypeCoreValidation',
                         'enabled': '!settings.disabled[core_checks]'
                     },
