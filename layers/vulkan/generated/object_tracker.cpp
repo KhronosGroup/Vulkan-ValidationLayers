@@ -7883,6 +7883,28 @@ bool Device::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device,
 // Checked by chassis: physicalDevice:
 // "VUID-vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV-physicalDevice-parameter"
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+bool Device::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                    void** pHandle, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetMemoryMetalHandleEXT-device-parameter"
+    if (pGetMetalHandleInfo) {
+        [[maybe_unused]] const Location pGetMetalHandleInfo_loc = error_obj.location.dot(Field::pGetMetalHandleInfo);
+        skip |=
+            ValidateObject(pGetMetalHandleInfo->memory, kVulkanObjectTypeDeviceMemory, false,
+                           "VUID-VkMemoryGetMetalHandleInfoEXT-memory-parameter",
+                           "UNASSIGNED-VkMemoryGetMetalHandleInfoEXT-memory-parent", pGetMetalHandleInfo_loc.dot(Field::memory));
+    }
+
+    return skip;
+}
+
+// vkGetMemoryMetalHandlePropertiesEXT:
+// Checked by chassis: device: "VUID-vkGetMemoryMetalHandlePropertiesEXT-device-parameter"
+
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,

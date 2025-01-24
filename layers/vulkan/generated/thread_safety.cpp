@@ -8042,6 +8042,32 @@ void Device::PostCallRecordUpdateIndirectExecutionSetShaderEXT(VkDevice device, 
     // Host access to indirectExecutionSet must be externally synchronized
 }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+void Device::PreCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                  void** pHandle, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                   void** pHandle, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                            const void* pHandle,
+                                                            VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                            const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                             const void* pHandle,
+                                                             VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                             const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+#endif  // VK_USE_PLATFORM_METAL_EXT
 void Device::PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkAccelerationStructureKHR* pAccelerationStructure,

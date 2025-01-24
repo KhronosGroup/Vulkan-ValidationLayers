@@ -726,6 +726,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->maintenance8 |= enabled->maintenance8 == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_2_FEATURES_KHR: {
+                const VkPhysicalDeviceVideoMaintenance2FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVideoMaintenance2FeaturesKHR *>(pNext);
+                features->videoMaintenance2 |= enabled->videoMaintenance2 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR: {
                 const VkPhysicalDeviceDepthClampZeroOneFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceDepthClampZeroOneFeaturesKHR *>(pNext);

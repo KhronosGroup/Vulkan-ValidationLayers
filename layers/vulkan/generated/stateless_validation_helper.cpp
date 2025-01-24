@@ -1730,6 +1730,24 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceVideoMaintenance2FeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_2_FEATURES_KHR: {  // Covers
+                                                                                    // VUID-VkPhysicalDeviceVideoMaintenance2FeaturesKHR-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_khr_video_maintenance2)) {
+                skip |=
+                    log.LogError(pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkStructureType "
+                                 "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_2_FEATURES_KHR), but its parent extension "
+                                 "VK_KHR_video_maintenance2 has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceVideoMaintenance2FeaturesKHR);
+                VkPhysicalDeviceVideoMaintenance2FeaturesKHR* structure = (VkPhysicalDeviceVideoMaintenance2FeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::videoMaintenance2), structure->videoMaintenance2);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceDepthClampZeroOneFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR: {  // Covers
                                                                                      // VUID-VkPhysicalDeviceDepthClampZeroOneFeaturesKHR-sType-sType
@@ -7724,6 +7742,45 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // Validation code for VkVideoDecodeH264InlineSessionParametersInfoKHR structure members
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_INLINE_SESSION_PARAMETERS_INFO_KHR: {  // Covers
+                                                                                        // VUID-VkVideoDecodeH264InlineSessionParametersInfoKHR-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_khr_video_maintenance2)) {
+                skip |= log.LogError(
+                    pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                    "includes a pointer to a VkStructureType "
+                    "(VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_INLINE_SESSION_PARAMETERS_INFO_KHR), but its parent extension "
+                    "VK_KHR_video_maintenance2 has not been enabled.");
+            }
+        } break;
+
+        // Validation code for VkVideoDecodeH265InlineSessionParametersInfoKHR structure members
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_INLINE_SESSION_PARAMETERS_INFO_KHR: {  // Covers
+                                                                                        // VUID-VkVideoDecodeH265InlineSessionParametersInfoKHR-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_khr_video_maintenance2)) {
+                skip |= log.LogError(
+                    pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                    "includes a pointer to a VkStructureType "
+                    "(VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_INLINE_SESSION_PARAMETERS_INFO_KHR), but its parent extension "
+                    "VK_KHR_video_maintenance2 has not been enabled.");
+            }
+        } break;
+
+        // Validation code for VkVideoDecodeAV1InlineSessionParametersInfoKHR structure members
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_INLINE_SESSION_PARAMETERS_INFO_KHR: {  // Covers
+                                                                                       // VUID-VkVideoDecodeAV1InlineSessionParametersInfoKHR-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_khr_video_maintenance2)) {
+                skip |= log.LogError(
+                    pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                    "includes a pointer to a VkStructureType "
+                    "(VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_INLINE_SESSION_PARAMETERS_INFO_KHR), but its parent extension "
+                    "VK_KHR_video_maintenance2 has not been enabled.");
+            }
+        } break;
+
         // Validation code for VkDebugReportCallbackCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT: {  // Covers
                                                                          // VUID-VkDebugReportCallbackCreateInfoEXT-sType-sType
@@ -10908,6 +10965,26 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                                       "VUID-VkHdrVividDynamicMetadataHUAWEI-pDynamicMetadata-parameter");
             }
         } break;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+        // Validation code for VkImportMemoryMetalHandleInfoEXT structure members
+        case VK_STRUCTURE_TYPE_IMPORT_MEMORY_METAL_HANDLE_INFO_EXT: {  // Covers VUID-VkImportMemoryMetalHandleInfoEXT-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_ext_external_memory_metal)) {
+                skip |= log.LogError(pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                                     "includes a pointer to a VkStructureType "
+                                     "(VK_STRUCTURE_TYPE_IMPORT_MEMORY_METAL_HANDLE_INFO_EXT), but its parent extension "
+                                     "VK_EXT_external_memory_metal has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkImportMemoryMetalHandleInfoEXT);
+                VkImportMemoryMetalHandleInfoEXT* structure = (VkImportMemoryMetalHandleInfoEXT*)header;
+                skip |= ValidateFlags(pNext_loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
+                                      AllVkExternalMemoryHandleTypeFlagBits, structure->handleType, kOptionalSingleBit,
+                                      "VUID-VkImportMemoryMetalHandleInfoEXT-handleType-parameter");
+            }
+        } break;
+#endif  // VK_USE_PLATFORM_METAL_EXT
 
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
@@ -11282,6 +11359,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_AV1_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_QUANTIZATION_MAP_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_2_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
@@ -11458,6 +11536,7 @@ bool Device::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAlloca
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_BUFFER_COLLECTION_FUCHSIA,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT,
+                                                                     VK_STRUCTURE_TYPE_IMPORT_MEMORY_METAL_HANDLE_INFO_EXT,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV,
                                                                      VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA,
@@ -19272,8 +19351,13 @@ bool Device::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, con
     if (pDecodeInfo != nullptr) {
         [[maybe_unused]] const Location pDecodeInfo_loc = loc.dot(Field::pDecodeInfo);
         constexpr std::array allowed_structs_VkVideoDecodeInfoKHR = {
-            VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_PICTURE_INFO_KHR, VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PICTURE_INFO_KHR,
-            VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PICTURE_INFO_KHR, VK_STRUCTURE_TYPE_VIDEO_INLINE_QUERY_INFO_KHR};
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_INLINE_SESSION_PARAMETERS_INFO_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_PICTURE_INFO_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_INLINE_SESSION_PARAMETERS_INFO_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PICTURE_INFO_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_INLINE_SESSION_PARAMETERS_INFO_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PICTURE_INFO_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_INLINE_QUERY_INFO_KHR};
 
         skip |=
             context.ValidateStructPnext(pDecodeInfo_loc, pDecodeInfo->pNext, allowed_structs_VkVideoDecodeInfoKHR.size(),
@@ -28369,6 +28453,63 @@ bool Instance::PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensio
     }
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+bool Device::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
+                                                    void** pHandle, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_external_memory_metal))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_external_memory_metal});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pGetMetalHandleInfo), pGetMetalHandleInfo, VK_STRUCTURE_TYPE_MEMORY_GET_METAL_HANDLE_INFO_EXT, true,
+        "VUID-vkGetMemoryMetalHandleEXT-pGetMetalHandleInfo-parameter", "VUID-VkMemoryGetMetalHandleInfoEXT-sType-sType");
+    if (pGetMetalHandleInfo != nullptr) {
+        [[maybe_unused]] const Location pGetMetalHandleInfo_loc = loc.dot(Field::pGetMetalHandleInfo);
+        skip |= context.ValidateStructPnext(pGetMetalHandleInfo_loc, pGetMetalHandleInfo->pNext, 0, nullptr,
+                                            GeneratedVulkanHeaderVersion, "VUID-VkMemoryGetMetalHandleInfoEXT-pNext-pNext",
+                                            kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pGetMetalHandleInfo_loc.dot(Field::memory), pGetMetalHandleInfo->memory);
+
+        skip |= context.ValidateFlags(
+            pGetMetalHandleInfo_loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
+            AllVkExternalMemoryHandleTypeFlagBits, pGetMetalHandleInfo->handleType, kRequiredSingleBit,
+            "VUID-VkMemoryGetMetalHandleInfoEXT-handleType-parameter", "VUID-VkMemoryGetMetalHandleInfoEXT-handleType-parameter");
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pHandle), pHandle, "VUID-vkGetMemoryMetalHandleEXT-pHandle-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
+                                                              const void* pHandle,
+                                                              VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_external_memory_metal))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_external_memory_metal});
+    skip |= context.ValidateFlags(loc.dot(Field::handleType), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
+                                  AllVkExternalMemoryHandleTypeFlagBits, handleType, kRequiredSingleBit,
+                                  "VUID-vkGetMemoryMetalHandlePropertiesEXT-handleType-parameter",
+                                  "VUID-vkGetMemoryMetalHandlePropertiesEXT-handleType-parameter");
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pHandle), pHandle,
+                                            "VUID-vkGetMemoryMetalHandlePropertiesEXT-pHandle-parameter");
+    skip |= context.ValidateStructType(loc.dot(Field::pMemoryMetalHandleProperties), pMemoryMetalHandleProperties,
+                                       VK_STRUCTURE_TYPE_MEMORY_METAL_HANDLE_PROPERTIES_EXT, true,
+                                       "VUID-vkGetMemoryMetalHandlePropertiesEXT-pMemoryMetalHandleProperties-parameter",
+                                       "VUID-VkMemoryMetalHandlePropertiesEXT-sType-sType");
+    if (pMemoryMetalHandleProperties != nullptr) {
+        [[maybe_unused]] const Location pMemoryMetalHandleProperties_loc = loc.dot(Field::pMemoryMetalHandleProperties);
+        skip |= context.ValidateStructPnext(pMemoryMetalHandleProperties_loc, pMemoryMetalHandleProperties->pNext, 0, nullptr,
+                                            GeneratedVulkanHeaderVersion, "VUID-VkMemoryMetalHandlePropertiesEXT-pNext-pNext",
+                                            kVUIDUndefined, false);
+    }
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
 
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,

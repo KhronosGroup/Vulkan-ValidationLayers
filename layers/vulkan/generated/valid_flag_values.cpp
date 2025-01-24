@@ -780,6 +780,12 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_QNX_external_memory_screen_buffer};
                 }
             }
+            if (value & (VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT | VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLTEXTURE_BIT_EXT |
+                         VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLHEAP_BIT_EXT)) {
+                if (!IsExtEnabled(extensions.vk_ext_external_memory_metal)) {
+                    return {vvl::Extension::_VK_EXT_external_memory_metal};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkExternalSemaphoreHandleTypeFlagBits:
             if (value & (VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_ZIRCON_EVENT_BIT_FUCHSIA)) {
@@ -846,6 +852,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                          VK_VIDEO_SESSION_CREATE_ALLOW_ENCODE_EMPHASIS_MAP_BIT_KHR)) {
                 if (!IsExtEnabled(extensions.vk_khr_video_encode_quantization_map)) {
                     return {vvl::Extension::_VK_KHR_video_encode_quantization_map};
+                }
+            }
+            if (value & (VK_VIDEO_SESSION_CREATE_INLINE_SESSION_PARAMETERS_BIT_KHR)) {
+                if (!IsExtEnabled(extensions.vk_khr_video_maintenance2)) {
+                    return {vvl::Extension::_VK_KHR_video_maintenance2};
                 }
             }
             return {};

@@ -392,6 +392,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_shader_relaxed_extended_instruction{kNotEnabled};
     ExtEnabled vk_khr_maintenance7{kNotEnabled};
     ExtEnabled vk_khr_maintenance8{kNotEnabled};
+    ExtEnabled vk_khr_video_maintenance2{kNotEnabled};
     ExtEnabled vk_khr_depth_clamp_zero_one{kNotEnabled};
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
@@ -634,6 +635,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_huawei_hdr_vivid{kNotEnabled};
     ExtEnabled vk_nv_cooperative_matrix2{kNotEnabled};
     ExtEnabled vk_arm_pipeline_opacity_micromap{kNotEnabled};
+    ExtEnabled vk_ext_external_memory_metal{kNotEnabled};
     ExtEnabled vk_ext_vertex_attribute_robustness{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
@@ -987,6 +989,10 @@ struct DeviceExtensions : public InstanceExtensions {
              Info(&DeviceExtensions::vk_khr_maintenance7, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
             {vvl::Extension::_VK_KHR_maintenance8,
              Info(&DeviceExtensions::vk_khr_maintenance8, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
+            {vvl::Extension::_VK_KHR_video_maintenance2,
+             Info(&DeviceExtensions::vk_khr_video_maintenance2,
+                  {{{&DeviceExtensions::vk_khr_video_decode_queue, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_depth_clamp_zero_one,
              Info(&DeviceExtensions::vk_khr_depth_clamp_zero_one, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -1723,6 +1729,11 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_ARM_pipeline_opacity_micromap,
              Info(&DeviceExtensions::vk_arm_pipeline_opacity_micromap,
                   {{{&DeviceExtensions::vk_ext_opacity_micromap, VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME}}})},
+#ifdef VK_USE_PLATFORM_METAL_EXT
+            {vvl::Extension::_VK_EXT_external_memory_metal,
+             Info(&DeviceExtensions::vk_ext_external_memory_metal,
+                  {{{&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
+#endif  // VK_USE_PLATFORM_METAL_EXT
             {vvl::Extension::_VK_EXT_vertex_attribute_robustness,
              Info(&DeviceExtensions::vk_ext_vertex_attribute_robustness,
                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
@@ -1922,6 +1933,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction:
         case vvl::Extension::_VK_KHR_maintenance7:
         case vvl::Extension::_VK_KHR_maintenance8:
+        case vvl::Extension::_VK_KHR_video_maintenance2:
         case vvl::Extension::_VK_KHR_depth_clamp_zero_one:
         case vvl::Extension::_VK_NV_glsl_shader:
         case vvl::Extension::_VK_EXT_depth_range_unrestricted:
@@ -2164,6 +2176,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_HUAWEI_hdr_vivid:
         case vvl::Extension::_VK_NV_cooperative_matrix2:
         case vvl::Extension::_VK_ARM_pipeline_opacity_micromap:
+        case vvl::Extension::_VK_EXT_external_memory_metal:
         case vvl::Extension::_VK_EXT_vertex_attribute_robustness:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:

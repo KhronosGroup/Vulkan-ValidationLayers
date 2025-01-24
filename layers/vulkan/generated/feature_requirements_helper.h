@@ -880,6 +880,8 @@ enum class Feature {
     videoEncodeQuantizationMap,
     // VkPhysicalDeviceVideoMaintenance1FeaturesKHR
     videoMaintenance1,
+    // VkPhysicalDeviceVideoMaintenance2FeaturesKHR
+    videoMaintenance2,
     // VkPhysicalDeviceVulkan12Features
     descriptorIndexing,
     // VkPhysicalDeviceVulkan12Features
