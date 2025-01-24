@@ -228,8 +228,6 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         task_shader_08689                        = "VUID-vkCmdDraw-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDraw-None-08690";
         vert_mesh_shader_08693                   = "VUID-vkCmdDraw-None-08693";
-        task_mesh_shader_08694                   = "VUID-vkCmdDraw-None-08694";
-        task_mesh_shader_08695                   = "VUID-vkCmdDraw-None-08695";
         vert_task_mesh_shader_08696              = "VUID-vkCmdDraw-None-08696";
         linked_shaders_08698                     = "VUID-vkCmdDraw-None-08698";
         linked_shaders_08699                     = "VUID-vkCmdDraw-None-08699";
@@ -497,8 +495,6 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         task_shader_08689                        = "VUID-vkCmdDrawMultiEXT-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawMultiEXT-None-08690";
         vert_mesh_shader_08693                   = "VUID-vkCmdDrawMultiEXT-None-08693";
-        task_mesh_shader_08694                   = "VUID-vkCmdDrawMultiEXT-None-08694";
-        task_mesh_shader_08695                   = "VUID-vkCmdDrawMultiEXT-None-08695";
         vert_task_mesh_shader_08696              = "VUID-vkCmdDrawMultiEXT-None-08696";
         linked_shaders_08698                     = "VUID-vkCmdDrawMultiEXT-None-08698";
         linked_shaders_08699                     = "VUID-vkCmdDrawMultiEXT-None-08699";
@@ -767,8 +763,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         task_shader_08689                        = "VUID-vkCmdDrawIndexed-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawIndexed-None-08690";
         vert_mesh_shader_08693                   = "VUID-vkCmdDrawIndexed-None-08693";
-        task_mesh_shader_08694                   = "VUID-vkCmdDrawIndexed-None-08694";
-        task_mesh_shader_08695                   = "VUID-vkCmdDrawIndexed-None-08695";
         vert_task_mesh_shader_08696              = "VUID-vkCmdDrawIndexed-None-08696";
         linked_shaders_08698                     = "VUID-vkCmdDrawIndexed-None-08698";
         linked_shaders_08699                     = "VUID-vkCmdDrawIndexed-None-08699";
@@ -1037,8 +1031,6 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         task_shader_08689                        = "VUID-vkCmdDrawMultiIndexedEXT-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawMultiIndexedEXT-None-08690";
         vert_mesh_shader_08693                   = "VUID-vkCmdDrawMultiIndexedEXT-None-08693";
-        task_mesh_shader_08694                   = "VUID-vkCmdDrawMultiIndexedEXT-None-08694";
-        task_mesh_shader_08695                   = "VUID-vkCmdDrawMultiIndexedEXT-None-08695";
         vert_task_mesh_shader_08696              = "VUID-vkCmdDrawMultiIndexedEXT-None-08696";
         linked_shaders_08698                     = "VUID-vkCmdDrawMultiIndexedEXT-None-08698";
         linked_shaders_08699                     = "VUID-vkCmdDrawMultiIndexedEXT-None-08699";
@@ -1307,8 +1299,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         task_shader_08689                        = "VUID-vkCmdDrawIndirect-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawIndirect-None-08690";
         vert_mesh_shader_08693                   = "VUID-vkCmdDrawIndirect-None-08693";
-        task_mesh_shader_08694                   = "VUID-vkCmdDrawIndirect-None-08694";
-        task_mesh_shader_08695                   = "VUID-vkCmdDrawIndirect-None-08695";
         vert_task_mesh_shader_08696              = "VUID-vkCmdDrawIndirect-None-08696";
         linked_shaders_08698                     = "VUID-vkCmdDrawIndirect-None-08698";
         linked_shaders_08699                     = "VUID-vkCmdDrawIndirect-None-08699";
@@ -1576,8 +1566,6 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         task_shader_08689                        = "VUID-vkCmdDrawIndexedIndirect-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawIndexedIndirect-None-08690";
         vert_mesh_shader_08693                   = "VUID-vkCmdDrawIndexedIndirect-None-08693";
-        task_mesh_shader_08694                   = "VUID-vkCmdDrawIndexedIndirect-None-08694";
-        task_mesh_shader_08695                   = "VUID-vkCmdDrawIndexedIndirect-None-08695";
         vert_task_mesh_shader_08696              = "VUID-vkCmdDrawIndexedIndirect-None-08696";
         linked_shaders_08698                     = "VUID-vkCmdDrawIndexedIndirect-None-08698";
         linked_shaders_08699                     = "VUID-vkCmdDrawIndexedIndirect-None-08699";
@@ -1946,8 +1934,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         task_shader_08689                        = "VUID-vkCmdDrawIndirectCount-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawIndirectCount-None-08690";
         vert_mesh_shader_08693                   = "VUID-vkCmdDrawIndirectCount-None-08693";
-        task_mesh_shader_08694                   = "VUID-vkCmdDrawIndirectCount-None-08694";
-        task_mesh_shader_08695                   = "VUID-vkCmdDrawIndirectCount-None-08695";
         vert_task_mesh_shader_08696              = "VUID-vkCmdDrawIndirectCount-None-08696";
         linked_shaders_08698                     = "VUID-vkCmdDrawIndirectCount-None-08698";
         linked_shaders_08699                     = "VUID-vkCmdDrawIndirectCount-None-08699";
@@ -2218,8 +2204,6 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         task_shader_08689                        = "VUID-vkCmdDrawIndexedIndirectCount-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawIndexedIndirectCount-None-08690";
         vert_mesh_shader_08693                   = "VUID-vkCmdDrawIndexedIndirectCount-None-08693";
-        task_mesh_shader_08694                   = "VUID-vkCmdDrawIndexedIndirectCount-None-08694";
-        task_mesh_shader_08695                   = "VUID-vkCmdDrawIndexedIndirectCount-None-08695";
         vert_task_mesh_shader_08696              = "VUID-vkCmdDrawIndexedIndirectCount-None-08696";
         linked_shaders_08698                     = "VUID-vkCmdDrawIndexedIndirectCount-None-08698";
         linked_shaders_08699                     = "VUID-vkCmdDrawIndexedIndirectCount-None-08699";
@@ -4180,8 +4164,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         task_shader_08689                        = "VUID-vkCmdDrawIndirectByteCountEXT-None-08689";
         mesh_shader_08690                        = "VUID-vkCmdDrawIndirectByteCountEXT-None-08690";
         vert_mesh_shader_08693                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-08693";
-        task_mesh_shader_08694                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-08694";
-        task_mesh_shader_08695                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-08695";
         vert_task_mesh_shader_08696              = "VUID-vkCmdDrawIndirectByteCountEXT-None-08696";
         linked_shaders_08698                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08698";
         linked_shaders_08699                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08699";
