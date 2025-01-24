@@ -18,6 +18,7 @@
  */
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_core.h>
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "generated/error_location_helper.h"
@@ -234,16 +235,16 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
 bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    const VkShaderStageFlags bound_stages = last_bound_state.GetAllActiveBoundStages();
     const bool has_pipeline = last_bound_state.pipeline_state != nullptr;
     const bool has_rasterization_pipeline = has_pipeline && !(last_bound_state.pipeline_state->active_shaders &
                                                               (VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT));
+    // TODO - Spec clarification and testing still to prove pipeline can just check active stages only
     const bool vertex_shader_bound = has_rasterization_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX);
     const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
-    const bool geom_shader_bound = has_rasterization_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::GEOMETRY);
-    const bool tesc_shader_bound =
-        has_rasterization_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::TESSELLATION_CONTROL);
-    const bool tese_shader_bound =
-        has_rasterization_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION);
+    const bool geom_shader_bound = (bound_stages & VK_SHADER_STAGE_GEOMETRY_BIT) != 0;
+    const bool tesc_shader_bound = (bound_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) != 0;
+    const bool tese_shader_bound = (bound_stages & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) != 0;
 
     // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer,
     // for Shader Object, everything is dynamic don't need a mask
