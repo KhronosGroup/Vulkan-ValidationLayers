@@ -374,6 +374,11 @@ class ShaderObjectTest : public virtual VkLayerTest {
   public:
     void InitBasicShaderObject();
     void InitBasicMeshShaderObject(APIVersion target_api_version);
+
+    // Many tests just need a basic vert/frag shader
+    vkt::Shader m_vert_shader;
+    vkt::Shader m_frag_shader;
+    void CreateMinimalShaders();
 };
 
 class SyncObjectTest : public VkLayerTest {
