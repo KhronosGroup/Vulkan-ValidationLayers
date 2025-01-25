@@ -44,6 +44,7 @@
 #include "gpuav/spirv/ray_query_pass.h"
 #include "gpuav/spirv/debug_printf_pass.h"
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
+#include "gpuav/spirv/vertex_attribute_fetch_oob.h"
 
 #include <cassert>
 #include <fstream>
@@ -1198,6 +1199,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     // in a if/else, this means they will be gaurded as if they were inside the above passes
     if (gpuav_settings.shader_instrumentation.post_process_descriptor_index) {
         spirv::PostProcessDescriptorIndexingPass pass(module);
+        modified |= pass.Run();
+    }
+
+    if (gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob) {
+        spirv::VertexAttributeFetchOob pass(module);
         modified |= pass.Run();
     }
 

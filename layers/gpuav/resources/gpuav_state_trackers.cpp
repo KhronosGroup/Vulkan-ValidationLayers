@@ -25,6 +25,8 @@
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/debug_printf/debug_printf.h"
 
+#include "profiling/profiling.h"
+
 namespace gpuav {
 
 Buffer::Buffer(ValidationStateTracker &dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_)
@@ -530,6 +532,8 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
                 error_record_ptr += record_size;
                 record_size = error_record_ptr[glsl::kHeaderErrorRecordSizeOffset];
             }
+
+            VVL_TracyPlot("GPU-AV errors count", int64_t(total_words / glsl::kErrorRecordSize));
 
             // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.
             assert(glsl::kErrorBufferByteSize > cst::stream_output_data_offset);

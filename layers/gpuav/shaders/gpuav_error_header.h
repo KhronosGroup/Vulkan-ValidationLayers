@@ -113,7 +113,7 @@ const int kInstBuffAddrAccessAlignmentOffset = kHeaderSize + 4;
 // ---
 const int kInstRayQueryParamOffset_0 = kHeaderSize;
 
-// Pre shaders
+// Validation commands shaders
 // ---
 const int kPreActionParamOffset_0 = kHeaderSize;
 const int kPreActionParamOffset_1 = kHeaderSize + 1;

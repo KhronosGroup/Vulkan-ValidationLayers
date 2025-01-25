@@ -754,6 +754,7 @@ struct LastBound {
     std::string DescribeNonCompatibleSet(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;
     std::string DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
 
+    const spirv::EntryPoint *GetVertexEntryPoint() const;
     const spirv::EntryPoint *GetFragmentEntryPoint() const;
 
     // For GPU-AV

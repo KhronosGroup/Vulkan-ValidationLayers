@@ -125,7 +125,7 @@ class CommandBuffer : public vvl::CommandBuffer {
     using ErrorLoggerFunc =
         stdext::inplace_function<bool(Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
                                       const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack),
-                                 192 /*lambda storage size (bytes), large enough to storest biggest error lambda*/>;
+                                 256 /*lambda storage size (bytes), large enough to storest biggest error lambda*/>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
 
     using ValidationCommandFunc = stdext::inplace_function<void(Validator &gpuav, CommandBuffer &cb_state), 192>;
