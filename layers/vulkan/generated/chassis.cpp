@@ -404,7 +404,11 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit(VkQueue queue, uint32_t submitCount, 
     VkResult result;
     {
         VVL_ZoneScopedN("Dispatch");
+
+        VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_QueueSubmit", submit_gpu_zone);
         result = device_dispatch->QueueSubmit(queue, submitCount, pSubmits, fence);
+
+        VVL_TracyVkNamedZoneEnd(submit_gpu_zone, queue);
 #if defined(VVL_TRACY_GPU)
         TracyVkCollector::TrySubmitCollectCb(queue);
 #endif
@@ -4491,7 +4495,6 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass(VkCommandBuffer commandBuffer, con
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), commandBuffer, "gpu_RenderPass");
         device_dispatch->CmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
     }
     {
@@ -4563,7 +4566,6 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass(VkCommandBuffer commandBuffer) {
     {
         VVL_ZoneScopedN("Dispatch");
         device_dispatch->CmdEndRenderPass(commandBuffer);
-        VVL_TracyVkNamedZoneEnd(commandBuffer);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
@@ -5771,7 +5773,6 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2(VkCommandBuffer commandBuffer, co
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), commandBuffer, "gpu_RenderPass2");
         device_dispatch->CmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     }
     {
@@ -5844,7 +5845,6 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2(VkCommandBuffer commandBuffer, cons
     {
         VVL_ZoneScopedN("Dispatch");
         device_dispatch->CmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
-        VVL_TracyVkNamedZoneEnd(commandBuffer);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
@@ -6477,7 +6477,11 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2(VkQueue queue, uint32_t submitCount,
     VkResult result;
     {
         VVL_ZoneScopedN("Dispatch");
+
+        VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_QueueSubmit", submit_gpu_zone);
         result = device_dispatch->QueueSubmit2(queue, submitCount, pSubmits, fence);
+
+        VVL_TracyVkNamedZoneEnd(submit_gpu_zone, queue);
 #if defined(VVL_TRACY_GPU)
         TracyVkCollector::TrySubmitCollectCb(queue);
 #endif
@@ -6733,7 +6737,6 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRendering(VkCommandBuffer commandBuffer, cons
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), commandBuffer, "gpu_Rendering");
         device_dispatch->CmdBeginRendering(commandBuffer, pRenderingInfo);
     }
     {
@@ -6770,7 +6773,6 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRendering(VkCommandBuffer commandBuffer) {
     {
         VVL_ZoneScopedN("Dispatch");
         device_dispatch->CmdEndRendering(commandBuffer);
-        VVL_TracyVkNamedZoneEnd(commandBuffer);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
@@ -9829,7 +9831,6 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(VkCommandBuffer commandBuffer, c
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), commandBuffer, "gpu_RenderingKHR");
         device_dispatch->CmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
     }
     {
@@ -9866,7 +9867,6 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderingKHR(VkCommandBuffer commandBuffer) {
     {
         VVL_ZoneScopedN("Dispatch");
         device_dispatch->CmdEndRenderingKHR(commandBuffer);
-        VVL_TracyVkNamedZoneEnd(commandBuffer);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
@@ -10985,7 +10985,6 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
     }
     {
         VVL_ZoneScopedN("Dispatch");
-        VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), commandBuffer, "gpu_RenderPass2KHR");
         device_dispatch->CmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     }
     {
@@ -11058,7 +11057,6 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, c
     {
         VVL_ZoneScopedN("Dispatch");
         device_dispatch->CmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
-        VVL_TracyVkNamedZoneEnd(commandBuffer);
     }
     {
         VVL_ZoneScopedN("PostCallRecord");
@@ -13235,7 +13233,11 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(VkQueue queue, uint32_t submitCou
     VkResult result;
     {
         VVL_ZoneScopedN("Dispatch");
+
+        VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_QueueSubmit", submit_gpu_zone);
         result = device_dispatch->QueueSubmit2KHR(queue, submitCount, pSubmits, fence);
+
+        VVL_TracyVkNamedZoneEnd(submit_gpu_zone, queue);
 #if defined(VVL_TRACY_GPU)
         TracyVkCollector::TrySubmitCollectCb(queue);
 #endif
