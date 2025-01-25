@@ -270,16 +270,15 @@ Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInf
     : HandleWrapper(instance->debug_report),
       settings(instance->settings),
       dispatch_instance(instance),
-      api_version(instance->api_version),
       physical_device(gpu) {
     // Get physical device limits for device
     VkPhysicalDeviceProperties device_properties = {};
     dispatch_instance->instance_dispatch_table.GetPhysicalDeviceProperties(gpu, &device_properties);
 
     // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver
-    auto effective_api_version = std::min(APIVersion(device_properties.apiVersion), dispatch_instance->api_version);
+    api_version = std::min(APIVersion(device_properties.apiVersion), dispatch_instance->api_version);
 
-    extensions = DeviceExtensions(dispatch_instance->extensions, effective_api_version, pCreateInfo);
+    extensions = DeviceExtensions(dispatch_instance->extensions, api_version, pCreateInfo);
 
     InitValidationObjects();
     InitObjectDispatchVectors();
