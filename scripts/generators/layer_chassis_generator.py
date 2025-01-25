@@ -366,22 +366,20 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             out.append('''{
                 VVL_ZoneScopedN("Dispatch");
             ''')
-            gpu_begin_render_commands = ["BeginRender"]
-            if any(s in command.name for s in gpu_begin_render_commands):
-                out.append(f'VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), commandBuffer, "gpu_{command.name[10:]}");\n')
 
+            if "QueueSubmit" in command.name:
+                out.append('''
+                    VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_QueueSubmit", submit_gpu_zone);
+                ''')
             assignResult = f'result = ' if (command.returnType != 'void') else ''
             method_name = command.name.replace('vk', f'{dispatch}->')
             out.append(f'        {assignResult}{method_name}({paramsList});\n')
 
             # Tracy profiler
-            gpu_end_render_commands = ["EndRender"]
-            if any(s in command.name for s in gpu_end_render_commands):
-                out.append(f'VVL_TracyVkNamedZoneEnd(commandBuffer);\n')
-
-
-            # Tracy submit GPU queries reset command buffer
             if "QueueSubmit" in command.name:
+                out.append('''
+                    VVL_TracyVkNamedZoneEnd(submit_gpu_zone, queue);
+                ''')
                 out.append('''#if defined(VVL_TRACY_GPU)
                     TracyVkCollector::TrySubmitCollectCb(queue);
                 #endif

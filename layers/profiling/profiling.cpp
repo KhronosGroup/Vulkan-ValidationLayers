@@ -20,7 +20,6 @@
 #include "profiling/profiling.h"
 
 #include "containers/custom_containers.h"
-#include "vulkan/generated/dispatch_functions.h"
 
 #include <cstdlib>
 #include <thread>
@@ -160,6 +159,8 @@ __attribute__((constructor)) static void so_attach(void) { tracy::StartupProfile
 
 #if defined(VVL_TRACY_GPU)
 
+#include <vulkan/utility/vk_struct_helper.hpp>
+
 // To do things properly, should be a per device object
 static std::array<TracyVkCtx, 8> tracy_vk_contexts;
 
@@ -173,10 +174,47 @@ TracyVkCtx &GetTracyVkCtx() {
 
 static std::vector<std::unique_ptr<TracyVkCollector>> queue_to_collector_map;
 
+PFN_vkCreateCommandPool TracyVkCollector::CreateCommandPool = nullptr;
+PFN_vkAllocateCommandBuffers TracyVkCollector::AllocateCommandBuffers = nullptr;
+PFN_vkCreateFence TracyVkCollector::CreateFence = nullptr;
+PFN_vkWaitForFences TracyVkCollector::WaitForFences = nullptr;
+PFN_vkDestroyFence TracyVkCollector::DestroyFence = nullptr;
+PFN_vkFreeCommandBuffers TracyVkCollector::FreeCommandBuffers = nullptr;
+PFN_vkDestroyCommandPool TracyVkCollector::DestroyCommandPool = nullptr;
+PFN_vkResetFences TracyVkCollector::ResetFences = nullptr;
 PFN_vkResetCommandBuffer TracyVkCollector::ResetCommandBuffer = nullptr;
 PFN_vkBeginCommandBuffer TracyVkCollector::BeginCommandBuffer = nullptr;
 PFN_vkEndCommandBuffer TracyVkCollector::EndCommandBuffer = nullptr;
 PFN_vkQueueSubmit TracyVkCollector::QueueSubmit = nullptr;
+
+constexpr uint32_t zone_profiling_command_buffers_count = 32;
+struct ZoneProfilingCommandPool {
+    VkDevice device = VK_NULL_HANDLE;
+    VkCommandPool cmd_pool = VK_NULL_HANDLE;
+    std::vector<VkCommandBuffer> cmd_buffers{};
+    std::vector<VkFence> fences{};
+    uint32_t cmd_buffer_ring_head = 0;
+    void Destroy() {
+        TracyVkCollector::DestroyCommandPool(device, cmd_pool, nullptr);
+        for (VkFence fence : fences) {
+            TracyVkCollector::DestroyFence(device, fence, nullptr);
+        }
+    }
+    VkCommandBuffer GetCommandBuffer() {
+        VVL_ZoneScoped;
+
+        const size_t cb_i = cmd_buffer_ring_head++ % cmd_buffers.size();
+        VkResult result = TracyVkCollector::WaitForFences(device, 1, &fences[cb_i], VK_TRUE, UINT64_MAX);
+        assert(result == VK_SUCCESS);
+        (void)result;
+        TracyVkCollector::ResetCommandBuffer(cmd_buffers[cb_i], 0);
+        return cmd_buffers[cb_i];
+    }
+};
+static vvl::concurrent_unordered_map<VkQueue, ZoneProfilingCommandPool *> &GetQueueToGpuZoneProfilingCommandPoolMap() {
+    static vvl::concurrent_unordered_map<VkQueue, ZoneProfilingCommandPool *> map;
+    return map;
+}
 
 void TracyVkCollector::Create(VkDevice device, VkQueue queue, uint32_t queue_family_i) {
     if (std::find_if(queue_to_collector_map.begin(), queue_to_collector_map.end(),
@@ -190,22 +228,54 @@ void TracyVkCollector::Create(VkDevice device, VkQueue queue, uint32_t queue_fam
     collector->queue = queue;
 
     VkCommandPoolCreateInfo cmd_pool_ci = vku::InitStructHelper();
-    cmd_pool_ci.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    cmd_pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     cmd_pool_ci.queueFamilyIndex = queue_family_i;
-    VkResult result = DispatchCreateCommandPool(device, &cmd_pool_ci, nullptr, &collector->cmd_pool);
+    VkResult result = TracyVkCollector::CreateCommandPool(device, &cmd_pool_ci, nullptr, &collector->cmd_pool);
     assert(result == VK_SUCCESS);
+
+    {
+        auto zone_profiling_cmd_pool = new ZoneProfilingCommandPool;
+        zone_profiling_cmd_pool->device = device;
+        result = TracyVkCollector::CreateCommandPool(device, &cmd_pool_ci, nullptr, &zone_profiling_cmd_pool->cmd_pool);
+        assert(result == VK_SUCCESS);
+        if (auto find_it = GetQueueToGpuZoneProfilingCommandPoolMap().find(queue);
+            find_it != GetQueueToGpuZoneProfilingCommandPoolMap().end()) {
+            VVL_TracyMessageL("[tracyvk] Already created command pool for queue");
+            assert(false);
+        }
+
+        VkCommandBufferAllocateInfo cmd_buf_ai = vku::InitStructHelper();
+        cmd_buf_ai.commandPool = zone_profiling_cmd_pool->cmd_pool;
+        cmd_buf_ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        cmd_buf_ai.commandBufferCount = zone_profiling_command_buffers_count;
+
+        zone_profiling_cmd_pool->cmd_buffers.resize(cmd_buf_ai.commandBufferCount);
+        result =
+            TracyVkCollector::AllocateCommandBuffers(collector->device, &cmd_buf_ai, zone_profiling_cmd_pool->cmd_buffers.data());
+        assert(result == VK_SUCCESS);
+
+        zone_profiling_cmd_pool->fences.resize(cmd_buf_ai.commandBufferCount);
+        for (VkFence &fence : zone_profiling_cmd_pool->fences) {
+            VkFenceCreateInfo fence_ci = vku::InitStructHelper();
+            fence_ci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+            result = TracyVkCollector::CreateFence(device, &fence_ci, nullptr, &fence);
+            assert(result == VK_SUCCESS);
+        }
+
+        GetQueueToGpuZoneProfilingCommandPoolMap().insert(queue, std::move(zone_profiling_cmd_pool));
+    }
 
     VkCommandBufferAllocateInfo cmd_buf_ai = vku::InitStructHelper();
     cmd_buf_ai.commandPool = collector->cmd_pool;
     cmd_buf_ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmd_buf_ai.commandBufferCount = 1;
 
-    result = DispatchAllocateCommandBuffers(device, &cmd_buf_ai, &collector->cmd_buf);
+    result = TracyVkCollector::AllocateCommandBuffers(device, &cmd_buf_ai, &collector->cmd_buf);
     assert(result == VK_SUCCESS);
 
     VkFenceCreateInfo fence_ci = vku::InitStructHelper();
     fence_ci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    result = DispatchCreateFence(device, &fence_ci, nullptr, &collector->fence);
+    result = TracyVkCollector::CreateFence(device, &fence_ci, nullptr, &collector->fence);
     assert(result == VK_SUCCESS);
 
     (void)result;
@@ -223,13 +293,14 @@ void TracyVkCollector::Create(VkDevice device, VkQueue queue, uint32_t queue_fam
             }
             collector_ptr->should_collect = false;
             collect_lock.unlock();
-
-            // VVL_TracyMessageStream("[tracyvk] Collecting TracyVkCollector: device: " << collector_ptr->device
-            //                                                                          << " queue: " << collector_ptr->queue);
+#if defined(TRACY_GPU_PROFILING_DEBUG)
+            VVL_TracyMessageStream("[tracyvk] Collecting TracyVkCollector: device: " << collector_ptr->device
+                                                                                     << " queue: " << collector_ptr->queue);
+#endif
             {
                 VVL_ZoneScopedN("Wait for collect cmd buf fence");
                 const VkResult wait_result =
-                    DispatchWaitForFences(collector_ptr->device, 1, &collector_ptr->fence, VK_TRUE, 16'000'000);
+                    TracyVkCollector::WaitForFences(collector_ptr->device, 1, &collector_ptr->fence, VK_TRUE, 16'000'000);
                 assert(wait_result == VK_SUCCESS || wait_result == VK_TIMEOUT);
                 if (wait_result == VK_TIMEOUT) {
                     VVL_ZoneScopedN("Wait for collect cmd buf fence timeout - setting should_collect to true");
@@ -244,7 +315,9 @@ void TracyVkCollector::Create(VkDevice device, VkQueue queue, uint32_t queue_fam
                 // the collect command buffer has to be reset and prepared every time
                 // ---
                 VVL_ZoneScopedN("Preparing collect cmd buf");
-                DispatchResetFences(collector_ptr->device, 1, &collector_ptr->fence);
+                VkResult result = TracyVkCollector::ResetFences(collector_ptr->device, 1, &collector_ptr->fence);
+                (void)result;
+                assert(result == VK_SUCCESS);
                 TracyVkCollector::ResetCommandBuffer(collector_ptr->cmd_buf, 0);
 
                 VkCommandBufferBeginInfo cmd_buf_bi = vku::InitStructHelper();
@@ -264,14 +337,18 @@ void TracyVkCollector::Create(VkDevice device, VkQueue queue, uint32_t queue_fam
     });
 
     queue_to_collector_map.emplace_back(std::move(collector));
+#if defined(TRACY_GPU_PROFILING_DEBUG)
     VVL_TracyMessageStream("[tracyvk] Added TracyVkCollector (now " << queue_to_collector_map.size()
                                                                     << " of them): device: " << device << " queue: " << queue
                                                                     << " queue family i:" << queue_family_i);
+#endif
 }
 
 void TracyVkCollector::Destroy(TracyVkCollector &collector) {
+#if defined(TRACY_GPU_PROFILING_DEBUG)
     VVL_TracyMessageStream("[tracyvk] Destroying TracyVkCollector: device: " << collector.device << " queue: " << collector.queue);
-
+#endif
+    VVL_ZoneScoped;
     {
         std::lock_guard<std::mutex> collect_lock(collector.collect_mutex);
         collector.should_abort = true;
@@ -280,17 +357,17 @@ void TracyVkCollector::Destroy(TracyVkCollector &collector) {
     collector.collect_thread.join();
 
     if (collector.fence != VK_NULL_HANDLE) {
-        DispatchDestroyFence(collector.device, collector.fence, nullptr);
+        TracyVkCollector::DestroyFence(collector.device, collector.fence, nullptr);
         collector.fence = VK_NULL_HANDLE;
     }
 
     if (collector.cmd_buf != VK_NULL_HANDLE) {
-        DispatchFreeCommandBuffers(collector.device, collector.cmd_pool, 1, &collector.cmd_buf);
+        TracyVkCollector::FreeCommandBuffers(collector.device, collector.cmd_pool, 1, &collector.cmd_buf);
         collector.cmd_buf = VK_NULL_HANDLE;
     }
 
     if (collector.cmd_pool != VK_NULL_HANDLE) {
-        DispatchDestroyCommandPool(collector.device, collector.cmd_pool, nullptr);
+        TracyVkCollector::DestroyCommandPool(collector.device, collector.cmd_pool, nullptr);
         collector.cmd_pool = VK_NULL_HANDLE;
     }
 
@@ -320,7 +397,9 @@ std::optional<std::pair<VkCommandBuffer, VkFence>> TracyVkCollector::TryGetColle
 
 // Not thread safe for now, should be fine to profile GFXR traces
 TracyVkCollector &TracyVkCollector::GetTracyVkCollector(VkQueue queue) {
+#if defined(TRACY_GPU_PROFILING_DEBUG)
     VVL_TracyMessageStream("[tracyvk] Getting TracyVkCollector for queue " << queue);
+#endif
     for (const std::unique_ptr<TracyVkCollector> &collector : queue_to_collector_map) {
         if (collector->queue == queue) return *collector;
     }
@@ -344,13 +423,22 @@ void TracyVkCollector::TrySubmitCollectCb(VkQueue queue) {
 }
 
 void InitTracyVk(VkInstance instance, VkPhysicalDevice gpu, VkDevice device, PFN_vkGetInstanceProcAddr GetInstanceProcAddr,
-                 PFN_vkGetDeviceProcAddr GetDeviceProcAddr, PFN_vkResetCommandBuffer ResetCommandBuffer,
-                 PFN_vkBeginCommandBuffer BeginCommandBuffer, PFN_vkEndCommandBuffer EndCommandBuffer,
-                 PFN_vkQueueSubmit QueueSubmit) {
-    TracyVkCollector::ResetCommandBuffer = ResetCommandBuffer;
-    TracyVkCollector::BeginCommandBuffer = BeginCommandBuffer;
-    TracyVkCollector::EndCommandBuffer = EndCommandBuffer;
-    TracyVkCollector::QueueSubmit = QueueSubmit;
+                 PFN_vkGetDeviceProcAddr GetDeviceProcAddr, VkLayerDispatchTable &device_dispatch_table) {
+    VVL_ZoneScoped;
+
+    TracyVkCollector::CreateCommandPool = device_dispatch_table.CreateCommandPool;
+    TracyVkCollector::AllocateCommandBuffers = device_dispatch_table.AllocateCommandBuffers;
+    TracyVkCollector::CreateFence = device_dispatch_table.CreateFence;
+    TracyVkCollector::WaitForFences = device_dispatch_table.WaitForFences;
+    TracyVkCollector::DestroyFence = device_dispatch_table.DestroyFence;
+    TracyVkCollector::FreeCommandBuffers = device_dispatch_table.FreeCommandBuffers;
+    TracyVkCollector::DestroyCommandPool = device_dispatch_table.DestroyCommandPool;
+    TracyVkCollector::ResetFences = device_dispatch_table.ResetFences;
+
+    TracyVkCollector::ResetCommandBuffer = device_dispatch_table.ResetCommandBuffer;
+    TracyVkCollector::BeginCommandBuffer = device_dispatch_table.BeginCommandBuffer;
+    TracyVkCollector::EndCommandBuffer = device_dispatch_table.EndCommandBuffer;
+    TracyVkCollector::QueueSubmit = device_dispatch_table.QueueSubmit;
 
     for (TracyVkCtx &tracy_vk_ctx : tracy_vk_contexts) {
         tracy_vk_ctx = TracyVkContextHostCalibrated(instance, gpu, device, GetInstanceProcAddr, GetDeviceProcAddr);
@@ -359,6 +447,7 @@ void InitTracyVk(VkInstance instance, VkPhysicalDevice gpu, VkDevice device, PFN
 }
 
 void CleanupTracyVk(VkDevice device) {
+    VVL_ZoneScoped;
     for (size_t i = 0; i < queue_to_collector_map.size(); ++i) {
         if (queue_to_collector_map[i]->device == device) {
             TracyVkCollector::Destroy(*queue_to_collector_map[i]);
@@ -367,6 +456,13 @@ void CleanupTracyVk(VkDevice device) {
             queue_to_collector_map.resize(queue_to_collector_map.size() - 1);
         }
     }
+    // Should be per device. Or maybe not, since queue handles are already per device?
+    auto queues_to_zpcp = GetQueueToGpuZoneProfilingCommandPoolMap().snapshot();
+    for (auto &[queue, zpcp] : queues_to_zpcp) {
+        zpcp->Destroy();
+        delete zpcp;
+    }
+    GetQueueToGpuZoneProfilingCommandPoolMap().clear();
 
     for (TracyVkCtx &tracy_vk_ctx : tracy_vk_contexts) {
         if (tracy_vk_ctx) {
@@ -375,23 +471,68 @@ void CleanupTracyVk(VkDevice device) {
     }
 }
 
-static vvl::concurrent_unordered_map<VkCommandBuffer, tracy::VkCtxScope *> &GetCbToCtxScopeMap() {
-    static vvl::concurrent_unordered_map<VkCommandBuffer, tracy::VkCtxScope *> cb_to_ctx_scope_map;
-    return cb_to_ctx_scope_map;
+tracy::VkCtxManualScope TracyVkZoneStart(tracy::VkCtx *ctx, const tracy::SourceLocationData *srcloc, VkQueue queue) {
+    VVL_ZoneScoped;
+
+    // Get a GPU zone profiling command buffer
+    VkCommandBuffer zone_start_cb = VK_NULL_HANDLE;
+    if (auto find_it = GetQueueToGpuZoneProfilingCommandPoolMap().find(queue);
+        find_it != GetQueueToGpuZoneProfilingCommandPoolMap().end()) {
+        zone_start_cb = find_it->second->GetCommandBuffer();
+    } else {
+        VVL_TracyMessageL("[tracyvk] Could not find command pool for VkCtxManualScope x_x");
+        assert(false);
+    }
+
+    // Fill zone start command buffer
+    VkCommandBufferBeginInfo cmd_buf_bi = vku::InitStructHelper();
+    cmd_buf_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    TracyVkCollector::BeginCommandBuffer(zone_start_cb, &cmd_buf_bi);
+
+    tracy::VkCtxManualScope ctx_manual_scope(ctx, srcloc, zone_start_cb, true);
+
+    TracyVkCollector::EndCommandBuffer(zone_start_cb);
+
+    // Submit zone start command buffer
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &zone_start_cb;
+    const VkResult submit_result = TracyVkCollector::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+    assert(submit_result);
+    (void)submit_result;
+
+    return ctx_manual_scope;
 }
 
-void TracyVkZoneStart(tracy::VkCtx *ctx, const tracy::SourceLocationData *srcloc, VkCommandBuffer cmd_buf) {
+void TracyVkZoneEnd(tracy::VkCtxManualScope &scope_to_close, VkQueue queue) {
     VVL_ZoneScoped;
-    auto ctx_scope = new tracy::VkCtxScope(ctx, srcloc, cmd_buf, true);
-    GetCbToCtxScopeMap().insert(cmd_buf, ctx_scope);
-}
-void TracyVkZoneEnd(VkCommandBuffer cmd_buf) {
-    VVL_ZoneScoped;
-    auto iter = GetCbToCtxScopeMap().pop(cmd_buf);
-    if (iter != GetCbToCtxScopeMap().end()) {
-        assert(iter->second);
-        delete iter->second;
+
+    // Get a GPU zone profiling command buffer
+    VkCommandBuffer zone_end_cb = VK_NULL_HANDLE;
+    if (auto find_it = GetQueueToGpuZoneProfilingCommandPoolMap().find(queue);
+        find_it != GetQueueToGpuZoneProfilingCommandPoolMap().end()) {
+        zone_end_cb = find_it->second->GetCommandBuffer();
+    } else {
+        VVL_TracyMessageL("[tracyvk] Could not find command pool for VkCtxManualScope x_x");
+        assert(false);
     }
+
+    // Fill zone end command buffer
+    VkCommandBufferBeginInfo cmd_buf_bi = vku::InitStructHelper();
+    cmd_buf_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    TracyVkCollector::BeginCommandBuffer(zone_end_cb, &cmd_buf_bi);
+
+    scope_to_close.CloseScope(zone_end_cb);
+
+    TracyVkCollector::EndCommandBuffer(zone_end_cb);
+
+    // Submit zone end command buffer
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &zone_end_cb;
+    const VkResult submit_result = TracyVkCollector::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+    assert(submit_result);
+    (void)submit_result;
 }
 
 #endif
