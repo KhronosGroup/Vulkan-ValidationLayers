@@ -3207,6 +3207,7 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer c
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
         // the stride is set from the pipeline or dynamic state
         vvl::VertexBufferBinding &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info[i + firstBinding];
+        vertex_buffer_binding.bound = true;
         vertex_buffer_binding.buffer = pBuffers[i];
         vertex_buffer_binding.offset = pOffsets[i];
         vertex_buffer_binding.effective_size =
@@ -5316,6 +5317,7 @@ void ValidationStateTracker::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer
     for (uint32_t i = 0; i < bindingCount; ++i) {
         auto buffer_state = Get<vvl::Buffer>(pBuffers[i]);
         vvl::VertexBufferBinding &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info[i + firstBinding];
+        vertex_buffer_binding.bound = true;
         vertex_buffer_binding.buffer = pBuffers[i];
         vertex_buffer_binding.offset = pOffsets[i];
         vertex_buffer_binding.effective_size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
@@ -5584,15 +5586,15 @@ void ValidationStateTracker::PostCallRecordCmdSetVertexInputEXT(
     // "The vertex attribute description for any location not specified in the pVertexAttributeDescriptions array becomes undefined"
     vertex_bindings.clear();
 
-    for (const auto [i, bd] : vvl::enumerate(pVertexBindingDescriptions, vertexBindingDescriptionCount)) {
-        vertex_bindings.insert_or_assign(bd.binding, VertexBindingState(i, &bd));
+    for (const auto [i, description] : vvl::enumerate(pVertexBindingDescriptions, vertexBindingDescriptionCount)) {
+        vertex_bindings.insert_or_assign(description.binding, VertexBindingState(i, &description));
 
-        cb_state->current_vertex_buffer_binding_info[bd.binding].stride = bd.stride;
+        cb_state->current_vertex_buffer_binding_info[description.binding].stride = description.stride;
     }
 
-    for (const auto [i, ad] : vvl::enumerate(pVertexAttributeDescriptions, vertexAttributeDescriptionCount)) {
-        if (auto *binding_state = vvl::Find(vertex_bindings, ad.binding)) {
-            binding_state->locations.insert_or_assign(ad.location, VertexAttrState(i, &ad));
+    for (const auto [i, description] : vvl::enumerate(pVertexAttributeDescriptions, vertexAttributeDescriptionCount)) {
+        if (auto *binding_state = vvl::Find(vertex_bindings, description.binding)) {
+            binding_state->locations.insert_or_assign(description.location, VertexAttrState(i, &description));
         }
     }
 }
