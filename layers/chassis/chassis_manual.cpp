@@ -338,9 +338,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     // NOTE: many PostCallRecords expect to be able to look up the device dispatch object so we need to populate the map here.
 #if defined(VVL_TRACY_GPU)
     InitTracyVk(instance_dispatch->instance, gpu, *pDevice, fpGetInstanceProcAddr, fpGetDeviceProcAddr,
-                device_dispatch->device_dispatch_table.ResetCommandBuffer,
-                device_dispatch->device_dispatch_table.BeginCommandBuffer, device_dispatch->device_dispatch_table.EndCommandBuffer,
-                device_dispatch->device_dispatch_table.QueueSubmit);
+                device_dispatch->device_dispatch_table);
 #endif
 
     vvl::dispatch::SetData(*pDevice, std::move(device_dispatch));
