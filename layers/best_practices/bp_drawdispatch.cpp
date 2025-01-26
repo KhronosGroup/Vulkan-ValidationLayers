@@ -106,8 +106,14 @@ void BestPractices::RecordCmdDrawType(bp_state::CommandBuffer& cb_state, uint32_
     }
 
     const auto* pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (pipeline_state && pipeline_state->vertex_input_state && !pipeline_state->vertex_input_state->bindings.empty()) {
-        cb_state.uses_vertex_buffer = true;
+    if (pipeline_state && !pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+        if (pipeline_state->vertex_input_state && !pipeline_state->vertex_input_state->bindings.empty()) {
+            cb_state.uses_vertex_buffer = true;
+        }
+    } else {
+        if (!cb_state.dynamic_state_value.vertex_bindings.empty()) {
+            cb_state.uses_vertex_buffer = true;
+        }
     }
 }
 
