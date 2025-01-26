@@ -455,3 +455,62 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetCommandPool) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    static const char kVertexGlsl[] = R"glsl(
+        #version 460
+        layout(location = 0) in vec4 pos;
+        void main() {
+           gl_Position = pos;
+        }
+    )glsl";
+
+    std::vector<uint32_t> vert_spirv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexGlsl);
+    VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
+    create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    create_info.codeSize = vert_spirv.size() * sizeof(uint32_t);
+    create_info.pCode = vert_spirv.data();
+    create_info.pName = "main";
+    vkt::Shader vert_shader(*m_device, create_info);
+
+    std::vector<uint32_t> frag_spirv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+    create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    create_info.codeSize = frag_spirv.size() * sizeof(uint32_t);
+    create_info.pCode = frag_spirv.data();
+    vkt::Shader frag_shader(*m_device, create_info);
+
+    m_vertex_buffer = new vkt::Buffer(*m_device, sizeof(float) * 12u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    VkVertexInputBindingDescription2EXT binding_desc = vku::InitStructHelper();
+    binding_desc.binding = 0u;
+    binding_desc.stride = sizeof(float);
+    binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    binding_desc.divisor = 1u;
+
+    VkVertexInputAttributeDescription2EXT attr_desc = vku::InitStructHelper();
+    attr_desc.location = 0u;
+    attr_desc.binding = 0u;
+    attr_desc.format = VK_FORMAT_R32G32B32_SFLOAT;
+    attr_desc.offset = 0u;
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kPerformanceWarningBit);
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    VkDeviceSize offset = 0u;
+    m_command_buffer.BindVertFragShader(vert_shader, frag_shader);
+    SetDefaultDynamicStatesExclude();
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0u, 1u, &m_vertex_buffer->handle(), &offset);
+    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1u, &binding_desc, 1u, &attr_desc);
+    vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
