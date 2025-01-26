@@ -238,7 +238,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -253,25 +253,6 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-
-    {
-        VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
-        imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.image = image.handle();
-        imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageMemoryBarrier.subresourceRange.baseMipLevel = 0u;
-        imageMemoryBarrier.subresourceRange.levelCount = 1u;
-        imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
-        imageMemoryBarrier.subresourceRange.layerCount = 1u;
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
-                               &imageMemoryBarrier);
-    }
     vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 2u, shaderStages, shaders);
     for (const auto &unusedShader : unusedShaderStages) {
@@ -434,25 +415,6 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-
-    {
-        VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
-        imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.image = image.handle();
-        imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageMemoryBarrier.subresourceRange.baseMipLevel = 0u;
-        imageMemoryBarrier.subresourceRange.levelCount = 1u;
-        imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
-        imageMemoryBarrier.subresourceRange.layerCount = 1u;
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
-                               &imageMemoryBarrier);
-    }
     vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, shaderStages, shaders);
     SetDefaultDynamicStatesExclude({}, true);
@@ -483,7 +445,7 @@ TEST_F(PositiveShaderObject, ComputeShader) {
 
     VkShaderStageFlagBits shaderStages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
 
-    vkt::Buffer storageBuffer(*m_device, sizeof(float), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer storageBuffer(*m_device, 16u * sizeof(float), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
@@ -559,7 +521,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -578,25 +540,6 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-
-    {
-        VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
-        imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.image = image.handle();
-        imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageMemoryBarrier.subresourceRange.baseMipLevel = 0u;
-        imageMemoryBarrier.subresourceRange.levelCount = 1u;
-        imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
-        imageMemoryBarrier.subresourceRange.layerCount = 1u;
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
-                               &imageMemoryBarrier);
-    }
     vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
     std::vector<VkShaderStageFlagBits> nullStages = {VK_SHADER_STAGE_VERTEX_BIT};
     if (features.tessellationShader) {
