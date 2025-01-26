@@ -6996,7 +6996,7 @@ TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -7015,25 +7015,6 @@ TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-
-    {
-        VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
-        imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.image = image.handle();
-        imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageMemoryBarrier.subresourceRange.baseMipLevel = 0u;
-        imageMemoryBarrier.subresourceRange.levelCount = 1u;
-        imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
-        imageMemoryBarrier.subresourceRange.layerCount = 1u;
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
-                               &imageMemoryBarrier);
-    }
     vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
     std::vector<VkShaderStageFlagBits> nullStages;
     if (features.tessellationShader) {
@@ -7072,7 +7053,7 @@ TEST_F(NegativeShaderObject, DrawMeshTasksWithoutMeshShader) {
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -7091,25 +7072,6 @@ TEST_F(NegativeShaderObject, DrawMeshTasksWithoutMeshShader) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-
-    {
-        VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
-        imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        imageMemoryBarrier.image = image.handle();
-        imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageMemoryBarrier.subresourceRange.baseMipLevel = 0u;
-        imageMemoryBarrier.subresourceRange.levelCount = 1u;
-        imageMemoryBarrier.subresourceRange.baseArrayLayer = 0u;
-        imageMemoryBarrier.subresourceRange.layerCount = 1u;
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                               VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
-                               &imageMemoryBarrier);
-    }
     vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
     std::vector<VkShaderStageFlagBits> null_stages;
     if (features.tessellationShader) {
