@@ -7208,7 +7208,21 @@ VkResult Device::GetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemo
 
 VkResult Device::GetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
                                           VkBaseOutStructure* pPipelineProperties) {
-    VkResult result = device_dispatch_table.GetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
+    if (!wrap_handles) return device_dispatch_table.GetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
+    vku::safe_VkPipelineInfoKHR var_local_pPipelineInfo;
+    vku::safe_VkPipelineInfoKHR* local_pPipelineInfo = nullptr;
+    {
+        if (pPipelineInfo) {
+            local_pPipelineInfo = &var_local_pPipelineInfo;
+            local_pPipelineInfo->initialize(pPipelineInfo);
+
+            if (pPipelineInfo->pipeline) {
+                local_pPipelineInfo->pipeline = Unwrap(pPipelineInfo->pipeline);
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.GetPipelinePropertiesEXT(device, (const VkPipelineInfoKHR*)local_pPipelineInfo, pPipelineProperties);
 
     return result;
 }

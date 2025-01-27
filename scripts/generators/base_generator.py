@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2023-2024 Valve Corporation
-# Copyright (c) 2023-2024 LunarG, Inc.
-# Copyright (c) 2023-2024 RasterGrid Kft.
+# Copyright (c) 2023-2025 Valve Corporation
+# Copyright (c) 2023-2025 LunarG, Inc.
+# Copyright (c) 2023-2025 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -315,6 +315,14 @@ class BaseGenerator(OutputGenerator):
                         if structName in self.vk.structs:
                             struct = self.vk.structs[structName]
                             struct.extensions.extend([extension] if extension not in struct.extensions else [])
+
+        # While we update struct alias inside other structs, the command itself might have the struct as a first level param.
+        # We use this time to update params to have the promoted name
+        # Example - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9322
+        for command in self.vk.commands.values():
+            for member in command.params:
+                if member.type in self.structAliasMap:
+                    member.type = self.structAliasMap[member.type]
 
     def endFile(self):
         # This is the point were reg.py has ran, everything is collected

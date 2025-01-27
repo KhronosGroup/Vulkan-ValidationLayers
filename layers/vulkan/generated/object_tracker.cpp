@@ -6785,8 +6785,19 @@ bool Device::PreCallValidateGetMemoryRemoteAddressNV(VkDevice device,
     return skip;
 }
 
-// vkGetPipelinePropertiesEXT:
-// Checked by chassis: device: "VUID-vkGetPipelinePropertiesEXT-device-parameter"
+bool Device::PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+                                                     VkBaseOutStructure* pPipelineProperties, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetPipelinePropertiesEXT-device-parameter"
+    if (pPipelineInfo) {
+        [[maybe_unused]] const Location pPipelineInfo_loc = error_obj.location.dot(Field::pPipelineInfo);
+        skip |=
+            ValidateObject(pPipelineInfo->pipeline, kVulkanObjectTypePipeline, false, "VUID-VkPipelineInfoKHR-pipeline-parameter",
+                           "VUID-VkPipelineInfoKHR-pipeline-parent", pPipelineInfo_loc.dot(Field::pipeline));
+    }
+
+    return skip;
+}
 
 // vkCmdSetPatchControlPointsEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetPatchControlPointsEXT-commandBuffer-parameter"
@@ -7891,10 +7902,9 @@ bool Device::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMem
     // Checked by chassis: device: "VUID-vkGetMemoryMetalHandleEXT-device-parameter"
     if (pGetMetalHandleInfo) {
         [[maybe_unused]] const Location pGetMetalHandleInfo_loc = error_obj.location.dot(Field::pGetMetalHandleInfo);
-        skip |=
-            ValidateObject(pGetMetalHandleInfo->memory, kVulkanObjectTypeDeviceMemory, false,
-                           "VUID-VkMemoryGetMetalHandleInfoEXT-memory-parameter",
-                           "UNASSIGNED-VkMemoryGetMetalHandleInfoEXT-memory-parent", pGetMetalHandleInfo_loc.dot(Field::memory));
+        skip |= ValidateObject(pGetMetalHandleInfo->memory, kVulkanObjectTypeDeviceMemory, false,
+                               "VUID-VkMemoryGetMetalHandleInfoEXT-memory-parameter",
+                               "VUID-VkMemoryGetMetalHandleInfoEXT-memory-parent", pGetMetalHandleInfo_loc.dot(Field::memory));
     }
 
     return skip;

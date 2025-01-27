@@ -23658,8 +23658,19 @@ bool Device::PreCallValidateGetAccelerationStructureMemoryRequirementsNV(
 
         skip |= context.ValidateRequiredHandle(pInfo_loc.dot(Field::accelerationStructure), pInfo->accelerationStructure);
     }
-    skip |= context.ValidateRequiredPointer(loc.dot(Field::pMemoryRequirements), pMemoryRequirements,
-                                            "VUID-vkGetAccelerationStructureMemoryRequirementsNV-pMemoryRequirements-parameter");
+    skip |= context.ValidateStructType(loc.dot(Field::pMemoryRequirements), pMemoryRequirements,
+                                       VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, true,
+                                       "VUID-vkGetAccelerationStructureMemoryRequirementsNV-pMemoryRequirements-parameter",
+                                       "VUID-VkMemoryRequirements2-sType-sType");
+    if (pMemoryRequirements != nullptr) {
+        [[maybe_unused]] const Location pMemoryRequirements_loc = loc.dot(Field::pMemoryRequirements);
+        constexpr std::array allowed_structs_VkMemoryRequirements2 = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS};
+
+        skip |= context.ValidateStructPnext(
+            pMemoryRequirements_loc, pMemoryRequirements->pNext, allowed_structs_VkMemoryRequirements2.size(),
+            allowed_structs_VkMemoryRequirements2.data(), GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext",
+            "VUID-VkMemoryRequirements2-sType-unique", false);
+    }
     return skip;
 }
 
@@ -26171,8 +26182,16 @@ bool Device::PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPi
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_ext_pipeline_properties))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_pipeline_properties});
-    skip |= context.ValidateRequiredPointer(loc.dot(Field::pPipelineInfo), pPipelineInfo,
-                                            "VUID-vkGetPipelinePropertiesEXT-pPipelineInfo-parameter");
+    skip |=
+        context.ValidateStructType(loc.dot(Field::pPipelineInfo), pPipelineInfo, VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR, true,
+                                   "VUID-vkGetPipelinePropertiesEXT-pPipelineInfo-parameter", "VUID-VkPipelineInfoKHR-sType-sType");
+    if (pPipelineInfo != nullptr) {
+        [[maybe_unused]] const Location pPipelineInfo_loc = loc.dot(Field::pPipelineInfo);
+        skip |= context.ValidateStructPnext(pPipelineInfo_loc, pPipelineInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkPipelineInfoKHR-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pPipelineInfo_loc.dot(Field::pipeline), pPipelineInfo->pipeline);
+    }
     if (!skip) skip |= manual_PreCallValidateGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, context);
     return skip;
 }
