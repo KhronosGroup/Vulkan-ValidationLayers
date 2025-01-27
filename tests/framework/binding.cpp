@@ -1519,12 +1519,12 @@ VkMemoryRequirements2 AccelerationStructureNV::MemoryRequirements() const {
         (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(device(),
                                                                                   "vkGetAccelerationStructureMemoryRequirementsNV");
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
-    VkMemoryRequirements2 memoryRequirements = {};
-    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = vku::InitStructHelper();
-    memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-    memoryRequirementsInfo.accelerationStructure = handle();
-    vkGetAccelerationStructureMemoryRequirementsNV(device(), &memoryRequirementsInfo, &memoryRequirements);
-    return memoryRequirements;
+    VkMemoryRequirements2 memory_requirements = vku::InitStructHelper();
+    VkAccelerationStructureMemoryRequirementsInfoNV memory_requirements_info = vku::InitStructHelper();
+    memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
+    memory_requirements_info.accelerationStructure = handle();
+    vkGetAccelerationStructureMemoryRequirementsNV(device(), &memory_requirements_info, &memory_requirements);
+    return memory_requirements;
 }
 
 VkMemoryRequirements2 AccelerationStructureNV::BuildScratchMemoryRequirements() const {
@@ -1533,13 +1533,13 @@ VkMemoryRequirements2 AccelerationStructureNV::BuildScratchMemoryRequirements() 
                                                                                   "vkGetAccelerationStructureMemoryRequirementsNV");
     assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
 
-    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = vku::InitStructHelper();
-    memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
-    memoryRequirementsInfo.accelerationStructure = handle();
+    VkAccelerationStructureMemoryRequirementsInfoNV memory_requirements_info = vku::InitStructHelper();
+    memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
+    memory_requirements_info.accelerationStructure = handle();
 
-    VkMemoryRequirements2 memoryRequirements = {};
-    vkGetAccelerationStructureMemoryRequirementsNV(device(), &memoryRequirementsInfo, &memoryRequirements);
-    return memoryRequirements;
+    VkMemoryRequirements2 memory_requirements = vku::InitStructHelper();
+    vkGetAccelerationStructureMemoryRequirementsNV(device(), &memory_requirements_info, &memory_requirements);
+    return memory_requirements;
 }
 
 void AccelerationStructureNV::init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory) {

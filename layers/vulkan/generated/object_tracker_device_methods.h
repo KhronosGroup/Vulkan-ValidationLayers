@@ -1108,6 +1108,8 @@ bool PreCallValidateCmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, V
                                                 const ErrorObject& error_obj) const override;
 bool PreCallValidateGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
                                              VkRemoteAddressNV* pAddress, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
+                                             VkBaseOutStructure* pPipelineProperties, const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap,
                                       const ErrorObject& error_obj) const override;
