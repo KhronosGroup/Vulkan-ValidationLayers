@@ -56,14 +56,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [debug, release]
-        robin_hood: [ "ON" ]
-        include:
-          # Test with Robin Hood disabled
-          # Chromium build, and some package managers don't use it.
-          - config: release
-            robin_hood: "OFF"
-
+        config: [ release ]
+        # Test with Robin Hood disabled
+        # Chromium build, and some package managers don't use it.
+        robin_hood: [ "ON", "OFF" ]
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
@@ -93,6 +89,28 @@ jobs:
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/min_core.json
+
+  # Make sure a debug version builds, but no need to run tests on it (since we do with release already)
+  linux-debug:
+    needs: check_vvl
+    runs-on: ubuntu-22.04
+    name: "linux (Build Only, ${{matrix.config}}, robinhood ${{matrix.robin_hood}} )"
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ debug ]
+        robin_hood: [ "ON" ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lukka/get-cmake@latest
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.config }}-buildOnly-${{matrix.robin_hood}}
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
 
   linux-tsan:
     needs: check_vvl
