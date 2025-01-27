@@ -228,6 +228,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/sync_val_ray_tracing_positive.cpp
     unit/sync_val_semaphore.cpp
     unit/sync_val_semaphore_positive.cpp
+    unit/sync_val_video.cpp
+    unit/sync_val_video_positive.cpp
     unit/sync_val_wsi.cpp
     unit/sync_val_wsi_positive.cpp
     unit/threading.cpp
@@ -239,6 +241,24 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/vertex_input_positive.cpp
     unit/video.cpp
     unit/video_positive.cpp
+    unit/video_decode.cpp
+    unit/video_decode_positive.cpp
+    unit/video_decode_av1.cpp
+    unit/video_decode_av1_positive.cpp
+    unit/video_decode_h264.cpp
+    unit/video_decode_h264_positive.cpp
+    unit/video_decode_h265.cpp
+    unit/video_decode_h265_positive.cpp
+    unit/video_encode.cpp
+    unit/video_encode_positive.cpp
+    unit/video_encode_av1.cpp
+    unit/video_encode_av1_positive.cpp
+    unit/video_encode_h264.cpp
+    unit/video_encode_h264_positive.cpp
+    unit/video_encode_h265.cpp
+    unit/video_encode_h265_positive.cpp
+    unit/video_encode_quantization_map.cpp
+    unit/video_encode_quantization_map_positive.cpp
     unit/viewport_inheritance.cpp
     unit/wsi.cpp
     unit/wsi_positive.cpp
