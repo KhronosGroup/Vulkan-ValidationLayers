@@ -1263,6 +1263,9 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
             StdVideoDecodeH264ReferenceInfo std_setup_reference_info{};
             std::vector<VkVideoDecodeH264DpbSlotInfoKHR> dpb_slot_info{};
             std::vector<StdVideoDecodeH264ReferenceInfo> std_reference_info{};
+            VkVideoDecodeH264InlineSessionParametersInfoKHR inline_params_info{};
+            StdVideoH264SequenceParameterSet std_inline_sps{};
+            StdVideoH264PictureParameterSet std_inline_pps{};
         } decode_h264{};
         struct {
             VkVideoDecodeH265PictureInfoKHR picture_info{};
@@ -1272,6 +1275,10 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
             StdVideoDecodeH265ReferenceInfo std_setup_reference_info{};
             std::vector<VkVideoDecodeH265DpbSlotInfoKHR> dpb_slot_info{};
             std::vector<StdVideoDecodeH265ReferenceInfo> std_reference_info{};
+            VkVideoDecodeH265InlineSessionParametersInfoKHR inline_params_info{};
+            StdVideoH265VideoParameterSet std_inline_vps{};
+            StdVideoH265SequenceParameterSet std_inline_sps{};
+            StdVideoH265PictureParameterSet std_inline_pps{};
         } decode_h265{};
         struct {
             VkVideoDecodeAV1PictureInfoKHR picture_info{};
@@ -1282,6 +1289,8 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
             StdVideoDecodeAV1ReferenceInfo std_setup_reference_info{};
             std::vector<VkVideoDecodeAV1DpbSlotInfoKHR> dpb_slot_info{};
             std::vector<StdVideoDecodeAV1ReferenceInfo> std_reference_info{};
+            VkVideoDecodeAV1InlineSessionParametersInfoKHR inline_params_info{};
+            StdVideoAV1SequenceHeader std_inline_seq_header{};
         } decode_av1{};
     };
 
@@ -1656,6 +1665,58 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
         return *this;
     }
 
+    VideoDecodeInfo& InlineParamsH264(const StdVideoH264SequenceParameterSet* sps, const StdVideoH264PictureParameterSet* pps) {
+        assert(config_->Profile()->videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR);
+        assert(codec_info_.decode_h264.inline_params_info.sType !=
+               VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_INLINE_SESSION_PARAMETERS_INFO_KHR);
+        codec_info_.decode_h264.inline_params_info = vku::InitStructHelper();
+        if (sps) {
+            codec_info_.decode_h264.std_inline_sps = *sps;
+            codec_info_.decode_h264.inline_params_info.pStdSPS = &codec_info_.decode_h264.std_inline_sps;
+        }
+        if (pps) {
+            codec_info_.decode_h264.std_inline_pps = *pps;
+            codec_info_.decode_h264.inline_params_info.pStdPPS = &codec_info_.decode_h264.std_inline_pps;
+        }
+        ChainInfo(codec_info_.decode_h264.inline_params_info);
+        return *this;
+    }
+
+    VideoDecodeInfo& InlineParamsH265(const StdVideoH265VideoParameterSet* vps, const StdVideoH265SequenceParameterSet* sps,
+                                      const StdVideoH265PictureParameterSet* pps) {
+        assert(config_->Profile()->videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR);
+        assert(codec_info_.decode_h265.inline_params_info.sType !=
+               VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_INLINE_SESSION_PARAMETERS_INFO_KHR);
+        codec_info_.decode_h265.inline_params_info = vku::InitStructHelper();
+        if (vps) {
+            codec_info_.decode_h265.std_inline_vps = *vps;
+            codec_info_.decode_h265.inline_params_info.pStdVPS = &codec_info_.decode_h265.std_inline_vps;
+        }
+        if (sps) {
+            codec_info_.decode_h265.std_inline_sps = *sps;
+            codec_info_.decode_h265.inline_params_info.pStdSPS = &codec_info_.decode_h265.std_inline_sps;
+        }
+        if (pps) {
+            codec_info_.decode_h265.std_inline_pps = *pps;
+            codec_info_.decode_h265.inline_params_info.pStdPPS = &codec_info_.decode_h265.std_inline_pps;
+        }
+        ChainInfo(codec_info_.decode_h265.inline_params_info);
+        return *this;
+    }
+
+    VideoDecodeInfo& InlineParamsAV1(const StdVideoAV1SequenceHeader* seq_header) {
+        assert(config_->Profile()->videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR);
+        assert(codec_info_.decode_av1.inline_params_info.sType !=
+               VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_INLINE_SESSION_PARAMETERS_INFO_KHR);
+        codec_info_.decode_av1.inline_params_info = vku::InitStructHelper();
+        if (seq_header) {
+            codec_info_.decode_av1.std_inline_seq_header = *seq_header;
+            codec_info_.decode_av1.inline_params_info.pStdSequenceHeader = &codec_info_.decode_av1.std_inline_seq_header;
+        }
+        ChainInfo(codec_info_.decode_av1.inline_params_info);
+        return *this;
+    }
+
     CodecInfoType& CodecInfo() { return codec_info_; }
 
   private:
@@ -1770,6 +1831,48 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
         if (other.inline_query_info_.sType == VK_STRUCTURE_TYPE_VIDEO_INLINE_QUERY_INFO_KHR) {
             inline_query_info_ = other.inline_query_info_;
             ChainInfo(inline_query_info_);
+        }
+
+        if (other.codec_info_.decode_h264.inline_params_info.sType ==
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_INLINE_SESSION_PARAMETERS_INFO_KHR) {
+            codec_info_.decode_h264.inline_params_info = other.codec_info_.decode_h264.inline_params_info;
+            if (other.codec_info_.decode_h264.inline_params_info.pStdSPS) {
+                codec_info_.decode_h264.std_inline_sps = other.codec_info_.decode_h264.std_inline_sps;
+                codec_info_.decode_h264.inline_params_info.pStdSPS = &codec_info_.decode_h264.std_inline_sps;
+            }
+            if (other.codec_info_.decode_h264.inline_params_info.pStdPPS) {
+                codec_info_.decode_h264.std_inline_pps = other.codec_info_.decode_h264.std_inline_pps;
+                codec_info_.decode_h264.inline_params_info.pStdPPS = &codec_info_.decode_h264.std_inline_pps;
+            }
+            ChainInfo(codec_info_.decode_h264.inline_params_info);
+        }
+
+        if (other.codec_info_.decode_h265.inline_params_info.sType ==
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_INLINE_SESSION_PARAMETERS_INFO_KHR) {
+            codec_info_.decode_h265.inline_params_info = other.codec_info_.decode_h265.inline_params_info;
+            if (other.codec_info_.decode_h265.inline_params_info.pStdVPS) {
+                codec_info_.decode_h265.std_inline_vps = other.codec_info_.decode_h265.std_inline_vps;
+                codec_info_.decode_h265.inline_params_info.pStdVPS = &codec_info_.decode_h265.std_inline_vps;
+            }
+            if (other.codec_info_.decode_h265.inline_params_info.pStdSPS) {
+                codec_info_.decode_h265.std_inline_sps = other.codec_info_.decode_h265.std_inline_sps;
+                codec_info_.decode_h265.inline_params_info.pStdSPS = &codec_info_.decode_h265.std_inline_sps;
+            }
+            if (other.codec_info_.decode_h265.inline_params_info.pStdPPS) {
+                codec_info_.decode_h265.std_inline_pps = other.codec_info_.decode_h265.std_inline_pps;
+                codec_info_.decode_h265.inline_params_info.pStdPPS = &codec_info_.decode_h265.std_inline_pps;
+            }
+            ChainInfo(codec_info_.decode_h265.inline_params_info);
+        }
+
+        if (other.codec_info_.decode_av1.inline_params_info.sType ==
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_INLINE_SESSION_PARAMETERS_INFO_KHR) {
+            codec_info_.decode_av1.inline_params_info = other.codec_info_.decode_av1.inline_params_info;
+            if (other.codec_info_.decode_av1.inline_params_info.pStdSequenceHeader) {
+                codec_info_.decode_av1.std_inline_seq_header = other.codec_info_.decode_av1.std_inline_seq_header;
+                codec_info_.decode_av1.inline_params_info.pStdSequenceHeader = &codec_info_.decode_av1.std_inline_seq_header;
+            }
+            ChainInfo(codec_info_.decode_av1.inline_params_info);
         }
     }
 
@@ -2797,7 +2900,7 @@ class VkVideoLayerTest : public VkLayerTest {
             VkLayerTest::AddOptionalFeature(feature);
         }
 
-        RETURN_IF_SKIP(InitFramework(instance_pnext_));
+        RETURN_IF_SKIP(VkLayerTest::InitFramework(instance_pnext_));
 
         VkPhysicalDeviceProtectedMemoryProperties prot_mem_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props = vku::InitStructHelper(&prot_mem_props);
@@ -2809,7 +2912,7 @@ class VkVideoLayerTest : public VkLayerTest {
         // aren't enabled on all platforms.
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkDeviceCreateInfo-pNext-pNext");
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkVideoCapabilitiesKHR-pNext-pNext");
-        RETURN_IF_SKIP(InitState());
+        RETURN_IF_SKIP(VkLayerTest::InitState());
 
         uint32_t qf_count;
         vk::GetPhysicalDeviceQueueFamilyProperties2(Gpu(), &qf_count, nullptr);
@@ -2970,9 +3073,16 @@ class VkVideoLayerTest : public VkLayerTest {
 
     bool IsProtectedNoFaultSupported() const { return protected_no_fault_supported_; }
 
-    void setInstancePNext(void* pNext) { instance_pnext_ = pNext; }
+    void SetInstancePNext(void* pNext) { instance_pnext_ = pNext; }
 
   private:
+    // InitFramework and InitState is explicitly hidden because there is a custom Init that should be used instead
+    void InitFramework(void* instance_pnext = NULL) { assert(false); }
+    void InitState(VkPhysicalDeviceFeatures* features = nullptr, void* create_device_pnext = nullptr,
+                   const VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {
+        assert(false);
+    }
+
     uint32_t FindQueueFamilySupportingCodecOp(VkVideoCodecOperationFlagBitsKHR codec_op) {
         uint32_t qfi = VK_QUEUE_FAMILY_IGNORED;
         for (size_t i = 0; i < queue_family_video_props_.size(); ++i) {
@@ -3634,13 +3744,10 @@ class VkVideoLayerTest : public VkLayerTest {
     std::vector<VideoConfig> configs_encode_av1_{};
 };
 
-class NegativeVideo : public VkVideoLayerTest {};
-class PositiveVideo : public VkVideoLayerTest {};
-
 class VkVideoSyncLayerTest : public VkVideoLayerTest {
   public:
     VkVideoSyncLayerTest() {
-        setInstancePNext(&features_);
+        SetInstancePNext(&features_);
         AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
     }
 
@@ -3652,13 +3759,10 @@ class VkVideoSyncLayerTest : public VkVideoLayerTest {
     VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1u, enables_, 4, disables_};
 };
 
-class NegativeSyncValVideo : public VkVideoSyncLayerTest {};
-class PositiveSyncValVideo : public VkVideoSyncLayerTest {};
-
 class VkVideoBestPracticesLayerTest : public VkVideoLayerTest {
   public:
     VkVideoBestPracticesLayerTest() {
-        setInstancePNext(&features_);
+        SetInstancePNext(&features_);
         AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
     }
 

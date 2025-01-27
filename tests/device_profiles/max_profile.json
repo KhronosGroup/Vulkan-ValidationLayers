@@ -919,6 +919,9 @@
                 "VkPhysicalDeviceVideoMaintenance1FeaturesKHR": {
                     "videoMaintenance1": true
                 },
+                "VkPhysicalDeviceVideoMaintenance2FeaturesKHR": {
+                    "videoMaintenance2": true
+                },
                 "VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR": {
                     "videoEncodeQuantizationMap": true
                 },
@@ -2240,6 +2243,7 @@
                 "VK_KHR_video_encode_queue": 1,
                 "VK_KHR_video_encode_quantization_map": 1,
                 "VK_KHR_video_maintenance1": 1,
+                "VK_KHR_video_maintenance2": 1,
                 "VK_KHR_video_queue": 1,
                 "VK_KHR_vulkan_memory_model": 1,
                 "VK_KHR_wayland_surface": 1,
@@ -8437,7 +8441,8 @@
                             ]
                         },
                         "VkVideoDecodeAV1ProfileInfoKHR": {
-                            "stdProfile": "STD_VIDEO_AV1_PROFILE_MAIN"
+                            "stdProfile": "STD_VIDEO_AV1_PROFILE_MAIN",
+                            "filmGrainSupport": false
                         }
                     }
                 },
@@ -8456,7 +8461,28 @@
                             ]
                         },
                         "VkVideoDecodeAV1ProfileInfoKHR": {
-                            "stdProfile": "STD_VIDEO_AV1_PROFILE_MAIN"
+                            "stdProfile": "STD_VIDEO_AV1_PROFILE_MAIN",
+                            "filmGrainSupport": false
+                        }
+                    }
+                },
+                {
+                    "profile": {
+                        "VkVideoProfileInfoKHR": {
+                            "videoCodecOperation": "VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR",
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR"
+                            ],
+                            "lumaBitDepth": [
+                                "VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR"
+                            ],
+                            "chromaBitDepth": [
+                                "VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR"
+                            ]
+                        },
+                        "VkVideoDecodeAV1ProfileInfoKHR": {
+                            "stdProfile": "STD_VIDEO_AV1_PROFILE_MAIN",
+                            "filmGrainSupport": true
                         }
                     }
                 },
@@ -8475,7 +8501,28 @@
                             ]
                         },
                         "VkVideoDecodeAV1ProfileInfoKHR": {
-                            "stdProfile": "STD_VIDEO_AV1_PROFILE_MAIN"
+                            "stdProfile": "STD_VIDEO_AV1_PROFILE_MAIN",
+                            "filmGrainSupport": false
+                        }
+                    }
+                },
+                {
+                    "profile": {
+                        "VkVideoProfileInfoKHR": {
+                            "videoCodecOperation": "VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR",
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR"
+                            ],
+                            "lumaBitDepth": [
+                                "VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR"
+                            ],
+                            "chromaBitDepth": [
+                                "VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR"
+                            ]
+                        },
+                        "VkVideoDecodeAV1ProfileInfoKHR": {
+                            "stdProfile": "STD_VIDEO_AV1_PROFILE_MAIN",
+                            "filmGrainSupport": true
                         }
                     }
                 },
@@ -9495,9 +9542,11 @@
                 },
                 {
                     "profile": {
-                        "chromaSubsampling": [
-                            "VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR"
-                        ]
+                        "VkVideoProfileInfoKHR": {
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR"
+                            ]
+                        }
                     },
                     "capabilities": {
                         "VkVideoDecodeCapabilitiesKHR": {}
@@ -9586,9 +9635,11 @@
                 },
                 {
                     "profile": {
-                        "chromaSubsampling": [
-                            "VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR"
-                        ]
+                        "VkVideoProfileInfoKHR": {
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR"
+                            ]
+                        }
                     },
                     "capabilities": {
                         "VkVideoDecodeCapabilitiesKHR": {}
@@ -9673,9 +9724,11 @@
                 },
                 {
                     "profile": {
-                        "chromaSubsampling": [
-                            "VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR"
-                        ]
+                        "VkVideoProfileInfoKHR": {
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR"
+                            ]
+                        }
                     },
                     "capabilities": {
                         "VkVideoDecodeCapabilitiesKHR": {}
@@ -9735,9 +9788,11 @@
                 },
                 {
                     "profile": {
-                        "chromaSubsampling": [
-                            "VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR"
-                        ]
+                        "VkVideoProfileInfoKHR": {
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR"
+                            ]
+                        }
                     },
                     "capabilities": {
                         "VkVideoEncodeCapabilitiesKHR": {}
@@ -9824,9 +9879,11 @@
                 },
                 {
                     "profile": {
-                        "chromaSubsampling": [
-                            "VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR"
-                        ]
+                        "VkVideoProfileInfoKHR": {
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR"
+                            ]
+                        }
                     },
                     "capabilities": {
                         "VkVideoEncodeCapabilitiesKHR": {}
@@ -9911,9 +9968,11 @@
                 },
                 {
                     "profile": {
-                        "chromaSubsampling": [
-                            "VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR"
-                        ]
+                        "VkVideoProfileInfoKHR": {
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR"
+                            ]
+                        }
                     },
                     "capabilities": {
                         "VkVideoEncodeCapabilitiesKHR": {}

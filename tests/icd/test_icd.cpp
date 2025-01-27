@@ -1126,6 +1126,10 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice ph
     if (video_maintenance1_features) {
         video_maintenance1_features->videoMaintenance1 = VK_TRUE;
     }
+    auto video_maintenance2_features = vku::FindStructInPNextChain<VkPhysicalDeviceVideoMaintenance2FeaturesKHR>(pFeatures->pNext);
+    if (video_maintenance2_features) {
+        video_maintenance2_features->videoMaintenance2 = VK_TRUE;
+    }
     auto device_generated_commands_features =
         vku::FindStructInPNextChain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesEXT>(pFeatures->pNext);
     if (device_generated_commands_features) {
