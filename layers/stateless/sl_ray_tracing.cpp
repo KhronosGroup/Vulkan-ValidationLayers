@@ -1783,35 +1783,43 @@ bool Device::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer
                                                             error_obj.location.dot(Field::pCallableShaderBindingTable));
     }
 
-    if (width * depth * height > phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount) {
+    const uint64_t invocations = static_cast<uint64_t>(width) * static_cast<uint64_t>(depth) * static_cast<uint64_t>(height);
+    if (invocations > phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount) {
         skip |= LogError("VUID-vkCmdTraceRaysKHR-width-03641", commandBuffer, error_obj.location,
                          "width x height x depth (%" PRIu32 " x %" PRIu32 " x %" PRIu32
                          ") must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayDispatchInvocationCount (%" PRIu32 ").",
                          width, depth, height, phys_dev_ext_props.ray_tracing_props_khr.maxRayDispatchInvocationCount);
     }
-    if (width > device_limits.maxComputeWorkGroupCount[0] * device_limits.maxComputeWorkGroupSize[0]) {
+
+    const uint64_t max_width = static_cast<uint64_t>(device_limits.maxComputeWorkGroupCount[0]) *
+                               static_cast<uint64_t>(device_limits.maxComputeWorkGroupSize[0]);
+    if (width > max_width) {
         skip |= LogError("VUID-vkCmdTraceRaysKHR-width-03638", commandBuffer, error_obj.location.dot(Field::width),
                          "(%" PRIu32
-                         ") must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] "
-                         "x VkPhysicalDeviceLimits::maxComputeWorkGroupSize[0] (%" PRIu32 " x %" PRIu32 ").",
-                         width, device_limits.maxComputeWorkGroupCount[0], device_limits.maxComputeWorkGroupSize[0]);
+                         ") must be less than or equal to maxComputeWorkGroupCount[0] x maxComputeWorkGroupSize[0] (%" PRIu32
+                         " x %" PRIu32 " = %" PRIu64 ").",
+                         width, device_limits.maxComputeWorkGroupCount[0], device_limits.maxComputeWorkGroupSize[0], max_width);
     }
 
-    if (height > device_limits.maxComputeWorkGroupCount[1] * device_limits.maxComputeWorkGroupSize[1]) {
+    const uint64_t max_height = static_cast<uint64_t>(device_limits.maxComputeWorkGroupCount[1]) *
+                                static_cast<uint64_t>(device_limits.maxComputeWorkGroupSize[1]);
+    if (height > max_height) {
         skip |= LogError("VUID-vkCmdTraceRaysKHR-height-03639", commandBuffer, error_obj.location.dot(Field::height),
                          "(%" PRIu32
-                         ") must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] "
-                         "x VkPhysicalDeviceLimits::maxComputeWorkGroupSize[1] (%" PRIu32 " x %" PRIu32 ").",
-                         height, device_limits.maxComputeWorkGroupCount[1], device_limits.maxComputeWorkGroupSize[1]);
+                         ") must be less than or equal to maxComputeWorkGroupCount[1] x maxComputeWorkGroupSize[1] (%" PRIu32
+                         " x %" PRIu32 " = %" PRIu64 ").",
+                         height, device_limits.maxComputeWorkGroupCount[1], device_limits.maxComputeWorkGroupSize[1], max_height);
     }
 
-    if (depth > device_limits.maxComputeWorkGroupCount[2] * device_limits.maxComputeWorkGroupSize[2]) {
+    const uint64_t max_depth = static_cast<uint64_t>(device_limits.maxComputeWorkGroupCount[2]) *
+                               static_cast<uint64_t>(device_limits.maxComputeWorkGroupSize[2]);
+    if (depth > max_depth) {
         skip |= LogError("VUID-vkCmdTraceRaysKHR-depth-03640", commandBuffer, error_obj.location.dot(Field::depth),
                          "(%" PRIu32
-                         ") must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] "
-                         "x VkPhysicalDeviceLimits::maxComputeWorkGroupSize[2] (%" PRIu32 " x %" PRIu32 ").",
-                         depth, device_limits.maxComputeWorkGroupCount[2], device_limits.maxComputeWorkGroupSize[2]);
+                         ") must be less than or equal to maxComputeWorkGroupCount[2] x maxComputeWorkGroupSize[2] (%" PRIu32
+                         " x %" PRIu32 " = %" PRIu64 ").",
+                         depth, device_limits.maxComputeWorkGroupCount[2], device_limits.maxComputeWorkGroupSize[2], max_depth);
     }
     return skip;
 }
