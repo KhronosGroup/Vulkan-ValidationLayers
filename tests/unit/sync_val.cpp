@@ -20,189 +20,108 @@
 
 class NegativeSyncVal : public VkSyncValTest {};
 
-TEST_F(NegativeSyncVal, BufferCopyHazards) {
-    AddOptionalExtensions(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
-    bool has_amd_buffer_maker = IsExtensionsEnabled(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
+TEST_F(NegativeSyncVal, BufferCopy) {
+    TEST_DESCRIPTION("Hazards caused by buffer copy commands");
+    RETURN_IF_SKIP(InitSyncVal());
 
-    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    vkt::Buffer buffer_a(*m_device, 256, transfer_usage, mem_prop);
-    vkt::Buffer buffer_b(*m_device, 256, transfer_usage, mem_prop);
-    vkt::Buffer buffer_c(*m_device, 256, transfer_usage, mem_prop);
+    const VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, usage);
+    vkt::Buffer buffer_b(*m_device, 256, usage);
+    vkt::Buffer buffer_c(*m_device, 256, usage);
 
-    VkBufferCopy region = {0, 0, 256};
-    VkBufferCopy front2front = {0, 0, 128};
-    VkBufferCopy front2back = {0, 128, 128};
-    VkBufferCopy back2back = {128, 128, 128};
-
-    auto cb = m_command_buffer.handle();
     m_command_buffer.Begin();
-
-    vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &region);
-
+    m_command_buffer.Copy(buffer_a, buffer_b);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &region);
+    m_command_buffer.Copy(buffer_c, buffer_a);
     m_errorMonitor->VerifyFound();
 
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Sync with buffer_a from the first copy (a->b). The second copy caused error and has no effect
     VkBufferMemoryBarrier buffer_barrier = vku::InitStructHelper();
     buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    buffer_barrier.buffer = buffer_a.handle();
-    buffer_barrier.offset = 0;
+    buffer_barrier.buffer = buffer_a;
     buffer_barrier.size = 256;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &buffer_barrier, 0,
-                           nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1,
+                           &buffer_barrier, 0, nullptr);
 
-    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
-    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &back2back);
+    // Write to buffer_a is protected by the above barrier
+    m_command_buffer.Copy(buffer_c, buffer_a);
 
+    // Cause WAW by writing buffer_a again
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2back);
+    m_command_buffer.Copy(buffer_c, buffer_a);
     m_errorMonitor->VerifyFound();
 
+    // buffer_b was not protected by the above barrier
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_b.handle(), 1, &region);
+    m_command_buffer.Copy(buffer_c, buffer_b);
     m_errorMonitor->VerifyFound();
 
-    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer thus doesn't
-    //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
-
-    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    // Use global barrier to protect buffer_b write
     VkMemoryBarrier mem_barrier = vku::InitStructHelper();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
+                           nullptr, 0, nullptr);
+    m_command_buffer.Copy(buffer_c, buffer_b);
 
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
-
+    // Protect buffer_c READ but not buffer_b WRITE
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;  // Protect C but not B
+    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
-                           nullptr);
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_b.handle(), buffer_c.handle(), 1, &region);
-    m_errorMonitor->VerifyFound();
-
-    m_command_buffer.End();
-
-    // CmdFillBuffer
-    m_command_buffer.Reset();
-    m_command_buffer.Begin();
-    vk::CmdFillBuffer(m_command_buffer.handle(), buffer_a.handle(), 0, 256, 1);
-    m_command_buffer.End();
-
-    m_command_buffer.Reset();
-    m_command_buffer.Begin();
-    vk::CmdCopyBuffer(cb, buffer_b.handle(), buffer_a.handle(), 1, &region);
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdFillBuffer(m_command_buffer.handle(), buffer_a.handle(), 0, 256, 1);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
+                           nullptr, 0, nullptr);
+    m_command_buffer.Copy(buffer_b, buffer_c);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
 
-    // CmdUpdateBuffer
-    int i = 10;
-    m_command_buffer.Reset();
-    m_command_buffer.Begin();
-    vk::CmdUpdateBuffer(m_command_buffer.handle(), buffer_a.handle(), 0, sizeof(i), &i);
-    m_command_buffer.End();
+TEST_F(NegativeSyncVal, BufferCopySecondary) {
+    TEST_DESCRIPTION("Record buffer copy commands in secondary command buffers");
+    RETURN_IF_SKIP(InitSyncVal());
 
-    m_command_buffer.Reset();
-    m_command_buffer.Begin();
-    vk::CmdCopyBuffer(cb, buffer_b.handle(), buffer_a.handle(), 1, &region);
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdUpdateBuffer(m_command_buffer.handle(), buffer_a.handle(), 0, sizeof(i), &i);
-    m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
+    const VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_a(*m_device, 256, usage);
+    vkt::Buffer buffer_b(*m_device, 256, usage);
+    vkt::Buffer buffer_c(*m_device, 256, usage);
 
-    // Create secondary buffers to use
     vkt::CommandBuffer secondary_cb1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBuffer scb1 = secondary_cb1.handle();
     secondary_cb1.Begin();
-    vk::CmdCopyBuffer(scb1, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
+    secondary_cb1.Copy(buffer_c, buffer_a);
     secondary_cb1.End();
 
     vkt::CommandBuffer secondary_cb2(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBuffer scb2 = secondary_cb2.handle();
     secondary_cb2.Begin();
-    vk::CmdCopyBuffer(scb2, buffer_a.handle(), buffer_c.handle(), 1, &front2front);
+    secondary_cb2.Copy(buffer_a, buffer_b);
     secondary_cb2.End();
 
     vkt::CommandBuffer secondary_cb3(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBuffer scb3 = secondary_cb3.handle();
     secondary_cb3.Begin();
-    vk::CmdPipelineBarrier(secondary_cb3.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-                           nullptr, 0, nullptr);
+    secondary_cb3.Copy(buffer_b, buffer_c);
     secondary_cb3.End();
 
-    vkt::CommandBuffer secondary_cb4(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBuffer scb4 = secondary_cb4.handle();
-    secondary_cb4.Begin();
-    vk::CmdCopyBuffer(scb4, buffer_b.handle(), buffer_c.handle(), 1, &front2front);
-    secondary_cb4.End();
-
-    // One secondary CB hazard with active command buffer
-    m_command_buffer.Reset();
+    // Secondary CB hazard with active command buffer
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
+    m_command_buffer.Copy(buffer_c, buffer_a);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdExecuteCommands(cb, 1, &scb1);
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_cb1.handle());
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
-    // Two secondary CB hazard with each other
-    m_command_buffer.Reset();
+    // Two secondary CBs hazard with each other
     m_command_buffer.Begin();
-    // This is also a "SYNC-HAZARD-WRITE-AFTER-WRITE" present, but only the first hazard is reported.
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
-    {
-        VkCommandBuffer two_cbs[2] = {scb1, scb2};
-        vk::CmdExecuteCommands(cb, 2, two_cbs);
-    }
+    VkCommandBuffer two_cbs[2] = {secondary_cb1, secondary_cb2};
+    vk::CmdExecuteCommands(m_command_buffer, 2, two_cbs);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 
-    // Two secondary CB hazard with each other
-    m_command_buffer.Reset();
     m_command_buffer.Begin();
-    {
-        m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-        VkCommandBuffer two_cbs[2] = {scb1, scb4};
-        vk::CmdExecuteCommands(cb, 2, two_cbs);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    VkCommandBuffer two_cbs2[2] = {secondary_cb1, secondary_cb3};
+    vk::CmdExecuteCommands(m_command_buffer, 2, two_cbs2);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
-
-    // Add a secondary CB with a barrier
-    m_command_buffer.Reset();
-    m_command_buffer.Begin();
-    {
-        VkCommandBuffer three_cbs[3] = {scb1, scb3, scb4};
-        vk::CmdExecuteCommands(cb, 3, three_cbs);
-    }
-    m_command_buffer.End();
-
-    m_command_buffer.Reset();
-    // CmdWriteBufferMarkerAMD
-    if (has_amd_buffer_maker) {
-        m_command_buffer.Reset();
-        m_command_buffer.Begin();
-        vk::CmdWriteBufferMarkerAMD(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, buffer_a.handle(), 0, 1);
-        m_command_buffer.End();
-
-        m_command_buffer.Reset();
-        m_command_buffer.Begin();
-        vk::CmdCopyBuffer(cb, buffer_b.handle(), buffer_a.handle(), 1, &region);
-        m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-        vk::CmdWriteBufferMarkerAMD(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, buffer_a.handle(), 0, 1);
-        m_errorMonitor->VerifyFound();
-        m_command_buffer.End();
-    } else {
-        printf("Test requires unsupported vkCmdWriteBufferMarkerAMD feature. Skipped.\n");
-    }
 }
 
 TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
