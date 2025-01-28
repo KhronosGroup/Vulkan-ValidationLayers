@@ -93,6 +93,55 @@ void VkSyncValTest::InitRayTracing() {
     RETURN_IF_SKIP(InitSyncVal());
 }
 
+TEST_F(PositiveSyncVal, BufferCopyNonOverlappedRegions) {
+    TEST_DESCRIPTION("Copy to non-overlapped regions of the same buffer");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferCopy first_half = {0, 0, 128};
+    VkBufferCopy second_half = {128, 128, 128};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBuffer(m_command_buffer, buffer_b, buffer_a, 1, &first_half);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_b, buffer_a, 1, &second_half);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, BufferCopySecondary) {
+    TEST_DESCRIPTION("Execution dependency protects protects READ access from subsequent WRITEs");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_c(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // buffer_c READ
+    vkt::CommandBuffer secondary_cb1(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary_cb1.Begin();
+    secondary_cb1.Copy(buffer_c, buffer_a);
+    secondary_cb1.End();
+
+    // Execution dependency
+    vkt::CommandBuffer secondary_cb2(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary_cb2.Begin();
+    vk::CmdPipelineBarrier(secondary_cb2, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
+                           0, nullptr);
+    secondary_cb2.End();
+
+    // buffer_c WRITE
+    vkt::CommandBuffer secondary_cb3(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary_cb3.Begin();
+    secondary_cb3.Copy(buffer_b, buffer_c);
+    secondary_cb3.End();
+
+    m_command_buffer.Begin();
+    VkCommandBuffer three_cbs[3] = {secondary_cb1, secondary_cb2, secondary_cb3};
+    vk::CmdExecuteCommands(m_command_buffer, 3, three_cbs);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     TEST_DESCRIPTION(
         "Clear one attachment layer and copy to a different one."
