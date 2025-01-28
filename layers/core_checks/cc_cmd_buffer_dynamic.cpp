@@ -1515,7 +1515,9 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
 
     if (fragment_shader_bound) {
         if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-            const uint32_t attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
+            // TODO - Add test to understand when this would be a null render pass
+            const uint32_t attachment_count =
+                cb_state.activeRenderPass ? cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount() : 0;
             if (attachment_count > 0) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT,
                                                   cb_state, objlist, loc, vuid.set_color_blend_enable_08657);
