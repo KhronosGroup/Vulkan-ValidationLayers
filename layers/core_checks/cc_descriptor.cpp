@@ -1622,7 +1622,7 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
         }
         if (buffer_info.range > (buffer_state->create_info.size - buffer_info.offset)) {
             skip |= LogError("VUID-VkDescriptorBufferInfo-range-00342", buffer_info.buffer, buffer_info_loc.dot(Field::range),
-                             "(%" PRIu64 ") is larger than buffer size (%" PRIu64 ") + offset (%" PRIu64 ").", buffer_info.range,
+                             "(%" PRIu64 ") is larger than buffer size (%" PRIu64 ") - offset (%" PRIu64 ").", buffer_info.range,
                              buffer_state->create_info.size, buffer_info.offset);
         }
     }
