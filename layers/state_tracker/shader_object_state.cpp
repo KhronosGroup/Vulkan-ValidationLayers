@@ -1,5 +1,5 @@
 /* Copyright (c) 2023-2024 Nintendo
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 #include "state_tracker/state_tracker.h"
 
 namespace vvl {
-static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker &dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
+static ShaderObject::SetLayoutVector GetSetLayouts(Device &dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
     ShaderObject::SetLayoutVector set_layouts(pCreateInfo.setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo.setLayoutCount; ++i) {
@@ -28,7 +28,7 @@ static ShaderObject::SetLayoutVector GetSetLayouts(ValidationStateTracker &dev_d
     return set_layouts;
 }
 
-ShaderObject::ShaderObject(ValidationStateTracker &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT handle,
+ShaderObject::ShaderObject(Device &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT handle,
                            std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders)
     : StateObject(handle, kVulkanObjectTypeShaderEXT),
       safe_create_info(&create_info_i),

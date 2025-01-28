@@ -27,11 +27,10 @@
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace vvl {
+class Device;
 class DescriptorSetLayout;
 class DescriptorSetLayoutDef;
 }  // namespace vvl
-
-class ValidationStateTracker;
 
 // Canonical dictionary for the pipeline layout's layout of descriptorsetlayouts
 using DescriptorSetLayoutDef = vvl::DescriptorSetLayoutDef;
@@ -80,7 +79,7 @@ class PipelineLayout : public StateObject {
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
     VkPipelineLayoutCreateFlags create_flags;
 
-    PipelineLayout(ValidationStateTracker &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo);
+    PipelineLayout(Device &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo);
     // Merge 2 or more non-overlapping layouts
     PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts);
     template <typename Container>

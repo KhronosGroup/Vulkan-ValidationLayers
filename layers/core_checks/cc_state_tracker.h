@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
@@ -40,9 +40,8 @@ class CommandBuffer : public vvl::CommandBuffer {
 // Override Retire to validate submissions in the order defined by synchronization
 class Queue : public vvl::Queue {
   public:
-    Queue(ValidationStateTracker& dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index,
-          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties& queue_family_properties,
-          const ValidationObject& error_logger);
+    Queue(vvl::Device& dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
+          const VkQueueFamilyProperties& queue_family_properties, const ValidationObject& error_logger);
 
   private:
     void Retire(vvl::QueueSubmission&) override;

@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -25,10 +25,9 @@
 #include "containers/custom_containers.h"
 #include "error_message/error_location.h"
 
-class ValidationStateTracker;
-
 namespace vvl {
 
+class Device;
 class Queue;
 class Semaphore;
 
@@ -77,7 +76,7 @@ class Semaphore : public RefcountedStateObject {
         void Notify() const;
     };
 
-    Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreCreateInfo *pCreateInfo)
+    Semaphore(Device &dev, VkSemaphore handle, const VkSemaphoreCreateInfo *pCreateInfo)
         : Semaphore(dev, handle, vku::FindStructInPNextChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
 
     std::shared_ptr<const Semaphore> shared_from_this() const { return SharedFromThisImpl(this); }
@@ -144,7 +143,7 @@ class Semaphore : public RefcountedStateObject {
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
   private:
-    Semaphore(ValidationStateTracker &dev, VkSemaphore handle, const VkSemaphoreTypeCreateInfo *type_create_info,
+    Semaphore(Device &dev, VkSemaphore handle, const VkSemaphoreTypeCreateInfo *type_create_info,
               const VkSemaphoreCreateInfo *pCreateInfo);
 
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
@@ -176,7 +175,7 @@ class Semaphore : public RefcountedStateObject {
     // can use the same payload value.
     std::map<uint64_t, TimePoint> timeline_;
     mutable std::shared_mutex lock_;
-    ValidationStateTracker &dev_data_;
+    Device &dev_data_;
 };
 
 }  // namespace vvl

@@ -118,8 +118,7 @@ Event::Event(VkEvent handle, const VkEventCreateInfo *create_info)
 {
 }
 
-CommandPool::CommandPool(ValidationStateTracker &dev, VkCommandPool handle, const VkCommandPoolCreateInfo *create_info,
-                         VkQueueFlags flags)
+CommandPool::CommandPool(Device &dev, VkCommandPool handle, const VkCommandPoolCreateInfo *create_info, VkQueueFlags flags)
     : StateObject(handle, kVulkanObjectTypeCommandPool),
       dev_data(dev),
       createFlags(create_info->flags),
@@ -166,7 +165,7 @@ void CommandBuffer::SetActiveSubpass(uint32_t subpass) {
     active_subpass_sample_count_ = std::nullopt;
 }
 
-CommandBuffer::CommandBuffer(ValidationStateTracker &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
+CommandBuffer::CommandBuffer(Device &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
                              const vvl::CommandPool *pool)
     : RefcountedStateObject(handle, kVulkanObjectTypeCommandBuffer),
       allocate_info(*allocate_info),
@@ -821,7 +820,7 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
 
             // Enqueue submission time DPB slot deactivation
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [deactivated_slots](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
+                [deactivated_slots](const Device &dev_data, const vvl::VideoSession *vs_state,
                                     vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                     for (const auto &slot_index : deactivated_slots) {
                         dev_state.Deactivate(slot_index);
@@ -852,8 +851,8 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
 
             // Enqueue submission time video session state reset/initialization
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
-                   vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                [](const Device &dev_data, const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
+                   bool do_validate) {
                     dev_state.Reset();
                     return false;
                 });
@@ -866,8 +865,8 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
 
                 // Enqueue rate control specific device state changes
                 video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                    [state](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
-                            vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                    [state](const Device &dev_data, const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
+                            bool do_validate) {
                         dev_state.SetRateControlState(state);
                         return false;
                     });
@@ -882,7 +881,7 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
 
                 // Enqueue encode quality level device state change
                 video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                    [quality_level](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
+                    [quality_level](const Device &dev_data, const vvl::VideoSession *vs_state,
                                     vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                         dev_state.SetEncodeQualityLevel(quality_level);
                         return false;
@@ -918,7 +917,7 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
             // Enqueue submission time reference slot setup or invalidation
             bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(*pDecodeInfo);
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [setup_slot, reference_setup_requested](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
+                [setup_slot, reference_setup_requested](const Device &dev_data, const vvl::VideoSession *vs_state,
                                                         vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                     if (reference_setup_requested) {
                         dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
@@ -958,7 +957,7 @@ void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
             // Enqueue submission time reference slot setup or invalidation
             bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(*pEncodeInfo);
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [setup_slot, reference_setup_requested](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
+                [setup_slot, reference_setup_requested](const Device &dev_data, const vvl::VideoSession *vs_state,
                                                         vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                     if (reference_setup_requested) {
                         dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
@@ -1071,7 +1070,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
 
         // Propagate inital layout and current layout state to the primary cmd buffer
         // NOTE: The update/population of the image_layout_map is done in CoreChecks, but for other classes derived from
-        // ValidationStateTracker these maps will be empty, so leaving the propagation in the the state tracker should be a no-op
+        // Device these maps will be empty, so leaving the propagation in the the state tracker should be a no-op
         // for those other classes.
         for (const auto &[image, image_layout_registry] : sub_cb_state->image_layout_map) {
             const auto image_state = dev_data.Get<vvl::Image>(image);

@@ -65,10 +65,11 @@ struct InstrumentedShader {
 // We still keep this as encapsulates the complex code around shader instrumentation.
 // Handles shader instrumentation (reserve a descriptor slot, create descriptor
 // sets, pipeline layout, hook into pipeline creation, etc...)
-class GpuShaderInstrumentor : public ValidationStateTracker {
-    using BaseClass = ValidationStateTracker;
+class GpuShaderInstrumentor : public vvl::Device {
+    using BaseClass = vvl::Device;
+
   public:
-    GpuShaderInstrumentor(vvl::dispatch::Device *dev, ValidationStateTracker *instance, LayerObjectTypeId type)
+    GpuShaderInstrumentor(vvl::dispatch::Device *dev, vvl::Instance *instance, LayerObjectTypeId type)
         : BaseClass(dev, instance, type) {}
 
     ReadLockGuard ReadLock() const override;

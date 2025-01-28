@@ -29,7 +29,7 @@
 
 namespace gpuav {
 
-Buffer::Buffer(ValidationStateTracker &dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_)
+Buffer::Buffer(vvl::Device &dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_)
     : vvl::Buffer(dev_data, buff, pCreateInfo),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(buff, kVulkanObjectTypeBuffer))) {}
@@ -325,7 +325,7 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
 
     const size_t max_recordable_ranges =
         static_cast<size_t>((GetBdaRangesBufferByteSize() - sizeof(uint64_t)) / (2 * sizeof(VkDeviceAddress)));
-    auto bda_ranges = reinterpret_cast<ValidationStateTracker::BufferAddressRange *>(bda_table_ptr + 1);
+    auto bda_ranges = reinterpret_cast<vvl::Device::BufferAddressRange *>(bda_table_ptr + 1);
     const auto [ranges_to_update_count, total_address_ranges_count] =
         gpuav->GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
     bda_table_ptr[0] = ranges_to_update_count;

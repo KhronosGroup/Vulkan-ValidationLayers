@@ -66,7 +66,7 @@ std::string DescriptorValidator::DescribeDescriptor(const spirv::ResourceInterfa
     return ss.str();
 }
 
-DescriptorValidator::DescriptorValidator(ValidationStateTracker &dev, CommandBuffer &cb_state, DescriptorSet &descriptor_set,
+DescriptorValidator::DescriptorValidator(vvl::Device &dev, CommandBuffer &cb_state, DescriptorSet &descriptor_set,
                                          uint32_t set_index, VkFramebuffer framebuffer, const Location &loc)
     : dev_state(dev),
       cb_state(cb_state),

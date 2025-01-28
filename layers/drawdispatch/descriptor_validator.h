@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+/* Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@
 #include <vulkan/vulkan.h>
 #include "error_message/error_location.h"
 
-class ValidationStateTracker;
-
 namespace spirv {
 struct ResourceInterfaceVariable;
 }  // namespace spirv
@@ -28,6 +26,7 @@ struct ResourceInterfaceVariable;
 namespace vvl {
 struct DrawDispatchVuid;
 class DescriptorBinding;
+class Device;
 class BufferDescriptor;
 class ImageDescriptor;
 class ImageSamplerDescriptor;
@@ -40,8 +39,8 @@ class DescriptorSet;
 
 class DescriptorValidator {
  public:
-   DescriptorValidator(ValidationStateTracker& dev, vvl::CommandBuffer& cb_state, vvl::DescriptorSet& descriptor_set,
-                       uint32_t set_index, VkFramebuffer framebuffer, const Location& loc);
+   DescriptorValidator(Device& dev, vvl::CommandBuffer& cb_state, vvl::DescriptorSet& descriptor_set, uint32_t set_index,
+                       VkFramebuffer framebuffer, const Location& loc);
 
    // Used with normal validation where we know which descriptors are accessed.
    bool ValidateBindingStatic(const spirv::ResourceInterfaceVariable& binding_info, const vvl::DescriptorBinding& binding) const;
@@ -76,7 +75,7 @@ class DescriptorValidator {
 
    std::string DescribeDescriptor(const spirv::ResourceInterfaceVariable& binding_info, uint32_t index) const;
 
-   ValidationStateTracker& dev_state;
+   vvl::Device& dev_state;
    vvl::CommandBuffer& cb_state;
    vvl::DescriptorSet& descriptor_set;
    const uint32_t set_index;

@@ -209,8 +209,8 @@ const char* VendorSpecificTag(BPVendorFlags vendors);
 
 bool VendorCheckEnabled(const CHECK_ENABLED& enabled, BPVendorFlags vendors);
 
-class Instance : public ValidationStateTracker {
-    using BaseClass = ValidationStateTracker;
+class Instance : public vvl::Instance {
+    using BaseClass = vvl::Instance;
 
   public:
     using Func = vvl::Func;
@@ -318,8 +318,9 @@ class Instance : public ValidationStateTracker {
 };
 }  // namespace bp_state
 
-class BestPractices : public ValidationStateTracker {
-    using BaseClass = ValidationStateTracker;
+class BestPractices : public vvl::Device {
+    using BaseClass = vvl::Device;
+
   public:
     using Func = vvl::Func;
     using Struct = vvl::Struct;

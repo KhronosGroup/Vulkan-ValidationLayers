@@ -47,8 +47,8 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpuav::Queue, vvl::Queue)
 
 namespace gpuav {
 
-class Instance : public ValidationStateTracker {
-    using BaseClass = ValidationStateTracker;
+class Instance : public vvl::Instance {
+    using BaseClass = vvl::Instance;
 
   public:
     Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeGpuAssisted) {}

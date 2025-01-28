@@ -1,7 +1,6 @@
-
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -31,13 +30,12 @@ class BestPractices;
 namespace bp_state {
 class Image : public vvl::Image {
   public:
-    Image(const ValidationStateTracker& dev_data, VkImage handle, const VkImageCreateInfo* create_info,
-          VkFormatFeatureFlags2 features)
+    Image(const vvl::Device& dev_data, VkImage handle, const VkImageCreateInfo* create_info, VkFormatFeatureFlags2 features)
         : vvl::Image(dev_data, handle, create_info, features) {
         SetupUsages();
     }
 
-    Image(const ValidationStateTracker& dev_data, VkImage handle, const VkImageCreateInfo* create_info, VkSwapchainKHR swapchain,
+    Image(const vvl::Device& dev_data, VkImage handle, const VkImageCreateInfo* create_info, VkSwapchainKHR swapchain,
           uint32_t swapchain_index, VkFormatFeatureFlags2 features)
         : vvl::Image(dev_data, handle, create_info, swapchain, swapchain_index, features) {
         SetupUsages();
@@ -100,7 +98,7 @@ class PhysicalDevice : public vvl::PhysicalDevice {
 
 class Swapchain : public vvl::Swapchain {
   public:
-    Swapchain(ValidationStateTracker& dev_data, const VkSwapchainCreateInfoKHR* create_info, VkSwapchainKHR handle)
+    Swapchain(vvl::Device& dev_data, const VkSwapchainCreateInfoKHR* create_info, VkSwapchainKHR handle)
         : vvl::Swapchain(dev_data, create_info, handle) {}
 
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
@@ -223,7 +221,7 @@ class CommandBuffer : public vvl::CommandBuffer {
 
 class DescriptorPool : public vvl::DescriptorPool {
   public:
-    DescriptorPool(ValidationStateTracker& dev, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo* create_info)
+    DescriptorPool(vvl::Device& dev, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo* create_info)
         : vvl::DescriptorPool(dev, handle, create_info) {}
 
     uint32_t freed_count{0};
@@ -231,7 +229,7 @@ class DescriptorPool : public vvl::DescriptorPool {
 
 class Pipeline : public vvl::Pipeline {
   public:
-    Pipeline(const ValidationStateTracker& state_data, const VkGraphicsPipelineCreateInfo* create_info,
+    Pipeline(const vvl::Device& state_data, const VkGraphicsPipelineCreateInfo* create_info,
              std::shared_ptr<const vvl::PipelineCache>&& pipe_cache, std::shared_ptr<const vvl::RenderPass>&& rpstate,
              std::shared_ptr<const vvl::PipelineLayout>&& layout);
 
