@@ -25,6 +25,7 @@
 #include "core_validation.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/descriptor_sets.h"
+#include "state_tracker/pipeline_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "generated/dispatch_functions.h"
 
@@ -247,6 +248,70 @@ bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipe
     return skip;
 }
 
+bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::CommandBuffer &cb_state,
+                                                              const vvl::Pipeline &pipeline_state, const vvl::RenderPass &rp_state,
+                                                              const Location &loc) const {
+    bool skip = false;
+    const auto *multisample_state = pipeline_state.MultisampleState();
+    if (!multisample_state) return skip;
+
+    if (phys_dev_ext_props.sample_locations_props.variableSampleLocations == VK_FALSE) {
+        const auto *sample_locations = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state);
+        if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
+            !pipeline_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
+            bool found = false;
+            if (cb_state.sample_locations_begin_info) {
+                for (uint32_t i = 0; i < cb_state.sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
+                    if (cb_state.sample_locations_begin_info->pPostSubpassSampleLocations[i].subpassIndex ==
+                        cb_state.GetActiveSubpass()) {
+                        if (MatchSampleLocationsInfo(
+                                cb_state.sample_locations_begin_info->pPostSubpassSampleLocations[i].sampleLocationsInfo,
+                                sample_locations->sampleLocationsInfo)) {
+                            found = true;
+                        }
+                    }
+                }
+            }
+            if (!found) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline_state.Handle(), rp_state.Handle());
+                skip |= LogError("VUID-vkCmdBindPipeline-variableSampleLocations-01525", objlist, loc,
+                                 "the current render pass was not begun with any element of "
+                                 "pPostSubpassSampleLocations subpassIndex "
+                                 "matching the current subpass index (%" PRIu32
+                                 ") and sampleLocationsInfo from VkPipelineMultisampleStateCreateInfo of the pipeline.",
+                                 cb_state.GetActiveSubpass());
+            }
+        }
+    }
+
+    if (enabled_features.variableMultisampleRate == VK_FALSE) {
+        const uint32_t subpass = cb_state.GetActiveSubpass();
+        // if render pass uses no attachment, verify that all bound pipelines referencing this subpass have the same
+        // pMultisampleState->rasterizationSamples.
+        if (rp_state.UsesNoAttachment(subpass)) {
+            // If execution ends up here, GetActiveSubpassRasterizationSampleCount() can still be empty if this is
+            // the first bound pipeline with the previous conditions holding. Rasterization samples count for the
+            // subpass will be updated in PostCallRecordCmdBindPipeline, if it is empty.
+            if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
+                    cb_state.GetActiveSubpassRasterizationSampleCount();
+                subpass_rasterization_samples && *subpass_rasterization_samples != multisample_state->rasterizationSamples) {
+                const LogObjectList objlist(device, rp_state.Handle(), pipeline_state.Handle());
+                skip |= LogError("VUID-vkCmdBindPipeline-pipeline-00781", objlist, loc,
+                                 "variableMultisampleRate is VK_FALSE "
+                                 "and "
+                                 "pipeline has pMultisampleState->rasterizationSamples equal to %s, while a previously bound "
+                                 "pipeline in the current subpass (%" PRIu32
+                                 ") used "
+                                 "pMultisampleState->rasterizationSamples equal to %s.",
+                                 string_VkSampleCountFlagBits(multisample_state->rasterizationSamples), subpass,
+                                 string_VkSampleCountFlagBits(*subpass_rasterization_samples));
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipeline pipeline, const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -280,111 +345,9 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
         if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
             skip |= ValidateGraphicsPipelineBindPoint(*cb_state, pipeline_state, error_obj.location);
 
-            if (cb_state->activeRenderPass &&
-                phys_dev_ext_props.provoking_vertex_props.provokingVertexModePerPipeline == VK_FALSE) {
-                const auto lvl_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-                const auto &last_bound = cb_state->lastBound[lvl_bind_point];
-                if (last_bound.pipeline_state) {
-                    auto last_bound_provoking_vertex_state_ci =
-                        vku::FindStructInPNextChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
-                            last_bound.pipeline_state->RasterizationStatePNext());
-
-                    auto current_provoking_vertex_state_ci =
-                        vku::FindStructInPNextChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
-                            pipeline_state.RasterizationStatePNext());
-
-                    if (last_bound_provoking_vertex_state_ci && !current_provoking_vertex_state_ci) {
-                        const LogObjectList objlist(cb_state->Handle(), pipeline);
-                        skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881", objlist, error_obj.location,
-                                         "Previous %s's provokingVertexMode is %s, but %s doesn't chain "
-                                         "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
-                                         FormatHandle(last_bound.pipeline_state->Handle()).c_str(),
-                                         string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode),
-                                         FormatHandle(pipeline).c_str());
-                    } else if (!last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci) {
-                        const LogObjectList objlist(cb_state->Handle(), pipeline);
-                        skip |= LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881", objlist, error_obj.location,
-                                         "%s's provokingVertexMode is %s, but previous %s doesn't chain "
-                                         "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
-                                         FormatHandle(pipeline).c_str(),
-                                         string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
-                                         FormatHandle(last_bound.pipeline_state->Handle()).c_str());
-                    } else if (last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci &&
-                               last_bound_provoking_vertex_state_ci->provokingVertexMode !=
-                                   current_provoking_vertex_state_ci->provokingVertexMode) {
-                        const LogObjectList objlist(cb_state->Handle(), pipeline);
-                        skip |=
-                            LogError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881", objlist, error_obj.location,
-                                     "%s's provokingVertexMode is %s, but previous %s's provokingVertexMode is %s.",
-                                     FormatHandle(pipeline).c_str(),
-                                     string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
-                                     FormatHandle(last_bound.pipeline_state->Handle()).c_str(),
-                                     string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode));
-                    }
-                }
-            }
-
-            if (cb_state->activeRenderPass && phys_dev_ext_props.sample_locations_props.variableSampleLocations == VK_FALSE) {
-                const auto *multisample_state = pipeline_state.MultisampleState();
-                const auto *sample_locations = vku::FindStructInPNextChain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state);
-                if (sample_locations && sample_locations->sampleLocationsEnable == VK_TRUE &&
-                    !pipeline_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
-                    const auto *sample_locations_begin_info =
-                        vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(cb_state->active_render_pass_begin_info.pNext);
-                    bool found = false;
-                    if (sample_locations_begin_info) {
-                        for (uint32_t i = 0; i < sample_locations_begin_info->postSubpassSampleLocationsCount; ++i) {
-                            if (sample_locations_begin_info->pPostSubpassSampleLocations[i].subpassIndex ==
-                                cb_state->GetActiveSubpass()) {
-                                if (MatchSampleLocationsInfo(
-                                        sample_locations_begin_info->pPostSubpassSampleLocations[i].sampleLocationsInfo,
-                                        sample_locations->sampleLocationsInfo)) {
-                                    found = true;
-                                }
-                            }
-                        }
-                    }
-                    if (!found) {
-                        const LogObjectList objlist(cb_state->Handle(), pipeline, cb_state->activeRenderPass->Handle());
-                        skip |= LogError("VUID-vkCmdBindPipeline-variableSampleLocations-01525", objlist, error_obj.location,
-                                         "the current render pass was not begun with any element of "
-                                         "pPostSubpassSampleLocations subpassIndex "
-                                         "matching the current subpass index (%" PRIu32
-                                         ") and sampleLocationsInfo from VkPipelineMultisampleStateCreateInfo of the pipeline.",
-                                         cb_state->GetActiveSubpass());
-                    }
-                }
-            }
-
-            if (enabled_features.variableMultisampleRate == VK_FALSE) {
-                if (const auto *multisample_state = pipeline_state.MultisampleState(); multisample_state) {
-                    if (const auto &render_pass = cb_state->activeRenderPass; render_pass) {
-                        const uint32_t subpass = cb_state->GetActiveSubpass();
-                        // if render pass uses no attachment, verify that all bound pipelines referencing this subpass have the same
-                        // pMultisampleState->rasterizationSamples.
-                        if (render_pass->UsesNoAttachment(subpass)) {
-                            // If execution ends up here, GetActiveSubpassRasterizationSampleCount() can still be empty if this is
-                            // the first bound pipeline with the previous conditions holding. Rasterization samples count for the
-                            // subpass will be updated in PostCallRecordCmdBindPipeline, if it is empty.
-                            if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
-                                    cb_state->GetActiveSubpassRasterizationSampleCount();
-                                subpass_rasterization_samples &&
-                                *subpass_rasterization_samples != multisample_state->rasterizationSamples) {
-                                const LogObjectList objlist(device, render_pass->Handle(), pipeline_state.Handle());
-                                skip |= LogError(
-                                    "VUID-vkCmdBindPipeline-pipeline-00781", objlist, error_obj.location,
-                                    "variableMultisampleRate is VK_FALSE "
-                                    "and "
-                                    "pipeline has pMultisampleState->rasterizationSamples equal to %s, while a previously bound "
-                                    "pipeline in the current subpass (%" PRIu32
-                                    ") used "
-                                    "pMultisampleState->rasterizationSamples equal to %s.",
-                                    string_VkSampleCountFlagBits(multisample_state->rasterizationSamples), subpass,
-                                    string_VkSampleCountFlagBits(*subpass_rasterization_samples));
-                            }
-                        }
-                    }
-                }
+            if (cb_state->active_render_pass) {
+                ValidateCmdBindPipelineRenderPassMultisample(*cb_state, pipeline_state, *cb_state->active_render_pass,
+                                                             error_obj.location);
             }
 
             if (cb_state->GetCurrentPipeline(pipelineBindPoint) &&

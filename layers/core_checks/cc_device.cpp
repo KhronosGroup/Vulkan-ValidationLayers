@@ -152,10 +152,9 @@ bool CoreChecks::ValidateDeviceMaskToCommandBuffer(const vvl::CommandBuffer &cb_
 bool CoreChecks::ValidateDeviceMaskToRenderPass(const vvl::CommandBuffer &cb_state, uint32_t deviceMask, const Location loc,
                                                 const char *vuid) const {
     bool skip = false;
-    if ((deviceMask & cb_state.active_render_pass_device_mask) != deviceMask) {
-        skip |=
-            LogError(vuid, cb_state.Handle(), loc, "(0x%" PRIx32 ") is not a subset of %s device mask (0x%" PRIx32 ").", deviceMask,
-                     FormatHandle(cb_state.activeRenderPass->Handle()).c_str(), cb_state.active_render_pass_device_mask);
+    if (cb_state.active_render_pass && ((deviceMask & cb_state.render_pass_device_mask) != deviceMask)) {
+        skip |= LogError(vuid, cb_state.Handle(), loc, "(0x%" PRIx32 ") is not a subset of %s device mask (0x%" PRIx32 ").",
+                         deviceMask, FormatHandle(cb_state.active_render_pass->Handle()).c_str(), cb_state.render_pass_device_mask);
     }
     return skip;
 }
@@ -606,9 +605,7 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, 
     skip |= ValidateDeviceMaskToPhysicalDeviceCount(deviceMask, objlist, loc, "VUID-vkCmdSetDeviceMask-deviceMask-00108");
     skip |= ValidateDeviceMaskToZero(deviceMask, objlist, loc, "VUID-vkCmdSetDeviceMask-deviceMask-00109");
     skip |= ValidateDeviceMaskToCommandBuffer(cb_state, deviceMask, objlist, loc, "VUID-vkCmdSetDeviceMask-deviceMask-00110");
-    if (cb_state.activeRenderPass) {
-        skip |= ValidateDeviceMaskToRenderPass(cb_state, deviceMask, loc, "VUID-vkCmdSetDeviceMask-deviceMask-00111");
-    }
+    skip |= ValidateDeviceMaskToRenderPass(cb_state, deviceMask, loc, "VUID-vkCmdSetDeviceMask-deviceMask-00111");
     return skip;
 }
 

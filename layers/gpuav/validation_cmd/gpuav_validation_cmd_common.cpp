@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,9 +80,10 @@ void RestorablePipelineState::Create(CommandBuffer &cb_state, VkPipelineBindPoin
         push_descriptor_set_writes_ = last_bound.push_descriptor_set->GetWrites();
     }
 
-    // Do not handle cb_state.activeRenderPass->use_dynamic_rendering_inherited for now
-    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && cb_state.activeRenderPass->use_dynamic_rendering) {
-        rendering_info_ = &cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info;
+    // Do not handle cb_state.active_render_pass->use_dynamic_rendering_inherited for now
+    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && cb_state.active_render_pass &&
+        cb_state.active_render_pass->use_dynamic_rendering) {
+        rendering_info_ = &cb_state.active_render_pass->dynamic_rendering_begin_rendering_info;
         DispatchCmdEndRendering(cb_state.VkHandle());
 
         VkRenderingInfo rendering_info = vku::InitStructHelper();

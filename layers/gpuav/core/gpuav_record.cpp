@@ -231,7 +231,8 @@ void Validator::PostCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, 
 }
 
 void Validator::RecordCmdNextSubpassLayouts(vvl::CommandBuffer &cb_state, VkSubpassContents contents) {
-    TransitionSubpassLayouts(cb_state, *cb_state.activeRenderPass, cb_state.GetActiveSubpass());
+    ASSERT_AND_RETURN(cb_state.active_render_pass);
+    TransitionSubpassLayouts(cb_state, *cb_state.active_render_pass, cb_state.GetActiveSubpass());
 }
 
 void Validator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,

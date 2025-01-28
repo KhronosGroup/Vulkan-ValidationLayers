@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -417,21 +417,31 @@ class CommandBuffer : public RefcountedStateObject {
     // Track if any dynamic state is set that is static in the currently bound pipeline
     bool dirtyStaticState;
 
+    // Device Mask at start of command buffer
     uint32_t initial_device_mask;
+    // Device mask from vkCmdBeginRenderPass/vkCmdBeginRendering
+    uint32_t render_pass_device_mask;
 
-    // The RenderPass created from vkCmdBeginRenderPass or vkCmdBeginRendering
-    std::shared_ptr<vvl::RenderPass> activeRenderPass;
+    // This is null if we are outside a renderPass/rendering
+    //
+    // There are 4 ways we populate this pointer
+    // 1. vkCmdBeginRenderPass this becomes a reference to the state created a vkCreateRenderPass time.
+    // 2. VkCommandBufferInheritanceInfo same as (1) but for secondary command buffers.
+    // 3. vkCmdBeginRendering we create the state object and store it here.
+    // 4. VkCommandBufferInheritanceRenderingInfo same as (3) but for secondary command buffers.
+    std::shared_ptr<vvl::RenderPass> active_render_pass;
+
     // Used for both type of renderPass
     AttachmentSource attachment_source;
     // There is no concept of "attachment index" with dynamic rendering, we use this for both dynamic/non-dynamic rendering though.
     // The attachments are packed the following: | color | color resolve | depth | depth resolve | stencil | stencil resolve |
     std::vector<AttachmentInfo> active_attachments;
     vvl::unordered_set<uint32_t> active_color_attachments_index;
-    uint32_t active_render_pass_device_mask;
     bool has_render_pass_striped;
     uint32_t striped_count;
+    VkRect2D render_area;
     // only when not using dynamic rendering
-    vku::safe_VkRenderPassBeginInfo active_render_pass_begin_info;
+    const VkRenderPassSampleLocationsBeginInfoEXT *sample_locations_begin_info;
     std::vector<SubpassInfo> active_subpasses;
 
     VkSubpassContents activeSubpassContents;

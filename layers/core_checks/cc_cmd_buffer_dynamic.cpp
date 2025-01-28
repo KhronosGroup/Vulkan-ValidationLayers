@@ -718,8 +718,9 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
         }
     }
 
+    const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-        if (!enabled_features.variableMultisampleRate && cb_state.activeRenderPass->UsesNoAttachment(cb_state.GetActiveSubpass())) {
+        if (!enabled_features.variableMultisampleRate && rp_state && rp_state->UsesNoAttachment(cb_state.GetActiveSubpass())) {
             if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
                     cb_state.GetActiveSubpassRasterizationSampleCount();
                 subpass_rasterization_samples &&
@@ -1183,10 +1184,11 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
+    const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
     if ((pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) || fragment_shader_bound) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
             cb_state.dynamic_state_value.sample_locations_enable) {
-            if (cb_state.activeRenderPass->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
+            if (rp_state && rp_state->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
                 for (uint32_t i = 0; i < cb_state.active_attachments.size(); i++) {
                     const auto* attachment = cb_state.active_attachments[i].image_view;
                     if (attachment && attachment->create_info.subresourceRange.aspectMask &
@@ -1244,9 +1246,8 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     }
 
     if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) &&
-        cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-        const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info =
-            cb_state.activeRenderPass->GetMSRTSSInfo(cb_state.GetActiveSubpass());
+        cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && rp_state) {
+        const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info = rp_state->GetMSRTSSInfo(cb_state.GetActiveSubpass());
         if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
             if (msrtss_info->rasterizationSamples != cb_state.dynamic_state_value.rasterization_samples) {
                 LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
@@ -1260,7 +1261,7 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
-    if (pipeline_state && cb_state.activeRenderPass->UsesDynamicRendering() &&
+    if (pipeline_state && rp_state && rp_state->UsesDynamicRendering() &&
         (!IsExtEnabled(extensions.vk_ext_shader_object) || !last_bound_state.IsAnyGraphicsShaderBound())) {
         skip |= ValidateDrawRenderingAttachmentLocation(cb_state, *pipeline_state, vuid);
         skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, *pipeline_state, vuid);
@@ -1296,8 +1297,8 @@ bool CoreChecks::ValidateDrawRenderingAttachmentLocation(const vvl::CommandBuffe
             vku::FindStructInPNextChain<VkRenderingAttachmentLocationInfo>(pipeline_state.GetCreateInfoPNext())) {
         pipeline_color_count = pipeline_location_info->colorAttachmentCount;
         pipeline_color_locations = pipeline_location_info->pColorAttachmentLocations;
-    } else if (const auto* pipeline_rendering_create_info = pipeline_state.GetPipelineRenderingCreateInfo()) {
-        pipeline_color_count = pipeline_rendering_create_info->colorAttachmentCount;
+    } else if (pipeline_state.rendering_create_info) {
+        pipeline_color_count = pipeline_state.rendering_create_info->colorAttachmentCount;
     } else {
         return skip;  // hit dynamic rendering that is not using local read
     }
@@ -1344,8 +1345,8 @@ bool CoreChecks::ValidateDrawRenderingInputAttachmentIndex(const vvl::CommandBuf
         pipeline_color_indexes = pipeline_index_info->pColorAttachmentInputIndices;
         pipeline_depth_index = pipeline_index_info->pDepthInputAttachmentIndex;
         pipeline_stencil_index = pipeline_index_info->pStencilInputAttachmentIndex;
-    } else if (const auto* pipeline_rendering_create_info = pipeline_state.GetPipelineRenderingCreateInfo()) {
-        pipeline_color_count = pipeline_rendering_create_info->colorAttachmentCount;
+    } else if (pipeline_state.rendering_create_info) {
+        pipeline_color_count = pipeline_state.rendering_create_info->colorAttachmentCount;
     } else {
         return skip;  // hit dynamic rendering that is not using local read
     }
@@ -1524,11 +1525,11 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
     }
 
+    const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
     if (fragment_shader_bound) {
         if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
             // TODO - Add test to understand when this would be a null render pass
-            const uint32_t attachment_count =
-                cb_state.activeRenderPass ? cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount() : 0;
+            const uint32_t attachment_count = rp_state ? rp_state->GetDynamicRenderingColorAttachmentCount() : 0;
             if (attachment_count > 0) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT,
                                                   cb_state, objlist, loc, vuid.set_color_blend_enable_08657);
@@ -1663,28 +1664,27 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     }
 
     // Resolve mode only for dynamic rendering
-    if (cb_state.activeRenderPass && cb_state.activeRenderPass->UsesDynamicRendering() &&
-        cb_state.HasExternalFormatResolveAttachment()) {
+    if (rp_state && rp_state->UsesDynamicRendering() && cb_state.HasExternalFormatResolveAttachment()) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
             cb_state.dynamic_state_value.color_blend_enable_attachments.test(0)) {
-            const LogObjectList rp_objlist(cb_state.Handle(), cb_state.activeRenderPass->Handle());
+            const LogObjectList rp_objlist(cb_state.Handle(), rp_state->Handle());
             skip |= LogError(vuid.external_format_resolve_09366, rp_objlist, loc,
                              "blend enable for attachment zero was set to VK_TRUE.");
         }
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
             cb_state.dynamic_state_value.rasterization_samples != VK_SAMPLE_COUNT_1_BIT) {
-            const LogObjectList rp_objlist(cb_state.Handle(), cb_state.activeRenderPass->Handle());
+            const LogObjectList rp_objlist(cb_state.Handle(), rp_state->Handle());
             skip |= LogError(vuid.external_format_resolve_09367, rp_objlist, loc, "rasterization samples set to %s.",
                              string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
         }
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
             if (cb_state.dynamic_state_value.fragment_size.width != 1) {
-                const LogObjectList rp_objlist(cb_state.Handle(), cb_state.activeRenderPass->Handle());
+                const LogObjectList rp_objlist(cb_state.Handle(), rp_state->Handle());
                 skip |= LogError(vuid.external_format_resolve_09370, rp_objlist, loc, "fragment size width is %" PRIu32 ".",
                                  cb_state.dynamic_state_value.fragment_size.width);
             }
             if (cb_state.dynamic_state_value.fragment_size.height != 1) {
-                const LogObjectList rp_objlist(cb_state.Handle(), cb_state.activeRenderPass->Handle());
+                const LogObjectList rp_objlist(cb_state.Handle(), rp_state->Handle());
                 skip |= LogError(vuid.external_format_resolve_09371, rp_objlist, loc, "fragment size height is %" PRIu32 ".",
                                  cb_state.dynamic_state_value.fragment_size.height);
             }

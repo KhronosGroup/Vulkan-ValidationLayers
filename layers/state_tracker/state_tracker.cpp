@@ -2548,7 +2548,7 @@ void ValidationStateTracker::PostCallRecordCmdBindPipeline(VkCommandBuffer comma
 
     if (enabled_features.variableMultisampleRate == VK_FALSE) {
         if (const auto *multisample_state = pipe_state->MultisampleState(); multisample_state) {
-            if (const auto &render_pass = cb_state->activeRenderPass; render_pass) {
+            if (const auto &render_pass = cb_state->active_render_pass) {
                 const uint32_t subpass = cb_state->GetActiveSubpass();
                 // if render pass uses no attachment, all bound pipelines in the same subpass must have the same
                 // pMultisampleState->rasterizationSamples. To check that, record pMultisampleState->rasterizationSamples of the
@@ -3327,11 +3327,11 @@ void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer command
 
     uint32_t num_queries = 1;
     uint32_t subpass = 0;
-    const bool inside_render_pass = cb_state->activeRenderPass != 0;
+    const bool inside_render_pass = cb_state->active_render_pass != nullptr;
     // If render pass instance has multiview enabled, query uses N consecutive query indices
     if (inside_render_pass) {
         subpass = cb_state->GetActiveSubpass();
-        uint32_t bits = cb_state->activeRenderPass->GetViewMaskBits(subpass);
+        uint32_t bits = cb_state->active_render_pass->GetViewMaskBits(subpass);
         num_queries = std::max(num_queries, bits);
     }
     for (uint32_t i = 0; i < num_queries; ++i) {
@@ -3355,11 +3355,11 @@ void ValidationStateTracker::PostCallRecordCmdEndQuery(VkCommandBuffer commandBu
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     uint32_t num_queries = 1;
     uint32_t subpass = 0;
-    const bool inside_render_pass = cb_state->activeRenderPass != 0;
+    const bool inside_render_pass = cb_state->active_render_pass != nullptr;
     // If render pass instance has multiview enabled, query uses N consecutive query indices
     if (inside_render_pass) {
         subpass = cb_state->GetActiveSubpass();
-        uint32_t bits = cb_state->activeRenderPass->GetViewMaskBits(subpass);
+        uint32_t bits = cb_state->active_render_pass->GetViewMaskBits(subpass);
         num_queries = std::max(num_queries, bits);
     }
 
@@ -3601,7 +3601,7 @@ void ValidationStateTracker::PostCallRecordCmdBeginConditionalRenderingEXT(
 
     cb_state->RecordCmd(record_obj.location.function);
     cb_state->conditional_rendering_active = true;
-    cb_state->conditional_rendering_inside_render_pass = cb_state->activeRenderPass != nullptr;
+    cb_state->conditional_rendering_inside_render_pass = cb_state->active_render_pass != nullptr;
     cb_state->conditional_rendering_subpass = cb_state->GetActiveSubpass();
 }
 
@@ -4706,11 +4706,11 @@ void ValidationStateTracker::PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuff
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     uint32_t num_queries = 1;
     uint32_t subpass = 0;
-    const bool inside_render_pass = cb_state->activeRenderPass != 0;
+    const bool inside_render_pass = cb_state->active_render_pass != nullptr;
     // If render pass instance has multiview enabled, query uses N consecutive query indices
     if (inside_render_pass) {
         subpass = cb_state->GetActiveSubpass();
-        uint32_t bits = cb_state->activeRenderPass->GetViewMaskBits(subpass);
+        uint32_t bits = cb_state->active_render_pass->GetViewMaskBits(subpass);
         num_queries = std::max(num_queries, bits);
     }
 
@@ -4734,11 +4734,11 @@ void ValidationStateTracker::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     uint32_t num_queries = 1;
     uint32_t subpass = 0;
-    const bool inside_render_pass = cb_state->activeRenderPass != 0;
+    const bool inside_render_pass = cb_state->active_render_pass != nullptr;
     // If render pass instance has multiview enabled, query uses N consecutive query indices
     if (inside_render_pass) {
         subpass = cb_state->GetActiveSubpass();
-        uint32_t bits = cb_state->activeRenderPass->GetViewMaskBits(subpass);
+        uint32_t bits = cb_state->active_render_pass->GetViewMaskBits(subpass);
         num_queries = std::max(num_queries, bits);
     }
 

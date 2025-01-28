@@ -949,7 +949,8 @@ class BestPractices : public ValidationStateTracker {
 
     void RecordSetDepthTestState(bp_state::CommandBuffer& cb_state, VkCompareOp new_depth_compare_op, bool new_depth_test_enable);
 
-    void RecordCmdBeginRenderingCommon(bp_state::CommandBuffer& cb_state);
+    void RecordCmdBeginRenderingCommon(bp_state::CommandBuffer& cb_state, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                       const VkRenderingInfo* pRenderingInfo);
     void RecordCmdEndRenderingCommon(bp_state::CommandBuffer& cb_state, const vvl::RenderPass& rp_state);
 
     void RecordBindZcullScope(bp_state::CommandBuffer& cb_state, VkImage depth_attachment,

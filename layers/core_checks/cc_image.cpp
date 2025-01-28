@@ -22,6 +22,7 @@
 #include <string>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_core.h>
 
 #include "core_validation.h"
 #include "cc_vuid_maps.h"
@@ -32,6 +33,7 @@
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "sync/sync_vuid_maps.h"
+#include "utils/vk_layer_utils.h"
 
 bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_info, const Location &loc) const {
     bool skip = false;
@@ -1197,19 +1199,19 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
     skip |= ValidateCmd(cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
 
+    const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
+    ASSERT_AND_RETURN_SKIP(rp_state);
+
     // Validate that attachments are in reference list of active subpass
-    const auto &render_area = (cb_state.activeRenderPass->use_dynamic_rendering)
-                                  ? cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.renderArea
-                                  : cb_state.active_render_pass_begin_info.renderArea;
 
     if (cb_state.IsPrimary()) {
         uint32_t layer_count = 0;
-        if (cb_state.activeRenderPass->UsesDynamicRendering()) {
-            layer_count = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.layerCount;
+        if (rp_state->UsesDynamicRendering()) {
+            layer_count = rp_state->dynamic_rendering_begin_rendering_info.layerCount;
         } else {
             layer_count = cb_state.activeFramebuffer.get()->create_info.layers;
         }
-        skip |= ValidateClearAttachmentExtent(cb_state, render_area, layer_count, rectCount, pRects, error_obj.location);
+        skip |= ValidateClearAttachmentExtent(cb_state, cb_state.render_area, layer_count, rectCount, pRects, error_obj.location);
     }
 
     for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
@@ -1227,14 +1229,14 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         uint32_t view_mask = 0;
         bool external_format_resolve = false;
 
-        const bool is_dynamic_rendering = cb_state.activeRenderPass->UsesDynamicRendering();
+        const bool is_dynamic_rendering = rp_state->UsesDynamicRendering();
         if (is_dynamic_rendering) {
             uint32_t colorAttachment = clear_desc->colorAttachment;
 
             if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) != 0 && cb_state.rendering_attachments.set_color_locations &&
                 colorAttachment < cb_state.rendering_attachments.color_locations.size() &&
                 cb_state.rendering_attachments.color_locations[colorAttachment] == VK_ATTACHMENT_UNUSED) {
-                const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->VkHandle());
+                const LogObjectList objlist(commandBuffer, rp_state->VkHandle());
                 skip |= LogError("VUID-vkCmdClearAttachments-colorAttachment-09503", objlist, attachment_loc,
                                  "cannot be cleared because VkRenderingAttachmentLocationInfo::pColorAttachmentLocations[%" PRIu32
                                  "] is VK_ATTACHMENT_UNUSED.",
@@ -1247,10 +1249,10 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             depth_view_state = cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicDepthAttachmentImageIndex());
             stencil_view_state = cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicStencilAttachmentImageIndex());
 
-            view_mask = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask;
+            view_mask = rp_state->dynamic_rendering_begin_rendering_info.viewMask;
             external_format_resolve = cb_state.HasExternalFormatResolveAttachment();
         } else {
-            const auto *renderpass_create_info = cb_state.activeRenderPass->create_info.ptr();
+            const auto *renderpass_create_info = rp_state->create_info.ptr();
             const auto *subpass_desc = &renderpass_create_info->pSubpasses[cb_state.GetActiveSubpass()];
             const auto *framebuffer = cb_state.activeFramebuffer.get();
 
@@ -1285,8 +1287,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 
                         const VkFormat image_view_format = depth_view_state->create_info.format;
                         if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) && !vkuFormatHasDepth(image_view_format)) {
-                            const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle(),
-                                                        depth_view_state->Handle());
+                            const LogObjectList objlist(commandBuffer, rp_state->Handle(), depth_view_state->Handle());
                             skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07884", objlist, attachment_loc,
                                              "in pSubpasses[%" PRIu32
                                              "] has VK_IMAGE_ASPECT_DEPTH_BIT and is backed by an image view with format (%s).",
@@ -1294,8 +1295,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                         }
 
                         if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) && !vkuFormatHasStencil(image_view_format)) {
-                            const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle(),
-                                                        stencil_view_state->Handle());
+                            const LogObjectList objlist(commandBuffer, rp_state->Handle(), stencil_view_state->Handle());
                             skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07885", objlist, attachment_loc,
                                              "in pSubpasses[%" PRIu32
                                              "] has VK_IMAGE_ASPECT_STENCIL_BIT and is backed by an image view with format (%s).",
@@ -1309,17 +1309,17 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         }
 
         if (aspect_mask & VK_IMAGE_ASPECT_METADATA_BIT) {
-            const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
+            const LogObjectList objlist(commandBuffer, rp_state->Handle());
             skip |= LogError("VUID-VkClearAttachment-aspectMask-00020", objlist, attachment_loc.dot(Field::aspectMask), "is %s.",
                              string_VkImageAspectFlags(aspect_mask).c_str());
         } else if (aspect_mask & (VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT |
                                   VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
-            const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
+            const LogObjectList objlist(commandBuffer, rp_state->Handle());
             skip |= LogError("VUID-VkClearAttachment-aspectMask-02246", objlist, attachment_loc.dot(Field::aspectMask), "is %s.",
                              string_VkImageAspectFlags(aspect_mask).c_str());
         } else if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
             if (clear_desc->colorAttachment == VK_ATTACHMENT_UNUSED) {
-                const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
+                const LogObjectList objlist(commandBuffer, rp_state->Handle());
                 skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::colorAttachment),
                                  "is VK_ATTACHMENT_UNUSED, but aspectMask is VK_IMAGE_ASPECT_COLOR_BIT.");
             } else if (clear_desc->colorAttachment >= color_attachment_count && color_attachment_count > 0) {
@@ -1332,7 +1332,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                     }
                     return ss.str();
                 };
-                const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
+                const LogObjectList objlist(commandBuffer, rp_state->Handle());
                 skip |=
                     LogError("VUID-vkCmdClearAttachments-aspectMask-07271", objlist, attachment_loc.dot(Field::colorAttachment),
                              "is index %" PRIu32 ", which is not less than colorAttachmentCount (%" PRIu32 ") which was set by %s",
@@ -1340,7 +1340,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             }
 
             if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) || (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
+                const LogObjectList objlist(commandBuffer, rp_state->Handle());
                 skip |= LogError("VUID-VkClearAttachment-aspectMask-00019", objlist, attachment_loc.dot(Field::aspectMask),
                                  "is %s.", string_VkImageAspectFlags(aspect_mask).c_str());
             }
@@ -1349,7 +1349,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             skip |= ValidateClearDepthStencilValue(commandBuffer, clear_desc->clearValue.depthStencil,
                                                    attachment_loc.dot(Field::clearValue).dot(Field::depthStencil));
         } else if (external_format_resolve && IsAnyPlaneAspect(aspect_mask)) {
-            const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
+            const LogObjectList objlist(commandBuffer, rp_state->Handle());
             skip |= LogError("VUID-vkCmdClearAttachments-aspectMask-09298", objlist, attachment_loc.dot(Field::aspectMask),
                              "is %s.", string_VkImageAspectFlags(aspect_mask).c_str());
         }
@@ -1388,7 +1388,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         if (view_mask > 0) {
             for (uint32_t i = 0; i < rectCount; ++i) {
                 if (pRects[i].baseArrayLayer != 0 || pRects[i].layerCount != 1) {
-                    const LogObjectList objlist(commandBuffer, cb_state.activeRenderPass->Handle());
+                    const LogObjectList objlist(commandBuffer, rp_state->Handle());
                     skip |= LogError("VUID-vkCmdClearAttachments-baseArrayLayer-00018", objlist,
                                      error_obj.location.dot(Field::pRects, i).dot(Field::baseArrayLayer),
                                      "is %" PRIu32 " and layerCount is %" PRIu32 ", but the render pass instance uses multiview.",
@@ -1408,14 +1408,15 @@ void CoreChecks::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer
     auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
     ASSERT_AND_RETURN(cb_state_ptr);
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
-    if (!cb_state.activeRenderPass || cb_state.IsPrimary()) {
+    const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
+    if (!rp_state || cb_state.IsPrimary()) {
         return;
     }
     std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
-    if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
+    if (rp_state->use_dynamic_rendering_inherited) {
         for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
             const auto clear_desc = &pAttachments[attachment_index];
-            auto colorAttachmentCount = cb_state.activeRenderPass->inheritance_rendering_info.colorAttachmentCount;
+            auto colorAttachmentCount = rp_state->inheritance_rendering_info.colorAttachmentCount;
             int image_index = -1;
             if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) && (clear_desc->colorAttachment < colorAttachmentCount)) {
                 image_index = cb_state.GetDynamicColorAttachmentImageIndex(clear_desc->colorAttachment);
@@ -1438,15 +1439,15 @@ void CoreChecks::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer
                                                                              const vvl::Framebuffer *) {
                     assert(rectCount == clear_rect_copy->size());
                     return ValidateClearAttachmentExtent(
-                        secondary, prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.renderArea,
-                        prim_cb->activeRenderPass->dynamic_rendering_begin_rendering_info.layerCount, rectCount,
+                        secondary, prim_cb->render_area,
+                        prim_cb->active_render_pass->dynamic_rendering_begin_rendering_info.layerCount, rectCount,
                         clear_rect_copy->data(), record_obj.location);
                 };
                 cb_state_ptr->cmd_execute_commands_functions.emplace_back(val_fn);
             }
         }
-    } else if (cb_state.activeRenderPass->use_dynamic_rendering == false) {
-        const VkRenderPassCreateInfo2 *renderpass_create_info = cb_state.activeRenderPass->create_info.ptr();
+    } else if (!rp_state->use_dynamic_rendering) {
+        const VkRenderPassCreateInfo2 *renderpass_create_info = rp_state->create_info.ptr();
         const VkSubpassDescription2 *subpass_desc = &renderpass_create_info->pSubpasses[cb_state.GetActiveSubpass()];
 
         for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
@@ -1471,11 +1472,10 @@ void CoreChecks::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer
                                                                              const vvl::CommandBuffer *prim_cb,
                                                                              const vvl::Framebuffer *fb) {
                     assert(rectCount == clear_rect_copy->size());
-                    const auto &render_area = prim_cb->active_render_pass_begin_info.renderArea;
                     bool skip = false;
 
                     if (fb && prim_cb->IsPrimary()) {
-                        skip |= ValidateClearAttachmentExtent(secondary, render_area, fb->create_info.layers, rectCount,
+                        skip |= ValidateClearAttachmentExtent(secondary, prim_cb->render_area, fb->create_info.layers, rectCount,
                                                               clear_rect_copy->data(), record_obj.location);
                     }
                     return skip;

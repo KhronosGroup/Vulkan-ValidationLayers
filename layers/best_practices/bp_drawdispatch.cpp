@@ -28,7 +28,7 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Locati
     bool skip = false;
     const auto cb_state = GetRead<bp_state::CommandBuffer>(cmd_buffer);
     if (const auto* pipe = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        if (const auto rp_state = pipe->RenderPassState()) {
+        if (const auto rp_state = cb_state->active_render_pass.get()) {
             for (uint32_t i = 0; i < rp_state->create_info.subpassCount; ++i) {
                 const auto& subpass = rp_state->create_info.pSubpasses[i];
                 const auto* ds_state = pipe->DepthStencilState();

@@ -461,7 +461,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                                  FormatHandle(query_obj.pool).c_str(), loc.StringFunc());
             }
 
-            if (query_pool_state->has_perf_scope_render_pass && cb_state.activeRenderPass) {
+            if (query_pool_state->has_perf_scope_render_pass && cb_state.active_render_pass) {
                 const char *vuid =
                     is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03225" : "VUID-vkCmdBeginQuery-queryPool-03225";
                 const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
@@ -641,21 +641,18 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
         skip |= LogError(vuid, cb_state.Handle(), loc, "command can't be used in protected command buffers.");
     }
 
-    if (cb_state.activeRenderPass) {
-        const auto *render_pass_info = cb_state.activeRenderPass->create_info.ptr();
-        if (!cb_state.activeRenderPass->UsesDynamicRendering()) {
-            const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
-            if (subpass_desc) {
-                uint32_t bits = GetBitSetCount(subpass_desc->viewMask);
-                if (query_obj.slot + bits > query_pool_state->create_info.queryCount) {
-                    const char *vuid =
-                        is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-query-00808" : "VUID-vkCmdBeginQuery-query-00808";
-                    const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
-                    skip |= LogError(vuid, objlist, loc,
-                                     "query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIx32
-                                     ") is greater than the number of queries in queryPool (%" PRIu32 ").",
-                                     query_obj.slot, subpass_desc->viewMask, query_pool_state->create_info.queryCount);
-                }
+    if (cb_state.active_render_pass && !cb_state.active_render_pass->UsesDynamicRendering()) {
+        const auto *render_pass_info = cb_state.active_render_pass->create_info.ptr();
+        const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
+        if (subpass_desc) {
+            uint32_t bits = GetBitSetCount(subpass_desc->viewMask);
+            if (query_obj.slot + bits > query_pool_state->create_info.queryCount) {
+                const char *vuid = is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-query-00808" : "VUID-vkCmdBeginQuery-query-00808";
+                const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
+                skip |= LogError(vuid, objlist, loc,
+                                 "query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIx32
+                                 ") is greater than the number of queries in queryPool (%" PRIu32 ").",
+                                 query_obj.slot, subpass_desc->viewMask, query_pool_state->create_info.queryCount);
             }
         }
     }
@@ -916,9 +913,10 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer &cb_state, VkQuery
     auto query_pool_state = Get<vvl::QueryPool>(queryPool);
     ASSERT_AND_RETURN_SKIP(query_pool_state);
 
+    const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
     const auto &query_pool_ci = query_pool_state->create_info;
     if (query_pool_ci.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
-        if (query_pool_state->has_perf_scope_render_pass && cb_state.activeRenderPass) {
+        if (query_pool_state->has_perf_scope_render_pass && rp_state) {
             const LogObjectList objlist(cb_state.Handle(), queryPool);
             skip |= LogError("VUID-vkCmdEndQuery-queryPool-03228", objlist, loc,
                              "Query pool %s was created with a counter of scope "
@@ -932,19 +930,19 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer &cb_state, VkQuery
             is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-02344" : "VUID-vkCmdEndQuery-commandBuffer-01886";
         skip |= LogError(vuid, cb_state.Handle(), loc, "command can't be used in protected command buffers.");
     }
-    if (cb_state.activeRenderPass && (query_payload != cb_state.activeQueries.end())) {
+    if (rp_state && (query_payload != cb_state.activeQueries.end())) {
         if (!query_payload->inside_render_pass) {
             const char *vuid = is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-None-07007" : "VUID-vkCmdEndQuery-None-07007";
-            const LogObjectList objlist(cb_state.Handle(), queryPool, cb_state.activeRenderPass->Handle());
+            const LogObjectList objlist(cb_state.Handle(), queryPool, rp_state->Handle());
             skip |= LogError(vuid, objlist, loc, "query (%" PRIu32 ") was started outside a renderpass", slot);
         }
 
-        const auto *render_pass_info = cb_state.activeRenderPass->create_info.ptr();
-        if (!cb_state.activeRenderPass->UsesDynamicRendering()) {
+        const auto *render_pass_info = rp_state->create_info.ptr();
+        if (!rp_state->UsesDynamicRendering()) {
             const uint32_t subpass = cb_state.GetActiveSubpass();
             if (query_payload->subpass != subpass) {
                 const char *vuid = is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-None-07007" : "VUID-vkCmdEndQuery-None-07007";
-                const LogObjectList objlist(cb_state.Handle(), queryPool, cb_state.activeRenderPass->Handle());
+                const LogObjectList objlist(cb_state.Handle(), queryPool, rp_state->Handle());
                 skip |= LogError(vuid, objlist, loc,
                                  "query (%" PRIu32 ") was started in subpass %" PRIu32 ", but ending in subpass %" PRIu32 ".", slot,
                                  query_payload->subpass, subpass);
@@ -955,7 +953,7 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer &cb_state, VkQuery
                 const uint32_t bits = GetBitSetCount(subpass_desc->viewMask);
                 if (slot + bits > query_pool_state->create_info.queryCount) {
                     const char *vuid = is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-query-02345" : "VUID-vkCmdEndQuery-query-00812";
-                    const LogObjectList objlist(cb_state.Handle(), queryPool, cb_state.activeRenderPass->Handle());
+                    const LogObjectList objlist(cb_state.Handle(), queryPool, rp_state->Handle());
                     skip |= LogError(vuid, objlist, loc,
                                      "query (%" PRIu32 ") + bits set in current subpass (%" PRIu32 ") view mask (%" PRIx32
                                      ") is greater than the number of queries in queryPool (%" PRIu32 ").",
@@ -1266,14 +1264,14 @@ bool CoreChecks::ValidateCmdWriteTimestamp(const vvl::CommandBuffer &cb_state, V
                          "query (%" PRIu32 ") is not lower than the number of queries (%" PRIu32 ") in Query pool %s.", slot,
                          query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
     }
-    if (cb_state.activeRenderPass &&
-        slot + cb_state.activeRenderPass->GetViewMaskBits(cb_state.GetActiveSubpass()) > query_pool_state->create_info.queryCount) {
+    if (cb_state.active_render_pass && slot + cb_state.active_render_pass->GetViewMaskBits(cb_state.GetActiveSubpass()) >
+                                           query_pool_state->create_info.queryCount) {
         const char *vuid = is_2 ? "VUID-vkCmdWriteTimestamp2-query-03865" : "VUID-vkCmdWriteTimestamp-query-00831";
         const LogObjectList objlist(cb_state.Handle(), queryPool);
         skip |= LogError(vuid, objlist, loc,
                          "query (%" PRIu32 ") + number of bits in current subpass (%" PRIu32
                          ") is not lower than the number of queries (%" PRIu32 ") in Query pool %s.",
-                         slot, cb_state.activeRenderPass->GetViewMaskBits(cb_state.GetActiveSubpass()),
+                         slot, cb_state.active_render_pass->GetViewMaskBits(cb_state.GetActiveSubpass()),
                          query_pool_state->create_info.queryCount, FormatHandle(queryPool).c_str());
     }
 

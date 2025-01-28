@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -20,6 +20,7 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "utils/vk_layer_utils.h"
 
 void BestPractices::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                       const VkClearAttachment* pClearAttachments, uint32_t rectCount,
@@ -28,14 +29,14 @@ void BestPractices::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuf
                                                               record_obj);
 
     auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    auto* rp_state = cb_state->activeRenderPass.get();
+    auto* rp_state = cb_state->active_render_pass.get();
     auto* fb_state = cb_state->activeFramebuffer.get();
 
     if (rectCount == 0 || !rp_state) {
         return;
     }
 
-    if (!cb_state->IsSecondary() && !fb_state && !rp_state->use_dynamic_rendering && !rp_state->use_dynamic_rendering_inherited) {
+    if (!cb_state->IsSecondary() && !fb_state && !rp_state->UsesDynamicRendering()) {
         return;
     }
 
@@ -114,8 +115,8 @@ bool BestPractices::ClearAttachmentsIsFullClear(const bp_state::CommandBuffer& c
     // If we have a rect which covers the entire frame buffer, we have a LOAD_OP_CLEAR-like command.
     for (uint32_t i = 0; i < rectCount; i++) {
         auto& rect = pRects[i];
-        auto& render_area = cb_state.active_render_pass_begin_info.renderArea;
-        if (rect.rect.extent.width == render_area.extent.width && rect.rect.extent.height == render_area.extent.height) {
+        if (rect.rect.extent.width == cb_state.render_area.extent.width &&
+            rect.rect.extent.height == cb_state.render_area.extent.height) {
             return true;
         }
     }
@@ -125,8 +126,8 @@ bool BestPractices::ClearAttachmentsIsFullClear(const bp_state::CommandBuffer& c
 
 bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cb_state, uint32_t fb_attachment,
                                             uint32_t color_attachment, VkImageAspectFlags aspects, const Location& loc) const {
-    const vvl::RenderPass* rp = cb_state.activeRenderPass.get();
     bool skip = false;
+    const vvl::RenderPass* rp = cb_state.active_render_pass.get();
 
     if (!rp || fb_attachment == VK_ATTACHMENT_UNUSED) {
         return skip;
@@ -209,10 +210,10 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
 
     // Check for uses of ClearAttachments along with LOAD_OP_LOAD,
     // as it can be more efficient to just use LOAD_OP_CLEAR
-    const vvl::RenderPass* rp = cb_state->activeRenderPass.get();
-    if (rp) {
-        if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
-            const auto pColorAttachments = rp->dynamic_rendering_begin_rendering_info.pColorAttachments;
+    const vvl::RenderPass* rp_state = cb_state->active_render_pass.get();
+    if (rp_state) {
+        if (rp_state->UsesDynamicRendering()) {
+            const auto pColorAttachments = rp_state->dynamic_rendering_begin_rendering_info.pColorAttachments;
 
             if (VendorCheckEnabled(kBPVendorNVIDIA)) {
                 for (uint32_t i = 0; i < attachmentCount; i++) {
@@ -237,7 +238,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
             }
 
         } else {
-            const auto& subpass = rp->create_info.pSubpasses[cb_state->GetActiveSubpass()];
+            const auto& subpass = rp_state->create_info.pSubpasses[cb_state->GetActiveSubpass()];
 
             if (is_full_clear) {
                 for (uint32_t i = 0; i < attachmentCount; i++) {
@@ -258,14 +259,14 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                     }
                 }
             }
-            if (VendorCheckEnabled(kBPVendorNVIDIA) && rp->create_info.pAttachments) {
+            if (VendorCheckEnabled(kBPVendorNVIDIA) && rp_state->create_info.pAttachments) {
                 for (uint32_t attachment_idx = 0; attachment_idx < attachmentCount; ++attachment_idx) {
                     const auto& attachment = pAttachments[attachment_idx];
 
                     if (attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
                         const uint32_t fb_attachment = subpass.pColorAttachments[attachment.colorAttachment].attachment;
                         if (fb_attachment != VK_ATTACHMENT_UNUSED) {
-                            const VkFormat format = rp->create_info.pAttachments[fb_attachment].format;
+                            const VkFormat format = rp_state->create_info.pAttachments[fb_attachment].format;
                             skip |= ValidateClearColor(commandBuffer, format, attachment.clearValue.color, error_obj.location);
                         }
                     }

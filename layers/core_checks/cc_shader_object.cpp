@@ -619,10 +619,10 @@ bool CoreChecks::ValidateDrawShaderObject(const LastBound& last_bound_state, con
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
-    if (cb_state.activeRenderPass && !cb_state.activeRenderPass->UsesDynamicRendering()) {
+    if (cb_state.active_render_pass && !cb_state.active_render_pass->UsesDynamicRendering()) {
         skip |= LogError(vuid.render_pass_began_08876, cb_state.Handle(), vuid.loc(),
                          "Shader objects must be used with dynamic rendering, but VkRenderPass %s is active.",
-                         FormatHandle(cb_state.activeRenderPass->Handle()).c_str());
+                         FormatHandle(cb_state.active_render_pass->Handle()).c_str());
     }
 
     skip |= ValidateDrawShaderObjectLinking(last_bound_state, vuid);

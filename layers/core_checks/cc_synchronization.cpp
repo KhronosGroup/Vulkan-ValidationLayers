@@ -879,7 +879,7 @@ bool CoreChecks::ValidateRenderPassPipelineStage(VkRenderPass render_pass, const
 }
 
 // Validate VUs for Pipeline Barriers that are within a renderPass
-// Pre: cb_state->activeRenderPass must be a pointer to valid renderPass state
+// Pre: cb_state->active_render_pass must be a pointer to valid renderPass state
 bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, const vvl::CommandBuffer &cb_state,
                                                     VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                                                     VkDependencyFlags dependency_flags, uint32_t mem_barrier_count,
@@ -888,7 +888,8 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                                                     uint32_t image_mem_barrier_count,
                                                     const VkImageMemoryBarrier *image_barriers) const {
     bool skip = false;
-    const auto &rp_state = cb_state.activeRenderPass;
+    const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
+    ASSERT_AND_RETURN_SKIP(rp_state);
     RenderPassDepState state(*this, "VUID-vkCmdPipelineBarrier-None-07889", cb_state.GetActiveSubpass(), rp_state->VkHandle(),
                              enabled_features, extensions, rp_state->self_dependencies[cb_state.GetActiveSubpass()],
                              rp_state->create_info.pDependencies);
@@ -945,8 +946,8 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
 bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, const vvl::CommandBuffer &cb_state,
                                                     const VkDependencyInfo &dep_info) const {
     bool skip = false;
-    const auto &rp_state = cb_state.activeRenderPass;
-    if (rp_state->UsesDynamicRendering()) {
+    const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
+    if (!rp_state || rp_state->UsesDynamicRendering()) {
         return skip;
     }
     RenderPassDepState state(*this, "VUID-vkCmdPipelineBarrier2-None-07889", cb_state.GetActiveSubpass(), rp_state->VkHandle(),
@@ -1206,7 +1207,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
         }
     }
 
-    if (cb_state->activeRenderPass && ((srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0)) {
+    if (cb_state->active_render_pass && ((srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0)) {
         skip |= LogError("VUID-vkCmdWaitEvents-srcStageMask-07308", commandBuffer, error_obj.location.dot(Field::srcStageMask),
                          "is %s.", sync_utils::StringPipelineStageFlags(srcStageMask).c_str());
     }
@@ -1331,7 +1332,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(
     skip |= ValidatePipelineStage(objlist, error_obj.location.dot(Field::srcStageMask), queue_flags, srcStageMask);
     skip |= ValidatePipelineStage(objlist, error_obj.location.dot(Field::dstStageMask), queue_flags, dstStageMask);
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    if (cb_state->activeRenderPass && !cb_state->activeRenderPass->UsesDynamicRendering()) {
+    if (cb_state->active_render_pass && !cb_state->active_render_pass->UsesDynamicRendering()) {
         skip |= ValidateRenderPassPipelineBarriers(error_obj.location, *cb_state, srcStageMask, dstStageMask, dependencyFlags,
                                                    memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
                                                    pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -1343,7 +1344,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(
                          "VK_DEPENDENCY_VIEW_LOCAL_BIT must not be set outside of a render pass instance.");
         }
     }
-    if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
+    if (cb_state->active_render_pass && cb_state->active_render_pass->UsesDynamicRendering()) {
         // In dynamic rendering, vkCmdPipelineBarrier is only allowed for VK_EXT_shader_tile_image
         skip |= ValidateShaderTileImageBarriers(objlist, error_obj.location, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
                                                 bufferMemoryBarrierCount, imageMemoryBarrierCount, pImageMemoryBarriers,
@@ -1366,7 +1367,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffe
                          "the synchronization2 feature was not enabled.");
     }
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    if (cb_state->activeRenderPass) {
+    if (cb_state->active_render_pass) {
         skip |= ValidateRenderPassPipelineBarriers(dep_info_loc, *cb_state, *pDependencyInfo);
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     } else {
@@ -1375,7 +1376,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffe
                              "VK_DEPENDENCY_VIEW_LOCAL_BIT must not be set outside of a render pass instance.");
         }
     }
-    if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
+    if (cb_state->active_render_pass && cb_state->active_render_pass->UsesDynamicRendering()) {
         // In dynamic rendering, vkCmdPipelineBarrier2 is only allowed for  VK_EXT_shader_tile_image
         skip |= ValidateShaderTileImageBarriers(objlist, dep_info_loc, *pDependencyInfo);
     }
@@ -1785,8 +1786,8 @@ bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl
             skip |= UpdateCommandBufferImageLayoutMap(cb_state, image_loc, img_barrier, current_map, layout_updates_state);
         }
 
-        if (enabled_features.dynamicRenderingLocalRead && cb_state.activeRenderPass) {
-            const auto &rp_state = cb_state.activeRenderPass;
+        const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
+        if (enabled_features.dynamicRenderingLocalRead && rp_state) {
             const auto &img_barrier_image = img_barrier.image;
             const auto &rendering_info = rp_state->dynamic_rendering_begin_rendering_info;
             std::vector<uint32_t> used_attachments(GetUsedAttachments(cb_state));
@@ -1952,9 +1953,9 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, con
 void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location &loc, vvl::CommandBuffer &cb_state,
                                                                  const ImageBarrier &barrier) {
     // Secondary CBs can have null framebuffer so queue up validation in that case 'til FB is known
-    if ((cb_state.activeRenderPass) && (VK_NULL_HANDLE == cb_state.activeFramebuffer) && cb_state.IsSecondary()) {
+    const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
+    if (rp_state && (VK_NULL_HANDLE == cb_state.activeFramebuffer) && cb_state.IsSecondary()) {
         const auto active_subpass = cb_state.GetActiveSubpass();
-        const auto rp_state = cb_state.activeRenderPass;
         if (active_subpass < rp_state->create_info.subpassCount) {
             const auto &sub_desc = rp_state->create_info.pSubpasses[active_subpass];
             // Secondary CB case w/o FB specified delay validation
@@ -2632,7 +2633,7 @@ bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Locat
                              "is VK_PIPELINE_STAGE_2_HOST_BIT.");
         }
     } else if (barrier_loc.function == Func::vkCmdWaitEvents2 || barrier_loc.function == Func::vkCmdWaitEvents2KHR) {
-        if (barrier.srcStageMask == VK_PIPELINE_STAGE_2_HOST_BIT && cb_state.activeRenderPass) {
+        if (barrier.srcStageMask == VK_PIPELINE_STAGE_2_HOST_BIT && cb_state.active_render_pass) {
             skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-03844", objects, barrier_loc.dot(Field::srcStageMask),
                              "is VK_PIPELINE_STAGE_2_HOST_BIT inside the render pass.");
         }
