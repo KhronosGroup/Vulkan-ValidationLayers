@@ -7135,3 +7135,24 @@ TEST_F(NegativeShaderObject, VertAndMeshShaderBothNotBound) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeShaderObject, SecondaryDrawWithoutRenderPass) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+    CreateMinimalShaders();
+
+    const std::optional<uint32_t> graphics_queue_family_index = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
+    vkt::CommandPool command_pool(*m_device, graphics_queue_family_index.value());
+    vkt::CommandBuffer command_buffer(*m_device, command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    // The test is invalid, it draws without beginning a render pass
+    // But we set DebugCallback flags to 0 so it will never return VK_ERROR_VALIDATION_FAILED_EXT
+    // This makes sure there are no crashes in such a case
+    m_errorMonitor->ExpectSuccess(0);
+
+    command_buffer.Begin();
+    SetDefaultDynamicStatesExclude({}, false, command_buffer.handle());
+    command_buffer.BindVertFragShader(m_vert_shader, m_frag_shader);
+    vk::CmdDraw(command_buffer.handle(), 4, 1, 0, 0);
+    command_buffer.End();
+}
