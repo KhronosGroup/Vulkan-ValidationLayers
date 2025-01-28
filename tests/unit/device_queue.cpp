@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -435,5 +435,95 @@ TEST_F(NegativeDeviceQueue, MismatchedQueueFamiliesOnSubmit) {
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00074");
     vk::QueueSubmit(other_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceQueue, DeviceCreateInvalidParameters) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitFramework());
+
+    uint32_t queue_family_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_props.data());
+
+    float priority = 1.0f;
+    VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
+    device_queue_ci.queueFamilyIndex = 0u;
+    device_queue_ci.queueCount = 1;
+    device_queue_ci.pQueuePriorities = &priority;
+
+    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan11Features features11_duplicated = vku::InitStructHelper(&features11);
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper(&features11_duplicated);
+    device_ci.queueCreateInfoCount = 1u;
+    device_ci.pQueueCreateInfos = &device_queue_ci;
+    device_ci.enabledLayerCount = 0u;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    VkDevice device;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-sType-unique");
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+
+    device_ci.pNext = nullptr;
+    device_ci.flags = 1u;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-flags-zerobitmask");
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+
+    device_ci.flags = 0u;
+    device_ci.pQueueCreateInfos = nullptr;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-parameter");
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+
+    device_ci.pQueueCreateInfos = &device_queue_ci;
+    device_ci.queueCreateInfoCount = 0u;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-queueCreateInfoCount-arraylength");
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
+
+//  https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9338
+TEST_F(NegativeDeviceQueue, DISABLED_DeviceCreateMissingPointers) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitFramework());
+
+    uint32_t queue_family_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_props.data());
+
+    float priority = 1.0f;
+    VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
+    device_queue_ci.queueFamilyIndex = 0u;
+    device_queue_ci.queueCount = 1;
+    device_queue_ci.pQueuePriorities = &priority;
+
+    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan11Features features11_duplicated = vku::InitStructHelper(&features11);
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper(&features11_duplicated);
+    device_ci.queueCreateInfoCount = 1u;
+    device_ci.pQueueCreateInfos = &device_queue_ci;
+    device_ci.enabledLayerCount = 0u;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    VkDevice device;
+
+    /*device_ci.enabledLayerCount = 1u;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter");
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();*/
+
+    device_ci.enabledLayerCount = 0u;
+    device_ci.enabledExtensionCount = 1u;
+    device_ci.ppEnabledExtensionNames = nullptr;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter");
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
