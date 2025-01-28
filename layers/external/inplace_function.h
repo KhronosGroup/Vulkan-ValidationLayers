@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -44,47 +45,6 @@ namespace stdext {
 namespace inplace_function_detail {
 
 static constexpr size_t InplaceFunctionDefaultCapacity = 32;
-
-#ifndef SG14_USE_STD_ALIGNED_STORAGE
-// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61458
-// MSVC 32-bit has the same bug.
-// libc++ and MSVC 64-bit seem to work fine right now, but why run the risk?
-template <size_t Cap>
-union aligned_storage_helper {
-    struct double1 {
-        double a;
-    };
-    struct double4 {
-        double a[4];
-    };
-    template <class T>
-    using maybe = std::conditional_t<(Cap >= sizeof(T)), T, char>;
-    char real_data[Cap];
-    maybe<int> a;
-    maybe<long> b;
-    maybe<long long> c;
-    maybe<void*> d;
-    maybe<void (*)()> e;
-    maybe<double1> f;
-    maybe<double4> g;
-    maybe<long double> h;
-};
-
-template <size_t Cap, size_t Align = alignof(aligned_storage_helper<Cap>)>
-struct aligned_storage {
-    using type = std::aligned_storage_t<Cap, Align>;
-};
-
-template <size_t Cap, size_t Align = alignof(aligned_storage_helper<Cap>)>
-using aligned_storage_t = typename aligned_storage<Cap, Align>::type;
-static_assert(sizeof(aligned_storage_t<sizeof(void*)>) == sizeof(void*), "A");
-static_assert(alignof(aligned_storage_t<sizeof(void*)>) == alignof(void*), "B");
-#else
-using std::aligned_storage;
-using std::aligned_storage_t;
-static_assert(sizeof(std::aligned_storage_t<sizeof(void*)>) == sizeof(void*), "C");
-static_assert(alignof(std::aligned_storage_t<sizeof(void*)>) == alignof(void*), "D");
-#endif
 
 template <class T>
 struct wrapper {
@@ -171,10 +131,49 @@ struct is_invocable_r_impl<decltype(accept<R>(std::declval<F>()(std::declval<Arg
 
 template <class R, class F, class... Args>
 using is_invocable_r = is_invocable_r_impl<void, R, F, Args...>;
+
+// The max element in Values which is <= Cap. min(Values) must be <= Cap.
+template <size_t Cap, size_t... Values>
+struct GetMaxValueWithinCap;
+
+template <size_t Cap, size_t Value>
+struct GetMaxValueWithinCap<Cap, Value> {
+    static_assert(Value <= Cap);
+    static const size_t value = Value;
+};
+
+template <size_t Cap, size_t Head, size_t... Tail>
+struct GetMaxValueWithinCap<Cap, Head, Tail...> {
+  private:
+    static const size_t rest = GetMaxValueWithinCap<Cap, Tail...>::value;
+
+  public:
+    // Ensure the problem is well-defined. This assertion causes quadratic time
+    // but that's fine, the list is small.
+    static_assert(std::min({Head, Tail...}) <= Cap);
+    static const size_t value = std::max(Head, rest) <= Cap ? std::max(Head, rest) : std::min(Head, rest);
+};
+
+struct struct_double {
+    long double lx;
+};
+
+struct struct_double4 {
+    double lx[4];
+};
+
 }  // namespace inplace_function_detail
 
+// Note about default alignment: This class used to employ
+// std::aligned_storage<Capacity>, which is now deprecated and got removed. To
+// avoid behavior changes, the new implementation mimics the default alignment
+// of std::aligned_storage, as per the link below.
+// https://source.chromium.org/chromium/chromium/src/+/main:third_party/libc++/src/include/__type_traits/aligned_storage.h;l=49;drc=66b494f0101bb862e9e7b034f18645af4b1dd080
 template <class Signature, size_t Capacity = inplace_function_detail::InplaceFunctionDefaultCapacity,
-          size_t Alignment = alignof(inplace_function_detail::aligned_storage_t<Capacity>)>
+          size_t Alignment = inplace_function_detail::GetMaxValueWithinCap<
+              Capacity, alignof(unsigned char), alignof(unsigned short), alignof(unsigned int), alignof(unsigned long),
+              alignof(unsigned long long), alignof(double), alignof(long double), alignof(int*),
+              alignof(inplace_function_detail::struct_double), alignof(inplace_function_detail::struct_double4)>::value>
 class inplace_function;  // unspecified
 
 namespace inplace_function_detail {
@@ -186,7 +185,6 @@ struct is_inplace_function<inplace_function<Sig, Cap, Align>> : std::true_type {
 
 template <class R, class... Args, size_t Capacity, size_t Alignment>
 class inplace_function<R(Args...), Capacity, Alignment> {
-    using storage_t = inplace_function_detail::aligned_storage_t<Capacity, Alignment>;
     using vtable_t = inplace_function_detail::vtable<R, Args...>;
     using vtable_ptr_t = const vtable_t*;
 
@@ -213,19 +211,19 @@ class inplace_function<R(Args...), Capacity, Alignment> {
         static const vtable_t vt{inplace_function_detail::wrapper<C>{}};
         vtable_ptr_ = std::addressof(vt);
 
-        ::new (std::addressof(storage_)) C{std::forward<T>(closure)};
+        ::new (storage_) C{std::forward<T>(closure)};
     }
 
     template <size_t Cap, size_t Align>
     inplace_function(const inplace_function<R(Args...), Cap, Align>& other)
-        : inplace_function(other.vtable_ptr_, other.vtable_ptr_->copy_ptr, std::addressof(other.storage_)) {
+        : inplace_function(other.vtable_ptr_, other.vtable_ptr_->copy_ptr, other.storage_) {
         static_assert(inplace_function_detail::is_valid_inplace_dst<Capacity, Alignment, Cap, Align>::value,
                       "conversion not allowed");
     }
 
     template <size_t Cap, size_t Align>
     inplace_function(inplace_function<R(Args...), Cap, Align>&& other) noexcept
-        : inplace_function(other.vtable_ptr_, other.vtable_ptr_->relocate_ptr, std::addressof(other.storage_)) {
+        : inplace_function(other.vtable_ptr_, other.vtable_ptr_->relocate_ptr, other.storage_) {
         static_assert(inplace_function_detail::is_valid_inplace_dst<Capacity, Alignment, Cap, Align>::value,
                       "conversion not allowed");
 
@@ -235,31 +233,31 @@ class inplace_function<R(Args...), Capacity, Alignment> {
     inplace_function(std::nullptr_t) noexcept : vtable_ptr_{std::addressof(inplace_function_detail::empty_vtable<R, Args...>)} {}
 
     inplace_function(const inplace_function& other) : vtable_ptr_{other.vtable_ptr_} {
-        vtable_ptr_->copy_ptr(std::addressof(storage_), std::addressof(other.storage_));
+        vtable_ptr_->copy_ptr(storage_, other.storage_);
     }
 
     inplace_function(inplace_function&& other) noexcept
         : vtable_ptr_{std::exchange(other.vtable_ptr_, std::addressof(inplace_function_detail::empty_vtable<R, Args...>))} {
-        vtable_ptr_->relocate_ptr(std::addressof(storage_), std::addressof(other.storage_));
+        vtable_ptr_->relocate_ptr(storage_, other.storage_);
     }
 
     inplace_function& operator=(std::nullptr_t) noexcept {
-        vtable_ptr_->destructor_ptr(std::addressof(storage_));
+        vtable_ptr_->destructor_ptr(storage_);
         vtable_ptr_ = std::addressof(inplace_function_detail::empty_vtable<R, Args...>);
         return *this;
     }
 
     inplace_function& operator=(inplace_function other) noexcept {
-        vtable_ptr_->destructor_ptr(std::addressof(storage_));
+        vtable_ptr_->destructor_ptr(storage_);
 
         vtable_ptr_ = std::exchange(other.vtable_ptr_, std::addressof(inplace_function_detail::empty_vtable<R, Args...>));
-        vtable_ptr_->relocate_ptr(std::addressof(storage_), std::addressof(other.storage_));
+        vtable_ptr_->relocate_ptr(storage_, other.storage_);
         return *this;
     }
 
-    ~inplace_function() { vtable_ptr_->destructor_ptr(std::addressof(storage_)); }
+    ~inplace_function() { vtable_ptr_->destructor_ptr(storage_); }
 
-    R operator()(Args... args) const { return vtable_ptr_->invoke_ptr(std::addressof(storage_), std::forward<Args>(args)...); }
+    R operator()(Args... args) const { return vtable_ptr_->invoke_ptr(storage_, std::forward<Args>(args)...); }
 
     constexpr bool operator==(std::nullptr_t) const noexcept { return !operator bool(); }
 
@@ -272,12 +270,12 @@ class inplace_function<R(Args...), Capacity, Alignment> {
     void swap(inplace_function& other) noexcept {
         if (this == std::addressof(other)) return;
 
-        storage_t tmp;
-        vtable_ptr_->relocate_ptr(std::addressof(tmp), std::addressof(storage_));
+        alignas(Alignment) std::byte tmp[Capacity];
+        vtable_ptr_->relocate_ptr(tmp, storage_);
 
-        other.vtable_ptr_->relocate_ptr(std::addressof(storage_), std::addressof(other.storage_));
+        other.vtable_ptr_->relocate_ptr(storage_, other.storage_);
 
-        vtable_ptr_->relocate_ptr(std::addressof(other.storage_), std::addressof(tmp));
+        vtable_ptr_->relocate_ptr(other.storage_, tmp);
 
         std::swap(vtable_ptr_, other.vtable_ptr_);
     }
@@ -286,12 +284,12 @@ class inplace_function<R(Args...), Capacity, Alignment> {
 
   private:
     vtable_ptr_t vtable_ptr_;
-    mutable storage_t storage_;
+    alignas(Alignment) mutable std::byte storage_[Capacity];
 
     inplace_function(vtable_ptr_t vtable_ptr, typename vtable_t::process_ptr_t process_ptr,
                      typename vtable_t::storage_ptr_t storage_ptr)
         : vtable_ptr_{vtable_ptr} {
-        process_ptr(std::addressof(storage_), storage_ptr);
+        process_ptr(storage_, storage_ptr);
     }
 };
 
