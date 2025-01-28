@@ -73,7 +73,9 @@ class Pipeline : public StateObject {
   protected:
     // NOTE: The style guide suggests private data appear at the end, but we need this populated first, so placing it here
 
-    // Render pass state for dynamic rendering, etc.
+    // Will be either
+    // 1. A copy of state from VkCreateRenderPass
+    // 2. Created at pipeline creation time if using dynamic rendering and VkPipelineRenderingCreateInfo
     std::shared_ptr<const vvl::RenderPass> rp_state;
 
   public:
@@ -232,6 +234,9 @@ class Pipeline : public StateObject {
     // TODO - This could probably just be a check to VkGraphicsPipelineLibraryCreateInfoEXT::flags
     bool OwnsSubState(const std::shared_ptr<PipelineSubState> sub_state) const { return sub_state && (&sub_state->parent == this); }
 
+    // This grabs the render pass at pipeline creation time, if you are inside a command buffer, use the vvl::RenderPass inside the
+    // command buffer! (The render pass can be different as they just have to be compatible, see
+    // vkspec.html#renderpass-compatibility)
     const std::shared_ptr<const vvl::RenderPass> RenderPassState() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
         if (fragment_output_state && fragment_output_state->rp_state) {
@@ -420,8 +425,6 @@ class Pipeline : public StateObject {
     bool BlendConstantsEnabled() const { return fragment_output_state && fragment_output_state->blend_constants_enabled; }
 
     bool SampleLocationEnabled() const { return fragment_output_state && fragment_output_state->sample_location_enabled; }
-
-    const VkPipelineRenderingCreateInfo *GetPipelineRenderingCreateInfo() const { return rendering_create_info; }
 
     static std::vector<ShaderStageState> GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
                                                         spirv::StatelessData *stateless_data);

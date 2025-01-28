@@ -29,6 +29,7 @@
 #include "error_message/error_strings.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "utils/vk_layer_utils.h"
 
 bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_object, const vvl::RenderPass &rp1_state,
                                                  const VulkanTypedHandle &rp2_object, const vvl::RenderPass &rp2_state,
@@ -658,7 +659,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
 
     skip |= ValidateCmd(cb_state, error_obj.location);
 
-    const auto *rp_state_ptr = cb_state.activeRenderPass.get();
+    const auto *rp_state_ptr = cb_state.active_render_pass.get();
     if (!rp_state_ptr) return skip;
 
     const auto &rp_state = *rp_state_ptr;
@@ -3975,9 +3976,9 @@ bool CoreChecks::ValidateBeginRenderingDepthAndStencilAttachment(VkCommandBuffer
 // render pass.
 bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     bool inside = false;
-    if (cb_state.activeRenderPass) {
+    if (cb_state.active_render_pass) {
         inside = LogError(vuid, cb_state.Handle(), loc, "It is invalid to issue this call inside an active %s.",
-                          FormatHandle(cb_state.activeRenderPass->Handle()).c_str());
+                          FormatHandle(cb_state.active_render_pass->Handle()).c_str());
     }
     return inside;
 }
@@ -3986,8 +3987,8 @@ bool CoreChecks::InsideRenderPass(const vvl::CommandBuffer &cb_state, const Loca
 // routine should ONLY be called inside a render pass.
 bool CoreChecks::OutsideRenderPass(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
     bool outside = false;
-    if ((cb_state.IsPrimary() && (!cb_state.activeRenderPass)) ||
-        (cb_state.IsSecondary() && (!cb_state.activeRenderPass) &&
+    if ((cb_state.IsPrimary() && (!cb_state.active_render_pass)) ||
+        (cb_state.IsSecondary() && (!cb_state.active_render_pass) &&
          !(cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT))) {
         outside = LogError(vuid, cb_state.Handle(), loc, "This call must be issued inside an active render pass.");
     }
@@ -4000,12 +4001,13 @@ bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, c
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
+    ASSERT_AND_RETURN_SKIP(cb_state->active_render_pass);
 
-    if (!cb_state->activeRenderPass->UsesDynamicRendering()) {
+    if (!cb_state->active_render_pass->UsesDynamicRendering()) {
         skip |= LogError("VUID-vkCmdEndRendering-None-06161", commandBuffer, error_obj.location,
                          "in a render pass instance that was not begun with vkCmdBeginRendering().");
     }
-    if (cb_state->activeRenderPass->use_dynamic_rendering_inherited == true) {
+    if (cb_state->active_render_pass->use_dynamic_rendering_inherited) {
         skip |= LogError("VUID-vkCmdEndRendering-commandBuffer-06162", commandBuffer, error_obj.location,
                          "in a render pass instance that was not begun in this command buffer.");
     }
@@ -4075,7 +4077,7 @@ bool CoreChecks::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuff
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
 bool CoreChecks::ValidateCmdSubpassState(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
-    if (!cb_state.activeRenderPass || cb_state.activeRenderPass->UsesDynamicRendering()) return false;
+    if (!cb_state.active_render_pass || cb_state.active_render_pass->UsesDynamicRendering()) return false;
     bool skip = false;
     if (cb_state.IsPrimary() && cb_state.activeSubpassContents == VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
         (loc.function != Func::vkCmdExecuteCommands && loc.function != Func::vkCmdNextSubpass &&
@@ -4096,8 +4098,9 @@ bool CoreChecks::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const Err
 
     skip |= ValidateCmd(*cb_state, error_obj.location);
     if (skip) return skip;  // basic validation failed, might have null pointers
+    ASSERT_AND_RETURN_SKIP(cb_state->active_render_pass);
 
-    auto subpass_count = cb_state->activeRenderPass->create_info.subpassCount;
+    auto subpass_count = cb_state->active_render_pass->create_info.subpassCount;
     if (cb_state->GetActiveSubpass() == subpass_count - 1) {
         vuid = use_rp2 ? "VUID-vkCmdNextSubpass2-None-03102" : "VUID-vkCmdNextSubpass-None-00909";
         skip |= LogError(vuid, commandBuffer, error_obj.location, "Attempted to advance beyond final subpass.");
@@ -4126,7 +4129,8 @@ bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, c
 
 void CoreChecks::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionSubpassLayouts(*cb_state, *cb_state->activeRenderPass, cb_state->GetActiveSubpass());
+    ASSERT_AND_RETURN(cb_state->active_render_pass);
+    TransitionSubpassLayouts(*cb_state, *cb_state->active_render_pass, cb_state->GetActiveSubpass());
 }
 
 void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
@@ -5066,7 +5070,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuff
 
     skip |= ValidateCmd(cb_state, loc_info);
 
-    const auto *rp_state_ptr = cb_state.activeRenderPass.get();
+    const auto *rp_state_ptr = cb_state.active_render_pass.get();
     if (!rp_state_ptr) {
         return skip;
     }
@@ -5182,7 +5186,7 @@ bool CoreChecks::PreCallValidateCmdSetRenderingInputAttachmentIndices(VkCommandB
 
     skip |= ValidateCmd(cb_state, error_obj.location);
 
-    const auto *rp_state_ptr = cb_state.activeRenderPass.get();
+    const auto *rp_state_ptr = cb_state.active_render_pass.get();
     if (!rp_state_ptr) {
         return skip;
     }

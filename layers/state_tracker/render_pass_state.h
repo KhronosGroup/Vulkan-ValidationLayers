@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <vulkan/vulkan_core.h>
 #include "state_tracker/state_object.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <map>
@@ -61,6 +62,9 @@ struct SubpassLayout {
 
 namespace vvl {
 
+// Vulkan 1.0 has a VkRenderPass object, things like dynamic rendering moved the handle to be across various other structs/calls.
+// We create a "RenderPass" object for dynamic rendering, so other code can just use it without caring how the contents were added
+// inside.
 class RenderPass : public StateObject {
   public:
     struct AttachmentTransition {
@@ -95,12 +99,18 @@ class RenderPass : public StateObject {
     using TransitionVec = std::vector<std::vector<AttachmentTransition>>;
     const TransitionVec subpass_transitions;
 
-    RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCreateInfo);
+    // vkCreateRenderPass
     RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreateInfo);
+    // vkCreateRenderPass2
+    RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCreateInfo);
 
-    RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled);
+    // vkCmdBeginRendering
     RenderPass(VkRenderingInfo const *pRenderingInfo, bool rasterization_enabled);
-    RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo);
+    // vkBeginCommandBuffer (dynamic rendering in secondary)
+    explicit RenderPass(VkCommandBufferInheritanceRenderingInfo const *pInheritanceRenderingInfo);
+
+    // vkCreateGraphicsPipelines (dynamic rendering state tied to pipeline state)
+    RenderPass(VkPipelineRenderingCreateInfo const *pPipelineRenderingCreateInfo, bool rasterization_enabled);
 
     VkRenderPass VkHandle() const { return handle_.Cast<VkRenderPass>(); }
 

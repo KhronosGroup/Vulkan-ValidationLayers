@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -23,6 +23,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
+#include "utils/vk_layer_utils.h"
 
 static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits stage) {
     if (stage == VK_SHADER_STAGE_VERTEX_BIT) return ShaderObjectStage::VERTEX;
@@ -252,8 +253,8 @@ void CommandBuffer::ResetCBState() {
     usedDynamicScissorCount = false;
     dirtyStaticState = false;
 
-    active_render_pass_begin_info = vku::safe_VkRenderPassBeginInfo();
-    activeRenderPass = nullptr;
+    active_render_pass = nullptr;
+    sample_locations_begin_info = nullptr;
     attachment_source = AttachmentSource::Empty;
     active_attachments.clear();
     active_subpasses.clear();
@@ -533,7 +534,8 @@ void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, u
 }
 
 void CommandBuffer::UpdateSubpassAttachments() {
-    const auto &subpass = activeRenderPass->create_info.pSubpasses[GetActiveSubpass()];
+    ASSERT_AND_RETURN(active_render_pass);
+    const auto &subpass = active_render_pass->create_info.pSubpasses[GetActiveSubpass()];
     assert(active_subpasses.size() == active_attachments.size());
 
     for (uint32_t index = 0; index < subpass.inputAttachmentCount; ++index) {
@@ -604,16 +606,18 @@ void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPa
 void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin, const VkSubpassContents contents) {
     RecordCmd(command);
     activeFramebuffer = dev_data.Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
-    activeRenderPass = dev_data.Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    active_render_pass_begin_info = vku::safe_VkRenderPassBeginInfo(pRenderPassBegin);
+    active_render_pass = dev_data.Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
+    render_area = pRenderPassBegin->renderArea;
     SetActiveSubpass(0);
     activeSubpassContents = contents;
     renderPassQueries.clear();
 
     // Connect this RP to cmdBuffer
     if (!dev_data.disabled[command_buffer_state]) {
-        AddChild(activeRenderPass);
+        AddChild(active_render_pass);
     }
+
+    sample_locations_begin_info = vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext);
 
     auto rp_striped_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pRenderPassBegin->pNext);
     if (rp_striped_begin) {
@@ -622,16 +626,12 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
     }
 
     // Spec states that after BeginRenderPass all resources should be rebound
-    if (activeRenderPass->has_multiview_enabled) {
+    if (active_render_pass->has_multiview_enabled) {
         UnbindResources();
     }
 
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
-    if (chained_device_group_struct) {
-        active_render_pass_device_mask = chained_device_group_struct->deviceMask;
-    } else {
-        active_render_pass_device_mask = initial_device_mask;
-    }
+    render_pass_device_mask = chained_device_group_struct ? chained_device_group_struct->deviceMask : initial_device_mask;
 
     attachment_source = AttachmentSource::RenderPass;
     active_subpasses.clear();
@@ -651,36 +651,39 @@ void CommandBuffer::NextSubpass(Func command, VkSubpassContents contents) {
     RecordCmd(command);
     SetActiveSubpass(GetActiveSubpass() + 1);
     activeSubpassContents = contents;
+    ASSERT_AND_RETURN(active_render_pass);
 
     if (activeFramebuffer) {
         active_subpasses.clear();
         active_subpasses.resize(activeFramebuffer->create_info.attachmentCount);
 
-        if (GetActiveSubpass() < activeRenderPass->create_info.subpassCount) {
+        if (GetActiveSubpass() < active_render_pass->create_info.subpassCount) {
             UpdateSubpassAttachments();
         }
     }
 
     // Spec states that after NextSubpass all resources should be rebound
-    if (activeRenderPass->has_multiview_enabled) {
+    if (active_render_pass->has_multiview_enabled) {
         UnbindResources();
     }
 }
 
 void CommandBuffer::EndRenderPass(Func command) {
     RecordCmd(command);
-    activeRenderPass = nullptr;
+    active_render_pass = nullptr;
     attachment_source = AttachmentSource::Empty;
     active_attachments.clear();
     active_subpasses.clear();
     active_color_attachments_index.clear();
     SetActiveSubpass(0);
     activeFramebuffer = VK_NULL_HANDLE;
+    sample_locations_begin_info = nullptr;
 }
 
 void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo) {
     RecordCmd(command);
-    activeRenderPass = std::make_shared<vvl::RenderPass>(pRenderingInfo, true);
+    active_render_pass = std::make_shared<vvl::RenderPass>(pRenderingInfo, true);
+    render_area = pRenderingInfo->renderArea;
     renderPassQueries.clear();
 
     rendering_attachments.Reset();
@@ -688,11 +691,7 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     rendering_attachments.color_indexes.resize(pRenderingInfo->colorAttachmentCount);
 
     auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
-    if (chained_device_group_struct) {
-        active_render_pass_device_mask = chained_device_group_struct->deviceMask;
-    } else {
-        active_render_pass_device_mask = initial_device_mask;
-    }
+    render_pass_device_mask = chained_device_group_struct ? chained_device_group_struct->deviceMask : initial_device_mask;
 
     auto rp_striped_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pRenderingInfo->pNext);
     if (rp_striped_begin) {
@@ -767,7 +766,7 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
 
 void CommandBuffer::EndRendering(Func command) {
     RecordCmd(command);
-    activeRenderPass = nullptr;
+    active_render_pass = nullptr;
     active_color_attachments_index.clear();
 }
 
@@ -1002,7 +1001,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
         // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
         if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
             if (beginInfo.pInheritanceInfo->renderPass) {
-                activeRenderPass = dev_data.Get<vvl::RenderPass>(beginInfo.pInheritanceInfo->renderPass);
+                active_render_pass = dev_data.Get<vvl::RenderPass>(beginInfo.pInheritanceInfo->renderPass);
                 SetActiveSubpass(beginInfo.pInheritanceInfo->subpass);
 
                 if (beginInfo.pInheritanceInfo->framebuffer) {
@@ -1026,7 +1025,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 auto inheritance_rendering_info =
                     vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
                 if (inheritance_rendering_info) {
-                    activeRenderPass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info);
+                    active_render_pass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info);
                 }
             }
 
@@ -1129,7 +1128,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         if (!hasRenderPassInstance) {
             resumesRenderPassInstance = sub_cb_state->resumesRenderPassInstance;
         }
-        if (!sub_cb_state->activeRenderPass) {
+        if (!sub_cb_state->active_render_pass) {
             suspendsRenderPassInstance = sub_cb_state->suspendsRenderPassInstance;
             hasRenderPassInstance |= sub_cb_state->hasRenderPassInstance;
         }
@@ -1664,43 +1663,43 @@ void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(c
 }
 
 uint32_t CommandBuffer::GetDynamicColorAttachmentCount() const {
-    if (activeRenderPass) {
-        if (activeRenderPass->use_dynamic_rendering_inherited) {
-            return activeRenderPass->inheritance_rendering_info.colorAttachmentCount;
+    if (active_render_pass) {
+        if (active_render_pass->use_dynamic_rendering_inherited) {
+            return active_render_pass->inheritance_rendering_info.colorAttachmentCount;
         }
-        if (activeRenderPass->use_dynamic_rendering) {
-            return activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount;
+        if (active_render_pass->use_dynamic_rendering) {
+            return active_render_pass->dynamic_rendering_begin_rendering_info.colorAttachmentCount;
         }
     }
     return 0;
 }
 
 bool CommandBuffer::HasValidDynamicDepthAttachment() const {
-    if (activeRenderPass) {
-        if (activeRenderPass->use_dynamic_rendering_inherited) {
-            return activeRenderPass->inheritance_rendering_info.depthAttachmentFormat != VK_FORMAT_UNDEFINED;
+    if (active_render_pass) {
+        if (active_render_pass->use_dynamic_rendering_inherited) {
+            return active_render_pass->inheritance_rendering_info.depthAttachmentFormat != VK_FORMAT_UNDEFINED;
         }
-        if (activeRenderPass->use_dynamic_rendering) {
-            return activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr;
+        if (active_render_pass->use_dynamic_rendering) {
+            return active_render_pass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr;
         }
     }
     return false;
 }
 bool CommandBuffer::HasValidDynamicStencilAttachment() const {
-    if (activeRenderPass) {
-        if (activeRenderPass->use_dynamic_rendering_inherited) {
-            return activeRenderPass->inheritance_rendering_info.stencilAttachmentFormat != VK_FORMAT_UNDEFINED;
+    if (active_render_pass) {
+        if (active_render_pass->use_dynamic_rendering_inherited) {
+            return active_render_pass->inheritance_rendering_info.stencilAttachmentFormat != VK_FORMAT_UNDEFINED;
         }
-        if (activeRenderPass->use_dynamic_rendering) {
-            return activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment != nullptr;
+        if (active_render_pass->use_dynamic_rendering) {
+            return active_render_pass->dynamic_rendering_begin_rendering_info.pStencilAttachment != nullptr;
         }
     }
     return false;
 }
 bool CommandBuffer::HasExternalFormatResolveAttachment() const {
-    if (activeRenderPass && activeRenderPass->use_dynamic_rendering &&
-        activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
-        return activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments->resolveMode ==
+    if (active_render_pass && active_render_pass->use_dynamic_rendering &&
+        active_render_pass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
+        return active_render_pass->dynamic_rendering_begin_rendering_info.pColorAttachments->resolveMode ==
                VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID;
     }
     return false;

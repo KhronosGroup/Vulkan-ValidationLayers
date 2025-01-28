@@ -578,12 +578,12 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
             "was created with VK_INDIRECT_COMMANDS_LAYOUT_USAGE_EXPLICIT_PREPROCESS_BIT_EXT but isPreprocessed is VK_FALSE.");
     }
 
-    if (cb_state.activeRenderPass) {
+    if (const vvl::RenderPass* rp_state = cb_state.active_render_pass.get()) {
         uint32_t view_mask = 0;
-        if (cb_state.activeRenderPass->UsesDynamicRendering()) {
-            view_mask = cb_state.activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask;
+        if (rp_state->UsesDynamicRendering()) {
+            view_mask = rp_state->dynamic_rendering_begin_rendering_info.viewMask;
         } else {
-            const auto* render_pass_info = cb_state.activeRenderPass->create_info.ptr();
+            const auto* render_pass_info = rp_state->create_info.ptr();
             const auto subpass_desc = render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
             view_mask = subpass_desc.viewMask;
         }

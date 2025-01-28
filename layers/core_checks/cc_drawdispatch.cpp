@@ -46,11 +46,11 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
     const auto *pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     // Verify maxMultiviewInstanceIndex
-    if (cb_state.activeRenderPass && cb_state.activeRenderPass->has_multiview_enabled &&
+    if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled &&
         ((static_cast<uint64_t>(instanceCount) + static_cast<uint64_t>(firstInstance)) >
          static_cast<uint64_t>(phys_dev_props_core11.maxMultiviewInstanceIndex))) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        objlist.add(cb_state.activeRenderPass->Handle());
+        objlist.add(cb_state.active_render_pass->Handle());
         skip |= LogError(vuid.max_multiview_instance_index_02688, objlist, loc,
                          "renderpass instance has multiview enabled, and maxMultiviewInstanceIndex: %" PRIu32
                          ", but instanceCount: %" PRIu32 " and firstInstance: %" PRIu32 ".",
