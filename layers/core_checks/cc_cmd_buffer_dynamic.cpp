@@ -1243,27 +1243,30 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
-    if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) &&
-        cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-        const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info =
-            cb_state.activeRenderPass->GetMSRTSSInfo(cb_state.GetActiveSubpass());
-        if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
-            if (msrtss_info->rasterizationSamples != cb_state.dynamic_state_value.rasterization_samples) {
-                LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
-                skip |= LogError(vuid.rasterization_samples_09211, objlist, vuid.loc(),
+    if (cb_state.activeRenderPass) {
+        if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) &&
+            cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+            const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info =
+                cb_state.activeRenderPass->GetMSRTSSInfo(cb_state.GetActiveSubpass());
+            if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
+                if (msrtss_info->rasterizationSamples != cb_state.dynamic_state_value.rasterization_samples) {
+                    LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
+                    skip |=
+                        LogError(vuid.rasterization_samples_09211, objlist, vuid.loc(),
                                  "VkMultisampledRenderToSingleSampledInfoEXT::multisampledRenderToSingleSampledEnable is VK_TRUE "
                                  "and VkMultisampledRenderToSingleSampledInfoEXT::rasterizationSamples are %s, but rasterization "
                                  "samples set with vkCmdSetRasterizationSamplesEXT() were %s.",
                                  string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples),
                                  string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
+                }
             }
         }
-    }
 
-    if (pipeline_state && cb_state.activeRenderPass->UsesDynamicRendering() &&
-        (!IsExtEnabled(extensions.vk_ext_shader_object) || !last_bound_state.IsAnyGraphicsShaderBound())) {
-        skip |= ValidateDrawRenderingAttachmentLocation(cb_state, *pipeline_state, vuid);
-        skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, *pipeline_state, vuid);
+        if (pipeline_state && cb_state.activeRenderPass->UsesDynamicRendering() &&
+            (!IsExtEnabled(extensions.vk_ext_shader_object) || !last_bound_state.IsAnyGraphicsShaderBound())) {
+            skip |= ValidateDrawRenderingAttachmentLocation(cb_state, *pipeline_state, vuid);
+            skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, *pipeline_state, vuid);
+        }
     }
 
     return skip;
@@ -1525,7 +1528,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     }
 
     if (fragment_shader_bound) {
-        if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
+        if (!cb_state.dynamic_state_value.rasterizer_discard_enable && cb_state.activeRenderPass) {
             const uint32_t attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
             if (attachment_count > 0) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT,
