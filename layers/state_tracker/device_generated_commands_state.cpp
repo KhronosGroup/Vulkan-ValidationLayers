@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -19,7 +19,7 @@
 
 #include "state_tracker/device_generated_commands_state.h"
 
-vvl::IndirectExecutionSet::IndirectExecutionSet(ValidationStateTracker &dev, VkIndirectExecutionSetEXT handle,
+vvl::IndirectExecutionSet::IndirectExecutionSet(vvl::Device &dev, VkIndirectExecutionSetEXT handle,
                                                 const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeIndirectExecutionSetEXT),
       safe_create_info(pCreateInfo),
@@ -35,7 +35,7 @@ vvl::IndirectExecutionSet::IndirectExecutionSet(ValidationStateTracker &dev, VkI
     }
 }
 
-vvl::IndirectCommandsLayout::IndirectCommandsLayout(ValidationStateTracker &dev, VkIndirectCommandsLayoutEXT handle,
+vvl::IndirectCommandsLayout::IndirectCommandsLayout(vvl::Device &dev, VkIndirectCommandsLayoutEXT handle,
                                                     const VkIndirectCommandsLayoutCreateInfoEXT *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeIndirectCommandsLayoutEXT),
       safe_create_info(pCreateInfo),

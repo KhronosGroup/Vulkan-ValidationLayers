@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+/* Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,7 @@ struct DescriptorAccess {
 class DescriptorSet : public vvl::DescriptorSet {
   public:
     DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool,
-                  const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
-                  ValidationStateTracker *state_data);
+                  const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count, vvl::Device *state_data);
     virtual ~DescriptorSet();
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
     void PerformWriteUpdate(const VkWriteDescriptorSet &) override;

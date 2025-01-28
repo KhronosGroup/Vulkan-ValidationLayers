@@ -34,14 +34,13 @@ class DescriptorSetLayoutDef;
 class DescriptorSetLayout;
 class DescriptorSet;
 class Descriptor;
+class Device;
 class RenderPass;
 class CommandBuffer;
 class Pipeline;
 struct ShaderObject;
 struct ShaderModule;
 }  // namespace vvl
-
-class ValidationStateTracker;
 
 namespace chassis {
 struct CreateShaderModule;
@@ -150,21 +149,21 @@ class Pipeline : public StateObject {
     } instrumentation_data;
 
     // Executable or legacy pipeline
-    Pipeline(const ValidationStateTracker &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
+    Pipeline(const Device &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
              std::shared_ptr<const vvl::PipelineLayout> &&layout,
              spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
 
     // Compute pipeline
-    Pipeline(const ValidationStateTracker &state_data, const VkComputePipelineCreateInfo *pCreateInfo,
+    Pipeline(const Device &state_data, const VkComputePipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              spirv::StatelessData *stateless_data);
 
-    Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
+    Pipeline(const Device &state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              spirv::StatelessData *stateless_data);
 
-    Pipeline(const ValidationStateTracker &state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
+    Pipeline(const Device &state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              spirv::StatelessData *stateless_data);
 
@@ -216,7 +215,7 @@ class Pipeline : public StateObject {
     std::shared_ptr<const vvl::ShaderModule> GetSubStateShader(VkShaderStageFlagBits state) const;
 
     template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
-    static inline typename SubStateTraits<type_flag>::type GetLibSubState(const ValidationStateTracker &state,
+    static inline typename SubStateTraits<type_flag>::type GetLibSubState(const Device &state,
                                                                           const VkPipelineLibraryCreateInfoKHR &link_info) {
         for (uint32_t i = 0; i < link_info.libraryCount; ++i) {
             const auto lib_state = state.Get<vvl::Pipeline>(link_info.pLibraries[i]);
@@ -426,7 +425,7 @@ class Pipeline : public StateObject {
 
     bool SampleLocationEnabled() const { return fragment_output_state && fragment_output_state->sample_location_enabled; }
 
-    static std::vector<ShaderStageState> GetStageStates(const ValidationStateTracker &state_data, const Pipeline &pipe_state,
+    static std::vector<ShaderStageState> GetStageStates(const Device &state_data, const Pipeline &pipe_state,
                                                         spirv::StatelessData *stateless_data);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
@@ -490,7 +489,7 @@ class Pipeline : public StateObject {
         // Check linked libraries
         auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
         if (link_info) {
-            auto state_tracker = dynamic_cast<const ValidationStateTracker *>(vo);
+            auto state_tracker = dynamic_cast<const Device *>(vo);
             if (state_tracker) {
                 const auto libs = vvl::make_span(link_info->pLibraries, link_info->libraryCount);
                 for (const auto handle : libs) {
@@ -539,10 +538,9 @@ class Pipeline : public StateObject {
 
     // This is a helper that is meant to be used during safe_VkPipelineRenderingCreateInfo construction to determine whether or not
     // certain fields should be ignored based on graphics pipeline state
-    // TODO - This is only a pointer to ValidationStateTracker because we are trying to do state tracking outside the state tracker
-    static bool PnextRenderingInfoCustomCopy(const ValidationStateTracker *state_data,
-                                             const VkGraphicsPipelineCreateInfo &graphics_info, VkBaseOutStructure *safe_struct,
-                                             const VkBaseOutStructure *in_struct) {
+    // TODO - This is only a pointer to Device  because we are trying to do state tracking outside the state tracker
+    static bool PnextRenderingInfoCustomCopy(const Device *state_data, const VkGraphicsPipelineCreateInfo &graphics_info,
+                                             VkBaseOutStructure *safe_struct, const VkBaseOutStructure *in_struct) {
         // "safe_struct" is assumed to be non-null as it should be the "this" member of calling class instance
         assert(safe_struct);
         if (safe_struct->sType == VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO) {
@@ -565,17 +563,17 @@ class Pipeline : public StateObject {
     }
 
   protected:
-    static std::shared_ptr<VertexInputState> CreateVertexInputState(const Pipeline &p, const ValidationStateTracker &state,
+    static std::shared_ptr<VertexInputState> CreateVertexInputState(const Pipeline &p, const Device &state,
                                                                     const vku::safe_VkGraphicsPipelineCreateInfo &create_info);
     static std::shared_ptr<PreRasterState> CreatePreRasterState(
-        const Pipeline &p, const ValidationStateTracker &state, const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
+        const Pipeline &p, const Device &state, const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
         const std::shared_ptr<const vvl::RenderPass> &rp, spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
     static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(
-        const Pipeline &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+        const Pipeline &p, const Device &state, const VkGraphicsPipelineCreateInfo &create_info,
         const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp,
         spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
     static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(
-        const Pipeline &p, const ValidationStateTracker &state, const VkGraphicsPipelineCreateInfo &create_info,
+        const Pipeline &p, const Device &state, const VkGraphicsPipelineCreateInfo &create_info,
         const vku::safe_VkGraphicsPipelineCreateInfo &safe_create_info, const std::shared_ptr<const vvl::RenderPass> &rp);
 
     template <typename CreateInfo>

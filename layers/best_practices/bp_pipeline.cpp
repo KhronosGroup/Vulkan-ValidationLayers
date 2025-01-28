@@ -240,7 +240,7 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
     return result;
 }
 
-bp_state::Pipeline::Pipeline(const ValidationStateTracker& state_data, const VkGraphicsPipelineCreateInfo* create_info,
+bp_state::Pipeline::Pipeline(const vvl::Device& state_data, const VkGraphicsPipelineCreateInfo* create_info,
                              std::shared_ptr<const vvl::PipelineCache>&& pipe_cache,
                              std::shared_ptr<const vvl::RenderPass>&& rpstate, std::shared_ptr<const vvl::PipelineLayout>&& layout)
     : vvl::Pipeline(state_data, create_info, std::move(pipe_cache), std::move(rpstate), std::move(layout), nullptr),

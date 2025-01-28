@@ -119,8 +119,8 @@ bool CoreChecks::IsImageCompatibleWithVideoSession(const vvl::Image &image_state
 void CoreChecks::EnqueueVerifyVideoSessionInitialized(vvl::CommandBuffer &cb_state, vvl::VideoSession &vs_state,
                                                       const Location &loc, const char *vuid) {
     cb_state.video_session_updates[vs_state.VkHandle()].emplace_back(
-        [loc, vuid](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
-                    vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+        [loc, vuid](const vvl::Device &dev_data, const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
+                    bool do_validate) {
             bool skip = false;
             if (!dev_state.IsInitialized()) {
                 skip |= dev_data.LogError(vuid, vs_state->Handle(), loc, "Bound video session %s is uninitialized.",
@@ -4800,7 +4800,7 @@ void CoreChecks::PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuff
 
         // Enqueue submission time validation of DPB slots
         cb_state->video_session_updates[vs_state->VkHandle()].emplace_back(
-            [expected_slots, loc](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
+            [expected_slots, loc](const vvl::Device &dev_data, const vvl::VideoSession *vs_state,
                                   vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                 if (!do_validate) return false;
                 bool skip = false;
@@ -4829,7 +4829,7 @@ void CoreChecks::PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuff
 
         // Enqueue submission time validation of rate control state
         cb_state->video_session_updates[vs_state->VkHandle()].emplace_back(
-            [begin_info, loc](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
+            [begin_info, loc](const vvl::Device &dev_data, const vvl::VideoSession *vs_state,
                               vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                 if (!do_validate) return false;
                 return dev_state.ValidateRateControlState(dev_data, vs_state, begin_info, loc);
@@ -5304,7 +5304,7 @@ void CoreChecks::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, c
 
         // Enqueue submission time validation of picture kind (frame, top field, bottom field) for H.264
         cb_state->video_session_updates[vs_state->VkHandle()].emplace_back(
-            [reference_slots, loc](const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
+            [reference_slots, loc](const vvl::Device &dev_data, const vvl::VideoSession *vs_state,
                                    vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                 if (!do_validate) return false;
                 bool skip = false;
@@ -5800,8 +5800,8 @@ void CoreChecks::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, c
             // so we only have to do submit-time validation if that's not the case
             cb_state->video_session_updates[vs_state->VkHandle()].emplace_back(
                 [vsp_state = cb_state->bound_video_session_parameters, loc](
-                    const ValidationStateTracker &dev_data, const vvl::VideoSession *vs_state,
-                    vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                    const vvl::Device &dev_data, const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
+                    bool do_validate) {
                     if (!do_validate) return false;
                     bool skip = false;
                     if (vsp_state->GetEncodeQualityLevel() != dev_state.GetEncodeQualityLevel()) {

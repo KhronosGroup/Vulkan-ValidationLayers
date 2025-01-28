@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@
 #include "state_tracker/state_object.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 
-class ValidationStateTracker;
-
 namespace vvl {
+class Device;
 class Pipeline;
 struct ShaderObject;
 
@@ -31,8 +30,7 @@ class IndirectExecutionSet : public StateObject {
     const vku::safe_VkIndirectExecutionSetCreateInfoEXT safe_create_info;
     const VkIndirectExecutionSetCreateInfoEXT &create_info;
 
-    IndirectExecutionSet(ValidationStateTracker &dev, VkIndirectExecutionSetEXT handle,
-                         const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo);
+    IndirectExecutionSet(Device &dev, VkIndirectExecutionSetEXT handle, const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo);
     VkIndirectExecutionSetEXT VkHandle() const { return handle_.Cast<VkIndirectExecutionSetEXT>(); }
 
     const bool is_pipeline;
@@ -54,7 +52,7 @@ class IndirectCommandsLayout : public StateObject {
     const vku::safe_VkIndirectCommandsLayoutCreateInfoEXT safe_create_info;
     const VkIndirectCommandsLayoutCreateInfoEXT &create_info;
 
-    IndirectCommandsLayout(ValidationStateTracker &dev, VkIndirectCommandsLayoutEXT handle,
+    IndirectCommandsLayout(Device &dev, VkIndirectCommandsLayoutEXT handle,
                            const VkIndirectCommandsLayoutCreateInfoEXT *pCreateInfo);
     VkIndirectCommandsLayoutEXT VkHandle() const { return handle_.Cast<VkIndirectCommandsLayoutEXT>(); }
 

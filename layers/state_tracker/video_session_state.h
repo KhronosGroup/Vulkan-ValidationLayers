@@ -24,8 +24,8 @@
 #include <vector>
 #include <functional>
 
-class ValidationStateTracker;
 namespace vvl {
+class Device;
 class Image;
 class ImageView;
 class VideoSession;
@@ -288,7 +288,7 @@ class VideoPictureResource {
     VkExtent2D coded_extent;
 
     VideoPictureResource();
-    VideoPictureResource(const ValidationStateTracker &dev_data, VkVideoPictureResourceInfoKHR const &res);
+    VideoPictureResource(const Device &dev_data, VkVideoPictureResourceInfoKHR const &res);
 
     operator bool() const { return image_view_state != nullptr; }
 
@@ -378,8 +378,8 @@ struct VideoReferenceSlot {
 
     VideoReferenceSlot() : index(-1), picture_id(), resource() {}
 
-    VideoReferenceSlot(const ValidationStateTracker &dev_data, VideoProfileDesc const &profile,
-                       VkVideoReferenceSlotInfoKHR const &slot, bool has_picture_id = true)
+    VideoReferenceSlot(const Device &dev_data, VideoProfileDesc const &profile, VkVideoReferenceSlotInfoKHR const &slot,
+                       bool has_picture_id = true)
         : index(slot.slotIndex),
           picture_id(has_picture_id ? VideoPictureID(profile, slot) : VideoPictureID()),
           resource(slot.pPictureResource ? VideoPictureResource(dev_data, *slot.pPictureResource) : VideoPictureResource()) {}
@@ -527,7 +527,7 @@ class VideoSessionDeviceState {
         encode_.rate_control_state = rate_control_state;
     }
 
-    bool ValidateRateControlState(const ValidationStateTracker &dev_data, const VideoSession *vs_state,
+    bool ValidateRateControlState(const Device &dev_data, const VideoSession *vs_state,
                                   const vku::safe_VkVideoBeginCodingInfoKHR &begin_info, const Location &loc) const;
 
   private:
@@ -566,7 +566,7 @@ class VideoSession : public StateObject {
         VideoSessionDeviceState &state_;
     };
 
-    VideoSession(const ValidationStateTracker &dev_data, VkVideoSessionKHR handle, VkVideoSessionCreateInfoKHR const *pCreateInfo,
+    VideoSession(const Device &dev_data, VkVideoSessionKHR handle, VkVideoSessionCreateInfoKHR const *pCreateInfo,
                  std::shared_ptr<const VideoProfileDesc> &&profile_desc);
 
     VkVideoSessionKHR VkHandle() const { return handle_.Cast<VkVideoSessionKHR>(); }
@@ -610,7 +610,7 @@ class VideoSession : public StateObject {
     bool ReferenceSetupRequested(VkVideoEncodeInfoKHR const &encode_info) const;
 
   private:
-    MemoryBindingMap GetMemoryBindings(const ValidationStateTracker &dev_data, VkVideoSessionKHR vs);
+    MemoryBindingMap GetMemoryBindings(const Device &dev_data, VkVideoSessionKHR vs);
 
     MemoryBindingMap memory_bindings_;
     uint32_t unbound_memory_binding_count_;
@@ -786,7 +786,7 @@ class VideoSessionParameters : public StateObject {
     void AddEncodeH265(VkVideoEncodeH265SessionParametersAddInfoKHR const *info);
 };
 
-using VideoSessionUpdateList = std::vector<std::function<bool(const ValidationStateTracker &dev_data, const VideoSession *vs_state,
+using VideoSessionUpdateList = std::vector<std::function<bool(const Device &dev_data, const VideoSession *vs_state,
                                                               VideoSessionDeviceState &dev_state, bool do_validate)>>;
 using VideoSessionUpdateMap = unordered_map<VkVideoSessionKHR, VideoSessionUpdateList>;
 

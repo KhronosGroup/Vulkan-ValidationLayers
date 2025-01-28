@@ -336,11 +336,11 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
 
 namespace {
 struct EventValidator {
-    const ValidationStateTracker& state_tracker;
+    const vvl::Device& state_tracker;
 
     vvl::unordered_map<VkEvent, bool> signaling_state;
 
-    EventValidator(const ValidationStateTracker& state_tracker) : state_tracker(state_tracker) {}
+    EventValidator(const vvl::Device& state_tracker) : state_tracker(state_tracker) {}
 
     bool ValidateSubmittedCbSignalingState(const bp_state::CommandBuffer& cb, const Location& cb_loc) {
         bool skip = false;

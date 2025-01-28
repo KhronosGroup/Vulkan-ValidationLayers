@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -173,8 +173,8 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
 
 void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
-    funcs.emplace_back([this, command, state, usage, array_layer, mip_level](
-                           const ValidationStateTracker& vst, const vvl::Queue& qs, const vvl::CommandBuffer& cbs) -> bool {
+    funcs.emplace_back([this, command, state, usage, array_layer, mip_level](const vvl::Device& vst, const vvl::Queue& qs,
+                                                                             const vvl::CommandBuffer& cbs) -> bool {
         ValidateImageInQueue(qs, cbs, command, *state, usage, array_layer, mip_level);
         return false;
     });

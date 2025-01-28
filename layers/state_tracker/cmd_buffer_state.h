@@ -28,11 +28,11 @@
 #include "generated/dynamic_state_helper.h"
 
 class CoreChecks;
-class ValidationStateTracker;
 
 namespace vvl {
 class Bindable;
 class Buffer;
+class Device;
 class Framebuffer;
 class RenderPass;
 class VideoSession;
@@ -128,7 +128,7 @@ class Event : public StateObject {
 // Track command pools and their command buffers
 class CommandPool : public StateObject {
   public:
-    ValidationStateTracker &dev_data;
+    Device &dev_data;
     const VkCommandPoolCreateFlags createFlags;
     const uint32_t queueFamilyIndex;
     const VkQueueFlags queue_flags;
@@ -136,7 +136,7 @@ class CommandPool : public StateObject {
     // Cmd buffers allocated from this pool
     vvl::unordered_map<VkCommandBuffer, CommandBuffer *> commandBuffers;
 
-    CommandPool(ValidationStateTracker &dev, VkCommandPool handle, const VkCommandPoolCreateInfo *create_info, VkQueueFlags flags);
+    CommandPool(Device &dev, VkCommandPool handle, const VkCommandPoolCreateInfo *create_info, VkQueueFlags flags);
     virtual ~CommandPool() { Destroy(); }
 
     VkCommandPool VkHandle() const { return handle_.Cast<VkCommandPool>(); }
@@ -165,7 +165,7 @@ class CommandBuffer : public RefcountedStateObject {
     VkCommandBufferInheritanceInfo inheritanceInfo;
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
     const vvl::CommandPool *command_pool;
-    ValidationStateTracker &dev_data;
+    Device &dev_data;
     bool unprotected;  // can't be used for protected memory
     bool hasRenderPassInstance;
     bool suspendsRenderPassInstance;
@@ -495,8 +495,8 @@ class CommandBuffer : public RefcountedStateObject {
     // If primary, the secondary command buffers we will call.
     vvl::unordered_set<CommandBuffer *> linkedCommandBuffers;
     // Validation functions run at primary CB queue submit time
-    using QueueCallback = std::function<bool(const ValidationStateTracker &device_data, const class vvl::Queue &queue_state,
-                                             const CommandBuffer &cb_state)>;
+    using QueueCallback =
+        std::function<bool(const Device &device_data, const class vvl::Queue &queue_state, const CommandBuffer &cb_state)>;
     std::vector<QueueCallback> queue_submit_functions;
     // Used by some layers to defer actions until vkCmdEndRenderPass time.
     // Layers using this are responsible for inserting the callbacks into queue_submit_functions.
@@ -551,7 +551,7 @@ class CommandBuffer : public RefcountedStateObject {
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
 
-    CommandBuffer(ValidationStateTracker &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
+    CommandBuffer(Device &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
                   const vvl::CommandPool *cmd_pool);
 
     virtual ~CommandBuffer() { Destroy(); }

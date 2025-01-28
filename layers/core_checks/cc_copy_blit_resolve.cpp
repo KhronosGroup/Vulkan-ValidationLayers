@@ -2004,7 +2004,7 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
 
         auto queue_submit_validation = [this, commandBuffer, src_buffer_state, dst_buffer_state, src_ranges = std::move(src_ranges),
                                         dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds, loc,
-                                        vuid](const ValidationStateTracker &device_data, const class vvl::Queue &queue_state,
+                                        vuid](const vvl::Device &device_data, const class vvl::Queue &queue_state,
                                               const vvl::CommandBuffer &cb_state) -> bool {
             bool skip = false;
 
@@ -2142,7 +2142,7 @@ bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const vvl::Image &imag
     bool skip = false;
 
     const VkDeviceSize buffer_copy_size =
-        GetBufferSizeFromCopyImage(region, image_state.create_info.format, image_state.create_info.arrayLayers);
+        vvl::GetBufferSizeFromCopyImage(region, image_state.create_info.format, image_state.create_info.arrayLayers);
     // This blocks against invalid VkBufferCopyImage that already have been caught elsewhere
     if (buffer_copy_size != 0) {
         const VkDeviceSize max_buffer_copy = buffer_copy_size + region.bufferOffset;

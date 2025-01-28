@@ -35,7 +35,7 @@ static uint32_t BitBufferSize(uint32_t num_bits) {
 
 DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *pool,
                              const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
-                             ValidationStateTracker *state_data)
+                             vvl::Device *state_data)
     : vvl::DescriptorSet(handle, pool, layout, variable_count, state_data),
       post_process_buffer_(*static_cast<Validator *>(state_data)),
       input_buffer_(*static_cast<Validator *>(state_data)) {

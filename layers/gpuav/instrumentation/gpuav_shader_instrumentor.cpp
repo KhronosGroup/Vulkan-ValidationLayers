@@ -636,7 +636,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
         if (found->first) {
             deferred_op_post_checks = std::move(found->second);
         } else {
-            // ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR should have added a lambda in
+            // vvl::Device::PostCallRecordCreateRayTracingPipelinesKHR should have added a lambda in
             // deferred_operation_post_check for the current deferredOperation.
             // This lambda is responsible for initializing the pipeline state we maintain,
             // this state will be accessed in the following lambda.

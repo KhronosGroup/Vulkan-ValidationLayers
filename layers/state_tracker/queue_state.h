@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -28,11 +28,10 @@
 #include <string>
 #include "error_message/error_location.h"
 
-class ValidationStateTracker;
-
 namespace vvl {
 
 class CommandBuffer;
+class Device;
 class Queue;
 
 struct CommandBufferSubmission {
@@ -105,8 +104,8 @@ struct PreSubmitResult {
 
 class Queue : public StateObject {
   public:
-    Queue(ValidationStateTracker &dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index,
-          VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties)
+    Queue(Device &dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
+          const VkQueueFamilyProperties &queueFamilyProperties)
         : StateObject(handle, kVulkanObjectTypeQueue),
           queue_family_index(family_index),
           queue_index(queue_index),
@@ -176,7 +175,7 @@ class Queue : public StateObject {
     QueueSubmission *NextSubmission();
     LockGuard Lock() const { return LockGuard(lock_); }
 
-    ValidationStateTracker &dev_data_;
+    Device &dev_data_;
 
     // state related to submitting to the queue, all data members must
     // be accessed with lock_ held

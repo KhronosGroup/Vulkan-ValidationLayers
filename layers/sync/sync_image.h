@@ -23,18 +23,17 @@ namespace syncval_state {
 
 class ImageState : public vvl::Image {
   public:
-    ImageState(const ValidationStateTracker &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo,
-               VkFormatFeatureFlags2 features)
+    ImageState(const vvl::Device &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2 features)
         : vvl::Image(dev_data, handle, pCreateInfo, features), opaque_base_address_(0U) {}
 
-    ImageState(const ValidationStateTracker &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo,
-               VkSwapchainKHR swapchain, uint32_t swapchain_index, VkFormatFeatureFlags2 features)
+    ImageState(const vvl::Device &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+               uint32_t swapchain_index, VkFormatFeatureFlags2 features)
         : vvl::Image(dev_data, handle, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
     bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
     bool IsTiled() const { return !IsLinear(); }
     bool IsSimplyBound() const;
 
-    void SetOpaqueBaseAddress(ValidationStateTracker &dev_data);
+    void SetOpaqueBaseAddress(vvl::Device &dev_data);
 
     VkDeviceSize GetOpaqueBaseAddress() const { return opaque_base_address_; }
     bool HasOpaqueMapping() const { return 0U != opaque_base_address_; }
@@ -64,7 +63,7 @@ class ImageViewState : public vvl::ImageView {
 
 class Swapchain : public vvl::Swapchain {
   public:
-    Swapchain(ValidationStateTracker &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
+    Swapchain(vvl::Device &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
     ~Swapchain() { Destroy(); }
     void RecordPresentedImage(PresentedImage &&presented_images);
     PresentedImage MovePresentedImage(uint32_t image_index);

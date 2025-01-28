@@ -29,7 +29,6 @@
 
 struct DeviceFeatures;
 struct DeviceExtensions;
-class ValidationStateTracker;
 
 namespace vvl {
 class Image;
