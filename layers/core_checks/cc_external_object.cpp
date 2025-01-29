@@ -642,7 +642,7 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo &allocat
         format_info.usage = image_state_ptr->safe_create_info.usage;
         VkExternalImageFormatProperties external_image_format_properties = vku::InitStructHelper();
         VkImageFormatProperties2 format_properties = vku::InitStructHelper(&external_image_format_properties);
-        DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &format_info, &format_properties);
+        instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &format_info, &format_properties);
 
         if ((external_image_format_properties.externalMemoryProperties.externalMemoryFeatures &
              VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) == 0u) {

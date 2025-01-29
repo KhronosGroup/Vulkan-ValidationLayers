@@ -20,10 +20,6 @@
 
 namespace threadsafety {
 
-ReadLockGuard Instance::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
-
-WriteLockGuard Instance::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
-
 ReadLockGuard Device::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
 
 WriteLockGuard Device::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }

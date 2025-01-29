@@ -73,7 +73,7 @@ static const char* string_SyncHazard(SyncHazard hazard) {
 
 namespace syncval {
 
-ErrorMessages::ErrorMessages(ValidationObject& validator)
+ErrorMessages::ErrorMessages(vvl::Device& validator)
     : validator_(validator),
       extra_properties_(validator_.syncval_settings.message_extra_properties),
       pretty_print_extra_(validator_.syncval_settings.message_extra_properties_pretty_print) {}

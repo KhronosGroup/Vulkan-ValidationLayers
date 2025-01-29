@@ -37,8 +37,6 @@
 #include "generated/vk_extension_helper.h"
 #include "generated/vk_layer_dispatch_table.h"
 
-class ValidationObject;
-
 // Layer object type identifiers
 enum LayerObjectTypeId {
     LayerObjectTypeThreading,            // Instance or device threading layer object
@@ -65,6 +63,11 @@ struct HashedUint64 {
 };
 
 namespace vvl {
+namespace base {
+class Instance;
+class Device;
+}  // namespace base
+
 namespace dispatch {
 
 class Instance;
@@ -174,14 +177,14 @@ class Instance : public HandleWrapper {
         display_id_reverse_mapping.insert_or_assign(handle, unique_id);
         return (VkDisplayKHR)unique_id;
     }
-    ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const;
+    base::Instance* GetValidationObject(LayerObjectTypeId object_type) const;
 
     Settings settings;
 
     APIVersion api_version;
     DeviceExtensions extensions{};
 
-    mutable std::vector<std::unique_ptr<ValidationObject>> object_dispatch;
+    mutable std::vector<std::unique_ptr<base::Instance>> object_dispatch;
 
     VkInstance instance = VK_NULL_HANDLE;
     VkLayerInstanceDispatchTable instance_dispatch_table;
@@ -199,7 +202,7 @@ class Device : public HandleWrapper {
     void InitObjectDispatchVectors();
     void InitValidationObjects();
     void ReleaseValidationObject(LayerObjectTypeId type_id) const;
-    ValidationObject* GetValidationObject(LayerObjectTypeId object_type) const;
+    base::Device* GetValidationObject(LayerObjectTypeId object_type) const;
 
     bool IsSecondary(VkCommandBuffer cb) const;
 
@@ -213,9 +216,9 @@ class Device : public HandleWrapper {
     VkDevice device = VK_NULL_HANDLE;
     VkLayerDispatchTable device_dispatch_table;
 
-    mutable std::vector<std::unique_ptr<ValidationObject>> object_dispatch;
-    mutable std::vector<std::unique_ptr<ValidationObject>> aborted_object_dispatch;
-    mutable std::vector<std::vector<ValidationObject*>> intercept_vectors;
+    mutable std::vector<std::unique_ptr<base::Device>> object_dispatch;
+    mutable std::vector<std::unique_ptr<base::Device>> aborted_object_dispatch;
+    mutable std::vector<std::vector<base::Device*>> intercept_vectors;
     // Handle Wrapping Data
     // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
     vvl::unordered_map<uint64_t, std::unique_ptr<TemplateState>> desc_template_createinfo_map;

@@ -213,7 +213,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             pdebi.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER];
         }
         VkExternalBufferProperties ext_buf_props = vku::InitStructHelper();
-        DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(physical_device, &pdebi, &ext_buf_props);
+        instance_state->DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(physical_device, &pdebi, &ext_buf_props);
 
         //  If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
         //  VkExternalImageFormatProperties or VkExternalBufferProperties.
@@ -241,7 +241,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             VkExternalImageFormatProperties ext_img_fmt_props = vku::InitStructHelper();
             VkImageFormatProperties2 ifp2 = vku::InitStructHelper(&ext_img_fmt_props);
 
-            VkResult fmt_lookup_result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &pdifi2, &ifp2);
+            VkResult fmt_lookup_result =
+                instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &pdifi2, &ifp2);
 
             if ((VK_SUCCESS != fmt_lookup_result) || (0 == (ext_img_fmt_props.externalMemoryProperties.externalMemoryFeatures &
                                                             VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT))) {
@@ -420,8 +421,8 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
 }
 
 bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
-    const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo, const VkImageFormatProperties2 *pImageFormatProperties,
-    const ErrorObject &error_obj) const {
+    VkPhysicalDevice physical_device, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+    const VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto *ahb_usage = vku::FindStructInPNextChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
     if (ahb_usage) {
@@ -613,8 +614,8 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
 }
 
 bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
-    const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo, const VkImageFormatProperties2 *pImageFormatProperties,
-    const ErrorObject &error_obj) const {
+    VkPhysicalDevice physical_device, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+    const VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
     return false;
 }
 

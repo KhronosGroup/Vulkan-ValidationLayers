@@ -1588,7 +1588,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkP
             if (const auto *win32_full_screen_info =
                     vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pSurfaceInfo->pNext);
                 !win32_full_screen_info) {
-                const LogObjectList objlist(device, pSurfaceInfo->surface);
+                const LogObjectList objlist(physicalDevice, pSurfaceInfo->surface);
                 skip |= LogError("VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-02672", objlist,
                                  error_obj.location.dot(Field::pSurfaceInfo)
                                      .pNext(Struct::VkSurfaceFullScreenExclusiveInfoEXT, Field::fullScreenExclusive),

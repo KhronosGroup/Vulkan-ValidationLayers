@@ -61,7 +61,8 @@ class Instance : public vvl::Instance {
                                                      const ErrorObject& error_obj) const override;
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                  const Location& loc) const;
-    bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+    bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(VkPhysicalDevice physical_device,
+                                                                const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 const VkImageFormatProperties2* pImageFormatProperties,
                                                                 const ErrorObject& error_obj) const;
     bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,

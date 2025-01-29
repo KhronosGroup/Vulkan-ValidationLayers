@@ -569,7 +569,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
     static_assert(4 == sizeof(vvl::CommandBuffer::viewportMask), "Adjust max_viewports to match viewportMask bit width");
     static constexpr uint32_t kMaxViewports = 32, kNotTrashed = uint32_t(-2), kTrashedByPrimary = uint32_t(-1);
 
-    const ValidationObject &validation_;
+    const vvl::Device &validation_;
     const vvl::CommandBuffer *primary_state_ = nullptr;
     uint32_t viewport_mask_;
     uint32_t scissor_mask_;
@@ -582,7 +582,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
     uint32_t scissor_count_trashed_by_;
 
   public:
-    ViewportScissorInheritanceTracker(const ValidationObject &validation) : validation_(validation) {}
+    ViewportScissorInheritanceTracker(const vvl::Device &validation) : validation_(validation) {}
 
     bool VisitPrimary(const vvl::CommandBuffer &primary_state) {
         assert(!primary_state_);

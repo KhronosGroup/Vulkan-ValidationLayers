@@ -30,10 +30,11 @@
 
 #include "chassis/validation_object.h"
 
-thread_local WriteLockGuard* ValidationObject::record_guard{};
+namespace vvl::base {
+thread_local WriteLockGuard* Device::record_guard{};
 
-void ValidationObject::DispatchGetPhysicalDeviceFeatures2Helper(VkPhysicalDevice physicalDevice,
-                                                                VkPhysicalDeviceFeatures2* pFeatures) const {
+void Instance::DispatchGetPhysicalDeviceFeatures2Helper(VkPhysicalDevice physicalDevice,
+                                                        VkPhysicalDeviceFeatures2* pFeatures) const {
     if (api_version >= VK_API_VERSION_1_1) {
         return dispatch_instance_->GetPhysicalDeviceFeatures2(physicalDevice, pFeatures);
     } else {
@@ -41,8 +42,8 @@ void ValidationObject::DispatchGetPhysicalDeviceFeatures2Helper(VkPhysicalDevice
     }
 }
 
-void ValidationObject::DispatchGetPhysicalDeviceProperties2Helper(VkPhysicalDevice physicalDevice,
-                                                                  VkPhysicalDeviceProperties2* pProperties) const {
+void Instance::DispatchGetPhysicalDeviceProperties2Helper(VkPhysicalDevice physicalDevice,
+                                                          VkPhysicalDeviceProperties2* pProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
         return dispatch_instance_->GetPhysicalDeviceProperties2(physicalDevice, pProperties);
     } else {
@@ -50,8 +51,8 @@ void ValidationObject::DispatchGetPhysicalDeviceProperties2Helper(VkPhysicalDevi
     }
 }
 
-void ValidationObject::DispatchGetPhysicalDeviceFormatProperties2Helper(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                        VkFormatProperties2* pFormatProperties) const {
+void Instance::DispatchGetPhysicalDeviceFormatProperties2Helper(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                VkFormatProperties2* pFormatProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
         return dispatch_instance_->GetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties);
     } else {
@@ -59,9 +60,9 @@ void ValidationObject::DispatchGetPhysicalDeviceFormatProperties2Helper(VkPhysic
     }
 }
 
-VkResult ValidationObject::DispatchGetPhysicalDeviceImageFormatProperties2Helper(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
-    VkImageFormatProperties2* pImageFormatProperties) const {
+VkResult Instance::DispatchGetPhysicalDeviceImageFormatProperties2Helper(VkPhysicalDevice physicalDevice,
+                                                                         const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
+                                                                         VkImageFormatProperties2* pImageFormatProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
         return dispatch_instance_->GetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo,
                                                                            pImageFormatProperties);
@@ -71,8 +72,9 @@ VkResult ValidationObject::DispatchGetPhysicalDeviceImageFormatProperties2Helper
     }
 }
 
-void ValidationObject::DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(
-    VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties2* pQueueFamilyProperties) const {
+void Instance::DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(VkPhysicalDevice physicalDevice,
+                                                                     uint32_t* pQueueFamilyPropertyCount,
+                                                                     VkQueueFamilyProperties2* pQueueFamilyProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
         return dispatch_instance_->GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                            pQueueFamilyProperties);
@@ -82,8 +84,8 @@ void ValidationObject::DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(
     }
 }
 
-void ValidationObject::DispatchGetPhysicalDeviceMemoryProperties2Helper(
-    VkPhysicalDevice physicalDevice, VkPhysicalDeviceMemoryProperties2* pMemoryProperties) const {
+void Instance::DispatchGetPhysicalDeviceMemoryProperties2Helper(VkPhysicalDevice physicalDevice,
+                                                                VkPhysicalDeviceMemoryProperties2* pMemoryProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
         return dispatch_instance_->GetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties);
     } else {
@@ -91,7 +93,7 @@ void ValidationObject::DispatchGetPhysicalDeviceMemoryProperties2Helper(
     }
 }
 
-void ValidationObject::DispatchGetPhysicalDeviceSparseImageFormatProperties2Helper(
+void Instance::DispatchGetPhysicalDeviceSparseImageFormatProperties2Helper(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
     VkSparseImageFormatProperties2* pProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
@@ -103,7 +105,7 @@ void ValidationObject::DispatchGetPhysicalDeviceSparseImageFormatProperties2Help
     }
 }
 
-void ValidationObject::DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelper(
+void Instance::DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelper(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
     VkExternalSemaphoreProperties* pExternalSemaphoreProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
@@ -115,9 +117,9 @@ void ValidationObject::DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelpe
     }
 }
 
-void ValidationObject::DispatchGetPhysicalDeviceExternalFencePropertiesHelper(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
-    VkExternalFenceProperties* pExternalFenceProperties) const {
+void Instance::DispatchGetPhysicalDeviceExternalFencePropertiesHelper(VkPhysicalDevice physicalDevice,
+                                                                      const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
+                                                                      VkExternalFenceProperties* pExternalFenceProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
         return dispatch_instance_->GetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo,
                                                                             pExternalFenceProperties);
@@ -127,7 +129,7 @@ void ValidationObject::DispatchGetPhysicalDeviceExternalFencePropertiesHelper(
     }
 }
 
-void ValidationObject::DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(
+void Instance::DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
     VkExternalBufferProperties* pExternalBufferProperties) const {
     if (api_version >= VK_API_VERSION_1_1) {
@@ -138,5 +140,6 @@ void ValidationObject::DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(
                                                                                 pExternalBufferProperties);
     }
 }
+}  // namespace vvl::base
 
 // NOLINTEND

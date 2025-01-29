@@ -484,7 +484,7 @@ typedef VkFlags VkStringErrorFlags;
 std::string GetTempFilePath();
 
 // Aliases to avoid excessive typing. We can't easily auto these away because
-// there are virtual methods in ValidationObject which return lock guards
+// there are virtual methods in vvl::base::Device which return lock guards
 // and those cannot use return type deduction.
 typedef std::shared_lock<std::shared_mutex> ReadLockGuard;
 typedef std::unique_lock<std::shared_mutex> WriteLockGuard;

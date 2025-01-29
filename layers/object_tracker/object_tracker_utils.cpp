@@ -35,8 +35,7 @@ Instance::~Instance() {
 }
 
 Device::Device(vvl::dispatch::Device *dev, Instance *instance)
-    : BaseClass(dev, LayerObjectTypeObjectTracker), tracker(debug_report) {
-
+    : BaseClass(dev, instance, LayerObjectTypeObjectTracker), tracker(debug_report) {
     WriteLockGuard lock(lifetime_set_mutex);
     lifetime_set.insert(&tracker);
 }
