@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& 
     }
 }
 
-Function::Function(Module& module, std::unique_ptr<Instruction> function_inst) : module_(module) {
+Function::Function(Module& module, std::unique_ptr<Instruction> function_inst) : module_(module), instrumentation_added_(false) {
     // Used when loading initial SPIR-V
     pre_block_inst_.emplace_back(std::move(function_inst));  // OpFunction
 }

@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,8 +64,10 @@ using BasicBlockList = std::vector<std::unique_ptr<BasicBlock>>;
 using BasicBlockIt = BasicBlockList::iterator;
 
 struct Function {
+    // Used to add functions building up SPIR-V the first time
     Function(Module& module, std::unique_ptr<Instruction> function_inst);
-    Function(Module& module) : module_(module) {}
+    // Used to link in new functions
+    Function(Module& module) : module_(module), instrumentation_added_(true) {}
 
     void ToBinary(std::vector<uint32_t>& out);
 
@@ -101,6 +103,9 @@ struct Function {
     uint32_t stage_info_y_id_ = 0;
     uint32_t stage_info_z_id_ = 0;
     uint32_t stage_info_w_id_ = 0;
+
+    // The main usage of this is for things like DebugPrintf that might want to actually run over previously instrumented functions
+    const bool instrumentation_added_;
 };
 
 using FunctionList = std::vector<std::unique_ptr<Function>>;

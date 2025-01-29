@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ bool VertexAttributeFetchOob::Instrument() {
 
         const uint32_t vertex_shader_entry_point_id = entry_point_inst->Word(2);
         for (const auto& function : module_.functions_) {
+            if (function->instrumentation_added_) continue;
             const uint32_t function_id = function->GetDef().Word(2);
             if (vertex_shader_entry_point_id != function_id) continue;
 

@@ -563,6 +563,9 @@ void Module::LinkFunction(const LinkInfo& info) {
 
     // Add function and copy all instructions to it, while adjusting any IDs
     auto& new_function = functions_.emplace_back(std::make_unique<Function>(*this));
+    // We make things simpler by just putting everything in the first BasicBlock
+    // (We need it in a block incase we want to alter this function later with something like DebugPrintf)
+    BasicBlock* link_basic_block = nullptr;
     while (offset < info.word_count) {
         const uint32_t* inst_word = &info.words[offset];
         auto new_inst = std::make_unique<Instruction>(inst_word, kLinkedInstruction);
@@ -581,6 +584,15 @@ void Module::LinkFunction(const LinkInfo& info) {
         } else if (opcode == spv::OpLabel) {
             uint32_t new_result_id = id_swap_map[new_inst->ResultId()];
             new_inst->ReplaceResultId(new_result_id);
+
+            // Only do on first label at top of function
+            if (!link_basic_block) {
+                auto new_block = std::make_unique<BasicBlock>(std::move(new_inst), *new_function);
+                auto& added_block = new_function->blocks_.emplace_back(std::move(new_block));
+                link_basic_block = &(*added_block);
+                offset += length;
+                continue;  // prevent adding a null new_inst below
+            }
         } else {
             uint32_t result_id = new_inst->ResultId();
             if (result_id != 0) {
@@ -591,9 +603,18 @@ void Module::LinkFunction(const LinkInfo& info) {
             new_inst->ReplaceLinkedId(id_swap_map);
         }
 
-        // To make simpler, just put everything in a single list as we have no need to do any modifications to the CFG logic for the
-        // linked function
-        new_function->pre_block_inst_.emplace_back(std::move(new_inst));
+        if (link_basic_block) {
+            // Need for a possible FindInstruction() lookup
+            const uint32_t result_id = new_inst->ResultId();
+            if (result_id != 0) {
+                new_function->inst_map_[result_id] = new_inst.get();
+            }
+
+            link_basic_block->instructions_.emplace_back(std::move(new_inst));
+        } else {
+            new_function->pre_block_inst_.emplace_back(std::move(new_inst));
+        }
+
         offset += length;
     }
 

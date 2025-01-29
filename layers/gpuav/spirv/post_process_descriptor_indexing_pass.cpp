@@ -173,6 +173,7 @@ void PostProcessDescriptorIndexingPass::Reset() {
 
 bool PostProcessDescriptorIndexingPass::Instrument() {
     for (const auto& function : module_.functions_) {
+        if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
