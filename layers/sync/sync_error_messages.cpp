@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 #include "sync/sync_commandbuffer.h"
 #include "sync/sync_image.h"
 #include "sync/sync_reporting.h"
+#include "sync/sync_validation.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
 
@@ -148,21 +149,53 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, VkBuffer buff
 }
 
 std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffer buffer, bool is_src_buffer, uint32_t region_index,
-                                             const CommandBufferAccessContext& cb_context) const {
-    const auto format = "Hazard %s for %s %s, region %" PRIu32 ". Access info %s.";
-    ReportKeyValues key_values;
+                                             const CommandBufferAccessContext& cb_context, const vvl::Func command) const {
+    // TEMP: will be part of more general code
+    const SyncAccessFlags write_barriers = hazard.State().access_state->GetWriteBarriers();
+    const auto vk_protected_accesses =
+        ConvertSyncAccessesToCompactVkForm(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
+                                           cb_context.GetSyncState().extensions);
+    const auto& sync_access = syncAccessInfoByAccessIndex()[hazard.State().access_index];
+    const bool barrier_protects_access =
+        std::find_if(vk_protected_accesses.begin(), vk_protected_accesses.end(), [&sync_access](const auto& protected_access) {
+            return (protected_access.second & sync_access.access_mask) != 0;
+        }) != vk_protected_accesses.end();
 
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* resource_parameter = is_src_buffer ? "srcBuffer" : "dstBuffer";
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), resource_parameter,
-                                 validator_.FormatHandle(buffer).c_str(), region_index, access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "BufferRegionError");
-        key_values.Add(kPropertyResourceParameter, resource_parameter);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+    // TEMP: detect specific case to demo new direction of syncval error messages.
+    // This also will be replaced by more general implementation.
+    if (hazard.Hazard() == WRITE_AFTER_WRITE && !write_barriers.none() && barrier_protects_access) {
+        const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
+        std::stringstream ss;
+        ss << string_SyncHazard(hazard.Hazard()) << " hazard detected. ";
+        ss << vvl::String(command) << " writes to " << validator_.FormatHandle(buffer);
+        ss << ", which was written earlier by ";
+        if (usage_info.command == command) {
+            ss << "another ";
+        }
+        ss << vvl::String(usage_info.command) << " command. ";
+        ss << "The existed synchronization protects ";
+        ss << FormatSyncAccesses(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
+                                 cb_context.GetSyncState().extensions, false);
+
+        ss << " but not at " << string_VkPipelineStageFlagBits2(sync_access.stage_mask) << " stage.";
+
+        return ss.str();
+    } else {
+        const auto format = "Hazard %s for %s %s, region %" PRIu32 ". Access info %s.";
+        ReportKeyValues key_values;
+
+        const std::string access_info = cb_context.FormatHazard(hazard, key_values);
+        const char* resource_parameter = is_src_buffer ? "srcBuffer" : "dstBuffer";
+        std::string message = Format(format, string_SyncHazard(hazard.Hazard()), resource_parameter,
+                                     validator_.FormatHandle(buffer).c_str(), region_index, access_info.c_str());
+        if (extra_properties_) {
+            key_values.Add(kPropertyMessageType, "BufferRegionError");
+            key_values.Add(kPropertyResourceParameter, resource_parameter);
+            AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
+            message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+        }
+        return message;
     }
-    return message;
 }
 
 std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, VkImage image, bool is_src_image, uint32_t region_index,

@@ -76,6 +76,36 @@ TEST_F(NegativeSyncVal, BufferCopy) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeSyncVal, BufferCopyWrongBarrier) {
+    TEST_DESCRIPTION("Buffer barrier does not specify proper dst stage/access");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Buffer buffer_a(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_b(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.buffer = buffer_b;
+    barrier.size = 256;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &barrier;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_command_buffer.Copy(buffer_a, buffer_b);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeSyncVal, BufferCopySecondary) {
     TEST_DESCRIPTION("Record buffer copy commands in secondary command buffers");
     RETURN_IF_SKIP(InitSyncVal());
@@ -5595,7 +5625,7 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage) {
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "VK_ACCESS_2_SHADER_READ_BIT accesses on VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT stage");
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "VK_ACCESS_2_SHADER_READ_BIT accesses at VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT stage");
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -5622,7 +5652,7 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage2) {
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "VK_ACCESS_2_MEMORY_READ_BIT accesses on VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT stage");
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "VK_ACCESS_2_MEMORY_READ_BIT accesses at VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT stage");
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -5649,7 +5679,7 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage3) {
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
     vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "VK_ACCESS_2_SHADER_WRITE_BIT accesses on VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT stage");
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "VK_ACCESS_2_SHADER_WRITE_BIT accesses at VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT stage");
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
