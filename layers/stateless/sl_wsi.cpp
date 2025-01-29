@@ -397,11 +397,15 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysi
                          "is VK_NULL_HANDLE and VK_GOOGLE_surfaceless_query is not enabled.");
     }
     if (pSurfaceFormats) {
-        // TODO: VUID-VkSurfaceFormat2KHR-pNext-06750 was checked here, but it says:
-        //      If the imageCompressionControlSwapchain feature is not enabled, the pNext chain must
-        //      not include an VkImageCompressionPropertiesEXT structure
-        // how can a feature be enabled on a physical device?
-        // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7138
+        if (vku::FindStructInPNextChain<VkImageCompressionPropertiesEXT>(pSurfaceFormats->pNext)) {
+            const auto &physdev_extensions = physical_device_extensions.at(physicalDevice);
+            if (!IsExtEnabled(physdev_extensions.vk_ext_image_compression_control_swapchain)) {
+                skip |= LogError("VUID-VkSurfaceFormat2KHR-pNext-06750", physicalDevice,
+                                 error_obj.location.dot(Field::pSurfaceFormats).dot(Field::pNext),
+                                 "contains a VkImageCompressionPropertiesEXT struct but VK_EXT_image_compression_control_swapchain "
+                                 "is not supported.");
+            }
+        }
     }
     return skip;
 }
