@@ -68,6 +68,9 @@ const char* unimplementable_validation[] = {
     "VUID-vkEnumerateDeviceLayerProperties-pPropertyCount-parameter",
     "VUID-vkEnumerateInstanceLayerProperties-pPropertyCount-parameter",
     "VUID-vkEnumerateInstanceExtensionProperties-pPropertyCount-parameter",
+    // These are implemented, but can't test as the loader will fail out first
+    "VUID-VkInstanceCreateInfo-ppEnabledLayerNames-parameter",
+    "VUID-VkInstanceCreateInfo-ppEnabledExtensionNames-parameter"
 
     // Caches are called between application runs so there is no way for a layer to track this information
     "VUID-VkPipelineCacheCreateInfo-initialDataSize-00768",
@@ -272,6 +275,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkPipelineViewportDepthClampControlCreateInfoEXT-pDepthClampRange-parameter",
     // These occur in stateless validation when a pointer member is optional and the length member is null
     "VUID-VkDeviceCreateInfo-pEnabledFeatures-parameter",
+    "VUID-VkInstanceCreateInfo-pApplicationInfo-parameter",
     "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-parameter",
     "VUID-VkSubpassDescription-pDepthStencilAttachment-parameter",
     "VUID-VkShaderCreateInfoEXT-pSpecializationInfo-parameter",
