@@ -292,9 +292,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         vo->extensions = device_dispatch->extensions;
     }
 
-    // Make copy to modify as some ValidationObjects will want to add extensions/features on
-    vku::safe_VkDeviceCreateInfo modified_create_info(pCreateInfo);
-
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDevice, VulkanTypedHandle(gpu, kVulkanObjectTypePhysicalDevice));
     for (const auto& vo : instance_dispatch->object_dispatch) {
@@ -304,6 +301,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
             return VK_ERROR_VALIDATION_FAILED_EXT;
         }
     }
+
+    // Make copy to modify as some ValidationObjects will want to add extensions/features on
+    // After PreCallValidate incase it is invalid
+    vku::safe_VkDeviceCreateInfo modified_create_info(pCreateInfo);
 
     RecordObject record_obj(vvl::Func::vkCreateDevice);
     for (auto& vo : instance_dispatch->object_dispatch) {

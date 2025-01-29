@@ -442,11 +442,6 @@ TEST_F(NegativeDeviceQueue, DeviceCreateInvalidParameters) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
 
-    uint32_t queue_family_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_family_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_props.data());
-
     float priority = 1.0f;
     VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
     device_queue_ci.queueFamilyIndex = 0u;
@@ -487,15 +482,9 @@ TEST_F(NegativeDeviceQueue, DeviceCreateInvalidParameters) {
     m_errorMonitor->VerifyFound();
 }
 
-//  https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9338
-TEST_F(NegativeDeviceQueue, DISABLED_DeviceCreateMissingPointers) {
+TEST_F(NegativeDeviceQueue, DeviceCreateEnabledLayerNamesPointer) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
-
-    uint32_t queue_family_count;
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, nullptr);
-    std::vector<VkQueueFamilyProperties> queue_props(queue_family_count);
-    vk::GetPhysicalDeviceQueueFamilyProperties(Gpu(), &queue_family_count, queue_props.data());
 
     float priority = 1.0f;
     VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
@@ -503,24 +492,37 @@ TEST_F(NegativeDeviceQueue, DISABLED_DeviceCreateMissingPointers) {
     device_queue_ci.queueCount = 1;
     device_queue_ci.pQueuePriorities = &priority;
 
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
-    VkPhysicalDeviceVulkan11Features features11_duplicated = vku::InitStructHelper(&features11);
+    VkDevice device;
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.queueCreateInfoCount = 1u;
+    device_ci.pQueueCreateInfos = &device_queue_ci;
+    device_ci.enabledExtensionCount = m_device_extension_names.size();
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+    device_ci.enabledLayerCount = 1u;
+    device_ci.ppEnabledLayerNames = nullptr;
+    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter");
+    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
+    m_errorMonitor->VerifyFound();
+}
 
-    VkDeviceCreateInfo device_ci = vku::InitStructHelper(&features11_duplicated);
+// Test works, but needs Loader fix in 369afe24d1351d6e03cbfc3daf1fc5f6cd103649
+// Enable once enough CI machines have loader patch
+TEST_F(NegativeDeviceQueue, DISABLED_DeviceCreateEnabledExtensionNamesPointer) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitFramework());
+
+    float priority = 1.0f;
+    VkDeviceQueueCreateInfo device_queue_ci = vku::InitStructHelper();
+    device_queue_ci.queueFamilyIndex = 0u;
+    device_queue_ci.queueCount = 1;
+    device_queue_ci.pQueuePriorities = &priority;
+
+    VkDevice device;
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
     device_ci.queueCreateInfoCount = 1u;
     device_ci.pQueueCreateInfos = &device_queue_ci;
     device_ci.enabledLayerCount = 0u;
-    device_ci.enabledExtensionCount = m_device_extension_names.size();
-    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
-
-    VkDevice device;
-
-    /*device_ci.enabledLayerCount = 1u;
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter");
-    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
-    m_errorMonitor->VerifyFound();*/
-
-    device_ci.enabledLayerCount = 0u;
+    device_ci.ppEnabledLayerNames = nullptr;
     device_ci.enabledExtensionCount = 1u;
     device_ci.ppEnabledExtensionNames = nullptr;
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter");
