@@ -228,6 +228,8 @@ class GpuShaderInstrumentor : public vvl::Device {
     vvl::concurrent_unordered_map<uint32_t, InstrumentedShader> instrumented_shaders_map_;
     std::vector<VkDescriptorSetLayoutBinding> instrumentation_bindings_;
 
+    std::vector<spirv::InternalOnlyDebugPrintf> intenral_only_debug_printf_;
+
   private:
     void Cleanup();
     // These are objects used to inject our descriptor set into the command buffer

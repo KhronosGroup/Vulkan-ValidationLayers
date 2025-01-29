@@ -486,6 +486,17 @@ bool DebugPrintfPass::Instrument() {
                 if (!Validate(*(function.get()))) continue;  // if not valid, don't attempt to instrument it
                 instrumentations_count_++;
 
+                // Save the OpString here so we can use it later
+                if (function->instrumentation_added_) {
+                    for (const auto& debug_inst : module_.debug_source_) {
+                        const uint32_t string_id = (*inst_it)->Word(5);
+                        if (debug_inst->Opcode() == spv::OpString && debug_inst->ResultId() == string_id) {
+                            intenral_only_debug_printf_.emplace_back(
+                                InternalOnlyDebugPrintf{module_.shader_id_, string_id, debug_inst->GetAsString(2)});
+                        }
+                    }
+                }
+
                 CreateFunctionCall(block_it, &inst_it);
 
                 // remove the OpExtInst incase they don't support VK_KHR_non_semantic_info
