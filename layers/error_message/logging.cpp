@@ -607,9 +607,7 @@ bool DebugReport::LogMsg(VkFlags msg_flags, const LogObjectList &objects, const 
         for (uint32_t i = 0; i < num_vuids; i++) {
             if (0 == strncmp(vuid_text.data(), vuid_spec_text[i].vuid, vuid_text.size())) {
                 spec_text = vuid_spec_text[i].spec_text;
-#ifndef ANNOTATED_SPEC_LINK
                 spec_url_section = vuid_spec_text[i].url_id;
-#endif
                 break;
             }
         }
@@ -637,9 +635,7 @@ bool DebugReport::LogMsg(VkFlags msg_flags, const LogObjectList &objects, const 
             full_message.append(spec_text);
             full_message.append(" (");
             full_message.append(spec_url_base);
-#ifndef ANNOTATED_SPEC_LINK
             full_message.append(spec_url_section);
-#endif
             full_message.append("#");  // CMake hates hashes
             full_message.append(vuid_text);
             full_message.append(")");
