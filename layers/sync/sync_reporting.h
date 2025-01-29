@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,19 @@
 
 #pragma once
 
-#include "sync/sync_commandbuffer.h"
+#include "generated/error_location_helper.h"
+#include "generated/sync_validation_types.h"
+
+namespace vvl {
+class CommandBuffer;
+class StateObject;
+class Image;
+class Queue;
+}
+class DebugReport;
+class SyncValidator;
+struct DeviceFeatures;
+struct DeviceExtensions;
 
 struct SyncNodeFormatter {
     const DebugReport *debug_report;
@@ -43,6 +55,18 @@ struct ReportKeyValues {
 
     std::string GetExtraPropertiesSection(bool pretty_print) const;
 };
+
+struct ReportUsageInfo {
+    vvl::Func command = vvl::Func::Empty;
+};
+
+std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
+    const SyncAccessFlags &sync_accesses, VkQueueFlags allowed_queue_flags, const DeviceFeatures &features,
+    const DeviceExtensions &device_extensions);
+
+std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQueueFlags allowed_queue_flags,
+                               const DeviceFeatures &features, const DeviceExtensions &device_extensions,
+                               bool format_as_extra_property);
 
 inline constexpr const char *kPropertyMessageType = "message_type";
 inline constexpr const char *kPropertyAccess = "access";

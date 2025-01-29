@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #pragma once
 
 #include "sync/sync_renderpass.h"
+#include "sync/sync_reporting.h"
 #include "state_tracker/cmd_buffer_state.h"
 
 struct ReportKeyValues;
@@ -33,6 +34,7 @@ class AlternateResourceUsage {
         using Record = std::unique_ptr<RecordBase>;
         virtual Record MakeRecord() const = 0;
         virtual std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const = 0;
+        virtual vvl::Func GetCommand() const = 0;
         virtual ~RecordBase() {}
     };
 
@@ -46,6 +48,7 @@ class AlternateResourceUsage {
     FormatterState Formatter(const SyncValidator &sync_state) const { return FormatterState(sync_state, *this); };
 
     std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const { return record_->Format(out, sync_state); };
+    vvl::Func GetCommand() const { return record_->GetCommand(); }
     AlternateResourceUsage() = default;
     AlternateResourceUsage(const RecordBase &record) : record_(record.MakeRecord()) {}
     AlternateResourceUsage(const AlternateResourceUsage &other) : record_() {
@@ -214,7 +217,6 @@ class CommandExecutionContext {
     virtual void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const = 0;
 
     std::string FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const;
-    std::string FormatHazard(const HazardResult &hazard) const;
     bool ValidForSyncOps() const;
     const SyncValidator &GetSyncState() const { return sync_state_; }
 
@@ -263,6 +265,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     void Reset();
 
+    ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const;
     std::string FormatUsage(ResourceUsageTagEx tag_ex) const override;
     void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const override;
     std::string FormatUsage(const char *usage_string,
@@ -303,6 +306,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context);
     void ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
+    // TODO: what about using queue_flags directly from base class?
     VkQueueFlags GetQueueFlags() const { return cb_state_ ? cb_state_->GetQueueFlags() : 0; }
 
     ExecutionType Type() const override { return kExecuted; }

@@ -143,7 +143,7 @@ static std::string FormatHandleRecord(const HandleRecord::FormatterState &format
     return out.str();
 }
 
-std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState &formatter) {
+static std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState &formatter) {
     std::stringstream out;
     const ResourceUsageRecord &record = formatter.record;
     if (record.alt_usage) {
@@ -235,11 +235,11 @@ static SyncAccessFlags FilterSyncAccessesByAllowedVkAccesses(const SyncAccessFla
     return filtered_accesses;
 }
 
-static std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQueueFlags allowed_queue_flags,
-                                      const DeviceFeatures &features, const DeviceExtensions &device_extensions,
-                                      bool format_as_extra_property) {
+std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
+    const SyncAccessFlags &sync_accesses, VkQueueFlags allowed_queue_flags, const DeviceFeatures &features,
+    const DeviceExtensions &device_extensions) {
     if (sync_accesses.none()) {
-        return "0";
+        return {};
     }
 
     const VkPipelineStageFlags2 disabled_stages = sync_utils::DisabledPipelineStages(features, device_extensions);
@@ -281,7 +281,7 @@ static std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQu
     }
 
     // Replace sequences of stages/accesses with more compact equivalent meta values where possible
-    std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> report_accesses;
+    std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> result;
     VkPipelineStageFlags2 stages_with_all_supported_accesses = 0;
     VkAccessFlags2 all_accesses = 0;  // accesses for the above stages
 
@@ -312,20 +312,29 @@ static std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQu
 
         sync_utils::ReplaceExpandBitsWithMetaMask(stages, all_transfer_expand_bits, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
         sync_utils::ReplaceExpandBitsWithMetaMask(accesses, kShaderReadExpandBits, VK_ACCESS_2_SHADER_READ_BIT);
-        report_accesses.emplace_back(stages, accesses);
+        result.emplace_back(stages, accesses);
     }
     if (stages_with_all_supported_accesses) {
         if (IsSingleBitSet(stages_with_all_supported_accesses) && GetBitSetCount(all_accesses) <= 2) {
             // For simple configurations (1 stage and at most 2 accesses) don't use ALL accesses shortcut
-            report_accesses.emplace_back(stages_with_all_supported_accesses, all_accesses);
+            result.emplace_back(stages_with_all_supported_accesses, all_accesses);
         } else {
             sync_utils::ReplaceExpandBitsWithMetaMask(stages_with_all_supported_accesses, all_transfer_expand_bits,
                                                       VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
-            report_accesses.emplace_back(stages_with_all_supported_accesses, sync_utils::kAllAccesses);
+            result.emplace_back(stages_with_all_supported_accesses, sync_utils::kAllAccesses);
         }
     }
+    return result;
+}
 
-    // Create string with available accesses
+std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQueueFlags allowed_queue_flags,
+                               const DeviceFeatures &features, const DeviceExtensions &device_extensions,
+                               bool format_as_extra_property) {
+    const auto report_accesses =
+        ConvertSyncAccessesToCompactVkForm(sync_accesses, allowed_queue_flags, features, device_extensions);
+    if (report_accesses.empty()) {
+        return "0";
+    }
     std::stringstream out;
     bool first = true;
     for (const auto &[stages, accesses] : report_accesses) {
@@ -340,9 +349,9 @@ static std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQu
             }
         } else {
             if (accesses == sync_utils::kAllAccesses) {
-                out << "all accesses on " << string_VkPipelineStageFlags2(stages) << " stage";
+                out << "all accesses at " << string_VkPipelineStageFlags2(stages) << " stage";
             } else {
-                out << string_VkAccessFlags2(accesses) << " accesses on " << string_VkPipelineStageFlags2(stages) << " stage";
+                out << string_VkAccessFlags2(accesses) << " accesses at " << string_VkPipelineStageFlags2(stages) << " stage";
             }
         }
         first = false;
@@ -403,9 +412,15 @@ std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard, Re
     return out.str();
 }
 
-std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard) const {
-    ReportKeyValues key_values;
-    return FormatHazard(hazard, key_values);
+ReportUsageInfo CommandBufferAccessContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex) const {
+    const ResourceUsageRecord &record = (*access_log_)[tag_ex.tag];
+    ReportUsageInfo info;
+    if (record.alt_usage) {
+        info.command = record.alt_usage.GetCommand();
+    } else {
+        info.command = record.command;
+    }
+    return info;
 }
 
 std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex) const {

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -265,6 +265,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
         ~PresentResourceRecord() override {}
         PresentResourceRecord(const PresentedImageRecord &presented) : presented_(presented) {}
         std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const override;
+        vvl::Func GetCommand() const override { return vvl::Func::vkQueuePresentKHR; }
 
       private:
         PresentedImageRecord presented_;
@@ -277,6 +278,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
         AcquireResourceRecord(const PresentedImageRecord &presented, ResourceUsageTag tag, vvl::Func command)
             : presented_(presented), acquire_tag_(tag), command_(command) {}
         std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const override;
+        vvl::Func GetCommand() const override { return command_; }
 
       private:
         PresentedImageRecord presented_;
