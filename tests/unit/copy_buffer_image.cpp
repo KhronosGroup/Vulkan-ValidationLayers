@@ -3404,3 +3404,77 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
 
     command_buffer.End();
 }
+
+TEST_F(NegativeCopyBufferImage, BufferCopy) {
+    RETURN_IF_SKIP(Init());
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 32u;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    vkt::Buffer src_buffer_no_mem(*m_device, buffer_ci, vkt::no_mem);
+    vkt::Buffer buffer(*m_device, 32u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer dst_buffer(*m_device, 32u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferCopy region;
+    region.srcOffset = 0u;
+    region.dstOffset = 0u;
+    region.size = 32u;
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-srcBuffer-00119");
+    vk::CmdCopyBuffer(m_command_buffer.handle(), src_buffer_no_mem.handle(), buffer.handle(), 1u, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-dstBuffer-00120");
+    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer.handle(), dst_buffer.handle(), 1u, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, ImageCopyMissingSrcFormatFeature) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkFormatProperties formatProps;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(Gpu(), format, &formatProps);
+    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), format, formatProps);
+
+    VkImageFormatProperties img_prop;
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(
+                          m_device->Physical().handle(), format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, 0u, &img_prop)) {
+        GTEST_SKIP() << "Format not supported";
+    }
+
+    m_command_buffer.Begin();
+
+    vkt::Image src_image(*m_device, 32u, 32u, 1u, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    vkt::Image dst_image(*m_device, 32u, 32u, 1u, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageCopy region;
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.srcOffset = {0, 0, 0};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.dstOffset = {0, 0, 0};
+    region.extent = {32u, 32u, 1u};
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01995");
+    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1u, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
