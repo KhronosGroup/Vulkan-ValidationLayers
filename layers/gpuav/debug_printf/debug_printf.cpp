@@ -219,7 +219,19 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         ::spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
 
         // Search through the shader source for the printf format string for this invocation
-        const std::string format_string = FindFormatString(instructions, debug_record->format_string_id);
+        std::string format_string = FindFormatString(instructions, debug_record->format_string_id);
+
+        if (format_string.empty()) {
+            // We have plumbed the OpString from the instrumented shader
+            for (auto debug_instrumented_info : gpuav.intenral_only_debug_printf_) {
+                if ((debug_instrumented_info.unique_shader_id == debug_record->shader_id) &&
+                    (debug_record->format_string_id == debug_instrumented_info.op_string_id)) {
+                    format_string = debug_instrumented_info.op_string_text;
+                    break;
+                }
+            }
+        }
+
         // Break the format string into strings with 1 or 0 value
         auto format_substrings = ParseFormatString(format_string);
         void *current_value = static_cast<void *>(&debug_record->values);
