@@ -27,6 +27,7 @@
 #include "chassis/chassis_modification_state.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
 #include "utils/vk_layer_utils.h"
+#include "utils/shader_utils.h"
 #include "sync/sync_utils.h"
 #include "state_tracker/pipeline_state.h"
 #include "error_message/spirv_logging.h"
@@ -47,7 +48,6 @@
 #include "gpuav/spirv/vertex_attribute_fetch_oob.h"
 
 #include <cassert>
-#include <fstream>
 #include <string>
 
 namespace gpuav {
@@ -1153,9 +1153,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {
         std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
-        std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
-        debug_file.write(reinterpret_cast<const char *>(input_spirv.data()),
-                         static_cast<std::streamsize>(input_spirv.size() * sizeof(uint32_t)));
+        DumpSpirvToFile(file_name, reinterpret_cast<const char *>(input_spirv.data()), input_spirv.size() * sizeof(uint32_t));
     }
 
     spirv::Settings module_settings{};
@@ -1233,9 +1231,8 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {
         std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_after.spv";
-        std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
-        debug_file.write(reinterpret_cast<char *>(out_instrumented_spirv.data()),
-                         static_cast<std::streamsize>(out_instrumented_spirv.size() * sizeof(uint32_t)));
+        DumpSpirvToFile(file_name, reinterpret_cast<const char *>(out_instrumented_spirv.data()),
+                        out_instrumented_spirv.size() * sizeof(uint32_t));
     }
 
     spv_target_env target_env = PickSpirvEnv(api_version, IsExtEnabled(extensions.vk_khr_spirv_1_4));

@@ -26,6 +26,8 @@
 
 #include "generated/spirv_tools_commit_id.h"
 
+#include <fstream>
+
 void ValidationCache::GetUUID(uint8_t *uuid) {
     const char *sha1_str = SPIRV_TOOLS_COMMIT_ID;
     // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of
@@ -182,4 +184,10 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
     if (out_hash) {
         *out_hash = hash_util::ShaderHash(&settings, sizeof(Settings));
     }
+}
+
+// This is used to help dump SPIR-V while debugging intermediate phases of any altercations to the SPIR-V
+void DumpSpirvToFile(std::string file_name, const char *spirv_data, size_t spirv_size) {
+    std::ofstream debug_file(file_name, std::ios::out | std::ios::binary);
+    debug_file.write(spirv_data, spirv_size);
 }
