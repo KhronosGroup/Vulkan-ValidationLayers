@@ -3698,14 +3698,16 @@ TEST_F(NegativeWsi, SwapchainCreateMissingMaintenanc1Feature) {
     m_errorMonitor->VerifyFound();
 }
 
-// TODO: https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7138
-TEST_F(NegativeWsi, DISABLED_ImageCompressionPropertiesSwapchainWithoutFeature) {
+TEST_F(NegativeWsi, ImageCompressionPropertiesSwapchainWithoutExtension) {
     TEST_DESCRIPTION("Use image compression control swapchain pNext without feature enabled");
 
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
+    if (DeviceExtensionSupported(Gpu(), nullptr, VK_EXT_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_EXT_image_compression_control_swapchain is supported";
+    }
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
