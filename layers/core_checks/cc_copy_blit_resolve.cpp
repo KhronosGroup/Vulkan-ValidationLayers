@@ -3370,19 +3370,21 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
             }
         } else if (enabled_features.maintenance8) {
             if (src_type == VK_IMAGE_TYPE_3D) {
-                if (src_subresource.baseArrayLayer != 0 || src_subresource.layerCount != 1) {
+                if (src_subresource.baseArrayLayer != 0 || src_subresource.layerCount != 1 || dst_subresource.layerCount != 1) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10207" : "VUID-vkCmdBlitImage-maintenance8-10207";
                     skip |= LogError(vuid, all_objlist, src_subresource_loc,
-                                     "(baseArrayLayer = %" PRIu32 ", layerCount = %" PRIu32 ") but srcImage is VK_IMAGE_TYPE_3D",
-                                     src_subresource.baseArrayLayer, src_subresource.layerCount);
+                                     "(src baseArrayLayer = %" PRIu32 ",  src layerCount = %" PRIu32 ", dst layerCount = %" PRIu32
+                                     ") but srcImage is VK_IMAGE_TYPE_3D",
+                                     src_subresource.baseArrayLayer, src_subresource.layerCount, dst_subresource.layerCount);
                 }
             }
             if (dst_type == VK_IMAGE_TYPE_3D) {
-                if (dst_subresource.baseArrayLayer != 0 || dst_subresource.layerCount != 1) {
+                if (dst_subresource.baseArrayLayer != 0 || dst_subresource.layerCount != 1 || src_subresource.layerCount != 1) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10208" : "VUID-vkCmdBlitImage-maintenance8-10208";
                     skip |= LogError(vuid, all_objlist, dst_subresource_loc,
-                                     "(baseArrayLayer = %" PRIu32 ", layerCount = %" PRIu32 ") but dstImage is VK_IMAGE_TYPE_3D",
-                                     src_subresource.baseArrayLayer, src_subresource.layerCount);
+                                     "(dst baseArrayLayer = %" PRIu32 ", dst layerCount = %" PRIu32 ", src layerCount = %" PRIu32
+                                     ") but dstImage is VK_IMAGE_TYPE_3D",
+                                     dst_subresource.baseArrayLayer, dst_subresource.layerCount, src_subresource.layerCount);
                 }
             }
         }
