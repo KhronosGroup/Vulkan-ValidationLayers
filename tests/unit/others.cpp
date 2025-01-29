@@ -178,13 +178,9 @@ TEST_F(VkLayerTest, SpecLinksImplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     RETURN_IF_SKIP(Init());
 
-    std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
-    std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
-    std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
-    // keep VUID seperate otherwise vk_validation_stats.py will get confused
-    std::string spec_version = "doc/view/" + major_version + "." + minor_version + "." + patch_version + ".0/windows/1." +
-                               minor_version + "-extensions/vkspec.html#" +
-                               std::string("VUID-vkGetPhysicalDeviceFeatures-pFeatures-parameter");
+    std::string spec_url_base = ANNOTATED_SPEC_LINK;
+    std::string spec_version =
+        spec_url_base + "chapters/features.html#" + std::string("VUID-vkGetPhysicalDeviceFeatures-pFeatures-parameter");
 
     m_errorMonitor->SetDesiredError(spec_version.c_str());
     vk::GetPhysicalDeviceFeatures(Gpu(), nullptr);
@@ -195,12 +191,8 @@ TEST_F(VkLayerTest, SpecLinksExplicit) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
     RETURN_IF_SKIP(Init());
 
-    std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
-    std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
-    std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
-    // keep VUID seperate otherwise vk_validation_stats.py will get confused
-    std::string spec_version = "doc/view/" + major_version + "." + minor_version + "." + patch_version + ".0/windows/1." +
-                               minor_version + "-extensions/vkspec.html#" + std::string("VUID-VkBufferCreateInfo-size-00912");
+    std::string spec_url_base = ANNOTATED_SPEC_LINK;
+    std::string spec_version = spec_url_base + "chapters/resources.html#" + std::string("VUID-VkBufferCreateInfo-size-00912");
 
     VkBufferCreateInfo info = vku::InitStructHelper();
     info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
