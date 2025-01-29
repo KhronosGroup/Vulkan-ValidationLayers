@@ -208,6 +208,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/enum_flag_bits.h
     ${API_TYPE}/generated/dispatch_vector.cpp
     ${API_TYPE}/generated/dispatch_object.cpp
+    ${API_TYPE}/generated/validation_object_device_methods.h
+    ${API_TYPE}/generated/validation_object_instance_methods.h
     ${API_TYPE}/generated/validation_object.cpp
     ${API_TYPE}/generated/object_tracker.cpp
     ${API_TYPE}/generated/object_tracker_device_methods.h

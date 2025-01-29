@@ -917,7 +917,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
 
                 # Do not generate validation code for the function's dispatchable parameter (the first one).
                 # Validation of such parameters is always successful based on the model of how the chassis
-                # dispactches the calls to ValidationObject. If invalid handle is used it will cause
+                # dispactches the calls to vvl::base::Device. If invalid handle is used it will cause
                 # crash/corruption on the chassis level (in GetDispatchKey or later). And if correct handle
                 # is passed, then due to the mapping done by GetDispatchKey() the handle will belong to the
                 # retrieved validation object, which guarantees positive result of the parenting test.

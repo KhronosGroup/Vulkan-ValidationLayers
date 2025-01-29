@@ -24,16 +24,16 @@
 // QueueSubmit (it will validate in submission order). This file provides support for submit validation
 // where ordering is important.
 
-class ValidationObject;
-
 namespace vvl {
 struct QueueSubmission;
 }  // namespace vvl
 
+class Logger;
+
 // Performs validationn when QueueSubmision is ready to retire.
 struct QueueSubmissionValidator {
-    const ValidationObject &error_logger;
+    const Logger &error_logger;
 
-    QueueSubmissionValidator(const ValidationObject &error_logger) : error_logger(error_logger) {}
+    QueueSubmissionValidator(const Logger &error_logger) : error_logger(error_logger) {}
     void Validate(const vvl::QueueSubmission& submission) const;
 };

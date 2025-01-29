@@ -189,7 +189,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateInstance, VulkanTypedHandle());
     for (const auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->ReadLock();
         skip |= vo->PreCallValidateCreateInstance(pCreateInfo, pAllocator, pInstance, error_obj);
         if (skip) {
             return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -198,7 +197,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
 
     RecordObject record_obj(vvl::Func::vkCreateInstance);
     for (auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PreCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, record_obj);
     }
 
@@ -221,7 +219,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     vvl::dispatch::SetData(*pInstance, std::move(instance_dispatch));
 
     for (auto& vo : id->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, record_obj);
     }
 
@@ -238,13 +235,11 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     ErrorObject error_obj(vvl::Func::vkDestroyInstance, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
 
     for (const auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->ReadLock();
         vo->PreCallValidateDestroyInstance(instance, pAllocator, error_obj);
     }
 
     RecordObject record_obj(vvl::Func::vkDestroyInstance);
     for (auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
     }
 
@@ -255,7 +250,6 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
 
     VVL_TracyCZone(tracy_zone_postcall, true);
     for (auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PostCallRecordDestroyInstance(instance, pAllocator, record_obj);
     }
 
@@ -295,7 +289,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDevice, VulkanTypedHandle(gpu, kVulkanObjectTypePhysicalDevice));
     for (const auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->ReadLock();
         skip |= vo->PreCallValidateCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, error_obj);
         if (skip) {
             return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -308,7 +301,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     RecordObject record_obj(vvl::Func::vkCreateDevice);
     for (auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, record_obj, &modified_create_info);
     }
 
@@ -339,7 +331,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     vvl::dispatch::SetData(*pDevice, std::move(device_dispatch));
     for (auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         // Send down modified create info as we want to mark enabled features that we sent down on behalf of the app
         vo->PostCallRecordCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice,
                                        record_obj);
@@ -357,19 +348,16 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     auto device_dispatch = vvl::dispatch::GetData(device);
     ErrorObject error_obj(vvl::Func::vkDestroyDevice, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const auto& vo : device_dispatch->object_dispatch) {
-        auto lock = vo->ReadLock();
         vo->PreCallValidateDestroyDevice(device, pAllocator, error_obj);
     }
 
     RecordObject record_obj(vvl::Func::vkDestroyDevice);
     for (auto& vo : device_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
 
     // Before device is destroyed, allow aborted objects to clean up
     for (auto& vo : device_dispatch->aborted_object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
 
@@ -380,7 +368,6 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     device_dispatch->DestroyDevice(device, pAllocator);
 
     for (auto& vo : device_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PostCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
 
@@ -959,14 +946,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
     }
 
     for (const auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->ReadLock();
         skip |= vo->PreCallValidateGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
     RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceToolPropertiesEXT);
     for (auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PreCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
 
@@ -980,7 +965,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
     (*pToolCount)++;
 
     for (auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PostCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
     return result;
@@ -1002,14 +986,12 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice 
     }
 
     for (const auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->ReadLock();
         skip |= vo->PreCallValidateGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
     RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceToolProperties);
     for (auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PreCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
 
@@ -1023,7 +1005,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice 
     (*pToolCount)++;
 
     for (auto& vo : instance_dispatch->object_dispatch) {
-        auto lock = vo->WriteLock();
         vo->PostCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
     return result;

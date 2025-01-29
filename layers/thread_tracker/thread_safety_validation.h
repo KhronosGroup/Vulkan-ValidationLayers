@@ -261,18 +261,13 @@ class Counter {
     void CreateObject(type object) { c_##type.CreateObject(object); }                               \
     void DestroyObject(type object) { c_##type.DestroyObject(object); }
 
-class Instance : public ValidationObject {
-    using BaseClass = ValidationObject;
+class Instance : public vvl::base::Instance {
+    using BaseClass = vvl::base::Instance;
 
   public:
     std::shared_mutex thread_safety_lock;
 
     Instance(vvl::dispatch::Instance *dispatch) : BaseClass(dispatch, LayerObjectTypeThreading) { InitCounters(); }
-
-    // Override chassis read/write locks for this validation object
-    // This override takes a deferred lock. i.e. it is not acquired.
-    ReadLockGuard ReadLock() const override;
-    WriteLockGuard WriteLock() override;
 
     void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                   VkDisplayPlanePropertiesKHR *pProperties,
@@ -318,8 +313,8 @@ class Instance : public ValidationObject {
     void StartReadObjectParentInstance(type object, const Location &loc) { parent_instance->StartReadObject(object, loc); }     \
     void FinishReadObjectParentInstance(type object, const Location &loc) { parent_instance->FinishReadObject(object, loc); }
 
-class Device : public ValidationObject {
-    using BaseClass = ValidationObject;
+class Device : public vvl::base::Device {
+    using BaseClass = vvl::base::Device;
 
   public:
     std::shared_mutex thread_safety_lock;
@@ -364,7 +359,7 @@ class Device : public ValidationObject {
     Instance *parent_instance;
 
     Device(vvl::dispatch::Device *dev, Instance *instance_vo)
-        : BaseClass(dev, LayerObjectTypeThreading), parent_instance(instance_vo) {
+        : BaseClass(dev, instance_vo, LayerObjectTypeThreading), parent_instance(instance_vo) {
         c_VkCommandPoolContents.Init(kVulkanObjectTypeCommandPool, this);
         InitCounters();
     }

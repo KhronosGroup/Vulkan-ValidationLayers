@@ -141,9 +141,9 @@ public:
     object_map_type object_map[kVulkanObjectTypeMax + 1];
 };
 
-class Instance : public ValidationObject {
+class Instance : public vvl::base::Instance {
   public:
-    using BaseClass = ValidationObject;
+    using BaseClass = vvl::base::Instance;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
@@ -185,8 +185,8 @@ class Instance : public ValidationObject {
 #include "generated/object_tracker_instance_methods.h"
 };
 
-class Device : public ValidationObject {
-    using BaseClass = ValidationObject;
+class Device : public vvl::base::Device {
+    using BaseClass = vvl::base::Device;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;

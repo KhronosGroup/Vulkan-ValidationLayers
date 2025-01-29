@@ -204,7 +204,11 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'generator' : ApiVersionOutputGenerator,
             'genCombined': True,
         },
-        'validation_object_methods.h' : {
+        'validation_object_instance_methods.h' : {
+            'generator' : LayerChassisOutputGenerator,
+            'genCombined': True,
+        },
+        'validation_object_device_methods.h' : {
             'generator' : LayerChassisOutputGenerator,
             'genCombined': True,
         },

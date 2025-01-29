@@ -136,15 +136,6 @@ Instance::~Instance() {
     delete debug_report;
 }
 
-ValidationObject *Instance::GetValidationObject(LayerObjectTypeId object_type) const {
-    for (auto &validation_object : object_dispatch) {
-        if (validation_object->container_type == object_type) {
-            return validation_object.get();
-        }
-    }
-    return nullptr;
-}
-
 VkResult Instance::GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                          VkDisplayPropertiesKHR *pProperties) {
     VkResult result = instance_dispatch_table.GetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
@@ -266,6 +257,15 @@ VkResult Instance::GetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevi
     return result;
 }
 
+base::Instance *Instance::GetValidationObject(LayerObjectTypeId object_type) const {
+    for (auto &validation_object : object_dispatch) {
+        if (validation_object->container_type == object_type) {
+            return validation_object.get();
+        }
+    }
+    return nullptr;
+}
+
 Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo)
     : HandleWrapper(instance->debug_report),
       settings(instance->settings),
@@ -290,7 +290,7 @@ Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInf
 
 Device::~Device() {}
 
-ValidationObject *Device::GetValidationObject(LayerObjectTypeId object_type) const {
+base::Device *Device::GetValidationObject(LayerObjectTypeId object_type) const {
     for (auto &validation_object : object_dispatch) {
         if (validation_object->container_type == object_type) {
             return validation_object.get();

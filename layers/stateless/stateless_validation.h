@@ -307,8 +307,8 @@ class Context {
     std::string DescribeFlagBitmaskValue64(vvl::FlagBitmask flag_bitmask, VkFlags64 value) const;
 };
 
-class Instance : public ValidationObject {
-    using BaseClass = ValidationObject;
+class Instance : public vvl::base::Instance {
+    using BaseClass = vvl::base::Instance;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
@@ -316,7 +316,7 @@ class Instance : public ValidationObject {
   public:
     vvl::unordered_map<VkPhysicalDevice, VkPhysicalDeviceProperties *> physical_device_properties_map;
     vvl::unordered_map<VkPhysicalDevice, DeviceExtensions> physical_device_extensions{};
-    // We have a copy of this in Stateless and ValidationStateTracker, could move the ValidationObject, but we don't have a way to
+    // We have a copy of this in Stateless and vvl::Instance, could move the base::Instance, but we don't have a way to
 
     Instance(vvl::dispatch::Instance *dispatch) : BaseClass(dispatch, LayerObjectTypeParameterValidation) {}
 
@@ -444,21 +444,21 @@ class Instance : public ValidationObject {
 #include "generated/stateless_instance_methods.h"
 };
 
-class Device : public ValidationObject {
-    using BaseClass = ValidationObject;
+class Device : public vvl::base::Device {
+    using BaseClass = vvl::base::Device;
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
 
   public:
     Device(vvl::dispatch::Device *dev, Instance *instance_vo)
-        : BaseClass(dev, LayerObjectTypeParameterValidation), instance(instance_vo) {}
+        : BaseClass(dev, instance_vo, LayerObjectTypeParameterValidation), instance(instance_vo) {}
     ~Device() {}
 
     Instance *instance;
     VkPhysicalDeviceLimits device_limits = {};
-    // We have a copy of this in Stateless and ValidationStateTracker, could move the ValidationDevice, but we don't have a way to
-    // set it at the ValidationObject level
+    // We have a copy of this in Stateless and the state tracker, could move the base::Device,
+    // but we don't have a way to set it at that level
     DeviceFeatures enabled_features = {};
 
     // This was a special case where it was decided to use the extension version for validation

@@ -519,7 +519,8 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2(
     VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
     bool skip = false;
-    skip |= ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(pImageFormatInfo, pImageFormatProperties, error_obj);
+    skip |=
+        ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(physicalDevice, pImageFormatInfo, pImageFormatProperties, error_obj);
     skip |= ValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties, error_obj);
     return skip;
 }

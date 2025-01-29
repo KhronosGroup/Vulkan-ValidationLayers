@@ -170,9 +170,9 @@ VALSTATETRACK_STATE_OBJECT(VkIndirectExecutionSetEXT, vvl::IndirectExecutionSet)
 VALSTATETRACK_STATE_OBJECT(VkIndirectCommandsLayoutEXT, vvl::IndirectCommandsLayout)
 
 namespace vvl {
-class Instance : public ValidationObject {
+class Instance : public vvl::base::Instance {
     using Func = vvl::Func;
-    using BaseClass = ValidationObject;
+    using BaseClass = vvl::base::Instance;
 
   public:
     Instance(vvl::dispatch::Instance* dispatch, LayerObjectTypeId type) : BaseClass(dispatch, type) {}
@@ -466,9 +466,9 @@ class Instance : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, vvl::PhysicalDevice, physical_device_map_)
 };
 
-class Device : public ValidationObject {
+class Device : public vvl::base::Device {
     using Func = vvl::Func;
-    using BaseClass = ValidationObject;
+    using BaseClass = vvl::base::Device;
 
   private:
     // NOTE: The Dummy argument allows for *partial* specialization at class scope, as full specialization at class scope
@@ -496,7 +496,7 @@ class Device : public ValidationObject {
 
   public:
     Device(vvl::dispatch::Device* dev, Instance* instance, LayerObjectTypeId type)
-        : BaseClass(dev, type), instance_state(instance) {
+        : BaseClass(dev, instance, type), instance_state(instance) {
         physical_device_state = instance_state->Get<vvl::PhysicalDevice>(physical_device).get();
     }
     ~Device();

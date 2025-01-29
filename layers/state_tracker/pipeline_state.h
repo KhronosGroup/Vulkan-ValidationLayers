@@ -447,8 +447,8 @@ class Pipeline : public StateObject {
                IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) && IsDynamic(CB_DYNAMIC_STATE_BLEND_CONSTANTS);
     }
 
-    template <typename ValidationObject, typename CreateInfo>
-    static bool EnablesRasterizationStates(const ValidationObject &vo, const CreateInfo &create_info) {
+    template <typename CreateInfo>
+    static bool EnablesRasterizationStates(const vvl::Device &vo, const CreateInfo &create_info) {
         // If this is an executable pipeline created from linking graphics libraries, we need to find the pre-raster library to
         // check if rasterization is enabled
         auto link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext);
@@ -481,7 +481,7 @@ class Pipeline : public StateObject {
     }
 
     template <typename CreateInfo>
-    static bool ContainsSubState(const ValidationObject *vo, const CreateInfo &create_info,
+    static bool ContainsSubState(const vvl::Device *vo, const CreateInfo &create_info,
                                  VkGraphicsPipelineLibraryFlagsEXT sub_state) {
         constexpr VkGraphicsPipelineLibraryFlagsEXT null_lib = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
         VkGraphicsPipelineLibraryFlagsEXT current_state = null_lib;

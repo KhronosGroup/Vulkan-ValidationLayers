@@ -41,7 +41,7 @@ class CommandBuffer : public vvl::CommandBuffer {
 class Queue : public vvl::Queue {
   public:
     Queue(vvl::Device& dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
-          const VkQueueFamilyProperties& queue_family_properties, const ValidationObject& error_logger);
+          const VkQueueFamilyProperties& queue_family_properties, const vvl::Device& error_logger);
 
   private:
     void Retire(vvl::QueueSubmission&) override;

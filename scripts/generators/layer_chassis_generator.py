@@ -154,8 +154,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
             ****************************************************************************/\n''')
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
-        if self.filename == 'validation_object_methods.h':
-            self.generateMethods()
+        if self.filename == 'validation_object_instance_methods.h':
+            self.generateInstanceMethods()
+        elif self.filename == 'validation_object_device_methods.h':
+            self.generateDeviceMethods()
         elif self.filename == 'validation_object.cpp':
             self.generateVOSource()
         elif self.filename == 'chassis.cpp':
@@ -165,23 +167,12 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
         self.write('// NOLINTEND') # Wrap for clang-tidy to ignore
 
-    def generateMethods(self):
+    def generateMethods(self, want_instance):
         out = []
-        out.append('''
-            // This file contains methods for class ValidationObject and it is designed to ONLY be
-            // included into validation_object.h.
-            ''')
-        out = []
-        out.append('// We make many internal dispatch calls to extended query functions which can depend on the API version\n')
-        for extended_query_ext in self.extended_query_exts:
-            for command in self.vk.extensions[extended_query_ext].commands:
-                parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
-                out.append(f'{command.returnType} Dispatch{command.alias[2:]}Helper({parameters}) const;\n')
-
-        out.append('// Pre/post hook point declarations\n')
-
         guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.name not in self.ignore_functions and 'ValidationCache' not in x.name]:
+            if command.instance != want_instance:
+                continue
             parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
             parameters = parameters.replace('\n', '')
             parameters = ' '.join(parameters.split()) # remove duplicate whitespace
@@ -193,6 +184,33 @@ class LayerChassisOutputGenerator(BaseGenerator):
         out.extend(guard_helper.add_guard(None))
         self.write("".join(out))
 
+    def generateInstanceMethods(self):
+        out = []
+        out.append('''
+            // This file contains methods for class vvl::base::Instance and it is designed to ONLY be
+            // included into validation_object.h.
+            ''')
+        out.append('// We make many internal dispatch calls to extended query functions which can depend on the API version\n')
+        for extended_query_ext in self.extended_query_exts:
+            for command in self.vk.extensions[extended_query_ext].commands:
+                parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
+                out.append(f'{command.returnType} Dispatch{command.alias[2:]}Helper({parameters}) const;\n')
+
+        out.append('// Pre/post hook point declarations\n')
+        self.write("".join(out))
+
+        self.generateMethods(True)
+
+    def generateDeviceMethods(self):
+        out = []
+        out.append('''
+            // This file contains methods for class vvl::base::Device and it is designed to ONLY be
+            // included into validation_object.h.
+            ''')
+        self.write("".join(out))
+
+        self.generateMethods(False)
+
     def generateVOSource(self):
         out = []
         out.append('''
@@ -202,7 +220,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             #include "chassis/validation_object.h"
 
-            thread_local WriteLockGuard* ValidationObject::record_guard{};
+            namespace vvl::base {
+            thread_local WriteLockGuard* Device::record_guard{};
 
             ''')
         for extended_query_ext in self.extended_query_exts:
@@ -210,7 +229,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
                 arguments = ','.join([x.name for x in command.params])
                 dispatch = 'dispatch_instance_' if command.instance else 'dispatch_device_'
-                out.append(f'''\n{command.returnType} ValidationObject::Dispatch{command.alias[2:]}Helper({parameters}) const {{
+                out.append(f'''\n{command.returnType} Instance::Dispatch{command.alias[2:]}Helper({parameters}) const {{
                     if (api_version >= VK_API_VERSION_1_1) {{
                         return {dispatch}->{command.alias[2:]}({arguments});
                     }} else {{
@@ -218,6 +237,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
                     }}
                 }}
                 ''')
+        out.append('} // namespace vvl::base\n')
         self.write("".join(out))
 
 
@@ -331,14 +351,13 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                 VVL_ZoneScopedN("PreCallValidate");
             ''')
             if not command.instance:
-                out.append(f'    for (const auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallValidate{command.name[2:]}]) {{\n')
+                out.append(f'for (const auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallValidate{command.name[2:]}]) {{\n')
+                out.append('    auto lock = vo->ReadLock();\n')
             else:
-                out.append(f'    for (const auto& vo : {dispatch}->object_dispatch) {{\n')
-            out.append(f'''
-                    auto lock = vo->ReadLock();
-                        skip |= vo->PreCallValidate{command.name[2:]}({paramsList}, error_obj);
-                        if (skip) {return_map[command.returnType]}
-                    }}\n''')
+                out.append(f'for (const auto& vo : {dispatch}->object_dispatch) {{\n')
+            out.append(f'    skip |= vo->PreCallValidate{command.name[2:]}({paramsList}, error_obj);\n')
+            out.append(f'    if (skip) {return_map[command.returnType]}\n')
+            out.append('}\n')
             out.append('}\n')
 
             # Generate pre-call state recording source code
@@ -347,13 +366,12 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                 VVL_ZoneScopedN("PreCallRecord");
             ''')
             if not command.instance:
-                out.append(f'    for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallRecord{command.name[2:]}]) {{\n')
+                out.append(f'for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallRecord{command.name[2:]}]) {{\n')
+                out.append('    auto lock = vo->WriteLock();\n')
             else:
-                out.append(f'    for (auto& vo : {dispatch}->object_dispatch) {{\n')
-            out.append(f'''
-                    auto lock = vo->WriteLock();
-                    vo->PreCallRecord{command.name[2:]}({paramsList}, record_obj);
-            }}\n''')
+                out.append(f'for (auto& vo : {dispatch}->object_dispatch) {{\n')
+            out.append(f'vo->PreCallRecord{command.name[2:]}({paramsList}, record_obj);\n')
+            out.append('    }\n')
             out.append('}\n')
 
             # Insert pre-dispatch debug utils function call
@@ -423,7 +441,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                 out.append(f'for (auto& vo : {dispatch}->object_dispatch) {{\n')
 
             # These commands perform blocking operations during PostRecord phase. We might need to
-            # release ValidationObject's lock for the period of blocking operation to avoid deadlocks.
+            # release base::Device's lock for the period of blocking operation to avoid deadlocks.
             # The released mutex can be re-acquired by the command that sets wait finish condition.
             # This functionality is needed when fine grained locking is disabled or not implemented.
             commands_with_blocking_operations = [
@@ -435,14 +453,14 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                 'vkGetSemaphoreCounterValue',
                 'vkGetSemaphoreCounterValueKHR',
             ]
+            if not command.instance:
+                if command.name not in commands_with_blocking_operations:
+                    out.append('auto lock = vo->WriteLock();\n')
+                else:
+                    out.append('vvl::base::Device::BlockingOperationGuard lock(vo);\n')
 
-            if command.name not in commands_with_blocking_operations:
-                out.append('auto lock = vo->WriteLock();\n')
-            else:
-                out.append('ValidationObject::BlockingOperationGuard lock(vo);\n')
-
-            # Because each intercept is a copy of ValidationObject, we need to update it for each
-            if command.errorCodes and 'VK_ERROR_DEVICE_LOST' in command.errorCodes:
+            # Because each intercept is a copy of vvl::base::Device, we need to update it for each
+            if not command.instance and command.errorCodes and 'VK_ERROR_DEVICE_LOST' in command.errorCodes:
                 out.append('''
                     if (result == VK_ERROR_DEVICE_LOST) {
                         vo->is_device_lost = true;

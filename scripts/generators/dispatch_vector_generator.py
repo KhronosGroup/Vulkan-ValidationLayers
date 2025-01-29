@@ -59,7 +59,7 @@ void Device::InitObjectDispatchVectors() {
 
 #define BUILD_DISPATCH_VECTOR(name) \\
     init_object_dispatch_vector(InterceptId ## name, \\
-                                typeid(&ValidationObject::name), \\
+                                typeid(&vvl::base::Device::name), \\
                                 typeid(&threadsafety::Device::name), \\
                                 typeid(&stateless::Device::name), \\
                                 typeid(&object_lifetimes::Device::name), \\

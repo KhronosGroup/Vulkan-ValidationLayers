@@ -62,7 +62,7 @@ std::shared_ptr<vvl::CommandBuffer> CoreChecks::CreateCmdBufferState(VkCommandBu
 
 core::Queue::Queue(vvl::Device& dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index,
                    VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties& queue_family_properties,
-                   const ValidationObject& error_logger)
+                   const vvl::Device& error_logger)
     : vvl::Queue(dev_data, handle, family_index, queue_index, flags, queue_family_properties),
       queue_submission_validator_(error_logger) {}
 
