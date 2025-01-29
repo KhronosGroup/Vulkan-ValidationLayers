@@ -175,6 +175,7 @@ void DescriptorClassGeneralBufferPass::PrintDebugInfo() const {
 bool DescriptorClassGeneralBufferPass::Instrument() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
+        if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             if ((*block_it)->loop_header_) {
                 continue;  // Currently can't properly handle injecting CFG logic into a loop header block
