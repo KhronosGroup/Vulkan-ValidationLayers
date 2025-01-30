@@ -120,47 +120,108 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
                                              const CommandBufferAccessContext& cb_context, const vvl::Func command) const {
     // TEMP: will be part of more general code
     const SyncAccessFlags write_barriers = hazard.State().access_state->GetWriteBarriers();
+    const VkPipelineStageFlags2 read_barriers = hazard.State().access_state->GetReadBarriers(hazard.State().prior_access_index);
     const auto vk_protected_accesses =
         ConvertSyncAccessesToCompactVkForm(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
                                            cb_context.GetSyncState().extensions);
     const auto& sync_access = syncAccessInfoByAccessIndex()[hazard.State().access_index];
+    const auto& sync_prior_access = syncAccessInfoByAccessIndex()[hazard.State().prior_access_index];
     const bool barrier_protects_access =
         std::find_if(vk_protected_accesses.begin(), vk_protected_accesses.end(), [&sync_access](const auto& protected_access) {
             return (protected_access.second & sync_access.access_mask) != 0;
         }) != vk_protected_accesses.end();
 
-    // TEMP: detect specific case to demo new direction of syncval error messages.
-    // This also will be replaced by more general implementation.
-    if (hazard.Hazard() == WRITE_AFTER_WRITE && !write_barriers.none() && barrier_protects_access) {
-        const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
-        std::stringstream ss;
-        ss << string_SyncHazard(hazard.Hazard()) << " hazard detected. ";
-        ss << vvl::String(command) << " writes to " << validator_.FormatHandle(buffer);
-        ss << ", which was written earlier by ";
-        if (usage_info.command == command) {
-            ss << "another ";
+    ReportKeyValues key_values;
+    cb_context.FormatHazard(hazard, key_values);
+    key_values.Add(kPropertyMessageType, "BufferRegionError");
+    const char* resource_parameter = is_src_buffer ? "srcBuffer" : "dstBuffer";
+    key_values.Add(kPropertyResourceParameter, resource_parameter);
+    AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
+
+    const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
+    const SyncHazard hazard_type = hazard.Hazard();
+
+    const bool missing_synchronization =
+        ((hazard_type == READ_AFTER_WRITE || hazard_type == WRITE_AFTER_WRITE) && write_barriers.none()) ||
+        ((hazard_type == WRITE_AFTER_READ) && read_barriers == VK_PIPELINE_STAGE_2_NONE);
+    const bool is_write = hazard_type == WRITE_AFTER_WRITE || hazard_type == WRITE_AFTER_READ;
+    const bool is_prior_write = hazard_type == WRITE_AFTER_WRITE || hazard_type == READ_AFTER_WRITE;
+    const char* access_type = is_write ? "write" : "read";
+    const char* prior_access_type = is_prior_write ? "write" : "read";
+
+    bool new_style = false;  // TEMP: until handle all use cases
+    std::stringstream ss;
+    ss << string_SyncHazard(hazard.Hazard()) << " hazard detected. ";
+    ss << vvl::String(command);
+    ss << (is_write ? " writes to " : " reads ");
+    ss << validator_.FormatHandle(buffer);
+    ss << ", which was previously ";
+    ss << (is_prior_write ? "written by " : "read by ");
+    if (usage_info.command == command) {
+        ss << "another ";
+    }
+    ss << vvl::String(usage_info.command) << " command";
+    if (const auto* debug_region = key_values.FindProperty("debug_region")) {
+        ss << " (debug region: " << *debug_region << ")";
+    }
+    ss << ". ";
+
+    if (missing_synchronization) {
+        ss << "No sufficient synchronization is present to ensure that a " << access_type << " (";
+        ss << string_VkAccessFlagBits2(sync_access.access_mask) << ") at the ";
+        ss << string_VkPipelineStageFlagBits2(sync_access.stage_mask) << " stage does not conflict with a prior ";
+        ss << prior_access_type << " (" << string_VkAccessFlags2(sync_prior_access.access_mask) << ") at the ";
+        if (sync_prior_access.stage_mask == sync_access.stage_mask) {
+            ss << "same";
+        } else {
+            ss << string_VkPipelineStageFlagBits2(sync_prior_access.stage_mask);
         }
-        ss << vvl::String(usage_info.command) << " command. ";
-        ss << "The existed synchronization protects ";
-        ss << FormatSyncAccesses(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
-                                 cb_context.GetSyncState().extensions, false);
+        ss << " stage.";
+    }
 
-        ss << " but not at " << string_VkPipelineStageFlagBits2(sync_access.stage_mask) << " stage.";
+    if (hazard_type == WRITE_AFTER_WRITE) {
+        if (write_barriers.none()) {
+            new_style = true;
+        } else {
+            if (barrier_protects_access) {
+                ss << "The current synchronization protects ";
+                ss << FormatSyncAccesses(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
+                                         cb_context.GetSyncState().extensions, false);
+                ss << " but not at " << string_VkPipelineStageFlagBits2(sync_access.stage_mask) << " stage.";
+                new_style = true;
+            }
+        }
+    } else if (hazard_type == WRITE_AFTER_READ) {
+        if (!read_barriers) {
+            ss << " An execution dependency is sufficient to prevent this hazard.";
+            new_style = true;
+        }
+    } else if (hazard_type == READ_AFTER_WRITE) {
+        if (write_barriers.none()) {
+            new_style = true;
+        }
+    }
+    if (new_style) {
+        std::string message = ss.str();
+        if (extra_properties_) {
+            message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+        }
+        return message;
+    }
 
-        return ss.str();
-    } else {
+    // TEMP: Old-style formatting fallback until we handle all cases
+    {
         const auto format = "Hazard %s for %s %s, region %" PRIu32 ". Access info %s.";
-        ReportKeyValues key_values;
+        ReportKeyValues key_values2;
 
-        const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-        const char* resource_parameter = is_src_buffer ? "srcBuffer" : "dstBuffer";
+        const std::string access_info = cb_context.FormatHazard(hazard, key_values2);
         std::string message = Format(format, string_SyncHazard(hazard.Hazard()), resource_parameter,
                                      validator_.FormatHandle(buffer).c_str(), region_index, access_info.c_str());
         if (extra_properties_) {
-            key_values.Add(kPropertyMessageType, "BufferRegionError");
-            key_values.Add(kPropertyResourceParameter, resource_parameter);
-            AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-            message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+            key_values2.Add(kPropertyMessageType, "BufferRegionError");
+            key_values2.Add(kPropertyResourceParameter, resource_parameter);
+            AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values2);
+            message += key_values2.GetExtraPropertiesSection(pretty_print_extra_);
         }
         return message;
     }
@@ -460,10 +521,11 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
     ReportKeyValues key_values;
 
     const std::string access_info = exec_context.FormatHazard(hazard, key_values);
-    std::string message = Format(
-        format, string_SyncHazard(hazard.Hazard()), command_buffer_index, validator_.FormatHandle(recorded_handle).c_str(),
-        exec_context.ExecutionTypeString(),
-        recorded_context.FormatUsage(exec_context.ExecutionUsageString(), *hazard.RecordedAccess()).c_str(), access_info.c_str());
+    std::string message =
+        Format(format, string_SyncHazard(hazard.Hazard()), command_buffer_index, validator_.FormatHandle(recorded_handle).c_str(),
+               exec_context.ExecutionTypeString(),
+               recorded_context.FormatUsage(exec_context.ExecutionUsageString(), *hazard.RecordedAccess(), key_values).c_str(),
+               access_info.c_str());
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "SubmitTimeError");
