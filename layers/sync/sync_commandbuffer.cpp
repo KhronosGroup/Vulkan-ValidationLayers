@@ -25,6 +25,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_module.h"
+#include "utils/text_utils.h"
 
 SyncAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
                                                         const spirv::ResourceInterfaceVariable &variable,
@@ -1048,7 +1049,7 @@ void CommandBufferAccessContext::CheckCommandTagDebugCheckpoint() {
         if (object_name.empty()) {
             object_name = debug_report.GetMarkerObjectNameNoLock(cmdbuf_handle);
         }
-        vvl::ToLower(object_name);
+        text::ToLower(object_name);
         return object_name;
     };
     if (sync_state_.debug_command_number == command_number_ && sync_state_.debug_reset_count == reset_count_) {

@@ -345,6 +345,8 @@ vvl_sources = [
   "layers/utils/ray_tracing_utils.h",
   "layers/utils/shader_utils.cpp",
   "layers/utils/shader_utils.h",
+  "layers/utils/text_utils.cpp",
+  "layers/utils/text_utils.h",
   "layers/utils/vk_layer_extension_utils.cpp",
   "layers/utils/vk_layer_extension_utils.h",
   "layers/utils/vk_layer_utils.cpp",

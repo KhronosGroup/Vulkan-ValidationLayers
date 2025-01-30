@@ -22,45 +22,13 @@
 #include "sync/sync_validation.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
+#include "utils/text_utils.h"
+using text::Format;
 
 #include <cassert>
 #include <cinttypes>
 #include <cstdarg>
 #include <sstream>
-
-// TODO: update algorith in logging.cpp to be similar to this version.
-// logging.cpp's vsnprintf usage in some places assumes that std::string
-// storage reserves space for null terminator but it is not guaranteed
-// (although it is in practise). vsnprintf there writes 0 terminator
-// in the char indexed as str[std::string::size()] and it should not be
-// accesses in this way by client code, only by std::string itself.
-
-static std::string Format(const char* format, ...) {
-    const int initial_max_symbol_count = 1024;
-    std::vector<char> buffer(initial_max_symbol_count + 1 /*null terminator*/);
-
-    va_list argptr;
-    va_start(argptr, format);
-
-    // The va_list will be destroyed by the call to vsnprintf(), so use a copy in case we need to try again.
-    va_list argptr2;
-    va_copy(argptr2, argptr);
-    const int symbol_count = vsnprintf(buffer.data(), buffer.size(), format, argptr2);
-    va_end(argptr2);
-
-    if (symbol_count < 0) {
-        assert(false && "Synchronization validation error formatting error");
-        va_end(argptr);
-        return {};
-    }
-    if (symbol_count > initial_max_symbol_count) {
-        buffer.resize(symbol_count + 1 /*null terminator*/);
-        vsnprintf(buffer.data(), buffer.size(), format, argptr);
-    }
-    va_end(argptr);
-    const std::string message(buffer.data());
-    return message;
-}
 
 static const char* string_SyncHazard(SyncHazard hazard) {
     switch (hazard) {
@@ -139,7 +107,7 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, VkBuffer buff
 
     const std::string access_info = cb_context.FormatHazard(hazard, key_values);
     std::string message = Format(format, string_SyncHazard(hazard.Hazard()), buffer_description,
-                                 validator_.FormatHandle(buffer).c_str(), access_info.c_str());
+                                       validator_.FormatHandle(buffer).c_str(), access_info.c_str());
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "BufferError");
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);

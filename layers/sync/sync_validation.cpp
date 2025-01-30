@@ -25,6 +25,7 @@
 #include "state_tracker/buffer_state.h"
 #include "utils/convert_utils.h"
 #include "utils/ray_tracing_utils.h"
+#include "utils/text_utils.h"
 #include "vk_layer_config.h"
 
 SyncValidator::~SyncValidator() {
@@ -758,7 +759,7 @@ void SyncValidator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, cons
         debug_reset_count = static_cast<uint32_t>(std::stoul(env_debug_reset_count));
     }
     debug_cmdbuf_pattern = GetEnvironment("VK_SYNCVAL_DEBUG_CMDBUF_PATTERN");
-    vvl::ToLower(debug_cmdbuf_pattern);
+    text::ToLower(debug_cmdbuf_pattern);
 }
 
 void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
