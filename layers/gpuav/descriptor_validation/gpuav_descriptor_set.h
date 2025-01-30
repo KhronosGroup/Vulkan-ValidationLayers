@@ -45,6 +45,7 @@ class DescriptorSet : public vvl::DescriptorSet {
     VkDeviceAddress GetTypeAddress(Validator &gpuav, const Location &loc);
     VkDeviceAddress GetPostProcessBuffer(Validator &gpuav, const Location &loc);
     bool HasPostProcessBuffer() const { return !post_process_buffer_.IsDestroyed(); }
+    bool CanPostProcess() const;
 
     std::vector<DescriptorAccess> GetDescriptorAccesses(const Location &loc, uint32_t shader_set) const;
 

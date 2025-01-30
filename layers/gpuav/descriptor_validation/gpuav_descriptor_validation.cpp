@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+/* Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -231,8 +231,12 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 // validating the 2nd instance of it
                 continue;
             }
-            validated_desc_sets.emplace(bound_descriptor_set->VkHandle());
+
             if (!bound_descriptor_set->HasPostProcessBuffer()) {
+                if (!bound_descriptor_set->CanPostProcess()) {
+                    continue;  // hit a dummy object used as a placeholder
+                }
+
                 std::stringstream error;
                 error << "In CommandBuffer::ValidateBindlessDescriptorSets, action_command_snapshots[" << action_index
                       << "].descriptor_command_binding.bound_descriptor_sets[" << set_index
@@ -241,6 +245,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 gpuav->InternalError(gpuav->device, loc, error.str().c_str());
                 return false;
             }
+            validated_desc_sets.emplace(bound_descriptor_set->VkHandle());
 
             vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set, set_index, VK_NULL_HANDLE /*framebuffer*/,
                                              draw_loc);
