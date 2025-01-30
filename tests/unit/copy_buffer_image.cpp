@@ -3433,6 +3433,52 @@ TEST_F(NegativeCopyBufferImage, BufferCopy) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeCopyBufferImage, BlitInvalidDepth) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 4u, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image src_image(*m_device, image_ci);
+    src_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    vkt::Image dst_image(*m_device, image_ci);
+    dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.arrayLayers = 1u;
+    image_ci.extent.depth = 4u;
+    vkt::Image src_image_3d(*m_device, image_ci);
+    src_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    vkt::Image dst_image_3d(*m_device, image_ci);
+    dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    m_command_buffer.Begin();
+
+    VkImageBlit region;
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.srcOffsets[0] = {0, 0, 0};
+    region.srcOffsets[1] = {32, 32, 1};
+    region.dstOffsets[0] = {0, 0, 0};
+    region.dstOffsets[1] = {32, 32, 2};
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-maintenance8-10579");
+    vk::CmdBlitImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image_3d,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    region.srcOffsets[1] = {32, 32, 2};
+    region.dstOffsets[1] = {32, 32, 1};
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-maintenance8-10580");
+    vk::CmdBlitImage(m_command_buffer.handle(), src_image_3d.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeCopyBufferImage, ImageCopyMissingSrcFormatFeature) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
