@@ -524,18 +524,6 @@ bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size);
 
 namespace vvl {
 
-static inline void ToLower(std::string &str) {
-    // std::tolower() returns int which can cause compiler warnings
-    transform(str.begin(), str.end(), str.begin(),
-              [](char c) { return static_cast<char>(std::tolower(c)); });
-}
-
-static inline void ToUpper(std::string &str) {
-    // std::toupper() returns int which can cause compiler warnings
-    transform(str.begin(), str.end(), str.begin(),
-              [](char c) { return static_cast<char>(std::toupper(c)); });
-}
-
 // The standard does not specify the value of data() for zero-sized contatiners as being null or non-null,
 // only that it is not dereferenceable.
 //

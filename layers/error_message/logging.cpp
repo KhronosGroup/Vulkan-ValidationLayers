@@ -30,6 +30,7 @@
 #include "generated/vk_validation_error_messages.h"
 #include "error_location.h"
 #include "utils/hash_util.h"
+#include "utils/text_utils.h"
 #include "error_message/log_message_type.h"
 
 [[maybe_unused]] const char *kVUIDUndefined = "VUID_Undefined";
@@ -579,38 +580,7 @@ bool DebugReport::LogMsg(VkFlags msg_flags, const LogObjectList &objects, const 
         return false;
     }
 
-    // Best guess at an upper bound for message length. At least some of the extra space
-    // should get used to store the VUID URL and text in the common case, without additional allocations.
-    std::string full_message(1024, '\0');
-
-    // vsnprintf() returns the number of characters that *would* have been printed, if there was
-    // enough space. If we have a huge message, reallocate the string and try again.
-    int result;
-    size_t old_size = full_message.size();
-    // The va_list will be destroyed by the call to vsnprintf(), so use a copy in case we need
-    // to try again.
-    va_list arg_copy;
-    va_copy(arg_copy, argptr);
-    result = vsnprintf(full_message.data(), full_message.size(), format, arg_copy);
-    va_end(arg_copy);
-
-    assert(result >= 0);
-    if (result < 0) {
-        full_message = "Message generation failure";
-    } else if (static_cast<size_t>(result) <= old_size) {
-        // Shrink the string to exactly fit the successfully printed string
-        full_message.resize(result);
-    } else {
-        // Grow buffer to fit needed size. Note that the input size to vsnprintf() must
-        // include space for the trailing '\0' character, but the return value DOES NOT
-        // include the `\0' character.
-        full_message.resize(result + 1);
-        // consume the va_list passed to us by the caller
-        result = vsnprintf(full_message.data(), full_message.size(), format, argptr);
-        // remove the `\0' character from the string
-        full_message.resize(result);
-    }
-
+    std::string full_message = text::VFormat(format, argptr);
     full_message = loc.Message() + " " + full_message;
 
     // Append the spec error text to the error message, unless it contains a word treated as special
