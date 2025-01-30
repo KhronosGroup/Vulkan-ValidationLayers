@@ -5682,6 +5682,9 @@ TEST_F(NegativeDynamicState, RebindSamePipeline) {
         (driver_properties.conformanceVersion.minor == 3 && driver_properties.conformanceVersion.subminor > 7)) {
         GTEST_SKIP() << "conformanceVersion is greater than the version the test requires";
     }
+    if (driver_properties.conformanceVersion.major == 0) {
+        GTEST_SKIP() << "conformanceVersion is invalid";  // happens in some non-conformant mesa drivers
+    }
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
