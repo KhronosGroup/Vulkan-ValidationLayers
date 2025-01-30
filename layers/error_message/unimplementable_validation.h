@@ -537,6 +537,13 @@ const char* unimplementable_validation[] = {
     "VUID-VkVideoDecodeH265InlineSessionParametersInfoKHR-pStdVPS-parameter",
     "VUID-VkVideoEncodeAV1SessionParametersCreateInfoKHR-pStdDecoderModelInfo-parameter",
     "VUID-VkVideoEncodeAV1SessionParametersCreateInfoKHR-pStdOperatingPoints-parameter",
+
+    // Acceleration structure replay related, 
+    // but VVL has no way of tracking needed info (typically stored offline)
+    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09488"
+    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09489"
+    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-09490"
+    "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-10393"
 };
 
 // VUs from deprecated extensions that would require complex codegen to get working
