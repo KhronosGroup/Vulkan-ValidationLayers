@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -553,9 +553,13 @@ TEST_F(NegativeShaderCooperativeMatrix, MatchSizeWithProperties) {
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
     VkPhysicalDeviceCooperativeMatrixPropertiesKHR props = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(props);
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper(&props);
+    GetPhysicalDeviceProperties2(props11);
     if ((props.cooperativeMatrixSupportedStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
         GTEST_SKIP() << "Compute stage is not supported";
+    }
+    if (props11.subgroupSize > 32) {
+        GTEST_SKIP() << "local_size_x (32) is not a multiple of subgroupSize";
     }
 
     if (HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 8, 8, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
