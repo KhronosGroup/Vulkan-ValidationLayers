@@ -3377,6 +3377,13 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                      ") but srcImage is VK_IMAGE_TYPE_3D",
                                      src_subresource.baseArrayLayer, src_subresource.layerCount, dst_subresource.layerCount);
                 }
+            } else if (uint32_t diff = static_cast<uint32_t>(abs(region.dstOffsets[0].z - region.dstOffsets[1].z));
+                       diff != src_subresource.layerCount) {
+                vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10579" : "VUID-vkCmdBlitImage-maintenance8-10579";
+                skip |= LogError(vuid, all_objlist, region_loc,
+                                 "has the absolute difference of dstOffsets[0].z (%" PRIu32 ") and dstOffsets[1].z (%" PRIu32
+                                 ") = %" PRIu32 ", which is not equal to srcSubresource.layerCount (%" PRIu32 ")",
+                                 region.dstOffsets[0].z, region.dstOffsets[1].z, diff, src_subresource.layerCount);
             }
             if (dst_type == VK_IMAGE_TYPE_3D) {
                 if (dst_subresource.baseArrayLayer != 0 || dst_subresource.layerCount != 1 || src_subresource.layerCount != 1) {
@@ -3386,6 +3393,13 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                      ") but dstImage is VK_IMAGE_TYPE_3D",
                                      dst_subresource.baseArrayLayer, dst_subresource.layerCount, src_subresource.layerCount);
                 }
+            } else if (uint32_t diff = static_cast<uint32_t>(abs(region.srcOffsets[0].z - region.srcOffsets[1].z));
+                       diff != dst_subresource.layerCount) {
+                vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10580" : "VUID-vkCmdBlitImage-maintenance8-10580";
+                skip |= LogError(vuid, all_objlist, region_loc,
+                                 "has the absolute difference of srcOffsets[0].z (%" PRIu32 ") and srcOffsets[1].z (%" PRIu32
+                                 ") = %" PRIu32 ", which is not equal to dstSubresource.layerCount (%" PRIu32 ")",
+                                 region.srcOffsets[0].z, region.srcOffsets[1].z, diff, dst_subresource.layerCount);
             }
         }
 
