@@ -3945,6 +3945,20 @@ void PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const 
                                                          VkTilePropertiesQCOM* pProperties,
                                                          const RecordObject& record_obj) override;
 
+void PreCallRecordConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                   const RecordObject& record_obj) override;
+
+void PostCallRecordConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                    const RecordObject& record_obj) override;
+
+void PreCallRecordCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                      const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
+                                                      const RecordObject& record_obj) override;
+
+void PostCallRecordCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                       const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
+                                                       const RecordObject& record_obj) override;
+
 void PreCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                         const RecordObject& record_obj) override;
 
@@ -3989,6 +4003,42 @@ void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _s
                                                 VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) override;
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+void PreCallRecordGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                              const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                              VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                              const RecordObject& record_obj) override;
+
+void PostCallRecordGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                               const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                               VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                               const RecordObject& record_obj) override;
+
+void PreCallRecordCmdBuildClusterAccelerationStructureIndirectNV(VkCommandBuffer commandBuffer,
+                                                                 const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
+                                                                 const RecordObject& record_obj) override;
+
+void PostCallRecordCmdBuildClusterAccelerationStructureIndirectNV(VkCommandBuffer commandBuffer,
+                                                                  const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
+                                                                  const RecordObject& record_obj) override;
+
+void PreCallRecordGetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device,
+                                                                   const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+                                                                   VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                                   const RecordObject& record_obj) override;
+
+void PostCallRecordGetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device,
+                                                                    const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+                                                                    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                                    const RecordObject& record_obj) override;
+
+void PreCallRecordCmdBuildPartitionedAccelerationStructuresNV(VkCommandBuffer commandBuffer,
+                                                              const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+                                                              const RecordObject& record_obj) override;
+
+void PostCallRecordCmdBuildPartitionedAccelerationStructuresNV(VkCommandBuffer commandBuffer,
+                                                               const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+                                                               const RecordObject& record_obj) override;
+
 void PreCallRecordGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
                                                             const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
                                                             VkMemoryRequirements2* pMemoryRequirements,

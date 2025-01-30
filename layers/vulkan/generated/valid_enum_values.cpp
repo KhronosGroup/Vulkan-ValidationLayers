@@ -948,6 +948,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkDescriptorType value) const {
                            IsExtEnabled(extensions.vk_ext_mutable_descriptor_type)
                        ? ValidValue::Valid
                        : ValidValue::NoExtension;
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+            return IsExtEnabled(extensions.vk_nv_partitioned_acceleration_structure) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -1260,6 +1262,30 @@ ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeTuningModeKHR value
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkComponentTypeKHR value) const {
+    switch (value) {
+        case VK_COMPONENT_TYPE_FLOAT16_KHR:
+        case VK_COMPONENT_TYPE_FLOAT32_KHR:
+        case VK_COMPONENT_TYPE_FLOAT64_KHR:
+        case VK_COMPONENT_TYPE_SINT8_KHR:
+        case VK_COMPONENT_TYPE_SINT16_KHR:
+        case VK_COMPONENT_TYPE_SINT32_KHR:
+        case VK_COMPONENT_TYPE_SINT64_KHR:
+        case VK_COMPONENT_TYPE_UINT8_KHR:
+        case VK_COMPONENT_TYPE_UINT16_KHR:
+        case VK_COMPONENT_TYPE_UINT32_KHR:
+        case VK_COMPONENT_TYPE_UINT64_KHR:
+        case VK_COMPONENT_TYPE_SINT8_PACKED_NV:
+        case VK_COMPONENT_TYPE_UINT8_PACKED_NV:
+        case VK_COMPONENT_TYPE_FLOAT_E4M3_NV:
+        case VK_COMPONENT_TYPE_FLOAT_E5M2_NV:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeAV1PredictionModeKHR value) const {
     switch (value) {
         case VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_INTRA_ONLY_KHR:
@@ -1538,6 +1564,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkGeometryTypeKHR value) const {
         case VK_GEOMETRY_TYPE_AABBS_KHR:
         case VK_GEOMETRY_TYPE_INSTANCES_KHR:
             return ValidValue::Valid;
+        case VK_GEOMETRY_TYPE_SPHERES_NV:
+        case VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV:
+            return IsExtEnabled(extensions.vk_nv_ray_tracing_linear_swept_spheres) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -1876,6 +1905,28 @@ ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureBuildType
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkRayTracingLssIndexingModeNV value) const {
+    switch (value) {
+        case VK_RAY_TRACING_LSS_INDEXING_MODE_LIST_NV:
+        case VK_RAY_TRACING_LSS_INDEXING_MODE_SUCCESSIVE_NV:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkRayTracingLssPrimitiveEndCapsModeNV value) const {
+    switch (value) {
+        case VK_RAY_TRACING_LSS_PRIMITIVE_END_CAPS_MODE_NONE_NV:
+        case VK_RAY_TRACING_LSS_PRIMITIVE_END_CAPS_MODE_CHAINED_NV:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDirectDriverLoadingModeLUNARG value) const {
     switch (value) {
         case VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG:
@@ -1963,6 +2014,19 @@ ValidValue stateless::Context::IsValidEnumValue(VkDepthClampModeEXT value) const
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkCooperativeVectorMatrixLayoutNV value) const {
+    switch (value) {
+        case VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV:
+        case VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV:
+        case VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_INFERENCING_OPTIMAL_NV:
+        case VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_TRAINING_OPTIMAL_NV:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkLayerSettingTypeEXT value) const {
     switch (value) {
         case VK_LAYER_SETTING_TYPE_BOOL32_EXT:
@@ -2042,6 +2106,56 @@ ValidValue stateless::Context::IsValidEnumValue(VkDisplaySurfaceStereoTypeNV val
         case VK_DISPLAY_SURFACE_STEREO_TYPE_ONBOARD_DIN_NV:
         case VK_DISPLAY_SURFACE_STEREO_TYPE_HDMI_3D_NV:
         case VK_DISPLAY_SURFACE_STEREO_TYPE_INBAND_DISPLAYPORT_NV:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkClusterAccelerationStructureTypeNV value) const {
+    switch (value) {
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_TYPE_CLUSTERS_BOTTOM_LEVEL_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_TYPE_TRIANGLE_CLUSTER_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_TYPE_TRIANGLE_CLUSTER_TEMPLATE_NV:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkClusterAccelerationStructureOpTypeNV value) const {
+    switch (value) {
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_MOVE_OBJECTS_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_CLUSTERS_BOTTOM_LEVEL_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkClusterAccelerationStructureOpModeNV value) const {
+    switch (value) {
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_IMPLICIT_DESTINATIONS_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_EXPLICIT_DESTINATIONS_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_MODE_COMPUTE_SIZES_NV:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkPartitionedAccelerationStructureOpTypeNV value) const {
+    switch (value) {
+        case VK_PARTITIONED_ACCELERATION_STRUCTURE_OP_TYPE_WRITE_INSTANCE_NV:
+        case VK_PARTITIONED_ACCELERATION_STRUCTURE_OP_TYPE_UPDATE_INSTANCE_NV:
+        case VK_PARTITIONED_ACCELERATION_STRUCTURE_OP_TYPE_WRITE_PARTITION_TRANSLATION_NV:
             return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
@@ -2691,6 +2805,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkDescriptorType value) co
             return {vvl::Extension::_VK_QCOM_image_processing};
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
             return {vvl::Extension::_VK_VALVE_mutable_descriptor_type, vvl::Extension::_VK_EXT_mutable_descriptor_type};
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+            return {vvl::Extension::_VK_NV_partitioned_acceleration_structure};
         default:
             return {};
     };
@@ -2960,6 +3076,15 @@ const char* stateless::Context::DescribeEnum(VkVideoEncodeTuningModeKHR value) c
 }
 
 template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkComponentTypeKHR value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkComponentTypeKHR value) const {
+    return nullptr;
+}
+
+template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkVideoEncodeAV1PredictionModeKHR value) const {
     return {};
 }
@@ -3142,11 +3267,17 @@ const char* stateless::Context::DescribeEnum(VkRayTracingShaderGroupTypeKHR valu
 
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkGeometryTypeKHR value) const {
-    return {};
+    switch (value) {
+        case VK_GEOMETRY_TYPE_SPHERES_NV:
+        case VK_GEOMETRY_TYPE_LINEAR_SWEPT_SPHERES_NV:
+            return {vvl::Extension::_VK_NV_ray_tracing_linear_swept_spheres};
+        default:
+            return {};
+    };
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkGeometryTypeKHR value) const {
-    return nullptr;
+    return string_VkGeometryTypeKHR(value);
 }
 
 template <>
@@ -3399,6 +3530,24 @@ const char* stateless::Context::DescribeEnum(VkAccelerationStructureBuildTypeKHR
 }
 
 template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkRayTracingLssIndexingModeNV value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkRayTracingLssIndexingModeNV value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkRayTracingLssPrimitiveEndCapsModeNV value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkRayTracingLssPrimitiveEndCapsModeNV value) const {
+    return nullptr;
+}
+
+template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkDirectDriverLoadingModeLUNARG value) const {
     return {};
 }
@@ -3462,6 +3611,15 @@ const char* stateless::Context::DescribeEnum(VkDepthClampModeEXT value) const {
 }
 
 template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkCooperativeVectorMatrixLayoutNV value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkCooperativeVectorMatrixLayoutNV value) const {
+    return nullptr;
+}
+
+template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkLayerSettingTypeEXT value) const {
     return {};
 }
@@ -3512,6 +3670,42 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkDisplaySurfaceStereoType
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkDisplaySurfaceStereoTypeNV value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkClusterAccelerationStructureTypeNV value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkClusterAccelerationStructureTypeNV value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkClusterAccelerationStructureOpTypeNV value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkClusterAccelerationStructureOpTypeNV value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkClusterAccelerationStructureOpModeNV value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkClusterAccelerationStructureOpModeNV value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkPartitionedAccelerationStructureOpTypeNV value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkPartitionedAccelerationStructureOpTypeNV value) const {
     return nullptr;
 }
 

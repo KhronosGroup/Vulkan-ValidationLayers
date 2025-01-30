@@ -303,6 +303,9 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPu
         // handled in core check because need to know if using immutable samplers or not
         case VK_DESCRIPTOR_TYPE_SAMPLER:
 
+        // VkWriteDescriptorSetPartitionedAccelerationStructureNV contains no VkObjects to validate
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+
         // TODO - These need to be checked as well
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:

@@ -80,6 +80,8 @@ enum class Feature {
     bufferDeviceAddressCaptureReplay,
     // VkPhysicalDeviceBufferDeviceAddressFeatures, VkPhysicalDeviceVulkan12Features
     bufferDeviceAddressMultiDevice,
+    // VkPhysicalDeviceClusterAccelerationStructureFeaturesNV
+    clusterAccelerationStructure,
     // VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI
     clustercullingShader,
     // VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI
@@ -116,6 +118,10 @@ enum class Feature {
     cooperativeMatrix,
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     cooperativeMatrixRobustBufferAccess,
+    // VkPhysicalDeviceCooperativeVectorFeaturesNV
+    cooperativeVector,
+    // VkPhysicalDeviceCooperativeVectorFeaturesNV
+    cooperativeVectorTraining,
     // VkPhysicalDeviceCopyMemoryIndirectFeaturesNV
     indirectCopy,
     // VkPhysicalDeviceCornerSampledImageFeaturesNV
@@ -578,6 +584,8 @@ enum class Feature {
     opticalFlow,
     // VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT
     pageableDeviceLocalMemory,
+    // VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV
+    partitionedAccelerationStructure,
     // VkPhysicalDevicePerStageDescriptorSetFeaturesNV
     dynamicPipelineLayout,
     // VkPhysicalDevicePerStageDescriptorSetFeaturesNV
@@ -672,6 +680,10 @@ enum class Feature {
     rayQuery,
     // VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV
     rayTracingInvocationReorder,
+    // VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV
+    linearSweptSpheres,
+    // VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV
+    spheres,
     // VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR
     rayTracingMaintenance1,
     // VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR

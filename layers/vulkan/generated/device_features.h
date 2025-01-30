@@ -86,6 +86,8 @@ struct DeviceFeatures {
     bool bufferDeviceAddressEXT;
     // VkPhysicalDeviceBufferDeviceAddressFeaturesEXT
     bool bufferDeviceAddressMultiDeviceEXT;
+    // VkPhysicalDeviceClusterAccelerationStructureFeaturesNV
+    bool clusterAccelerationStructure;
     // VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI
     bool clustercullingShader;
     // VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI
@@ -124,6 +126,10 @@ struct DeviceFeatures {
     bool cooperativeMatrix;
     // VkPhysicalDeviceCooperativeMatrixFeaturesKHR, VkPhysicalDeviceCooperativeMatrixFeaturesNV
     bool cooperativeMatrixRobustBufferAccess;
+    // VkPhysicalDeviceCooperativeVectorFeaturesNV
+    bool cooperativeVector;
+    // VkPhysicalDeviceCooperativeVectorFeaturesNV
+    bool cooperativeVectorTraining;
     // VkPhysicalDeviceCopyMemoryIndirectFeaturesNV
     bool indirectCopy;
     // VkPhysicalDeviceCornerSampledImageFeaturesNV
@@ -588,6 +594,8 @@ struct DeviceFeatures {
     bool opticalFlow;
     // VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT
     bool pageableDeviceLocalMemory;
+    // VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV
+    bool partitionedAccelerationStructure;
     // VkPhysicalDevicePerStageDescriptorSetFeaturesNV
     bool dynamicPipelineLayout;
     // VkPhysicalDevicePerStageDescriptorSetFeaturesNV
@@ -682,6 +690,10 @@ struct DeviceFeatures {
     bool rayQuery;
     // VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV
     bool rayTracingInvocationReorder;
+    // VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV
+    bool linearSweptSpheres;
+    // VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV
+    bool spheres;
     // VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR
     bool rayTracingMaintenance1;
     // VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR

@@ -325,6 +325,10 @@ void PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(VkPhysicalDevice p
                                                               VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties,
                                                               const RecordObject& record_obj) override;
 
+void PostCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                  VkCooperativeVectorPropertiesNV* pProperties,
+                                                                  const RecordObject& record_obj) override;
+
 void PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const RecordObject& record_obj) override;

@@ -271,6 +271,8 @@ VkResult GetPhysicalDeviceOpticalFlowImageFormatsNV(VkPhysicalDevice physicalDev
                                                     const VkOpticalFlowImageFormatInfoNV* pOpticalFlowImageFormatInfo,
                                                     uint32_t* pFormatCount,
                                                     VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties);
+VkResult GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                        VkCooperativeVectorPropertiesNV* pProperties);
 VkResult GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties);
 

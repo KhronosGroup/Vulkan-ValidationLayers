@@ -366,6 +366,9 @@ bool PreCallValidateGetPhysicalDeviceOpticalFlowImageFormatsNV(VkPhysicalDevice 
                                                                uint32_t* pFormatCount,
                                                                VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties,
                                                                const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                   VkCooperativeVectorPropertiesNV* pProperties,
+                                                                   const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const ErrorObject& error_obj) const override;

@@ -3,8 +3,8 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2021-2024 Valve Corporation
- * Copyright (c) 2021-2024 LunarG, Inc.
+ * Copyright (c) 2021-2025 Valve Corporation
+ * Copyright (c) 2021-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1801,12 +1801,33 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdSetDepthClampRangeEXT-videocoding",
 }},
+{Func::vkCmdConvertCooperativeVectorMatrixNV, {
+    "VUID-vkCmdConvertCooperativeVectorMatrixNV-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdConvertCooperativeVectorMatrixNV-commandBuffer-cmdpool",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdConvertCooperativeVectorMatrixNV-renderpass",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdConvertCooperativeVectorMatrixNV-videocoding",
+}},
 {Func::vkCmdSetAttachmentFeedbackLoopEnableEXT, {
     "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-commandBuffer-recording",
     nullptr,
     VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-commandBuffer-cmdpool",
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-videocoding",
+}},
+{Func::vkCmdBuildClusterAccelerationStructureIndirectNV, {
+    "VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-commandBuffer-cmdpool",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-renderpass",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-videocoding",
+}},
+{Func::vkCmdBuildPartitionedAccelerationStructuresNV, {
+    "VUID-vkCmdBuildPartitionedAccelerationStructuresNV-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdBuildPartitionedAccelerationStructuresNV-commandBuffer-cmdpool",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdBuildPartitionedAccelerationStructuresNV-renderpass",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdBuildPartitionedAccelerationStructuresNV-videocoding",
 }},
 {Func::vkCmdPreprocessGeneratedCommandsEXT, {
     "VUID-vkCmdPreprocessGeneratedCommandsEXT-commandBuffer-recording",

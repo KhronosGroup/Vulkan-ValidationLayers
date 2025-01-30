@@ -1412,6 +1412,11 @@ bool PreCallValidateGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuf
 bool PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
                                                           VkTilePropertiesQCOM* pProperties,
                                                           const ErrorObject& error_obj) const override;
+bool PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                     const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                        const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
+                                                        const ErrorObject& error_obj) const override;
 bool PreCallValidateSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                           const ErrorObject& error_obj) const override;
 bool PreCallValidateLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
@@ -1430,6 +1435,19 @@ bool PreCallValidateGetScreenBufferPropertiesQNX(VkDevice device, const struct _
                                                  VkScreenBufferPropertiesQNX* pProperties,
                                                  const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+bool PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                                const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
+    const ErrorObject& error_obj) const override;
+bool PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV(
+    VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo, const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(VkCommandBuffer commandBuffer,
+                                                                const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+                                                                const ErrorObject& error_obj) const override;
 bool PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
                                                               const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
                                                               VkMemoryRequirements2* pMemoryRequirements,

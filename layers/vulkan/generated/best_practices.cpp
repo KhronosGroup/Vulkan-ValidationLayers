@@ -2094,6 +2094,22 @@ void BestPractices::PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice devi
     bp_state::LogResult(*this, device, record_obj);
 }
 
+void bp_state::Instance::PostCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
+                                                                                      uint32_t* pPropertyCount,
+                                                                                      VkCooperativeVectorPropertiesNV* pProperties,
+                                                                                      const RecordObject& record_obj) {
+    BaseClass::PostCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties,
+                                                                            record_obj);
+    bp_state::LogResult(*this, physicalDevice, record_obj);
+}
+
+void BestPractices::PostCallRecordConvertCooperativeVectorMatrixNV(VkDevice device,
+                                                                   const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                                   const RecordObject& record_obj) {
+    BaseClass::PostCallRecordConvertCooperativeVectorMatrixNV(device, pInfo, record_obj);
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 void BestPractices::PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                         const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                                         const RecordObject& record_obj) {

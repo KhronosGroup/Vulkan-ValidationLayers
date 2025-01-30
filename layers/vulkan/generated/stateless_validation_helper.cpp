@@ -3536,6 +3536,28 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV: {  // Covers
+                                                                                                // VUID-VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_ray_tracing_linear_swept_spheres)) {
+                skip |= log.LogError(
+                    pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                    "includes a pointer to a VkStructureType "
+                    "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV), but its parent extension "
+                    "VK_NV_ray_tracing_linear_swept_spheres has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV);
+                VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV* structure =
+                    (VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::spheres), structure->spheres);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::linearSweptSpheres), structure->linearSweptSpheres);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceLinearColorAttachmentFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceLinearColorAttachmentFeaturesNV-sType-sType
@@ -3931,6 +3953,25 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceCooperativeVectorFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV: {  // Covers
+                                                                                  // VUID-VkPhysicalDeviceCooperativeVectorFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_cooperative_vector)) {
+                skip |= log.LogError(pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                                     "includes a pointer to a VkStructureType "
+                                     "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV), but its parent extension "
+                                     "VK_NV_cooperative_vector has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceCooperativeVectorFeaturesNV);
+                VkPhysicalDeviceCooperativeVectorFeaturesNV* structure = (VkPhysicalDeviceCooperativeVectorFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeVector), structure->cooperativeVector);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::cooperativeVectorTraining), structure->cooperativeVectorTraining);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_SPARSE_ADDRESS_SPACE_FEATURES_NV: {  // Covers
                                                                                              // VUID-VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV-sType-sType
@@ -4291,6 +4332,47 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceRayTracingValidationFeaturesNV);
                 VkPhysicalDeviceRayTracingValidationFeaturesNV* structure = (VkPhysicalDeviceRayTracingValidationFeaturesNV*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::rayTracingValidation), structure->rayTracingValidation);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceClusterAccelerationStructureFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_FEATURES_NV: {  // Covers
+                                                                                              // VUID-VkPhysicalDeviceClusterAccelerationStructureFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_cluster_acceleration_structure)) {
+                skip |= log.LogError(
+                    pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                    "includes a pointer to a VkStructureType "
+                    "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_FEATURES_NV), but its parent extension "
+                    "VK_NV_cluster_acceleration_structure has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceClusterAccelerationStructureFeaturesNV);
+                VkPhysicalDeviceClusterAccelerationStructureFeaturesNV* structure =
+                    (VkPhysicalDeviceClusterAccelerationStructureFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::clusterAccelerationStructure), structure->clusterAccelerationStructure);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV: {  // Covers
+                                                                                                  // VUID-VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_partitioned_acceleration_structure)) {
+                skip |= log.LogError(
+                    pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                    "includes a pointer to a VkStructureType "
+                    "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV), but its parent extension "
+                    "VK_NV_partitioned_acceleration_structure has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV);
+                VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV* structure =
+                    (VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::partitionedAccelerationStructure),
+                                       structure->partitionedAccelerationStructure);
             }
         } break;
 
@@ -10879,6 +10961,68 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // Validation code for VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV structure members
+        case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CLUSTER_ACCELERATION_STRUCTURE_CREATE_INFO_NV: {  // Covers
+                                                                                                      // VUID-VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_cluster_acceleration_structure)) {
+                skip |= log.LogError(pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                                     "includes a pointer to a VkStructureType "
+                                     "(VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CLUSTER_ACCELERATION_STRUCTURE_CREATE_INFO_NV), but "
+                                     "its parent extension "
+                                     "VK_NV_cluster_acceleration_structure has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV);
+                VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV* structure =
+                    (VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::allowClusterAccelerationStructure),
+                                       structure->allowClusterAccelerationStructure);
+            }
+        } break;
+
+        // Validation code for VkPartitionedAccelerationStructureFlagsNV structure members
+        case VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_FLAGS_NV: {  // Covers
+                                                                               // VUID-VkPartitionedAccelerationStructureFlagsNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_partitioned_acceleration_structure)) {
+                skip |= log.LogError(pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                                     "includes a pointer to a VkStructureType "
+                                     "(VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_FLAGS_NV), but its parent extension "
+                                     "VK_NV_partitioned_acceleration_structure has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPartitionedAccelerationStructureFlagsNV);
+                VkPartitionedAccelerationStructureFlagsNV* structure = (VkPartitionedAccelerationStructureFlagsNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::enablePartitionTranslation), structure->enablePartitionTranslation);
+            }
+        } break;
+
+        // Validation code for VkWriteDescriptorSetPartitionedAccelerationStructureNV structure members
+        case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV: {  // Covers
+                                                                                              // VUID-VkWriteDescriptorSetPartitionedAccelerationStructureNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_partitioned_acceleration_structure)) {
+                skip |= log.LogError(
+                    pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                    "includes a pointer to a VkStructureType "
+                    "(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV), but its parent extension "
+                    "VK_NV_partitioned_acceleration_structure has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkWriteDescriptorSetPartitionedAccelerationStructureNV);
+                VkWriteDescriptorSetPartitionedAccelerationStructureNV* structure =
+                    (VkWriteDescriptorSetPartitionedAccelerationStructureNV*)header;
+                skip |= ValidateArray(
+                    pNext_loc.dot(Field::accelerationStructureCount), pNext_loc.dot(Field::pAccelerationStructures),
+                    structure->accelerationStructureCount, &structure->pAccelerationStructures, true, false,
+                    "VUID-VkWriteDescriptorSetPartitionedAccelerationStructureNV-accelerationStructureCount-arraylength",
+                    "VUID-VkWriteDescriptorSetPartitionedAccelerationStructureNV-pAccelerationStructures-parameter");
+            }
+        } break;
+
         // Validation code for VkGeneratedCommandsPipelineInfoEXT structure members
         case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_PIPELINE_INFO_EXT: {  // Covers
                                                                         // VUID-VkGeneratedCommandsPipelineInfoEXT-sType-sType
@@ -11176,6 +11320,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BORDER_COLOR_SWIZZLE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_FEATURES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT,
@@ -11185,6 +11330,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV,
@@ -11273,6 +11419,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPTICAL_FLOW_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PER_STAGE_DESCRIPTOR_SET_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_BINARY_FEATURES_KHR,
@@ -11298,6 +11445,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAW_ACCESS_CHAINS_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR,
@@ -13030,7 +13178,8 @@ bool Device::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descr
             constexpr std::array allowed_structs_VkWriteDescriptorSet = {
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV,
-                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK};
+                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK,
+                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV};
 
             skip |= context.ValidateStructPnext(
                 pDescriptorWrites_loc, pDescriptorWrites[descriptorWriteIndex].pNext, allowed_structs_VkWriteDescriptorSet.size(),
@@ -14564,12 +14713,14 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
         constexpr std::array allowed_structs_VkPhysicalDeviceProperties2 = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_PROPERTIES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_2_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT,
@@ -14621,6 +14772,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPACITY_MICROMAP_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_OPTICAL_FLOW_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_BINARY_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_PROPERTIES,
@@ -17643,7 +17795,8 @@ bool Device::PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, 
             constexpr std::array allowed_structs_VkWriteDescriptorSet = {
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV,
-                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK};
+                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK,
+                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV};
 
             skip |= context.ValidateStructPnext(
                 pDescriptorWrites_loc, pDescriptorWrites[descriptorWriteIndex].pNext, allowed_structs_VkWriteDescriptorSet.size(),
@@ -17803,7 +17956,8 @@ bool Device::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
                 constexpr std::array allowed_structs_VkWriteDescriptorSet = {
                     VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
                     VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV,
-                    VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK};
+                    VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK,
+                    VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV};
 
                 skip |= context.ValidateStructPnext(
                     pDescriptorWrites_loc, pPushDescriptorSetInfo->pDescriptorWrites[descriptorWriteIndex].pNext,
@@ -28043,6 +28197,137 @@ bool Device::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice devic
     return skip;
 }
 
+bool Instance::PreCallValidateGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
+                                                                             uint32_t* pPropertyCount,
+                                                                             VkCooperativeVectorPropertiesNV* pProperties,
+                                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::pPropertyCount), loc.dot(Field::pProperties), pPropertyCount, pProperties,
+        VK_STRUCTURE_TYPE_COOPERATIVE_VECTOR_PROPERTIES_NV, true, false, false, "VUID-VkCooperativeVectorPropertiesNV-sType-sType",
+        kVUIDUndefined, "VUID-vkGetPhysicalDeviceCooperativeVectorPropertiesNV-pPropertyCount-parameter", kVUIDUndefined);
+    if (pProperties != nullptr) {
+        for (uint32_t pPropertyIndex = 0; pPropertyIndex < *pPropertyCount; ++pPropertyIndex) {
+            [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, pPropertyIndex);
+            skip |= context.ValidateStructPnext(pProperties_loc, pProperties[pPropertyIndex].pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkCooperativeVectorPropertiesNV-pNext-pNext",
+                                                kVUIDUndefined, false);
+
+            skip |= context.ValidateRangedEnum(pProperties_loc.dot(Field::inputType), vvl::Enum::VkComponentTypeKHR,
+                                               pProperties[pPropertyIndex].inputType,
+                                               "VUID-VkCooperativeVectorPropertiesNV-inputType-parameter");
+
+            skip |= context.ValidateRangedEnum(pProperties_loc.dot(Field::inputInterpretation), vvl::Enum::VkComponentTypeKHR,
+                                               pProperties[pPropertyIndex].inputInterpretation,
+                                               "VUID-VkCooperativeVectorPropertiesNV-inputInterpretation-parameter");
+
+            skip |= context.ValidateRangedEnum(pProperties_loc.dot(Field::matrixInterpretation), vvl::Enum::VkComponentTypeKHR,
+                                               pProperties[pPropertyIndex].matrixInterpretation,
+                                               "VUID-VkCooperativeVectorPropertiesNV-matrixInterpretation-parameter");
+
+            skip |= context.ValidateRangedEnum(pProperties_loc.dot(Field::biasInterpretation), vvl::Enum::VkComponentTypeKHR,
+                                               pProperties[pPropertyIndex].biasInterpretation,
+                                               "VUID-VkCooperativeVectorPropertiesNV-biasInterpretation-parameter");
+
+            skip |= context.ValidateRangedEnum(pProperties_loc.dot(Field::resultType), vvl::Enum::VkComponentTypeKHR,
+                                               pProperties[pPropertyIndex].resultType,
+                                               "VUID-VkCooperativeVectorPropertiesNV-resultType-parameter");
+
+            skip |= context.ValidateBool32(pProperties_loc.dot(Field::transpose), pProperties[pPropertyIndex].transpose);
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_cooperative_vector))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cooperative_vector});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_CONVERT_COOPERATIVE_VECTOR_MATRIX_INFO_NV,
+                                       true, "VUID-vkConvertCooperativeVectorMatrixNV-pInfo-parameter",
+                                       "VUID-VkConvertCooperativeVectorMatrixInfoNV-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkConvertCooperativeVectorMatrixInfoNV-pNext-pNext", kVUIDUndefined, true);
+
+        // No xml-driven validation
+
+        skip |= context.ValidateRequiredPointer(pInfo_loc.dot(Field::pDstSize), pInfo->pDstSize,
+                                                "VUID-VkConvertCooperativeVectorMatrixInfoNV-pDstSize-parameter");
+
+        // No xml-driven validation
+
+        skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::srcComponentType), vvl::Enum::VkComponentTypeKHR,
+                                           pInfo->srcComponentType,
+                                           "VUID-VkConvertCooperativeVectorMatrixInfoNV-srcComponentType-parameter");
+
+        skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::dstComponentType), vvl::Enum::VkComponentTypeKHR,
+                                           pInfo->dstComponentType,
+                                           "VUID-VkConvertCooperativeVectorMatrixInfoNV-dstComponentType-parameter");
+
+        skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::srcLayout), vvl::Enum::VkCooperativeVectorMatrixLayoutNV,
+                                           pInfo->srcLayout, "VUID-VkConvertCooperativeVectorMatrixInfoNV-srcLayout-parameter");
+
+        skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::dstLayout), vvl::Enum::VkCooperativeVectorMatrixLayoutNV,
+                                           pInfo->dstLayout, "VUID-VkConvertCooperativeVectorMatrixInfoNV-dstLayout-parameter");
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                                const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
+                                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_cooperative_vector))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cooperative_vector});
+    skip |= context.ValidateStructTypeArray(loc.dot(Field::infoCount), loc.dot(Field::pInfos), infoCount, pInfos,
+                                            VK_STRUCTURE_TYPE_CONVERT_COOPERATIVE_VECTOR_MATRIX_INFO_NV, true, true,
+                                            "VUID-VkConvertCooperativeVectorMatrixInfoNV-sType-sType",
+                                            "VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfos-parameter",
+                                            "VUID-vkCmdConvertCooperativeVectorMatrixNV-infoCount-arraylength");
+    if (pInfos != nullptr) {
+        for (uint32_t infoIndex = 0; infoIndex < infoCount; ++infoIndex) {
+            [[maybe_unused]] const Location pInfos_loc = loc.dot(Field::pInfos, infoIndex);
+            skip |= context.ValidateStructPnext(pInfos_loc, pInfos[infoIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                                "VUID-VkConvertCooperativeVectorMatrixInfoNV-pNext-pNext", kVUIDUndefined, true);
+
+            // No xml-driven validation
+
+            skip |= context.ValidateRequiredPointer(pInfos_loc.dot(Field::pDstSize), pInfos[infoIndex].pDstSize,
+                                                    "VUID-VkConvertCooperativeVectorMatrixInfoNV-pDstSize-parameter");
+
+            // No xml-driven validation
+
+            skip |= context.ValidateRangedEnum(pInfos_loc.dot(Field::srcComponentType), vvl::Enum::VkComponentTypeKHR,
+                                               pInfos[infoIndex].srcComponentType,
+                                               "VUID-VkConvertCooperativeVectorMatrixInfoNV-srcComponentType-parameter");
+
+            skip |= context.ValidateRangedEnum(pInfos_loc.dot(Field::dstComponentType), vvl::Enum::VkComponentTypeKHR,
+                                               pInfos[infoIndex].dstComponentType,
+                                               "VUID-VkConvertCooperativeVectorMatrixInfoNV-dstComponentType-parameter");
+
+            skip |= context.ValidateRangedEnum(pInfos_loc.dot(Field::srcLayout), vvl::Enum::VkCooperativeVectorMatrixLayoutNV,
+                                               pInfos[infoIndex].srcLayout,
+                                               "VUID-VkConvertCooperativeVectorMatrixInfoNV-srcLayout-parameter");
+
+            skip |= context.ValidateRangedEnum(pInfos_loc.dot(Field::dstLayout), vvl::Enum::VkCooperativeVectorMatrixLayoutNV,
+                                               pInfos[infoIndex].dstLayout,
+                                               "VUID-VkConvertCooperativeVectorMatrixInfoNV-dstLayout-parameter");
+        }
+    }
+    return skip;
+}
+
 bool Device::PreCallValidateSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                   const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                                   const ErrorObject& error_obj) const {
@@ -28179,6 +28464,265 @@ bool Device::PreCallValidateGetScreenBufferPropertiesQNX(VkDevice device, const 
     return skip;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+bool Device::PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                        const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                        VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_cluster_acceleration_structure))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cluster_acceleration_structure});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_INPUT_INFO_NV,
+                                       true, "VUID-vkGetClusterAccelerationStructureBuildSizesNV-pInfo-parameter",
+                                       "VUID-VkClusterAccelerationStructureInputInfoNV-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkClusterAccelerationStructureInputInfoNV-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR,
+                                      AllVkBuildAccelerationStructureFlagBitsKHR, pInfo->flags, kOptionalFlags,
+                                      "VUID-VkClusterAccelerationStructureInputInfoNV-flags-parameter");
+
+        skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::opType), vvl::Enum::VkClusterAccelerationStructureOpTypeNV,
+                                           pInfo->opType, "VUID-VkClusterAccelerationStructureInputInfoNV-opType-parameter");
+
+        skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::opMode), vvl::Enum::VkClusterAccelerationStructureOpModeNV,
+                                           pInfo->opMode, "VUID-VkClusterAccelerationStructureInputInfoNV-opMode-parameter");
+
+        skip |=
+            context.ValidateStructType(pInfo_loc.dot(Field::pClustersBottomLevel), pInfo->opInput.pClustersBottomLevel,
+                                       VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_CLUSTERS_BOTTOM_LEVEL_INPUT_NV, true,
+                                       kVUIDUndefined, "VUID-VkClusterAccelerationStructureClustersBottomLevelInputNV-sType-sType");
+
+        if (pInfo->opInput.pClustersBottomLevel != nullptr) {
+            [[maybe_unused]] const Location pClustersBottomLevel_loc = pInfo_loc.dot(Field::pClustersBottomLevel);
+            skip |= context.ValidateStructPnext(
+                pClustersBottomLevel_loc, pInfo->opInput.pClustersBottomLevel->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                "VUID-VkClusterAccelerationStructureClustersBottomLevelInputNV-pNext-pNext", kVUIDUndefined, true);
+        }
+
+        skip |= context.ValidateStructType(pInfo_loc.dot(Field::pTriangleClusters), pInfo->opInput.pTriangleClusters,
+                                           VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_TRIANGLE_CLUSTER_INPUT_NV, true,
+                                           kVUIDUndefined, "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-sType-sType");
+
+        if (pInfo->opInput.pTriangleClusters != nullptr) {
+            [[maybe_unused]] const Location pTriangleClusters_loc = pInfo_loc.dot(Field::pTriangleClusters);
+            skip |= context.ValidateStructPnext(
+                pTriangleClusters_loc, pInfo->opInput.pTriangleClusters->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-pNext-pNext", kVUIDUndefined, true);
+
+            skip |= context.ValidateRangedEnum(pTriangleClusters_loc.dot(Field::vertexFormat), vvl::Enum::VkFormat,
+                                               pInfo->opInput.pTriangleClusters->vertexFormat,
+                                               "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-vertexFormat-parameter");
+        }
+
+        skip |= context.ValidateStructType(pInfo_loc.dot(Field::pMoveObjects), pInfo->opInput.pMoveObjects,
+                                           VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_MOVE_OBJECTS_INPUT_NV, true,
+                                           kVUIDUndefined, "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-sType-sType");
+
+        if (pInfo->opInput.pMoveObjects != nullptr) {
+            [[maybe_unused]] const Location pMoveObjects_loc = pInfo_loc.dot(Field::pMoveObjects);
+            skip |= context.ValidateStructPnext(
+                pMoveObjects_loc, pInfo->opInput.pMoveObjects->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-pNext-pNext", kVUIDUndefined, true);
+
+            skip |= context.ValidateRangedEnum(pMoveObjects_loc.dot(Field::type), vvl::Enum::VkClusterAccelerationStructureTypeNV,
+                                               pInfo->opInput.pMoveObjects->type,
+                                               "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-type-parameter");
+
+            skip |= context.ValidateBool32(pMoveObjects_loc.dot(Field::noMoveOverlap), pInfo->opInput.pMoveObjects->noMoveOverlap);
+        }
+    }
+    skip |= context.ValidateStructType(loc.dot(Field::pSizeInfo), pSizeInfo,
+                                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR, true,
+                                       "VUID-vkGetClusterAccelerationStructureBuildSizesNV-pSizeInfo-parameter",
+                                       "VUID-VkAccelerationStructureBuildSizesInfoKHR-sType-sType");
+    if (pSizeInfo != nullptr) {
+        [[maybe_unused]] const Location pSizeInfo_loc = loc.dot(Field::pSizeInfo);
+        skip |= context.ValidateStructPnext(pSizeInfo_loc, pSizeInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkAccelerationStructureBuildSizesInfoKHR-pNext-pNext", kVUIDUndefined, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_cluster_acceleration_structure))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cluster_acceleration_structure});
+    skip |= context.ValidateStructType(loc.dot(Field::pCommandInfos), pCommandInfos,
+                                       VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_COMMANDS_INFO_NV, true,
+                                       "VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-pCommandInfos-parameter",
+                                       "VUID-VkClusterAccelerationStructureCommandsInfoNV-sType-sType");
+    if (pCommandInfos != nullptr) {
+        [[maybe_unused]] const Location pCommandInfos_loc = loc.dot(Field::pCommandInfos);
+        skip |= context.ValidateStructPnext(pCommandInfos_loc, pCommandInfos->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkClusterAccelerationStructureCommandsInfoNV-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateStructType(pCommandInfos_loc.dot(Field::input), &(pCommandInfos->input),
+                                           VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_INPUT_INFO_NV, false, kVUIDUndefined,
+                                           "VUID-VkClusterAccelerationStructureInputInfoNV-sType-sType");
+
+        skip |= context.ValidateStructPnext(pCommandInfos_loc, pCommandInfos->input.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkClusterAccelerationStructureInputInfoNV-pNext-pNext", kVUIDUndefined, true);
+
+        skip |=
+            context.ValidateFlags(pCommandInfos_loc.dot(Field::flags), vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR,
+                                  AllVkBuildAccelerationStructureFlagBitsKHR, pCommandInfos->input.flags, kOptionalFlags,
+                                  "VUID-VkClusterAccelerationStructureInputInfoNV-flags-parameter");
+
+        skip |= context.ValidateRangedEnum(pCommandInfos_loc.dot(Field::opType), vvl::Enum::VkClusterAccelerationStructureOpTypeNV,
+                                           pCommandInfos->input.opType,
+                                           "VUID-VkClusterAccelerationStructureInputInfoNV-opType-parameter");
+
+        skip |= context.ValidateRangedEnum(pCommandInfos_loc.dot(Field::opMode), vvl::Enum::VkClusterAccelerationStructureOpModeNV,
+                                           pCommandInfos->input.opMode,
+                                           "VUID-VkClusterAccelerationStructureInputInfoNV-opMode-parameter");
+
+        skip |= context.ValidateStructType(
+            pCommandInfos_loc.dot(Field::pClustersBottomLevel), pCommandInfos->input.opInput.pClustersBottomLevel,
+            VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_CLUSTERS_BOTTOM_LEVEL_INPUT_NV, true, kVUIDUndefined,
+            "VUID-VkClusterAccelerationStructureClustersBottomLevelInputNV-sType-sType");
+
+        if (pCommandInfos->input.opInput.pClustersBottomLevel != nullptr) {
+            [[maybe_unused]] const Location pClustersBottomLevel_loc = pCommandInfos_loc.dot(Field::pClustersBottomLevel);
+            skip |= context.ValidateStructPnext(pClustersBottomLevel_loc, pCommandInfos->input.opInput.pClustersBottomLevel->pNext,
+                                                0, nullptr, GeneratedVulkanHeaderVersion,
+                                                "VUID-VkClusterAccelerationStructureClustersBottomLevelInputNV-pNext-pNext",
+                                                kVUIDUndefined, true);
+        }
+
+        skip |= context.ValidateStructType(pCommandInfos_loc.dot(Field::pTriangleClusters),
+                                           pCommandInfos->input.opInput.pTriangleClusters,
+                                           VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_TRIANGLE_CLUSTER_INPUT_NV, true,
+                                           kVUIDUndefined, "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-sType-sType");
+
+        if (pCommandInfos->input.opInput.pTriangleClusters != nullptr) {
+            [[maybe_unused]] const Location pTriangleClusters_loc = pCommandInfos_loc.dot(Field::pTriangleClusters);
+            skip |= context.ValidateStructPnext(pTriangleClusters_loc, pCommandInfos->input.opInput.pTriangleClusters->pNext, 0,
+                                                nullptr, GeneratedVulkanHeaderVersion,
+                                                "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-pNext-pNext",
+                                                kVUIDUndefined, true);
+
+            skip |= context.ValidateRangedEnum(pTriangleClusters_loc.dot(Field::vertexFormat), vvl::Enum::VkFormat,
+                                               pCommandInfos->input.opInput.pTriangleClusters->vertexFormat,
+                                               "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-vertexFormat-parameter");
+        }
+
+        skip |= context.ValidateStructType(pCommandInfos_loc.dot(Field::pMoveObjects), pCommandInfos->input.opInput.pMoveObjects,
+                                           VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_MOVE_OBJECTS_INPUT_NV, true,
+                                           kVUIDUndefined, "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-sType-sType");
+
+        if (pCommandInfos->input.opInput.pMoveObjects != nullptr) {
+            [[maybe_unused]] const Location pMoveObjects_loc = pCommandInfos_loc.dot(Field::pMoveObjects);
+            skip |= context.ValidateStructPnext(
+                pMoveObjects_loc, pCommandInfos->input.opInput.pMoveObjects->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-pNext-pNext", kVUIDUndefined, true);
+
+            skip |= context.ValidateRangedEnum(pMoveObjects_loc.dot(Field::type), vvl::Enum::VkClusterAccelerationStructureTypeNV,
+                                               pCommandInfos->input.opInput.pMoveObjects->type,
+                                               "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-type-parameter");
+
+            skip |= context.ValidateBool32(pMoveObjects_loc.dot(Field::noMoveOverlap),
+                                           pCommandInfos->input.opInput.pMoveObjects->noMoveOverlap);
+        }
+
+        // No xml-driven validation
+
+        // No xml-driven validation
+
+        // No xml-driven validation
+
+        skip |= context.ValidateFlags(pCommandInfos_loc.dot(Field::addressResolutionFlags),
+                                      vvl::FlagBitmask::VkClusterAccelerationStructureAddressResolutionFlagBitsNV,
+                                      AllVkClusterAccelerationStructureAddressResolutionFlagBitsNV,
+                                      pCommandInfos->addressResolutionFlags, kOptionalFlags,
+                                      "VUID-VkClusterAccelerationStructureCommandsInfoNV-addressResolutionFlags-parameter");
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV(
+    VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_partitioned_acceleration_structure))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_partitioned_acceleration_structure});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo,
+                                       VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_INSTANCES_INPUT_NV, true,
+                                       "VUID-vkGetPartitionedAccelerationStructuresBuildSizesNV-pInfo-parameter",
+                                       "VUID-VkPartitionedAccelerationStructureInstancesInputNV-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        constexpr std::array allowed_structs_VkPartitionedAccelerationStructureInstancesInputNV = {
+            VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_FLAGS_NV};
+
+        skip |= context.ValidateStructPnext(
+            pInfo_loc, pInfo->pNext, allowed_structs_VkPartitionedAccelerationStructureInstancesInputNV.size(),
+            allowed_structs_VkPartitionedAccelerationStructureInstancesInputNV.data(), GeneratedVulkanHeaderVersion,
+            "VUID-VkPartitionedAccelerationStructureInstancesInputNV-pNext-pNext",
+            "VUID-VkPartitionedAccelerationStructureInstancesInputNV-sType-unique", true);
+
+        skip |= context.ValidateFlags(pInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR,
+                                      AllVkBuildAccelerationStructureFlagBitsKHR, pInfo->flags, kOptionalFlags,
+                                      "VUID-VkPartitionedAccelerationStructureInstancesInputNV-flags-parameter");
+    }
+    skip |= context.ValidateStructType(loc.dot(Field::pSizeInfo), pSizeInfo,
+                                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR, true,
+                                       "VUID-vkGetPartitionedAccelerationStructuresBuildSizesNV-pSizeInfo-parameter",
+                                       "VUID-VkAccelerationStructureBuildSizesInfoKHR-sType-sType");
+    if (pSizeInfo != nullptr) {
+        [[maybe_unused]] const Location pSizeInfo_loc = loc.dot(Field::pSizeInfo);
+        skip |= context.ValidateStructPnext(pSizeInfo_loc, pSizeInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkAccelerationStructureBuildSizesInfoKHR-pNext-pNext", kVUIDUndefined, false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
+    VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_partitioned_acceleration_structure))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_partitioned_acceleration_structure});
+    skip |= context.ValidateStructType(loc.dot(Field::pBuildInfo), pBuildInfo,
+                                       VK_STRUCTURE_TYPE_BUILD_PARTITIONED_ACCELERATION_STRUCTURE_INFO_NV, true,
+                                       "VUID-vkCmdBuildPartitionedAccelerationStructuresNV-pBuildInfo-parameter",
+                                       "VUID-VkBuildPartitionedAccelerationStructureInfoNV-sType-sType");
+    if (pBuildInfo != nullptr) {
+        [[maybe_unused]] const Location pBuildInfo_loc = loc.dot(Field::pBuildInfo);
+        skip |= context.ValidateStructPnext(pBuildInfo_loc, pBuildInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkBuildPartitionedAccelerationStructureInfoNV-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateStructType(pBuildInfo_loc.dot(Field::input), &(pBuildInfo->input),
+                                           VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_INSTANCES_INPUT_NV, false,
+                                           kVUIDUndefined, "VUID-VkPartitionedAccelerationStructureInstancesInputNV-sType-sType");
+
+        constexpr std::array allowed_structs_VkPartitionedAccelerationStructureInstancesInputNV = {
+            VK_STRUCTURE_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_FLAGS_NV};
+
+        skip |= context.ValidateStructPnext(
+            pBuildInfo_loc, pBuildInfo->input.pNext, allowed_structs_VkPartitionedAccelerationStructureInstancesInputNV.size(),
+            allowed_structs_VkPartitionedAccelerationStructureInstancesInputNV.data(), GeneratedVulkanHeaderVersion,
+            "VUID-VkPartitionedAccelerationStructureInstancesInputNV-pNext-pNext",
+            "VUID-VkPartitionedAccelerationStructureInstancesInputNV-sType-unique", true);
+
+        skip |= context.ValidateFlags(pBuildInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkBuildAccelerationStructureFlagBitsKHR,
+                                      AllVkBuildAccelerationStructureFlagBitsKHR, pBuildInfo->input.flags, kOptionalFlags,
+                                      "VUID-VkPartitionedAccelerationStructureInstancesInputNV-flags-parameter");
+    }
+    return skip;
+}
 
 bool Device::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
                                                                       const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
@@ -29248,7 +29792,8 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
             [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
             constexpr std::array allowed_structs_VkRayTracingPipelineCreateInfoKHR = {
                 VK_STRUCTURE_TYPE_PIPELINE_BINARY_INFO_KHR, VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO,
-                VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO, VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO};
+                VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO, VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO,
+                VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CLUSTER_ACCELERATION_STRUCTURE_CREATE_INFO_NV};
 
             skip |= context.ValidateStructPnext(
                 pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext, allowed_structs_VkRayTracingPipelineCreateInfoKHR.size(),

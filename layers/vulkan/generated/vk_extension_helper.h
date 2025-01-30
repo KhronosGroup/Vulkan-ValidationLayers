@@ -588,6 +588,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_copy_memory_indirect{kNotEnabled};
     ExtEnabled vk_nv_memory_decompression{kNotEnabled};
     ExtEnabled vk_nv_device_generated_commands_compute{kNotEnabled};
+    ExtEnabled vk_nv_ray_tracing_linear_swept_spheres{kNotEnabled};
     ExtEnabled vk_nv_linear_color_attachment{kNotEnabled};
     ExtEnabled vk_ext_image_compression_control_swapchain{kNotEnabled};
     ExtEnabled vk_qcom_image_processing{kNotEnabled};
@@ -607,6 +608,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_sec_amigo_profiling{kNotEnabled};
     ExtEnabled vk_qcom_multiview_per_view_viewports{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing_invocation_reorder{kNotEnabled};
+    ExtEnabled vk_nv_cooperative_vector{kNotEnabled};
     ExtEnabled vk_nv_extended_sparse_address_space{kNotEnabled};
     ExtEnabled vk_ext_mutable_descriptor_type{kNotEnabled};
     ExtEnabled vk_ext_legacy_vertex_attributes{kNotEnabled};
@@ -629,6 +631,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_shader_atomic_float16_vector{kNotEnabled};
     ExtEnabled vk_ext_shader_replicated_composites{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing_validation{kNotEnabled};
+    ExtEnabled vk_nv_cluster_acceleration_structure{kNotEnabled};
+    ExtEnabled vk_nv_partitioned_acceleration_structure{kNotEnabled};
     ExtEnabled vk_ext_device_generated_commands{kNotEnabled};
     ExtEnabled vk_mesa_image_alignment_control{kNotEnabled};
     ExtEnabled vk_ext_depth_clamp_control{kNotEnabled};
@@ -1575,6 +1579,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_NV_device_generated_commands_compute,
              Info(&DeviceExtensions::vk_nv_device_generated_commands_compute,
                   {{{&DeviceExtensions::vk_nv_device_generated_commands, VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_NV_ray_tracing_linear_swept_spheres,
+             Info(&DeviceExtensions::vk_nv_ray_tracing_linear_swept_spheres,
+                  {{{&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_NV_linear_color_attachment,
              Info(&DeviceExtensions::vk_nv_linear_color_attachment, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -1642,6 +1649,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_NV_ray_tracing_invocation_reorder,
              Info(&DeviceExtensions::vk_nv_ray_tracing_invocation_reorder,
                   {{{&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_NV_cooperative_vector, Info(&DeviceExtensions::vk_nv_cooperative_vector, {})},
             {vvl::Extension::_VK_NV_extended_sparse_address_space,
              Info(&DeviceExtensions::vk_nv_extended_sparse_address_space, {})},
             {vvl::Extension::_VK_EXT_mutable_descriptor_type,
@@ -1707,6 +1715,12 @@ struct DeviceExtensions : public InstanceExtensions {
             {vvl::Extension::_VK_EXT_shader_replicated_composites,
              Info(&DeviceExtensions::vk_ext_shader_replicated_composites, {})},
             {vvl::Extension::_VK_NV_ray_tracing_validation, Info(&DeviceExtensions::vk_nv_ray_tracing_validation, {})},
+            {vvl::Extension::_VK_NV_cluster_acceleration_structure,
+             Info(&DeviceExtensions::vk_nv_cluster_acceleration_structure,
+                  {{{&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_NV_partitioned_acceleration_structure,
+             Info(&DeviceExtensions::vk_nv_partitioned_acceleration_structure,
+                  {{{&DeviceExtensions::vk_khr_acceleration_structure, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_EXT_device_generated_commands,
              Info(&DeviceExtensions::vk_ext_device_generated_commands,
                   {{{&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME},
@@ -2129,6 +2143,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_copy_memory_indirect:
         case vvl::Extension::_VK_NV_memory_decompression:
         case vvl::Extension::_VK_NV_device_generated_commands_compute:
+        case vvl::Extension::_VK_NV_ray_tracing_linear_swept_spheres:
         case vvl::Extension::_VK_NV_linear_color_attachment:
         case vvl::Extension::_VK_EXT_image_compression_control_swapchain:
         case vvl::Extension::_VK_QCOM_image_processing:
@@ -2148,6 +2163,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_SEC_amigo_profiling:
         case vvl::Extension::_VK_QCOM_multiview_per_view_viewports:
         case vvl::Extension::_VK_NV_ray_tracing_invocation_reorder:
+        case vvl::Extension::_VK_NV_cooperative_vector:
         case vvl::Extension::_VK_NV_extended_sparse_address_space:
         case vvl::Extension::_VK_EXT_mutable_descriptor_type:
         case vvl::Extension::_VK_EXT_legacy_vertex_attributes:
@@ -2170,6 +2186,8 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_shader_atomic_float16_vector:
         case vvl::Extension::_VK_EXT_shader_replicated_composites:
         case vvl::Extension::_VK_NV_ray_tracing_validation:
+        case vvl::Extension::_VK_NV_cluster_acceleration_structure:
+        case vvl::Extension::_VK_NV_partitioned_acceleration_structure:
         case vvl::Extension::_VK_EXT_device_generated_commands:
         case vvl::Extension::_VK_MESA_image_alignment_control:
         case vvl::Extension::_VK_EXT_depth_clamp_control:

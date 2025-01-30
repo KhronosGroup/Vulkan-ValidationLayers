@@ -1289,6 +1289,18 @@ virtual void PreCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(
 virtual void PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(
     VkPhysicalDevice physicalDevice, const VkOpticalFlowImageFormatInfoNV* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
     VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties, const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
+                                                                           uint32_t* pPropertyCount,
+                                                                           VkCooperativeVectorPropertiesNV* pProperties,
+                                                                           const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                         VkCooperativeVectorPropertiesNV* pProperties,
+                                                                         const RecordObject& record_obj) {}
+virtual void PostCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                          VkCooperativeVectorPropertiesNV* pProperties,
+                                                                          const RecordObject& record_obj) {}
 virtual bool PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const ErrorObject& error_obj) const {

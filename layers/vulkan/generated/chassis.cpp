@@ -24728,6 +24728,123 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(VkDevice de
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
+                                                                              uint32_t* pPropertyCount,
+                                                                              VkCooperativeVectorPropertiesNV* pProperties) {
+    VVL_ZoneScoped;
+
+    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceCooperativeVectorPropertiesNV,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto& vo : instance_dispatch->object_dispatch) {
+            skip |= vo->PreCallValidateGetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties,
+                                                                                      error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceCooperativeVectorPropertiesNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            vo->PreCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties,
+                                                                            record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = instance_dispatch->GetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            vo->PostCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties,
+                                                                             record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL ConvertCooperativeVectorMatrixNV(VkDevice device,
+                                                                const VkConvertCooperativeVectorMatrixInfoNV* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkConvertCooperativeVectorMatrixNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateConvertCooperativeVectorMatrixNV]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateConvertCooperativeVectorMatrixNV(device, pInfo, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkConvertCooperativeVectorMatrixNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordConvertCooperativeVectorMatrixNV]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordConvertCooperativeVectorMatrixNV(device, pInfo, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch");
+        result = device_dispatch->ConvertCooperativeVectorMatrixNV(device, pInfo);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordConvertCooperativeVectorMatrixNV]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordConvertCooperativeVectorMatrixNV(device, pInfo, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                               const VkConvertCooperativeVectorMatrixInfoNV* pInfos) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdConvertCooperativeVectorMatrixNV,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdConvertCooperativeVectorMatrixNV]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdConvertCooperativeVectorMatrixNV(commandBuffer, infoCount, pInfos, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdConvertCooperativeVectorMatrixNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdConvertCooperativeVectorMatrixNV]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdConvertCooperativeVectorMatrixNV(commandBuffer, infoCount, pInfos, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdConvertCooperativeVectorMatrixNV(commandBuffer, infoCount, pInfos);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdConvertCooperativeVectorMatrixNV]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdConvertCooperativeVectorMatrixNV(commandBuffer, infoCount, pInfos, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL SetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                      const VkLatencySleepModeInfoNV* pSleepModeInfo) {
     VVL_ZoneScoped;
@@ -24989,6 +25106,164 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, con
 }
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                       const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                       VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetClusterAccelerationStructureBuildSizesNV,
+                          VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetClusterAccelerationStructureBuildSizesNV]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetClusterAccelerationStructureBuildSizesNV(device, pInfo, pSizeInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetClusterAccelerationStructureBuildSizesNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetClusterAccelerationStructureBuildSizesNV]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetClusterAccelerationStructureBuildSizesNV(device, pInfo, pSizeInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->GetClusterAccelerationStructureBuildSizesNV(device, pInfo, pSizeInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetClusterAccelerationStructureBuildSizesNV]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetClusterAccelerationStructureBuildSizesNV(device, pInfo, pSizeInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdBuildClusterAccelerationStructureIndirectNV,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBuildClusterAccelerationStructureIndirectNV]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(commandBuffer, pCommandInfos, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdBuildClusterAccelerationStructureIndirectNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdBuildClusterAccelerationStructureIndirectNV]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdBuildClusterAccelerationStructureIndirectNV(commandBuffer, pCommandInfos, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdBuildClusterAccelerationStructureIndirectNV(commandBuffer, pCommandInfos);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBuildClusterAccelerationStructureIndirectNV]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdBuildClusterAccelerationStructureIndirectNV(commandBuffer, pCommandInfos, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL
+GetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+                                                 VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPartitionedAccelerationStructuresBuildSizesNV,
+                          VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV(device, pInfo, pSizeInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetPartitionedAccelerationStructuresBuildSizesNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetPartitionedAccelerationStructuresBuildSizesNV]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetPartitionedAccelerationStructuresBuildSizesNV(device, pInfo, pSizeInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->GetPartitionedAccelerationStructuresBuildSizesNV(device, pInfo, pSizeInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetPartitionedAccelerationStructuresBuildSizesNV]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetPartitionedAccelerationStructuresBuildSizesNV(device, pInfo, pSizeInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBuildPartitionedAccelerationStructuresNV(
+    VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdBuildPartitionedAccelerationStructuresNV,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate");
+        for (const auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBuildPartitionedAccelerationStructuresNV]) {
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(commandBuffer, pBuildInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdBuildPartitionedAccelerationStructuresNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdBuildPartitionedAccelerationStructuresNV]) {
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdBuildPartitionedAccelerationStructuresNV(commandBuffer, pBuildInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch");
+        device_dispatch->CmdBuildPartitionedAccelerationStructuresNV(commandBuffer, pBuildInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBuildPartitionedAccelerationStructuresNV]) {
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdBuildPartitionedAccelerationStructuresNV(commandBuffer, pBuildInfo, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
                                                                      const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
                                                                      VkMemoryRequirements2* pMemoryRequirements) {
@@ -27195,6 +27470,10 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkCmdSetDepthClampRangeEXT", {kFuncTypeDev, (void*)CmdSetDepthClampRangeEXT}},
         {"vkGetFramebufferTilePropertiesQCOM", {kFuncTypeDev, (void*)GetFramebufferTilePropertiesQCOM}},
         {"vkGetDynamicRenderingTilePropertiesQCOM", {kFuncTypeDev, (void*)GetDynamicRenderingTilePropertiesQCOM}},
+        {"vkGetPhysicalDeviceCooperativeVectorPropertiesNV",
+         {kFuncTypePdev, (void*)GetPhysicalDeviceCooperativeVectorPropertiesNV}},
+        {"vkConvertCooperativeVectorMatrixNV", {kFuncTypeDev, (void*)ConvertCooperativeVectorMatrixNV}},
+        {"vkCmdConvertCooperativeVectorMatrixNV", {kFuncTypeDev, (void*)CmdConvertCooperativeVectorMatrixNV}},
         {"vkSetLatencySleepModeNV", {kFuncTypeDev, (void*)SetLatencySleepModeNV}},
         {"vkLatencySleepNV", {kFuncTypeDev, (void*)LatencySleepNV}},
         {"vkSetLatencyMarkerNV", {kFuncTypeDev, (void*)SetLatencyMarkerNV}},
@@ -27204,6 +27483,11 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
         {"vkGetScreenBufferPropertiesQNX", {kFuncTypeDev, (void*)GetScreenBufferPropertiesQNX}},
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+        {"vkGetClusterAccelerationStructureBuildSizesNV", {kFuncTypeDev, (void*)GetClusterAccelerationStructureBuildSizesNV}},
+        {"vkCmdBuildClusterAccelerationStructureIndirectNV", {kFuncTypeDev, (void*)CmdBuildClusterAccelerationStructureIndirectNV}},
+        {"vkGetPartitionedAccelerationStructuresBuildSizesNV",
+         {kFuncTypeDev, (void*)GetPartitionedAccelerationStructuresBuildSizesNV}},
+        {"vkCmdBuildPartitionedAccelerationStructuresNV", {kFuncTypeDev, (void*)CmdBuildPartitionedAccelerationStructuresNV}},
         {"vkGetGeneratedCommandsMemoryRequirementsEXT", {kFuncTypeDev, (void*)GetGeneratedCommandsMemoryRequirementsEXT}},
         {"vkCmdPreprocessGeneratedCommandsEXT", {kFuncTypeDev, (void*)CmdPreprocessGeneratedCommandsEXT}},
         {"vkCmdExecuteGeneratedCommandsEXT", {kFuncTypeDev, (void*)CmdExecuteGeneratedCommandsEXT}},
