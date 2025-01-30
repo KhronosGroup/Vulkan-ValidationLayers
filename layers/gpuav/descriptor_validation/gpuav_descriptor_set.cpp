@@ -259,6 +259,15 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
     return input_buffer_.Address();
 }
 
+// There are times we need a dummy address because the app is legally using something that doesn't require a post process buffer
+bool DescriptorSet::CanPostProcess() const {
+    // When no descriptors (only inline, zero bindingCount, etc)
+    if (GetNonInlineDescriptorCount() == 0) {
+        return false;
+    }
+    return true;
+}
+
 VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Location &loc) {
     auto guard = Lock();
     // Each set only needs to create its post process buffer once. It is based on total descriptor count, and even with things like
@@ -267,8 +276,7 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
         return post_process_buffer_.Address();
     }
 
-    if (GetNonInlineDescriptorCount() == 0) {
-        // no descriptors case, return a dummy state object
+    if (!CanPostProcess()) {
         return post_process_buffer_.Address();
     }
 

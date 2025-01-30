@@ -875,3 +875,94 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVDescriptorPostProcess, ZeroBindingDescriptor) {
+    TEST_DESCRIPTION(
+        "Have an unused descriptor slot actually be backed by zero bindings (and therefor having no post process buffer)");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_samplerless_texture_functions : enable
+        layout(set = 1, binding = 0) uniform texture2D textures[2];
+        layout(set = 1, binding = 1) buffer output_buffer {
+            uint index;
+            vec4 data;
+        };
+
+        void main() {
+            data = texelFetch(textures[index], ivec2(0), 0);
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    OneOffDescriptorSet descriptor_set_unused(m_device, {{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    // Create a VkDescriptorSet backed by zero bindings
+    VkDescriptorSetLayoutCreateInfo empty_set_layout_ci = vku::InitStructHelper();
+    empty_set_layout_ci.bindingCount = 0;
+    empty_set_layout_ci.pBindings = nullptr;
+    vkt::DescriptorSetLayout empty_set_layout(*m_device, empty_set_layout_ci);
+
+    VkDescriptorPoolSize pool_size = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &pool_size;
+    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
+    allocate_info.descriptorPool = pool.handle();
+    allocate_info.descriptorSetCount = 1;
+    allocate_info.pSetLayouts = &empty_set_layout.handle();
+
+    VkDescriptorSet descriptor_set_empty = VK_NULL_HANDLE;
+    vk::AllocateDescriptorSets(device(), &allocate_info, &descriptor_set_empty);
+
+    const vkt::PipelineLayout pipeline_layout1(*m_device, {&descriptor_set_unused.layout_, &descriptor_set.layout_});
+    const vkt::PipelineLayout pipeline_layout2(*m_device, {&empty_set_layout, &descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe1(*this);
+    pipe1.cp_ci_.layout = pipeline_layout1.handle();
+    pipe1.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe1.CreateComputePipeline();
+
+    CreateComputePipelineHelper pipe2(*this);
+    pipe2.cp_ci_.layout = pipeline_layout2.handle();
+    pipe2.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe2.CreateComputePipeline();
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    buffer_ptr[0] = 0;
+    buffer.Memory().Unmap();
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    VkDescriptorSet sets[2] = {descriptor_set_unused.set_, descriptor_set.set_};
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe1.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout1, 0, 2, sets, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+
+    sets[0] = descriptor_set_empty;
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe2.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout2, 0, 2, sets, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
