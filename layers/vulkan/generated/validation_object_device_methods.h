@@ -5354,6 +5354,25 @@ virtual void PreCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice device,
 virtual void PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
                                                                  VkTilePropertiesQCOM* pProperties,
                                                                  const RecordObject& record_obj) {}
+virtual bool PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                                const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
+                                                                const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                              const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
+                                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                               const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
+                                                               const RecordObject& record_obj) {}
 virtual bool PreCallValidateSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                   const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                                   const ErrorObject& error_obj) const {
@@ -5415,6 +5434,53 @@ virtual void PreCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const st
 virtual void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                                         VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) {}
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+virtual bool PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                        const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                        VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                                        const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                      const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                      VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                                      const RecordObject& record_obj) {}
+virtual void PostCallRecordGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                       const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                       VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                                       const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
+    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
+    const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
+    const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV(
+    VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetPartitionedAccelerationStructuresBuildSizesNV(
+    VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetPartitionedAccelerationStructuresBuildSizesNV(
+    VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
+    VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBuildPartitionedAccelerationStructuresNV(
+    VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+    const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBuildPartitionedAccelerationStructuresNV(
+    VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+    const RecordObject& record_obj) {}
 virtual bool PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
                                                                       const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
                                                                       VkMemoryRequirements2* pMemoryRequirements,

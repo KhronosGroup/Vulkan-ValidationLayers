@@ -2194,6 +2194,9 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
             }
 
         } break;
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+            // TODO
+            break;
         // KHR acceleration structures don't require memory to be bound manually to them.
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:

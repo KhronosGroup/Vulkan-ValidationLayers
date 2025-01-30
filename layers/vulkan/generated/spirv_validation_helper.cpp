@@ -263,6 +263,16 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo> &GetSpirvCapabilites(
         {spv::CapabilityCooperativeMatrixPerElementOperationsNV, {0, &DeviceFeatures::cooperativeMatrixPerElementOperations, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixTensorAddressingNV, {0, &DeviceFeatures::cooperativeMatrixTensorAddressing, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixBlockLoadsNV, {0, &DeviceFeatures::cooperativeMatrixBlockLoads, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityRayTracingSpheresGeometryNV, {0, &DeviceFeatures::spheres, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityRayTracingLinearSweptSpheresGeometryNV, {0, &DeviceFeatures::linearSweptSpheres, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityRayTracingClusterAccelerationStructureNV, {0, &DeviceFeatures::clusterAccelerationStructure, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityCooperativeVectorNV, {0, &DeviceFeatures::cooperativeVector, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityCooperativeVectorTrainingNV, {0, &DeviceFeatures::cooperativeVectorTraining, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -379,6 +389,8 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo> &GetSpirvExte
         {"SPV_KHR_relaxed_extended_instruction", {0, nullptr, &DeviceExtensions::vk_khr_shader_relaxed_extended_instruction, ""}},
         {"SPV_NV_cooperative_matrix2", {0, nullptr, &DeviceExtensions::vk_nv_cooperative_matrix2, ""}},
         {"SPV_NV_tensor_addressing", {0, nullptr, &DeviceExtensions::vk_nv_cooperative_matrix2, ""}},
+        {"SPV_NV_cluster_acceleration_structure", {0, nullptr, &DeviceExtensions::vk_nv_cluster_acceleration_structure, ""}},
+        {"SPV_NV_cooperative_vector", {0, nullptr, &DeviceExtensions::vk_nv_cooperative_vector, ""}},
     };
     // clang-format on
     return spirv_extensions;
@@ -1125,6 +1137,8 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
     {"SPV_KHR_relaxed_extended_instruction", {{vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction}}},
     {"SPV_NV_cooperative_matrix2", {{vvl::Extension::_VK_NV_cooperative_matrix2}}},
     {"SPV_NV_tensor_addressing", {{vvl::Extension::_VK_NV_cooperative_matrix2}}},
+    {"SPV_NV_cluster_acceleration_structure", {{vvl::Extension::_VK_NV_cluster_acceleration_structure}}},
+    {"SPV_NV_cooperative_vector", {{vvl::Extension::_VK_NV_cooperative_vector}}},
     };
 
     // VUs before catch unknown extensions

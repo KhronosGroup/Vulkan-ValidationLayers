@@ -7811,6 +7811,30 @@ void Device::PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice device
     FinishReadObjectParentInstance(device, record_obj.location);
 }
 
+void Device::PreCallRecordConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                           const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                            const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                              const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
+                                                              const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                               const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
+                                                               const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void Device::PreCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                 const VkLatencySleepModeInfoNV* pSleepModeInfo, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
@@ -7893,6 +7917,60 @@ void Device::PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const s
 }
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+void Device::PreCallRecordGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                      const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                      VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                                      const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                       const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                       VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
+                                                                       const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordCmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
+    const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
+    const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordGetPartitionedAccelerationStructuresBuildSizesNV(
+    VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetPartitionedAccelerationStructuresBuildSizesNV(
+    VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordCmdBuildPartitionedAccelerationStructuresNV(
+    VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+    const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdBuildPartitionedAccelerationStructuresNV(
+    VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
+    const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void Device::PreCallRecordGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
                                                                     const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
                                                                     VkMemoryRequirements2* pMemoryRequirements,

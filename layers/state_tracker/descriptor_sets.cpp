@@ -18,6 +18,7 @@
 
 #include "state_tracker/descriptor_sets.h"
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_core.h>
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -166,6 +167,9 @@ vvl::DescriptorClass vvl::DescriptorTypeToClass(VkDescriptorType type) {
             return DescriptorClass::AccelerationStructure;
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
             return DescriptorClass::Mutable;
+        case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+            // TODO
+            break;
         case VK_DESCRIPTOR_TYPE_MAX_ENUM:
             break;
     }

@@ -1343,6 +1343,13 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->deviceGeneratedComputeCaptureReplay |= enabled->deviceGeneratedComputeCaptureReplay == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_LINEAR_SWEPT_SPHERES_FEATURES_NV: {
+                const VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV *>(pNext);
+                features->spheres |= enabled->spheres == VK_TRUE;
+                features->linearSweptSpheres |= enabled->linearSweptSpheres == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV: {
                 const VkPhysicalDeviceLinearColorAttachmentFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceLinearColorAttachmentFeaturesNV *>(pNext);
@@ -1492,6 +1499,13 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->rayTracingInvocationReorder |= enabled->rayTracingInvocationReorder == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_VECTOR_FEATURES_NV: {
+                const VkPhysicalDeviceCooperativeVectorFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceCooperativeVectorFeaturesNV *>(pNext);
+                features->cooperativeVector |= enabled->cooperativeVector == VK_TRUE;
+                features->cooperativeVectorTraining |= enabled->cooperativeVectorTraining == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_SPARSE_ADDRESS_SPACE_FEATURES_NV: {
                 const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV *>(pNext);
@@ -1607,6 +1621,18 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceRayTracingValidationFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceRayTracingValidationFeaturesNV *>(pNext);
                 features->rayTracingValidation |= enabled->rayTracingValidation == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_FEATURES_NV: {
+                const VkPhysicalDeviceClusterAccelerationStructureFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceClusterAccelerationStructureFeaturesNV *>(pNext);
+                features->clusterAccelerationStructure |= enabled->clusterAccelerationStructure == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PARTITIONED_ACCELERATION_STRUCTURE_FEATURES_NV: {
+                const VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePartitionedAccelerationStructureFeaturesNV *>(pNext);
+                features->partitionedAccelerationStructure |= enabled->partitionedAccelerationStructure == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_FEATURES_EXT: {

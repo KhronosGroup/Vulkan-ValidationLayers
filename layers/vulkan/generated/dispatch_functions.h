@@ -4094,6 +4094,25 @@ static inline VkResult DispatchGetDynamicRenderingTilePropertiesQCOM(VkDevice de
     return dispatch->GetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
 }
 
+static inline VkResult DispatchGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
+                                                                              uint32_t* pPropertyCount,
+                                                                              VkCooperativeVectorPropertiesNV* pProperties) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    return dispatch->GetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties);
+}
+
+static inline VkResult DispatchConvertCooperativeVectorMatrixNV(VkDevice device,
+                                                                const VkConvertCooperativeVectorMatrixInfoNV* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->ConvertCooperativeVectorMatrixNV(device, pInfo);
+}
+
+static inline void DispatchCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                               const VkConvertCooperativeVectorMatrixInfoNV* pInfos) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdConvertCooperativeVectorMatrixNV(commandBuffer, infoCount, pInfos);
+}
+
 static inline VkResult DispatchSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                      const VkLatencySleepModeInfoNV* pSleepModeInfo) {
     auto dispatch = vvl::dispatch::GetData(device);
@@ -4134,6 +4153,32 @@ static inline VkResult DispatchGetScreenBufferPropertiesQNX(VkDevice device, con
     return dispatch->GetScreenBufferPropertiesQNX(device, buffer, pProperties);
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+static inline void DispatchGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
+                                                                       const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                                       VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->GetClusterAccelerationStructureBuildSizesNV(device, pInfo, pSizeInfo);
+}
+
+static inline void DispatchCmdBuildClusterAccelerationStructureIndirectNV(
+    VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBuildClusterAccelerationStructureIndirectNV(commandBuffer, pCommandInfos);
+}
+
+static inline void DispatchGetPartitionedAccelerationStructuresBuildSizesNV(
+    VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->GetPartitionedAccelerationStructuresBuildSizesNV(device, pInfo, pSizeInfo);
+}
+
+static inline void DispatchCmdBuildPartitionedAccelerationStructuresNV(
+    VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBuildPartitionedAccelerationStructuresNV(commandBuffer, pBuildInfo);
+}
 
 static inline void DispatchGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
                                                                      const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,

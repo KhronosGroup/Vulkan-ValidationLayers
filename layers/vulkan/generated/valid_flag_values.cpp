@@ -988,6 +988,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
                     return {vvl::Extension::_VK_NV_optical_flow};
                 }
             }
+            if (value & (VK_PIPELINE_STAGE_2_CONVERT_COOPERATIVE_VECTOR_MATRIX_BIT_NV)) {
+                if (!IsExtEnabled(extensions.vk_nv_cooperative_vector)) {
+                    return {vvl::Extension::_VK_NV_cooperative_vector};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkAccessFlagBits2:
             if (value & (VK_ACCESS_2_VIDEO_DECODE_READ_BIT_KHR | VK_ACCESS_2_VIDEO_DECODE_WRITE_BIT_KHR)) {
@@ -1032,9 +1037,19 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
                     return {vvl::Extension::_VK_AMDX_shader_enqueue};
                 }
             }
+            if (value & (VK_PIPELINE_CREATE_2_RAY_TRACING_ALLOW_SPHERES_AND_LINEAR_SWEPT_SPHERES_BIT_NV)) {
+                if (!IsExtEnabled(extensions.vk_nv_ray_tracing_linear_swept_spheres)) {
+                    return {vvl::Extension::_VK_NV_ray_tracing_linear_swept_spheres};
+                }
+            }
             if (value & (VK_PIPELINE_CREATE_2_ENABLE_LEGACY_DITHERING_BIT_EXT)) {
                 if (!IsExtEnabled(extensions.vk_ext_legacy_dithering)) {
                     return {vvl::Extension::_VK_EXT_legacy_dithering};
+                }
+            }
+            if (value & (VK_PIPELINE_CREATE_2_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR)) {
+                if (!IsExtEnabled(extensions.vk_khr_ray_tracing_pipeline)) {
+                    return {vvl::Extension::_VK_KHR_ray_tracing_pipeline};
                 }
             }
             if (value & (VK_PIPELINE_CREATE_2_DISALLOW_OPACITY_MICROMAP_BIT_ARM)) {
@@ -1280,6 +1295,12 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkOpticalFlowExecuteFlagsNV(value);
         case vvl::FlagBitmask::VkShaderCreateFlagBitsEXT:
             return string_VkShaderCreateFlagsEXT(value);
+        case vvl::FlagBitmask::VkClusterAccelerationStructureAddressResolutionFlagBitsNV:
+            return string_VkClusterAccelerationStructureAddressResolutionFlagsNV(value);
+        case vvl::FlagBitmask::VkClusterAccelerationStructureClusterFlagBitsNV:
+            return string_VkClusterAccelerationStructureClusterFlagsNV(value);
+        case vvl::FlagBitmask::VkPartitionedAccelerationStructureInstanceFlagBitsNV:
+            return string_VkPartitionedAccelerationStructureInstanceFlagsNV(value);
         case vvl::FlagBitmask::VkIndirectCommandsInputModeFlagBitsEXT:
             return string_VkIndirectCommandsInputModeFlagsEXT(value);
         case vvl::FlagBitmask::VkIndirectCommandsLayoutUsageFlagBitsEXT:

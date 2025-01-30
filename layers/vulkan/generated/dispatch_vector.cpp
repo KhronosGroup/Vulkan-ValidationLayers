@@ -1770,6 +1770,12 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDynamicRenderingTilePropertiesQCOM);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDynamicRenderingTilePropertiesQCOM);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDynamicRenderingTilePropertiesQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateConvertCooperativeVectorMatrixNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordConvertCooperativeVectorMatrixNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordConvertCooperativeVectorMatrixNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdConvertCooperativeVectorMatrixNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdConvertCooperativeVectorMatrixNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdConvertCooperativeVectorMatrixNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateSetLatencySleepModeNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetLatencySleepModeNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetLatencySleepModeNV);
@@ -1793,6 +1799,18 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordGetScreenBufferPropertiesQNX);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetScreenBufferPropertiesQNX);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetClusterAccelerationStructureBuildSizesNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetClusterAccelerationStructureBuildSizesNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetClusterAccelerationStructureBuildSizesNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBuildClusterAccelerationStructureIndirectNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBuildClusterAccelerationStructureIndirectNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetPartitionedAccelerationStructuresBuildSizesNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetPartitionedAccelerationStructuresBuildSizesNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBuildPartitionedAccelerationStructuresNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBuildPartitionedAccelerationStructuresNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBuildPartitionedAccelerationStructuresNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetGeneratedCommandsMemoryRequirementsEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetGeneratedCommandsMemoryRequirementsEXT);

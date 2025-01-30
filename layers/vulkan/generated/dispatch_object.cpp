@@ -8033,6 +8033,25 @@ VkResult Device::GetDynamicRenderingTilePropertiesQCOM(VkDevice device, const Vk
     return result;
 }
 
+VkResult Instance::GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                  VkCooperativeVectorPropertiesNV* pProperties) {
+    VkResult result =
+        instance_dispatch_table.GetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties);
+
+    return result;
+}
+
+VkResult Device::ConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo) {
+    VkResult result = device_dispatch_table.ConvertCooperativeVectorMatrixNV(device, pInfo);
+
+    return result;
+}
+
+void Device::CmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                 const VkConvertCooperativeVectorMatrixInfoNV* pInfos) {
+    device_dispatch_table.CmdConvertCooperativeVectorMatrixNV(commandBuffer, infoCount, pInfos);
+}
+
 VkResult Device::SetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepModeInfoNV* pSleepModeInfo) {
     if (!wrap_handles) return device_dispatch_table.SetLatencySleepModeNV(device, swapchain, pSleepModeInfo);
     { swapchain = Unwrap(swapchain); }
@@ -8089,6 +8108,27 @@ VkResult Device::GetScreenBufferPropertiesQNX(VkDevice device, const struct _scr
     return result;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+void Device::GetClusterAccelerationStructureBuildSizesNV(VkDevice device, const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                         VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+    device_dispatch_table.GetClusterAccelerationStructureBuildSizesNV(device, pInfo, pSizeInfo);
+}
+
+void Device::CmdBuildClusterAccelerationStructureIndirectNV(VkCommandBuffer commandBuffer,
+                                                            const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos) {
+    device_dispatch_table.CmdBuildClusterAccelerationStructureIndirectNV(commandBuffer, pCommandInfos);
+}
+
+void Device::GetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device,
+                                                              const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+                                                              VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
+    device_dispatch_table.GetPartitionedAccelerationStructuresBuildSizesNV(device, pInfo, pSizeInfo);
+}
+
+void Device::CmdBuildPartitionedAccelerationStructuresNV(VkCommandBuffer commandBuffer,
+                                                         const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo) {
+    device_dispatch_table.CmdBuildPartitionedAccelerationStructuresNV(commandBuffer, pBuildInfo);
+}
 
 void Device::GetGeneratedCommandsMemoryRequirementsEXT(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
                                                        VkMemoryRequirements2* pMemoryRequirements) {

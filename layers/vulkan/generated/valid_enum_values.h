@@ -114,6 +114,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkFragmentShadingRateCombinerOpK
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeTuningModeKHR value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkComponentTypeKHR value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeAV1PredictionModeKHR value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkVideoEncodeAV1RateControlGroupKHR value) const;
@@ -206,6 +208,10 @@ ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureCompatibi
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkAccelerationStructureBuildTypeKHR value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkRayTracingLssIndexingModeNV value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkRayTracingLssPrimitiveEndCapsModeNV value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDirectDriverLoadingModeLUNARG value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkOpticalFlowPerformanceLevelNV value) const;
@@ -220,6 +226,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkShaderCodeTypeEXT value) const
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDepthClampModeEXT value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkCooperativeVectorMatrixLayoutNV value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkLayerSettingTypeEXT value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkLatencyMarkerNV value) const;
@@ -231,6 +239,14 @@ template <>
 ValidValue stateless::Context::IsValidEnumValue(VkCubicFilterWeightsQCOM value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDisplaySurfaceStereoTypeNV value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkClusterAccelerationStructureTypeNV value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkClusterAccelerationStructureOpTypeNV value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkClusterAccelerationStructureOpModeNV value) const;
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkPartitionedAccelerationStructureOpTypeNV value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkIndirectExecutionSetInfoTypeEXT value) const;
 template <>

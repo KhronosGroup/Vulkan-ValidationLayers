@@ -893,6 +893,9 @@ VkResult GetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebu
                                           VkTilePropertiesQCOM* pProperties);
 VkResult GetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
                                                VkTilePropertiesQCOM* pProperties);
+VkResult ConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo);
+void CmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                         const VkConvertCooperativeVectorMatrixInfoNV* pInfos);
 VkResult SetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepModeInfoNV* pSleepModeInfo);
 VkResult LatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo);
 void SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo);
@@ -903,6 +906,15 @@ void CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImag
 VkResult GetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                       VkScreenBufferPropertiesQNX* pProperties);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+void GetClusterAccelerationStructureBuildSizesNV(VkDevice device, const VkClusterAccelerationStructureInputInfoNV* pInfo,
+                                                 VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo);
+void CmdBuildClusterAccelerationStructureIndirectNV(VkCommandBuffer commandBuffer,
+                                                    const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos);
+void GetPartitionedAccelerationStructuresBuildSizesNV(VkDevice device,
+                                                      const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
+                                                      VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo);
+void CmdBuildPartitionedAccelerationStructuresNV(VkCommandBuffer commandBuffer,
+                                                 const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo);
 void GetGeneratedCommandsMemoryRequirementsEXT(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
                                                VkMemoryRequirements2* pMemoryRequirements);
 void CmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,

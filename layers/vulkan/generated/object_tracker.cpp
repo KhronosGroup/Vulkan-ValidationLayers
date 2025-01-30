@@ -7567,6 +7567,15 @@ bool Device::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice devic
     return skip;
 }
 
+// vkGetPhysicalDeviceCooperativeVectorPropertiesNV:
+// Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceCooperativeVectorPropertiesNV-physicalDevice-parameter"
+
+// vkConvertCooperativeVectorMatrixNV:
+// Checked by chassis: device: "VUID-vkConvertCooperativeVectorMatrixNV-device-parameter"
+
+// vkCmdConvertCooperativeVectorMatrixNV:
+// Checked by chassis: commandBuffer: "VUID-vkCmdConvertCooperativeVectorMatrixNV-commandBuffer-parameter"
+
 bool Device::PreCallValidateSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
                                                   const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                                   const ErrorObject& error_obj) const {
@@ -7627,6 +7636,18 @@ bool Device::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR 
 // Checked by chassis: device: "VUID-vkGetScreenBufferPropertiesQNX-device-parameter"
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+// vkGetClusterAccelerationStructureBuildSizesNV:
+// Checked by chassis: device: "VUID-vkGetClusterAccelerationStructureBuildSizesNV-device-parameter"
+
+// vkCmdBuildClusterAccelerationStructureIndirectNV:
+// Checked by chassis: commandBuffer: "VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-commandBuffer-parameter"
+
+// vkGetPartitionedAccelerationStructuresBuildSizesNV:
+// Checked by chassis: device: "VUID-vkGetPartitionedAccelerationStructuresBuildSizesNV-device-parameter"
+
+// vkCmdBuildPartitionedAccelerationStructuresNV:
+// Checked by chassis: commandBuffer: "VUID-vkCmdBuildPartitionedAccelerationStructuresNV-commandBuffer-parameter"
 
 bool Device::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
                                                                       const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,

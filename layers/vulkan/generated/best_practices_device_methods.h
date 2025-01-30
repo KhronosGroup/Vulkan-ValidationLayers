@@ -702,6 +702,9 @@ void PostCallRecordGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, s
 void PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount,
                                                     VkTilePropertiesQCOM* pProperties, const RecordObject& record_obj) override;
 
+void PostCallRecordConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                    const RecordObject& record_obj) override;
+
 void PostCallRecordSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepModeInfoNV* pSleepModeInfo,
                                          const RecordObject& record_obj) override;
 
