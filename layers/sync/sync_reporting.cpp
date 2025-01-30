@@ -114,6 +114,15 @@ std::string ReportKeyValues::GetExtraPropertiesSection(bool pretty_print) const 
     return ss.str();
 }
 
+const std::string *ReportKeyValues::FindProperty(const std::string &key) const {
+    for (const auto &property : key_values) {
+        if (property.key == key) {
+            return &property.value;
+        }
+    }
+    return nullptr;
+}
+
 static std::string FormatHandleRecord(const HandleRecord::FormatterState &formatter) {
     std::stringstream out;
     const HandleRecord &handle = formatter.that;
@@ -143,7 +152,7 @@ static std::string FormatHandleRecord(const HandleRecord::FormatterState &format
     return out.str();
 }
 
-static std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState &formatter) {
+static std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState &formatter, ReportKeyValues &key_values) {
     std::stringstream out;
     const ResourceUsageRecord &record = formatter.record;
     if (record.alt_usage) {
@@ -173,6 +182,7 @@ static std::string FormatResourceUsageRecord(const ResourceUsageRecord::Formatte
             const std::string debug_region_name = formatter.debug_name_provider->GetDebugRegionName(record);
             if (!debug_region_name.empty()) {
                 out << ", debug_region: " << debug_region_name;
+                key_values.Add(kPropertyDebugRegion, debug_region_name);
             }
         }
     }
@@ -408,7 +418,7 @@ std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard, Re
     std::stringstream out;
     assert(hazard.IsHazard());
     out << FormatHazardState(hazard.State(), queue_flags_, sync_state_.enabled_features, sync_state_.extensions, key_values);
-    out << ", " << FormatUsage(hazard.TagEx()) << ")";
+    out << ", " << FormatUsage(hazard.TagEx(), key_values) << ")";
     return out.str();
 }
 
@@ -423,14 +433,15 @@ ReportUsageInfo CommandBufferAccessContext::GetReportUsageInfo(ResourceUsageTagE
     return info;
 }
 
-std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
+std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const {
     if (tag_ex.tag >= access_log_->size()) return std::string();
 
     std::stringstream out;
     assert(tag_ex.tag < access_log_->size());
     const auto &record = (*access_log_)[tag_ex.tag];
     const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
-    out << FormatResourceUsageRecord(record.Formatter(sync_state_, cb_state_, debug_name_provider, tag_ex.handle_index));
+    out << FormatResourceUsageRecord(record.Formatter(sync_state_, cb_state_, debug_name_provider, tag_ex.handle_index),
+                                     extra_properties);
     return out.str();
 }
 
@@ -444,7 +455,7 @@ void CommandBufferAccessContext::AddUsageRecordExtraProperties(ResourceUsageTag 
     extra_properties.Add(kPropertyResetNo, record.reset_count);
 }
 
-std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
+std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const {
     std::stringstream out;
     BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag_ex.tag);
     if (access.IsValid()) {
@@ -455,7 +466,8 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex) const {
             out << FormatStateObject(SyncNodeFormatter(sync_state_, batch.queue->GetQueueState()));
             out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index << ", ";
         }
-        out << FormatResourceUsageRecord(record.Formatter(sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index));
+        out << FormatResourceUsageRecord(record.Formatter(sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index),
+                                         extra_properties);
     }
     return out.str();
 }

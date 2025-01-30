@@ -54,6 +54,7 @@ struct ReportKeyValues {
     void Add(std::string_view key, uint64_t value);
 
     std::string GetExtraPropertiesSection(bool pretty_print) const;
+    const std::string* FindProperty(const std::string &key) const;
 };
 
 struct ReportUsageInfo {
@@ -73,6 +74,7 @@ inline constexpr const char *kPropertyAccess = "access";
 inline constexpr const char *kPropertyPriorAccess = "prior_access";
 inline constexpr const char *kPropertyReadBarriers = "read_barriers";
 inline constexpr const char *kPropertyWriteBarriers = "write_barriers";
+inline constexpr const char *kPropertyDebugRegion = "debug_region";
 inline constexpr const char *kPropertyLoadOp = "load_op";
 inline constexpr const char *kPropertyStoreOp = "store_op";
 inline constexpr const char *kPropertyResolveMode = "resolve_mode";
