@@ -1217,3 +1217,126 @@ TEST_F(NegativeProtectedMemory, WriteToProtectedStorageBuffer) {
     vk::CmdEndRenderPass(m_command_buffer.handle());
     m_command_buffer.End();
 }
+
+TEST_F(NegativeProtectedMemory, ResolveProtectedImage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceProtectedMemoryProperties prot_mem_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props = vku::InitStructHelper(&prot_mem_props);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props);
+
+    const auto protected_no_fault_supported = (prot_mem_props.protectedNoFault == VK_TRUE);
+    if (protected_no_fault_supported) {
+        GTEST_SKIP() << "Test requires protectedMemory support without protectedNoFault support";
+    }
+
+    VkImageFormatProperties2 image_format_prop = vku::InitStructHelper();
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
+    image_format_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_format_info.type = VK_IMAGE_TYPE_2D;
+    image_format_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_format_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkResult result =
+        vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &image_format_info, &image_format_prop);
+    if ((result != VK_SUCCESS) || !(image_format_prop.imageFormatProperties.sampleCounts & VK_SAMPLE_COUNT_4_BIT)) {
+        GTEST_SKIP() << "Cannot create an image with format VK_FORMAT_R8G8B8A8_UNORM and sample count VK_SAMPLE_COUNT_4_BIT. "
+                        "Skipping remainder of the test";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image ms_image(*m_device, image_ci);
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
+    vkt::Image image_protected(*m_device, image_ci, vkt::no_mem);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image ms_image_protected(*m_device, image_ci, vkt::no_mem);
+
+    VkPhysicalDeviceMemoryProperties phys_mem_props;
+    vk::GetPhysicalDeviceMemoryProperties(Gpu(), &phys_mem_props);
+    uint32_t protected_index = phys_mem_props.memoryTypeCount;
+    for (uint32_t i = 0; i < phys_mem_props.memoryTypeCount; i++) {
+        if ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0) {
+            protected_index = i;
+            break;
+        }
+    }
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetImageMemoryRequirements(device(), image_protected, &mem_reqs);
+    VkMemoryRequirements ms_mem_reqs;
+    vk::GetImageMemoryRequirements(device(), ms_image_protected, &ms_mem_reqs);
+
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
+    mem_alloc.allocationSize = mem_reqs.size;
+    mem_alloc.memoryTypeIndex = protected_index;
+    vkt::DeviceMemory memory(*m_device, mem_alloc);
+    vk::BindImageMemory(device(), image_protected.handle(), memory.handle(), 0);
+
+    mem_alloc.allocationSize = ms_mem_reqs.size;
+    vkt::DeviceMemory ms_memory(*m_device, mem_alloc);
+    vk::BindImageMemory(device(), ms_image_protected.handle(), ms_memory.handle(), 0);
+
+    m_command_buffer.Begin();
+
+    VkImageResolve region;
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.srcOffset = {0, 0, 0};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.dstOffset = {0, 0, 0};
+    region.extent = {1u, 1u, 1u};
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-commandBuffer-01837");
+    vk::CmdResolveImage(m_command_buffer.handle(), ms_image_protected.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(),
+                        VK_IMAGE_LAYOUT_GENERAL, 1u, &region);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-commandBuffer-01838");
+    vk::CmdResolveImage(m_command_buffer.handle(), ms_image.handle(), VK_IMAGE_LAYOUT_GENERAL, image_protected.handle(),
+                        VK_IMAGE_LAYOUT_GENERAL, 1u, &region);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeProtectedMemory, ResolveImageInProtectedCmdBuffer) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    RETURN_IF_SKIP(InitFramework());
+    RETURN_IF_SKIP(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
+
+    VkPhysicalDeviceProtectedMemoryProperties prot_mem_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props = vku::InitStructHelper(&prot_mem_props);
+    vk::GetPhysicalDeviceProperties2(Gpu(), &props);
+
+    const auto protected_no_fault_supported = (prot_mem_props.protectedNoFault == VK_TRUE);
+    if (protected_no_fault_supported) {
+        GTEST_SKIP() << "Test requires protectedMemory support without protectedNoFault support";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, image_ci);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image ms_image(*m_device, image_ci);
+
+    m_command_buffer.Begin();
+
+    VkImageResolve region;
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.srcOffset = {0, 0, 0};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    region.dstOffset = {0, 0, 0};
+    region.extent = {1u, 1u, 1u};
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResolveImage-commandBuffer-01839");
+    vk::CmdResolveImage(m_command_buffer.handle(), ms_image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(),
+                        VK_IMAGE_LAYOUT_GENERAL, 1u, &region);
+
+    m_errorMonitor->VerifyFound();
+}
