@@ -251,6 +251,7 @@ class DescriptorSetLayoutDef {
 using DescriptorSetLayoutDict = hash_util::Dictionary<DescriptorSetLayoutDef, hash_util::HasHashMember<DescriptorSetLayoutDef>>;
 using DescriptorSetLayoutId = DescriptorSetLayoutDict::Id;
 
+// Compare is in header and static because hash_util KeyValueEqual need the symbol at compile time
 static inline bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs) {
     // trivial types
     if ((lhs.GetCreateFlags() != rhs.GetCreateFlags()) || (lhs.GetBindingFlags() != rhs.GetBindingFlags())) {
@@ -265,6 +266,11 @@ static inline bool operator==(const DescriptorSetLayoutDef &lhs, const Descripto
     for (uint32_t i = 0; i < lhs_bindings.size(); i++) {
         const auto &l = lhs_bindings[i];
         const auto &r = rhs_bindings[i];
+        // For things where we are comparing with the bound pipeline, the binding will always be right, but when comparing two
+        // arbitrary layouts (ex. templates, Device Generated Commands, etc) the bindings might be different
+        if (l.binding != r.binding) {
+            return false;
+        }
         if (l.descriptorType != r.descriptorType || l.descriptorCount != r.descriptorCount || l.stageFlags != r.stageFlags) {
             return false;
         }

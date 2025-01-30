@@ -184,41 +184,6 @@ DescriptorSetLayoutId GetCanonicalId(const VkDescriptorSetLayoutCreateInfo *p_cr
     return descriptor_set_layout_dict.LookUp(DescriptorSetLayoutDef(p_create_info));
 }
 
-bool operator==(const DescriptorSetLayoutDef &lhs, const DescriptorSetLayoutDef &rhs) {
-    // trivial types
-    if ((lhs.GetCreateFlags() != rhs.GetCreateFlags()) || (lhs.GetBindingFlags() != rhs.GetBindingFlags())) {
-        return false;
-    }
-    // vectors of vku::safe_VkDescriptorSetLayoutBinding structures
-    const auto &lhs_bindings = lhs.GetBindings();
-    const auto &rhs_bindings = rhs.GetBindings();
-    if (lhs_bindings.size() != rhs_bindings.size()) {
-        return false;
-    }
-    for (uint32_t i = 0; i < lhs_bindings.size(); i++) {
-        const auto &l = lhs_bindings[i];
-        const auto &r = rhs_bindings[i];
-        // For things where we are comparing with the bound pipeline, the binding will always be right, but when comparing two
-        // arbitrary layouts (ex. templates, Device Generated Commands, etc) the bindings might be different
-        if (l.binding != r.binding) {
-            return false;
-        }
-        if (l.descriptorType != r.descriptorType || l.descriptorCount != r.descriptorCount || l.stageFlags != r.stageFlags) {
-            return false;
-        }
-        for (uint32_t s = 0; s < l.descriptorCount; s++) {
-            if (l.pImmutableSamplers[s] != r.pImmutableSamplers[s]) {
-                return false;
-            }
-        }
-        // These have been sorted already so can direct compare
-        if (lhs.GetMutableTypes(i) != rhs.GetMutableTypes(i)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 std::string DescriptorSetLayoutDef::DescribeDifference(uint32_t index, const DescriptorSetLayoutDef &other) const {
     std::ostringstream ss;
     ss << "Set " << index << " ";
