@@ -1,7 +1,7 @@
 # Generated Code
 
 There is a lot of code generated in `layers/vulkan/generated/`. This is done to prevent errors forgetting to add support for new
-values when the Vulkan Headers or SPIR-V Grammer is updated.
+values when the Vulkan Headers or SPIR-V Grammar is updated.
 
 - [How to generate the code](#how-to-generate-the-code)
 - [Adding and Editing code generation](#adding-and-editing-code-generation)
@@ -114,7 +114,7 @@ Code generation is **not** a bottleneck for performance, but trying add/edit/deb
 
 The Vulkan code is generated from [vk.xml](https://github.com/KhronosGroup/Vulkan-Headers/blob/main/registry/vk.xml) and uses the python helper functions in the `Vulkan-Headers/registry` folder.
 
-The SPIR-V code is generated from [SPIR-V Grammer](https://github.com/KhronosGroup/SPIRV-Headers/blob/main/include/spirv/unified1/spirv.core.grammar.json)
+The SPIR-V code is generated from [SPIR-V Grammar](https://github.com/KhronosGroup/SPIRV-Headers/blob/main/include/spirv/unified1/spirv.core.grammar.json)
 
 ## Implementation Details
 
