@@ -1949,11 +1949,14 @@ class Device : public vvl::base::Device {
         VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_props;
         VkPhysicalDeviceMapMemoryPlacedPropertiesEXT map_memory_placed_props;
         VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR compute_shader_derivatives_props;
+        VkPhysicalDeviceCooperativeVectorPropertiesNV cooperative_vector_props_nv;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties_nv;
     std::vector<VkCooperativeMatrixPropertiesKHR> cooperative_matrix_properties_khr;
     std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV> cooperative_matrix_flexible_dimensions_properties;
+
+    std::vector<VkCooperativeVectorPropertiesNV> cooperative_vector_properties_nv;
 
     // Features and properties that depend on platforms being defined
     // They will be false if platform is not defined

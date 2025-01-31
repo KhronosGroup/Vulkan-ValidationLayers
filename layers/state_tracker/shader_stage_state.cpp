@@ -100,6 +100,32 @@ bool ShaderStageState::GetInt32ConstantValue(const spirv::Instruction &insn, uin
     return false;
 }
 
+bool ShaderStageState::GetBooleanConstantValue(const spirv::Instruction &insn, bool *value) const {
+    const spirv::Instruction *type_id = spirv_state->FindDef(insn.Word(1));
+    if (type_id->Opcode() != spv::OpTypeBool) {
+        return false;
+    }
+
+    if (insn.Opcode() == spv::OpConstantFalse) {
+        *value = false;
+        return true;
+    } else if (insn.Opcode() == spv::OpConstantTrue) {
+        *value = true;
+        return true;
+    } else if (insn.Opcode() == spv::OpSpecConstantTrue || insn.Opcode() == spv::OpSpecConstantFalse) {
+        *value = insn.Opcode() == spv::OpSpecConstantTrue;  // default value
+        const auto *spec_info = GetSpecializationInfo();
+        const uint32_t spec_id = spirv_state->static_data_.id_to_spec_id.at(insn.Word(2));
+        if (spec_info && spec_id < spec_info->mapEntryCount) {
+            memcpy(value, (uint8_t *)spec_info->pData + spec_info->pMapEntries[spec_id].offset, 1);
+        }
+        return true;
+    }
+
+    // This means the value is not known until runtime and will need to be checked in GPU-AV
+    return false;
+}
+
 ShaderStageState::ShaderStageState(const vku::safe_VkPipelineShaderStageCreateInfo *pipeline_create_info,
                                    const vku::safe_VkShaderCreateInfoEXT *shader_object_create_info,
                                    std::shared_ptr<const vvl::ShaderModule> module_state,

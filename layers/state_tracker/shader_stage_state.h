@@ -56,6 +56,7 @@ struct ShaderStageState {
     vku::safe_VkSpecializationInfo *GetSpecializationInfo() const;
     const void *GetPNext() const;
     bool GetInt32ConstantValue(const spirv::Instruction &insn, uint32_t *value) const;
+    bool GetBooleanConstantValue(const spirv::Instruction &insn, bool *value) const;
 };
 
 namespace spirv {

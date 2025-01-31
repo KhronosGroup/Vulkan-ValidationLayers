@@ -872,6 +872,8 @@ class CoreChecks : public vvl::Device {
     bool ValidateCooperativeMatrix(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const ShaderStageState& stage_state, const uint32_t local_size_x, const uint32_t local_size_y,
                                    const uint32_t local_size_z, const Location& loc) const;
+    bool ValidateCooperativeVector(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                   const ShaderStageState& stage_state, const Location& loc) const;
     bool ValidateShaderResolveQCOM(const spirv::Module& module_state, VkShaderStageFlagBits stage, const vvl::Pipeline& pipeline,
                                    const Location& loc) const;
     bool ValidateShaderSubgroupSizeControl(VkShaderStageFlagBits stage, const ShaderStageState& stage_state,
@@ -2754,6 +2756,17 @@ class CoreChecks : public vvl::Device {
                                                               struct AHardwareBuffer** pBuffer,
                                                               const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
+
+    bool ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectList& objlist,
+                                                        const VkConvertCooperativeVectorMatrixInfoNV& info,
+                                                        const Location& info_loc) const;
+
+    bool PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
+                                                         const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                            const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
+                                                            const ErrorObject& error_obj) const override;
+
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
                                                              const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                              const vvl::CommandPool* pool) final;

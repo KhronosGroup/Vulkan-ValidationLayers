@@ -1095,6 +1095,18 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 cooperative_matrix_inst.push_back(&insn);
                 break;
             }
+
+            case spv::OpTypeCooperativeVectorNV:
+            case spv::OpCooperativeVectorLoadNV:
+            case spv::OpCooperativeVectorStoreNV:
+            case spv::OpCooperativeVectorMatrixMulNV:
+            case spv::OpCooperativeVectorMatrixMulAddNV:
+            case spv::OpCooperativeVectorReduceSumAccumulateNV:
+            case spv::OpCooperativeVectorOuterProductAccumulateNV: {
+                cooperative_vector_inst.push_back(&insn);
+                break;
+            }
+
             case spv::OpExtInst: {
                 if (insn.Word(4) == GLSLstd450InterpolateAtSample) {
                     uses_interpolate_at_sample = true;

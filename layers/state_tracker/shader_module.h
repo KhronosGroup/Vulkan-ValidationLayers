@@ -618,6 +618,8 @@ struct Module {
 
         std::vector<const Instruction *> cooperative_matrix_inst;
 
+        std::vector<const Instruction *> cooperative_vector_inst;
+
         std::vector<spv::Capability> capability_list;
         // Code on the hot path can cache capabilities for fast access.
         bool has_capability_runtime_descriptor_array{false};

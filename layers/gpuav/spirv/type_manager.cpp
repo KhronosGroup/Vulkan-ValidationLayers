@@ -101,6 +101,8 @@ const Type& TypeManager::AddType(std::unique_ptr<Instruction> new_inst, SpvType 
             break;
         case SpvType::kStruct:
             break;  // don't track structs currently
+        case SpvType::kCooperativeVectorNV:
+            break;  // don't track coopvec currently
         default:
             assert(false && "unsupported SpvType");
             break;
