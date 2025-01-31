@@ -572,6 +572,12 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     create_info.bindingCount = bindings.size();
     create_info.pBindings = bindings.data();
 
+    VkDescriptorSetLayoutSupport dsl_support = vku::InitStructHelper();
+    vk::GetDescriptorSetLayoutSupport(device(), &create_info, &dsl_support);
+    if (!dsl_support.supported) {
+        GTEST_SKIP() << "Acceleration Structure not supported for mutable";
+    }
+
     vkt::DescriptorSetLayout set_layout(*m_device, create_info);
 
     std::array<VkDescriptorSetLayout, 2> layouts = {set_layout.handle(), set_layout.handle()};
