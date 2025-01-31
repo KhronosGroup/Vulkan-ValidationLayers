@@ -132,48 +132,35 @@ struct is_invocable_r_impl<decltype(accept<R>(std::declval<F>()(std::declval<Arg
 template <class R, class F, class... Args>
 using is_invocable_r = is_invocable_r_impl<void, R, F, Args...>;
 
-// The max element in Values which is <= Cap. min(Values) must be <= Cap.
-template <size_t Cap, size_t... Values>
-struct GetMaxValueWithinCap;
-
-template <size_t Cap, size_t Value>
-struct GetMaxValueWithinCap<Cap, Value> {
-    static_assert(Value <= Cap);
-    static const size_t value = Value;
-};
-
-template <size_t Cap, size_t Head, size_t... Tail>
-struct GetMaxValueWithinCap<Cap, Head, Tail...> {
-  private:
-    static const size_t rest = GetMaxValueWithinCap<Cap, Tail...>::value;
-
-  public:
-    // Ensure the problem is well-defined. This assertion causes quadratic time
-    // but that's fine, the list is small.
-    static_assert(std::min({Head, Tail...}) <= Cap);
-    static const size_t value = std::max(Head, rest) <= Cap ? std::max(Head, rest) : std::min(Head, rest);
-};
-
-struct struct_double {
-    long double lx;
-};
-
-struct struct_double4 {
-    double lx[4];
-};
-
-}  // namespace inplace_function_detail
-
 // Note about default alignment: This class used to employ
 // std::aligned_storage<Capacity>, which is now deprecated and got removed. To
 // avoid behavior changes, the new implementation mimics the default alignment
 // of std::aligned_storage, as per the link below.
 // https://source.chromium.org/chromium/chromium/src/+/main:third_party/libc++/src/include/__type_traits/aligned_storage.h;l=49;drc=66b494f0101bb862e9e7b034f18645af4b1dd080
+constexpr std::size_t GetDefaultAlignment(std::size_t capacity) {
+    struct struct_double {
+        long double lx;
+    };
+    struct struct_double4 {
+        double lx[4];
+    };
+    std::size_t alignments[] = {alignof(unsigned char),      alignof(unsigned short), alignof(unsigned int), alignof(unsigned long),
+                                alignof(unsigned long long), alignof(double),         alignof(long double),  alignof(int*),
+                                alignof(struct_double),      alignof(struct_double4)};
+    std::size_t max_alignment_within_capacity = 0;
+    for (std::size_t alignment : alignments) {
+        if (alignment <= capacity) {
+            max_alignment_within_capacity = std::max(max_alignment_within_capacity, alignment);
+        }
+    }
+    // The caller ensures this is non-zero via static_assert(), it's not possible to do it here.
+    return max_alignment_within_capacity;
+}
+
+}  // namespace inplace_function_detail
+
 template <class Signature, size_t Capacity = inplace_function_detail::InplaceFunctionDefaultCapacity,
-          size_t Alignment = inplace_function_detail::GetMaxValueWithinCap<
-              Capacity, alignof(unsigned char), alignof(unsigned short), alignof(unsigned int), alignof(unsigned long),
-              alignof(unsigned long long), alignof(double), alignof(long double), alignof(int*),
-              alignof(inplace_function_detail::struct_double), alignof(inplace_function_detail::struct_double4)>::value>
+          size_t Alignment = inplace_function_detail::GetDefaultAlignment(Capacity)>
 class inplace_function;  // unspecified
 
 namespace inplace_function_detail {
@@ -185,6 +172,7 @@ struct is_inplace_function<inplace_function<Sig, Cap, Align>> : std::true_type {
 
 template <class R, class... Args, size_t Capacity, size_t Alignment>
 class inplace_function<R(Args...), Capacity, Alignment> {
+    static_assert(Alignment > 0);
     using vtable_t = inplace_function_detail::vtable<R, Args...>;
     using vtable_ptr_t = const vtable_t*;
 
