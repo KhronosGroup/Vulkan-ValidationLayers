@@ -1,7 +1,7 @@
 # Generated Code
 
 There is a lot of code generated in `layers/vulkan/generated/`. This is done to prevent errors forgetting to add support for new
-values when the Vulkan Headers or SPIR-V Grammer is updated.
+values when the Vulkan Headers or SPIR-V Grammar is updated.
 
 - [How to generate the code](#how-to-generate-the-code)
 - [Adding and Editing code generation](#adding-and-editing-code-generation)
@@ -15,29 +15,10 @@ values when the Vulkan Headers or SPIR-V Grammer is updated.
 
 # How to generate the code
 
-- Linux:
-```bash
-scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/
-```
-
-- Windows Powershell:
-```powershell
-pwsh -Command { python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/ }
-```
-
-- Windows Command:
-```cmd
-cmd /C "python3 scripts/generate_source.py external/Vulkan-Headers/registry/ external/SPIRV-Headers/include/spirv/unified1/"
-```
-
 When making change to the `scripts/` folder, make sure to run `generate_source.py` and check in both the changes to
-`scripts/` and `layers/vulkan/generated/` in any PR. (Code generation does **not** happen automatically at build time.)
+`scripts/` and `layers/vulkan/generated/` in any PR.
 
-> Note: All generated code is formatted with `clang-format` after it generates (see PR #6480 for details)
-
-## CMake helper
-
-A helper CMake target `vvl_codegen` is also provided to simplify the invocation of `scripts/generate_source.py` from the build directory:
+A helper CMake target `vvl_codegen` is provided to simplify the invocation of `scripts/generate_source.py` from the build directory:
 
 ```bash
 cmake -S . -B build -D VVL_CODEGEN=ON
@@ -133,7 +114,7 @@ Code generation is **not** a bottleneck for performance, but trying add/edit/deb
 
 The Vulkan code is generated from [vk.xml](https://github.com/KhronosGroup/Vulkan-Headers/blob/main/registry/vk.xml) and uses the python helper functions in the `Vulkan-Headers/registry` folder.
 
-The SPIR-V code is generated from [SPIR-V Grammer](https://github.com/KhronosGroup/SPIRV-Headers/blob/main/include/spirv/unified1/spirv.core.grammar.json)
+The SPIR-V code is generated from [SPIR-V Grammar](https://github.com/KhronosGroup/SPIRV-Headers/blob/main/include/spirv/unified1/spirv.core.grammar.json)
 
 ## Implementation Details
 
