@@ -18,6 +18,7 @@
 
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
+#include "containers/range_vector.h"
 
 namespace stateless {
 ReadLockGuard Device::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
@@ -771,4 +772,245 @@ bool Device::manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
     }
     return skip;
 }
+
+static size_t ComponentTypeBytesPerElement(VkComponentTypeKHR component_type) {
+    switch (component_type) {
+        case VK_COMPONENT_TYPE_SINT8_KHR:
+        case VK_COMPONENT_TYPE_UINT8_KHR:
+        case VK_COMPONENT_TYPE_FLOAT_E4M3_NV:
+        case VK_COMPONENT_TYPE_FLOAT_E5M2_NV:
+        case VK_COMPONENT_TYPE_SINT8_PACKED_NV:
+        case VK_COMPONENT_TYPE_UINT8_PACKED_NV:
+            return 1;
+        case VK_COMPONENT_TYPE_FLOAT16_KHR:
+        case VK_COMPONENT_TYPE_SINT16_KHR:
+        case VK_COMPONENT_TYPE_UINT16_KHR:
+            return 2;
+        case VK_COMPONENT_TYPE_FLOAT32_KHR:
+        case VK_COMPONENT_TYPE_SINT32_KHR:
+        case VK_COMPONENT_TYPE_UINT32_KHR:
+            return 4;
+        case VK_COMPONENT_TYPE_FLOAT64_KHR:
+        case VK_COMPONENT_TYPE_SINT64_KHR:
+        case VK_COMPONENT_TYPE_UINT64_KHR:
+            return 8;
+        default:
+            return 0;
+    }
+}
+
+static bool IsFloatComponentType(VkComponentTypeKHR component_type) {
+    switch (component_type) {
+        case VK_COMPONENT_TYPE_FLOAT_E4M3_NV:
+        case VK_COMPONENT_TYPE_FLOAT_E5M2_NV:
+        case VK_COMPONENT_TYPE_FLOAT16_KHR:
+        case VK_COMPONENT_TYPE_FLOAT32_KHR:
+        case VK_COMPONENT_TYPE_FLOAT64_KHR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool Device::ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectList &objlist,
+                                                            const VkConvertCooperativeVectorMatrixInfoNV &info,
+                                                            const Location &info_loc) const {
+    bool skip = false;
+
+    size_t src_element_size = ComponentTypeBytesPerElement(info.srcComponentType);
+    size_t dst_element_size = ComponentTypeBytesPerElement(info.dstComponentType);
+
+    if (info.srcLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV) {
+        if (info.srcStride < info.numColumns * src_element_size) {
+            skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-srcLayout-10077", objlist, info_loc.dot(Field::srcStride),
+                             "(%zu) must be at least as large as numColumns (%d) times source element size (%zu)", info.srcStride,
+                             info.numColumns, src_element_size);
+        }
+    }
+    if (info.srcLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV) {
+        if (info.srcStride < info.numRows * src_element_size) {
+            skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-srcLayout-10077", objlist, info_loc.dot(Field::srcStride),
+                             "(%zu) must be at least as large as numRows (%d) times source element size (%zu)", info.srcStride,
+                             info.numRows, src_element_size);
+        }
+    }
+    if (info.srcLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV ||
+        info.srcLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV) {
+        if ((info.srcStride % src_element_size) != 0) {
+            skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-srcLayout-10077", objlist, info_loc.dot(Field::srcStride),
+                             "(%zu) must be a multiple of source element size (%zu)", info.srcStride, src_element_size);
+        }
+    }
+
+    if (info.dstLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV) {
+        if (info.dstStride < info.numColumns * dst_element_size) {
+            skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-dstLayout-10078", objlist, info_loc.dot(Field::dstStride),
+                             "(%zu) must be at least as large as numColumns (%d) times destination element size (%zu)",
+                             info.dstStride, info.numColumns, dst_element_size);
+        }
+    }
+    if (info.dstLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV) {
+        if (info.dstStride < info.numRows * dst_element_size) {
+            skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-dstLayout-10078", objlist, info_loc.dot(Field::dstStride),
+                             "(%zu) must be at least as large as numRows (%d) times destination element size (%zu)", info.dstStride,
+                             info.numRows, dst_element_size);
+        }
+    }
+    if (info.dstLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV ||
+        info.dstLayout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV) {
+        if ((info.dstStride % dst_element_size) != 0) {
+            skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-dstLayout-10078", objlist, info_loc.dot(Field::dstStride),
+                             "(%zu) must be a multiple of destination element size (%zu)", info.dstStride, dst_element_size);
+        }
+    }
+
+    if (info.srcComponentType != info.dstComponentType) {
+        bool ok =
+            IsFloatComponentType(info.srcComponentType) && IsFloatComponentType(info.dstComponentType) &&
+            (info.srcComponentType == VK_COMPONENT_TYPE_FLOAT16_KHR || info.srcComponentType == VK_COMPONENT_TYPE_FLOAT32_KHR ||
+             info.dstComponentType == VK_COMPONENT_TYPE_FLOAT16_KHR || info.dstComponentType == VK_COMPONENT_TYPE_FLOAT32_KHR);
+        if (!ok) {
+            skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-srcComponentType-10081", objlist, info_loc,
+                             "Unsupported conversion from %s to %s", string_VkComponentTypeKHR(info.srcComponentType),
+                             string_VkComponentTypeKHR(info.dstComponentType));
+        }
+    }
+    if ((info.dstComponentType == VK_COMPONENT_TYPE_FLOAT_E4M3_NV || info.dstComponentType == VK_COMPONENT_TYPE_FLOAT_E5M2_NV) &&
+        info.dstLayout != VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_INFERENCING_OPTIMAL_NV &&
+        info.dstLayout != VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_TRAINING_OPTIMAL_NV) {
+        skip |=
+            LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-dstComponentType-10082", objlist,
+                     info_loc.dot(Field::srcComponentType), "%s cannot be converted to destination layout %s",
+                     string_VkComponentTypeKHR(info.srcComponentType), string_VkCooperativeVectorMatrixLayoutNV(info.dstLayout));
+    }
+
+    return skip;
+}
+
+static size_t ComputeMinSize(VkComponentTypeKHR component_type, VkCooperativeVectorMatrixLayoutNV layout, uint32_t num_rows,
+                             uint32_t num_columns, size_t stride) {
+    size_t min_size = 0;
+    size_t element_size = ComponentTypeBytesPerElement(component_type);
+    if (layout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR_NV) {
+        min_size = (num_rows - 1) * stride + num_columns * element_size;
+    } else if (layout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR_NV) {
+        min_size = (num_columns - 1) * stride + num_rows * element_size;
+    }
+    return min_size;
+}
+
+bool Device::manual_PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice device,
+                                                                    const VkConvertCooperativeVectorMatrixInfoNV *pInfo,
+                                                                    const Context &context) const {
+    bool skip = false;
+    const auto &error_obj = context.error_obj;
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+
+    if (pInfo->srcData.hostAddress == nullptr && pInfo->dstData.hostAddress != nullptr) {
+        skip |= LogError("VUID-vkConvertCooperativeVectorMatrixNV-pInfo-10073", device,
+                         info_loc.dot(Field::dstData).dot(Field::hostAddress), "(%p) must be null", pInfo->dstData.hostAddress);
+    }
+
+    if (pInfo->srcData.hostAddress != nullptr) {
+        size_t min_src_size =
+            ComputeMinSize(pInfo->srcComponentType, pInfo->srcLayout, pInfo->numRows, pInfo->numColumns, pInfo->srcStride);
+        if (pInfo->srcSize < min_src_size) {
+            skip |= LogError("VUID-vkConvertCooperativeVectorMatrixNV-pInfo-10074", device, info_loc.dot(Field::srcSize),
+                             "(%zu) less than minimum size for row/col-major layout (%zu)", pInfo->srcSize, min_src_size);
+        }
+    }
+
+    if (pInfo->dstData.hostAddress != nullptr) {
+        size_t min_dst_size =
+            ComputeMinSize(pInfo->dstComponentType, pInfo->dstLayout, pInfo->numRows, pInfo->numColumns, pInfo->dstStride);
+        if (*pInfo->pDstSize < min_dst_size) {
+            skip |= LogError("VUID-vkConvertCooperativeVectorMatrixNV-pInfo-10075", device, info_loc.dot(Field::pDstSize),
+                             "(%zu) less than minimum size for row/col-major layout (%zu)", *pInfo->pDstSize, min_dst_size);
+        }
+    }
+
+    if (pInfo->dstData.hostAddress != nullptr) {
+        sparse_container::range<size_t> src_range((uintptr_t)pInfo->srcData.hostAddress,
+                                                  (uintptr_t)pInfo->srcData.hostAddress + pInfo->srcSize);
+        sparse_container::range<size_t> dst_range((uintptr_t)pInfo->dstData.hostAddress,
+                                                  (uintptr_t)pInfo->dstData.hostAddress + *pInfo->pDstSize);
+        if (src_range.intersects(dst_range)) {
+            skip |= LogError("VUID-vkConvertCooperativeVectorMatrixNV-pInfo-10076", device, info_loc,
+                             "Source [%zx,%zx) and destination [%zx,%zx) ranges overlap", src_range.begin, src_range.end,
+                             dst_range.begin, dst_range.end);
+        }
+    }
+
+    skip |= ValidateVkConvertCooperativeVectorMatrixInfoNV(device, *pInfo, info_loc);
+
+    return skip;
+}
+
+bool Device::manual_PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                                       const VkConvertCooperativeVectorMatrixInfoNV *pInfos,
+                                                                       const Context &context) const {
+    bool skip = false;
+    const auto &error_obj = context.error_obj;
+
+    std::vector<sparse_container::range<VkDeviceAddress>> src_memory_ranges;
+    std::vector<sparse_container::range<VkDeviceAddress>> dst_memory_ranges;
+
+    for (uint32_t i = 0; i < infoCount; ++i) {
+        auto const &info = pInfos[i];
+
+        const Location info_loc = error_obj.location.dot(Field::pInfos, i);
+
+        if ((info.srcData.deviceAddress & 0x3F) != 0) {
+            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10084", commandBuffer,
+                             info_loc.dot(Field::srcData).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be 64 byte aligned",
+                             info.srcData.deviceAddress);
+        }
+        if ((info.dstData.deviceAddress & 0x3F) != 0) {
+            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10085", commandBuffer,
+                             info_loc.dot(Field::dstData).dot(Field::deviceAddress), "(0x%" PRIx64 ") must be 64 byte aligned",
+                             info.dstData.deviceAddress);
+        }
+
+        size_t min_src_size = ComputeMinSize(info.srcComponentType, info.srcLayout, info.numRows, info.numColumns, info.srcStride);
+        if (info.srcSize < min_src_size) {
+            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10086", device, info_loc.dot(Field::srcSize),
+                             "(%zu) less than minimum size for row/col-major layout (%zu)", info.srcSize, min_src_size);
+        }
+
+        size_t min_dst_size = ComputeMinSize(info.dstComponentType, info.dstLayout, info.numRows, info.numColumns, info.dstStride);
+        if (*info.pDstSize < min_dst_size) {
+            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10087", device, info_loc.dot(Field::pDstSize),
+                             "(%zu) less than minimum size for row/col-major layout (%zu)", *info.pDstSize, min_dst_size);
+        }
+
+        src_memory_ranges.emplace_back(info.srcData.deviceAddress, info.srcData.deviceAddress + info.srcSize);
+        dst_memory_ranges.emplace_back(info.dstData.deviceAddress, info.dstData.deviceAddress + *info.pDstSize);
+
+        skip |= ValidateVkConvertCooperativeVectorMatrixInfoNV(commandBuffer, info, info_loc);
+    }
+
+    std::sort(src_memory_ranges.begin(), src_memory_ranges.end());
+    std::sort(dst_memory_ranges.begin(), dst_memory_ranges.end());
+
+    // Memory ranges are sorted, so looking for overlaps can be done in linear time
+    auto src_ranges_it = src_memory_ranges.cbegin();
+    auto dst_ranges_it = dst_memory_ranges.cbegin();
+
+    while (src_ranges_it != src_memory_ranges.cend() && dst_ranges_it != dst_memory_ranges.cend()) {
+        if (src_ranges_it->intersects(*dst_ranges_it)) {
+            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-None-10088", commandBuffer, error_obj.location,
+                             "Source [0x%" PRIx64 ", 0x%" PRIx64 ") and destination [0x%" PRIx64 ", 0x%" PRIx64 ") ranges overlap",
+                             src_ranges_it->begin, src_ranges_it->end, dst_ranges_it->begin, dst_ranges_it->end);
+        }
+
+        if (*src_ranges_it < *dst_ranges_it)
+            ++src_ranges_it;
+        else
+            ++dst_ranges_it;
+    }
+
+    return skip;
+}
+
 }  // namespace stateless

@@ -956,6 +956,294 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
     return skip;
 }
 
+bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                           const ShaderStageState &stage_state, const Location &loc) const {
+    bool skip = false;
+
+    struct CoopVecType {
+        VkComponentTypeKHR component_type;
+        uint32_t component_count;
+        bool all_constant;
+
+        CoopVecType(uint32_t id, const spirv::Module &module_state, const ShaderStageState &stage_state) {
+            const spirv::Instruction *insn = module_state.FindDef(id);
+            const spirv::Instruction *component_type_insn = module_state.FindDef(insn->Word(2));
+            const spirv::Instruction *component_count_insn = module_state.FindDef(insn->Word(3));
+
+            all_constant = true;
+            if (!stage_state.GetInt32ConstantValue(*component_count_insn, &component_count)) {
+                all_constant = false;
+            }
+            component_type = GetComponentType(component_type_insn, false);
+        }
+
+        std::string Describe() {
+            std::ostringstream ss;
+            ss << "component count: " << component_count << ", type: " << string_VkComponentTypeKHR(component_type);
+            return ss.str();
+        }
+    };
+
+    if (module_state.HasCapability(spv::CapabilityCooperativeVectorNV) ||
+        module_state.HasCapability(spv::CapabilityCooperativeVectorTrainingNV)) {
+        if (!(entrypoint.stage & phys_dev_ext_props.cooperative_vector_props_nv.cooperativeVectorSupportedStages)) {
+            skip |= LogError(
+                "VUID-RuntimeSpirv-cooperativeVectorSupportedStages-10091", module_state.handle(), loc,
+                "SPIR-V contains cooperative vector capability used in shader stage %s but is not in "
+                "cooperativeVectorSupportedStages (%s)",
+                string_VkShaderStageFlagBits(entrypoint.stage),
+                string_VkShaderStageFlags(phys_dev_ext_props.cooperative_vector_props_nv.cooperativeVectorSupportedStages).c_str());
+        }
+    } else {
+        return skip;
+    }
+
+    vvl::unordered_map<uint32_t, uint32_t> id_to_type_id;
+    for (const spirv::Instruction &insn : module_state.GetInstructions()) {
+        if (OpcodeHasType(insn.Opcode()) && OpcodeHasResult(insn.Opcode())) {
+            id_to_type_id[insn.Word(2)] = insn.Word(1);
+        }
+    }
+    for (const spirv::Instruction *cooperative_vector_inst : module_state.static_data_.cooperative_vector_inst) {
+        const spirv::Instruction &insn = *cooperative_vector_inst;
+        switch (insn.Opcode()) {
+            case spv::OpTypeCooperativeVectorNV: {
+                CoopVecType m(insn.Word(1), module_state, stage_state);
+
+                if (!m.all_constant) {
+                    break;
+                }
+
+                if (m.component_count > phys_dev_ext_props.cooperative_vector_props_nv.maxCooperativeVectorComponents) {
+                    skip |= LogError("VUID-RuntimeSpirv-maxCooperativeVectorComponents-10094", module_state.handle(), loc,
+                                     "SPIR-V (%s) component count (%d) is greater than maxCooperativeVectorComponents (%d)",
+                                     string_VkShaderStageFlagBits(entrypoint.stage), m.component_count,
+                                     phys_dev_ext_props.cooperative_vector_props_nv.maxCooperativeVectorComponents);
+                }
+
+                bool found = false;
+                for (uint32_t i = 0; i < cooperative_vector_properties_nv.size(); ++i) {
+                    const auto &property = cooperative_vector_properties_nv[i];
+                    if (m.component_type == property.inputType || m.component_type == property.resultType) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeVector-10095", module_state.handle(), loc,
+                                     "SPIR-V (%s) contains unsupported cooperative vector component type (%s)",
+                                     string_VkShaderStageFlagBits(entrypoint.stage),
+                                     string_VkComponentTypeKHR((VkComponentTypeKHR)m.component_type));
+                }
+
+                break;
+            }
+            case spv::OpCooperativeVectorLoadNV:
+            case spv::OpCooperativeVectorStoreNV: {
+                // Nothing we can validate outside of GPUAV
+                break;
+            }
+            case spv::OpCooperativeVectorMatrixMulNV:
+            case spv::OpCooperativeVectorMatrixMulAddNV: {
+                CoopVecType result(id_to_type_id[insn.Word(2)], module_state, stage_state);
+                CoopVecType input(id_to_type_id[insn.Word(3)], module_state, stage_state);
+
+                uint32_t result_type = result.component_type;
+                uint32_t input_type = input.component_type;
+
+                uint32_t biasOffset = insn.Opcode() == spv::OpCooperativeVectorMatrixMulAddNV ? 3 : 0;
+
+                bool all_constant = true;
+                uint32_t input_interpretation{};
+                uint32_t matrix_interpretation{};
+                uint32_t bias_interpretation{};
+                bool transpose{};
+                if (!stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(4)), &input_interpretation)) {
+                    all_constant = false;
+                }
+                if (!stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(7)), &matrix_interpretation)) {
+                    all_constant = false;
+                }
+                if (insn.Opcode() == spv::OpCooperativeVectorMatrixMulAddNV) {
+                    if (!stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(10)), &bias_interpretation)) {
+                        all_constant = false;
+                    }
+                }
+                if (!stage_state.GetBooleanConstantValue(*module_state.FindDef(insn.Word(11 + biasOffset)), &transpose)) {
+                    all_constant = false;
+                }
+
+                if (!all_constant) {
+                    break;
+                }
+
+                bool found = false;
+                for (uint32_t i = 0; i < cooperative_vector_properties_nv.size(); ++i) {
+                    const auto &property = cooperative_vector_properties_nv[i];
+                    if (property.inputType == input_type && property.inputInterpretation == input_interpretation &&
+                        property.matrixInterpretation == matrix_interpretation &&
+                        (insn.Opcode() == spv::OpCooperativeVectorMatrixMulNV ||
+                         property.biasInterpretation == bias_interpretation) &&
+                        property.resultType == result_type && (!transpose || property.transpose)) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorMatrixMulNV-10089", module_state.handle(), loc,
+                                     "SPIR-V (%s) contains unsupported cooperative vector matrix mul with "
+                                     "result component type (%s), input component type (%s), input interpretation (%s), "
+                                     "matrix interpretation (%s), bias interpretation (%s), transpose (%d)",
+                                     string_VkShaderStageFlagBits(entrypoint.stage),
+                                     string_VkComponentTypeKHR((VkComponentTypeKHR)result_type),
+                                     string_VkComponentTypeKHR((VkComponentTypeKHR)input_type),
+                                     string_VkComponentTypeKHR((VkComponentTypeKHR)input_interpretation),
+                                     string_VkComponentTypeKHR((VkComponentTypeKHR)matrix_interpretation),
+                                     (insn.Opcode() == spv::OpCooperativeVectorMatrixMulNV
+                                          ? "None"
+                                          : string_VkComponentTypeKHR((VkComponentTypeKHR)bias_interpretation)),
+                                     transpose);
+                }
+
+                uint32_t memory_layout{};
+                if (stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(10 + biasOffset)), &memory_layout)) {
+                    if ((matrix_interpretation == VK_COMPONENT_TYPE_FLOAT_E4M3_NV ||
+                         matrix_interpretation == VK_COMPONENT_TYPE_FLOAT_E5M2_NV) &&
+                        !(memory_layout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_INFERENCING_OPTIMAL_NV ||
+                          memory_layout == VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_TRAINING_OPTIMAL_NV)) {
+                        skip |=
+                            LogError("VUID-RuntimeSpirv-OpCooperativeVectorMatrixMulNV-10090", module_state.handle(), loc,
+                                     "SPIR-V (%s) contains unsupported cooperative vector matrix mul with "
+                                     "matrix_interpretation (%s) and memory layout (%s)",
+                                     string_VkShaderStageFlagBits(entrypoint.stage),
+                                     string_VkComponentTypeKHR((VkComponentTypeKHR)matrix_interpretation),
+                                     string_VkCooperativeVectorMatrixLayoutNV((VkCooperativeVectorMatrixLayoutNV)memory_layout));
+                    }
+                }
+                break;
+            }
+            case spv::OpCooperativeVectorReduceSumAccumulateNV: {
+                CoopVecType v(id_to_type_id[insn.Word(3)], module_state, stage_state);
+
+                switch (v.component_type) {
+                    case VK_COMPONENT_TYPE_FLOAT16_KHR:
+                        if (!phys_dev_ext_props.cooperative_vector_props_nv.cooperativeVectorTrainingFloat16Accumulation) {
+                            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorReduceSumAccumulateNV-10092",
+                                             module_state.handle(), loc,
+                                             "SPIR-V (%s) Component type is FLOAT16 but "
+                                             "cooperativeVectorTrainingFloat16Accumulation not supported",
+                                             string_VkShaderStageFlagBits(entrypoint.stage));
+                        }
+                        break;
+                    case VK_COMPONENT_TYPE_FLOAT32_KHR:
+                        if (!phys_dev_ext_props.cooperative_vector_props_nv.cooperativeVectorTrainingFloat32Accumulation) {
+                            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorReduceSumAccumulateNV-10092",
+                                             module_state.handle(), loc,
+                                             "SPIR-V (%s) Component type is FLOAT32 but "
+                                             "cooperativeVectorTrainingFloat32Accumulation not supported",
+                                             string_VkShaderStageFlagBits(entrypoint.stage));
+                        }
+                        break;
+                    default:
+                        skip |=
+                            LogError("VUID-RuntimeSpirv-OpCooperativeVectorReduceSumAccumulateNV-10092", module_state.handle(), loc,
+                                     "SPIR-V (%s) Unsupported component type (%s)", string_VkShaderStageFlagBits(entrypoint.stage),
+                                     string_VkComponentTypeKHR((VkComponentTypeKHR)v.component_type));
+                        break;
+                }
+
+                const spirv::Instruction *ptr_type = module_state.FindDef(id_to_type_id[insn.Word(1)]);
+                if (ptr_type->StorageClass() != spv::StorageClassStorageBuffer &&
+                    ptr_type->StorageClass() != spv::StorageClassPhysicalStorageBuffer) {
+                    skip |=
+                        LogError("VUID-RuntimeSpirv-OpCooperativeVectorReduceSumAccumulateNV-10092", module_state.handle(), loc,
+                                 "SPIR-V (%s) Unsupported pointer storage class (%s)",
+                                 string_VkShaderStageFlagBits(entrypoint.stage), string_SpvStorageClass(ptr_type->StorageClass()));
+                }
+
+                break;
+            }
+
+            case spv::OpCooperativeVectorOuterProductAccumulateNV: {
+                uint32_t matrix_interpretation{};
+                if (stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(6)), &matrix_interpretation)) {
+                    switch (matrix_interpretation) {
+                        case VK_COMPONENT_TYPE_FLOAT16_KHR:
+                            if (!phys_dev_ext_props.cooperative_vector_props_nv.cooperativeVectorTrainingFloat16Accumulation) {
+                                skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093",
+                                                 module_state.handle(), loc,
+                                                 "SPIR-V (%s) Matrix interpretation is FLOAT16 but "
+                                                 "cooperativeVectorTrainingFloat16Accumulation not supported",
+                                                 string_VkShaderStageFlagBits(entrypoint.stage));
+                            }
+                            break;
+                        case VK_COMPONENT_TYPE_FLOAT32_KHR:
+                            if (!phys_dev_ext_props.cooperative_vector_props_nv.cooperativeVectorTrainingFloat32Accumulation) {
+                                skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093",
+                                                 module_state.handle(), loc,
+                                                 "SPIR-V (%s) Matrix interpretation is FLOAT32 but "
+                                                 "cooperativeVectorTrainingFloat32Accumulation not supported",
+                                                 string_VkShaderStageFlagBits(entrypoint.stage));
+                            }
+                            break;
+                        default:
+                            skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093",
+                                             module_state.handle(), loc, "SPIR-V (%s) Unsupported Matrix interpretation (%s)",
+                                             string_VkShaderStageFlagBits(entrypoint.stage),
+                                             string_VkComponentTypeKHR((VkComponentTypeKHR)matrix_interpretation));
+                            break;
+                    }
+                }
+
+                CoopVecType a(id_to_type_id[insn.Word(3)], module_state, stage_state);
+                CoopVecType b(id_to_type_id[insn.Word(4)], module_state, stage_state);
+
+                if (a.component_type != VK_COMPONENT_TYPE_FLOAT16_KHR) {
+                    skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093", module_state.handle(),
+                                     loc, "SPIR-V (%s) Component type of A (%s) must be FLOAT16",
+                                     string_VkShaderStageFlagBits(entrypoint.stage),
+                                     string_VkComponentTypeKHR((VkComponentTypeKHR)a.component_type));
+                }
+                if (b.component_type != VK_COMPONENT_TYPE_FLOAT16_KHR) {
+                    skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093", module_state.handle(),
+                                     loc, "SPIR-V (%s) Component type of B (%s) must be FLOAT16",
+                                     string_VkShaderStageFlagBits(entrypoint.stage),
+                                     string_VkComponentTypeKHR((VkComponentTypeKHR)b.component_type));
+                }
+
+                uint32_t memory_layout{};
+                if (stage_state.GetInt32ConstantValue(*module_state.FindDef(insn.Word(5)), &memory_layout)) {
+                    if (memory_layout != VK_COOPERATIVE_VECTOR_MATRIX_LAYOUT_TRAINING_OPTIMAL_NV) {
+                        skip |=
+                            LogError("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093", module_state.handle(),
+                                     loc, "SPIR-V (%s) Memory layout (%s) must be TRAINING_OPTIMAL",
+                                     string_VkShaderStageFlagBits(entrypoint.stage),
+                                     string_VkCooperativeVectorMatrixLayoutNV((VkCooperativeVectorMatrixLayoutNV)memory_layout));
+                    }
+                }
+
+                const spirv::Instruction *ptr_type = module_state.FindDef(id_to_type_id[insn.Word(1)]);
+                if (ptr_type->StorageClass() != spv::StorageClassStorageBuffer &&
+                    ptr_type->StorageClass() != spv::StorageClassPhysicalStorageBuffer) {
+                    skip |=
+                        LogError("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093", module_state.handle(), loc,
+                                 "SPIR-V (%s) Unsupported pointer storage class (%s)",
+                                 string_VkShaderStageFlagBits(entrypoint.stage), string_SpvStorageClass(ptr_type->StorageClass()));
+                }
+
+                break;
+            }
+
+            default:
+                assert(false);  // unexpected instruction
+                break;
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateShaderResolveQCOM(const spirv::Module &module_state, VkShaderStageFlagBits stage,
                                            const vvl::Pipeline &pipeline, const Location &loc) const {
     bool skip = false;
@@ -2595,6 +2883,9 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
     skip |= ValidatePushConstantUsage(module_state, entrypoint, pipeline, stage_state, loc);
     if (enabled_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z, loc);
+    }
+    if (enabled_features.cooperativeVector) {
+        skip |= ValidateCooperativeVector(module_state, entrypoint, stage_state, loc);
     }
 
     if (pipeline) {

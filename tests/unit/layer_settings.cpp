@@ -11,6 +11,7 @@
  */
 //stype-check off
 
+#include <cstdarg>
 #include <cstdint>
 #include "../framework/layer_validation_tests.h"
 

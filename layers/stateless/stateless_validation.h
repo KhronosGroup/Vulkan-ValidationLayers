@@ -1163,6 +1163,19 @@ class Device : public vvl::base::Device {
 
     bool ValidateAllocateMemoryExternal(VkDevice device, const VkMemoryAllocateInfo &allocate_info, VkMemoryAllocateFlags flags,
                                         const Location &allocate_info_loc) const;
+
+    bool ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectList &objlist,
+                                                        const VkConvertCooperativeVectorMatrixInfoNV &info,
+                                                        const Location &info_loc) const;
+
+    bool manual_PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice device,
+                                                                const VkConvertCooperativeVectorMatrixInfoNV *pInfo,
+                                                                const Context &context) const;
+
+    bool manual_PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                                   const VkConvertCooperativeVectorMatrixInfoNV *pInfos,
+                                                                   const Context &context) const;
+
 #include "generated/stateless_device_methods.h"
 };
 
