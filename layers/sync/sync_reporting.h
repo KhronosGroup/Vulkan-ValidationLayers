@@ -21,13 +21,10 @@
 #include "generated/sync_validation_types.h"
 #include "generated/vk_object_types.h"
 
-namespace vvl {
-class Device;
-}  // namespace vvl
-
 class CommandExecutionContext;
 class HazardResult;
 class Logger;
+class SyncValidator;
 
 // Collection of named values that describe key information associated with an error message.
 // This can be useful to filter out messages or for quick inspection as a more structured (but lose)
@@ -70,7 +67,7 @@ ReportProperties GetErrorMessageProperties(const HazardResult &hazard, const Com
 std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutionContext &context, vvl::Func command,
                                const std::string &resouce_description, const AdditionalMessageInfo &additional_info);
 
-std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
+std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const SyncValidator &device, VkQueueFlags allowed_queue_flags,
                                bool format_as_extra_property);
 
 void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss);

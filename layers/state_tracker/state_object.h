@@ -150,6 +150,7 @@ template <typename T>
 class SubStateManager {
   public:
     void SetSubState(LayerObjectTypeId id, std::unique_ptr<T> &&substate) { substates.emplace(id, std::move(substate)); }
+    void RemoveSubState(LayerObjectTypeId id) { substates.erase(id); }
 
     T *SubState(LayerObjectTypeId id) { return substates[id].get(); }
     const T *SubState(LayerObjectTypeId id) const {

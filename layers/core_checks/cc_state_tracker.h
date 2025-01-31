@@ -30,7 +30,7 @@ namespace core {
 // CommandBuffer object only for core and keep only the most basic items in the parent class
 class CommandBuffer : public vvl::CommandBufferSubState {
   public:
-    CommandBuffer(vvl::CommandBuffer& cb) : vvl::CommandBufferSubState(cb) {}
+    explicit CommandBuffer(vvl::CommandBuffer& cb) : vvl::CommandBufferSubState(cb) {}
 
     void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
@@ -39,7 +39,7 @@ class CommandBuffer : public vvl::CommandBufferSubState {
 // Override Retire to validate submissions in the order defined by synchronization
 class Queue : public vvl::QueueSubState {
   public:
-    Queue(vvl::Device& dev_data, vvl::Queue& q);
+    Queue(Logger& logger, vvl::Queue& q);
 
     void Retire(vvl::QueueSubmission&) override;
 

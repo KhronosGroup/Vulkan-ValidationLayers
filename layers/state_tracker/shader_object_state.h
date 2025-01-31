@@ -28,7 +28,7 @@
 namespace vvl {
 // Represents a VkShaderEXT (VK_EXT_shader_object) handle
 struct ShaderObject : public StateObject {
-    ShaderObject(Device &dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object,
+    ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object,
                  std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders);
 
     const vku::safe_VkShaderCreateInfoEXT safe_create_info;

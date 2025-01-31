@@ -45,8 +45,8 @@ struct DAGNode;
 struct SemaphoreSubmitState;
 
 namespace core {
-class Instance : public vvl::Instance {
-    using BaseClass = vvl::Instance;
+class Instance : public vvl::InstanceProxy {
+    using BaseClass = vvl::InstanceProxy;
 
   public:
     using Func = vvl::Func;
@@ -178,8 +178,8 @@ bool ValidateVideoProfileListInfo(const StateObject& state, const VkVideoProfile
                                   const char* missing_encode_profile_msg_code);
 }  // namespace core
 
-class CoreChecks : public vvl::Device {
-    using BaseClass = vvl::Device;
+class CoreChecks : public vvl::DeviceProxy {
+    using BaseClass = vvl::DeviceProxy;
 
   public:
     using Func = vvl::Func;
@@ -2741,11 +2741,6 @@ class CoreChecks : public vvl::Device {
                                                             const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
                                                             const ErrorObject& error_obj) const override;
 
-    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
-                                                             const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                             const vvl::CommandPool* pool) final;
-
-    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
-                                            VkDeviceQueueCreateFlags flags,
-                                            const VkQueueFamilyProperties& queue_family_properties) final;
+    void CommandBufferCreated(vvl::CommandBuffer& cb) override;
+    void QueueCreated(vvl::Queue& queue) override;
 };  // Class CoreChecks

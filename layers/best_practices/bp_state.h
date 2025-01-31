@@ -153,7 +153,7 @@ struct CommandBufferStateNV {
 
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
-    CommandBufferSubState(BestPractices& bp, vvl::CommandBuffer& cb);
+    CommandBufferSubState(BestPractices& bp, vvl::CommandBuffer& cb) : vvl::CommandBufferSubState(cb) {}
 
     RenderPassState render_pass_state;
     CommandBufferStateNV nv;
