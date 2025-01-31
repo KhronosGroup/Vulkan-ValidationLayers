@@ -451,8 +451,9 @@ bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const Presen
             const auto queue_handle = queue_state_->Handle();
             const auto swap_handle = vvl::StateObject::Handle(presented.swapchain_state.lock());
             const auto image_handle = vvl::StateObject::Handle(presented.image);
-            const auto error = sync_state_.error_messages_.PresentError(hazard, *this, presented.present_index, swap_handle,
-                                                                        presented.image_index, image_handle);
+            const auto error =
+                sync_state_.error_messages_.PresentError(hazard, *this, presented.present_index, swap_handle, presented.image_index,
+                                                         image_handle, vvl::Func::vkQueuePresentKHR);
             skip |= sync_state_.SyncError(hazard.Hazard(), queue_handle, loc, error);
             if (skip) break;
         }
