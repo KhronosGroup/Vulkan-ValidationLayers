@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_core.h>
 #include "generated/pnext_chain_extraction.h"
 #include "core_validation.h"
 #include "cc_buffer_address.h"
@@ -980,6 +981,30 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                              "to %s and memoryOffset %" PRIu64 " must be zero.",
                              FormatHandle(memory).c_str(), FormatHandle(dedicated_buffer).c_str(), FormatHandle(buffer).c_str(),
                              memoryOffset);
+        } else if (IsExtEnabled(extensions.vk_khr_dedicated_allocation)) {
+            VkBufferMemoryRequirementsInfo2 buffer_memory_requirements_info_2 = vku::InitStructHelper();
+            buffer_memory_requirements_info_2.buffer = buffer;
+            VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
+            VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&memory_dedicated_requirements);
+            DispatchGetBufferMemoryRequirements2Helper(device, &buffer_memory_requirements_info_2, &memory_requirements);
+
+            if (memory_dedicated_requirements.requiresDedicatedAllocation) {
+                const char *vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-buffer-01444" : "VUID-vkBindBufferMemory-buffer-01444";
+                if (dedicated_buffer == VK_NULL_HANDLE) {
+                    const LogObjectList objlist(buffer, memory);
+                    skip |= LogError(
+                        vuid, objlist, loc.dot(Field::memory),
+                        "was created without a VkMemoryDedicatedAllocateInfo in the pNext chain, but the buffer, if queried with "
+                        "vkGetBufferMemoryRequirements2() reports requiresDedicatedAllocation is VK_TRUE.");
+                } else if (dedicated_buffer != buffer) {
+                    const LogObjectList objlist(buffer, memory, dedicated_buffer);
+                    skip |=
+                        LogError(vuid, objlist, loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::pNext).dot(Field::buffer),
+                                 "is %s, but VkBindBufferMemoryInfo::buffer is %s.", FormatHandle(dedicated_buffer).c_str(),
+                                 FormatHandle(buffer).c_str());
+                }
+            }
         }
 
         auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->allocate_info.pNext);

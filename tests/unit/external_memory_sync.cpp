@@ -454,6 +454,7 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
                                                                     &export_memory_info);
     const auto memory = vkt::DeviceMemory(*m_device, alloc_info);
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkBindBufferMemory-buffer-01444");  // required dedicated
     m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-02726");
     vk::BindBufferMemory(device(), buffer.handle(), memory.handle(), 0);
     m_errorMonitor->VerifyFound();
@@ -462,6 +463,7 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     bind_buffer_info.buffer = buffer.handle();
     bind_buffer_info.memory = memory.handle();
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkBindBufferMemory-buffer-01444");  // required dedicated
     m_errorMonitor->SetDesiredError("VUID-VkBindBufferMemoryInfo-memory-02726");
     vk::BindBufferMemory2(device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();

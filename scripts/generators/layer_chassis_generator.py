@@ -108,6 +108,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'VK_KHR_external_semaphore_capabilities',
         'VK_KHR_external_fence_capabilities',
         'VK_KHR_external_memory_capabilities',
+        'VK_KHR_get_memory_requirements2',
     )
 
     def __init__(self):
@@ -169,6 +170,15 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
     def generateMethods(self, want_instance):
         out = []
+
+        out.append('// We make many internal dispatch calls to extended query functions which can depend on the API version\n')
+        for extended_query_ext in self.extended_query_exts:
+            for command in self.vk.extensions[extended_query_ext].commands:
+                if command.instance != want_instance:
+                    continue
+                parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
+                out.append(f'{command.returnType} Dispatch{command.alias[2:]}Helper({parameters}) const;\n')
+
         guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.name not in self.ignore_functions and 'ValidationCache' not in x.name]:
             if command.instance != want_instance:
@@ -190,13 +200,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
             // This file contains methods for class vvl::base::Instance and it is designed to ONLY be
             // included into validation_object.h.
             ''')
-        out.append('// We make many internal dispatch calls to extended query functions which can depend on the API version\n')
-        for extended_query_ext in self.extended_query_exts:
-            for command in self.vk.extensions[extended_query_ext].commands:
-                parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
-                out.append(f'{command.returnType} Dispatch{command.alias[2:]}Helper({parameters}) const;\n')
-
-        out.append('// Pre/post hook point declarations\n')
         self.write("".join(out))
 
         self.generateMethods(True)
@@ -229,7 +232,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
                 parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
                 arguments = ','.join([x.name for x in command.params])
                 dispatch = 'dispatch_instance_' if command.instance else 'dispatch_device_'
-                out.append(f'''\n{command.returnType} Instance::Dispatch{command.alias[2:]}Helper({parameters}) const {{
+                dispatch_class = 'Instance' if command.instance else 'Device'
+                out.append(f'''\n{command.returnType} {dispatch_class}::Dispatch{command.alias[2:]}Helper({parameters}) const {{
                     if (api_version >= VK_API_VERSION_1_1) {{
                         return {dispatch}->{command.alias[2:]}({arguments});
                     }} else {{
@@ -387,7 +391,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             # Output dispatch (down-chain) function call
             if (command.returnType != 'void'):
                 out.append(f'{command.returnType} result;')
-            
+
             # Tracy profiler
             out.append('''{
                 VVL_ZoneScopedN("Dispatch");
@@ -399,7 +403,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             assignResult = f'result = ' if (command.returnType != 'void') else ''
             method_name = command.name.replace('vk', f'{dispatch}->')
             out.append(f'        {assignResult}{method_name}({paramsList});\n')
-            
+
             # Tracy profiler
             gpu_end_render_commands = ["EndRender"]
             if any(s in command.name for s in gpu_end_render_commands):
@@ -412,7 +416,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                     TracyVkCollector::TrySubmitCollectCb(queue);
                 #endif
                 ''')
-            out.append('}\n')    
+            out.append('}\n')
 
             # Insert post-dispatch debug utils function call
             post_dispatch_debug_utils_functions = {
@@ -474,14 +478,14 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             # Return result variable, if any.
             if command.returnType != 'void':
                 out.append('    return result;\n')
-           
+
             # Tracy create GPU queries collectors
             if command.name == "vkGetDeviceQueue":
                 out.append('''#if defined(VVL_TRACY_GPU)
                     TracyVkCollector::Create(device, *pQueue, queueFamilyIndex);
                 #endif
                 ''')
-            
+
             if command.name == "vkGetDeviceQueue2":
                 out.append('''#if defined(VVL_TRACY_GPU)
                     TracyVkCollector::Create(device, *pQueue, pQueueInfo->queueFamilyIndex);
