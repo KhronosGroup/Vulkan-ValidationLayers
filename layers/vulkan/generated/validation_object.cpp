@@ -140,6 +140,36 @@ void Instance::DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(
                                                                                 pExternalBufferProperties);
     }
 }
+
+void Device::DispatchGetImageMemoryRequirements2Helper(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                                       VkMemoryRequirements2* pMemoryRequirements) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return dispatch_device_->GetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
+    } else {
+        return dispatch_device_->GetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
+    }
+}
+
+void Device::DispatchGetBufferMemoryRequirements2Helper(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
+                                                        VkMemoryRequirements2* pMemoryRequirements) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return dispatch_device_->GetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
+    } else {
+        return dispatch_device_->GetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
+    }
+}
+
+void Device::DispatchGetImageSparseMemoryRequirements2Helper(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
+                                                             uint32_t* pSparseMemoryRequirementCount,
+                                                             VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        return dispatch_device_->GetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
+                                                                   pSparseMemoryRequirements);
+    } else {
+        return dispatch_device_->GetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount,
+                                                                      pSparseMemoryRequirements);
+    }
+}
 }  // namespace vvl::base
 
 // NOLINTEND

@@ -195,8 +195,7 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     }
 
     // Allocate memory to be exported
-    vkt::DeviceMemory memory_export;
-    memory_export.init(*m_device, alloc_info);
+    vkt::DeviceMemory memory_export(*m_device, alloc_info);
 
     // Bind exported memory
     buffer_export.BindMemory(memory_export, 0);
@@ -219,11 +218,14 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     VkImportMemoryFdInfoKHR import_info = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR, nullptr, handle_type, fd};
 #endif
 
-    // Import memory
+    // Import
+    if (dedicated_allocation) {
+        dedicated_info.buffer = buffer_import;
+        import_info.pNext = &dedicated_info;
+    }
     alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_import.MemoryRequirements(), mem_flags);
     alloc_info.pNext = &import_info;
-    vkt::DeviceMemory memory_import;
-    memory_import.init(*m_device, alloc_info);
+    vkt::DeviceMemory memory_import(*m_device, alloc_info);
 
     // Bind imported memory
     buffer_import.BindMemory(memory_import, 0);
