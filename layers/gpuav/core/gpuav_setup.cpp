@@ -30,6 +30,7 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 namespace gpuav {
 
+#if 0
 std::shared_ptr<vvl::Buffer> Validator::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *create_info) {
     return std::make_shared<Buffer>(*this, handle, create_info, *desc_heap_);
 }
@@ -88,6 +89,7 @@ std::shared_ptr<vvl::Queue> Validator::CreateQueue(VkQueue handle, uint32_t fami
     return std::static_pointer_cast<vvl::Queue>(
         std::make_shared<Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties, timeline_khr_));
 }
+#endif
 
 // Trampolines to make VMA call Dispatch for Vulkan calls
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL gpuVkGetInstanceProcAddr(VkInstance inst, const char *name) {
@@ -256,13 +258,6 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
 
     desc_set_manager_ =
         std::make_unique<vko::DescriptorSetManager>(device, static_cast<uint32_t>(instrumentation_bindings_.size()));
-
-    // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
-    {
-        auto chain_info = GetChainInfo(pCreateInfo, VK_LOADER_DATA_CALLBACK);
-        assert(chain_info->u.pfnSetDeviceLoaderData);
-        vk_set_device_loader_data_ = chain_info->u.pfnSetDeviceLoaderData;
-    }
 
     if (gpuav_settings.shader_instrumentation.descriptor_checks) {
         VkPhysicalDeviceDescriptorIndexingProperties desc_indexing_props = vku::InitStructHelper();
