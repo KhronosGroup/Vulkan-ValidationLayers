@@ -1883,3 +1883,75 @@ bool CoreChecks::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer command
     }
     return skip;
 }
+
+bool CoreChecks::ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectList &objlist,
+                                                                const VkConvertCooperativeVectorMatrixInfoNV &info,
+                                                                const Location &info_loc) const {
+    bool skip = false;
+
+    auto const supported_matrix_type = [&](VkComponentTypeKHR component_type) {
+        if (component_type == VK_COMPONENT_TYPE_FLOAT32_KHR) {
+            return true;
+        }
+        for (size_t i = 0; i < cooperative_vector_properties_nv.size(); ++i) {
+            if (cooperative_vector_properties_nv[i].matrixInterpretation == component_type) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    if (!supported_matrix_type(info.srcComponentType)) {
+        skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-srcComponentType-10079", objlist,
+                         info_loc.dot(Field::srcComponentType), "(%s) must be float32 or a supported matrixInterpretation",
+                         string_VkComponentTypeKHR(info.srcComponentType));
+    }
+    if (!supported_matrix_type(info.dstComponentType)) {
+        skip |= LogError("VUID-VkConvertCooperativeVectorMatrixInfoNV-dstComponentType-10080", objlist,
+                         info_loc.dot(Field::dstComponentType), "(%s) must be float32 or a supported matrixInterpretation",
+                         string_VkComponentTypeKHR(info.dstComponentType));
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice device,
+                                                                 const VkConvertCooperativeVectorMatrixInfoNV *pInfo,
+                                                                 const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+
+    skip |= ValidateVkConvertCooperativeVectorMatrixInfoNV(device, *pInfo, info_loc);
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                                    const VkConvertCooperativeVectorMatrixInfoNV *pInfos,
+                                                                    const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < infoCount; ++i) {
+        auto const &info = pInfos[i];
+        auto src_buffers = GetBuffersByAddress(info.srcData.deviceAddress);
+        auto dst_buffers = GetBuffersByAddress(info.dstData.deviceAddress);
+
+        const Location info_loc = error_obj.location.dot(Field::pInfos, i);
+
+        if (src_buffers.empty()) {
+            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10083", commandBuffer,
+                             info_loc.dot(Field::srcData).dot(Field::deviceAddress), "(0x%" PRIx64 ") does not belong to a buffer",
+                             info.srcData.deviceAddress);
+        }
+        if (dst_buffers.empty()) {
+            skip |= LogError("VUID-vkCmdConvertCooperativeVectorMatrixNV-pInfo-10083", commandBuffer,
+                             info_loc.dot(Field::dstData).dot(Field::deviceAddress), "(0x%" PRIx64 ") does not belong to a buffer",
+                             info.dstData.deviceAddress);
+        }
+
+        skip |= ValidateVkConvertCooperativeVectorMatrixInfoNV(commandBuffer, info, info_loc);
+    }
+
+    return skip;
+}

@@ -1227,6 +1227,22 @@ void Device::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locat
             cooperative_matrix_flexible_dimensions_properties.data());
     }
 
+    if (IsExtEnabled(dev_ext.vk_nv_cooperative_vector)) {
+        // Get the needed NV cooperative_vector properties
+        VkPhysicalDeviceCooperativeVectorPropertiesNV cooperative_vector_props_nv = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&cooperative_vector_props_nv);
+        DispatchGetPhysicalDeviceProperties2KHR(physical_device, &prop2);
+        phys_dev_ext_props.cooperative_vector_props_nv = cooperative_vector_props_nv;
+
+        uint32_t num_cooperative_vector_properties_nv = 0;
+        DispatchGetPhysicalDeviceCooperativeVectorPropertiesNV(physical_device, &num_cooperative_vector_properties_nv, NULL);
+        cooperative_vector_properties_nv.resize(num_cooperative_vector_properties_nv,
+                                                vku::InitStruct<VkCooperativeVectorPropertiesNV>());
+
+        DispatchGetPhysicalDeviceCooperativeVectorPropertiesNV(physical_device, &num_cooperative_vector_properties_nv,
+                                                               cooperative_vector_properties_nv.data());
+    }
+
     // Store queue family data
     if (pCreateInfo->pQueueCreateInfos != nullptr) {
         uint32_t num_queue_families = 0;

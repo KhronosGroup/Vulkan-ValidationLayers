@@ -28279,6 +28279,7 @@ bool Device::PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice device, co
         skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::dstLayout), vvl::Enum::VkCooperativeVectorMatrixLayoutNV,
                                            pInfo->dstLayout, "VUID-VkConvertCooperativeVectorMatrixInfoNV-dstLayout-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateConvertCooperativeVectorMatrixNV(device, pInfo, context);
     return skip;
 }
 
@@ -28325,6 +28326,7 @@ bool Device::PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer 
                                                "VUID-VkConvertCooperativeVectorMatrixInfoNV-dstLayout-parameter");
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdConvertCooperativeVectorMatrixNV(commandBuffer, infoCount, pInfos, context);
     return skip;
 }
 
