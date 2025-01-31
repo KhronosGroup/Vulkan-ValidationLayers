@@ -175,7 +175,8 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(error_obj.location, i);
-            const auto error = sync_state_.error_messages_.BeginRenderingError(hazard, attachment, *this);
+            const auto error =
+                sync_state_.error_messages_.BeginRenderingError(hazard, attachment, *this, error_obj.location.function);
             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
             if (skip) break;
         }
@@ -213,10 +214,12 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
         const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
         const AccessContext *access_context = GetCurrentAccessContext();
         assert(access_context);
-        auto report_resolve_hazard = [this](const HazardResult &hazard, const Location &loc, const VulkanTypedHandle image_handle,
-                                            const VkResolveModeFlagBits resolve_mode) {
+        auto report_resolve_hazard = [&error_obj, this](const HazardResult &hazard, const Location &loc,
+                                                        const VulkanTypedHandle image_handle,
+                                                        const VkResolveModeFlagBits resolve_mode) {
             LogObjectList objlist(cb_state_->Handle(), image_handle);
-            const auto error = sync_state_.error_messages_.EndRenderingResolveError(hazard, image_handle, resolve_mode, *this);
+            const auto error = sync_state_.error_messages_.EndRenderingResolveError(hazard, image_handle, resolve_mode, *this,
+                                                                                    error_obj.location.function);
             return sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
         };
 
@@ -251,8 +254,8 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
                     const VulkanTypedHandle image_handle = attachment.view->Handle();
                     LogObjectList objlist(cb_state_->Handle(), image_handle);
                     Location loc = attachment.GetLocation(error_obj.location, i);
-                    const auto error =
-                        sync_state_.error_messages_.EndRenderingStoreError(hazard, image_handle, attachment.info.storeOp, *this);
+                    const auto error = sync_state_.error_messages_.EndRenderingStoreError(
+                        hazard, image_handle, attachment.info.storeOp, *this, error_obj.location.function);
                     skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
                 }
             }
@@ -370,7 +373,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
                             const auto error = error_messages_.DrawDispatchImageError(
                                 hazard, *this, *img_view_state, *pipe, *descriptor_set, descriptor_type, image_layout,
-                                variable.decorations.binding, index);
+                                variable.decorations.binding, index, loc.function);
                             skip |= sync_state_.SyncError(hazard.Hazard(), img_view_state->Handle(), loc, error);
                         }
                         break;
@@ -385,9 +388,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         const ResourceAccessRange range = MakeRange(*buf_view_state);
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
-                            const auto error =
-                                error_messages_.DrawDispatchTexelBufferError(hazard, *this, *buf_view_state, *pipe, *descriptor_set,
-                                                                             descriptor_type, variable.decorations.binding, index);
+                            const auto error = error_messages_.DrawDispatchTexelBufferError(
+                                hazard, *this, *buf_view_state, *pipe, *descriptor_set, descriptor_type,
+                                variable.decorations.binding, index, loc.function);
                             skip |= sync_state_.SyncError(hazard.Hazard(), buf_view_state->Handle(), loc, error);
                         }
                         break;
@@ -410,9 +413,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         const ResourceAccessRange range = MakeRange(*buf_state, offset, buffer_descriptor->GetRange());
                         auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
                         if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
-                            const auto error =
-                                error_messages_.DrawDispatchBufferError(hazard, *this, *buf_state, *pipe, *descriptor_set,
-                                                                        descriptor_type, variable.decorations.binding, index);
+                            const auto error = error_messages_.DrawDispatchBufferError(
+                                hazard, *this, *buf_state, *pipe, *descriptor_set, descriptor_type, variable.decorations.binding,
+                                index, loc.function);
                             skip |= sync_state_.SyncError(hazard.Hazard(), buf_state->Handle(), loc, error);
                         }
                         break;
@@ -570,7 +573,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vert
 
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.IsHazard()) {
-                const auto error = error_messages_.DrawVertexBufferError(hazard, *this, *buf_state);
+                const auto error = error_messages_.DrawVertexBufferError(hazard, *this, *buf_state, loc.function);
                 skip |= sync_state_.SyncError(hazard.Hazard(), buf_state->Handle(), loc, error);
             }
         }
@@ -624,7 +627,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, u
 
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.IsHazard()) {
-        const auto error = error_messages_.DrawIndexBufferError(hazard, *this, *index_buf_state);
+        const auto error = error_messages_.DrawIndexBufferError(hazard, *this, *index_buf_state, loc.function);
         skip |= sync_state_.SyncError(hazard.Hazard(), index_buf_state->Handle(), loc, error);
     }
 
@@ -682,7 +685,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
         if (hazard.IsHazard()) {
             LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(location, output_location);
-            const auto error = error_messages_.DrawAttachmentError(hazard, *this, *attachment.view);
+            const auto error = error_messages_.DrawAttachmentError(hazard, *this, *attachment.view, location.function);
             skip |= sync_state_.SyncError(hazard.Hazard(), obj_list, loc.dot(vvl::Field::imageView), error);
         }
     }
@@ -705,7 +708,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
                 Location loc = attachment.GetLocation(location);
-                const auto error = error_messages_.DrawAttachmentError(hazard, *this, *attachment.view);
+                const auto error = error_messages_.DrawAttachmentError(hazard, *this, *attachment.view, location.function);
                 skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
             }
         }
@@ -984,7 +987,8 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
             SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(cb_state_->Handle(), info.view->Handle());
-            const auto error = error_messages_.ClearColorAttachmentError(hazard, *this, info.GetSubpassAttachmentText());
+            const auto error =
+                error_messages_.ClearColorAttachmentError(hazard, *this, info.GetSubpassAttachmentText(), loc.function);
             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
         }
     }
@@ -1003,8 +1007,8 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
 
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(cb_state_->Handle(), info.view->Handle());
-                const auto error =
-                    error_messages_.ClearDepthStencilAttachmentError(hazard, *this, info.GetSubpassAttachmentText(), aspect);
+                const auto error = error_messages_.ClearDepthStencilAttachmentError(hazard, *this, info.GetSubpassAttachmentText(),
+                                                                                    aspect, loc.function);
                 skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
             }
         }
