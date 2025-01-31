@@ -722,8 +722,6 @@ std::shared_ptr<Queue> Device::CreateQueue(VkQueue handle, uint32_t family_index
 }
 
 void Device::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
-    GetEnabledDeviceFeatures(pCreateInfo, &enabled_features, api_version);
-
     const auto *device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
     if (device_group_ci) {
         physical_device_count = device_group_ci->physicalDeviceCount;

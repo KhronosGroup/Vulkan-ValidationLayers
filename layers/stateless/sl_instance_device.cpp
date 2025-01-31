@@ -454,8 +454,6 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         stateless_device->phys_dev_ext_props.renderpass_striped_props = renderpass_striped_props;
     }
 
-    GetEnabledDeviceFeatures(pCreateInfo, &stateless_device->enabled_features, api_version);
-
     std::vector<VkExtensionProperties> ext_props{};
     uint32_t ext_count = 0;
     DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &ext_count, nullptr);

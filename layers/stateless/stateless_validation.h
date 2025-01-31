@@ -457,9 +457,6 @@ class Device : public vvl::base::Device {
 
     Instance *instance;
     VkPhysicalDeviceLimits device_limits = {};
-    // We have a copy of this in Stateless and the state tracker, could move the base::Device,
-    // but we don't have a way to set it at that level
-    DeviceFeatures enabled_features = {};
 
     // This was a special case where it was decided to use the extension version for validation
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5671
