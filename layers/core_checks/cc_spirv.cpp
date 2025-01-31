@@ -425,8 +425,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
 
     auto print_properties = [this]() {
         std::ostringstream ss;
-        for (uint32_t i = 0; i < cooperative_matrix_properties_khr.size(); ++i) {
-            const auto &prop = cooperative_matrix_properties_khr[i];
+        for (uint32_t i = 0; i < device_state->cooperative_matrix_properties_khr.size(); ++i) {
+            const auto &prop = device_state->cooperative_matrix_properties_khr[i];
             ss << "[" << i << "] MSize = " << prop.MSize << " | NSize = " << prop.NSize << " | KSize = " << prop.KSize
                << " | AType = " << string_VkComponentTypeKHR(prop.AType) << " | BType = " << string_VkComponentTypeKHR(prop.BType)
                << " | CType = " << string_VkComponentTypeKHR(prop.CType)
@@ -438,8 +438,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
 
     auto print_flexible_properties = [this]() {
         std::ostringstream ss;
-        for (uint32_t i = 0; i < cooperative_matrix_flexible_dimensions_properties.size(); ++i) {
-            const auto &prop = cooperative_matrix_flexible_dimensions_properties[i];
+        for (uint32_t i = 0; i < device_state->cooperative_matrix_flexible_dimensions_properties.size(); ++i) {
+            const auto &prop = device_state->cooperative_matrix_flexible_dimensions_properties[i];
             ss << "[" << i << "] MGranularity = " << prop.MGranularity << " | NGranularity = " << prop.NGranularity
                << " | KGranularity = " << prop.KGranularity << " | AType = " << string_VkComponentTypeKHR(prop.AType)
                << " | BType = " << string_VkComponentTypeKHR(prop.BType) << " | CType = " << string_VkComponentTypeKHR(prop.CType)
@@ -491,8 +491,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                 // Validate that the type parameters are all supported for one of the
                 // operands of a cooperative matrix khr property.
                 bool valid = false;
-                for (uint32_t i = 0; i < cooperative_matrix_properties_khr.size(); ++i) {
-                    const auto &property = cooperative_matrix_properties_khr[i];
+                for (uint32_t i = 0; i < device_state->cooperative_matrix_properties_khr.size(); ++i) {
+                    const auto &property = device_state->cooperative_matrix_properties_khr[i];
                     if (property.AType == m.component_type && property.MSize == m.rows && property.KSize == m.cols &&
                         property.scope == m.scope && m.use == spv::CooperativeMatrixUseMatrixAKHR) {
                         valid = true;
@@ -515,8 +515,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                     }
                 }
                 if (enabled_features.cooperativeMatrixFlexibleDimensions) {
-                    for (uint32_t i = 0; i < cooperative_matrix_flexible_dimensions_properties.size(); ++i) {
-                        const auto &property = cooperative_matrix_flexible_dimensions_properties[i];
+                    for (uint32_t i = 0; i < device_state->cooperative_matrix_flexible_dimensions_properties.size(); ++i) {
+                        const auto &property = device_state->cooperative_matrix_flexible_dimensions_properties[i];
 
                         if (property.scope == VK_SCOPE_WORKGROUP_KHR && workgroup_size != property.workgroupInvocations) {
                             continue;
@@ -590,8 +590,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                     // Validate that the type parameters are all supported for the same
                     // cooperative matrix property.
                     bool found_matching_prop = false;
-                    for (uint32_t i = 0; i < cooperative_matrix_properties_khr.size(); ++i) {
-                        const auto &property = cooperative_matrix_properties_khr[i];
+                    for (uint32_t i = 0; i < device_state->cooperative_matrix_properties_khr.size(); ++i) {
+                        const auto &property = device_state->cooperative_matrix_properties_khr[i];
 
                         bool valid = true;
                         valid &= property.AType == a.component_type && property.MSize == a.rows && property.KSize == a.cols &&
@@ -622,8 +622,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                     }
                     bool found_matching_flexible_prop = false;
                     if (enabled_features.cooperativeMatrixFlexibleDimensions) {
-                        for (uint32_t i = 0; i < cooperative_matrix_flexible_dimensions_properties.size(); ++i) {
-                            const auto &property = cooperative_matrix_flexible_dimensions_properties[i];
+                        for (uint32_t i = 0; i < device_state->cooperative_matrix_flexible_dimensions_properties.size(); ++i) {
+                            const auto &property = device_state->cooperative_matrix_flexible_dimensions_properties[i];
 
                             bool valid = true;
                             valid &= property.AType == a.component_type && SafeModulo(a.rows, property.MGranularity) == 0 &&
@@ -690,8 +690,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                 // Validate that the type parameters are all supported for one of the
                 // operands of a cooperative matrix property.
                 bool valid = false;
-                for (uint32_t i = 0; i < cooperative_matrix_properties_nv.size(); ++i) {
-                    const auto &property = cooperative_matrix_properties_nv[i];
+                for (uint32_t i = 0; i < device_state->cooperative_matrix_properties_nv.size(); ++i) {
+                    const auto &property = device_state->cooperative_matrix_properties_nv[i];
                     if (property.AType == m.component_type && property.MSize == m.rows && property.KSize == m.cols &&
                         property.scope == m.scope) {
                         valid = true;
@@ -734,8 +734,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                     bool valid_b = false;
                     bool valid_c = false;
                     bool valid_d = false;
-                    for (uint32_t i = 0; i < cooperative_matrix_properties_nv.size(); ++i) {
-                        const auto &property = cooperative_matrix_properties_nv[i];
+                    for (uint32_t i = 0; i < device_state->cooperative_matrix_properties_nv.size(); ++i) {
+                        const auto &property = device_state->cooperative_matrix_properties_nv[i];
                         valid_a |= property.AType == a.component_type && property.MSize == a.rows && property.KSize == a.cols &&
                                    property.scope == a.scope;
                         valid_b |= property.BType == b.component_type && property.KSize == b.rows && property.NSize == b.cols &&
@@ -850,8 +850,8 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
                 }
 
                 bool found = false;
-                for (uint32_t i = 0; i < cooperative_vector_properties_nv.size(); ++i) {
-                    const auto &property = cooperative_vector_properties_nv[i];
+                for (uint32_t i = 0; i < device_state->cooperative_vector_properties_nv.size(); ++i) {
+                    const auto &property = device_state->cooperative_vector_properties_nv[i];
                     if (m.component_type == property.inputType || m.component_type == property.resultType) {
                         found = true;
                         break;
@@ -907,8 +907,8 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
                 }
 
                 bool found = false;
-                for (uint32_t i = 0; i < cooperative_vector_properties_nv.size(); ++i) {
-                    const auto &property = cooperative_vector_properties_nv[i];
+                for (uint32_t i = 0; i < device_state->cooperative_vector_properties_nv.size(); ++i) {
+                    const auto &property = device_state->cooperative_vector_properties_nv[i];
                     if (property.inputType == input_type && property.inputInterpretation == input_interpretation &&
                         property.matrixInterpretation == matrix_interpretation &&
                         (insn.Opcode() == spv::OpCooperativeVectorMatrixMulNV ||

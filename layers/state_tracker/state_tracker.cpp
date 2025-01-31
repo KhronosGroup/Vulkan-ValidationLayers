@@ -47,6 +47,20 @@
 namespace vvl {
 DeviceState::~DeviceState() { DestroyObjectMaps(); }
 
+void DeviceState::AddProxy(DeviceProxy *proxy) { proxies.emplace(proxy->container_type, proxy); }
+
+void DeviceState::RemoveProxy(const DeviceProxy *proxy) {
+    // this is used by gpuav abort so it needs to clean up any substates as well
+    proxies.erase(proxy->container_type);
+    ForEachShared<vvl::CommandBuffer>(
+        [proxy](std::shared_ptr<vvl::CommandBuffer> state) { state->RemoveSubState(proxy->container_type); });
+    ForEachShared<vvl::Queue>([proxy](std::shared_ptr<vvl::Queue> state) { state->RemoveSubState(proxy->container_type); });
+    ForEachShared<vvl::Swapchain>([proxy](std::shared_ptr<vvl::Swapchain> state) { state->RemoveSubState(proxy->container_type); });
+    ForEachShared<vvl::Image>([proxy](std::shared_ptr<vvl::Image> state) { state->RemoveSubState(proxy->container_type); });
+    ForEachShared<vvl::DescriptorSet>(
+        [proxy](std::shared_ptr<vvl::DescriptorSet> state) { state->RemoveSubState(proxy->container_type); });
+}
+
 VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const DeviceExtensions *exts = nullptr) const {
     // GPU-AV needs to pass in the modified extensions, since it may turn on BDA on its own
     if (!exts) {
@@ -240,12 +254,20 @@ VkFormatFeatureFlags2 InstanceState::GetImageFormatFeatures(VkPhysicalDevice phy
 
 std::shared_ptr<Image> DeviceState::CreateImageState(VkImage handle, const VkImageCreateInfo *create_info,
                                                      VkFormatFeatureFlags2 features) {
-    return std::make_shared<Image>(*this, handle, create_info, features);
+    auto image_state = std::make_shared<Image>(*this, handle, create_info, features);
+    for (auto &entry : proxies) {
+        entry.second->ImageCreated(*image_state);
+    }
+    return image_state;
 }
 
 std::shared_ptr<Image> DeviceState::CreateImageState(VkImage handle, const VkImageCreateInfo *create_info, VkSwapchainKHR swapchain,
                                                      uint32_t swapchain_index, VkFormatFeatureFlags2 features) {
-    return std::make_shared<Image>(*this, handle, create_info, swapchain, swapchain_index, features);
+    auto image_state = std::make_shared<Image>(*this, handle, create_info, swapchain, swapchain_index, features);
+    for (auto &entry : proxies) {
+        entry.second->ImageCreated(*image_state);
+    }
+    return image_state;
 }
 
 void DeviceState::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
@@ -264,8 +286,8 @@ void DeviceState::PostCallRecordCreateImage(VkDevice device, const VkImageCreate
     Add(CreateImageState(*pImage, pCreateInfo, format_features));
 }
 
-void DeviceState::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
-                                            const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
+                                             const RecordObject &record_obj) {
     Destroy<Image>(image);
 }
 
@@ -533,13 +555,13 @@ void DeviceState::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, con
                                 Get<Buffer>(pCopyBufferInfo->dstBuffer));
 }
 
-void DeviceState::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator,
-                                                const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator,
+                                                 const RecordObject &record_obj) {
     Destroy<ImageView>(imageView);
 }
 
-void DeviceState::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
-                                             const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
+                                              const RecordObject &record_obj) {
     if (auto buffer_state = Get<Buffer>(buffer)) {
         WriteLockGuard guard(buffer_address_lock_);
 
@@ -587,8 +609,8 @@ void DeviceState::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, c
     Destroy<Buffer>(buffer);
 }
 
-void DeviceState::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator,
-                                                 const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator,
+                                                  const RecordObject &record_obj) {
     Destroy<BufferView>(bufferView);
 }
 
@@ -711,7 +733,11 @@ VkFormatFeatureFlags2KHR DeviceState::GetPotentialFormatFeatures(VkFormat format
 std::shared_ptr<Queue> DeviceState::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
                                                 VkDeviceQueueCreateFlags flags,
                                                 const VkQueueFamilyProperties &queueFamilyProperties) {
-    return std::make_shared<Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties);
+    auto queue_state = std::make_shared<Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties);
+    for (auto &entry : proxies) {
+        entry.second->QueueCreated(*queue_state);
+    }
+    return queue_state;
 }
 
 void DeviceState::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
@@ -1096,8 +1122,8 @@ void DeviceState::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAl
     return;
 }
 
-void DeviceState::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator,
-                                          const RecordObject &record_obj) {
+void DeviceState::PostCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator,
+                                           const RecordObject &record_obj) {
     if (auto mem_info = Get<DeviceMemory>(mem)) {
         fake_memory.Free(mem_info->fake_base_address);
     }
@@ -1379,23 +1405,23 @@ void DeviceState::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObje
     }
 }
 
-void DeviceState::PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator,
-                                            const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator,
+                                             const RecordObject &record_obj) {
     Destroy<Fence>(fence);
 }
 
-void DeviceState::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator,
-                                                const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator,
+                                                 const RecordObject &record_obj) {
     Destroy<Semaphore>(semaphore);
 }
 
-void DeviceState::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator,
-                                            const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator,
+                                             const RecordObject &record_obj) {
     Destroy<Event>(event);
 }
 
-void DeviceState::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator,
-                                                const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator,
+                                                 const RecordObject &record_obj) {
     Destroy<QueryPool>(queryPool);
 }
 
@@ -1513,18 +1539,18 @@ void DeviceState::PostCallRecordGetImageSparseMemoryRequirements2KHR(VkDevice de
                                                     record_obj);
 }
 
-void DeviceState::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
-                                                   const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
+                                                    const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     Destroy<ShaderModule>(shaderModule);
 }
 
-void DeviceState::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks *pAllocator,
-                                                const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks *pAllocator,
+                                                 const RecordObject &record_obj) {
     Destroy<ShaderObject>(shader);
 }
 
-void DeviceState::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
-                                               const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
+                                                const RecordObject &record_obj) {
     Destroy<Pipeline>(pipeline);
 }
 
@@ -1541,13 +1567,13 @@ void DeviceState::PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer,
     }
 }
 
-void DeviceState::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
-                                                     const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
+                                                      const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     Destroy<PipelineLayout>(pipelineLayout);
 }
 
-void DeviceState::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator,
-                                              const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator,
+                                               const RecordObject &record_obj) {
     if (!sampler) return;
     // Any bound cmd buffers are now invalid
     if (auto sampler_state = Get<Sampler>(sampler)) {
@@ -1559,18 +1585,19 @@ void DeviceState::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler
     Destroy<Sampler>(sampler);
 }
 
-void DeviceState::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
-                                                          const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
+                                                           const VkAllocationCallbacks *pAllocator,
+                                                           const RecordObject &record_obj) {
     Destroy<DescriptorSetLayout>(descriptorSetLayout);
 }
 
-void DeviceState::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                     const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+                                                      const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     Destroy<DescriptorPool>(descriptorPool);
 }
 
-void DeviceState::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                                  const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
+                                                   const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
     if (auto pool = Get<CommandPool>(commandPool)) {
         pool->Free(commandBufferCount, pCommandBuffers);
     }
@@ -1634,8 +1661,8 @@ void DeviceState::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPo
         video_encode_feedback_flags));
 }
 
-void DeviceState::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
-                                                  const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
+                                                   const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     Destroy<CommandPool>(commandPool);
 }
 
@@ -1657,13 +1684,13 @@ void DeviceState::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount
     }
 }
 
-void DeviceState::PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
-                                                  const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
+                                                   const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     Destroy<Framebuffer>(framebuffer);
 }
 
-void DeviceState::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
-                                                 const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator,
+                                                  const RecordObject &record_obj) {
     Destroy<RenderPass>(renderPass);
 }
 
@@ -1686,8 +1713,8 @@ void DeviceState::PostCallRecordCreatePipelineCache(VkDevice device, const VkPip
     Add(CreatePipelineCacheState(*pPipelineCache, pCreateInfo));
 }
 
-void DeviceState::PreCallRecordDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache,
-                                                    const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache,
+                                                     const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     Destroy<PipelineCache>(pipelineCache);
 }
 
@@ -1726,12 +1753,6 @@ bool DeviceState::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipe
                 has_fragment_output_state && Pipeline::EnablesRasterizationStates(*this, create_info);
 
             render_pass = std::make_shared<RenderPass>(pipeline_rendering_ci, rasterization_enabled);
-        } else {
-            const bool is_graphics_lib = GetGraphicsLibType(create_info) != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
-            const bool has_link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext) != nullptr;
-            if (!is_graphics_lib && !has_link_info) {
-                skip = true;
-            }
         }
         pipeline_states.push_back(CreateGraphicsPipelineState(&create_info, pipeline_cache, std::move(render_pass),
                                                               std::move(layout_state), chassis_state.stateless_data));
@@ -1940,7 +1961,11 @@ std::shared_ptr<DescriptorPool> DeviceState::CreateDescriptorPoolState(VkDescrip
 std::shared_ptr<DescriptorSet> DeviceState::CreateDescriptorSet(VkDescriptorSet handle, DescriptorPool *pool,
                                                                 const std::shared_ptr<DescriptorSetLayout const> &layout,
                                                                 uint32_t variable_count) {
-    return std::make_shared<DescriptorSet>(handle, pool, layout, variable_count, this);
+    auto set = std::make_shared<DescriptorSet>(handle, pool, layout, variable_count, this);
+    for (auto &entry : proxies) {
+        entry.second->DescriptorSetCreated(*set);
+    }
+    return set;
 }
 
 void DeviceState::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
@@ -1978,8 +2003,8 @@ void DeviceState::PostCallRecordAllocateDescriptorSets(VkDevice device, const Vk
     }
 }
 
-void DeviceState::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
-                                                  const VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
+                                                   const VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj) {
     if (auto ds_pool_state = Get<DescriptorPool>(descriptorPool)) {
         ds_pool_state->Free(count, pDescriptorSets);
     }
@@ -2437,15 +2462,15 @@ void DeviceState::PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer c
     }
 }
 
-void DeviceState::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
-                                                               const VkAllocationCallbacks *pAllocator,
-                                                               const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
+                                                                const VkAllocationCallbacks *pAllocator,
+                                                                const RecordObject &record_obj) {
     Destroy<AccelerationStructureKHR>(accelerationStructure);
 }
 
-void DeviceState::PreCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                              const VkAllocationCallbacks *pAllocator,
-                                                              const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
+                                                               const VkAllocationCallbacks *pAllocator,
+                                                               const RecordObject &record_obj) {
     Destroy<AccelerationStructureNV>(accelerationStructure);
 }
 
@@ -3057,8 +3082,8 @@ void DeviceState::PostCallRecordBindVideoSessionMemoryKHR(VkDevice device, VkVid
     }
 }
 
-void DeviceState::PreCallRecordDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                      const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
+                                                       const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     Destroy<VideoSession>(videoSession);
 }
 
@@ -3082,9 +3107,10 @@ void DeviceState::PostCallRecordUpdateVideoSessionParametersKHR(VkDevice device,
     Get<VideoSessionParameters>(videoSessionParameters)->Update(pUpdateInfo);
 }
 
-void DeviceState::PreCallRecordDestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
-                                                                const VkAllocationCallbacks *pAllocator,
-                                                                const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroyVideoSessionParametersKHR(VkDevice device,
+                                                                 VkVideoSessionParametersKHR videoSessionParameters,
+                                                                 const VkAllocationCallbacks *pAllocator,
+                                                                 const RecordObject &record_obj) {
     Destroy<VideoSessionParameters>(videoSessionParameters);
 }
 
@@ -3556,6 +3582,9 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
                 Add(std::move(image_state));
             }
         }
+        for (auto &entry : proxies) {
+            entry.second->SwapchainCreated(*swapchain);
+        }
         Add(std::move(swapchain));
     } else {
         surface_state->swapchain = nullptr;
@@ -3576,8 +3605,8 @@ void DeviceState::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwap
     RecordCreateSwapchainState(record_obj.result, pCreateInfo, pSwapchain, std::move(surface_state), old_swapchain_state.get());
 }
 
-void DeviceState::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                   const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                    const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     Destroy<Swapchain>(swapchain);
 }
 
@@ -3826,8 +3855,8 @@ void InstanceState::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkP
                                                           record_obj);
 }
 
-void InstanceState::PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
-                                                   const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
+void InstanceState::PostCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
+                                                    const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     Destroy<Surface>(surface);
 }
 
@@ -5530,7 +5559,11 @@ std::shared_ptr<Swapchain> DeviceState::CreateSwapchainState(const VkSwapchainCr
 std::shared_ptr<CommandBuffer> DeviceState::CreateCmdBufferState(VkCommandBuffer handle,
                                                                  const VkCommandBufferAllocateInfo *allocate_info,
                                                                  const CommandPool *pool) {
-    return std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool);
+    auto cb_state = std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool);
+    for (auto &entry : proxies) {
+        entry.second->CommandBufferCreated(*cb_state);
+    }
+    return cb_state;
 }
 
 std::shared_ptr<DeviceMemory> DeviceState::CreateDeviceMemoryState(VkDeviceMemory handle, const VkMemoryAllocateInfo *allocate_info,

@@ -930,7 +930,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     vvl::unordered_set<const vvl::CommandBuffer *> linked_command_buffers;
-    ViewportScissorInheritanceTracker viewport_scissor_inheritance{*this};
+    ViewportScissorInheritanceTracker viewport_scissor_inheritance{*device_state};
 
     if (enabled_features.inheritedViewportScissor2D) {
         skip |= viewport_scissor_inheritance.VisitPrimary(cb_state);
@@ -1910,8 +1910,8 @@ bool CoreChecks::ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectL
         if (component_type == VK_COMPONENT_TYPE_FLOAT32_KHR) {
             return true;
         }
-        for (size_t i = 0; i < cooperative_vector_properties_nv.size(); ++i) {
-            if (cooperative_vector_properties_nv[i].matrixInterpretation == component_type) {
+        for (size_t i = 0; i < device_state->cooperative_vector_properties_nv.size(); ++i) {
+            if (device_state->cooperative_vector_properties_nv[i].matrixInterpretation == component_type) {
                 return true;
             }
         }

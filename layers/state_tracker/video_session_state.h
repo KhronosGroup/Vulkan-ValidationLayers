@@ -26,6 +26,7 @@
 
 namespace vvl {
 class DeviceState;
+class DeviceProxy;
 class Image;
 class ImageView;
 class VideoSession;
