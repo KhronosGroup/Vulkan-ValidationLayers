@@ -654,7 +654,8 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         }
     }
 
-    if ((create_info.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) && physical_device_count == 1) {
+    if ((create_info.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) &&
+        state_tracker->physical_device_count == 1) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429", device, create_info_loc.dot(Field::flags),
                      "containing VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR"
                      "but logical device was created with VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1."
@@ -1508,14 +1509,14 @@ bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice de
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     const auto *core_instance = reinterpret_cast<core::Instance *>(instance_state);
-    if (physical_device_count == 1) {
+    if (state_tracker->physical_device_count == 1) {
         skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
             physical_device, surface, "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212", error_obj.location);
     } else {
-        for (uint32_t i = 0; i < physical_device_count; ++i) {
-            skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(device_group_create_info.pPhysicalDevices[i], surface,
-                                                                        "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212",
-                                                                        error_obj.location);
+        for (uint32_t i = 0; i < state_tracker->physical_device_count; ++i) {
+            skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
+                state_tracker->device_group_create_info.pPhysicalDevices[i], surface,
+                "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212", error_obj.location);
         }
     }
 

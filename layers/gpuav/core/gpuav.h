@@ -47,8 +47,8 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpuav::Queue, vvl::Queue)
 
 namespace gpuav {
 
-class Instance : public vvl::Instance {
-    using BaseClass = vvl::Instance;
+class Instance : public vvl::InstanceProxy {
+    using BaseClass = vvl::InstanceProxy;
 
   public:
     Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeGpuAssisted) {}
@@ -81,6 +81,7 @@ class Validator : public GpuShaderInstrumentor {
     // gpuav_setup.cpp
     // -------------
   public:
+#if 0
     std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer handle, const VkBufferCreateInfo* create_info) final;
     std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& buffer, VkBufferView handle,
                                                            const VkBufferViewCreateInfo* create_info,
@@ -103,6 +104,7 @@ class Validator : public GpuShaderInstrumentor {
                                             VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties& queueFamilyProperties) override;
 
+#endif
     void FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
 
     void InternalVmaError(LogObjectList objlist, const Location& loc, const char* const specific_message) const;

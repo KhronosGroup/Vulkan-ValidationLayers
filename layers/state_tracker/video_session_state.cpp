@@ -534,7 +534,7 @@ class RateControlStateMismatchRecorder {
     mutable std::string string_{};
 };
 
-bool VideoSessionDeviceState::ValidateRateControlState(const Device &dev_data, const VideoSession *vs_state,
+bool VideoSessionDeviceState::ValidateRateControlState(const DeviceProxy &dev_data, const VideoSession *vs_state,
                                                        const vku::safe_VkVideoBeginCodingInfoKHR &begin_info,
                                                        const Location &loc) const {
     bool skip = false;

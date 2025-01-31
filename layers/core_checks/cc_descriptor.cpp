@@ -2684,13 +2684,13 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice
                          "descriptorBufferCaptureReplay feature was not enabled.");
     }
 
-    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+    if (state_tracker->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
         !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetBufferOpaqueCaptureDescriptorDataEXT-device-08074", pInfo->buffer, error_obj.location,
                          "device was created with multiple physical devices (%" PRIu32
                          "), but the "
                          "bufferDeviceAddressMultiDevice feature was not enabled.",
-                         physical_device_count);
+                         state_tracker->physical_device_count);
     }
 
     if (auto buffer_state = Get<vvl::Buffer>(pInfo->buffer)) {
@@ -2714,13 +2714,13 @@ bool CoreChecks::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice 
                          "descriptorBufferCaptureReplay feature was not enabled.");
     }
 
-    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+    if (state_tracker->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
         !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetImageOpaqueCaptureDescriptorDataEXT-device-08078", pInfo->image, error_obj.location,
                          "device was created with multiple physical devices (%" PRIu32
                          "), but the "
                          "bufferDeviceAddressMultiDevice feature was not enabled.",
-                         physical_device_count);
+                         state_tracker->physical_device_count);
     }
 
     if (auto image_state = Get<vvl::Image>(pInfo->image)) {
@@ -2744,13 +2744,13 @@ bool CoreChecks::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(VkDev
                          "descriptorBufferCaptureReplay feature was not enabled.");
     }
 
-    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+    if (state_tracker->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
         !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetImageViewOpaqueCaptureDescriptorDataEXT-device-08082", pInfo->imageView, error_obj.location,
                          "device was created with multiple physical devices (%" PRIu32
                          "), but the "
                          "bufferDeviceAddressMultiDevice feature was not enabled.",
-                         physical_device_count);
+                         state_tracker->physical_device_count);
     }
 
     if (auto image_view_state = Get<vvl::ImageView>(pInfo->imageView)) {
@@ -2774,13 +2774,13 @@ bool CoreChecks::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevic
                          "descriptorBufferCaptureReplay feature was not enabled.");
     }
 
-    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+    if (state_tracker->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
         !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetSamplerOpaqueCaptureDescriptorDataEXT-device-08086", pInfo->sampler, error_obj.location,
                          "device was created with multiple physical devices (%" PRIu32
                          "), but the "
                          "bufferDeviceAddressMultiDevice feature was not enabled.",
-                         physical_device_count);
+                         state_tracker->physical_device_count);
     }
 
     if (auto sampler_state = Get<vvl::Sampler>(pInfo->sampler)) {
@@ -2804,13 +2804,13 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
                          "descriptorBufferCaptureReplay feature was not enabled.");
     }
 
-    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+    if (state_tracker->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
         !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT-device-08090", device, error_obj.location,
                          "device was created with multiple physical devices (%" PRIu32
                          "), but the "
                          "bufferDeviceAddressMultiDevice feature was not enabled.",
-                         physical_device_count);
+                         state_tracker->physical_device_count);
     }
 
     if (pInfo->accelerationStructure != VK_NULL_HANDLE) {
@@ -3575,7 +3575,7 @@ bool CoreChecks::ValidateCmdPushDescriptorSet(const vvl::CommandBuffer &cb_state
         // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
         // don't have to do this. Note we need to const_cast<>(this) because GPU-AV needs a non-const version of
         // the state tracker. The proxy here could get away with const.
-        vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
+        vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<vvl::Device *>(state_tracker));
         vvl::DslErrorSource dsl_error_source(loc, layout, set);
         skip |= ValidatePushDescriptorsUpdate(proxy_ds, descriptorWriteCount, pDescriptorWrites, dsl_error_source, loc);
     }
@@ -3725,7 +3725,7 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device,
     if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
         // decode the templatized data and leverage the non-template UpdateDescriptor helper functions.
         // Translate the templated update into a normal update for validation...
-        vvl::DecodedTemplateUpdate decoded_update(*this, descriptorSet, template_state.get(), pData);
+        vvl::DecodedTemplateUpdate decoded_update(*state_tracker, descriptorSet, template_state.get(), pData);
         return ValidateUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()),
                                             decoded_update.desc_writes.data(), 0, nullptr, error_obj.location);
     }
@@ -3819,9 +3819,9 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
                          "VkDescriptorUpdateTemplateCreateInfo::descriptorSetLayout was accidentally destroy.");
     } else {
         // Create an empty proxy in order to use the existing descriptor set update validation
-        vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<CoreChecks *>(this));
+        vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<vvl::Device *>(state_tracker));
         // Decode the template into a set of write updates
-        vvl::DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
+        vvl::DecodedTemplateUpdate decoded_template(*state_tracker, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
         // Validate the decoded update against the proxy_ds
         vvl::DslErrorSource dsl_error_source(loc, layout, set);
         skip |= ValidatePushDescriptorsUpdate(proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
@@ -4727,7 +4727,8 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
 
     if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
         pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
-        if (custom_border_color_sampler_count >= phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers) {
+        if (state_tracker->custom_border_color_sampler_count >=
+            phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers) {
             skip |= LogError("VUID-VkSamplerCreateInfo-None-04012", device, error_obj.location,
                              "Creating a sampler with a custom border color will exceed the "
                              "maxCustomBorderColorSamplers limit of %" PRIu32 ".",

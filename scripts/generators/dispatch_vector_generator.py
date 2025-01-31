@@ -60,6 +60,7 @@ void Device::InitObjectDispatchVectors() {
 #define BUILD_DISPATCH_VECTOR(name) \\
     init_object_dispatch_vector(InterceptId ## name, \\
                                 typeid(&vvl::base::Device::name), \\
+                                typeid(&vvl::Device::name), \\
                                 typeid(&threadsafety::Device::name), \\
                                 typeid(&stateless::Device::name), \\
                                 typeid(&object_lifetimes::Device::name), \\
@@ -70,6 +71,7 @@ void Device::InitObjectDispatchVectors() {
 
     auto init_object_dispatch_vector = [this](InterceptId id,
                                               const std::type_info& vo_typeid,
+                                              const std::type_info& st_typeid,
                                               const std::type_info& tt_typeid,
                                               const std::type_info& tpv_typeid,
                                               const std::type_info& tot_typeid,
@@ -83,6 +85,9 @@ void Device::InitObjectDispatchVectors() {
             switch (item->container_type) {
             case LayerObjectTypeThreading:
                 if (tt_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeStateTracker:
+                if (tt_typeid != st_typeid) intercept_vector->push_back(item);
                 break;
             case LayerObjectTypeParameterValidation:
                 if (tpv_typeid != vo_typeid) intercept_vector->push_back(item);

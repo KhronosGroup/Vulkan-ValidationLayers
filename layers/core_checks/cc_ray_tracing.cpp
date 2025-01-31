@@ -459,7 +459,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevic
         skip |= LogError("VUID-vkGetAccelerationStructureDeviceAddressKHR-accelerationStructure-08935", device, error_obj.location,
                          "accelerationStructure feature was not enabled.");
     }
-    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+    if (state_tracker->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
         !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetAccelerationStructureDeviceAddressKHR-device-03504", device, error_obj.location,
                          "bufferDeviceAddressMultiDevice feature was not enabled.");

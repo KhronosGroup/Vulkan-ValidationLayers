@@ -26,6 +26,7 @@
 
 namespace vvl {
 class Device;
+class DeviceProxy;
 class Image;
 class ImageView;
 class VideoSession;
@@ -527,7 +528,7 @@ class VideoSessionDeviceState {
         encode_.rate_control_state = rate_control_state;
     }
 
-    bool ValidateRateControlState(const Device &dev_data, const VideoSession *vs_state,
+    bool ValidateRateControlState(const DeviceProxy &dev_data, const VideoSession *vs_state,
                                   const vku::safe_VkVideoBeginCodingInfoKHR &begin_info, const Location &loc) const;
 
   private:

@@ -33,6 +33,7 @@ static uint32_t BitBufferSize(uint32_t num_bits) {
     return (((num_bits + (kBitsPerWord - 1)) & ~(kBitsPerWord - 1)) / kBitsPerWord) * sizeof(uint32_t);
 }
 
+#if 0
 DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *pool,
                              const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count,
                              vvl::Device *state_data)
@@ -41,6 +42,7 @@ DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *
       input_buffer_(*static_cast<Validator *>(state_data)) {
     BuildBindingLayouts();
 }
+#endif
 
 DescriptorSet::~DescriptorSet() {
     post_process_buffer_.Destroy();

@@ -123,6 +123,7 @@ void AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_nodes, bo
     vvl::AccelerationStructureNV::NotifyInvalidate(invalid_nodes, unlink);
 }
 
+#if 0
 CommandBuffer::CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
                              const vvl::CommandPool *pool)
     : vvl::CommandBuffer(gpuav, handle, pCreateInfo, pool),
@@ -134,6 +135,7 @@ CommandBuffer::CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkC
     Location loc(vvl::Func::vkAllocateCommandBuffers);
     AllocateResources(loc);
 }
+#endif
 
 static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_buffer, vko::Buffer &error_output_buffer,
                                     const Location &loc) {
@@ -160,7 +162,7 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
 }
 
 void CommandBuffer::AllocateResources(const Location &loc) {
-    auto gpuav = static_cast<Validator *>(&dev_data);
+    auto gpuav = static_cast<Validator *>(nullptr);  // TODO
 
     VkResult result = VK_SUCCESS;
 
@@ -301,11 +303,11 @@ void CommandBuffer::AllocateResources(const Location &loc) {
 }
 
 bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
-    auto gpuav = static_cast<Validator *>(&dev_data);
+    auto gpuav = static_cast<Validator *>(nullptr);  // TODO
 
     // By supplying a "date"
     if (!gpuav->gpuav_settings.shader_instrumentation.buffer_device_address ||
-        bda_ranges_snapshot_version_ == gpuav->buffer_device_address_ranges_version) {
+        bda_ranges_snapshot_version_ == gpuav->state_tracker->buffer_device_address_ranges_version) {
         return true;
     }
 
@@ -326,7 +328,7 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
         static_cast<size_t>((GetBdaRangesBufferByteSize() - sizeof(uint64_t)) / (2 * sizeof(VkDeviceAddress)));
     auto bda_ranges = reinterpret_cast<vvl::Device::BufferAddressRange *>(bda_table_ptr + 1);
     const auto [ranges_to_update_count, total_address_ranges_count] =
-        gpuav->GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
+        gpuav->state_tracker->GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
     bda_table_ptr[0] = ranges_to_update_count;
 
     if (total_address_ranges_count > size_t(gpuav->gpuav_settings.max_bda_in_use)) {
@@ -344,13 +346,13 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
     // Flush the BDA buffer before un-mapping so that the new state is visible to the GPU
     bda_ranges_snapshot_.FlushAllocation(loc);
     bda_ranges_snapshot_.UnmapMemory();
-    bda_ranges_snapshot_version_ = gpuav->buffer_device_address_ranges_version;
+    bda_ranges_snapshot_version_ = gpuav->state_tracker->buffer_device_address_ranges_version;
 
     return true;
 }
 
 VkDeviceSize CommandBuffer::GetBdaRangesBufferByteSize() const {
-    auto gpuav = static_cast<Validator *>(&dev_data);
+    auto gpuav = static_cast<Validator *>(nullptr);     // TODO
     return (1                                           // 1 QWORD for the number of address ranges
             + 2 * gpuav->gpuav_settings.max_bda_in_use  // 2 QWORDS per address range
             ) *
@@ -377,7 +379,8 @@ void CommandBuffer::Reset(const Location &loc) {
 }
 
 void CommandBuffer::ResetCBState() {
-    auto gpuav = static_cast<Validator *>(&dev_data);
+    // auto gpuav = static_cast<Validator *>(&dev_data);
+    auto gpuav = static_cast<Validator *>(nullptr);  // TODO
 
     // Free the device memory and descriptor set(s) associated with a command buffer.
     for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
@@ -463,7 +466,7 @@ std::string CommandBuffer::GetDebugLabelRegion(uint32_t label_command_i,
 }
 
 bool CommandBuffer::PreProcess(const Location &loc) {
-    auto gpuav = static_cast<Validator *>(&dev_data);
+    auto gpuav = static_cast<Validator *>(nullptr);  // TODO
 
     bool succeeded = descriptor::UpdateDescriptorStateSSBO(*gpuav, *this, loc);
     if (!succeeded) {
@@ -482,7 +485,7 @@ bool CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.IsDestroye
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc) {
-    auto gpuav = static_cast<Validator *>(&dev_data);
+    auto gpuav = static_cast<Validator *>(nullptr);  // TODO
 
     // For the given command buffer, map its debug data buffers and read their contents for analysis.
     for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
@@ -558,6 +561,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
     }
 }
 
+#if 0
 Queue::Queue(Validator &gpuav, VkQueue q, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
              const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr)
     : vvl::Queue(gpuav, q, family_index, queue_index, flags, queueFamilyProperties), state_(gpuav), timeline_khr_(timeline_khr) {}
@@ -576,6 +580,7 @@ Queue::~Queue() {
         barrier_sem_ = VK_NULL_HANDLE;
     }
 }
+#endif
 
 // Submit a memory barrier on graphics queues.
 // Lazy-create and record the needed command buffer.

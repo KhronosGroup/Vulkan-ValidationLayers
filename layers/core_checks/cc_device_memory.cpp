@@ -594,7 +594,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         import_memory_fd_info && import_memory_fd_info->handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
     if (imported_opaque_fd) {
         const Location import_loc = allocate_info_loc.pNext(Struct::VkImportMemoryFdInfoKHR, Field::fd);
-        if (const auto payload_info = GetOpaqueInfoFromFdHandle(import_memory_fd_info->fd)) {
+        if (const auto payload_info = state_tracker->GetOpaqueInfoFromFdHandle(import_memory_fd_info->fd)) {
             if (pAllocateInfo->allocationSize != payload_info->allocation_size) {
                 skip |=
                     LogError("VUID-VkMemoryAllocateInfo-allocationSize-01742", device, allocate_info_loc.dot(Field::allocationSize),
@@ -869,6 +869,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                                           const Location &loc) const {
     bool skip = false;
 
+    const auto &device_group_create_info = state_tracker->device_group_create_info;
     // Validate device group information
     if (const auto *bind_buffer_memory_device_group_info = vku::FindStructInPNextChain<VkBindBufferMemoryDeviceGroupInfo>(pNext)) {
         if (bind_buffer_memory_device_group_info->deviceIndexCount != 0 &&
@@ -1575,6 +1576,7 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDev
 bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindImageMemoryInfo *pBindInfos,
                                          const ErrorObject &error_obj) const {
     bool skip = false;
+    const auto &device_group_create_info = state_tracker->device_group_create_info;
     const bool bind_image_mem_2 = error_obj.location.function != Func::vkBindImageMemory;
 
     // Track all image sub resources if they are bound for bind_image_mem_2
@@ -2516,7 +2518,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const Vk
                          "The bufferDeviceAddress feature must be enabled.");
     }
 
-    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+    if (state_tracker->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
         !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetBufferDeviceAddress-device-03325", pInfo->buffer, error_obj.location,
                          "If device was created with multiple physical devices, then the "
@@ -2557,7 +2559,7 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, c
                          "The bufferDeviceAddress feature must be enabled.");
     }
 
-    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice) {
+    if (state_tracker->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice) {
         skip |= LogError("VUID-vkGetBufferOpaqueCaptureAddress-device-03327", objlist, error_obj.location,
                          "If device was created with multiple physical devices, then the "
                          "bufferDeviceAddressMultiDevice feature must be enabled.");
@@ -2581,7 +2583,7 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice dev
                          "The bufferDeviceAddress feature was not enabled.");
     }
 
-    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice) {
+    if (state_tracker->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice) {
         skip |= LogError("VUID-vkGetDeviceMemoryOpaqueCaptureAddress-device-03335", objlst, error_obj.location,
                          "If device was created with multiple physical devices, then the "
                          "bufferDeviceAddressMultiDevice feature was not enabled.");

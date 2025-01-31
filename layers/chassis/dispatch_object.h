@@ -40,6 +40,7 @@
 
 // Layer object type identifiers
 enum LayerObjectTypeId {
+    LayerObjectTypeStateTracker,         // Shared state tracker
     LayerObjectTypeThreading,            // Instance or device threading layer object
     LayerObjectTypeParameterValidation,  // Instance or device parameter validation layer object
     LayerObjectTypeObjectTracker,        // Instance or device object tracker layer object

@@ -195,7 +195,7 @@ void SyncValidator::ForAllQueueBatchContexts(BatchOp &&op) {
         }
     }
     // Get present batches
-    ForEachShared<vvl::Swapchain>([&batch_contexts](const std::shared_ptr<vvl::Swapchain> &swapchain) {
+    state_tracker->ForEachShared<vvl::Swapchain>([&batch_contexts](const std::shared_ptr<vvl::Swapchain> &swapchain) {
         auto sync_swapchain = std::static_pointer_cast<syncval_state::Swapchain>(swapchain);
         sync_swapchain->GetPresentBatches(batch_contexts);
     });
@@ -270,7 +270,7 @@ void SyncValidator::UpdateSyncImageMemoryBindState(uint32_t count, const VkBindI
         if (!image_state->HasBeenBound()) continue;
 
         if (image_state->IsTiled()) {
-            image_state->SetOpaqueBaseAddress(*this);
+            image_state->SetOpaqueBaseAddress(*state_tracker);
         }
     }
 }
@@ -284,6 +284,7 @@ std::shared_ptr<const QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQ
     return {};
 }
 
+#if 0
 std::shared_ptr<vvl::CommandBuffer> SyncValidator::CreateCmdBufferState(VkCommandBuffer handle,
                                                                         const VkCommandBufferAllocateInfo *allocate_info,
                                                                         const vvl::CommandPool *cmd_pool) {
@@ -314,6 +315,7 @@ std::shared_ptr<vvl::ImageView> SyncValidator::CreateImageViewState(
     VkFormatFeatureFlags2 format_features, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
     return std::make_shared<ImageViewState>(image_state, handle, create_info, format_features, cubic_props);
 }
+#endif
 
 void SyncValidator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
                                                const RecordObject &record_obj) {
@@ -743,14 +745,15 @@ void SyncValidator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, con
     // This allows to have deterministic QueueId between runs that simplifies debugging.
     auto get_sorted_queues = [this]() {
         std::vector<std::shared_ptr<vvl::Queue>> queues;
-        ForEachShared<vvl::Queue>([&queues](const std::shared_ptr<vvl::Queue> &queue) { queues.emplace_back(queue); });
+        state_tracker->ForEachShared<vvl::Queue>(
+            [&queues](const std::shared_ptr<vvl::Queue> &queue) { queues.emplace_back(queue); });
         std::sort(queues.begin(), queues.end(), [](const auto &q1, const auto &q2) {
             return (q1->queue_family_index < q2->queue_family_index) ||
                    (q1->queue_family_index == q2->queue_family_index && q1->queue_index < q2->queue_index);
         });
         return queues;
     };
-    queue_sync_states_.reserve(Count<vvl::Queue>());
+    queue_sync_states_.reserve(state_tracker->Count<vvl::Queue>());
     for (const auto &queue : get_sorted_queues()) {
         queue_sync_states_.emplace_back(std::make_shared<QueueSyncState>(queue, queue_id_limit_++));
     }
@@ -2432,7 +2435,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
         }
     }
 
-    auto dst_resource = vvl::VideoPictureResource(*this, pDecodeInfo->dstPictureResource);
+    auto dst_resource = vvl::VideoPictureResource(*state_tracker, pDecodeInfo->dstPictureResource);
     if (dst_resource) {
         auto hazard = context->DetectHazard(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
         if (hazard.IsHazard()) {
@@ -2450,7 +2453,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
 
     if (pDecodeInfo->pSetupReferenceSlot != nullptr && pDecodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
         const VkVideoPictureResourceInfoKHR &video_picture = *pDecodeInfo->pSetupReferenceSlot->pPictureResource;
-        auto setup_resource = vvl::VideoPictureResource(*this, video_picture);
+        auto setup_resource = vvl::VideoPictureResource(*state_tracker, video_picture);
         if (setup_resource && (setup_resource != dst_resource)) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
             if (hazard.IsHazard()) {
@@ -2473,7 +2476,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
     for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
         if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
             const VkVideoPictureResourceInfoKHR &video_picture = *pDecodeInfo->pReferenceSlots[i].pPictureResource;
-            auto reference_resource = vvl::VideoPictureResource(*this, video_picture);
+            auto reference_resource = vvl::VideoPictureResource(*state_tracker, video_picture);
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ);
                 if (hazard.IsHazard()) {
@@ -2519,13 +2522,13 @@ void SyncValidator::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer
                                    src_tag_ex);
     }
 
-    auto dst_resource = vvl::VideoPictureResource(*this, pDecodeInfo->dstPictureResource);
+    auto dst_resource = vvl::VideoPictureResource(*state_tracker, pDecodeInfo->dstPictureResource);
     if (dst_resource) {
         context->UpdateAccessState(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
     }
 
     if (pDecodeInfo->pSetupReferenceSlot != nullptr && pDecodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        auto setup_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
+        auto setup_resource = vvl::VideoPictureResource(*state_tracker, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
         if (setup_resource && (setup_resource != dst_resource)) {
             context->UpdateAccessState(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE, tag);
         }
@@ -2533,7 +2536,7 @@ void SyncValidator::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer
 
     for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
         if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            auto reference_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
+            auto reference_resource = vvl::VideoPictureResource(*state_tracker, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
                 context->UpdateAccessState(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, tag);
             }
@@ -2568,7 +2571,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         }
     }
 
-    if (auto src_resource = vvl::VideoPictureResource(*this, pEncodeInfo->srcPictureResource)) {
+    if (auto src_resource = vvl::VideoPictureResource(*state_tracker, pEncodeInfo->srcPictureResource)) {
         auto hazard = context->DetectHazard(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
         if (hazard.IsHazard()) {
             std::stringstream ss;
@@ -2586,7 +2589,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
 
     if (pEncodeInfo->pSetupReferenceSlot != nullptr && pEncodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
         const VkVideoPictureResourceInfoKHR &video_picture = *pEncodeInfo->pSetupReferenceSlot->pPictureResource;
-        auto setup_resource = vvl::VideoPictureResource(*this, video_picture);
+        auto setup_resource = vvl::VideoPictureResource(*state_tracker, video_picture);
         if (setup_resource) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
             if (hazard.IsHazard()) {
@@ -2609,7 +2612,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
     for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
         if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
             const VkVideoPictureResourceInfoKHR &video_picture = *pEncodeInfo->pReferenceSlots[i].pPictureResource;
-            auto reference_resource = vvl::VideoPictureResource(*this, video_picture);
+            auto reference_resource = vvl::VideoPictureResource(*state_tracker, video_picture);
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
                 if (hazard.IsHazard()) {
@@ -2680,13 +2683,13 @@ void SyncValidator::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer
                                    src_tag_ex);
     }
 
-    auto src_resource = vvl::VideoPictureResource(*this, pEncodeInfo->srcPictureResource);
+    auto src_resource = vvl::VideoPictureResource(*state_tracker, pEncodeInfo->srcPictureResource);
     if (src_resource) {
         context->UpdateAccessState(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
     }
 
     if (pEncodeInfo->pSetupReferenceSlot != nullptr && pEncodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        auto setup_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
+        auto setup_resource = vvl::VideoPictureResource(*state_tracker, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
         if (setup_resource) {
             context->UpdateAccessState(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, tag);
         }
@@ -2694,7 +2697,7 @@ void SyncValidator::PreCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer
 
     for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
         if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            auto reference_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
+            auto reference_resource = vvl::VideoPictureResource(*state_tracker, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
             if (reference_resource) {
                 context->UpdateAccessState(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ, tag);
             }
@@ -3323,7 +3326,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
             unresolved_batch.batch = std::move(batch);
             unresolved_batch.submit_index = submit_id;
             unresolved_batch.batch_index = batch_idx;
-            unresolved_batch.command_buffers = GetCommandBuffers(*this, submit);
+            unresolved_batch.command_buffers = GetCommandBuffers(*state_tracker, submit);
             unresolved_batch.unresolved_waits = std::move(unresolved_waits);
             unresolved_batch.resolved_dependencies = std::move(resolved_batches);
             if (submit.pSignalSemaphoreInfos && submit.signalSemaphoreInfoCount) {
@@ -3349,7 +3352,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
         // TODO: All syncval tests pass when the return value is ignored. Write a regression test that fails/crashes in this case.
         const auto async_batches = batch->RegisterAsyncContexts(resolved_batches);
 
-        const auto command_buffers = GetCommandBuffers(*this, submit);
+        const auto command_buffers = GetCommandBuffers(*state_tracker, submit);
         skip |= batch->ValidateSubmit(command_buffers, submit_id, batch_idx, current_label_stack, error_obj);
 
         const auto submit_signals = vvl::make_span(submit.pSignalSemaphoreInfos, submit.signalSemaphoreInfoCount);
@@ -3644,7 +3647,7 @@ void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapc
             if (swapchain_image.image_state) {
                 auto *sync_image = static_cast<ImageState *>(swapchain_image.image_state);
                 assert(sync_image->IsTiled());  // This is the assumption from the spec, and the implementation relies on it
-                sync_image->SetOpaqueBaseAddress(*this);
+                sync_image->SetOpaqueBaseAddress(*state_tracker);
             }
         }
     }
@@ -3776,7 +3779,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
 
     for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
         // Validate scratch buffer
-        if (const vvl::Buffer *p_scratch_buffer = GetSingleBufferFromDeviceAddress(*this, info.scratchData.deviceAddress)) {
+        if (const vvl::Buffer *p_scratch_buffer = GetSingleBufferFromDeviceAddress(*state_tracker, info.scratchData.deviceAddress)) {
             const vvl::Buffer &scratch_buffer = *p_scratch_buffer;
             const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
             // Skip invalid configurations
@@ -3849,7 +3852,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
             if (!p_geometry) {
                 continue;  // [core validation check]: null pointer in ppGeometries
             }
-            const auto geometry_info = GetValidGeometryInfo(*this, *p_geometry, p_range_infos[k]);
+            const auto geometry_info = GetValidGeometryInfo(*state_tracker, *p_geometry, p_range_infos[k]);
             if (!geometry_info.has_value()) {
                 continue;
             }
@@ -3903,7 +3906,8 @@ void SyncValidator::PreCallRecordCmdBuildAccelerationStructuresKHR(
 
     for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
         // Record scratch buffer access
-        if (const vvl::Buffer *p_scratch_buffer = GetSingleBufferFromDeviceAddress(*this, info.scratchData.deviceAddress)) {
+        if (const vvl::Buffer *p_scratch_buffer =
+                GetSingleBufferFromDeviceAddress(*state_tracker, info.scratchData.deviceAddress)) {
             const vvl::Buffer &scratch_buffer = *p_scratch_buffer;
             const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
             // Skip invalid configurations
@@ -3950,7 +3954,7 @@ void SyncValidator::PreCallRecordCmdBuildAccelerationStructuresKHR(
             if (!p_geometry) {
                 continue;  // [core validation check]: null pointer in ppGeometries
             }
-            const auto geometry_info = GetValidGeometryInfo(*this, *p_geometry, p_range_infos[k]);
+            const auto geometry_info = GetValidGeometryInfo(*state_tracker, *p_geometry, p_range_infos[k]);
             if (!geometry_info.has_value()) {
                 continue;
             }

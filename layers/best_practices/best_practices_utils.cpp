@@ -51,6 +51,7 @@ WriteLockGuard BestPractices::WriteLock() {
     }
 }
 
+#if 0
 std::shared_ptr<vvl::CommandBuffer> BestPractices::CreateCmdBufferState(VkCommandBuffer handle,
                                                                         const VkCommandBufferAllocateInfo* allocate_info,
                                                                         const vvl::CommandPool* pool) {
@@ -61,6 +62,7 @@ std::shared_ptr<vvl::CommandBuffer> BestPractices::CreateCmdBufferState(VkComman
 bp_state::CommandBuffer::CommandBuffer(BestPractices& bp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* allocate_info,
                                        const vvl::CommandPool* pool)
     : vvl::CommandBuffer(bp, handle, allocate_info, pool) {}
+#endif
 
 bool bp_state::VendorCheckEnabled(const CHECK_ENABLED& enabled, BPVendorFlags vendors) {
     for (const auto& vendor : GetVendorInfo()) {

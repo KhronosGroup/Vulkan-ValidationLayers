@@ -239,7 +239,7 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
 
 namespace syncval {
 
-ErrorMessages::ErrorMessages(vvl::Device& validator)
+ErrorMessages::ErrorMessages(SyncValidator& validator)
     : validator_(validator),
       extra_properties_(validator_.syncval_settings.message_extra_properties),
       pretty_print_extra_(validator_.syncval_settings.message_extra_properties_pretty_print) {}

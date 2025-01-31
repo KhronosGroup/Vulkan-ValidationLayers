@@ -294,6 +294,7 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
     }
 }
 
+#if 0
 std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
                                                             VkFormatFeatureFlags2 features) {
     return std::make_shared<bp_state::Image>(*this, handle, create_info, features);
@@ -304,3 +305,4 @@ std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage handle, cons
                                                             VkFormatFeatureFlags2 features) {
     return std::make_shared<bp_state::Image>(*this, handle, create_info, swapchain, swapchain_index, features);
 }
+#endif

@@ -573,11 +573,11 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const
                                                   "VUID-VkDeviceGroupRenderPassBeginInfo-deviceMask-00907");
 
         if (device_group_begin_info->deviceRenderAreaCount != 0 &&
-            device_group_begin_info->deviceRenderAreaCount != physical_device_count) {
+            device_group_begin_info->deviceRenderAreaCount != state_tracker->physical_device_count) {
             skip |= LogError("VUID-VkDeviceGroupRenderPassBeginInfo-deviceRenderAreaCount-00908", objlist,
                              rp_begin_loc.pNext(Struct::VkDeviceGroupRenderPassBeginInfo, Field::deviceRenderAreaCount),
                              "is %" PRIu32 " but the physical device count is %" PRIu32 ".",
-                             device_group_begin_info->deviceRenderAreaCount, physical_device_count);
+                             device_group_begin_info->deviceRenderAreaCount, state_tracker->physical_device_count);
         }
     }
 
@@ -1166,7 +1166,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
         }
     }
 
-    if (enabled_features.externalFormatResolve && !android_external_format_resolve_null_color_attachment_prop) {
+    if (enabled_features.externalFormatResolve && !state_tracker->android_external_format_resolve_null_color_attachment_prop) {
         for (const auto [i, subpass] : vvl::enumerate(render_pass_create_info->pSubpasses, render_pass_create_info->subpassCount)) {
             if (!subpass.pResolveAttachments || !subpass.pColorAttachments) {
                 continue;
@@ -1178,8 +1178,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
             }
             const uint64_t attachment_external_format =
                 GetExternalFormat(render_pass_create_info->pAttachments[resolve_attachment].pNext);
-            auto it = ahb_ext_resolve_formats_map.find(attachment_external_format);
-            if (it != ahb_ext_resolve_formats_map.end()) {
+            auto it = state_tracker->ahb_ext_resolve_formats_map.find(attachment_external_format);
+            if (it != state_tracker->ahb_ext_resolve_formats_map.end()) {
                 VkFormat color_format = render_pass_create_info->pAttachments[color_attachment].format;
                 if (it->second != color_format) {
                     const LogObjectList objlist(begin_info.renderPass, begin_info.framebuffer);
@@ -2010,7 +2010,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                 const Location &resolve_loc = subpass_loc.dot(Field::pResolveAttachments, j);
                 if (enabled_features.externalFormatResolve && resolve_desc.format == VK_FORMAT_UNDEFINED) {
                     if (attachment_index == VK_ATTACHMENT_UNUSED) {
-                        if (!android_external_format_resolve_null_color_attachment_prop) {
+                        if (!state_tracker->android_external_format_resolve_null_color_attachment_prop) {
                             skip |= LogError("VUID-VkSubpassDescription2-nullColorAttachmentWithExternalFormatResolve-09336",
                                              device, resolve_loc.dot(Field::attachment),
                                              "is %" PRIu32 ", pAttachments[%" PRIu32
@@ -2021,7 +2021,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                         }
 
                     } else {
-                        if (android_external_format_resolve_null_color_attachment_prop) {
+                        if (state_tracker->android_external_format_resolve_null_color_attachment_prop) {
                             skip |= LogError("VUID-VkSubpassDescription2-nullColorAttachmentWithExternalFormatResolve-09337",
                                              device, resolve_loc.dot(Field::attachment),
                                              "is %" PRIu32 ", pAttachments[%" PRIu32
@@ -3717,7 +3717,7 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBu
                                  color_attachment_loc.dot(Field::resolveImageView), "is not valid (%s).",
                                  FormatHandle(color_attachment.resolveImageView).c_str());
             } else {
-                if (android_external_format_resolve_null_color_attachment_prop &&
+                if (state_tracker->android_external_format_resolve_null_color_attachment_prop &&
                     resolve_view_state->image_state->create_info.samples != VK_SAMPLE_COUNT_1_BIT) {
                     skip |= LogError("VUID-VkRenderingAttachmentInfo-nullColorAttachmentWithExternalFormatResolve-09325",
                                      commandBuffer, color_attachment_loc.dot(Field::resolveImageView), "image was created with %s.",
@@ -3735,13 +3735,13 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBu
                 }
 
                 if (auto color_view_state = Get<vvl::ImageView>(color_attachment.imageView)) {
-                    if (android_external_format_resolve_null_color_attachment_prop) {
+                    if (state_tracker->android_external_format_resolve_null_color_attachment_prop) {
                         skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveMode-09328", commandBuffer,
                                          color_attachment_loc.dot(Field::imageView), "is not null (%s).",
                                          FormatHandle(color_attachment.imageView).c_str());
                     } else {
-                        auto it = ahb_ext_resolve_formats_map.find(resolve_view_state->image_state->ahb_format);
-                        if (it != ahb_ext_resolve_formats_map.end()) {
+                        auto it = state_tracker->ahb_ext_resolve_formats_map.find(resolve_view_state->image_state->ahb_format);
+                        if (it != state_tracker->ahb_ext_resolve_formats_map.end()) {
                             if (it->second != color_view_state->create_info.format) {
                                 skip |=
                                     LogError("VUID-VkRenderingAttachmentInfo-resolveMode-09330", commandBuffer,
@@ -3753,7 +3753,7 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBu
                             }
                         }
                     }
-                } else if (!android_external_format_resolve_null_color_attachment_prop) {
+                } else if (!state_tracker->android_external_format_resolve_null_color_attachment_prop) {
                     skip |= LogError("VUID-VkRenderingAttachmentInfo-resolveMode-09329", commandBuffer,
                                      color_attachment_loc.dot(Field::imageView), "is not valid.");
                 }
@@ -4471,12 +4471,13 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                 }
             }
 
-            if (enabled_features.externalFormatResolve && !android_external_format_resolve_null_color_attachment_prop &&
-                subpass.pResolveAttachments && subpass.pResolveAttachments[0].attachment == i && subpass.pColorAttachments) {
+            if (enabled_features.externalFormatResolve &&
+                !state_tracker->android_external_format_resolve_null_color_attachment_prop && subpass.pResolveAttachments &&
+                subpass.pResolveAttachments[0].attachment == i && subpass.pColorAttachments) {
                 const uint64_t attachment_external_format =
                     GetExternalFormat(rpci.pAttachments[subpass.pResolveAttachments[0].attachment].pNext);
-                auto it = ahb_ext_resolve_formats_map.find(attachment_external_format);
-                if (it != ahb_ext_resolve_formats_map.end()) {
+                auto it = state_tracker->ahb_ext_resolve_formats_map.find(attachment_external_format);
+                if (it != state_tracker->ahb_ext_resolve_formats_map.end()) {
                     VkFormat color_format = rpci.pAttachments[subpass.pColorAttachments[0].attachment].format;
                     if (it->second != color_format) {
                         LogObjectList objlist(create_info.renderPass, image_views[i]);

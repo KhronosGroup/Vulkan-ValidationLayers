@@ -176,7 +176,7 @@ class Instance : public vvl::base::Instance {
     using BaseClass = vvl::base::Instance;
 
   public:
-    Instance(vvl::dispatch::Instance* dispatch, LayerObjectTypeId type) : BaseClass(dispatch, type) {}
+    Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeStateTracker) {}
 
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkInstance* pInstance, const RecordObject& record_obj) override;
@@ -442,6 +442,44 @@ class Instance : public vvl::base::Instance {
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, vvl::PhysicalDevice, physical_device_map_)
 };
 
+class InstanceProxy : public vvl::base::Instance {
+  public:
+    using BaseClass = vvl::base::Instance;
+
+    vvl::Instance* state_tracker;
+
+    InstanceProxy(vvl::dispatch::Instance* dispatch, LayerObjectTypeId type)
+        : BaseClass(dispatch, type),
+          state_tracker(reinterpret_cast<vvl::Instance*>(dispatch->GetValidationObject(LayerObjectTypeStateTracker))) {}
+
+    template <typename State, typename Traits = typename state_object::Traits<State>>
+    typename Traits::SharedType Get(typename Traits::HandleType handle) {
+        return state_tracker->Get<State>(handle);
+    }
+
+    template <typename State, typename Traits = typename state_object::Traits<State>>
+    typename Traits::ConstSharedType Get(typename Traits::HandleType handle) const {
+        return state_tracker->Get<State>(handle);
+    }
+
+    template <typename State, typename Traits = typename state_object::Traits<State>,
+              typename ReadLockedType = typename Traits::ReadLockedType>
+    ReadLockedType GetRead(typename Traits::HandleType handle) const {
+        return state_tracker->GetRead<State>(handle);
+    }
+
+    template <typename State, typename Traits = state_object::Traits<State>,
+              typename WriteLockedType = typename Traits::WriteLockedType>
+    WriteLockedType GetWrite(typename Traits::HandleType handle) {
+        return state_tracker->GetWrite<State>(handle);
+    }
+
+    template <typename State>
+    size_t Count() const {
+        return state_tracker->Count<State>();
+    }
+};
+
 class Device : public vvl::base::Device {
     using Func = vvl::Func;
     using BaseClass = vvl::base::Device;
@@ -471,9 +509,8 @@ class Device : public vvl::base::Device {
     void DestroyObjectMaps();
 
   public:
-    Device(vvl::dispatch::Device* dev, Instance* instance, LayerObjectTypeId type)
-        : BaseClass(dev, instance, type),
-          instance_state(instance),
+    Device(vvl::dispatch::Device* dev, Instance* instance)
+        : BaseClass(dev, instance, LayerObjectTypeStateTracker), instance_state(instance),
           has_format_feature2(dev->stateless_device_data.has_format_feature2),
           has_robust_image_access(dev->stateless_device_data.has_robust_image_access),
           has_robust_image_access2(dev->stateless_device_data.has_robust_image_access2),
@@ -1842,28 +1879,6 @@ class Device : public vvl::base::Device {
     }
 #endif
 
-    virtual bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                        const Location& image_loc, const char* vuid, const char* more_message = "") const {
-        return false;
-    }
-    virtual bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                          const Location& image_loc, const char* vuid, const char* more_message = "") const {
-        return false;
-    }
-    virtual bool ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
-                                         const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
-        return false;
-    }
-    virtual bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
-                                           const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
-        return false;
-    }
-    virtual bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
-                                   VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
-                                   bool* error) const {
-        return false;
-    }
-
     // Link to the device's physical-device data
     vvl::PhysicalDevice* physical_device_state;
 
@@ -1913,7 +1928,6 @@ class Device : public vvl::base::Device {
     using BufferAddressMapStore = small_vector<vvl::Buffer*, 1, size_t>;
     using BufferAddressRangeMap = sparse_container::range_map<VkDeviceAddress, BufferAddressMapStore>;
 
-  protected:
     // tracks which queue family index were used when creating the device for quick lookup
     vvl::unordered_set<uint32_t> queue_family_index_set;
     // The queue count can different for the same queueFamilyIndex if the create flag are different
@@ -2002,6 +2016,85 @@ class Device : public vvl::base::Device {
         std::atomic<VkDeviceSize> free_{1U << 20};  // start at 1mb to leave room for a NULL address
     };
     FakeAllocator fake_memory;
+};
+
+class DeviceProxy : public vvl::base::Device {
+    using BaseClass = vvl::base::Device;
+
+  public:
+    vvl::Device* state_tracker{};
+    vvl::PhysicalDevice* physical_device_state{};
+    vvl::Instance* instance_state{};
+
+    DeviceProxy(vvl::dispatch::Device* dev, InstanceProxy* instance, LayerObjectTypeId type)
+        : BaseClass(dev, instance, type),
+          state_tracker(reinterpret_cast<vvl::Device*>(dev->GetValidationObject(LayerObjectTypeStateTracker))),
+          physical_device_state(state_tracker->physical_device_state),
+          instance_state(instance->state_tracker) {}
+
+    template <typename State, typename Traits = typename state_object::Traits<State>>
+    typename Traits::SharedType Get(typename Traits::HandleType handle) {
+        return state_tracker->Get<State>(handle);
+    }
+
+    template <typename State, typename Traits = typename state_object::Traits<State>>
+    typename Traits::ConstSharedType Get(typename Traits::HandleType handle) const {
+        return state_tracker->Get<State>(handle);
+    }
+
+    template <typename State, typename Traits = typename state_object::Traits<State>,
+              typename ReadLockedType = typename Traits::ReadLockedType>
+    ReadLockedType GetRead(typename Traits::HandleType handle) const {
+        return state_tracker->GetRead<State>(handle);
+    }
+
+    template <typename State, typename Traits = state_object::Traits<State>,
+              typename WriteLockedType = typename Traits::WriteLockedType>
+    WriteLockedType GetWrite(typename Traits::HandleType handle) {
+        return state_tracker->GetWrite<State>(handle);
+    }
+
+    template <typename State>
+    size_t Count() const {
+        return state_tracker->Count<State>();
+    }
+    template <typename State>
+    bool AnyOf(std::function<bool(const State& s)> fn) const {
+        return state_tracker->AnyOf<State>(fn);
+    }
+
+    vvl::span<vvl::Buffer*> GetBuffersByAddress(VkDeviceAddress address) { return state_tracker->GetBuffersByAddress(address); }
+
+    vvl::span<vvl::Buffer* const> GetBuffersByAddress(VkDeviceAddress address) const {
+        return const_cast<const vvl::Device*>(state_tracker)->GetBuffersByAddress(address);
+    }
+
+    VkFormatFeatureFlags2KHR GetPotentialFormatFeatures(VkFormat format) const {
+        return state_tracker->GetPotentialFormatFeatures(format);
+    }
+
+    virtual bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                        const Location& image_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                          const Location& image_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
+                                         const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
+                                           const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
+                                   VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
+                                   bool* error) const {
+        return false;
+    }
+
 };
 
 // Get buffer size from VkBufferImageCopy / VkBufferImageCopy2KHR structure, for a given format
