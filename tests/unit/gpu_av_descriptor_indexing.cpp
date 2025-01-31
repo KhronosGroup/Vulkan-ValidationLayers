@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
- * Copyright (c) 2020-2023 Google, Inc.
+ * Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
+ * Copyright (c) 2020-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3868,7 +3868,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleAccessChains) {
                OpDecorate %_runtimearr_Bar_std430 ArrayStride 4
                OpDecorate %RWStructuredBuffer Block
                OpMemberDecorate %RWStructuredBuffer 0 Offset 0
-               OpDecorate %_arr_RWStructuredBuffer_int_4 ArrayStride 0
                OpDecorate %foo Binding 0
                OpDecorate %foo DescriptorSet 0
        %void = OpTypeVoid

@@ -1945,7 +1945,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DescriptorIndexSlang) {
                OpDecorate %_runtimearr_Bar_std430 ArrayStride 48
                OpDecorate %RWStructuredBuffer Block
                OpMemberDecorate %RWStructuredBuffer 0 Offset 0
-               OpDecorate %_arr_RWStructuredBuffer_int_2 ArrayStride 0
                OpDecorate %foo Binding 0
                OpDecorate %foo DescriptorSet 0
        %void = OpTypeVoid
