@@ -73,6 +73,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/buffer_positive.cpp
     unit/command.cpp
     unit/command_positive.cpp
+    unit/cooperative_vector.cpp
+    unit/cooperative_vector_positive.cpp
     unit/copy_buffer_image.cpp
     unit/copy_buffer_image_positive.cpp
     unit/debug_extensions.cpp
@@ -107,6 +109,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av.cpp
     unit/gpu_av_buffer_device_address.cpp
     unit/gpu_av_buffer_device_address_positive.cpp
+    unit/gpu_av_cooperative_vector.cpp
+    unit/gpu_av_cooperative_vector_positive.cpp
     unit/gpu_av_debug_printf.cpp
     unit/gpu_av_descriptor_buffer_positive.cpp
     unit/gpu_av_descriptor_class_general_buffer.cpp
