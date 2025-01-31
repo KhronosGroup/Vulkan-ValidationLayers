@@ -654,7 +654,7 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
         }
     }
 
-    if ((create_info.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) && physical_device_count == 1) {
+    if ((create_info.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) && device_state->physical_device_count == 1) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429", device, create_info_loc.dot(Field::flags),
                      "containing VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR"
                      "but logical device was created with VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1."
@@ -1471,15 +1471,15 @@ bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice d
                                                                       const ErrorObject &error_obj) const {
     bool skip = false;
 
-    const auto *core_instance = reinterpret_cast<core::Instance *>(instance_state);
-    if (physical_device_count == 1) {
+    const auto *core_instance = reinterpret_cast<core::Instance *>(instance_proxy);
+    if (device_state->physical_device_count == 1) {
         skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
             physical_device, pSurfaceInfo->surface, "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213",
             error_obj.location);
     } else {
-        for (uint32_t i = 0; i < physical_device_count; ++i) {
+        for (uint32_t i = 0; i < device_state->physical_device_count; ++i) {
             skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
-                device_group_create_info.pPhysicalDevices[i], pSurfaceInfo->surface,
+                device_state->device_group_create_info.pPhysicalDevices[i], pSurfaceInfo->surface,
                 "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-06213", error_obj.location);
         }
     }
@@ -1508,14 +1508,14 @@ bool CoreChecks::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice de
                                                                      const ErrorObject &error_obj) const {
     bool skip = false;
     const auto *core_instance = reinterpret_cast<core::Instance *>(instance_state);
-    if (physical_device_count == 1) {
+    if (device_state->physical_device_count == 1) {
         skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
             physical_device, surface, "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212", error_obj.location);
     } else {
-        for (uint32_t i = 0; i < physical_device_count; ++i) {
-            skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(device_group_create_info.pPhysicalDevices[i], surface,
-                                                                        "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212",
-                                                                        error_obj.location);
+        for (uint32_t i = 0; i < device_state->physical_device_count; ++i) {
+            skip |= core_instance->ValidatePhysicalDeviceSurfaceSupport(
+                device_state->device_group_create_info.pPhysicalDevices[i], surface,
+                "VUID-vkGetDeviceGroupSurfacePresentModesKHR-surface-06212", error_obj.location);
         }
     }
 

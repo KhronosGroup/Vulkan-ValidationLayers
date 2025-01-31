@@ -30,14 +30,14 @@
 
 namespace syncval {
 // sync validation has no instance-level functionality
-class Instance : public vvl::InstanceState {
+class Instance : public vvl::InstanceProxy {
   public:
-    Instance(vvl::dispatch::Instance *dispatch) : vvl::InstanceState(dispatch, LayerObjectTypeSyncValidation) {}
+    Instance(vvl::dispatch::Instance *dispatch) : vvl::InstanceProxy(dispatch, LayerObjectTypeSyncValidation) {}
 };
 }  // namespace syncval
 
-class SyncValidator : public vvl::DeviceState, public SyncStageAccess {
-    using BaseClass = vvl::DeviceState;
+class SyncValidator : public vvl::DeviceProxy, public SyncStageAccess {
+    using BaseClass = vvl::DeviceProxy;
 
   public:
     using Func = vvl::Func;
@@ -124,15 +124,10 @@ class SyncValidator : public vvl::DeviceState, public SyncStageAccess {
     std::vector<QueueBatchContext::ConstPtr> GetLastPendingBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter) const;
     void ClearPending() const;
 
-    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
-                                                             const VkCommandBufferAllocateInfo *allocate_info,
-                                                             const vvl::CommandPool *cmd_pool) override;
-    std::shared_ptr<vvl::Swapchain> CreateSwapchainState(const VkSwapchainCreateInfoKHR *create_info,
-                                                         VkSwapchainKHR swapchain) final;
-    std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo *create_info,
-                                                 VkFormatFeatureFlags2 features) override;
-    std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo *create_info, VkSwapchainKHR swapchain,
-                                                 uint32_t swapchain_index, VkFormatFeatureFlags2 features) override;
+    void Created(vvl::CommandBuffer &cb_state) override;
+    void Created(vvl::Swapchain &swapchain_state) override;
+    void Created(vvl::Image &image_state) override;
+
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,

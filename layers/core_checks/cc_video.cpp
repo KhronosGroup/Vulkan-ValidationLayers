@@ -1907,8 +1907,8 @@ bool CoreChecks::ValidateVideoDecodeInfoAV1(const vvl::CommandBuffer &cb_state, 
             }
 
             if (decode_info.pSetupReferenceSlot != nullptr && decode_info.pSetupReferenceSlot->pPictureResource != nullptr) {
-                auto dst_resource = vvl::VideoPictureResource(*this, decode_info.dstPictureResource);
-                auto setup_resource = vvl::VideoPictureResource(*this, *decode_info.pSetupReferenceSlot->pPictureResource);
+                auto dst_resource = vvl::VideoPictureResource(*device_state, decode_info.dstPictureResource);
+                auto setup_resource = vvl::VideoPictureResource(*device_state, *decode_info.pSetupReferenceSlot->pPictureResource);
                 if (dst_resource == setup_resource) {
                     skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-09249", cb_state.Handle(),
                                      loc.pNext(Struct::VkVideoDecodeAV1PictureInfoKHR, Field::pStdPictureInfo),
@@ -4499,7 +4499,7 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
 
     const Location begin_info_loc = error_obj.location.dot(Field::pBeginInfo);
 
-    auto qf_ext_props = queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
+    auto qf_ext_props = device_state->queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
 
     if ((qf_ext_props.video_props.videoCodecOperations & vs_state->GetCodecOp()) == 0) {
         const LogObjectList objlist(commandBuffer, pBeginInfo->videoSession, cb_state->command_pool->Handle());
@@ -4558,7 +4558,7 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
 
             if (slot.pPictureResource != nullptr) {
                 const Location reference_resource_loc = reference_slot_loc.dot(Field::pPictureResource);
-                auto reference_resource = vvl::VideoPictureResource(*this, *slot.pPictureResource);
+                auto reference_resource = vvl::VideoPictureResource(*device_state, *slot.pPictureResource);
                 skip |= ValidateVideoPictureResource(reference_resource, commandBuffer, *vs_state, reference_resource_loc,
                                                      "VUID-VkVideoBeginCodingInfoKHR-pPictureResource-07242",
                                                      "VUID-VkVideoBeginCodingInfoKHR-pPictureResource-07243");
@@ -4793,7 +4793,7 @@ void CoreChecks::PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuff
 
         for (uint32_t i = 0; i < pBeginInfo->referenceSlotCount; ++i) {
             if (pBeginInfo->pReferenceSlots[i].slotIndex >= 0) {
-                expected_slots.emplace_back(*this, *vs_state->profile, pBeginInfo->pReferenceSlots[i], false);
+                expected_slots.emplace_back(*device_state, *vs_state->profile, pBeginInfo->pReferenceSlots[i], false);
             }
         }
 
@@ -5041,7 +5041,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
         }
 
         if (pDecodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-            setup_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
+            setup_resource = vvl::VideoPictureResource(*device_state, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
             if (setup_resource) {
                 skip |= ValidateVideoPictureResource(setup_resource, commandBuffer, *vs_state,
                                                      decode_info_loc.dot(Field::pSetupReferenceSlot).dot(Field::pPictureResource),
@@ -5063,7 +5063,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
         }
     }
 
-    auto dst_resource = vvl::VideoPictureResource(*this, pDecodeInfo->dstPictureResource);
+    auto dst_resource = vvl::VideoPictureResource(*device_state, pDecodeInfo->dstPictureResource);
     const Location dst_resource_loc = decode_info_loc.dot(Field::dstPictureResource);
     skip |=
         ValidateVideoPictureResource(dst_resource, commandBuffer, *vs_state, dst_resource_loc,
@@ -5161,7 +5161,8 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
             }
 
             if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-                auto reference_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
+                auto reference_resource =
+                    vvl::VideoPictureResource(*device_state, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
                 if (reference_resource) {
                     if (!unique_resources.emplace(reference_resource).second) {
                         resources_unique = false;
@@ -5250,7 +5251,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                      FormatHandle(*query_pool_state).c_str(), FormatHandle(*vs_state).c_str());
                 }
 
-                const auto &qf_ext_props = queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
+                const auto &qf_ext_props = device_state->queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
                 if (!qf_ext_props.query_result_status_props.queryResultStatusSupport) {
                     const LogObjectList objlist(commandBuffer, inline_query_info->queryPool);
                     skip |= LogError("VUID-vkCmdDecodeVideoKHR-queryType-08369", objlist, error_obj.location,
@@ -5297,7 +5298,7 @@ void CoreChecks::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, c
         std::vector<vvl::VideoReferenceSlot> reference_slots{};
         reference_slots.reserve(pDecodeInfo->referenceSlotCount);
         for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
-            reference_slots.emplace_back(*this, *vs_state->profile, pDecodeInfo->pReferenceSlots[i]);
+            reference_slots.emplace_back(*device_state, *vs_state->profile, pDecodeInfo->pReferenceSlots[i]);
         }
 
         // Enqueue submission time validation of picture kind (frame, top field, bottom field) for H.264
@@ -5556,7 +5557,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
         }
 
         if (pEncodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-            setup_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
+            setup_resource = vvl::VideoPictureResource(*device_state, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
             if (setup_resource) {
                 skip |= ValidateVideoPictureResource(setup_resource, commandBuffer, *vs_state,
                                                      encode_info_loc.dot(Field::pSetupReferenceSlot).dot(Field::pPictureResource),
@@ -5579,7 +5580,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
         }
     }
 
-    auto src_resource = vvl::VideoPictureResource(*this, pEncodeInfo->srcPictureResource);
+    auto src_resource = vvl::VideoPictureResource(*device_state, pEncodeInfo->srcPictureResource);
     const Location src_resource_loc = encode_info_loc.dot(Field::srcPictureResource);
     skip |=
         ValidateVideoPictureResource(src_resource, commandBuffer, *vs_state, src_resource_loc,
@@ -5653,7 +5654,8 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
             }
 
             if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-                auto reference_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
+                auto reference_resource =
+                    vvl::VideoPictureResource(*device_state, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
                 if (reference_resource) {
                     if (!unique_resources.emplace(reference_resource).second) {
                         resources_unique = false;
@@ -5745,7 +5747,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                      FormatHandle(*query_pool_state).c_str(), FormatHandle(*vs_state).c_str());
                 }
 
-                const auto &qf_ext_props = queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
+                const auto &qf_ext_props = device_state->queue_family_ext_props[cb_state->command_pool->queueFamilyIndex];
                 if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR &&
                     !qf_ext_props.query_result_status_props.queryResultStatusSupport) {
                     const LogObjectList objlist(commandBuffer, inline_query_info->queryPool);

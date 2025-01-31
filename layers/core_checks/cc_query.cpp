@@ -268,7 +268,7 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
     switch (pCreateInfo->queryType) {
         case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR: {
             if (auto perf_ci = vku::FindStructInPNextChain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext)) {
-                auto *core_instance = static_cast<core::Instance *>(instance_state);
+                auto *core_instance = static_cast<core::Instance *>(instance_proxy);
                 skip |= core_instance->ValidateQueueFamilyIndex(
                     *physical_device_state, perf_ci->queueFamilyIndex,
                     "VUID-VkQueryPoolPerformanceCreateInfoKHR-queueFamilyIndex-03236",
@@ -566,7 +566,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
             break;
         }
         case VK_QUERY_TYPE_RESULT_STATUS_ONLY_KHR: {
-            const auto &qf_ext_props = queue_family_ext_props[cb_state.command_pool->queueFamilyIndex];
+            const auto &qf_ext_props = device_state->queue_family_ext_props[cb_state.command_pool->queueFamilyIndex];
             if (!qf_ext_props.query_result_status_props.queryResultStatusSupport) {
                 const char *vuid =
                     is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryType-07126" : "VUID-vkCmdBeginQuery-queryType-07126";
@@ -1543,7 +1543,7 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
 bool CoreChecks::PreCallValidateReleaseProfilingLockKHR(VkDevice device, const ErrorObject &error_obj) const {
     bool skip = false;
 
-    if (!performance_lock_acquired) {
+    if (!device_state->performance_lock_acquired) {
         skip |= LogError("VUID-vkReleaseProfilingLockKHR-device-03235", device, error_obj.location,
                          "The profiling lock of device must have been held via a previous successful "
                          "call to vkAcquireProfilingLockKHR.");

@@ -26,7 +26,7 @@ struct ResourceInterfaceVariable;
 namespace vvl {
 struct DrawDispatchVuid;
 class DescriptorBinding;
-class DeviceState;
+class DeviceProxy;
 class BufferDescriptor;
 class ImageDescriptor;
 class ImageSamplerDescriptor;
@@ -39,7 +39,7 @@ class DescriptorSet;
 
 class DescriptorValidator : public Logger {
   public:
-    DescriptorValidator(DeviceState& dev, vvl::CommandBuffer& cb_state, vvl::DescriptorSet& descriptor_set, uint32_t set_index,
+    DescriptorValidator(DeviceProxy& dev, vvl::CommandBuffer& cb_state, vvl::DescriptorSet& descriptor_set, uint32_t set_index,
                         VkFramebuffer framebuffer, const VulkanTypedHandle* shader_handle, const Location& loc);
 
     // Used with normal validation where we know which descriptors are accessed.
@@ -81,7 +81,7 @@ class DescriptorValidator : public Logger {
     std::string DescribeDescriptor(const spirv::ResourceInterfaceVariable& binding_info, uint32_t index,
                                    VkDescriptorType type) const;
 
-    vvl::DeviceState& dev_state;
+    vvl::DeviceProxy& dev_proxy;
     vvl::CommandBuffer& cb_state;
     vvl::DescriptorSet& descriptor_set;
     const VkFramebuffer framebuffer;

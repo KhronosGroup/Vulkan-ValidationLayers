@@ -121,6 +121,7 @@ struct TraitsBase {
     using ReadLockedType = LockedSharedPtr<const StateType, ReadLockGuard>;
     using WriteLockedType = LockedSharedPtr<StateType, WriteLockGuard>;
 };
+
 }  // namespace state_object
 
 #define VALSTATETRACK_STATE_OBJECT(handle_type, state_type)                    \
@@ -178,7 +179,7 @@ class InstanceState : public vvl::base::Instance {
     using BaseClass = vvl::base::Instance;
 
   public:
-    InstanceState(vvl::dispatch::Instance* dispatch, LayerObjectTypeId type) : BaseClass(dispatch, type) {}
+    InstanceState(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeStateTracker) {}
 
     virtual std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -445,6 +446,54 @@ class InstanceState : public vvl::base::Instance {
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, vvl::PhysicalDevice, physical_device_map_)
 };
 
+class InstanceProxy : public vvl::base::Instance {
+  public:
+    using BaseClass = vvl::base::Instance;
+
+    vvl::InstanceState* instance_state;
+
+    InstanceProxy(vvl::dispatch::Instance* dispatch, LayerObjectTypeId type)
+        : BaseClass(dispatch, type),
+          instance_state(dynamic_cast<vvl::InstanceState*>(dispatch->GetValidationObject(LayerObjectTypeStateTracker))) {}
+
+    template <typename State, typename Traits = typename state_object::Traits<State>>
+    typename Traits::SharedType Get(typename Traits::HandleType handle) {
+        return instance_state->Get<State>(handle);
+    }
+
+    template <typename State, typename Traits = typename state_object::Traits<State>>
+    typename Traits::ConstSharedType Get(typename Traits::HandleType handle) const {
+        return instance_state->Get<State>(handle);
+    }
+
+    template <typename State, typename Traits = typename state_object::Traits<State>,
+              typename ReadLockedType = typename Traits::ReadLockedType>
+    ReadLockedType GetRead(typename Traits::HandleType handle) const {
+        return instance_state->GetRead<State>(handle);
+    }
+
+    template <typename State, typename Traits = state_object::Traits<State>,
+              typename WriteLockedType = typename Traits::WriteLockedType>
+    WriteLockedType GetWrite(typename Traits::HandleType handle) {
+        return instance_state->GetWrite<State>(handle);
+    }
+
+    template <typename State>
+    size_t Count() const {
+        return instance_state->Count<State>();
+    }
+};
+
+class DeviceProxy;
+
+template <typename State, typename = void>
+struct HasSubStates : std::false_type {};
+
+template <typename State>
+struct HasSubStates<State,
+                    typename std::enable_if_t<std::is_member_function_pointer_v<decltype(&State::SetSubState)>>>
+        : std::true_type {};
+
 class DeviceState : public vvl::base::Device {
     using Func = vvl::Func;
     using BaseClass = vvl::base::Device;
@@ -474,8 +523,8 @@ class DeviceState : public vvl::base::Device {
     void DestroyObjectMaps();
 
   public:
-    DeviceState(vvl::dispatch::Device* dev, InstanceState* instance, LayerObjectTypeId type)
-        : BaseClass(dev, instance, type),
+    DeviceState(vvl::dispatch::Device* dev, InstanceState* instance)
+        : BaseClass(dev, instance, LayerObjectTypeStateTracker),
           instance_state(instance),
           has_format_feature2(dev->stateless_device_data.has_format_feature2),
           has_robust_image_access(dev->stateless_device_data.has_robust_image_access),
@@ -485,6 +534,9 @@ class DeviceState : public vvl::base::Device {
     }
     ~DeviceState();
 
+    void AddProxy(DeviceProxy& proxy);
+    void RemoveProxy(LayerObjectTypeId id);
+
     template <typename State, typename HandleType = typename state_object::Traits<State>::HandleType>
     void Add(std::shared_ptr<State>&& state_object) {
         auto& map = GetStateMap<State>();
@@ -493,6 +545,7 @@ class DeviceState : public vvl::base::Device {
         // Finish setting up the object node tree, which cannot be done from the state object contructors
         // due to use of shared_from_this()
         state_object->LinkChildNodes();
+        NotifyCreated(*state_object);
         map.insert_or_assign(handle, std::move(state_object));
     }
 
@@ -830,6 +883,7 @@ class DeviceState : public vvl::base::Device {
     virtual std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool* pool,
                                                                     const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
                                                                     uint32_t variable_count);
+    std::shared_ptr<vvl::DescriptorSet> CreatePushDescriptorSet(const std::shared_ptr<vvl::DescriptorSetLayout const>& layout);
 
     void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
@@ -1023,16 +1077,16 @@ class DeviceState : public vvl::base::Device {
                                                     const VkAllocationCallbacks* pAllocator,
                                                     VkSamplerYcbcrConversion* pYcbcrConversion,
                                                     const RecordObject& record_obj) override;
-    void PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                     const VkAllocationCallbacks* pAllocator,
-                                                     const RecordObject& record_obj) override;
+    void PreCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                    const VkAllocationCallbacks* pAllocator,
+                                                    const RecordObject& record_obj) override;
     void PostCallRecordCreateSamplerYcbcrConversionKHR(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkSamplerYcbcrConversion* pYcbcrConversion,
                                                        const RecordObject& record_obj) override;
-    void PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                        const VkAllocationCallbacks* pAllocator,
-                                                        const RecordObject& record_obj) override;
+    void PreCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       const RecordObject& record_obj) override;
     void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore,
                                        const RecordObject& record_obj) override;
@@ -1782,16 +1836,16 @@ class DeviceState : public vvl::base::Device {
                                                      const VkAllocationCallbacks* pAllocator,
                                                      VkIndirectExecutionSetEXT* pIndirectExecutionSet,
                                                      const RecordObject& record_obj) override;
-    void PostCallRecordDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
-                                                      const VkAllocationCallbacks* pAllocator,
-                                                      const RecordObject& record_obj) override;
+    void PreCallRecordDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     const RecordObject& record_obj) override;
     void PostCallRecordCreateIndirectCommandsLayoutEXT(VkDevice device, const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
                                                        const RecordObject& record_ob) override;
-    void PostCallRecordDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
-                                                        const VkAllocationCallbacks* pAllocator,
-                                                        const RecordObject& record_obj) override;
+    void PreCallRecordDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       const RecordObject& record_obj) override;
 
     inline std::shared_ptr<vvl::ShaderModule> GetShaderModuleStateFromIdentifier(const VkShaderModuleIdentifierEXT& ident) {
         ReadLockGuard guard(shader_identifier_map_lock_);
@@ -1853,28 +1907,6 @@ class DeviceState : public vvl::base::Device {
     }
 #endif
 
-    virtual bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                        const Location& image_loc, const char* vuid, const char* more_message = "") const {
-        return false;
-    }
-    virtual bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                          const Location& image_loc, const char* vuid, const char* more_message = "") const {
-        return false;
-    }
-    virtual bool ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
-                                         const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
-        return false;
-    }
-    virtual bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
-                                           const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
-        return false;
-    }
-    virtual bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
-                                   VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
-                                   bool* error) const {
-        return false;
-    }
-
     // Link to the device's physical-device data
     vvl::PhysicalDevice* physical_device_state;
 
@@ -1924,7 +1956,6 @@ class DeviceState : public vvl::base::Device {
     using BufferAddressMapStore = small_vector<vvl::Buffer*, 1, size_t>;
     using BufferAddressRangeMap = sparse_container::range_map<VkDeviceAddress, BufferAddressMapStore>;
 
-  protected:
     // tracks which queue family index were used when creating the device for quick lookup
     vvl::unordered_set<uint32_t> queue_family_index_set;
     // The queue count can different for the same queueFamilyIndex if the create flag are different
@@ -1996,6 +2027,13 @@ class DeviceState : public vvl::base::Device {
     VALSTATETRACK_MAP_AND_TRAITS(VkIndirectExecutionSetEXT, vvl::IndirectExecutionSet, indirect_execution_set_ext_map_)
     VALSTATETRACK_MAP_AND_TRAITS(VkIndirectCommandsLayoutEXT, vvl::IndirectCommandsLayout, indirect_commands_layout_ext_map_)
 
+    // For state objects that have sub states.  Requires the definition of DeviceProxy, which is below.
+    template <typename State, std::enable_if_t<HasSubStates<State>::value, bool> = true>
+    void NotifyCreated(State& state_object);
+
+    template <typename State, std::enable_if_t<not HasSubStates<State>::value, bool> = true>
+    void NotifyCreated(State& state_object) {}
+
     std::atomic<uint32_t> object_id_{1};  // 0 is an invalid id
 
     // Simple base address allocator allow allow VkDeviceMemory allocations to appear to exist in a common address space.
@@ -2013,7 +2051,110 @@ class DeviceState : public vvl::base::Device {
         std::atomic<VkDeviceSize> free_{1U << 20};  // start at 1mb to leave room for a NULL address
     };
     FakeAllocator fake_memory;
+
+    // All validation types share the same state tracking (if they need it). They're tracked here and notified
+    // when various state objects are created.  This must be an ordered map so that proxies run in the order
+    // defined by the LayerObjecTypeId enum.
+    std::map<LayerObjectTypeId, DeviceProxy&> proxies;
 };
+
+class DeviceProxy : public vvl::base::Device {
+    using BaseClass = vvl::base::Device;
+
+  public:
+    vvl::DeviceState* device_state{};
+    vvl::PhysicalDevice* physical_device_state{};
+    vvl::InstanceState* instance_state{};
+    vvl::InstanceProxy* instance_proxy{};
+
+    DeviceProxy(vvl::dispatch::Device* dev, InstanceProxy* instance, LayerObjectTypeId type)
+        : BaseClass(dev, instance, type),
+          device_state(dynamic_cast<vvl::DeviceState*>(dev->GetValidationObject(LayerObjectTypeStateTracker))),
+          physical_device_state(device_state->physical_device_state),
+          instance_state(instance->instance_state),
+          instance_proxy(instance) {
+        device_state->AddProxy(*this);
+    }
+    ~DeviceProxy() { device_state->RemoveProxy(container_type); }
+
+    template <typename State, typename Traits = typename state_object::Traits<State>>
+    typename Traits::SharedType Get(typename Traits::HandleType handle) {
+        return device_state->Get<State>(handle);
+    }
+
+    template <typename State, typename Traits = typename state_object::Traits<State>>
+    typename Traits::ConstSharedType Get(typename Traits::HandleType handle) const {
+        return device_state->Get<State>(handle);
+    }
+
+    template <typename State, typename Traits = typename state_object::Traits<State>,
+              typename ReadLockedType = typename Traits::ReadLockedType>
+    ReadLockedType GetRead(typename Traits::HandleType handle) const {
+        return device_state->GetRead<State>(handle);
+    }
+
+    template <typename State, typename Traits = state_object::Traits<State>,
+              typename WriteLockedType = typename Traits::WriteLockedType>
+    WriteLockedType GetWrite(typename Traits::HandleType handle) {
+        return device_state->GetWrite<State>(handle);
+    }
+
+    template <typename State>
+    size_t Count() const {
+        return device_state->Count<State>();
+    }
+    template <typename State>
+    bool AnyOf(std::function<bool(const State& s)> fn) const {
+        return device_state->AnyOf<State>(fn);
+    }
+
+    vvl::span<vvl::Buffer*> GetBuffersByAddress(VkDeviceAddress address) { return device_state->GetBuffersByAddress(address); }
+
+    vvl::span<vvl::Buffer* const> GetBuffersByAddress(VkDeviceAddress address) const {
+        return const_cast<const vvl::DeviceState*>(device_state)->GetBuffersByAddress(address);
+    }
+
+    VkFormatFeatureFlags2KHR GetPotentialFormatFeatures(VkFormat format) const {
+        return device_state->GetPotentialFormatFeatures(format);
+    }
+
+    // callbacks for adding sub state information to new state objects
+    virtual void Created(vvl::CommandBuffer& cb_state) {}
+    virtual void Created(vvl::Queue& queue_state) {}
+    virtual void Created(vvl::Image& image_state) {}
+    virtual void Created(vvl::Swapchain& swapchain_state) {}
+    virtual void Created(vvl::DescriptorSet& swapchain_state) {}
+
+    // callbacks for image layout validation, which is implemented in both core validation and gpu-av
+    virtual bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                        const Location& image_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                          const Location& image_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateProtectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
+                                         const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state,
+                                           const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
+        return false;
+    }
+    virtual bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
+                                   VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
+                                   bool* error) const {
+        return false;
+    }
+};
+
+template <typename State, std::enable_if_t<HasSubStates<State>::value, bool>>
+void DeviceState::NotifyCreated(State& state_object) {
+    for (auto& item : proxies) {
+        item.second.Created(state_object);
+    }
+}
 
 // Get buffer size from VkBufferImageCopy / VkBufferImageCopy2KHR structure, for a given format
 template <typename RegionType>

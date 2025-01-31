@@ -206,7 +206,7 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
 bool CommandBufferSubState::UpdateBdaRangesBuffer(const Location &loc) {
     // By supplying a "date"
     if (!state_.gpuav_settings.shader_instrumentation.buffer_device_address ||
-        bda_ranges_snapshot_version_ == state_.buffer_device_address_ranges_version) {
+        bda_ranges_snapshot_version_ == state_.device_state->buffer_device_address_ranges_version) {
         return true;
     }
 
@@ -229,7 +229,7 @@ bool CommandBufferSubState::UpdateBdaRangesBuffer(const Location &loc) {
         static_cast<size_t>((GetBdaRangesBufferByteSize() - sizeof(uint64_t)) / (2 * sizeof(VkDeviceAddress)));
     auto bda_ranges = reinterpret_cast<vvl::DeviceState::BufferAddressRange *>(bda_table_ptr + 2);
     const auto [ranges_to_update_count, total_address_ranges_count] =
-        state_.GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
+        state_.device_state->GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
     // Cast here instead of having to cast inside the shader
     bda_table_ptr[0] = static_cast<uint32_t>(ranges_to_update_count);
 
@@ -247,7 +247,7 @@ bool CommandBufferSubState::UpdateBdaRangesBuffer(const Location &loc) {
     // ---
     // Flush the BDA buffer before un-mapping so that the new state is visible to the GPU
     bda_ranges_snapshot_.FlushAllocation(loc);
-    bda_ranges_snapshot_version_ = state_.buffer_device_address_ranges_version;
+    bda_ranges_snapshot_version_ = state_.device_state->buffer_device_address_ranges_version;
 
     return true;
 }

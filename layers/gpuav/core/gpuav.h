@@ -35,8 +35,8 @@ class QueueSubState;
 
 namespace gpuav {
 
-class Instance : public vvl::InstanceState {
-    using BaseClass = vvl::InstanceState;
+class Instance : public vvl::InstanceProxy {
+    using BaseClass = vvl::InstanceProxy;
 
   public:
     Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeGpuAssisted) {}
@@ -51,6 +51,7 @@ class Instance : public vvl::InstanceState {
     void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                     VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2,
                                                     const RecordObject& record_obj) final;
+
     void InternalWarning(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
     void AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceCreateInfo* modified_create_info, const Location& loc);
     bool timeline_khr_{false};
@@ -69,16 +70,6 @@ class Validator : public GpuShaderInstrumentor {
     // gpuav_setup.cpp
     // -------------
   public:
-    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
-                                                             const VkCommandBufferAllocateInfo* allocate_info,
-                                                             const vvl::CommandPool* pool) final;
-    std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool* pool,
-                                                            const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
-                                                            uint32_t variable_count) final;
-    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
-                                            VkDeviceQueueCreateFlags flags,
-                                            const VkQueueFamilyProperties& queueFamilyProperties) override;
-
     void FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
 
     void InternalVmaError(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
@@ -415,6 +406,10 @@ class Validator : public GpuShaderInstrumentor {
     bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const final;
+
+    void Created(vvl::DescriptorSet& set) final;
+    void Created(vvl::CommandBuffer& cb_state) final;
+    void Created(vvl::Queue& queue) final;
 
   public:
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction

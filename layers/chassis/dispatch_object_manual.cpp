@@ -593,6 +593,11 @@ Instance::Instance(const VkInstanceCreateInfo *pCreateInfo) : HandleWrapper(new 
 }
 
 Instance::~Instance() {
+    // Destroy validation objects in reverse order so that state tracker clients
+    // are destroyed before it is.
+    while (!object_dispatch.empty()) {
+        object_dispatch.pop_back();
+    }
     vku::FreePnextChain(debug_report->instance_pnext_chain);
     delete debug_report;
 }
@@ -753,7 +758,16 @@ Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInf
     }
 }
 
-Device::~Device() {}
+Device::~Device() {
+    // Destroy validation objects in reverse order so that state tracker clients
+    // are destroyed before it is.
+    while (!aborted_object_dispatch.empty()) {
+        aborted_object_dispatch.pop_back();
+    }
+    while (!object_dispatch.empty()) {
+        object_dispatch.pop_back();
+    }
+}
 
 base::Device *Device::GetValidationObject(LayerObjectTypeId object_type) const {
     for (auto &validation_object : object_dispatch) {
@@ -772,6 +786,10 @@ void Device::DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAlloca
 // Designed for things like GPU-AV to remove itself while keeping everything else alive
 void Device::ReleaseValidationObject(LayerObjectTypeId type_id) const {
     for (auto object_it = object_dispatch.begin(); object_it != object_dispatch.end(); object_it++) {
+        if ((*object_it)->container_type == LayerObjectTypeStateTracker) {
+            auto &state_tracker = dynamic_cast<vvl::DeviceState&>(**object_it);
+            state_tracker.RemoveProxy(type_id);
+        }
         if ((*object_it)->container_type == type_id) {
             auto object = std::move(*object_it);
 

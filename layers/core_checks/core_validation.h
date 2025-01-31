@@ -47,8 +47,8 @@ struct DAGNode;
 struct SemaphoreSubmitState;
 
 namespace core {
-class Instance : public vvl::InstanceState {
-    using BaseClass = vvl::InstanceState;
+class Instance : public vvl::InstanceProxy {
+    using BaseClass = vvl::InstanceProxy;
 
   public:
     using Func = vvl::Func;
@@ -180,8 +180,8 @@ bool ValidateVideoProfileListInfo(const StateObject& state, const VkVideoProfile
                                   const char* missing_encode_profile_msg_code);
 }  // namespace core
 
-class CoreChecks : public vvl::DeviceState {
-    using BaseClass = vvl::DeviceState;
+class CoreChecks : public vvl::DeviceProxy {
+    using BaseClass = vvl::DeviceProxy;
 
   public:
     using Func = vvl::Func;
@@ -1911,11 +1911,11 @@ class CoreChecks : public vvl::DeviceState {
                                             uint32_t query, const RecordObject& record_obj) override;
     void PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
                                          uint32_t query, const RecordObject& record_obj) override;
-    void PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
-                                                                   uint32_t accelerationStructureCount,
-                                                                   const VkAccelerationStructureKHR* pAccelerationStructures,
-                                                                   VkQueryType queryType, VkQueryPool queryPool,
-                                                                   uint32_t firstQuery, const RecordObject& record_obj) override;
+    void PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
+                                                                  uint32_t accelerationStructureCount,
+                                                                  const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                                  VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery,
+                                                                  const RecordObject& record_obj) override;
     bool ValidateFrameBufferAttachments(const VkFramebufferCreateInfo& create_info, const Location& create_info_loc,
                                         const vvl::RenderPass& rp_state, const VkRenderPassCreateInfo2& rpci) const;
     bool ValidateFrameBufferAttachmentsImageless(
@@ -1969,15 +1969,15 @@ class CoreChecks : public vvl::DeviceState {
     void PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
                                        const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) override;
     bool PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
-    void PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
+    void PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
     bool PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                              const ErrorObject& error_obj) const override;
-    void PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                            const RecordObject& record_obj) override;
+    void PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
+                                           const RecordObject& record_obj) override;
     bool PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                           const ErrorObject& error_obj) const override;
-    void PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                         const RecordObject& record_obj) override;
+    void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
+                                        const RecordObject& record_obj) override;
     bool ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
                                              const VkSubpassFragmentDensityMapOffsetEndInfoQCOM& fdm_offset_end_info,
                                              const Location& end_info_loc) const;
@@ -2747,11 +2747,6 @@ class CoreChecks : public vvl::DeviceState {
                                                             const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
                                                             const ErrorObject& error_obj) const override;
 
-    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
-                                                             const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                             const vvl::CommandPool* pool) final;
-
-    std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
-                                            VkDeviceQueueCreateFlags flags,
-                                            const VkQueueFamilyProperties& queue_family_properties) final;
+    void Created(vvl::CommandBuffer& cb) override;
+    void Created(vvl::Queue& queue) override;
 };  // Class CoreChecks

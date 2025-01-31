@@ -31,6 +31,7 @@
 #include "thread_tracker/thread_safety_validation.h"
 #include "stateless/stateless_validation.h"
 #include "object_tracker/object_lifetime_validation.h"
+#include "state_tracker/state_tracker.h"
 #include "core_checks/core_validation.h"
 #include "best_practices/best_practices_validation.h"
 #include "gpuav/core/gpuav.h"
@@ -52,6 +53,10 @@ void Instance::InitValidationObjects() {
     }
     if (!settings.disabled[object_tracking]) {
         object_dispatch.emplace_back(new object_lifetimes::Instance(this));
+    }
+    if (!settings.disabled[core_checks] || settings.enabled[best_practices] || settings.enabled[gpu_validation] ||
+        settings.enabled[debug_printf_validation] || settings.enabled[sync_validation]) {
+        object_dispatch.emplace_back(new vvl::InstanceState(this));
     }
     if (!settings.disabled[core_checks]) {
         object_dispatch.emplace_back(new core::Instance(this));
@@ -81,6 +86,11 @@ void Device::InitValidationObjects() {
     if (!settings.disabled[object_tracking]) {
         object_dispatch.emplace_back(new object_lifetimes::Device(
             this, static_cast<object_lifetimes::Instance*>(dispatch_instance->GetValidationObject(LayerObjectTypeObjectTracker))));
+    }
+    if (!settings.disabled[core_checks] || settings.enabled[best_practices] || settings.enabled[gpu_validation] ||
+        settings.enabled[debug_printf_validation] || settings.enabled[sync_validation]) {
+        object_dispatch.emplace_back(new vvl::DeviceState(
+            this, static_cast<vvl::InstanceState*>(dispatch_instance->GetValidationObject(LayerObjectTypeStateTracker))));
     }
     if (!settings.disabled[core_checks]) {
         object_dispatch.emplace_back(new CoreChecks(
