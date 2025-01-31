@@ -406,8 +406,8 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
             // PHASE1 TODO -- add tag information to log msg when useful.
             const Location loc(command_);
             const auto &sync_state = cb_context.GetSyncState();
-            const auto error =
-                sync_state.error_messages_.PipelineBarrierError(hazard, cb_context, image_barrier.barrier_index, image_state);
+            const auto error = sync_state.error_messages_.PipelineBarrierError(hazard, cb_context, image_barrier.barrier_index,
+                                                                               image_state, command_);
             skip |= sync_state.SyncError(hazard.Hazard(), image_state.Handle(), loc, error);
         }
     }
@@ -637,8 +637,8 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                     *image_state, subresource_range, sync_event->scope.exec_scope, src_access_scope, queue_id,
                     sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
                 if (hazard.IsHazard()) {
-                    const auto error = sync_state.error_messages_.WaitEventsError(hazard, exec_context,
-                                                                                  image_memory_barrier.barrier_index, *image_state);
+                    const auto error = sync_state.error_messages_.WaitEventsError(
+                        hazard, exec_context, image_memory_barrier.barrier_index, *image_state, command_);
                     skip |= sync_state.SyncError(hazard.Hazard(), image_state->Handle(), loc, error);
                     break;
                 }
@@ -1176,8 +1176,9 @@ bool ReplayState::DetectFirstUseHazard(const ResourceUsageRange &first_use_range
             const SyncValidator &sync_state = exec_context_.GetSyncState();
             const auto handle = exec_context_.Handle();
             const VkCommandBuffer recorded_handle = recorded_context_.GetCBState().VkHandle();
+            // TODO: figure out the last parameter for vvl::Func
             const auto error =
-                sync_state.error_messages_.FirstUseError(hazard, exec_context_, recorded_context_, index_, recorded_handle);
+                sync_state.error_messages_.FirstUseError(hazard, exec_context_, recorded_context_, index_, recorded_handle, vvl::Func::Empty);
             skip |= sync_state.SyncError(hazard.Hazard(), handle, error_obj_.location, error);
         }
     }

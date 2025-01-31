@@ -520,7 +520,8 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
                                                 copy_region.extent, false, SYNC_COPY_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcImage);
-                const auto error = error_messages_.ImageRegionError(hazard, srcImage, true, region, *cb_access_context);
+                const auto error = error_messages_.ImageRegionError(hazard, srcImage, true, region, *cb_access_context,
+                                                                    error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -530,7 +531,8 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
                                                 copy_region.extent, false, SYNC_COPY_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstImage);
-                const auto error = error_messages_.ImageRegionError(hazard, dstImage, false, region, *cb_access_context);
+                const auto error = error_messages_.ImageRegionError(hazard, dstImage, false, region, *cb_access_context,
+                                                                    error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
             if (skip) break;
@@ -594,8 +596,8 @@ bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, 
                                                 copy_region.extent, false, SYNC_COPY_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, pCopyImageInfo->srcImage);
-                const auto error =
-                    error_messages_.ImageRegionError(hazard, pCopyImageInfo->srcImage, true, region, *cb_access_context);
+                const auto error = error_messages_.ImageRegionError(hazard, pCopyImageInfo->srcImage, true, region,
+                                                                    *cb_access_context, error_obj.location.function);
                 // TODO: this error not covered by the test
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
@@ -606,8 +608,8 @@ bool SyncValidator::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, 
                                                 copy_region.extent, false, SYNC_COPY_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, pCopyImageInfo->dstImage);
-                const auto error =
-                    error_messages_.ImageRegionError(hazard, pCopyImageInfo->dstImage, false, region, *cb_access_context);
+                const auto error = error_messages_.ImageRegionError(hazard, pCopyImageInfo->dstImage, false, region,
+                                                                    *cb_access_context, error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
             if (skip) break;
@@ -1090,7 +1092,8 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
                                            copy_region.imageExtent, false, SYNC_COPY_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstImage);
-                const auto error = error_messages_.ImageRegionError(hazard, dstImage, false, region, *cb_access_context);
+                const auto error =
+                    error_messages_.ImageRegionError(hazard, dstImage, false, region, *cb_access_context, loc.function);
                 skip |= SyncError(hazard.Hazard(), objlist, loc, error);
             }
             if (skip) break;
@@ -1205,7 +1208,8 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
                                                 copy_region.imageExtent, false, SYNC_COPY_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcImage);
-                const auto error = error_messages_.ImageRegionError(hazard, srcImage, true, region, *cb_access_context);
+                const auto error =
+                    error_messages_.ImageRegionError(hazard, srcImage, true, region, *cb_access_context, loc.function);
                 skip |= SyncError(hazard.Hazard(), objlist, loc, error);
             }
             if (dst_memory != VK_NULL_HANDLE) {
@@ -1336,7 +1340,8 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
                                                 SYNC_BLIT_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcImage);
-                const auto error = error_messages_.ImageRegionError(hazard, srcImage, true, region, *cb_access_context);
+                const auto error =
+                    error_messages_.ImageRegionError(hazard, srcImage, true, region, *cb_access_context, loc.function);
                 skip |= SyncError(hazard.Hazard(), objlist, loc, error);
             }
         }
@@ -1352,7 +1357,8 @@ bool SyncValidator::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
                                                 SYNC_BLIT_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstImage);
-                const auto error = error_messages_.ImageRegionError(hazard, dstImage, false, region, *cb_access_context);
+                const auto error =
+                    error_messages_.ImageRegionError(hazard, dstImage, false, region, *cb_access_context, loc.function);
                 skip |= SyncError(hazard.Hazard(), objlist, loc, error);
             }
             if (skip) break;
@@ -1458,7 +1464,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
         auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(cb_context.GetCBState().Handle(), buf_state->Handle());
-            const auto error = error_messages_.BufferError(hazard, buffer, "indirect", cb_context);
+            const auto error = error_messages_.BufferError(hazard, buffer, "indirect", cb_context, loc.function);
             skip |= SyncError(hazard.Hazard(), objlist, loc, error);
         }
     } else {
@@ -1467,7 +1473,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
             auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(cb_context.GetCBState().Handle(), buf_state->Handle());
-                const auto error = error_messages_.BufferError(hazard, buffer, "indirect", cb_context);
+                const auto error = error_messages_.BufferError(hazard, buffer, "indirect", cb_context, loc.function);
                 skip |= SyncError(hazard.Hazard(), objlist, loc, error);
                 break;
             }
@@ -1507,7 +1513,7 @@ bool SyncValidator::ValidateCountBuffer(const CommandBufferAccessContext &cb_con
     auto hazard = context.DetectHazard(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
     if (hazard.IsHazard()) {
         const LogObjectList objlist(cb_context.GetCBState().Handle(), count_buf_state->Handle());
-        const auto error = error_messages_.BufferError(hazard, buffer, "countBuffer", cb_context);
+        const auto error = error_messages_.BufferError(hazard, buffer, "countBuffer", cb_context, loc.function);
         skip |= SyncError(hazard.Hazard(), objlist, loc, error);
     }
     return skip;
@@ -1898,7 +1904,8 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
             auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, image);
-                const auto error = error_messages_.ImageSubresourceRangeError(hazard, image, index, *cb_access_context);
+                const auto error = error_messages_.ImageSubresourceRangeError(hazard, image, index, *cb_access_context,
+                                                                              error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -1954,7 +1961,8 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
             auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, image);
-                const auto error = error_messages_.ImageSubresourceRangeError(hazard, image, index, *cb_access_context);
+                const auto error = error_messages_.ImageSubresourceRangeError(hazard, image, index, *cb_access_context,
+                                                                              error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -2042,7 +2050,8 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(commandBuffer, queryPool, dstBuffer);
-            const auto error = error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context);
+            const auto error =
+                error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context, error_obj.location.function);
             skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
         }
     }
@@ -2095,7 +2104,8 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(commandBuffer, dstBuffer);
-            const auto error = error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context);
+            const auto error =
+                error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context, error_obj.location.function);
             skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
         }
     }
@@ -2145,7 +2155,8 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
                                                 resolve_region.srcOffset, resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcImage);
-                const auto error = error_messages_.ImageRegionError(hazard, srcImage, true, region, *cb_access_context);
+                const auto error = error_messages_.ImageRegionError(hazard, srcImage, true, region, *cb_access_context,
+                                                                    error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -2156,7 +2167,8 @@ bool SyncValidator::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
                                       resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstImage);
-                const auto error = error_messages_.ImageRegionError(hazard, dstImage, false, region, *cb_access_context);
+                const auto error = error_messages_.ImageRegionError(hazard, dstImage, false, region, *cb_access_context,
+                                                                    error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
             if (skip) break;
@@ -2224,8 +2236,8 @@ bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
                                                 resolve_region.srcOffset, resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, pResolveImageInfo->srcImage);
-                const auto error =
-                    error_messages_.ImageRegionError(hazard, pResolveImageInfo->srcImage, true, region, *cb_access_context);
+                const auto error = error_messages_.ImageRegionError(hazard, pResolveImageInfo->srcImage, true, region,
+                                                                    *cb_access_context, error_obj.location.function);
                 // TODO: this error is not covered by the test
                 skip |= SyncError(hazard.Hazard(), objlist, region_loc, error);
             }
@@ -2237,8 +2249,8 @@ bool SyncValidator::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffe
                                       resolve_region.extent, false, SYNC_RESOLVE_TRANSFER_WRITE);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, pResolveImageInfo->dstImage);
-                const auto error =
-                    error_messages_.ImageRegionError(hazard, pResolveImageInfo->dstImage, false, region, *cb_access_context);
+                const auto error = error_messages_.ImageRegionError(hazard, pResolveImageInfo->dstImage, false, region,
+                                                                    *cb_access_context, error_obj.location.function);
                 // TODO: this error is not covered by the test
                 skip |= SyncError(hazard.Hazard(), objlist, region_loc, error);
             }
@@ -2312,7 +2324,8 @@ bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(commandBuffer, dstBuffer);
-            const auto error = error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context);
+            const auto error =
+                error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context, error_obj.location.function);
             skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
         }
     }
@@ -2359,7 +2372,8 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer comma
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
-            const auto error = error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context);
+            const auto error =
+                error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context, error_obj.location.function);
             skip |= SyncError(hazard.Hazard(), dstBuffer, error_obj.location, error);
         }
     }
@@ -2410,7 +2424,8 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
         auto hazard = context->DetectHazard(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, src_range);
         if (hazard.IsHazard()) {
             // TODO: there are no tests for this error
-            const auto error = error_messages_.BufferError(hazard, pDecodeInfo->srcBuffer, "bitstream buffer", *cb_access_context);
+            const auto error = error_messages_.BufferError(hazard, pDecodeInfo->srcBuffer, "bitstream buffer", *cb_access_context,
+                                                           error_obj.location.function);
             skip |= SyncError(hazard.Hazard(), src_buffer->Handle(), decode_info_loc.dot(Field::srcBuffer), error);
         }
     }
@@ -2419,7 +2434,8 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
     if (dst_resource) {
         auto hazard = context->DetectHazard(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
         if (hazard.IsHazard()) {
-            const auto error = error_messages_.Error(hazard, "decode output picture", *cb_access_context);
+            const auto error =
+                error_messages_.Error(hazard, "decode output picture", *cb_access_context, error_obj.location.function);
             skip |= SyncError(hazard.Hazard(), dst_resource.image_view_state->Handle(),
                               decode_info_loc.dot(Field::dstPictureResource), error);
         }
@@ -2431,7 +2447,8 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
             if (hazard.IsHazard()) {
                 // TODO: there are no tests for this error
-                const auto error = error_messages_.Error(hazard, "reconstructed picture", *cb_access_context);
+                const auto error =
+                    error_messages_.Error(hazard, "reconstructed picture", *cb_access_context, error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(),
                                   decode_info_loc.dot(Field::pSetupReferenceSlot).dot(Field::pPictureResource), error);
             }
@@ -2444,7 +2461,8 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ);
                 if (hazard.IsHazard()) {
-                    const auto error = error_messages_.VideoReferencePictureError(hazard, i, *cb_access_context);
+                    const auto error =
+                        error_messages_.VideoReferencePictureError(hazard, i, *cb_access_context, error_obj.location.function);
                     skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(),
                                       decode_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource), error);
                 }
@@ -2521,7 +2539,8 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         const ResourceAccessRange src_range = MakeRange(*dst_buffer, pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange);
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, src_range);
         if (hazard.IsHazard()) {
-            const auto error = error_messages_.BufferError(hazard, pEncodeInfo->dstBuffer, "bitstream buffer", *cb_access_context);
+            const auto error = error_messages_.BufferError(hazard, pEncodeInfo->dstBuffer, "bitstream buffer", *cb_access_context,
+                                                           error_obj.location.function);
             skip |= SyncError(hazard.Hazard(), dst_buffer->Handle(), encode_info_loc.dot(Field::dstBuffer), error);
         }
     }
@@ -2531,7 +2550,8 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         auto hazard = context->DetectHazard(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
         if (hazard.IsHazard()) {
             // TODO: there are no tests for this error
-            const auto error = error_messages_.Error(hazard, "encode input picture", *cb_access_context);
+            const auto error =
+                error_messages_.Error(hazard, "encode input picture", *cb_access_context, error_obj.location.function);
             skip |= SyncError(hazard.Hazard(), src_resource.image_view_state->Handle(),
                               encode_info_loc.dot(Field::srcPictureResource), error);
         }
@@ -2542,7 +2562,8 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         if (setup_resource) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
             if (hazard.IsHazard()) {
-                const auto error = error_messages_.Error(hazard, "reconstructed picture", *cb_access_context);
+                const auto error =
+                    error_messages_.Error(hazard, "reconstructed picture", *cb_access_context, error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(),
                                   encode_info_loc.dot(Field::pSetupReferenceSlot).dot(Field::pPictureResource), error);
             }
@@ -2555,7 +2576,8 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
                 if (hazard.IsHazard()) {
-                    const auto error = error_messages_.VideoReferencePictureError(hazard, i, *cb_access_context);
+                    const auto error =
+                        error_messages_.VideoReferencePictureError(hazard, i, *cb_access_context, error_obj.location.function);
                     skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(),
                                       encode_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource), error);
                 }
@@ -2575,7 +2597,8 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
                                                     SyncOrdering::kOrderingNone);
                 if (hazard.IsHazard()) {
                     // TODO: there are no tests for this error
-                    const auto error = error_messages_.Error(hazard, "quantization map", *cb_access_context);
+                    const auto error =
+                        error_messages_.Error(hazard, "quantization map", *cb_access_context, error_obj.location.function);
                     skip |= SyncError(hazard.Hazard(), image_view_state->Handle(),
                                       encode_info_loc.pNext(Struct::VkVideoEncodeQuantizationMapInfoKHR, Field::quantizationMap),
                                       error);
@@ -2868,7 +2891,8 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer comm
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
             // TODO: there are no tests for this error
-            const auto error = error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context);
+            const auto error =
+                error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context, error_obj.location.function);
             skip |= SyncError(hazard.Hazard(), dstBuffer, error_obj.location, error);
         }
     }
@@ -3610,7 +3634,8 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
         auto hazard = context.DetectHazard(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(commandBuffer, scratch_buffer.Handle());
-            const auto error = error_messages_.BufferError(hazard, scratch_buffer.VkHandle(), "scratch buffer", cb_context);
+            const auto error = error_messages_.BufferError(hazard, scratch_buffer.VkHandle(), "scratch buffer", cb_context,
+                                                           error_obj.location.function);
             skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
         }
     }

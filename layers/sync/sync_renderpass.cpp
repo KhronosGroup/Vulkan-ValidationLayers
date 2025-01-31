@@ -40,7 +40,7 @@ class ValidateResolveAction {
         if (hazard.IsHazard()) {
             const Location loc(command_);
             const auto error = cb_context_.GetSyncState().error_messages_.RenderPassResolveError(
-                hazard, cb_context_, subpass_, aspect_name, attachment_name, src_at, dst_at);
+                hazard, cb_context_, subpass_, aspect_name, attachment_name, src_at, dst_at, command_);
             skip_ |= cb_context_.GetSyncState().SyncError(hazard.Hazard(), render_pass_, loc, error);
         }
     }
@@ -162,11 +162,12 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
                 // TODO: investigate when we can get invalid tag
                 // Initially introduced: ee98402 - syncval: Cleanup of invalid tagging
                 const auto error = cb_context.GetSyncState().error_messages_.RenderPassLayoutTransitionVsStoreOrResolveError(
-                    hazard, subpass, transition.attachment, transition.old_layout, transition.new_layout, transition.prev_pass);
+                    hazard, subpass, transition.attachment, transition.old_layout, transition.new_layout, transition.prev_pass,
+                    command);
                 skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
             } else {
                 const auto error = cb_context.GetSyncState().error_messages_.RenderPassLayoutTransitionError(
-                    hazard, cb_context, subpass, transition.attachment, transition.old_layout, transition.new_layout);
+                    hazard, cb_context, subpass, transition.attachment, transition.old_layout, transition.new_layout, command);
                 skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
             }
         }
@@ -228,12 +229,12 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
                 const Location loc(command);
                 if (hazard.Tag() == kInvalidTag) {
                     // Hazard vs. ILT
-                    const auto error =
-                        sync_state.error_messages_.RenderPassLoadOpVsLayoutTransitionError(hazard, subpass, i, aspect, load_op);
+                    const auto error = sync_state.error_messages_.RenderPassLoadOpVsLayoutTransitionError(hazard, subpass, i,
+                                                                                                          aspect, load_op, command);
                     skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
                 } else {
                     const auto error =
-                        sync_state.error_messages_.RenderPassLoadOpError(hazard, cb_context, subpass, i, aspect, load_op);
+                        sync_state.error_messages_.RenderPassLoadOpError(hazard, cb_context, subpass, i, aspect, load_op, command);
                     skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
                 }
             }
@@ -294,7 +295,7 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
                 const VkAttachmentStoreOp store_op = checked_stencil ? ci.stencilStoreOp : ci.storeOp;
                 const Location loc(command);
                 const auto error = cb_context.GetSyncState().error_messages_.RenderPassStoreOpError(
-                    hazard, cb_context, current_subpass_, i, aspect, op_type_string, store_op);
+                    hazard, cb_context, current_subpass_, i, aspect, op_type_string, store_op, command);
                 skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             }
         }
@@ -504,8 +505,8 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
             if (hazard.IsHazard()) {
                 const VkImageView view_handle = view_gen.GetViewState()->VkHandle();
                 const Location loc(command);
-                const auto error = sync_state.error_messages_.RenderPassColorAttachmentError(hazard, cb_context,
-                                                                                             *view_gen.GetViewState(), location);
+                const auto error = sync_state.error_messages_.RenderPassColorAttachmentError(
+                    hazard, cb_context, *view_gen.GetViewState(), location, command);
                 skip |= sync_state.SyncError(hazard.Hazard(), view_handle, loc, error);
             }
         }
@@ -536,7 +537,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
             if (hazard.IsHazard()) {
                 const Location loc(command);
                 const auto error =
-                    sync_state.error_messages_.RenderPassDepthStencilAttachmentError(hazard, cb_context, view_state, true);
+                    sync_state.error_messages_.RenderPassDepthStencilAttachmentError(hazard, cb_context, view_state, true, command);
                 skip |= sync_state.SyncError(hazard.Hazard(), view_state.Handle(), loc, error);
             }
         }
@@ -546,8 +547,8 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                                                                SyncOrdering::kDepthStencilAttachment);
             if (hazard.IsHazard()) {
                 const Location loc(command);
-                const auto error =
-                    sync_state.error_messages_.RenderPassDepthStencilAttachmentError(hazard, cb_context, view_state, false);
+                const auto error = sync_state.error_messages_.RenderPassDepthStencilAttachmentError(hazard, cb_context, view_state,
+                                                                                                    false, command);
                 skip |= sync_state.SyncError(hazard.Hazard(), view_state.Handle(), loc, error);
             }
         }
@@ -786,12 +787,14 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
             if (hazard.Tag() == kInvalidTag) {
                 // Hazard vs. store/resolve
                 const auto error = cb_context.GetSyncState().error_messages_.RenderPassFinalLayoutTransitionVsStoreOrResolveError(
-                    hazard, cb_context, transition.prev_pass, transition.attachment, transition.old_layout, transition.new_layout);
+                    hazard, cb_context, transition.prev_pass, transition.attachment, transition.old_layout, transition.new_layout,
+                    command);
                 skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             } else {
                 // TODO: this error is not covered by the test
                 const auto error = cb_context.GetSyncState().error_messages_.RenderPassFinalLayoutTransitionError(
-                    hazard, cb_context, transition.prev_pass, transition.attachment, transition.old_layout, transition.new_layout);
+                    hazard, cb_context, transition.prev_pass, transition.attachment, transition.old_layout, transition.new_layout,
+                    command);
                 skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             }
         }

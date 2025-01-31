@@ -61,18 +61,23 @@ static auto SortKeyValues(const std::vector<ReportKeyValues::KeyValue> &key_valu
         if (key == kPropertyMessageType) {
             return 0;
         }
-        // then some common properties
-        const char *common_properties[] = {kPropertyAccess, kPropertyPriorAccess, kPropertyReadBarriers, kPropertyWriteBarriers};
-        if (IsValueIn(key, common_properties)) {
+        // followed by hazard type
+        if (key == kPropertyHazardType) {
             return 1;
+        }
+        // then some common properties
+        const char *common_properties[] = {kPropertyAccess,       kPropertyPriorAccess,  kPropertyCommand,
+                                           kPropertyPriorCommand, kPropertyReadBarriers, kPropertyWriteBarriers};
+        if (IsValueIn(key, common_properties)) {
+            return 2;
         }
         // debug properties are at the end
         const char *debug_properties[] = {kPropertySeqNo, kPropertySubCmd, kPropertyResetNo, kPropertyBatchTag};
         if (IsValueIn(key, debug_properties)) {
-            return 3;
+            return 4;
         }
         // everything else
-        return 2;
+        return 3;
     };
     auto sorted = key_values;
     std::stable_sort(sorted.begin(), sorted.end(), [&get_sort_order](const auto &a, const auto &b) {
@@ -448,6 +453,7 @@ std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex, R
 void CommandBufferAccessContext::AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const {
     if (tag >= access_log_->size()) return;
     const ResourceUsageRecord &record = (*access_log_)[tag];
+    extra_properties.Add(kPropertyPriorCommand, vvl::String(record.command));
     extra_properties.Add(kPropertySeqNo, record.seq_num);
     if (record.sub_command != 0) {
         extra_properties.Add(kPropertySubCmd, record.sub_command);

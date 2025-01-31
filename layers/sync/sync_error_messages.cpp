@@ -85,8 +85,8 @@ void ErrorMessages::AddCbContextExtraProperties(const CommandBufferAccessContext
     }
 }
 
-std::string ErrorMessages::Error(const HazardResult& hazard, const char* description,
-                                 const CommandBufferAccessContext& cb_context) const {
+std::string ErrorMessages::Error(const HazardResult& hazard, const char* description, const CommandBufferAccessContext& cb_context,
+                                 vvl::Func command) const {
     const auto format = "Hazard %s for %s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -94,6 +94,8 @@ std::string ErrorMessages::Error(const HazardResult& hazard, const char* descrip
     std::string message = Format(format, string_SyncHazard(hazard.Hazard()), description, access_info.c_str());
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "GeneralError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -101,15 +103,17 @@ std::string ErrorMessages::Error(const HazardResult& hazard, const char* descrip
 }
 
 std::string ErrorMessages::BufferError(const HazardResult& hazard, VkBuffer buffer, const char* buffer_description,
-                                       const CommandBufferAccessContext& cb_context) const {
+                                       const CommandBufferAccessContext& cb_context, vvl::Func command) const {
     const auto format = "Hazard %s for %s %s. Access info %s.";
     ReportKeyValues key_values;
 
     const std::string access_info = cb_context.FormatHazard(hazard, key_values);
     std::string message = Format(format, string_SyncHazard(hazard.Hazard()), buffer_description,
-                                       validator_.FormatHandle(buffer).c_str(), access_info.c_str());
+                                 validator_.FormatHandle(buffer).c_str(), access_info.c_str());
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "BufferError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -134,8 +138,9 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
     ReportKeyValues key_values;
     cb_context.FormatHazard(hazard, key_values);
     key_values.Add(kPropertyMessageType, "BufferRegionError");
+    key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+    key_values.Add(kPropertyCommand, vvl::String(command));
     const char* resource_parameter = is_src_buffer ? "srcBuffer" : "dstBuffer";
-    key_values.Add(kPropertyResourceParameter, resource_parameter);
     AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
 
     const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
@@ -219,7 +224,7 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
                                      validator_.FormatHandle(buffer).c_str(), region_index, access_info.c_str());
         if (extra_properties_) {
             key_values2.Add(kPropertyMessageType, "BufferRegionError");
-            key_values2.Add(kPropertyResourceParameter, resource_parameter);
+            key_values2.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
             AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values2);
             message += key_values2.GetExtraPropertiesSection(pretty_print_extra_);
         }
@@ -228,7 +233,7 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
 }
 
 std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, VkImage image, bool is_src_image, uint32_t region_index,
-                                            const CommandBufferAccessContext& cb_context) const {
+                                            const CommandBufferAccessContext& cb_context, vvl::Func command) const {
     const auto format = "Hazard %s for %s %s, region %" PRIu32 ". Access info %s.";
     ReportKeyValues key_values;
 
@@ -238,7 +243,8 @@ std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, VkImage 
                                  validator_.FormatHandle(image).c_str(), region_index, access_info.c_str());
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "ImageRegionError");
-        key_values.Add(kPropertyResourceParameter, resource_parameter);
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -246,7 +252,7 @@ std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, VkImage 
 }
 
 std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard, VkImage image, uint32_t subresource_range_index,
-                                                      const CommandBufferAccessContext& cb_context) const {
+                                                      const CommandBufferAccessContext& cb_context, vvl::Func command) const {
     const auto format = "Hazard %s for %s, range index %" PRIu32 ". Access info %s.";
     ReportKeyValues key_values;
 
@@ -255,6 +261,8 @@ std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard
                                  subresource_range_index, access_info.c_str());
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "ImageSubresourceRangeError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -263,7 +271,7 @@ std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard
 
 std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard,
                                                const syncval_state::DynamicRenderingInfo::Attachment& attachment,
-                                               const CommandBufferAccessContext& cb_context) const {
+                                               const CommandBufferAccessContext& cb_context, vvl::Func command) const {
     const auto format = "(%s), with loadOp %s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -273,6 +281,8 @@ std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard,
         Format(format, validator_.FormatHandle(attachment.view->Handle()).c_str(), load_op_str, access_info.c_str());
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "BeginRenderingError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyLoadOp, load_op_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
@@ -282,7 +292,7 @@ std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard,
 
 std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
                                                     VkResolveModeFlagBits resolve_mode,
-                                                    const CommandBufferAccessContext& cb_context) const {
+                                                    const CommandBufferAccessContext& cb_context, vvl::Func command) const {
     const auto format = "(%s), during resolve with resolveMode %s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -291,6 +301,8 @@ std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, 
     std::string message = Format(format, validator_.FormatHandle(image_view_handle).c_str(), resolve_mode_str, access_info.c_str());
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "EndRenderingResolveError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyResolveMode, resolve_mode_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
@@ -299,8 +311,8 @@ std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, 
 }
 
 std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
-                                                  VkAttachmentStoreOp store_op,
-                                                  const CommandBufferAccessContext& cb_context) const {
+                                                  VkAttachmentStoreOp store_op, const CommandBufferAccessContext& cb_context,
+                                                  vvl::Func command) const {
     const auto format = "(%s), during store with storeOp %s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -309,6 +321,8 @@ std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, co
     std::string message = Format(format, validator_.FormatHandle(image_view_handle).c_str(), store_op_str, access_info.c_str());
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "EndRenderingStoreError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyStoreOp, store_op_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
@@ -319,8 +333,8 @@ std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, co
 std::string ErrorMessages::DrawDispatchImageError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                   const vvl::ImageView& image_view, const vvl::Pipeline& pipeline,
                                                   const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
-                                                  VkImageLayout image_layout, uint32_t descriptor_binding,
-                                                  uint32_t binding_index) const {
+                                                  VkImageLayout image_layout, uint32_t descriptor_binding, uint32_t binding_index,
+                                                  vvl::Func command) const {
     const auto format =
         "Hazard %s for %s, in %s, and %s, %s, type: %s, imageLayout: %s, binding #%" PRIu32 ", index %" PRIu32 ". Access info %s.";
     ReportKeyValues key_values;
@@ -336,6 +350,8 @@ std::string ErrorMessages::DrawDispatchImageError(const HazardResult& hazard, co
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "DrawDispatchImageError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyDescriptorType, descriptor_type_str);
         key_values.Add(kPropertyImageLayout, image_layout_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
@@ -347,7 +363,8 @@ std::string ErrorMessages::DrawDispatchImageError(const HazardResult& hazard, co
 std::string ErrorMessages::DrawDispatchTexelBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                         const vvl::BufferView& buffer_view, const vvl::Pipeline& pipeline,
                                                         const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
-                                                        uint32_t descriptor_binding, uint32_t binding_index) const {
+                                                        uint32_t descriptor_binding, uint32_t binding_index,
+                                                        vvl::Func command) const {
     const auto format = "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%" PRIu32 " index %" PRIu32 ". Access info %s.";
     ReportKeyValues key_values;
 
@@ -361,6 +378,8 @@ std::string ErrorMessages::DrawDispatchTexelBufferError(const HazardResult& haza
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "DrawDispatchTexelBufferError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyDescriptorType, descriptor_type_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
@@ -371,7 +390,7 @@ std::string ErrorMessages::DrawDispatchTexelBufferError(const HazardResult& haza
 std::string ErrorMessages::DrawDispatchBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                    const vvl::Buffer& buffer, const vvl::Pipeline& pipeline,
                                                    const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
-                                                   uint32_t descriptor_binding, uint32_t binding_index) const {
+                                                   uint32_t descriptor_binding, uint32_t binding_index, vvl::Func command) const {
     const auto format = "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%" PRIu32 " index %" PRIu32 ". Access info %s.";
     ReportKeyValues key_values;
 
@@ -385,6 +404,8 @@ std::string ErrorMessages::DrawDispatchBufferError(const HazardResult& hazard, c
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "DrawDispatchBufferError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyDescriptorType, descriptor_type_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
@@ -393,7 +414,7 @@ std::string ErrorMessages::DrawDispatchBufferError(const HazardResult& hazard, c
 }
 
 std::string ErrorMessages::DrawVertexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                 const vvl::Buffer& vertex_buffer) const {
+                                                 const vvl::Buffer& vertex_buffer, vvl::Func command) const {
     const auto format = "Hazard %s for vertex %s in %s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -404,6 +425,8 @@ std::string ErrorMessages::DrawVertexBufferError(const HazardResult& hazard, con
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "DrawVertexBufferError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -411,7 +434,7 @@ std::string ErrorMessages::DrawVertexBufferError(const HazardResult& hazard, con
 }
 
 std::string ErrorMessages::DrawIndexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                const vvl::Buffer& index_buffer) const {
+                                                const vvl::Buffer& index_buffer, vvl::Func command) const {
     const auto format = "Hazard %s for index %s in %s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -421,6 +444,8 @@ std::string ErrorMessages::DrawIndexBufferError(const HazardResult& hazard, cons
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "DrawIndexBufferError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -428,7 +453,7 @@ std::string ErrorMessages::DrawIndexBufferError(const HazardResult& hazard, cons
 }
 
 std::string ErrorMessages::DrawAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                               const vvl::ImageView& attachment_view) const {
+                                               const vvl::ImageView& attachment_view, vvl::Func command) const {
     const auto format = "(%s). Access info %s.";
     ReportKeyValues key_values;
 
@@ -437,6 +462,8 @@ std::string ErrorMessages::DrawAttachmentError(const HazardResult& hazard, const
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "DrawAttachmentError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -444,7 +471,7 @@ std::string ErrorMessages::DrawAttachmentError(const HazardResult& hazard, const
 }
 
 std::string ErrorMessages::ClearColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                     const std::string& subpass_attachment_info) const {
+                                                     const std::string& subpass_attachment_info, vvl::Func command) const {
     const auto format = "Hazard %s while clearing color attachment%s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -453,6 +480,8 @@ std::string ErrorMessages::ClearColorAttachmentError(const HazardResult& hazard,
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "ClearColorAttachmentError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -462,7 +491,7 @@ std::string ErrorMessages::ClearColorAttachmentError(const HazardResult& hazard,
 std::string ErrorMessages::ClearDepthStencilAttachmentError(const HazardResult& hazard,
                                                             const CommandBufferAccessContext& cb_context,
                                                             const std::string& subpass_attachment_info,
-                                                            VkImageAspectFlagBits aspect) const {
+                                                            VkImageAspectFlagBits aspect, vvl::Func command) const {
     const auto format = "Hazard %s when clearing %s aspect of depth-stencil attachment%s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -473,6 +502,8 @@ std::string ErrorMessages::ClearDepthStencilAttachmentError(const HazardResult& 
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "ClearDepthStencilAttachmentError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyImageAspect, image_aspect_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
@@ -481,7 +512,7 @@ std::string ErrorMessages::ClearDepthStencilAttachmentError(const HazardResult& 
 }
 
 std::string ErrorMessages::PipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                uint32_t image_barrier_index, const vvl::Image& image) const {
+                                                uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const {
     const auto format = "Hazard %s for image barrier %" PRIu32 " %s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -491,6 +522,8 @@ std::string ErrorMessages::PipelineBarrierError(const HazardResult& hazard, cons
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "PipelineBarrierError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -498,7 +531,7 @@ std::string ErrorMessages::PipelineBarrierError(const HazardResult& hazard, cons
 }
 
 std::string ErrorMessages::WaitEventsError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
-                                           uint32_t image_barrier_index, const vvl::Image& image) const {
+                                           uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const {
     const auto format = "Hazard %s for image barrier %" PRIu32 " %s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -508,6 +541,8 @@ std::string ErrorMessages::WaitEventsError(const HazardResult& hazard, const Com
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "WaitEventsError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         exec_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -516,7 +551,7 @@ std::string ErrorMessages::WaitEventsError(const HazardResult& hazard, const Com
 
 std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
                                          const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index,
-                                         VkCommandBuffer recorded_handle) const {
+                                         VkCommandBuffer recorded_handle, vvl::Func command) const {
     const auto format = "Hazard %s for entry %" PRIu32 ", %s, %s access info %s. Access info %s.";
     ReportKeyValues key_values;
 
@@ -529,6 +564,9 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "SubmitTimeError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        // TODO: ensure correct command is used here, currently it's always empty
+        // key_values.Add(kPropertyCommand, vvl::String(command));
         exec_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -537,7 +575,7 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
 
 std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                   uint32_t subpass, const char* aspect_name, const char* attachment_name,
-                                                  uint32_t src_attachment, uint32_t dst_attachment) const {
+                                                  uint32_t src_attachment, uint32_t dst_attachment, vvl::Func command) const {
     const auto format = "Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32 " to resolve attachment %" PRIu32
                         ". Access info %s.";
     ReportKeyValues key_values;
@@ -548,6 +586,8 @@ std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, co
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassResolveError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -556,8 +596,8 @@ std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, co
 
 std::string ErrorMessages::RenderPassLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard, uint32_t subpass,
                                                                            uint32_t attachment, VkImageLayout old_layout,
-                                                                           VkImageLayout new_layout,
-                                                                           uint32_t store_resolve_subpass) const {
+                                                                           VkImageLayout new_layout, uint32_t store_resolve_subpass,
+                                                                           vvl::Func command) const {
     const auto format =
         "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
         " image layout transition (old_layout: %s, new_layout: %s) after store/resolve operation in subpass %" PRIu32;
@@ -569,6 +609,8 @@ std::string ErrorMessages::RenderPassLayoutTransitionVsStoreOrResolveError(const
     if (extra_properties_) {
         ReportKeyValues key_values;
         key_values.Add(kPropertyMessageType, "RenderPassLayoutTransitionVsStoreOrResolveError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyOldLayout, old_layout_str);
         key_values.Add(kPropertyNewLayout, new_layout_str);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
@@ -578,7 +620,7 @@ std::string ErrorMessages::RenderPassLayoutTransitionVsStoreOrResolveError(const
 
 std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                            uint32_t subpass, uint32_t attachment, VkImageLayout old_layout,
-                                                           VkImageLayout new_layout) const {
+                                                           VkImageLayout new_layout, vvl::Func command) const {
     const auto format = "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
                         " image layout transition (old_layout: %s, new_layout: %s). Access info %s.";
     ReportKeyValues key_values;
@@ -591,6 +633,8 @@ std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& h
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassLayoutTransitionError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyOldLayout, old_layout_str);
         key_values.Add(kPropertyNewLayout, new_layout_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
@@ -601,7 +645,7 @@ std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& h
 
 std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardResult& hazard, uint32_t subpass,
                                                                    uint32_t attachment, const char* aspect_name,
-                                                                   VkAttachmentLoadOp load_op) const {
+                                                                   VkAttachmentLoadOp load_op, vvl::Func command) const {
     const auto format =
         "Hazard %s vs. layout transition in subpass %" PRIu32 " for attachment %" PRIu32 " aspect %s during load with loadOp %s.";
 
@@ -611,6 +655,8 @@ std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardR
     if (extra_properties_) {
         ReportKeyValues key_values;
         key_values.Add(kPropertyMessageType, "RenderPassLoadOpVsLayoutTransitionError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyLoadOp, load_op_str);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -619,7 +665,7 @@ std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardR
 
 std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                  uint32_t subpass, uint32_t attachment, const char* aspect_name,
-                                                 VkAttachmentLoadOp load_op) const {
+                                                 VkAttachmentLoadOp load_op, vvl::Func command) const {
     const auto format =
         "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " aspect %s during load with loadOp %s. Access info %s.";
     ReportKeyValues key_values;
@@ -631,6 +677,8 @@ std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, con
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassLoadOpError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyLoadOp, load_op_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
@@ -640,7 +688,8 @@ std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, con
 
 std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                   uint32_t subpass, uint32_t attachment, const char* aspect_name,
-                                                  const char* store_op_type_name, VkAttachmentStoreOp store_op) const {
+                                                  const char* store_op_type_name, VkAttachmentStoreOp store_op,
+                                                  vvl::Func command) const {
     const auto format =
         "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " %s aspect during store with %s %s. Access info %s";
     ReportKeyValues key_values;
@@ -652,6 +701,8 @@ std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, co
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassStoreOpError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyStoreOp, store_op_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
@@ -660,7 +711,8 @@ std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, co
 }
 
 std::string ErrorMessages::RenderPassColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                          const vvl::ImageView& view, uint32_t attachment) const {
+                                                          const vvl::ImageView& view, uint32_t attachment,
+                                                          vvl::Func command) const {
     const auto format = "Hazard %s for %s in %s, Subpass #%d, and pColorAttachments #%d. Access info %s.";
     ReportKeyValues key_values;
 
@@ -671,6 +723,8 @@ std::string ErrorMessages::RenderPassColorAttachmentError(const HazardResult& ha
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassColorAttachmentError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -679,7 +733,8 @@ std::string ErrorMessages::RenderPassColorAttachmentError(const HazardResult& ha
 
 std::string ErrorMessages::RenderPassDepthStencilAttachmentError(const HazardResult& hazard,
                                                                  const CommandBufferAccessContext& cb_context,
-                                                                 const vvl::ImageView& view, bool is_depth) const {
+                                                                 const vvl::ImageView& view, bool is_depth,
+                                                                 vvl::Func command) const {
     const auto format = "Hazard %s for %s in %s, Subpass #%d, and %s part of pDepthStencilAttachment. Access info %s.";
     ReportKeyValues key_values;
 
@@ -690,6 +745,8 @@ std::string ErrorMessages::RenderPassDepthStencilAttachmentError(const HazardRes
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassDepthStencilAttachmentError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -699,8 +756,8 @@ std::string ErrorMessages::RenderPassDepthStencilAttachmentError(const HazardRes
 std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
                                                                                 const CommandBufferAccessContext& cb_context,
                                                                                 uint32_t subpass, uint32_t attachment,
-                                                                                VkImageLayout old_layout,
-                                                                                VkImageLayout new_layout) const {
+                                                                                VkImageLayout old_layout, VkImageLayout new_layout,
+                                                                                vvl::Func command) const {
     const auto format = "Hazard %s vs. store/resolve operations in subpass %" PRIu32 " for attachment %" PRIu32
                         " final image layout transition (old_layout: %s, new_layout: %s).";
     ReportKeyValues key_values;
@@ -711,6 +768,8 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassFinalLayoutTransitionVsStoreOrResolveError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyOldLayout, old_layout_str);
         key_values.Add(kPropertyNewLayout, new_layout_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
@@ -722,7 +781,7 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
 std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResult& hazard,
                                                                 const CommandBufferAccessContext& cb_context, uint32_t subpass,
                                                                 uint32_t attachment, VkImageLayout old_layout,
-                                                                VkImageLayout new_layout) const {
+                                                                VkImageLayout new_layout, vvl::Func command) const {
     const auto format = "Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
                         " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.";
     ReportKeyValues key_values;
@@ -735,6 +794,8 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResu
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "RenderPassFinalLayoutTransitionError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyOldLayout, old_layout_str);
         key_values.Add(kPropertyNewLayout, new_layout_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
@@ -745,7 +806,7 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResu
 
 std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, uint32_t present_index,
                                         const VulkanTypedHandle& swapchain_handle, uint32_t image_index,
-                                        const VulkanTypedHandle& image_handle) const {
+                                        const VulkanTypedHandle& image_handle, vvl::Func command) const {
     const auto format =
         "Hazard %s for present pSwapchains[%" PRIu32 "] , swapchain %s, image index %" PRIu32 " %s, Access info %s.";
     ReportKeyValues key_values;
@@ -757,6 +818,8 @@ std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueB
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "PresentError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         batch_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
@@ -764,7 +827,7 @@ std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueB
 }
 
 std::string ErrorMessages::VideoReferencePictureError(const HazardResult& hazard, uint32_t reference_picture_index,
-                                                      const CommandBufferAccessContext& cb_context) const {
+                                                      const CommandBufferAccessContext& cb_context, vvl::Func command) const {
     const auto format = "Hazard %s for reference picture #%u. Access info %s.";
     ReportKeyValues key_values;
 
@@ -773,6 +836,8 @@ std::string ErrorMessages::VideoReferencePictureError(const HazardResult& hazard
 
     if (extra_properties_) {
         key_values.Add(kPropertyMessageType, "VideoReferencePictureError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
