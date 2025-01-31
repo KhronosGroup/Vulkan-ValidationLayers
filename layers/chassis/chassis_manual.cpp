@@ -303,6 +303,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     for (auto& vo : instance_dispatch->object_dispatch) {
         vo->PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, record_obj, &modified_create_info);
     }
+    // Recalculate enabled_features based on any changes made
+    GetEnabledDeviceFeatures(modified_create_info.ptr(), &device_dispatch->enabled_features, device_dispatch->api_version);
 
     VkResult result = fpCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice);
     if (result != VK_SUCCESS) {

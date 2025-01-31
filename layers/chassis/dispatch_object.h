@@ -32,6 +32,7 @@
 #include "layer_options.h"
 #include "gpuav/core/gpuav_settings.h"
 #include "sync/sync_settings.h"
+#include "generated/device_features.h"
 #include "generated/dispatch_vector.h"
 #include "generated/vk_api_version.h"
 #include "generated/vk_extension_helper.h"
@@ -211,6 +212,7 @@ class Device : public HandleWrapper {
 
     APIVersion api_version;
     DeviceExtensions extensions = {};
+    DeviceFeatures enabled_features = {};
 
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;

@@ -279,6 +279,7 @@ Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInf
     api_version = std::min(APIVersion(device_properties.apiVersion), dispatch_instance->api_version);
 
     extensions = DeviceExtensions(dispatch_instance->extensions, api_version, pCreateInfo);
+    GetEnabledDeviceFeatures(pCreateInfo, &enabled_features, api_version);
 
     InitValidationObjects();
     InitObjectDispatchVectors();

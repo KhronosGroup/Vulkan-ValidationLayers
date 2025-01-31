@@ -1883,7 +1883,6 @@ class Device : public vvl::base::Device {
     // Link for derived device objects back to their parent instance object
     vvl::Instance* instance_state;
 
-    DeviceFeatures enabled_features = {};
     // Device specific data
     VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
     VkPhysicalDeviceProperties phys_dev_props = {};

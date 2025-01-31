@@ -129,6 +129,7 @@ class Device : public Logger {
     vvl::dispatch::Device* dispatch_device_{};
 
     DeviceExtensions extensions;
+    const DeviceFeatures& enabled_features;
     const GlobalSettings& global_settings;
     GpuAVSettings& gpuav_settings;
     const SyncValSettings& syncval_settings;
@@ -155,6 +156,7 @@ class Device : public Logger {
           dispatch_instance_(dispatch_dev->dispatch_instance),
           dispatch_device_(dispatch_dev),
           extensions(dispatch_dev->extensions),
+          enabled_features(dispatch_dev->enabled_features),
           global_settings(dispatch_dev->settings.global_settings),
           gpuav_settings(dispatch_dev->settings.gpuav_settings),
           syncval_settings(dispatch_dev->settings.syncval_settings),
