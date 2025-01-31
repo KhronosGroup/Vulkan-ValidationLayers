@@ -27,14 +27,6 @@
 // This file contains methods for class vvl::base::Device and it is designed to ONLY be
 // included into validation_object.h.
 
-// We make many internal dispatch calls to extended query functions which can depend on the API version
-void DispatchGetImageMemoryRequirements2Helper(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
-                                               VkMemoryRequirements2* pMemoryRequirements) const;
-void DispatchGetBufferMemoryRequirements2Helper(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
-                                                VkMemoryRequirements2* pMemoryRequirements) const;
-void DispatchGetImageSparseMemoryRequirements2Helper(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
-                                                     uint32_t* pSparseMemoryRequirementCount,
-                                                     VkSparseImageMemoryRequirements2* pSparseMemoryRequirements) const;
 virtual bool PreCallValidateGetDeviceProcAddr(VkDevice device, const char* pName, const ErrorObject& error_obj) const {
     return false;
 }

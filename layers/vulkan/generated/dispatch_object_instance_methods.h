@@ -25,6 +25,8 @@
 // This file contains methods for class vvl::dispatch::Instance  and it is designed to ONLY be
 // included into dispatch_object.h.
 
+#pragma once
+
 VkResult CreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance);
 void DestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator);
 VkResult EnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount, VkPhysicalDevice* pPhysicalDevices);

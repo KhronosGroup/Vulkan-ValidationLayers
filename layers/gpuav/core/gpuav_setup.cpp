@@ -490,7 +490,7 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
     if (gpuav_settings.shader_instrumentation.descriptor_checks) {
         VkPhysicalDeviceDescriptorIndexingProperties desc_indexing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&desc_indexing_props);
-        instance_state->DispatchGetPhysicalDeviceProperties2Helper(physical_device, &props2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physical_device, &props2);
 
         uint32_t num_descs = desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools;
         if (num_descs == 0 || num_descs > glsl::kDebugInputBindlessMaxDescriptors) {

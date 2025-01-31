@@ -25,6 +25,8 @@
 // This file contains methods for class vvl::dispatch::Device and it is designed to ONLY be
 // included into dispatch_object.h.
 
+#pragma once
+
 PFN_vkVoidFunction GetDeviceProcAddr(VkDevice device, const char* pName);
 void DestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator);
 void GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue);
