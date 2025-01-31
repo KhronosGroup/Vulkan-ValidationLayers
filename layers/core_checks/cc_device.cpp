@@ -99,8 +99,8 @@ bool CoreChecks::GetPhysicalDeviceImageFormatProperties(vvl::Image &image_state,
         image_format_info.usage = image_create_info.usage;
         image_format_info.flags = image_create_info.flags;
         VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
-        image_properties_result = instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(
-            physical_device, &image_format_info, &image_format_properties);
+        image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(
+            api_version, physical_device, &image_format_info, &image_format_properties);
         image_state.image_format_properties = image_format_properties.imageFormatProperties;
     }
     if (image_properties_result != VK_SUCCESS) {
@@ -538,7 +538,7 @@ VkFormatProperties3KHR CoreChecks::GetPDFormatProperties(const VkFormat format) 
     VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_props_3);
 
     if (has_format_feature2) {
-        instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, format, &fmt_props_2);
+        DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &fmt_props_2);
         fmt_props_3.linearTilingFeatures |= fmt_props_2.formatProperties.linearTilingFeatures;
         fmt_props_3.optimalTilingFeatures |= fmt_props_2.formatProperties.optimalTilingFeatures;
         fmt_props_3.bufferFeatures |= fmt_props_2.formatProperties.bufferFeatures;

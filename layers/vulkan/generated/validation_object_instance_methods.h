@@ -27,31 +27,6 @@
 // This file contains methods for class vvl::base::Instance and it is designed to ONLY be
 // included into validation_object.h.
 
-// We make many internal dispatch calls to extended query functions which can depend on the API version
-void DispatchGetPhysicalDeviceFeatures2Helper(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) const;
-void DispatchGetPhysicalDeviceProperties2Helper(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties) const;
-void DispatchGetPhysicalDeviceFormatProperties2Helper(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                      VkFormatProperties2* pFormatProperties) const;
-VkResult DispatchGetPhysicalDeviceImageFormatProperties2Helper(VkPhysicalDevice physicalDevice,
-                                                               const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
-                                                               VkImageFormatProperties2* pImageFormatProperties) const;
-void DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-                                                           VkQueueFamilyProperties2* pQueueFamilyProperties) const;
-void DispatchGetPhysicalDeviceMemoryProperties2Helper(VkPhysicalDevice physicalDevice,
-                                                      VkPhysicalDeviceMemoryProperties2* pMemoryProperties) const;
-void DispatchGetPhysicalDeviceSparseImageFormatProperties2Helper(VkPhysicalDevice physicalDevice,
-                                                                 const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
-                                                                 uint32_t* pPropertyCount,
-                                                                 VkSparseImageFormatProperties2* pProperties) const;
-void DispatchGetPhysicalDeviceExternalSemaphorePropertiesHelper(VkPhysicalDevice physicalDevice,
-                                                                const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-                                                                VkExternalSemaphoreProperties* pExternalSemaphoreProperties) const;
-void DispatchGetPhysicalDeviceExternalFencePropertiesHelper(VkPhysicalDevice physicalDevice,
-                                                            const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
-                                                            VkExternalFenceProperties* pExternalFenceProperties) const;
-void DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(VkPhysicalDevice physicalDevice,
-                                                             const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
-                                                             VkExternalBufferProperties* pExternalBufferProperties) const;
 virtual bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                            VkInstance* pInstance, const ErrorObject& error_obj) const {
     return false;

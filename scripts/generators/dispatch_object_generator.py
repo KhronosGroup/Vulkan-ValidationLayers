@@ -178,7 +178,7 @@ class DispatchObjectGenerator(BaseGenerator):
             'vkBindBufferMemory2KHR',
             'vkBindImageMemory2',
             'vkBindImageMemory2KHR',
-            )
+        )
 
         # List of all extension structs strings containing handles
         self.ndo_extension_structs = [
@@ -188,6 +188,14 @@ class DispatchObjectGenerator(BaseGenerator):
             "VkRayTracingPipelineCreateInfoKHR",
             "VkExecutionGraphPipelineCreateInfoAMDX",
         ]
+
+        self.extended_query_exts = (
+            'VK_KHR_get_physical_device_properties2',
+            'VK_KHR_external_semaphore_capabilities',
+            'VK_KHR_external_fence_capabilities',
+            'VK_KHR_external_memory_capabilities',
+            'VK_KHR_get_memory_requirements2',
+        )
 
         # Dispatch functions that need special state tracking variables passed in
         self.custom_definition = {}
@@ -264,6 +272,9 @@ class DispatchObjectGenerator(BaseGenerator):
         out.append('''
             // This file contains methods for class vvl::dispatch::Device and it is designed to ONLY be
             // included into dispatch_object.h.
+
+            #pragma once
+
             ''')
         self.write("".join(out))
         self.generateMethods(False)
@@ -273,6 +284,8 @@ class DispatchObjectGenerator(BaseGenerator):
         out.append('''
             // This file contains methods for class vvl::dispatch::Instance  and it is designed to ONLY be
             // included into dispatch_object.h.
+
+            #pragma once
             ''')
         self.write("".join(out))
         self.generateMethods(True)
@@ -283,8 +296,10 @@ class DispatchObjectGenerator(BaseGenerator):
             // This file contains contains convience functions for non-chassis code that needs to
             // make vulkan calls.
 
+            #pragma once
+
             #include "chassis/dispatch_object.h"
-    
+
             ''')
         dispatchable_handles = [handle.name for handle in self.vk.handles.values() if handle.dispatchable]
         guard_helper = PlatformGuardHelper()
@@ -310,6 +325,20 @@ class DispatchObjectGenerator(BaseGenerator):
             out.append(f'{returnResult}{command.name.replace("vk", "dispatch->")}({paramsList}{call_extra});\n')
             out.append('}\n')
         out.extend(guard_helper.add_guard(None))
+        out.append('// We make many internal dispatch calls to extended query functions which can depend on the API version\n')
+        for extended_query_ext in self.extended_query_exts:
+            for command in self.vk.extensions[extended_query_ext].commands:
+                parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
+                arguments = ','.join([x.name for x in command.params])
+                out.append(f'''
+                static inline {command.returnType} Dispatch{command.alias[2:]}Helper(APIVersion api_version, {parameters}) {{
+                    if (api_version >= VK_API_VERSION_1_1) {{
+                        return Dispatch{command.alias[2:]}({arguments});
+                    }} else {{
+                        return Dispatch{command.name[2:]}({arguments});
+                    }}
+                }}
+                ''')
         self.write("".join(out))
 
     def generateSource(self):

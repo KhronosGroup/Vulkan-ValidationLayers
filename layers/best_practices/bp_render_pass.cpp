@@ -137,7 +137,7 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
                     const VkFormat format = pCreateInfo->pAttachments[attachment].format;
                     VkSubpassResolvePerformanceQueryEXT performance_query = vku::InitStructHelper();
                     VkFormatProperties2 format_properties2 = vku::InitStructHelper(&performance_query);
-                    instance_state->DispatchGetPhysicalDeviceFormatProperties2Helper(physical_device, format, &format_properties2);
+                    DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, format, &format_properties2);
                     if (performance_query.optimal == VK_FALSE) {
                         skip |= LogPerformanceWarning(
                             "BestPractices-vkCreateRenderPass-SubpassResolve-NonOptimalFormat", device,

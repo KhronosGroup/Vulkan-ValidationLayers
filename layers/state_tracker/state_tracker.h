@@ -24,6 +24,7 @@
 #include "state_tracker/video_session_state.h"
 #include "chassis/dispatch_object.h"
 #include "generated/device_features.h"
+#include "generated/dispatch_functions.h"
 #include "error_message/logging.h"
 #include "containers/custom_containers.h"
 #include "utils/android_ndk_types.h"
@@ -245,7 +246,7 @@ class Instance : public vvl::base::Instance {
                 *ext_prop = vku::InitStructHelper();
             }
             VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
-            DispatchGetPhysicalDeviceProperties2Helper(gpu, &prop2);
+            DispatchGetPhysicalDeviceProperties2Helper(api_version, gpu, &prop2);
         }
     }
 
@@ -254,7 +255,7 @@ class Instance : public vvl::base::Instance {
         assert(ext_prop);
         *ext_prop = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
-        DispatchGetPhysicalDeviceProperties2Helper(gpu, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, gpu, &prop2);
     }
 
     VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device, bool has_format_feature2,

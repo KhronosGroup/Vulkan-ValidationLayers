@@ -213,7 +213,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             pdebi.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER];
         }
         VkExternalBufferProperties ext_buf_props = vku::InitStructHelper();
-        instance_state->DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(physical_device, &pdebi, &ext_buf_props);
+        DispatchGetPhysicalDeviceExternalBufferPropertiesHelper(api_version, physical_device, &pdebi, &ext_buf_props);
 
         //  If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
         //  VkExternalImageFormatProperties or VkExternalBufferProperties.
@@ -242,7 +242,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             VkImageFormatProperties2 ifp2 = vku::InitStructHelper(&ext_img_fmt_props);
 
             VkResult fmt_lookup_result =
-                instance_state->DispatchGetPhysicalDeviceImageFormatProperties2Helper(physical_device, &pdifi2, &ifp2);
+                DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &pdifi2, &ifp2);
 
             if ((VK_SUCCESS != fmt_lookup_result) || (0 == (ext_img_fmt_props.externalMemoryProperties.externalMemoryFeatures &
                                                             VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT))) {

@@ -351,7 +351,7 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         // Get the needed shading rate image limits
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&shading_rate_image_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.shading_rate_image_props = shading_rate_image_props;
     }
 
@@ -359,7 +359,7 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         // Get the needed mesh shader limits
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&mesh_shader_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.mesh_shader_props_nv = mesh_shader_props;
     }
 
@@ -367,7 +367,7 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         // Get the needed mesh shader EXT limits
         VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&mesh_shader_props_ext);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.mesh_shader_props_ext = mesh_shader_props_ext;
     }
 
@@ -375,7 +375,7 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         // Get the needed ray tracing limits
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&ray_tracing_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.ray_tracing_props_nv = ray_tracing_props;
     }
 
@@ -383,7 +383,7 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         // Get the needed ray tracing limits
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&ray_tracing_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.ray_tracing_props_khr = ray_tracing_props;
     }
 
@@ -391,7 +391,7 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         // Get the needed ray tracing acc structure limits
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&acc_structure_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.acc_structure_props = acc_structure_props;
     }
 
@@ -399,7 +399,7 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         // Get the needed transform feedback limits
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&transform_feedback_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
     }
 
@@ -407,13 +407,13 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
         // Get the needed vertex attribute divisor limits
         VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vertex_attribute_divisor_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&vertex_attribute_divisor_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.vertex_attribute_divisor_props = vertex_attribute_divisor_props;
     } else if (IsExtEnabled(extensions.vk_ext_vertex_attribute_divisor)) {
         // Get the needed vertex attribute divisor limits
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vertex_attribute_divisor_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&vertex_attribute_divisor_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.vertex_attribute_divisor_props = vku::InitStructHelper();
         stateless_device->phys_dev_ext_props.vertex_attribute_divisor_props.maxVertexAttribDivisor =
             vertex_attribute_divisor_props.maxVertexAttribDivisor;
@@ -422,35 +422,35 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
     if (IsExtEnabled(extensions.vk_khr_fragment_shading_rate)) {
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&fragment_shading_rate_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.fragment_shading_rate_props = fragment_shading_rate_props;
     }
 
     if (IsExtEnabled(extensions.vk_khr_depth_stencil_resolve)) {
         VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&depth_stencil_resolve_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
     }
 
     if (IsExtEnabled(extensions.vk_ext_external_memory_host)) {
         VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&external_memory_host_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.external_memory_host_props = external_memory_host_props;
     }
 
     if (IsExtEnabled(extensions.vk_ext_device_generated_commands)) {
         VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT device_generated_commands_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&device_generated_commands_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.device_generated_commands_props = device_generated_commands_props;
     }
 
     if (IsExtEnabled(extensions.vk_arm_render_pass_striped)) {
         VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&renderpass_striped_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &prop2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &prop2);
         stateless_device->phys_dev_ext_props.renderpass_striped_props = renderpass_striped_props;
     }
 
@@ -857,7 +857,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
     if (features && features->robustBufferAccess && any_update_after_bind_feature) {
         VkPhysicalDeviceDescriptorIndexingProperties di_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&di_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &props2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &props2);
         if (!di_props.robustBufferAccessUpdateAfterBind) {
             skip |= LogError("VUID-VkDeviceCreateInfo-robustBufferAccess-10247", physicalDevice, error_obj.location,
                              "robustBufferAccessUpdateAfterBind is false, but both robustBufferAccess and a "
@@ -961,7 +961,7 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
     if (cache_control && cache_control->disableInternalCache) {
         VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&pipeline_binary_props);
-        DispatchGetPhysicalDeviceProperties2Helper(physicalDevice, &props2);
+        DispatchGetPhysicalDeviceProperties2Helper(api_version, physicalDevice, &props2);
 
         if (!pipeline_binary_props.pipelineBinaryInternalCacheControl) {
             skip |= LogError("VUID-VkDevicePipelineBinaryInternalCacheControlKHR-disableInternalCache-09602", physicalDevice,
@@ -1016,7 +1016,8 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
                         image_drm_format->queueFamilyIndexCount);
                 } else {
                     uint32_t queue_family_property_count = 0;
-                    DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(physicalDevice, &queue_family_property_count, nullptr);
+                    DispatchGetPhysicalDeviceQueueFamilyProperties2Helper(api_version, physicalDevice, &queue_family_property_count,
+                                                                          nullptr);
                     vvl::unordered_set<uint32_t> queue_family_indices_set;
                     for (uint32_t i = 0; i < image_drm_format->queueFamilyIndexCount; i++) {
                         const uint32_t queue_index = image_drm_format->pQueueFamilyIndices[i];

@@ -103,14 +103,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkGetPhysicalDeviceToolPropertiesEXT',
     )
 
-    extended_query_exts = (
-        'VK_KHR_get_physical_device_properties2',
-        'VK_KHR_external_semaphore_capabilities',
-        'VK_KHR_external_fence_capabilities',
-        'VK_KHR_external_memory_capabilities',
-        'VK_KHR_get_memory_requirements2',
-    )
-
     def __init__(self):
         BaseGenerator.__init__(self)
 
@@ -171,14 +163,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
     def generateMethods(self, want_instance):
         out = []
 
-        out.append('// We make many internal dispatch calls to extended query functions which can depend on the API version\n')
-        for extended_query_ext in self.extended_query_exts:
-            for command in self.vk.extensions[extended_query_ext].commands:
-                if command.instance != want_instance:
-                    continue
-                parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
-                out.append(f'{command.returnType} Dispatch{command.alias[2:]}Helper({parameters}) const;\n')
-
         guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if x.name not in self.ignore_functions and 'ValidationCache' not in x.name]:
             if command.instance != want_instance:
@@ -226,22 +210,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
             namespace vvl::base {
             thread_local WriteLockGuard* Device::record_guard{};
 
-            ''')
-        for extended_query_ext in self.extended_query_exts:
-            for command in self.vk.extensions[extended_query_ext].commands:
-                parameters = (command.cPrototype.split('(')[1])[:-2] # leaves just the parameters
-                arguments = ','.join([x.name for x in command.params])
-                dispatch = 'dispatch_instance_' if command.instance else 'dispatch_device_'
-                dispatch_class = 'Instance' if command.instance else 'Device'
-                out.append(f'''\n{command.returnType} {dispatch_class}::Dispatch{command.alias[2:]}Helper({parameters}) const {{
-                    if (api_version >= VK_API_VERSION_1_1) {{
-                        return {dispatch}->{command.alias[2:]}({arguments});
-                    }} else {{
-                        return {dispatch}->{command.name[2:]}({arguments});
-                    }}
-                }}
-                ''')
-        out.append('} // namespace vvl::base\n')
+            } // namespace vvl::base
+        ''')
         self.write("".join(out))
 
 
