@@ -773,6 +773,16 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpTypeHitObjectNV";
         case spv::OpImageSampleFootprintNV:
             return "OpImageSampleFootprintNV";
+        case spv::OpTypeCooperativeVectorNV:
+            return "OpTypeCooperativeVectorNV";
+        case spv::OpCooperativeVectorMatrixMulNV:
+            return "OpCooperativeVectorMatrixMulNV";
+        case spv::OpCooperativeVectorOuterProductAccumulateNV:
+            return "OpCooperativeVectorOuterProductAccumulateNV";
+        case spv::OpCooperativeVectorReduceSumAccumulateNV:
+            return "OpCooperativeVectorReduceSumAccumulateNV";
+        case spv::OpCooperativeVectorMatrixMulAddNV:
+            return "OpCooperativeVectorMatrixMulAddNV";
         case spv::OpCooperativeMatrixConvertNV:
             return "OpCooperativeMatrixConvertNV";
         case spv::OpEmitMeshTasksEXT:
@@ -787,6 +797,10 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpFetchMicroTriangleVertexPositionNV";
         case spv::OpFetchMicroTriangleVertexBarycentricNV:
             return "OpFetchMicroTriangleVertexBarycentricNV";
+        case spv::OpCooperativeVectorLoadNV:
+            return "OpCooperativeVectorLoadNV";
+        case spv::OpCooperativeVectorStoreNV:
+            return "OpCooperativeVectorStoreNV";
         case spv::OpReportIntersectionKHR:
             return "OpReportIntersectionKHR";
         case spv::OpIgnoreIntersectionNV:
@@ -805,6 +819,10 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpTypeAccelerationStructureKHR";
         case spv::OpExecuteCallableNV:
             return "OpExecuteCallableNV";
+        case spv::OpRayQueryGetClusterIdNV:
+            return "OpRayQueryGetClusterIdNV";
+        case spv::OpHitObjectGetClusterIdNV:
+            return "OpHitObjectGetClusterIdNV";
         case spv::OpTypeCooperativeMatrixNV:
             return "OpTypeCooperativeMatrixNV";
         case spv::OpCooperativeMatrixLoadNV:
@@ -873,6 +891,32 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpSamplerImageAddressingModeNV";
         case spv::OpRawAccessChainNV:
             return "OpRawAccessChainNV";
+        case spv::OpRayQueryGetIntersectionSpherePositionNV:
+            return "OpRayQueryGetIntersectionSpherePositionNV";
+        case spv::OpRayQueryGetIntersectionSphereRadiusNV:
+            return "OpRayQueryGetIntersectionSphereRadiusNV";
+        case spv::OpRayQueryGetIntersectionLSSPositionsNV:
+            return "OpRayQueryGetIntersectionLSSPositionsNV";
+        case spv::OpRayQueryGetIntersectionLSSRadiiNV:
+            return "OpRayQueryGetIntersectionLSSRadiiNV";
+        case spv::OpRayQueryGetIntersectionLSSHitValueNV:
+            return "OpRayQueryGetIntersectionLSSHitValueNV";
+        case spv::OpHitObjectGetSpherePositionNV:
+            return "OpHitObjectGetSpherePositionNV";
+        case spv::OpHitObjectGetSphereRadiusNV:
+            return "OpHitObjectGetSphereRadiusNV";
+        case spv::OpHitObjectGetLSSPositionsNV:
+            return "OpHitObjectGetLSSPositionsNV";
+        case spv::OpHitObjectGetLSSRadiiNV:
+            return "OpHitObjectGetLSSRadiiNV";
+        case spv::OpHitObjectIsSphereHitNV:
+            return "OpHitObjectIsSphereHitNV";
+        case spv::OpHitObjectIsLSSHitNV:
+            return "OpHitObjectIsLSSHitNV";
+        case spv::OpRayQueryIsSphereHitNV:
+            return "OpRayQueryIsSphereHitNV";
+        case spv::OpRayQueryIsLSSHitNV:
+            return "OpRayQueryIsLSSHitNV";
         case spv::OpUCountLeadingZerosINTEL:
             return "OpUCountLeadingZerosINTEL";
         case spv::OpUCountTrailingZerosINTEL:
@@ -1841,6 +1885,12 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
             return "IncomingRayFlagsKHR";
         case spv::BuiltInRayGeometryIndexKHR:
             return "RayGeometryIndexKHR";
+        case spv::BuiltInHitIsSphereNV:
+            return "HitIsSphereNV";
+        case spv::BuiltInHitIsLSSNV:
+            return "HitIsLSSNV";
+        case spv::BuiltInHitSpherePositionNV:
+            return "HitSpherePositionNV";
         case spv::BuiltInWarpsPerSMNV:
             return "WarpsPerSMNV";
         case spv::BuiltInSMCountNV:
@@ -1849,10 +1899,18 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
             return "WarpIDNV";
         case spv::BuiltInSMIDNV:
             return "SMIDNV";
+        case spv::BuiltInHitLSSPositionsNV:
+            return "HitLSSPositionsNV";
         case spv::BuiltInHitKindFrontFacingMicroTriangleNV:
             return "HitKindFrontFacingMicroTriangleNV";
         case spv::BuiltInHitKindBackFacingMicroTriangleNV:
             return "HitKindBackFacingMicroTriangleNV";
+        case spv::BuiltInHitSphereRadiusNV:
+            return "HitSphereRadiusNV";
+        case spv::BuiltInHitLSSRadiiNV:
+            return "HitLSSRadiiNV";
+        case spv::BuiltInClusterIDNV:
+            return "ClusterIDNV";
         case spv::BuiltInCullMaskKHR:
             return "CullMaskKHR";
 
@@ -2299,6 +2357,11 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpReorderThreadWithHintNV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpTypeHitObjectNV, {{}}},
         {spv::OpImageSampleFootprintNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
+        {spv::OpTypeCooperativeVectorNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpCooperativeVectorMatrixMulNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
+        {spv::OpCooperativeVectorOuterProductAccumulateNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpCooperativeVectorReduceSumAccumulateNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpCooperativeVectorMatrixMulAddNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpCooperativeMatrixConvertNV, {{OperandKind::Id}}},
         {spv::OpEmitMeshTasksEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSetMeshOutputsEXT, {{OperandKind::Id, OperandKind::Id}}},
@@ -2306,6 +2369,8 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpWritePackedPrimitiveIndices4x8NV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpFetchMicroTriangleVertexPositionNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpFetchMicroTriangleVertexBarycentricNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpCooperativeVectorLoadNV, {{OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
+        {spv::OpCooperativeVectorStoreNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpReportIntersectionKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpIgnoreIntersectionNV, {{}}},
         {spv::OpTerminateRayNV, {{}}},
@@ -2315,6 +2380,8 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpRayQueryGetIntersectionTriangleVertexPositionsKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpTypeAccelerationStructureKHR, {{}}},
         {spv::OpExecuteCallableNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpRayQueryGetClusterIdNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectGetClusterIdNV, {{OperandKind::Id}}},
         {spv::OpTypeCooperativeMatrixNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpCooperativeMatrixLoadNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpCooperativeMatrixStoreNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
@@ -2349,6 +2416,19 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpConvertSampledImageToUNV, {{OperandKind::Id}}},
         {spv::OpSamplerImageAddressingModeNV, {{OperandKind::Literal}}},
         {spv::OpRawAccessChainNV, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
+        {spv::OpRayQueryGetIntersectionSpherePositionNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpRayQueryGetIntersectionSphereRadiusNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpRayQueryGetIntersectionLSSPositionsNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpRayQueryGetIntersectionLSSRadiiNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpRayQueryGetIntersectionLSSHitValueNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpHitObjectGetSpherePositionNV, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetSphereRadiusNV, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetLSSPositionsNV, {{OperandKind::Id}}},
+        {spv::OpHitObjectGetLSSRadiiNV, {{OperandKind::Id}}},
+        {spv::OpHitObjectIsSphereHitNV, {{OperandKind::Id}}},
+        {spv::OpHitObjectIsLSSHitNV, {{OperandKind::Id}}},
+        {spv::OpRayQueryIsSphereHitNV, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpRayQueryIsLSSHitNV, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpUCountLeadingZerosINTEL, {{OperandKind::Id}}},
         {spv::OpUCountTrailingZerosINTEL, {{OperandKind::Id}}},
         {spv::OpAbsISubINTEL, {{OperandKind::Id, OperandKind::Id}}},

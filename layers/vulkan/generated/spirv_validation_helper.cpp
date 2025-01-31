@@ -263,16 +263,11 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo> &GetSpirvCapabilites(
         {spv::CapabilityCooperativeMatrixPerElementOperationsNV, {0, &DeviceFeatures::cooperativeMatrixPerElementOperations, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixTensorAddressingNV, {0, &DeviceFeatures::cooperativeMatrixTensorAddressing, nullptr, ""}},
         {spv::CapabilityCooperativeMatrixBlockLoadsNV, {0, &DeviceFeatures::cooperativeMatrixBlockLoads, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityRayTracingSpheresGeometryNV, {0, &DeviceFeatures::spheres, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityRayTracingLinearSweptSpheresGeometryNV, {0, &DeviceFeatures::linearSweptSpheres, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityRayTracingClusterAccelerationStructureNV, {0, &DeviceFeatures::clusterAccelerationStructure, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityCooperativeVectorNV, {0, &DeviceFeatures::cooperativeVector, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityCooperativeVectorTrainingNV, {0, &DeviceFeatures::cooperativeVectorTraining, nullptr, ""}},
+        {spv::CapabilityRayTracingSpheresGeometryNV, {0, &DeviceFeatures::spheres, nullptr, ""}},
+        {spv::CapabilityRayTracingLinearSweptSpheresGeometryNV, {0, &DeviceFeatures::linearSweptSpheres, nullptr, ""}},
+        {spv::CapabilityRayTracingClusterAccelerationStructureNV, {0, &DeviceFeatures::clusterAccelerationStructure, nullptr, ""}},
+        {spv::CapabilityCooperativeVectorNV, {0, &DeviceFeatures::cooperativeVector, nullptr, ""}},
+        {spv::CapabilityCooperativeVectorTrainingNV, {0, &DeviceFeatures::cooperativeVectorTraining, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -704,12 +699,18 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "BindlessTextureNV";
         case spv::CapabilityRayQueryPositionFetchKHR:
             return "RayQueryPositionFetchKHR";
+        case spv::CapabilityCooperativeVectorNV:
+            return "CooperativeVectorNV";
         case spv::CapabilityAtomicFloat16VectorNV:
             return "AtomicFloat16VectorNV";
         case spv::CapabilityRayTracingDisplacementMicromapNV:
             return "RayTracingDisplacementMicromapNV";
         case spv::CapabilityRawAccessChainsNV:
             return "RawAccessChainsNV";
+        case spv::CapabilityRayTracingSpheresGeometryNV:
+            return "RayTracingSpheresGeometryNV";
+        case spv::CapabilityRayTracingLinearSweptSpheresGeometryNV:
+            return "RayTracingLinearSweptSpheresGeometryNV";
         case spv::CapabilityCooperativeMatrixReductionsNV:
             return "CooperativeMatrixReductionsNV";
         case spv::CapabilityCooperativeMatrixConversionsNV:
@@ -720,6 +721,10 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
             return "CooperativeMatrixTensorAddressingNV";
         case spv::CapabilityCooperativeMatrixBlockLoadsNV:
             return "CooperativeMatrixBlockLoadsNV";
+        case spv::CapabilityCooperativeVectorTrainingNV:
+            return "CooperativeVectorTrainingNV";
+        case spv::CapabilityRayTracingClusterAccelerationStructureNV:
+            return "RayTracingClusterAccelerationStructureNV";
         case spv::CapabilityTensorAddressingNV:
             return "TensorAddressingNV";
         case spv::CapabilityIntegerFunctions2INTEL:
@@ -1038,6 +1043,11 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityCooperativeMatrixPerElementOperationsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixPerElementOperations"},
     {spv::CapabilityCooperativeMatrixTensorAddressingNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixTensorAddressing"},
     {spv::CapabilityCooperativeMatrixBlockLoadsNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixBlockLoads"},
+    {spv::CapabilityRayTracingSpheresGeometryNV, "VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV::spheres"},
+    {spv::CapabilityRayTracingLinearSweptSpheresGeometryNV, "VkPhysicalDeviceRayTracingLinearSweptSpheresFeaturesNV::linearSweptSpheres"},
+    {spv::CapabilityRayTracingClusterAccelerationStructureNV, "VkPhysicalDeviceClusterAccelerationStructureFeaturesNV::clusterAccelerationStructure"},
+    {spv::CapabilityCooperativeVectorNV, "VkPhysicalDeviceCooperativeVectorFeaturesNV::cooperativeVector"},
+    {spv::CapabilityCooperativeVectorTrainingNV, "VkPhysicalDeviceCooperativeVectorFeaturesNV::cooperativeVectorTraining"},
     };
 
     // VUs before catch unknown capabilities
