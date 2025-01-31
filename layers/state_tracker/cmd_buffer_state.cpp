@@ -1705,7 +1705,24 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
 }
 
 void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state) {
-    auto &last_bound_state = lastBound[ConvertToPipelineBindPoint(shader_stage)];
+    auto &last_bound_state = [&]() -> LastBound & {
+        const auto bind_point = ConvertToPipelineBindPoint(shader_stage);
+
+        assert(lastBound.size() == 3);
+
+        // VkPipelineBindPoint cannot be used to safely index an array.
+        if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+            return lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS];
+        } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+            return lastBound[VK_PIPELINE_BIND_POINT_COMPUTE];
+        } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+            return lastBound[2];
+        };
+
+        // We should never reach this point
+        assert(false);
+        return lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS];
+    }();
     const auto stage_index = static_cast<uint32_t>(ConvertToShaderObjectStage(shader_stage));
     last_bound_state.shader_object_bound[stage_index] = true;
     last_bound_state.shader_object_states[stage_index] = shader_object_state;
