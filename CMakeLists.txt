@@ -182,7 +182,7 @@ elseif(MSVC)
     add_link_options("$<$<CONFIG:Release>:/DEBUG:FULL>")
 
     # Enable /LTCG (Link-time code generation)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    #set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
     # Remove unreferenced code/data.
     add_link_options("$<$<CONFIG:Release>:/OPT:REF>")
     # Merge duplicate data/functions
