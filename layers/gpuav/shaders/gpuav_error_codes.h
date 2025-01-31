@@ -36,6 +36,7 @@ const int kErrorGroupGpuPreTraceRays = 6;
 const int kErrorGroupGpuCopyBufferToImage = 7;
 const int kErrorGroupInstDescriptorClass = 8;
 const int kErrorGroupInstIndexedDraw = 9;
+const int kErrorGroupInst_Reserved_6452 = 10;  // Saved for future extension MR 6452
 
 // Used for MultiEntry and there is no single stage set
 const int kHeaderStageIdMultiEntryPoint = 0x7fffffff;  // same as spv::ExecutionModelMax
