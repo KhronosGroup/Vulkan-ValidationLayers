@@ -60,6 +60,19 @@ class APISpecific:
                         'enabled': '!settings.disabled[object_tracking]'
                     },
                     {
+                        'include': 'state_tracker/state_tracker.h',
+                        'device': 'vvl::DeviceState',
+                        'instance': 'vvl::InstanceState',
+                        'type': 'LayerObjectTypeStateTracker',
+                        'enabled': '''
+                            !settings.disabled[core_checks] ||
+                            settings.enabled[best_practices] ||
+                            settings.enabled[gpu_validation] ||
+                            settings.enabled[debug_printf_validation] ||
+                            settings.enabled[sync_validation]
+                        '''
+                    },
+                    {
                         'include': 'core_checks/core_validation.h',
                         'device': 'CoreChecks',
                         'instance': 'core::Instance',

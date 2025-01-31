@@ -21,6 +21,10 @@
 #include "cc_state_tracker.h"
 #include "core_validation.h"
 
+void CoreChecks::Created(vvl::CommandBuffer& cb) {
+    cb.SetSubState(container_type, std::make_unique<core::CommandBufferSubState>(cb));
+}
+
 void core::CommandBufferSubState::RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
                                                    VkPipelineStageFlags2KHR srcStageMask) {
     // vvl::CommandBuffer will add to the events vector. TODO this is now incorrect
@@ -35,26 +39,10 @@ void core::CommandBufferSubState::RecordWaitEvents(vvl::Func command, uint32_t e
         });
 }
 
-std::shared_ptr<vvl::CommandBuffer> CoreChecks::CreateCmdBufferState(VkCommandBuffer handle,
-                                                                     const VkCommandBufferAllocateInfo* allocate_info,
-                                                                     const vvl::CommandPool* pool) {
-    auto cb = BaseClass::CreateCmdBufferState(handle, allocate_info, pool);
-    if (cb) {
-        cb->SetSubState(container_type, std::make_unique<core::CommandBufferSubState>(*cb));
-    }
-    return cb;
+void CoreChecks::Created(vvl::Queue& queue) {
+    queue.SetSubState(container_type, std::make_unique<core::QueueSubState>(*this, queue));
 }
 
 core::QueueSubState::QueueSubState(Logger& logger, vvl::Queue& q) : vvl::QueueSubState(q), queue_submission_validator_(logger) {}
 
 void core::QueueSubState::Retire(vvl::QueueSubmission& submission) { queue_submission_validator_.Validate(submission); }
-
-std::shared_ptr<vvl::Queue> CoreChecks::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
-                                                    VkDeviceQueueCreateFlags flags,
-                                                    const VkQueueFamilyProperties& queue_family_properties) {
-    auto q = BaseClass::CreateQueue(handle, family_index, queue_index, flags, queue_family_properties);
-    if (q) {
-        q->SetSubState(container_type, std::make_unique<core::QueueSubState>(*this, *q));
-    }
-    return q;
-}

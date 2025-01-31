@@ -2118,7 +2118,7 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, cons
     bool skip = false;
     using sync_vuid_maps::QueueError;
 
-    auto log_queue_family_error = [sharing_mode, resource_handle, &barrier_loc, &field_loc, device_data_ = this,
+    auto log_queue_family_error = [sharing_mode, resource_handle, &barrier_loc, &field_loc, device_data_ = device_state,
                                    objects_ = objects](QueueError vu_index, uint32_t family, const char *param_name) -> bool {
         const std::string &vuid = GetBarrierQueueVUID(field_loc, vu_index);
         const char *annotation = GetFamilyAnnotation(*device_data_, family);
@@ -2138,19 +2138,19 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, cons
         }
 
         if (sharing_mode == VK_SHARING_MODE_EXCLUSIVE && src_queue_family != dst_queue_family) {
-            if (!IsQueueFamilyValid(*this, src_queue_family)) {
+            if (!IsQueueFamilyValid(*device_state, src_queue_family)) {
                 skip |= log_queue_family_error(QueueError::kExclusiveSrc, src_queue_family, "srcQueueFamilyIndex");
             }
-            if (!IsQueueFamilyValid(*this, dst_queue_family)) {
+            if (!IsQueueFamilyValid(*device_state, dst_queue_family)) {
                 skip |= log_queue_family_error(QueueError::kExclusiveDst, dst_queue_family, "dstQueueFamilyIndex");
             }
         }
     } else {
         if (sharing_mode == VK_SHARING_MODE_EXCLUSIVE && src_queue_family != dst_queue_family) {
-            if (!(IsQueueFamilyValid(*this, src_queue_family) || IsQueueFamilySpecial(src_queue_family))) {
+            if (!(IsQueueFamilyValid(*device_state, src_queue_family) || IsQueueFamilySpecial(src_queue_family))) {
                 skip |= log_queue_family_error(QueueError::kExclusiveSrc, src_queue_family, "srcQueueFamilyIndex");
             }
-            if (!(IsQueueFamilyValid(*this, dst_queue_family) || IsQueueFamilySpecial(dst_queue_family))) {
+            if (!(IsQueueFamilyValid(*device_state, dst_queue_family) || IsQueueFamilySpecial(dst_queue_family))) {
                 skip |= log_queue_family_error(QueueError::kExclusiveDst, dst_queue_family, "dstQueueFamilyIndex");
             }
         }
@@ -2171,8 +2171,8 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, cons
             skip |= log_queue_family_error(QueueError::kSync1ConcurrentDst, dst_queue_family, "dstQueueFamilyIndex");
         } else if (src_queue_family != VK_QUEUE_FAMILY_IGNORED && dst_queue_family != VK_QUEUE_FAMILY_IGNORED) {
             const std::string &vuid = GetBarrierQueueVUID(field_loc, QueueError::kSync1ConcurrentNoIgnored);
-            const char *src_annotation = GetFamilyAnnotation(*this, src_queue_family);
-            const char *dst_annotation = GetFamilyAnnotation(*this, dst_queue_family);
+            const char *src_annotation = GetFamilyAnnotation(*device_state, src_queue_family);
+            const char *dst_annotation = GetFamilyAnnotation(*device_state, dst_queue_family);
             // Log both src and dst queue families
             skip |= LogError(vuid, objects, barrier_loc,
                              "barrier using %s created with sharingMode %s, has srcQueueFamilyIndex %" PRIu32
@@ -2186,8 +2186,8 @@ bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, cons
     if (sharing_mode == VK_SHARING_MODE_EXCLUSIVE && IsOwnershipTransfer(barrier)) {
         if (src_queue_family != command_pool_queue_family && dst_queue_family != command_pool_queue_family) {
             const std::string vuid = GetBarrierQueueVUID(barrier_loc, sync_vuid_maps::QueueError::kSubmitQueueMustMatchSrcOrDst);
-            const char *src_annotation = GetFamilyAnnotation(*this, src_queue_family);
-            const char *dst_annotation = GetFamilyAnnotation(*this, dst_queue_family);
+            const char *src_annotation = GetFamilyAnnotation(*device_state, src_queue_family);
+            const char *dst_annotation = GetFamilyAnnotation(*device_state, dst_queue_family);
             skip |= LogError(
                 vuid, objects, barrier_loc,
                 "has srcQueueFamilyIndex %" PRIu32 "%s and dstQueueFamilyIndex %" PRIu32

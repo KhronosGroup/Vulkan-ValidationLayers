@@ -89,7 +89,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkIm
     }
 
     if (pImportSemaphoreFdInfo->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT) {
-        if (const auto payload_info = GetOpaqueInfoFromFdHandle(pImportSemaphoreFdInfo->fd)) {
+        if (const auto payload_info = device_state->GetOpaqueInfoFromFdHandle(pImportSemaphoreFdInfo->fd)) {
             if (sem_state->flags != payload_info->semaphore_flags) {
                 // would use string_VkSemaphoreCreateFlags but no valid flags yet
                 skip |= LogError("VUID-VkImportSemaphoreFdInfoKHR-handleType-03263", device, info_loc.dot(Field::semaphore),

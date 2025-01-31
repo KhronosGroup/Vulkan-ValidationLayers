@@ -188,8 +188,8 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
                 error << "In CommandBuffer::ValidateBindlessDescriptorSets, descriptor_command_binding.bound_descriptor_sets["
                       << set_index
                       << "].HasPostProcessBuffer() was false. This should not happen. GPU-AV is in a bad state, aborting.";
-                auto gpuav = static_cast<Validator *>(&base.dev_data);
-                gpuav->InternalError(gpuav->device, loc, error.str().c_str());
+
+                state_.InternalError(state_.device, loc, error.str().c_str());
                 return false;
             }
             validated_desc_sets.emplace(bound_descriptor_set->VkHandle());

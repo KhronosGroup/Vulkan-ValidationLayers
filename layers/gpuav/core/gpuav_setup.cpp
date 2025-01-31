@@ -30,35 +30,15 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 namespace gpuav {
 
-std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool *pool,
-                                                                   const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
-                                                                   uint32_t variable_count) {
-    auto set = BaseClass::CreateDescriptorSet(handle, pool, layout, variable_count);
-    if (set) {
-        set->SetSubState(container_type, std::make_unique<DescriptorSetSubState>(*set, *this));
-    }
-    return set;
+void Validator::Created(vvl::DescriptorSet &set) {
+    set.SetSubState(container_type, std::make_unique<DescriptorSetSubState>(set, *this));
 }
 
-std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuffer handle,
-                                                                    const VkCommandBufferAllocateInfo *allocate_info,
-                                                                    const vvl::CommandPool *pool) {
-    auto cb = BaseClass::CreateCmdBufferState(handle, allocate_info, pool);
-    if (cb) {
-        cb->SetSubState(container_type, std::make_unique<CommandBufferSubState>(*this, *cb));
-    }
-    return cb;
+void Validator::Created(vvl::CommandBuffer &cb_state) {
+    cb_state.SetSubState(container_type, std::make_unique<CommandBufferSubState>(*this, cb_state));
 }
 
-std::shared_ptr<vvl::Queue> Validator::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
-                                                   VkDeviceQueueCreateFlags flags,
-                                                   const VkQueueFamilyProperties &queueFamilyProperties) {
-    auto queue = BaseClass::CreateQueue(handle, family_index, queue_index, flags, queueFamilyProperties);
-    if (queue) {
-        queue->SetSubState(container_type, std::make_unique<QueueSubState>(*this, *queue));
-    }
-    return queue;
-}
+void Validator::Created(vvl::Queue &queue) { queue.SetSubState(container_type, std::make_unique<QueueSubState>(*this, queue)); }
 
 // Trampolines to make VMA call Dispatch for Vulkan calls
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL gpuVkGetInstanceProcAddr(VkInstance inst, const char *name) {

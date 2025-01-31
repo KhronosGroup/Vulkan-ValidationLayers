@@ -189,8 +189,8 @@ const char* VendorSpecificTag(BPVendorFlags vendors);
 
 bool VendorCheckEnabled(const CHECK_ENABLED& enabled, BPVendorFlags vendors);
 
-class Instance : public vvl::InstanceState {
-    using BaseClass = vvl::InstanceState;
+class Instance : public vvl::InstanceProxy {
+    using BaseClass = vvl::InstanceProxy;
 
   public:
     using Func = vvl::Func;
@@ -243,8 +243,8 @@ class Instance : public vvl::InstanceState {
 };
 }  // namespace bp_state
 
-class BestPractices : public vvl::DeviceState {
-    using BaseClass = vvl::DeviceState;
+class BestPractices : public vvl::DeviceProxy {
+    using BaseClass = vvl::DeviceProxy;
 
   public:
     using Func = vvl::Func;
@@ -789,19 +789,10 @@ class BestPractices : public vvl::DeviceState {
                                                           const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
                                                           const ErrorObject& error_obj) const override;
 
+    void Created(vvl::CommandBuffer& cb_state) override;
+    void Created(vvl::Image& image_state) override;
 // Include code-generated functions
 #include "generated/best_practices_device_methods.h"
-  protected:
-    std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
-                                                             const VkCommandBufferAllocateInfo* allocate_info,
-                                                             const vvl::CommandPool* pool) final;
-
-    std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
-                                                 VkFormatFeatureFlags2 features) final;
-
-    std::shared_ptr<vvl::Image> CreateImageState(VkImage handle, const VkImageCreateInfo* create_info, VkSwapchainKHR swapchain,
-                                                 uint32_t swapchain_index, VkFormatFeatureFlags2 features) final;
-
   private:
     // CacheEntry and PostTransformLRUCacheModel are used on the stack
     struct CacheEntry {
