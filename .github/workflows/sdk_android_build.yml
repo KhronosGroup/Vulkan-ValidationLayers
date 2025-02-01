@@ -81,6 +81,11 @@ jobs:
       run: |
         sdk_version=`echo "${{ github.ref }}" | cut -d "-" -f 3`
         echo "sdk_version=$sdk_version" >> $GITHUB_OUTPUT
+    - name: Get NDK version
+      id: get_ndk_version
+      run: |
+        ndk_version=$(basename $ANDROID_NDK | sed 's/^android-ndk-r//')
+        echo "ndk_version=$ndk_version" >> $GITHUB_OUTPUT
     - name: Create release
       id: create_release
       uses: actions/create-release@v1
@@ -90,7 +95,7 @@ jobs:
         tag_name: ${{ github.ref }}
         release_name: Android binaries for ${{ steps.get_sdk_version.outputs.sdk_version }} SDK release
         body: |
-            These Android Validation Layer binaries were built with ndk version 25.2.9519653
+            These Android Validation Layer binaries were built with ndk version ${{ steps.get_ndk_version.outputs.ndk_version }}
 
             The validation binaries can only be used with a device that supports Android API version 26 or higher.
         draft: false
