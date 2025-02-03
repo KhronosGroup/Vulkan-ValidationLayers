@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -757,5 +757,80 @@ TEST_F(PositiveShaderPushConstants, SpecConstantSizeSet) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
                                              &specialization_info);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderPushConstants, Storage8BitPointers) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9364");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    // storagePushConstant8 is not enabled
+    RETURN_IF_SKIP(Init());
+
+    // RWStructuredBuffer<int> result;
+    // [shader("compute")]
+    // [numthreads(1,1,1)]
+    // void main(uint8_t* input) {
+    //     result[0] = (int)input[0];
+    // }
+    const char *spv_source = R"(
+               OpCapability PhysicalStorageBufferAddresses
+               OpCapability Int8
+               OpCapability Shader
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %result %entryPointParams
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_ptr_PhysicalStorageBuffer_uchar ArrayStride 1
+               OpDecorate %17 AliasedPointer
+               OpDecorate %EntryPointParams_std430 Block
+               OpMemberDecorate %EntryPointParams_std430 0 Offset 0
+               OpDecorate %_runtimearr_int ArrayStride 4
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %result Binding 0
+               OpDecorate %result DescriptorSet 0
+       %void = OpTypeVoid
+         %12 = OpTypeFunction %void
+      %uchar = OpTypeInt 8 0
+%_ptr_PhysicalStorageBuffer_uchar = OpTypePointer PhysicalStorageBuffer %uchar
+%_ptr_Function__ptr_PhysicalStorageBuffer_uchar = OpTypePointer Function %_ptr_PhysicalStorageBuffer_uchar
+%EntryPointParams_std430 = OpTypeStruct %_ptr_PhysicalStorageBuffer_uchar
+%_ptr_PushConstant_EntryPointParams_std430 = OpTypePointer PushConstant %EntryPointParams_std430
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_PushConstant__ptr_PhysicalStorageBuffer_uchar = OpTypePointer PushConstant %_ptr_PhysicalStorageBuffer_uchar
+%_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
+%_runtimearr_int = OpTypeRuntimeArray %int
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_int
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+%entryPointParams = OpVariable %_ptr_PushConstant_EntryPointParams_std430 PushConstant
+     %result = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
+       %main = OpFunction %void None %12
+         %13 = OpLabel
+         %17 = OpVariable %_ptr_Function__ptr_PhysicalStorageBuffer_uchar Function
+         %44 = OpAccessChain %_ptr_PushConstant__ptr_PhysicalStorageBuffer_uchar %entryPointParams %int_0
+         %45 = OpLoad %_ptr_PhysicalStorageBuffer_uchar %44
+               OpStore %17 %45
+         %50 = OpAccessChain %_ptr_StorageBuffer_int %result %int_0 %int_0
+         %55 = OpLoad %_ptr_PhysicalStorageBuffer_uchar %44
+         %56 = OpPtrAccessChain %_ptr_PhysicalStorageBuffer_uchar %55 %int_0
+         %57 = OpLoad %uchar %56 Aligned 1
+         %58 = OpSConvert %int %57
+               OpStore %50 %58
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 8};
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {push_constant_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
     pipe.CreateComputePipeline();
 }

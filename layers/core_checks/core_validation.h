@@ -888,6 +888,7 @@ class CoreChecks : public vvl::Device {
                                 const spirv::StatelessData& stateless_data, const Location& loc) const;
     bool ValidatePhysicalStorageBuffers(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                         const Location& loc) const;
+    bool Validate8And16BitStorage(const spirv::Module& module_state, const spirv::Instruction& var_insn, const Location& loc) const;
     bool ValidateShaderExecutionModes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                       VkShaderStageFlagBits stage, const vvl::Pipeline* pipeline, const Location& loc) const;
     bool ValidateInterfaceVertexInput(const vvl::Pipeline& pipeline, const spirv::Module& module_state,
