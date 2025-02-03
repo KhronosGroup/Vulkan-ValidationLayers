@@ -196,6 +196,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/shader_compute_positive.cpp
     unit/shader_cooperative_matrix.cpp
     unit/shader_cooperative_matrix_positive.cpp
+    unit/shader_debug_info.cpp
     unit/shader_image_access.cpp
     unit/shader_image_access_positive.cpp
     unit/shader_interface.cpp
