@@ -1062,8 +1062,9 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, co
 
         // If we somehow can't find our state, we can still report our error message
         std::vector<Instruction> instructions;
-        if (instrumented_shader && !instrumented_shader->instrumented_spirv.empty()) {
-            ::spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
+        if (instrumented_shader && !instrumented_shader->original_spirv.empty()) {
+            ::spirv::GenerateInstructions(instrumented_shader->original_spirv, instrumented_shader->instruction_count,
+                                          instructions);
         }
         std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
         Location loc_with_debug_region(loc, debug_region_name);

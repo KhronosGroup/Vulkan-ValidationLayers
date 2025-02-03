@@ -747,6 +747,8 @@ struct Module {
         return std::any_of(static_data_.capability_list.begin(), static_data_.capability_list.end(),
                            [find_capability](const spv::Capability &capability) { return capability == find_capability; });
     }
+
+    uint32_t InstructionCount() const { return (uint32_t)static_data_.instructions.size(); }
 };
 
 }  // namespace spirv

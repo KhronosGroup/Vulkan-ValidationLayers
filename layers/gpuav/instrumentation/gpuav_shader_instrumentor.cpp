@@ -355,13 +355,21 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
         if (!instrumentation_data.IsInstrumented()) {
             continue;
         }
-        if (const auto &shader_object_state = Get<vvl::ShaderObject>(pShaders[i])) {
-            shader_object_state->instrumentation_data.was_instrumented = true;
-            shader_object_state->instrumentation_data.unique_shader_id = instrumentation_data.unique_shader_id;
+        const auto &shader_object_state = Get<vvl::ShaderObject>(pShaders[i]);
+        ASSERT_AND_CONTINUE(shader_object_state);
+
+        shader_object_state->instrumentation_data.was_instrumented = true;
+        shader_object_state->instrumentation_data.unique_shader_id = instrumentation_data.unique_shader_id;
+
+        uint32_t instruction_count = 0;
+        std::vector<uint32_t> code;
+        if (shader_object_state->spirv) {
+            instruction_count = shader_object_state->spirv->InstructionCount();
+            code = shader_object_state->spirv->words_;
         }
 
         instrumented_shaders_map_.insert_or_assign(instrumentation_data.unique_shader_id, VK_NULL_HANDLE, VK_NULL_HANDLE,
-                                                   pShaders[i], instrumentation_data.instrumented_spirv);
+                                                   pShaders[i], std::move(code), instruction_count);
     }
 }
 
@@ -939,13 +947,18 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
         const auto &stage_state = pipeline_state.stage_states[stage_state_i];
         auto &module_state = stage_state.module_state;
 
+        uint32_t instruction_count = 0;
+
         // We currently need to store a copy of the original, non-instrumented shader so if there is debug information,
         // we can reference it by the instruction number printed out in the shader. Since the application can destroy the
         // original VkShaderModule, there is a chance this will be gone, we need to copy it now.
         // TODO - in the instrumentation, instead of printing the instruction number only, if we print out debug info, we
         // can remove this copy
         std::vector<uint32_t> code;
-        if (module_state && module_state->spirv) code = module_state->spirv->words_;
+        if (module_state && module_state->spirv) {
+            code = module_state->spirv->words_;
+            instruction_count = module_state->spirv->InstructionCount();
+        }
 
         VkShaderModule shader_module_handle = module_state->VkHandle();
         if (shader_module_handle == VK_NULL_HANDLE && instrumentation_metadata.passed_in_shader_stage_ci) {
@@ -953,7 +966,7 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentation(
         }
 
         instrumented_shaders_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, pipeline_state.VkHandle(),
-                                                   shader_module_handle, VK_NULL_HANDLE, std::move(code));
+                                                   shader_module_handle, VK_NULL_HANDLE, std::move(code), instruction_count);
     }
 }
 
@@ -1112,13 +1125,18 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationG
             const auto &stage_state = lib->stage_states[stage_state_i];
             auto &module_state = stage_state.module_state;
 
+            uint32_t instruction_count = 0;
+
             // We currently need to store a copy of the original, non-instrumented shader so if there is debug information,
             // we can reference it by the instruction number printed out in the shader. Since the application can destroy the
             // original VkShaderModule, there is a chance this will be gone, we need to copy it now.
             // TODO - in the instrumentation, instead of printing the instruction number only, if we print out debug info, we
             // can remove this copy
             std::vector<uint32_t> code;
-            if (module_state && module_state->spirv) code = module_state->spirv->words_;
+            if (module_state && module_state->spirv) {
+                code = module_state->spirv->words_;
+                instruction_count = module_state->spirv->InstructionCount();
+            }
 
             VkShaderModule shader_module_handle = module_state->VkHandle();
             if (shader_module_handle == VK_NULL_HANDLE && instrumentation_metadata.passed_in_shader_stage_ci) {
@@ -1126,7 +1144,7 @@ void GpuShaderInstrumentor::PostCallRecordPipelineCreationShaderInstrumentationG
             }
 
             instrumented_shaders_map_.insert_or_assign(instrumentation_metadata.unique_shader_id, lib->VkHandle(),
-                                                       shader_module_handle, VK_NULL_HANDLE, std::move(code));
+                                                       shader_module_handle, VK_NULL_HANDLE, std::move(code), instruction_count);
         }
     }
 }

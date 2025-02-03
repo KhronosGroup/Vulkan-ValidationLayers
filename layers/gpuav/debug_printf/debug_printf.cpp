@@ -210,13 +210,13 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         }
 
         // without the instrumented spirv, there is nothing valuable to print out
-        if (!instrumented_shader || instrumented_shader->instrumented_spirv.empty()) {
+        if (!instrumented_shader || instrumented_shader->original_spirv.empty()) {
             gpuav.InternalWarning(queue, loc, "Can't find instructions from any handles in shader_map");
             return;
         }
 
         std::vector<Instruction> instructions;
-        ::spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
+        ::spirv::GenerateInstructions(instrumented_shader->original_spirv, instrumented_shader->instruction_count, instructions);
 
         // Search through the shader source for the printf format string for this invocation
         std::string format_string = FindFormatString(instructions, debug_record->format_string_id);

@@ -189,11 +189,16 @@ spv::StorageClass Instruction::StorageClass() const {
 // When logging from things such as GPU-AV, we need to do some SPIR-V processing, but is just to inspect single instructions without
 // knowledge of the rest of the module. This function just turns the saved vector of uint32_t into the Instruction class to make it
 // easier to use.
-void GenerateInstructions(const vvl::span<const uint32_t>& spirv, std::vector<Instruction>& instructions) {
+void GenerateInstructions(const vvl::span<const uint32_t>& spirv, uint32_t instruction_count,
+                          std::vector<Instruction>& instructions) {
     // Need to use until we have native std::span in c++20
     using spirv_iterator = vvl::enumeration<const uint32_t, const uint32_t*>::iterator;
 
     assert(instructions.empty());
+
+    // profiling showed this is a huge bottleneck to not have this reserved
+    instructions.reserve(instruction_count);
+
     spirv_iterator it = spirv.begin();
     it += 5;  // skip first 5 word of header
     instructions.reserve(spirv.size() * 4);
