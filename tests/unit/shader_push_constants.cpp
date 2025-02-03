@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -547,5 +547,97 @@ TEST_F(NegativeShaderPushConstants, DISABLED_SpecConstantSize) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {}, {push_constant_range});
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-07987");
     pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderPushConstants, ArrayOf8Bit) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9364");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    // storagePushConstant8 is not enabled
+    RETURN_IF_SKIP(Init());
+
+    const char *vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_8bit_storage: enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+        layout(push_constant) uniform PushConstant {
+            int8_t x[4];
+        } data;
+
+        void main(){
+            gl_Position = vec4(float(data.x[0]) * 0.0);
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-storagePushConstant8-06330");  // feature
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");     // capability
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderPushConstants, StructOf8Bit) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9364");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    // storagePushConstant8 is not enabled
+    RETURN_IF_SKIP(Init());
+
+    const char *vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_8bit_storage: enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+
+        struct Foo {
+            uint a;
+            int8_t b;
+            vec4 c;
+        };
+
+        layout(push_constant) uniform PushConstant {
+            Foo x;
+        } data;
+
+        void main(){
+            gl_Position = data.x.c;
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-storagePushConstant8-06330");  // feature
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");     // capability
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderPushConstants, ArrayOfStructOf8Bit) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9364");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    // storagePushConstant8 is not enabled
+    RETURN_IF_SKIP(Init());
+
+    const char *vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_8bit_storage: enable
+        #extension GL_EXT_shader_explicit_arithmetic_types_int8: enable
+
+        struct Foo {
+            uint a;
+            int8_t b[2];
+            vec4 c;
+        };
+
+        layout(push_constant) uniform PushConstant {
+            Foo x[2];
+        } data;
+
+        void main(){
+            gl_Position = data.x[1].c;
+        }
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-storagePushConstant8-06330");  // feature
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");     // capability
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
     m_errorMonitor->VerifyFound();
 }

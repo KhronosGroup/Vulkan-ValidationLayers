@@ -29,6 +29,7 @@
 #include "core_checks/cc_vuid_maps.h"
 #include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
+#include "state_tracker/shader_instruction.h"
 #include "state_tracker/shader_stage_state.h"
 #include "utils/hash_util.h"
 #include "chassis/chassis_modification_state.h"
@@ -1790,16 +1791,94 @@ struct VariableInstInfo {
 static void GetVariableInfo(const spirv::Module &module_state, const spirv::Instruction *insn, VariableInstInfo &info) {
     if (!insn) {
         return;
+    } else if (insn->Opcode() == spv::OpTypePointer) {
+        return;
     } else if (insn->Opcode() == spv::OpTypeFloat || insn->Opcode() == spv::OpTypeInt) {
         const uint32_t bit_width = insn->Word(2);
         info.has_8bit |= (bit_width == 8);
         info.has_16bit |= (bit_width == 16);
     } else if (insn->Opcode() == spv::OpTypeStruct) {
         for (uint32_t i = 2; i < insn->Length(); i++) {
-            const spirv::Instruction *base_insn = module_state.GetBaseTypeInstruction(insn->Word(i));
+            const spirv::Instruction *member_insn = module_state.FindDef(insn->Word(i));
+            if (member_insn->StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
+                continue;  // a uint8 pointer is not a 8-bit element
+            }
+            const uint32_t base_insn_id = module_state.GetBaseType(member_insn);
+            const spirv::Instruction *base_insn = module_state.FindDef(base_insn_id);
             GetVariableInfo(module_state, base_insn, info);
         }
     }
+}
+
+// This is to validate the VK_KHR_8bit_storage and VK_KHR_16bit_storage extensions
+bool CoreChecks::Validate8And16BitStorage(const spirv::Module &module_state, const spirv::Instruction &var_insn,
+                                          const Location &loc) const {
+    bool skip = false;
+
+    const uint32_t storage_class = var_insn.StorageClass();
+
+    const spirv::Instruction *type_pointer = module_state.FindDef(var_insn.Word(1));
+    const spirv::Instruction *type = module_state.FindDef(type_pointer->Word(3));
+    // type will either be a float, int, or struct and if struct need to traverse it
+    VariableInstInfo info;
+    GetVariableInfo(module_state, type, info);
+
+    if (info.has_8bit) {
+        if (!enabled_features.storageBuffer8BitAccess &&
+            (storage_class == spv::StorageClassStorageBuffer || storage_class == spv::StorageClassShaderRecordBufferKHR ||
+             storage_class == spv::StorageClassPhysicalStorageBuffer)) {
+            skip |= LogError("VUID-RuntimeSpirv-storageBuffer8BitAccess-06328", module_state.handle(), loc,
+                             "SPIR-V contains an 8-bit "
+                             "OpVariable with %s Storage Class, but storageBuffer8BitAccess was not enabled.\n%s\n",
+                             string_SpvStorageClass(storage_class), var_insn.Describe().c_str());
+        }
+        if (!enabled_features.uniformAndStorageBuffer8BitAccess && storage_class == spv::StorageClassUniform) {
+            skip |= LogError(
+                "VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329", module_state.handle(), loc,
+                "SPIR-V contains an "
+                "8-bit OpVariable with Uniform Storage Class, but uniformAndStorageBuffer8BitAccess was not enabled.\n%s\n",
+                var_insn.Describe().c_str());
+        }
+        if (!enabled_features.storagePushConstant8 && storage_class == spv::StorageClassPushConstant) {
+            skip |= LogError("VUID-RuntimeSpirv-storagePushConstant8-06330", module_state.handle(), loc,
+                             "SPIR-V contains an 8-bit "
+                             "OpVariable with PushConstant Storage Class, but storagePushConstant8 was not enabled.\n%s\n",
+                             var_insn.Describe().c_str());
+        }
+    }
+
+    if (info.has_16bit) {
+        if (!enabled_features.storageBuffer16BitAccess &&
+            (storage_class == spv::StorageClassStorageBuffer || storage_class == spv::StorageClassShaderRecordBufferKHR ||
+             storage_class == spv::StorageClassPhysicalStorageBuffer)) {
+            skip |= LogError("VUID-RuntimeSpirv-storageBuffer16BitAccess-06331", module_state.handle(), loc,
+                             "SPIR-V contains an 16-bit "
+                             "OpVariable with %s Storage Class, but storageBuffer16BitAccess was not enabled.\n%s\n",
+                             string_SpvStorageClass(storage_class), var_insn.Describe().c_str());
+        }
+        if (!enabled_features.uniformAndStorageBuffer16BitAccess && storage_class == spv::StorageClassUniform) {
+            skip |= LogError(
+                "VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332", module_state.handle(), loc,
+                "SPIR-V contains an "
+                "16-bit OpVariable with Uniform Storage Class, but uniformAndStorageBuffer16BitAccess was not enabled.\n%s\n",
+                var_insn.Describe().c_str());
+        }
+        if (!enabled_features.storagePushConstant16 && storage_class == spv::StorageClassPushConstant) {
+            skip |= LogError("VUID-RuntimeSpirv-storagePushConstant16-06333", module_state.handle(), loc,
+                             "SPIR-V contains an 16-bit "
+                             "OpVariable with PushConstant Storage Class, but storagePushConstant16 was not enabled.\n%s\n",
+                             var_insn.Describe().c_str());
+        }
+        if (!enabled_features.storageInputOutput16 &&
+            (storage_class == spv::StorageClassInput || storage_class == spv::StorageClassOutput)) {
+            skip |= LogError("VUID-RuntimeSpirv-storageInputOutput16-06334", module_state.handle(), loc,
+                             "SPIR-V contains an 16-bit "
+                             "OpVariable with %s Storage Class, but storageInputOutput16 was not enabled.\n%s\n",
+                             string_SpvStorageClass(storage_class), var_insn.Describe().c_str());
+        }
+    }
+
+    return skip;
 }
 
 bool CoreChecks::ValidateVariables(const spirv::Module &module_state, const Location &loc) const {
@@ -1818,66 +1897,7 @@ bool CoreChecks::ValidateVariables(const spirv::Module &module_state, const Loca
             }
         }
 
-        const spirv::Instruction *type_pointer = module_state.FindDef(insn->Word(1));
-        const spirv::Instruction *type = module_state.FindDef(type_pointer->Word(3));
-        // type will either be a float, int, or struct and if struct need to traverse it
-        VariableInstInfo info;
-        GetVariableInfo(module_state, type, info);
-
-        if (info.has_8bit) {
-            if (!enabled_features.storageBuffer8BitAccess &&
-                (storage_class == spv::StorageClassStorageBuffer || storage_class == spv::StorageClassShaderRecordBufferKHR ||
-                 storage_class == spv::StorageClassPhysicalStorageBuffer)) {
-                skip |= LogError("VUID-RuntimeSpirv-storageBuffer8BitAccess-06328", module_state.handle(), loc,
-                                 "SPIR-V contains an 8-bit "
-                                 "OpVariable with %s Storage Class, but storageBuffer8BitAccess was not enabled.\n%s\n",
-                                 string_SpvStorageClass(storage_class), insn->Describe().c_str());
-            }
-            if (!enabled_features.uniformAndStorageBuffer8BitAccess && storage_class == spv::StorageClassUniform) {
-                skip |= LogError(
-                    "VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329", module_state.handle(), loc,
-                    "SPIR-V contains an "
-                    "8-bit OpVariable with Uniform Storage Class, but uniformAndStorageBuffer8BitAccess was not enabled.\n%s\n",
-                    insn->Describe().c_str());
-            }
-            if (!enabled_features.storagePushConstant8 && storage_class == spv::StorageClassPushConstant) {
-                skip |= LogError("VUID-RuntimeSpirv-storagePushConstant8-06330", module_state.handle(), loc,
-                                 "SPIR-V contains an 8-bit "
-                                 "OpVariable with PushConstant Storage Class, but storagePushConstant8 was not enabled.\n%s\n",
-                                 insn->Describe().c_str());
-            }
-        }
-
-        if (info.has_16bit) {
-            if (!enabled_features.storageBuffer16BitAccess &&
-                (storage_class == spv::StorageClassStorageBuffer || storage_class == spv::StorageClassShaderRecordBufferKHR ||
-                 storage_class == spv::StorageClassPhysicalStorageBuffer)) {
-                skip |= LogError("VUID-RuntimeSpirv-storageBuffer16BitAccess-06331", module_state.handle(), loc,
-                                 "SPIR-V contains an 16-bit "
-                                 "OpVariable with %s Storage Class, but storageBuffer16BitAccess was not enabled.\n%s\n",
-                                 string_SpvStorageClass(storage_class), insn->Describe().c_str());
-            }
-            if (!enabled_features.uniformAndStorageBuffer16BitAccess && storage_class == spv::StorageClassUniform) {
-                skip |= LogError(
-                    "VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332", module_state.handle(), loc,
-                    "SPIR-V contains an "
-                    "16-bit OpVariable with Uniform Storage Class, but uniformAndStorageBuffer16BitAccess was not enabled.\n%s\n",
-                    insn->Describe().c_str());
-            }
-            if (!enabled_features.storagePushConstant16 && storage_class == spv::StorageClassPushConstant) {
-                skip |= LogError("VUID-RuntimeSpirv-storagePushConstant16-06333", module_state.handle(), loc,
-                                 "SPIR-V contains an 16-bit "
-                                 "OpVariable with PushConstant Storage Class, but storagePushConstant16 was not enabled.\n%s\n",
-                                 insn->Describe().c_str());
-            }
-            if (!enabled_features.storageInputOutput16 &&
-                (storage_class == spv::StorageClassInput || storage_class == spv::StorageClassOutput)) {
-                skip |= LogError("VUID-RuntimeSpirv-storageInputOutput16-06334", module_state.handle(), loc,
-                                 "SPIR-V contains an 16-bit "
-                                 "OpVariable with %s Storage Class, but storageInputOutput16 was not enabled.\n%s\n",
-                                 string_SpvStorageClass(storage_class), insn->Describe().c_str());
-            }
-        }
+        skip |= Validate8And16BitStorage(module_state, *insn, loc);
 
         // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
         // disabled if VK_KHR_format_feature_flags2 is supported.
