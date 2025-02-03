@@ -901,6 +901,13 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
                                                             : "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03680";
         const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-03681"
                                                           : "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03681";
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9368
+        // TODO - waiting for https://gitlab.khronos.org/vulkan/vulkan/-/issues/4173
+        if (const auto buffers = GetBuffersByAddress(pRaygenShaderBindingTable->deviceAddress); buffers.empty()) {
+            skip |= LogError("UNASSIGNED-TraceRays-InvalidRayGenSBTAddress", cb_state.Handle(), table_loc.dot(Field::deviceAddress),
+                             "(0x%" PRIx64 ") does not belong to a valid VkBuffer.",
+                             pRaygenShaderBindingTable->deviceAddress);
+        }
         skip |= ValidateRaytracingShaderBindingTable(cb_state.VkHandle(), table_loc, vuid_single_device_memory,
                                                      vuid_binding_table_flag, *pRaygenShaderBindingTable);
     }
