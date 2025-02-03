@@ -364,9 +364,9 @@ std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQueueFlag
             }
         } else {
             if (accesses == sync_utils::kAllAccesses) {
-                out << "all accesses at " << string_VkPipelineStageFlags2(stages) << " stage";
+                out << "all accesses at " << string_VkPipelineStageFlags2(stages);
             } else {
-                out << string_VkAccessFlags2(accesses) << " accesses at " << string_VkPipelineStageFlags2(stages) << " stage";
+                out << string_VkAccessFlags2(accesses) << " accesses at " << string_VkPipelineStageFlags2(stages);
             }
         }
         first = false;

@@ -1048,7 +1048,7 @@ TEST_F(NegativeSyncValReporting, ReportAllTransferMetaStage) {
 
     // Check that error reporting merged internal representation of transfer stage accesses into a compact form
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE",
-                                         "VK_ACCESS_2_TRANSFER_WRITE_BIT accesses at VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT stage");
+                                         "VK_ACCESS_2_TRANSFER_WRITE_BIT accesses at VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -1110,8 +1110,7 @@ TEST_F(NegativeSyncValReporting, DoNotReportUnsupportedStage) {
 
     // If error reporting does not skip unsupported ACCELERATION_STRUCTURE_COPY_BIT_KHR then the following error message won't
     // be able to use short form (TRANSFER_WRITE+TRANSFER_READ != "all accesses" in that case)
-    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE",
-                                         "all accesses at VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT stage");
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", "all accesses at VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT");
 
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
