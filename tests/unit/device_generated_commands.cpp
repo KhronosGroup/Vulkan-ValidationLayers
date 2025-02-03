@@ -2085,7 +2085,7 @@ TEST_F(NegativeDeviceGeneratedCommands, ExecuteStageMismatch) {
     VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
     pipe_flags2.flags = VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT;
     CreatePipelineHelper pipe(*this, &pipe_flags2);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.VertexShaderOnly();
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
     vkt::IndirectExecutionSet exe_set(*m_device, pipe.Handle(), 1);

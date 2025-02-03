@@ -54,6 +54,13 @@ static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
 
 namespace vvl {
 
+// TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9384
+// Fix GCC 13 issues with how we emplace BindableSparseMemoryTracker
+#if defined(__GNUC__) && (__GNUC__ > 12)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 Buffer::Buffer(Device &dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo)
     : Bindable(handle, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
@@ -72,6 +79,10 @@ Buffer::Buffer(Device &dev_data, VkBuffer handle, const VkBufferCreateInfo *pCre
         SetMemoryTracker(&std::get<BindableLinearMemoryTracker>(tracker_));
     }
 }
+
+#if defined(__GNUC__) && (__GNUC__ > 12)
+#pragma GCC diagnostic pop
+#endif
 
 bool Buffer::CompareCreateInfo(const Buffer &other) const {
     bool valid_queue_family = true;

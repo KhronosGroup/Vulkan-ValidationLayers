@@ -629,7 +629,7 @@ bool CoreChecks::ValidateGeneratedCommandsInitialShaderState(const vvl::CommandB
 
     const VkPipelineBindPoint bind_point = ConvertToPipelineBindPoint(shader_stage_flags);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const auto& last_bound = cb_state.lastBound[lv_bind_point];
+    const LastBound& last_bound = cb_state.lastBound[lv_bind_point];
 
     if (indirect_execution_set.is_pipeline) {
         const vvl::Pipeline* pipeline = last_bound.pipeline_state;

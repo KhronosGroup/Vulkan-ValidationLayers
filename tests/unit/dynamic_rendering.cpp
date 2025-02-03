@@ -3054,7 +3054,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingMultisampleState) {
 
     {
         CreatePipelineHelper pipe(*this);
-        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+        pipe.VertexShaderOnly();
         pipe.gp_ci_.pMultisampleState = nullptr;
         pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
         // No fragment shader implies no fragment shader state and rasterizerDiscardEnable == true implies no fragment
