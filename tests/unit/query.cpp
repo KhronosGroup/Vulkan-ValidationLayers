@@ -1726,7 +1726,7 @@ TEST_F(NegativeQuery, PrimitivesGeneratedDiscardEnabled) {
     CreatePipelineHelper pipe(*this);
     pipe.rs_state_ci_ = rs_ci;
     // Rasterization discard enable prohibits fragment shader.
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.VertexShaderOnly();
     pipe.CreateGraphicsPipeline();
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);

@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@
 #pragma once
 #include <vector>
 #include <sstream>
-#include "state_tracker/shader_instruction.h"
+
+namespace spirv {
+class Instruction;
+}
 
 // When producing error messages for SPIR-V related items and the user generated the shader with debug information, we can use these
 // helpers to print out information from their High Level source instead of some cryptic SPIR-V jargon

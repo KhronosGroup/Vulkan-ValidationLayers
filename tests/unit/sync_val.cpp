@@ -2881,7 +2881,7 @@ struct CreateRenderPassHelper {
 
     void InitPipelineHelper(CreatePipelineHelper& g_pipe) {
         g_pipe.ResetShaderInfo(kVertexMinimalGlsl, kFragmentSubpassLoadGlsl);
-        g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         g_pipe.gp_ci_.renderPass = render_pass->handle();
         ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
     }
@@ -2913,7 +2913,7 @@ struct SyncTestPipeline {
           sampler() {
         sampler.init(*test.DeviceObj(), sampler_info);
         g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         g_pipe.gp_ci_.renderPass = rp;
     }
     void Init() {
@@ -3285,7 +3285,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         CreatePipelineHelper g_pipe_12(*this);
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe_12.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         g_pipe_12.gp_ci_.renderPass = rp.handle();
         g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.LateBindPipelineInfo();
@@ -3365,7 +3365,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         CreatePipelineHelper g_pipe_12(*this);
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe_12.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         g_pipe_12.gp_ci_.renderPass = rp.handle();
         g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.LateBindPipelineInfo();
@@ -3453,7 +3453,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
 
         CreatePipelineHelper g_pipe_12(*this);
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe_12.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
         g_pipe_12.gp_ci_.renderPass = rp.handle();
         g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.LateBindPipelineInfo();

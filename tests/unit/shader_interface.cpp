@@ -2030,7 +2030,7 @@ TEST_F(NegativeShaderInterface, MissingInputAttachmentIndex) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     pipe.gp_ci_.renderPass = rp.Handle();
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-09558");
     pipe.CreateGraphicsPipeline();
@@ -2093,7 +2093,7 @@ TEST_F(NegativeShaderInterface, MissingInputAttachmentIndexArray) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeImage-09644");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

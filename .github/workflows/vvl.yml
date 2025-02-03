@@ -36,7 +36,7 @@ permissions:
 
 jobs:
   code-format:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,7 +51,7 @@ jobs:
 
   linux:
     needs: check_vvl
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: "linux (address sanitizer, ${{matrix.config}}, robinhood ${{matrix.robin_hood}} )"
     strategy:
       fail-fast: false
@@ -67,9 +67,6 @@ jobs:
         with:
           key: ${{ matrix.config }}-address-${{matrix.robin_hood}}
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      # This is to combat a bug when using 6.6 linux kernels with thread/address sanitizer
-      # https://github.com/google/sanitizers/issues/1716
-      - run: sudo sysctl vm.mmap_rnd_bits=28
       - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
         env:
           CFLAGS: -fsanitize=address
@@ -93,7 +90,7 @@ jobs:
   # Make sure a debug version builds, but no need to run tests on it (since we do with release already)
   linux-debug:
     needs: check_vvl
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: "linux (Build Only, ${{matrix.config}}, robinhood ${{matrix.robin_hood}} )"
     strategy:
       fail-fast: false
@@ -114,7 +111,7 @@ jobs:
 
   linux-tsan:
     needs: check_vvl
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: "linux (thread sanitizer, ${{matrix.config}}, robinhood ${{matrix.robin_hood}} )"
     strategy:
       fail-fast: false
@@ -130,9 +127,6 @@ jobs:
         with:
           key: ${{ matrix.config }}-thread-${{matrix.robin_hood}}
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      # This is to combat a bug when using 6.6 linux kernels with thread/address sanitizer
-      # https://github.com/google/sanitizers/issues/1716
-      - run: sudo sysctl vm.mmap_rnd_bits=28
       - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_ROBIN_HOOD_HASHING=${{matrix.robin_hood}}'
         env:
           CFLAGS: -fsanitize=thread
@@ -148,13 +142,36 @@ jobs:
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
 
+  # Ensure we can build on an older Ubuntu distro with an older version of CMake.
+  linux_back_compat:
+    needs: check_vvl
+    runs-on: ubuntu-22.04
+    name: "Ubuntu Backcompat"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test Minimum CMake Version
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.22.1
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux_back_compat
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - run: cmake -S . -B build/ -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Debug
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          # Linker warnings as errors
+          LDFLAGS: -Wl,--fatal-warnings
+      - run: cmake --build build
+      - run: cmake --install build --prefix /tmp
+
+
   linuxUpload:
     needs: linux
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: "linux Upload"
-    strategy:
-      fail-fast: false
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
@@ -174,7 +191,7 @@ jobs:
 
   androidOnLinux:
     needs: check_vvl
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
@@ -264,7 +281,7 @@ jobs:
 
   android:
       needs: check_vvl
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-24.04
       strategy:
         matrix:
           abi: [ arm64-v8a ]
@@ -303,7 +320,7 @@ jobs:
   androidUpload:
       needs: android
       if: github.ref == 'refs/heads/main'
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-24.04
       steps:
         - uses: actions/checkout@v4
         - uses: lukka/get-cmake@latest

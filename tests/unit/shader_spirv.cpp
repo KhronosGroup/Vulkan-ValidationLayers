@@ -640,7 +640,7 @@ TEST_F(NegativeShaderSpirv, SpirvStatelessMaintenance5) {
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = &stage_ci;
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329");  // feature
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740", 2);     // Int8
@@ -2297,7 +2297,7 @@ TEST_F(NegativeShaderSpirv, DISABLED_ImageFormatTypeMismatchWithZeroExtend) {
     m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-Image-04965");
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }

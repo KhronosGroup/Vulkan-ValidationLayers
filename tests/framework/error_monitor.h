@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,18 @@
 
 #include <atomic>
 #include <mutex>
-#include <regex>
 #include <cassert>
+
+// TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9384
+// Fix GCC 13 issues with regex
+#if defined(__GNUC__) && (__GNUC__ > 12)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+#include <regex>
+#if defined(__GNUC__) && (__GNUC__ > 12)
+#pragma GCC diagnostic pop
+#endif
 
 #include "error_message/log_message_type.h"
 #include <vulkan/vulkan_core.h>

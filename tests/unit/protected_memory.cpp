@@ -451,7 +451,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.VertexShaderOnly();
     pipe.gp_ci_.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-07369");
@@ -1198,7 +1198,7 @@ TEST_F(NegativeProtectedMemory, WriteToProtectedStorageBuffer) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     pipe.CreateGraphicsPipeline();
 
     // Use unprotected resources in protected command buffer

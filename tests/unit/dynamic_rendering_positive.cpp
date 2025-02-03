@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1035,7 +1035,7 @@ TEST_F(PositiveDynamicRendering, DynamicColorBlendEnable) {
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
 
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     pipe.CreateGraphicsPipeline();
 
@@ -1247,7 +1247,7 @@ TEST_F(PositiveDynamicRendering, VertexOnlyDepth) {
     ds_state.depthWriteEnable = VK_TRUE;
 
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.VertexShaderOnly();
     pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.gp_ci_.pMultisampleState = &ms_ci;

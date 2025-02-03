@@ -537,8 +537,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const
                 if (i == *pPropertyCount) {
                     break;
                 }
-                std::strncpy(pProperties[i].extensionName, name_ver_pair.first.c_str(), sizeof(pProperties[i].extensionName));
-                pProperties[i].extensionName[sizeof(pProperties[i].extensionName) - 1] = 0;
+                std::strncpy(pProperties[i].extensionName, name_ver_pair.first.c_str(), sizeof(pProperties[i].extensionName) - 1);
+                pProperties[i].extensionName[sizeof(pProperties[i].extensionName) - 1] = '\0';
                 pProperties[i].specVersion = name_ver_pair.second;
                 ++i;
             }
@@ -563,8 +563,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysi
                 if (i == *pPropertyCount) {
                     break;
                 }
-                std::strncpy(pProperties[i].extensionName, name_ver_pair.first.c_str(), sizeof(pProperties[i].extensionName));
-                pProperties[i].extensionName[sizeof(pProperties[i].extensionName) - 1] = 0;
+                std::strncpy(pProperties[i].extensionName, name_ver_pair.first.c_str(), sizeof(pProperties[i].extensionName) - 1);
+                pProperties[i].extensionName[sizeof(pProperties[i].extensionName) - 1] = '\0';
                 pProperties[i].specVersion = name_ver_pair.second;
                 ++i;
             }

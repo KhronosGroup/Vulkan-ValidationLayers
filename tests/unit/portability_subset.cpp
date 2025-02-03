@@ -232,7 +232,7 @@ TEST_F(NegativePortabilitySubset, TriangleFans) {
     pipe.ia_ci_ = VkPipelineInputAssemblyStateCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, VK_FALSE};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.VertexShaderOnly();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineInputAssemblyStateCreateInfo-triangleFans-04452");
     pipe.CreateGraphicsPipeline();
@@ -272,7 +272,7 @@ TEST_F(NegativePortabilitySubset, VertexInputStride) {
     pipe.ia_ci_ = VkPipelineInputAssemblyStateCreateInfo{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
                                                          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.VertexShaderOnly();
 
     m_errorMonitor->SetDesiredError("VUID-VkVertexInputBindingDescription-stride-04456");
     pipe.CreateGraphicsPipeline();
@@ -310,7 +310,7 @@ TEST_F(NegativePortabilitySubset, VertexAttributes) {
     pipe.vi_ci_ = VkPipelineVertexInputStateCreateInfo{
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 1, &vertex_desc, 1, &vertex_attrib};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.VertexShaderOnly();
 
     m_errorMonitor->SetDesiredError("VUID-VkVertexInputAttributeDescription-vertexAttributeAccessBeyondStride-04457");
     pipe.CreateGraphicsPipeline();
@@ -385,7 +385,7 @@ TEST_F(NegativePortabilitySubset, DepthStencilState) {
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pDepthStencilState = &depth_stencil_ci;
     pipe.rs_state_ci_.cullMode = VK_CULL_MODE_NONE;
-    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo()};
+    pipe.VertexShaderOnly();
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineDepthStencilStateCreateInfo-separateStencilMaskRef-04453");
     pipe.CreateGraphicsPipeline();
