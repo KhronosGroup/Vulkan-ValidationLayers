@@ -358,15 +358,14 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
 
-    for (uint32_t region = 0; region < regionCount; region++) {
-        const auto &copy_region = pRegions[region];
+    for (const auto [region_index, copy_region] : vvl::enumerate(pRegions, regionCount)) {
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
             auto hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcBuffer);
-                const auto error =
-                    error_messages_.BufferRegionError(hazard, srcBuffer, true, region, *cb_context, error_obj.location.function);
+                const auto error = error_messages_.BufferRegionError(hazard, srcBuffer, region_index, src_range, *cb_context,
+                                                                     error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -375,8 +374,8 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
             auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstBuffer);
-                const auto error =
-                    error_messages_.BufferRegionError(hazard, dstBuffer, false, region, *cb_context, error_obj.location.function);
+                const auto error = error_messages_.BufferRegionError(hazard, dstBuffer, region_index, dst_range, *cb_context,
+                                                                     error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -426,8 +425,7 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
     auto src_buffer = Get<vvl::Buffer>(pCopyBufferInfo->srcBuffer);
     auto dst_buffer = Get<vvl::Buffer>(pCopyBufferInfo->dstBuffer);
 
-    for (uint32_t region = 0; region < pCopyBufferInfo->regionCount; region++) {
-        const auto &copy_region = pCopyBufferInfo->pRegions[region];
+    for (const auto [region_index, copy_region] : vvl::enumerate(pCopyBufferInfo->pRegions, pCopyBufferInfo->regionCount)) {
         if (src_buffer) {
             const ResourceAccessRange src_range = MakeRange(*src_buffer, copy_region.srcOffset, copy_region.size);
             auto hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
@@ -435,8 +433,8 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
                 // TODO -- add tag information to log msg when useful.
                 // TODO: there are no tests for this error
                 const LogObjectList objlist(commandBuffer, pCopyBufferInfo->srcBuffer);
-                const auto error = error_messages_.BufferRegionError(hazard, pCopyBufferInfo->srcBuffer, true, region, *cb_context,
-                                                                     error_obj.location.function);
+                const auto error = error_messages_.BufferRegionError(hazard, pCopyBufferInfo->srcBuffer, region_index, src_range,
+                                                                     *cb_context, error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -446,8 +444,8 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
             if (hazard.IsHazard()) {
                 // TODO: there are no tests for this error
                 const LogObjectList objlist(commandBuffer, pCopyBufferInfo->dstBuffer);
-                const auto error = error_messages_.BufferRegionError(hazard, pCopyBufferInfo->dstBuffer, false, region, *cb_context,
-                                                                     error_obj.location.function);
+                const auto error = error_messages_.BufferRegionError(hazard, pCopyBufferInfo->dstBuffer, region_index, dst_range,
+                                                                     *cb_context, error_obj.location.function);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -1070,8 +1068,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
     auto src_buffer = Get<vvl::Buffer>(srcBuffer);
     auto dst_image = Get<ImageState>(dstImage);
 
-    for (uint32_t region = 0; region < regionCount; region++) {
-        const auto &copy_region = pRegions[region];
+    for (const auto [region_index, copy_region] : vvl::enumerate(pRegions, regionCount)) {
         HazardResult hazard;
         if (dst_image) {
             if (src_buffer) {
@@ -1082,8 +1079,8 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
                 if (hazard.IsHazard()) {
                     // PHASE1 TODO -- add tag information to log msg when useful.
                     const LogObjectList objlist(commandBuffer, srcBuffer);
-                    const auto error =
-                        error_messages_.BufferRegionError(hazard, srcBuffer, true, region, *cb_access_context, loc.function);
+                    const auto error = error_messages_.BufferRegionError(hazard, srcBuffer, region_index, src_range,
+                                                                         *cb_access_context, loc.function);
                     skip |= SyncError(hazard.Hazard(), objlist, loc, error);
                 }
             }
@@ -1093,7 +1090,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstImage);
                 const auto error =
-                    error_messages_.ImageRegionError(hazard, dstImage, false, region, *cb_access_context, loc.function);
+                    error_messages_.ImageRegionError(hazard, dstImage, false, region_index, *cb_access_context, loc.function);
                 skip |= SyncError(hazard.Hazard(), objlist, loc, error);
             }
             if (skip) break;
@@ -1201,15 +1198,14 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
     auto src_image = Get<ImageState>(srcImage);
     auto dst_buffer = Get<vvl::Buffer>(dstBuffer);
     const VkDeviceMemory dst_memory = (dst_buffer && !dst_buffer->sparse) ? dst_buffer->MemoryState()->VkHandle() : VK_NULL_HANDLE;
-    for (uint32_t region = 0; region < regionCount; region++) {
-        const auto &copy_region = pRegions[region];
+    for (const auto [region_index, copy_region] : vvl::enumerate(pRegions, regionCount)) {
         if (src_image) {
             auto hazard = context->DetectHazard(*src_image, RangeFromLayers(copy_region.imageSubresource), copy_region.imageOffset,
                                                 copy_region.imageExtent, false, SYNC_COPY_TRANSFER_READ);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcImage);
                 const auto error =
-                    error_messages_.ImageRegionError(hazard, srcImage, true, region, *cb_access_context, loc.function);
+                    error_messages_.ImageRegionError(hazard, srcImage, true, region_index, *cb_access_context, loc.function);
                 skip |= SyncError(hazard.Hazard(), objlist, loc, error);
             }
             if (dst_memory != VK_NULL_HANDLE) {
@@ -1219,8 +1215,8 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
                 hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
                 if (hazard.IsHazard()) {
                     const LogObjectList objlist(commandBuffer, dstBuffer);
-                    const auto error =
-                        error_messages_.BufferRegionError(hazard, dstBuffer, false, region, *cb_access_context, loc.function);
+                    const auto error = error_messages_.BufferRegionError(hazard, dstBuffer, region_index, dst_range,
+                                                                         *cb_access_context, loc.function);
                     skip |= SyncError(hazard.Hazard(), objlist, loc, error);
                 }
             }

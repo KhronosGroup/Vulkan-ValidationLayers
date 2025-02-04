@@ -45,8 +45,9 @@ class ErrorMessages {
     std::string BufferError(const HazardResult& hazard, VkBuffer buffer, const char* buffer_description,
                             const CommandBufferAccessContext& cb_context, vvl::Func command) const;
 
-    std::string BufferRegionError(const HazardResult& hazard, VkBuffer buffer, bool is_src_buffer, uint32_t region_index,
-                                  const CommandBufferAccessContext& cb_context, const vvl::Func command) const;
+    std::string BufferRegionError(const HazardResult& hazard, VkBuffer buffer, uint32_t region_index,
+                                  ResourceAccessRange region_range, const CommandBufferAccessContext& cb_context,
+                                  const vvl::Func command) const;
 
     std::string ImageRegionError(const HazardResult& hazard, VkImage image, bool is_src_image, uint32_t region_index,
                                  const CommandBufferAccessContext& cb_context, vvl::Func command) const;

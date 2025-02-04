@@ -78,6 +78,7 @@ inline constexpr const char *kPropertyAccess = "access";
 inline constexpr const char *kPropertyPriorAccess = "prior_access";
 inline constexpr const char *kPropertyReadBarriers = "read_barriers";
 inline constexpr const char *kPropertyWriteBarriers = "write_barriers";
+inline constexpr const char *kPropertyCopyRegion = "copy_region";
 inline constexpr const char *kPropertyLoadOp = "load_op";
 inline constexpr const char *kPropertyStoreOp = "store_op";
 inline constexpr const char *kPropertyResolveMode = "resolve_mode";
