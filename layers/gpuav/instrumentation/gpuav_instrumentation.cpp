@@ -1060,15 +1060,10 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, co
             instrumented_shader = &it->second;
         }
 
-        // If we somehow can't find our state, we can still report our error message
-        std::vector<Instruction> instructions;
-        if (instrumented_shader && !instrumented_shader->instrumented_spirv.empty()) {
-            ::spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
-        }
         std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
         Location loc_with_debug_region(loc, debug_region_name);
         std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
-            cb_state.VkHandle(), instructions, error_record[gpuav::glsl::kHeaderStageIdOffset],
+            cb_state.VkHandle(), error_record[gpuav::glsl::kHeaderStageIdOffset],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_0], error_record[gpuav::glsl::kHeaderStageInfoOffset_1],
             error_record[gpuav::glsl::kHeaderStageInfoOffset_2], error_record[gpuav::glsl::kHeaderInstructionIdOffset],
             instrumented_shader, shader_id, pipeline_bind_point, operation_index);

@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ struct Instruction {
     // operand id, return 0 if no type
     uint32_t TypeId() const { return (type_id_index_ == 0) ? 0 : words_[type_id_index_]; }
 
-    // Increments Lenght() as well
+    // Increments Length() as well
     void AppendWord(uint32_t word);
 
     void ReplaceResultId(uint32_t new_result_id);
