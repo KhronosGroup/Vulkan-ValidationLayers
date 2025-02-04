@@ -34,7 +34,6 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
-#include "state_tracker/shader_instruction.h"
 
 #include "gpuav/spirv/module.h"
 #include "gpuav/spirv/descriptor_indexing_oob_pass.h"
@@ -1290,22 +1289,11 @@ static std::string LookupDebugUtilsNameNoLock(const DebugReport *debug_report, c
 
 // Generate the stage-specific part of the message.
 static void GenerateStageMessage(std::ostringstream &ss, uint32_t stage_id, uint32_t stage_info_0, uint32_t stage_info_1,
-                                 uint32_t stage_info_2, const std::vector<Instruction> &instructions) {
+                                 uint32_t stage_info_2, const std::vector<uint32_t> &instrumented_spirv) {
     switch (stage_id) {
         case glsl::kHeaderStageIdMultiEntryPoint: {
             ss << "Stage has multiple OpEntryPoint (";
-            bool first_stage = true;
-            for (const auto &insn : instructions) {
-                if (insn.Opcode() == spv::OpFunction) break;  // early exit when possible
-                if (insn.Opcode() == spv::OpEntryPoint) {
-                    if (first_stage) {
-                        first_stage = false;
-                    } else {
-                        ss << ", ";
-                    }
-                    ss << string_SpvExecutionModel(insn.Word(1));
-                }
-            }
+            ::spirv::GetExecutionModelNames(instrumented_spirv, ss);
             ss << ") and could not detect stage. ";
         } break;
         case spv::ExecutionModelVertex: {
@@ -1384,41 +1372,15 @@ static void GenerateStageMessage(std::ostringstream &ss, uint32_t stage_id, uint
 // There are 2 ways to inject source into a shader:
 // 1. The "old" way using OpLine/OpSource
 // 2. The "new" way using NonSemantic Shader DebugInfo
-static std::string FindShaderSource(std::ostringstream &ss, const std::vector<Instruction> &instructions,
+static std::string FindShaderSource(std::ostringstream &ss, const std::vector<uint32_t> &instrumented_spirv,
                                     uint32_t instruction_position, bool debug_printf_only) {
     ss << "SPIR-V Instruction Index = " << instruction_position << '\n';
 
-    // Find the OpLine/DebugLine just before the failing instruction indicated by the debug info.
-    // SPIR-V can only be iterated in the forward direction due to its opcode/length encoding.
-    uint32_t index = 0;
-    uint32_t shader_debug_info_set_id = 0;
-    const Instruction *last_line_inst = nullptr;
-    for (const auto &insn : instructions) {
-        const uint32_t opcode = insn.Opcode();
-        if (opcode == spv::OpExtInstImport) {
-            if (strcmp(insn.GetAsString(2), "NonSemantic.Shader.DebugInfo.100") == 0) {
-                shader_debug_info_set_id = insn.ResultId();
-            }
-        }
-
-        if (opcode == spv::OpExtInst && insn.Word(3) == shader_debug_info_set_id &&
-            insn.Word(4) == NonSemanticShaderDebugInfo100DebugLine) {
-            last_line_inst = &insn;
-        } else if (opcode == spv::OpLine) {
-            last_line_inst = &insn;
-        } else if (opcode == spv::OpFunctionEnd) {
-            last_line_inst = nullptr;  // debug lines can't cross functions boundaries
-        }
-
-        if (index == instruction_position) {
-            break;
-        }
-        index++;
-    }
-
-    if (last_line_inst) {
+    const uint32_t last_line_inst_offset = ::spirv::GetDebugLineOffset(instrumented_spirv, instruction_position);
+    if (last_line_inst_offset != 0) {
+        Instruction last_line_inst(instrumented_spirv.data() + last_line_inst_offset);
         ss << (debug_printf_only ? "Debug shader printf message generated " : "Shader validation error occurred ");
-        GetShaderSourceInfo(ss, instructions, *last_line_inst);
+        GetShaderSourceInfo(ss, instrumented_spirv, last_line_inst);
     } else {
         ss << "Unable to source. Build shader with debug info to get source information.\n";
     }
@@ -1427,17 +1389,19 @@ static std::string FindShaderSource(std::ostringstream &ss, const std::vector<In
 }
 
 // Where we build up the error message with all the useful debug information about where the error occured
-std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
-    VkCommandBuffer commandBuffer, const std::vector<Instruction> &instructions, uint32_t stage_id, uint32_t stage_info_0,
-    uint32_t stage_info_1, uint32_t stage_info_2, uint32_t instruction_position, const InstrumentedShader *instrumented_shader,
-    uint32_t shader_id, VkPipelineBindPoint pipeline_bind_point, uint32_t operation_index) const {
+std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer commandBuffer, uint32_t stage_id, uint32_t stage_info_0,
+                                                            uint32_t stage_info_1, uint32_t stage_info_2,
+                                                            uint32_t instruction_position,
+                                                            const InstrumentedShader *instrumented_shader, uint32_t shader_id,
+                                                            VkPipelineBindPoint pipeline_bind_point,
+                                                            uint32_t operation_index) const {
     std::ostringstream ss;
-    if (instructions.empty() || !instrumented_shader) {
+    if (!instrumented_shader || instrumented_shader->instrumented_spirv.empty()) {
         ss << "[Internal Error] - Can't get instructions from shader_map\n";
         return ss.str();
     }
 
-    GenerateStageMessage(ss, stage_id, stage_info_0, stage_info_1, stage_info_2, instructions);
+    GenerateStageMessage(ss, stage_id, stage_info_0, stage_info_1, stage_info_2, instrumented_shader->instrumented_spirv);
 
     ss << std::hex << std::showbase;
     if (instrumented_shader->shader_module == VK_NULL_HANDLE && instrumented_shader->shader_object == VK_NULL_HANDLE) {
@@ -1483,7 +1447,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(
     }
     ss << std::dec << std::noshowbase;
 
-    FindShaderSource(ss, instructions, instruction_position, gpuav_settings.debug_printf_only);
+    FindShaderSource(ss, instrumented_shader->instrumented_spirv, instruction_position, gpuav_settings.debug_printf_only);
 
     return ss.str();
 }

@@ -17,6 +17,7 @@
 
 #include "spirv_logging.h"
 #include <string>
+#include <cstring>
 
 // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9384
 // Fix GCC 13 issues with regex
@@ -32,6 +33,13 @@
 #include "state_tracker/shader_instruction.h"
 #include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
 #include <spirv/unified1/spirv.hpp>
+#include "generated/spirv_grammar_helper.h"
+
+namespace spirv {
+
+static const int kModuleStartingOffset = 5;  // first 5 words of module are the headers
+static inline uint32_t Opcode(uint32_t instruction) { return instruction & 0x0ffffu; }
+static inline uint32_t Length(uint32_t instruction) { return instruction >> 16; }
 
 struct SpirvLoggingInfo {
     uint32_t file_string_id = 0;  // OpString with filename
@@ -42,99 +50,115 @@ struct SpirvLoggingInfo {
     std::string reported_filename;
 };
 
-static const spirv::Instruction *FindOpString(const std::vector<spirv::Instruction> &instructions, uint32_t string_id) {
-    const spirv::Instruction *string_insn = nullptr;
-    for (const auto &insn : instructions) {
-        if (insn.Opcode() == spv::OpString && insn.Length() >= 3 && insn.Word(1) == string_id) {
-            string_insn = &insn;
-            break;
-        }
-        // OpString can only be in the debug section, so can break early if not found
-        if (insn.Opcode() == spv::OpFunction) {
-            assert(false);
-            break;
-        }
-    }
-    return string_insn;
-};
-
 // Read the contents of the SPIR-V OpSource instruction and any following continuation instructions.
 // Split the single string into a vector of strings, one for each line, for easier processing.
-static void ReadOpSource(const std::vector<spirv::Instruction> &instructions, const uint32_t reported_file_id,
+static void ReadOpSource(const std::vector<uint32_t> &instructions, const uint32_t reported_file_id,
                          std::vector<std::string> &out_source_lines) {
-    for (size_t i = 0; i < instructions.size(); i++) {
-        const auto &insn = instructions[i];
-        if ((insn.Opcode() != spv::OpSource) || (insn.Length() < 5) || (insn.Word(3) != reported_file_id)) {
+    uint32_t offset = kModuleStartingOffset;
+    while (offset < instructions.size()) {
+        const uint32_t instruction = instructions[offset];
+        const uint32_t length = Length(instruction);
+        const uint32_t opcode = Opcode(instruction);
+        if (opcode != spv::OpSource || length < 5 || instructions[offset + 3] != reported_file_id) {
+            offset += length;
             continue;
         }
 
+        // OpSource has been found
         std::istringstream in_stream;
         std::string current_line;
-        in_stream.str(insn.GetAsString(4));
+        const char *str = reinterpret_cast<const char *>(&instructions[offset + 4]);
+        in_stream.str(str);
         while (std::getline(in_stream, current_line)) {
             out_source_lines.emplace_back(current_line);
         }
 
-        for (size_t k = i + 1; k < instructions.size(); k++) {
-            const auto &continue_insn = instructions[k];
-            if (continue_insn.Opcode() != spv::OpSourceContinued) {
-                return;
-            }
-            in_stream.clear();  // without, will fail getline
-            in_stream.str(continue_insn.GetAsString(1));
-            while (std::getline(in_stream, current_line)) {
-                out_source_lines.emplace_back(current_line);
-            }
+        offset += length;  // point to next instruction after OpSource
+        break;
+    }
+
+    // Look for OpSourceContinued, it must be right after
+    while (offset < instructions.size()) {
+        const uint32_t continue_insn = instructions[offset];
+        const uint32_t length = Length(continue_insn);
+        const uint32_t opcode = Opcode(continue_insn);
+        if (opcode != spv::OpSourceContinued) {
+            break;
         }
-        return;
+
+        std::istringstream in_stream;
+        std::string current_line;
+        const char *str = reinterpret_cast<const char *>(&instructions[offset + 1]);
+        in_stream.str(str);
+        while (std::getline(in_stream, current_line)) {
+            out_source_lines.emplace_back(current_line);
+        }
+        offset += length;
     }
 }
 
-static void ReadDebugSource(const std::vector<spirv::Instruction> &instructions, const uint32_t debug_source_id,
-                            uint32_t &out_file_string_id, std::vector<std::string> &out_source_lines) {
-    for (size_t i = 0; i < instructions.size(); i++) {
-        const auto &insn = instructions[i];
-        if (insn.ResultId() != debug_source_id) {
+static void ReadDebugSource(const std::vector<uint32_t> &instructions, const uint32_t debug_source_id, uint32_t &out_file_string_id,
+                            std::vector<std::string> &out_source_lines) {
+    uint32_t offset = kModuleStartingOffset;
+    while (offset < instructions.size()) {
+        const uint32_t instruction = instructions[offset];
+        const uint32_t length = Length(instruction);
+        const uint32_t opcode = Opcode(instruction);
+        if (opcode != spv::OpExtInst || instructions[offset + 2] != debug_source_id ||
+            instructions[offset + 4] != NonSemanticShaderDebugInfo100DebugSource) {
+            offset += length;
             continue;
         }
-        out_file_string_id = insn.Word(5);
 
-        if (insn.Length() < 7) {
-            return;  // Optional source Text not provided
+        // We have now found the proper OpExtInst DebugSource
+        out_file_string_id = instructions[offset + 5];
+
+        // Optional source Text not provided so nothing left to do
+        if (length < 7) {
+            return;
         }
 
-        uint32_t string_id = insn.Word(6);
-        auto string_inst = FindOpString(instructions, string_id);
-        if (!string_inst) {
+        const uint32_t string_id = instructions[offset + 6];
+        const char *source_text = spirv::GetOpString(instructions, string_id);
+        if (!source_text) {
             return;  // error should be caught in spirv-val, but don't crash here
         }
 
         std::istringstream in_stream;
         std::string current_line;
-        in_stream.str(string_inst->GetAsString(2));
+        in_stream.str(source_text);
         while (std::getline(in_stream, current_line)) {
             out_source_lines.emplace_back(current_line);
         }
 
-        for (size_t k = i + 1; k < instructions.size(); k++) {
-            const auto &continue_insn = instructions[k];
-            if (continue_insn.Opcode() != spv::OpExtInst ||
-                continue_insn.Word(4) != NonSemanticShaderDebugInfo100DebugSourceContinued) {
-                return;
-            }
-            string_id = continue_insn.Word(5);
-            string_inst = FindOpString(instructions, string_id);
-            if (!string_inst) {
-                return;  // error should be caught in spirv-val, but don't crash here
-            }
+        offset += length;  // point to next instruction after OpSource
+        break;
+    }
 
-            in_stream.clear();  // without, will fail getline
-            in_stream.str(string_inst->GetAsString(2));
-            while (std::getline(in_stream, current_line)) {
-                out_source_lines.emplace_back(current_line);
-            }
+    // Look for DebugSourceContinued, it must be right after
+    while (offset < instructions.size()) {
+        const uint32_t continue_insn = instructions[offset];
+        const uint32_t length = Length(continue_insn);
+        const uint32_t opcode = Opcode(continue_insn);
+
+        if (opcode != spv::OpExtInst || instructions[offset + 4] != NonSemanticShaderDebugInfo100DebugSourceContinued) {
+            break;
         }
-        return;
+
+        const uint32_t string_id = instructions[offset + 5];
+        const char *continue_text = spirv::GetOpString(instructions, string_id);
+        if (!continue_text) {
+            return;  // error should be caught in spirv-val, but don't crash here
+        }
+
+        std::istringstream in_stream;
+        std::string current_line;
+        in_stream.str(continue_text);
+        while (std::getline(in_stream, current_line)) {
+            out_source_lines.emplace_back(current_line);
+        }
+
+        offset += length;
     }
 }
 
@@ -183,8 +207,7 @@ static bool GetLineFromDirective(const std::string &string, uint32_t *linenumber
 }
 
 // Return false if any error arise
-static bool GetLineAndFilename(std::ostringstream &ss, const std::vector<spirv::Instruction> &instructions,
-                               SpirvLoggingInfo &logging_info) {
+static bool GetLineAndFilename(std::ostringstream &ss, const std::vector<uint32_t> &instructions, SpirvLoggingInfo &logging_info) {
     const std::string debug_info_type = (logging_info.using_shader_debug_info) ? "DebugSource" : "OpLine";
     if (logging_info.file_string_id == 0) {
         // This error should be caught in spirv-val
@@ -192,7 +215,7 @@ static bool GetLineAndFilename(std::ostringstream &ss, const std::vector<spirv::
         return false;
     }
 
-    auto file_string_insn = FindOpString(instructions, logging_info.file_string_id);
+    const char *file_string_insn = spirv::GetOpString(instructions, logging_info.file_string_id);
     if (!file_string_insn) {
         ss << "(Unable to find SPIR-V OpString from " << debug_info_type << " instruction.\n";
         ss << "File ID = " << logging_info.file_string_id << ", Line Number = " << logging_info.line_number_start
@@ -200,7 +223,7 @@ static bool GetLineAndFilename(std::ostringstream &ss, const std::vector<spirv::
         return false;
     }
 
-    logging_info.reported_filename = file_string_insn->GetAsString(2);
+    logging_info.reported_filename = std::string(file_string_insn);
     if (!logging_info.reported_filename.empty()) {
         ss << "in file " << logging_info.reported_filename << " ";
     }
@@ -298,22 +321,7 @@ static void GetSourceLines(std::ostringstream &ss, const std::vector<std::string
     }
 }
 
-void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<spirv::Instruction> &instructions,
-                         const spirv::Instruction &last_line_insn) {
-    // Instead of building up hash map that might not be used, reloop the constants to find the value.
-    // Non Semantic instructions are validated to have 32-bit integer constants (not spec constants).
-    auto get_constant_value = [&instructions](uint32_t id) {
-        for (const auto &insn : instructions) {
-            if (insn.Opcode() == spv::OpConstant && insn.ResultId() == id) {
-                return insn.Word(3);
-            } else if (insn.Opcode() == spv::OpFunction) {
-                break;
-            }
-        }
-        assert(false);
-        return 0u;
-    };
-
+void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<uint32_t> &instructions, const Instruction &last_line_insn) {
     // Read the source code and split it up into separate lines.
     //
     // 1. OpLine will point to a OpSource/OpSourceContinued which have the string built-in
@@ -332,9 +340,9 @@ void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<spirv::Instru
     } else {
         // NonSemanticShaderDebugInfo100DebugLine
         logging_info.using_shader_debug_info = true;
-        logging_info.line_number_start = get_constant_value(last_line_insn.Word(6));
-        logging_info.line_number_end = get_constant_value(last_line_insn.Word(7));
-        logging_info.column_number = get_constant_value(last_line_insn.Word(8));
+        logging_info.line_number_start = GetConstantValue(instructions, last_line_insn.Word(6));
+        logging_info.line_number_end = GetConstantValue(instructions, last_line_insn.Word(7));
+        logging_info.column_number = GetConstantValue(instructions, last_line_insn.Word(8));
         const uint32_t debug_source_id = last_line_insn.Word(5);
         ReadDebugSource(instructions, debug_source_id, logging_info.file_string_id, source_lines);
     }
@@ -350,3 +358,114 @@ void GetShaderSourceInfo(std::ostringstream &ss, const std::vector<spirv::Instru
 
     GetSourceLines(ss, source_lines, logging_info);
 }
+
+const char *GetOpString(const std::vector<uint32_t> &instructions, uint32_t string_id) {
+    uint32_t offset = kModuleStartingOffset;
+    while (offset < instructions.size()) {
+        const uint32_t instruction = instructions[offset];
+        const uint32_t length = Length(instruction);
+        const uint32_t opcode = Opcode(instruction);
+
+        // if here, seen all OpString and can return early
+        if (opcode == spv::OpFunction) break;
+
+        if (opcode == spv::OpString) {
+            const uint32_t result_id = instructions[offset + 1];
+            if (result_id == string_id) {
+                return reinterpret_cast<const char *>(&instructions[offset + 2]);
+            }
+        }
+        offset += length;
+    }
+    return nullptr;
+}
+
+uint32_t GetConstantValue(const std::vector<uint32_t> &instructions, uint32_t constant_id) {
+    uint32_t offset = kModuleStartingOffset;
+    while (offset < instructions.size()) {
+        const uint32_t instruction = instructions[offset];
+        const uint32_t length = Length(instruction);
+        const uint32_t opcode = Opcode(instruction);
+
+        // if here, seen all OpConstant and can return early
+        if (opcode == spv::OpFunction) break;
+
+        if (opcode == spv::OpConstant) {
+            const uint32_t result_id = instructions[offset + 2];
+            if (result_id == constant_id) {
+                return instructions[offset + 3];
+            }
+        }
+        offset += length;
+    }
+    assert(false);
+    return 0;
+}
+
+void GetExecutionModelNames(const std::vector<uint32_t> &instructions, std::ostringstream &ss) {
+    bool first_stage = true;
+
+    uint32_t offset = kModuleStartingOffset;
+    while (offset < instructions.size()) {
+        const uint32_t instruction = instructions[offset];
+        const uint32_t length = Length(instruction);
+        const uint32_t opcode = Opcode(instruction);
+
+        // if here, seen all OpEntryPoint and can return early
+        if (opcode == spv::OpFunction) break;
+
+        if (opcode == spv::OpEntryPoint) {
+            if (first_stage) {
+                first_stage = false;
+            } else {
+                ss << ", ";
+            }
+            const uint32_t entry_point_id = instructions[offset + 1];
+            ss << string_SpvExecutionModel(entry_point_id);
+        }
+
+        offset += length;
+    }
+}
+
+// Find the OpLine/DebugLine just before the failing instruction indicated by the debug info.
+// Return the offset into the instructions array
+uint32_t GetDebugLineOffset(const std::vector<uint32_t> &instructions, uint32_t instruction_position) {
+    uint32_t index = 0;
+    uint32_t shader_debug_info_set_id = 0;
+    uint32_t last_line_inst_offset = 0;
+
+    uint32_t offset = kModuleStartingOffset;
+    while (offset < instructions.size()) {
+        const uint32_t instruction = instructions[offset];
+        const uint32_t length = Length(instruction);
+        const uint32_t opcode = Opcode(instruction);
+
+        if (opcode == spv::OpExtInstImport) {
+            const char *str = reinterpret_cast<const char *>(&instructions[offset + 2]);
+            if (strcmp(str, "NonSemantic.Shader.DebugInfo.100") == 0) {
+                shader_debug_info_set_id = instructions[offset + 1];
+            }
+        }
+
+        if (opcode == spv::OpExtInst && instructions[offset + 3] == shader_debug_info_set_id &&
+            instructions[offset + 4] == NonSemanticShaderDebugInfo100DebugLine) {
+            last_line_inst_offset = offset;
+        } else if (opcode == spv::OpLine) {
+            last_line_inst_offset = offset;
+        } else if (opcode == spv::OpFunctionEnd) {
+            last_line_inst_offset = 0;  // debug lines can't cross functions boundaries
+        }
+
+        if (index == instruction_position) {
+            break;
+        }
+        index++;
+
+        offset += length;
+    }
+
+    return last_line_inst_offset;
+}
+
+}  // namespace spirv

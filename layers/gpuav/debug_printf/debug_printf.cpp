@@ -23,6 +23,7 @@
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/core/gpuav.h"
 #include "state_tracker/shader_instruction.h"
+#include "error_message/spirv_logging.h"
 
 #include <iostream>
 
@@ -154,19 +155,6 @@ static std::vector<Substring> ParseFormatString(const std::string &format_string
     return parsed_strings;
 }
 
-static std::string FindFormatString(const std::vector<Instruction> &instructions, uint32_t string_id) {
-    std::string format_string;
-    for (const auto &insn : instructions) {
-        if (insn.Opcode() == spv::OpString && insn.Word(1) == string_id) {
-            format_string = insn.GetAsString(2);
-            break;
-        }
-        // if here, seen all OpString and can return early
-        if (insn.Opcode() == spv::OpFunction) break;
-    }
-    return format_string;
-}
-
 // GCC and clang don't like using variables as format strings in sprintf.
 // #pragma GCC is recognized by both compilers
 #if defined(__GNUC__) || defined(__clang__)
@@ -215,11 +203,8 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
             return;
         }
 
-        std::vector<Instruction> instructions;
-        ::spirv::GenerateInstructions(instrumented_shader->instrumented_spirv, instructions);
-
         // Search through the shader source for the printf format string for this invocation
-        std::string format_string = FindFormatString(instructions, debug_record->format_string_id);
+        std::string format_string = ::spirv::GetOpString(instrumented_shader->instrumented_spirv, debug_record->format_string_id);
 
         if (format_string.empty()) {
             // We have plumbed the OpString from the instrumented shader
@@ -347,7 +332,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
         const bool use_stdout = gpuav.gpuav_settings.debug_printf_to_stdout;
         if (gpuav.gpuav_settings.debug_printf_verbose) {
             std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
-                command_buffer, instructions, debug_record->stage_id, debug_record->stage_info_0, debug_record->stage_info_1,
+                command_buffer, debug_record->stage_id, debug_record->stage_info_0, debug_record->stage_info_1,
                 debug_record->stage_info_2, debug_record->instruction_position, instrumented_shader, debug_record->shader_id,
                 buffer_info.pipeline_bind_point, buffer_info.action_command_index);
             if (use_stdout) {

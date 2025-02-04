@@ -37,7 +37,7 @@ struct Module;
 
 static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
-// Need to find a way to know if actually array lenght of zero, or a runtime array.
+// Need to find a way to know if actually array length of zero, or a runtime array.
 static constexpr uint32_t kRuntimeArray = std::numeric_limits<uint32_t>::max();
 
 // This is the common info for both OpDecorate and OpMemberDecorate

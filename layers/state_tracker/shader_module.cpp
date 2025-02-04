@@ -1422,7 +1422,7 @@ std::string Module::DescribeInstruction(const Instruction& error_insn) const {
     std::ostringstream ss;
     ss << error_insn.Describe();
     ss << "\nFrom shader debug information ";
-    GetShaderSourceInfo(ss, static_data_.instructions, *last_line_inst);
+    GetShaderSourceInfo(ss, words_, *last_line_inst);
     return ss.str();
 }
 
