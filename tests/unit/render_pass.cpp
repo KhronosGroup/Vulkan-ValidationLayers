@@ -4799,3 +4799,40 @@ TEST_F(NegativeRenderPass, FramebufferLimits) {
     vk::CreateFramebuffer(device(), &framebuffer_ci, nullptr, &framebuffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeRenderPass, CreateFramebufferWithNullHandleView) {
+    RETURN_IF_SKIP(Init());
+
+    VkAttachmentDescription description = {0,
+                                           VK_FORMAT_R8G8B8A8_UNORM,
+                                           VK_SAMPLE_COUNT_1_BIT,
+                                           VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                           VK_ATTACHMENT_STORE_OP_STORE,
+                                           VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                           VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                           VK_IMAGE_LAYOUT_UNDEFINED,
+                                           VK_IMAGE_LAYOUT_GENERAL};
+
+    VkAttachmentReference attachment_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
+
+    VkSubpassDescription subpass = {0,      VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1u, &attachment_ref, nullptr, nullptr, 0,
+                                    nullptr};
+
+    auto rp_ci = vku::InitStruct<VkRenderPassCreateInfo>(nullptr, 0u, 1u, &description, 1u, &subpass, 0u, nullptr);
+    vkt::RenderPass render_pass(*m_device, rp_ci);
+
+    VkImageView view = VK_NULL_HANDLE;
+
+    VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
+    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.attachmentCount = 1u;
+    framebuffer_ci.pAttachments = &view;
+    framebuffer_ci.width = 32u;
+    framebuffer_ci.height = 32u;
+    framebuffer_ci.layers = 1u;
+
+    VkFramebuffer framebuffer;
+    m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-02778");
+    vk::CreateFramebuffer(device(), &framebuffer_ci, nullptr, &framebuffer);
+    m_errorMonitor->VerifyFound();
+}
