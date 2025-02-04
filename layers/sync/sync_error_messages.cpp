@@ -120,8 +120,9 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, VkBuffer buff
     return message;
 }
 
-std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffer buffer, bool is_src_buffer, uint32_t region_index,
-                                             const CommandBufferAccessContext& cb_context, const vvl::Func command) const {
+std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffer buffer, uint32_t region_index,
+                                             ResourceAccessRange region_range, const CommandBufferAccessContext& cb_context,
+                                             const vvl::Func command) const {
     const SyncHazard hazard_type = hazard.Hazard();
 
     const SyncAccessFlags write_barriers = hazard.State().access_state->GetWriteBarriers();
@@ -143,6 +144,7 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
     key_values.Add(kPropertyMessageType, "BufferRegionError");
     key_values.Add(kPropertyHazardType, string_SyncHazard(hazard_type));
     key_values.Add(kPropertyCommand, vvl::String(command));
+    key_values.Add(kPropertyCopyRegion, region_index);
     AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
 
     const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
@@ -206,6 +208,10 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
         ss << ", but to prevent this hazard, it must wait at ";
         ss << string_VkPipelineStageFlagBits2(sync_access.stage_mask) << ".";
     }
+
+    // Copy region information
+    ss << " Hazardous copy region: " << region_index << " (offset = " << region_range.begin;
+    ss << ", size = " << region_range.end - region_range.begin << ").";
 
     // Give a hint for WAR hazard
     if (IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_RACING_READ, PRESENT_AFTER_READ})) {
