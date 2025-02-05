@@ -278,7 +278,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
 
     // use a unique pointer to make sure we destroy this object on error
-    auto device_dispatch = std::make_unique<vvl::dispatch::Device>(instance_dispatch, gpu, pCreateInfo);
+    vvl::dispatch::Device* device_dispatch = new vvl::dispatch::Device(instance_dispatch, gpu, pCreateInfo);
 
     // This is odd but we need to set the current extensions in all of the
     // instance validation objects so that they are available for validating CreateDevice
@@ -322,7 +322,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     for (auto& vo : device_dispatch->object_dispatch) {
         vo->CopyDispatchState();
     }
-    DeviceExtensionWhitelist(device_dispatch.get(), pCreateInfo, *pDevice);
+    DeviceExtensionWhitelist(device_dispatch, pCreateInfo, *pDevice);
     // NOTE: many PostCallRecords expect to be able to look up the device dispatch object so we need to populate the map here.
 #if defined(VVL_TRACY_GPU)
     InitTracyVk(instance_dispatch->instance, gpu, *pDevice, fpGetInstanceProcAddr, fpGetDeviceProcAddr,
@@ -331,7 +331,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
                 device_dispatch->device_dispatch_table.QueueSubmit);
 #endif
 
-    vvl::dispatch::SetData(*pDevice, std::move(device_dispatch));
+    vvl::dispatch::SetData(*pDevice, device_dispatch);
     for (auto& vo : instance_dispatch->object_dispatch) {
         // Send down modified create info as we want to mark enabled features that we sent down on behalf of the app
         vo->PostCallRecordCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice,
