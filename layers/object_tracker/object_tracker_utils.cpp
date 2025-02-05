@@ -236,7 +236,6 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPu
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
             if (desc->pImageInfo) {
                 for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
-                    // Only validate image here, we have to validate Sampler state tracker object
                     skip |= ValidateObject(desc->pImageInfo[i].imageView, kVulkanObjectTypeImageView, true,
                                            "VUID-VkWriteDescriptorSet-descriptorType-02996",
                                            "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239",
@@ -300,8 +299,23 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPu
             }
             break;
         }
-        // handled in core check because need to know if using immutable samplers or not
-        case VK_DESCRIPTOR_TYPE_SAMPLER:
+
+        case VK_DESCRIPTOR_TYPE_SAMPLER: {
+            // These VUs talk about immutable samplers, we currently don't track the VkDescriptorSetLayout here to know if it uses
+            // it or not, but for VK_DESCRIPTOR_TYPE_SAMPLER there is  VUID-VkWriteDescriptorSet-descriptorType-02752 which guards
+            // from it containing an immutable sampler. So we are safe to validate the lifetime here. In theory this should be
+            // checked for COMBINED_IMAGE_SAMPLER as well, but being discussed in
+            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4177
+            if (desc->pImageInfo) {
+                for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
+                    skip |= ValidateObject(desc->pImageInfo[i].sampler, kVulkanObjectTypeSampler, false,
+                                           "VUID-VkWriteDescriptorSet-descriptorType-00325",
+                                           "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06238",
+                                           loc.dot(Field::pImageInfo, i).dot(Field::sampler));
+                }
+            }
+            break;
+        }
 
         // VkWriteDescriptorSetPartitionedAccelerationStructureNV contains no VkObjects to validate
         case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:

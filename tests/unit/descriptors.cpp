@@ -13,6 +13,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -223,137 +224,150 @@ TEST_F(NegativeDescriptors, DescriptorSetLayout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
-    TEST_DESCRIPTION(
-        "This test verifies some requirements of chapter 13.2.3 of the Vulkan Spec "
-        "1) A uniform buffer update must have a valid buffer index. "
-        "2) When using an array of descriptors in a single WriteDescriptor, the descriptor types and stageflags "
-        "must all be the same. "
-        "3) Immutable Sampler state must match across descriptors. "
-        "4) That sampled image descriptors have required layouts. "
-        "5) That it is prohibited to write to an immutable sampler. ");
+TEST_F(NegativeDescriptors, WriteDescriptorSetNullBufferInfo) {
     RETURN_IF_SKIP(Init());
-
-    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
-        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, NULL},
-        {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
-        {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
-        {3, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
-        {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
-        {5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
-        {6, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, NULL},
-        {7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
-        {8, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL}};
-    OneOffDescriptorSet descriptor_set(m_device, bindings);
-    ASSERT_TRUE(descriptor_set.Initialized());
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
 
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.pBufferInfo = nullptr;
 
-    // 1) The uniform buffer is intentionally invalid here
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00324");
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
+}
 
-    // Create a buffer to update the descriptor with
-    vkt::Buffer dynamic_uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+TEST_F(NegativeDescriptors, WriteDescriptorSetTypeStageMatch) {
+    RETURN_IF_SKIP(Init());
 
-    VkDescriptorBufferInfo buffInfo[5] = {};
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                                  {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                                  {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                                  {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+
+    vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    VkDescriptorBufferInfo buffer_infos[5] = {};
     for (int i = 0; i < 5; ++i) {
-        buffInfo[i].buffer = dynamic_uniform_buffer.handle();
-        buffInfo[i].offset = 0;
-        buffInfo[i].range = 1024;
+        buffer_infos[i] = {uniform_buffer, 0, VK_WHOLE_SIZE};
     }
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_write.pBufferInfo = buffInfo;
+    descriptor_write.pBufferInfo = buffer_infos;
 
-    // 2) The stateFlags and type don't match between the first and second descriptor
     descriptor_write.dstBinding = 0;
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 2;
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    descriptor_write.dstBinding = 4;
+    descriptor_write.dstBinding = 2;
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 5;
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    descriptor_write.dstBinding = 4;
     descriptor_write.dstArrayElement = 1;
     descriptor_write.descriptorCount = 4;
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
+}
 
-    descriptor_write.dstBinding = 4;
+TEST_F(NegativeDescriptors, WriteDescriptorSetImmutableSamplerMix) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                        {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()}});
+
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM,
+                     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
     descriptor_write.dstArrayElement = 0;
-    descriptor_write.descriptorCount = 4;
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    descriptor_write.descriptorCount = 2;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-    descriptor_write.dstBinding = 4;
-    descriptor_write.dstArrayElement = 1;
-    descriptor_write.descriptorCount = 3;
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
-
-    // 3) The second descriptor has a null_ptr pImmutableSamplers and the third descriptor contains an immutable sampler
-    descriptor_write.dstBinding = 1;
-    descriptor_write.dstArrayElement = 0;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-
-    // Make pImageInfo index non-null to avoid complaints of it missing
-    VkDescriptorImageInfo imageInfo[2] = {};
-    imageInfo[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo[1].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    descriptor_write.pImageInfo = imageInfo;
-    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00318");  // binding 2
-    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");  // binding 3
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    VkDescriptorImageInfo image_infos[2] = {
+        {sampler, image_view, VK_IMAGE_LAYOUT_GENERAL},
+        {VK_NULL_HANDLE, image_view, VK_IMAGE_LAYOUT_GENERAL},
+    };
+    descriptor_write.pImageInfo = image_infos;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00318");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
+}
 
-    // 4) That sampled image descriptors have required layouts -- create images to update the descriptor with
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    vkt::Image image(*m_device, 32, 32, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-    vkt::ImageView view = image.CreateView();
+TEST_F(NegativeDescriptors, WriteDescriptorSetIntegrity) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                        {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
+                                        {2, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                        {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                        {4, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM,
+                     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.dstArrayElement = 0;
 
     // Attmept write with incorrect layout for sampled descriptor
-    imageInfo[0].sampler = VK_NULL_HANDLE;
-    imageInfo[0].imageView = view;
-    imageInfo[0].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkDescriptorImageInfo image_info = {VK_NULL_HANDLE, image_view, VK_IMAGE_LAYOUT_UNDEFINED};
+    descriptor_write.pImageInfo = &image_info;
 
-    descriptor_write.dstBinding = 3;
-    descriptor_write.descriptorCount = 1;
+    descriptor_write.dstBinding = 2;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-04149");
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    descriptor_write.dstBinding = 7;
+    descriptor_write.dstBinding = 3;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    imageInfo[0].sampler = sampler.handle();
+    image_info.sampler = sampler.handle();
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-04150");
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
-    descriptor_write.dstBinding = 8;
+    descriptor_write.dstBinding = 4;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-04151");
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
+}
 
-    // 5) Attempt to update an immutable sampler
-    descriptor_write.dstBinding = 2;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+TEST_F(NegativeDescriptors, WriteImmutableSampler) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
+                                       });
+
+    descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02752");
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
 
@@ -2373,7 +2387,7 @@ TEST_F(NegativeDescriptors, SampleDescriptorUpdate) {
 
     VkSampler sampler = CastToHandle<VkSampler, uintptr_t>(0xbaadbeef);  // Sampler with invalid handle
 
-    m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-06238");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00325");
     descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();

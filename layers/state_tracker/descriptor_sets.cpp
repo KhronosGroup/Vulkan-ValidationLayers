@@ -499,14 +499,13 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorP
         switch (descriptor_class) {
             case DescriptorClass::PlainSampler: {
                 auto binding = MakeBinding<SamplerBinding>(free_binding++, *create_info, descriptor_count, flags);
-                auto immut = layout_->GetImmutableSamplerPtrFromIndex(i);
-                if (immut) {
+                if (auto immutable_sampler_handles = layout_->GetImmutableSamplerPtrFromIndex(i)) {
                     for (uint32_t di = 0; di < descriptor_count; ++di) {
-                        auto sampler = state_data->GetConstCastShared<vvl::Sampler>(immut[di]);
+                        auto sampler = state_data->GetConstCastShared<vvl::Sampler>(immutable_sampler_handles[di]);
                         if (sampler) {
                             some_update_ = true;  // Immutable samplers are updated at creation
                             binding->updated[di] = true;
-                            binding->descriptors[di].SetSamplerState(std::move(sampler));
+                            binding->descriptors[di].SetImmutableSampler(std::move(sampler));
                         }
                     }
                 }
@@ -515,14 +514,13 @@ vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorP
             }
             case DescriptorClass::ImageSampler: {
                 auto binding = MakeBinding<ImageSamplerBinding>(free_binding++, *create_info, descriptor_count, flags);
-                auto immut = layout_->GetImmutableSamplerPtrFromIndex(i);
-                if (immut) {
+                if (auto immutable_sampler_handles = layout_->GetImmutableSamplerPtrFromIndex(i)) {
                     for (uint32_t di = 0; di < descriptor_count; ++di) {
-                        auto sampler = state_data->GetConstCastShared<vvl::Sampler>(immut[di]);
+                        auto sampler = state_data->GetConstCastShared<vvl::Sampler>(immutable_sampler_handles[di]);
                         if (sampler) {
                             some_update_ = true;  // Immutable samplers are updated at creation
                             binding->updated[di] = true;
-                            binding->descriptors[di].SetSamplerState(std::move(sampler));
+                            binding->descriptors[di].SetImmutableSampler(std::move(sampler));
                         }
                     }
                 }
@@ -775,9 +773,8 @@ void vvl::SamplerDescriptor::CopyUpdate(DescriptorSet &set_state, const vvl::Dev
 
 VkSampler vvl::SamplerDescriptor::GetSampler() const { return sampler_state_ ? sampler_state_->VkHandle() : VK_NULL_HANDLE; }
 
-void vvl::SamplerDescriptor::SetSamplerState(std::shared_ptr<vvl::Sampler> &&state) {
+void vvl::SamplerDescriptor::SetImmutableSampler(std::shared_ptr<vvl::Sampler> &&state) {
     sampler_state_ = std::move(state);
-    // currently this method is only used to initialize immutable samplers during DescriptorSet creation
     immutable_ = true;
 }
 
@@ -826,9 +823,8 @@ void vvl::ImageSamplerDescriptor::CopyUpdate(DescriptorSet &set_state, const vvl
 
 VkSampler vvl::ImageSamplerDescriptor::GetSampler() const { return sampler_state_ ? sampler_state_->VkHandle() : VK_NULL_HANDLE; }
 
-void vvl::ImageSamplerDescriptor::SetSamplerState(std::shared_ptr<vvl::Sampler> &&state) {
+void vvl::ImageSamplerDescriptor::SetImmutableSampler(std::shared_ptr<vvl::Sampler> &&state) {
     sampler_state_ = std::move(state);
-    // currently this method is only used to initialize immutable samplers during DescriptorSet creation
     immutable_ = true;
 }
 
