@@ -130,6 +130,13 @@ class Device : public Logger {
 
     DeviceExtensions extensions;
     const DeviceFeatures& enabled_features;
+    const VkPhysicalDeviceMemoryProperties& phys_dev_mem_props;
+    const VkPhysicalDeviceProperties& phys_dev_props;
+    const VkPhysicalDeviceVulkan11Properties& phys_dev_props_core11;
+    const VkPhysicalDeviceVulkan12Properties& phys_dev_props_core12;
+    const VkPhysicalDeviceVulkan13Properties& phys_dev_props_core13;
+    const VkPhysicalDeviceVulkan14Properties& phys_dev_props_core14;
+    const DeviceExtensionProperties& phys_dev_ext_props;
     const GlobalSettings& global_settings;
     GpuAVSettings& gpuav_settings;
     const SyncValSettings& syncval_settings;
@@ -157,6 +164,13 @@ class Device : public Logger {
           dispatch_device_(dispatch_dev),
           extensions(dispatch_dev->extensions),
           enabled_features(dispatch_dev->enabled_features),
+          phys_dev_mem_props(dispatch_dev->phys_dev_mem_props),
+          phys_dev_props(dispatch_dev->phys_dev_props),
+          phys_dev_props_core11(dispatch_dev->phys_dev_props_core11),
+          phys_dev_props_core12(dispatch_dev->phys_dev_props_core12),
+          phys_dev_props_core13(dispatch_dev->phys_dev_props_core13),
+          phys_dev_props_core14(dispatch_dev->phys_dev_props_core14),
+          phys_dev_ext_props(dispatch_dev->phys_dev_ext_props),
           global_settings(dispatch_dev->settings.global_settings),
           gpuav_settings(dispatch_dev->settings.gpuav_settings),
           syncval_settings(dispatch_dev->settings.syncval_settings),

@@ -281,6 +281,402 @@ Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInf
     extensions = DeviceExtensions(dispatch_instance->extensions, api_version, pCreateInfo);
     GetEnabledDeviceFeatures(pCreateInfo, &enabled_features, api_version);
 
+    instance->GetPhysicalDeviceMemoryProperties(physical_device, &phys_dev_mem_props);
+    instance->GetPhysicalDeviceProperties(physical_device, &phys_dev_props);
+
+    // Vulkan 1.1 and later can get properties from single struct.
+    // The goal is to only use the phys_dev_props_core field and funnel the properties from promoted extensions
+    if (extensions.vk_feature_version_1_2) {
+        // 1.1 struct wasn't available until 1.2
+        instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_feature_version_1_2, &phys_dev_props_core11);
+        instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_feature_version_1_2, &phys_dev_props_core12);
+    } else {
+        // VkPhysicalDeviceVulkan11Properties
+        //
+        // Can ingnore VkPhysicalDeviceIDProperties as it has no validation purpose
+
+        if (extensions.vk_khr_multiview) {
+            VkPhysicalDeviceMultiviewProperties multiview_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_multiview, &multiview_props);
+            phys_dev_props_core11.maxMultiviewViewCount = multiview_props.maxMultiviewViewCount;
+            phys_dev_props_core11.maxMultiviewInstanceIndex = multiview_props.maxMultiviewInstanceIndex;
+        }
+
+        if (extensions.vk_khr_maintenance3) {
+            VkPhysicalDeviceMaintenance3Properties maintenance3_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance3, &maintenance3_props);
+            phys_dev_props_core11.maxPerSetDescriptors = maintenance3_props.maxPerSetDescriptors;
+            phys_dev_props_core11.maxMemoryAllocationSize = maintenance3_props.maxMemoryAllocationSize;
+        }
+
+        // Some 1.1 properties were added to core without previous extensions
+        if (api_version >= VK_API_VERSION_1_1) {
+            VkPhysicalDeviceSubgroupProperties subgroup_prop = vku::InitStructHelper();
+            VkPhysicalDeviceProtectedMemoryProperties protected_memory_prop = vku::InitStructHelper(&subgroup_prop);
+            VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(&protected_memory_prop);
+            instance->GetPhysicalDeviceProperties2(physical_device, &prop2);
+
+            phys_dev_props_core11.subgroupSize = subgroup_prop.subgroupSize;
+            phys_dev_props_core11.subgroupSupportedStages = subgroup_prop.supportedStages;
+            phys_dev_props_core11.subgroupSupportedOperations = subgroup_prop.supportedOperations;
+            phys_dev_props_core11.subgroupQuadOperationsInAllStages = subgroup_prop.quadOperationsInAllStages;
+
+            phys_dev_props_core11.protectedNoFault = protected_memory_prop.protectedNoFault;
+        }
+
+        // VkPhysicalDeviceVulkan12Properties
+
+        if (extensions.vk_khr_driver_properties) {
+            VkPhysicalDeviceDriverProperties driver_properties = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_driver_properties, &driver_properties);
+            phys_dev_props_core12.driverID = driver_properties.driverID;
+            memcpy(phys_dev_props_core12.driverName, driver_properties.driverName, VK_MAX_DRIVER_NAME_SIZE);
+            memcpy(phys_dev_props_core12.driverInfo, driver_properties.driverName, VK_MAX_DRIVER_INFO_SIZE);
+            phys_dev_props_core12.conformanceVersion = driver_properties.conformanceVersion;
+        }
+
+        if (extensions.vk_ext_descriptor_indexing) {
+            VkPhysicalDeviceDescriptorIndexingProperties descriptor_indexing_prop = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_descriptor_indexing,
+                                                     &descriptor_indexing_prop);
+            phys_dev_props_core12.maxUpdateAfterBindDescriptorsInAllPools =
+                descriptor_indexing_prop.maxUpdateAfterBindDescriptorsInAllPools;
+            phys_dev_props_core12.shaderUniformBufferArrayNonUniformIndexingNative =
+                descriptor_indexing_prop.shaderUniformBufferArrayNonUniformIndexingNative;
+            phys_dev_props_core12.shaderSampledImageArrayNonUniformIndexingNative =
+                descriptor_indexing_prop.shaderSampledImageArrayNonUniformIndexingNative;
+            phys_dev_props_core12.shaderStorageBufferArrayNonUniformIndexingNative =
+                descriptor_indexing_prop.shaderStorageBufferArrayNonUniformIndexingNative;
+            phys_dev_props_core12.shaderStorageImageArrayNonUniformIndexingNative =
+                descriptor_indexing_prop.shaderStorageImageArrayNonUniformIndexingNative;
+            phys_dev_props_core12.shaderInputAttachmentArrayNonUniformIndexingNative =
+                descriptor_indexing_prop.shaderInputAttachmentArrayNonUniformIndexingNative;
+            phys_dev_props_core12.robustBufferAccessUpdateAfterBind = descriptor_indexing_prop.robustBufferAccessUpdateAfterBind;
+            phys_dev_props_core12.quadDivergentImplicitLod = descriptor_indexing_prop.quadDivergentImplicitLod;
+            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindSamplers =
+                descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindSamplers;
+            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindUniformBuffers =
+                descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindUniformBuffers;
+            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindStorageBuffers =
+                descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindStorageBuffers;
+            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindSampledImages =
+                descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindSampledImages;
+            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindStorageImages =
+                descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindStorageImages;
+            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindInputAttachments =
+                descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindInputAttachments;
+            phys_dev_props_core12.maxPerStageUpdateAfterBindResources =
+                descriptor_indexing_prop.maxPerStageUpdateAfterBindResources;
+            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindSamplers =
+                descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindSamplers;
+            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffers =
+                descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindUniformBuffers;
+            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic =
+                descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic;
+            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffers =
+                descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindStorageBuffers;
+            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic =
+                descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic;
+            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindSampledImages =
+                descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindSampledImages;
+            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageImages =
+                descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindStorageImages;
+            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindInputAttachments =
+                descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindInputAttachments;
+        }
+
+        if (extensions.vk_khr_depth_stencil_resolve) {
+            VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_depth_stencil_resolve,
+                                                     &depth_stencil_resolve_props);
+            phys_dev_props_core12.supportedDepthResolveModes = depth_stencil_resolve_props.supportedDepthResolveModes;
+            phys_dev_props_core12.supportedStencilResolveModes = depth_stencil_resolve_props.supportedStencilResolveModes;
+            phys_dev_props_core12.independentResolveNone = depth_stencil_resolve_props.independentResolveNone;
+            phys_dev_props_core12.independentResolve = depth_stencil_resolve_props.independentResolve;
+        }
+
+        if (extensions.vk_khr_timeline_semaphore) {
+            VkPhysicalDeviceTimelineSemaphoreProperties timeline_semaphore_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_timeline_semaphore,
+                                                     &timeline_semaphore_props);
+            phys_dev_props_core12.maxTimelineSemaphoreValueDifference =
+                timeline_semaphore_props.maxTimelineSemaphoreValueDifference;
+        }
+
+        if (extensions.vk_ext_sampler_filter_minmax) {
+            VkPhysicalDeviceSamplerFilterMinmaxProperties sampler_filter_minmax_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_sampler_filter_minmax,
+                                                     &sampler_filter_minmax_props);
+            phys_dev_props_core12.filterMinmaxSingleComponentFormats =
+                sampler_filter_minmax_props.filterMinmaxSingleComponentFormats;
+            phys_dev_props_core12.filterMinmaxImageComponentMapping = sampler_filter_minmax_props.filterMinmaxImageComponentMapping;
+        }
+
+        if (extensions.vk_khr_shader_float_controls) {
+            VkPhysicalDeviceFloatControlsProperties float_controls_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_shader_float_controls,
+                                                     &float_controls_props);
+            phys_dev_props_core12.denormBehaviorIndependence = float_controls_props.denormBehaviorIndependence;
+            phys_dev_props_core12.roundingModeIndependence = float_controls_props.roundingModeIndependence;
+            phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat16 =
+                float_controls_props.shaderSignedZeroInfNanPreserveFloat16;
+            phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat32 =
+                float_controls_props.shaderSignedZeroInfNanPreserveFloat32;
+            phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64 =
+                float_controls_props.shaderSignedZeroInfNanPreserveFloat64;
+            phys_dev_props_core12.shaderDenormPreserveFloat16 = float_controls_props.shaderDenormPreserveFloat16;
+            phys_dev_props_core12.shaderDenormPreserveFloat32 = float_controls_props.shaderDenormPreserveFloat32;
+            phys_dev_props_core12.shaderDenormPreserveFloat64 = float_controls_props.shaderDenormPreserveFloat64;
+            phys_dev_props_core12.shaderDenormFlushToZeroFloat16 = float_controls_props.shaderDenormFlushToZeroFloat16;
+            phys_dev_props_core12.shaderDenormFlushToZeroFloat32 = float_controls_props.shaderDenormFlushToZeroFloat32;
+            phys_dev_props_core12.shaderDenormFlushToZeroFloat64 = float_controls_props.shaderDenormFlushToZeroFloat64;
+            phys_dev_props_core12.shaderRoundingModeRTEFloat16 = float_controls_props.shaderRoundingModeRTEFloat16;
+            phys_dev_props_core12.shaderRoundingModeRTEFloat32 = float_controls_props.shaderRoundingModeRTEFloat32;
+            phys_dev_props_core12.shaderRoundingModeRTEFloat64 = float_controls_props.shaderRoundingModeRTEFloat64;
+            phys_dev_props_core12.shaderRoundingModeRTZFloat16 = float_controls_props.shaderRoundingModeRTZFloat16;
+            phys_dev_props_core12.shaderRoundingModeRTZFloat32 = float_controls_props.shaderRoundingModeRTZFloat32;
+            phys_dev_props_core12.shaderRoundingModeRTZFloat64 = float_controls_props.shaderRoundingModeRTZFloat64;
+        }
+    }
+
+    // funnel promoted extensions into a VkPhysicalDeviceVulkan13Properties
+    //
+    // Can ingnore VkPhysicalDeviceShaderIntegerDotProductProperties as it has no validation purpose
+    if (extensions.vk_feature_version_1_3) {
+        instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_feature_version_1_3, &phys_dev_props_core13);
+    } else {
+        if (extensions.vk_ext_subgroup_size_control) {
+            VkPhysicalDeviceSubgroupSizeControlProperties subgroup_size_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_subgroup_size_control,
+                                                     &subgroup_size_props);
+            phys_dev_props_core13.minSubgroupSize = subgroup_size_props.minSubgroupSize;
+            phys_dev_props_core13.maxSubgroupSize = subgroup_size_props.maxSubgroupSize;
+            phys_dev_props_core13.maxComputeWorkgroupSubgroups = subgroup_size_props.maxComputeWorkgroupSubgroups;
+            phys_dev_props_core13.requiredSubgroupSizeStages = subgroup_size_props.requiredSubgroupSizeStages;
+        }
+
+        if (extensions.vk_ext_inline_uniform_block) {
+            VkPhysicalDeviceInlineUniformBlockProperties inline_uniform_block_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_inline_uniform_block,
+                                                     &inline_uniform_block_props);
+            phys_dev_props_core13.maxInlineUniformBlockSize = inline_uniform_block_props.maxInlineUniformBlockSize;
+            phys_dev_props_core13.maxPerStageDescriptorInlineUniformBlocks =
+                inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks;
+            phys_dev_props_core13.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks =
+                inline_uniform_block_props.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks;
+            phys_dev_props_core13.maxDescriptorSetInlineUniformBlocks =
+                inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks;
+            phys_dev_props_core13.maxDescriptorSetUpdateAfterBindInlineUniformBlocks =
+                inline_uniform_block_props.maxDescriptorSetUpdateAfterBindInlineUniformBlocks;
+        }
+
+        if (extensions.vk_ext_texel_buffer_alignment) {
+            VkPhysicalDeviceTexelBufferAlignmentProperties texel_buffer_alignment_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_texel_buffer_alignment,
+                                                     &texel_buffer_alignment_props);
+            phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes =
+                texel_buffer_alignment_props.storageTexelBufferOffsetAlignmentBytes;
+            phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment =
+                texel_buffer_alignment_props.storageTexelBufferOffsetSingleTexelAlignment;
+            phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes =
+                texel_buffer_alignment_props.uniformTexelBufferOffsetAlignmentBytes;
+            phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment =
+                texel_buffer_alignment_props.uniformTexelBufferOffsetSingleTexelAlignment;
+        }
+
+        if (extensions.vk_khr_maintenance4) {
+            VkPhysicalDeviceMaintenance4Properties maintenance4_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance4, &maintenance4_props);
+            phys_dev_props_core13.maxBufferSize = maintenance4_props.maxBufferSize;
+        }
+    }
+
+    // funnel promoted extensions into a VkPhysicalDeviceVulkan14Properties
+    if (extensions.vk_feature_version_1_4) {
+        // First query to get list properties size from host image copy extension,
+        // second to get actual properties
+        phys_dev_props_core14.copySrcLayoutCount = 0;
+        phys_dev_props_core14.pCopySrcLayouts = nullptr;
+        phys_dev_props_core14.copyDstLayoutCount = 0;
+        phys_dev_props_core14.pCopyDstLayouts = nullptr;
+        instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_feature_version_1_4, &phys_dev_props_core14);
+        host_image_copy_props_copy_src_layouts.resize(phys_dev_props_core14.copySrcLayoutCount);
+        host_imape_copy_props_copy_dst_layouts.resize(phys_dev_props_core14.copyDstLayoutCount);
+        phys_dev_props_core14.pCopySrcLayouts = host_image_copy_props_copy_src_layouts.data();
+        phys_dev_props_core14.pCopyDstLayouts = host_imape_copy_props_copy_dst_layouts.data();
+        instance->GetPhysicalDeviceExtProperties<false>(physical_device, extensions.vk_feature_version_1_4, &phys_dev_props_core14);
+    } else {
+        if (extensions.vk_khr_line_rasterization) {
+            VkPhysicalDeviceLineRasterizationPropertiesKHR line_rasterization_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_line_rasterization,
+                                                     &line_rasterization_props);
+            phys_dev_props_core14.lineSubPixelPrecisionBits = line_rasterization_props.lineSubPixelPrecisionBits;
+        } else if (extensions.vk_ext_line_rasterization) {
+            VkPhysicalDeviceLineRasterizationPropertiesEXT line_rasterization_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_line_rasterization,
+                                                     &line_rasterization_props);
+            phys_dev_props_core14.lineSubPixelPrecisionBits = line_rasterization_props.lineSubPixelPrecisionBits;
+        }
+
+        if (extensions.vk_ext_vertex_attribute_divisor) {
+            VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props_ext;
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_vertex_attribute_divisor,
+                                                     &vtx_attrib_divisor_props_ext);
+            phys_dev_props_core14.maxVertexAttribDivisor = vtx_attrib_divisor_props_ext.maxVertexAttribDivisor;
+        } else if (extensions.vk_khr_vertex_attribute_divisor) {
+            VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vtx_attrib_divisor_props_khr;
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_vertex_attribute_divisor,
+                                                     &vtx_attrib_divisor_props_khr);
+            phys_dev_props_core14.maxVertexAttribDivisor = vtx_attrib_divisor_props_khr.maxVertexAttribDivisor;
+            phys_dev_props_core14.supportsNonZeroFirstInstance = vtx_attrib_divisor_props_khr.supportsNonZeroFirstInstance;
+        }
+
+        if (extensions.vk_khr_push_descriptor) {
+            VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_push_descriptor, &push_descriptor_props);
+            phys_dev_props_core14.maxPushDescriptors = push_descriptor_props.maxPushDescriptors;
+        }
+
+        if (extensions.vk_khr_maintenance5) {
+            VkPhysicalDeviceMaintenance5PropertiesKHR maintenance_5_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance5, &maintenance_5_props);
+            phys_dev_props_core14.earlyFragmentMultisampleCoverageAfterSampleCounting =
+                maintenance_5_props.earlyFragmentMultisampleCoverageAfterSampleCounting;
+            phys_dev_props_core14.earlyFragmentSampleMaskTestBeforeSampleCounting =
+                maintenance_5_props.earlyFragmentSampleMaskTestBeforeSampleCounting;
+            phys_dev_props_core14.depthStencilSwizzleOneSupport = maintenance_5_props.depthStencilSwizzleOneSupport;
+            phys_dev_props_core14.polygonModePointSize = maintenance_5_props.polygonModePointSize;
+            phys_dev_props_core14.nonStrictSinglePixelWideLinesUseParallelogram =
+                maintenance_5_props.nonStrictSinglePixelWideLinesUseParallelogram;
+            phys_dev_props_core14.nonStrictWideLinesUseParallelogram = maintenance_5_props.nonStrictWideLinesUseParallelogram;
+        }
+
+        if (extensions.vk_khr_maintenance6) {
+            VkPhysicalDeviceMaintenance6PropertiesKHR maintenance_6_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance6, &maintenance_6_props);
+            phys_dev_props_core14.blockTexelViewCompatibleMultipleLayers =
+                maintenance_6_props.blockTexelViewCompatibleMultipleLayers;
+            phys_dev_props_core14.maxCombinedImageSamplerDescriptorCount =
+                maintenance_6_props.maxCombinedImageSamplerDescriptorCount;
+            phys_dev_props_core14.fragmentShadingRateClampCombinerInputs =
+                maintenance_6_props.fragmentShadingRateClampCombinerInputs;
+        }
+
+        if (extensions.vk_ext_pipeline_robustness) {
+            VkPhysicalDevicePipelineRobustnessProperties pipeline_robustness_props = vku::InitStructHelper();
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_pipeline_robustness,
+                                                     &pipeline_robustness_props);
+            phys_dev_props_core14.defaultRobustnessStorageBuffers = pipeline_robustness_props.defaultRobustnessStorageBuffers;
+            phys_dev_props_core14.defaultRobustnessUniformBuffers = pipeline_robustness_props.defaultRobustnessUniformBuffers;
+            phys_dev_props_core14.defaultRobustnessVertexInputs = pipeline_robustness_props.defaultRobustnessVertexInputs;
+            phys_dev_props_core14.defaultRobustnessImages = pipeline_robustness_props.defaultRobustnessImages;
+        }
+
+        if (extensions.vk_ext_host_image_copy) {
+            VkPhysicalDeviceHostImageCopyPropertiesEXT host_image_copy_props = vku::InitStructHelper();
+            // First call, get copySrcLayoutCount and copyDstLayoutCount
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_host_image_copy, &host_image_copy_props);
+            host_image_copy_props_copy_src_layouts.resize(host_image_copy_props.copySrcLayoutCount);
+            host_imape_copy_props_copy_dst_layouts.resize(host_image_copy_props.copyDstLayoutCount);
+            host_image_copy_props.pCopySrcLayouts = host_image_copy_props_copy_src_layouts.data();
+            host_image_copy_props.pCopyDstLayouts = host_imape_copy_props_copy_dst_layouts.data();
+            instance->GetPhysicalDeviceExtProperties<false>(physical_device, extensions.vk_ext_host_image_copy,
+                                                            &host_image_copy_props);
+
+            phys_dev_props_core14.copySrcLayoutCount = host_image_copy_props.copySrcLayoutCount;
+            phys_dev_props_core14.pCopySrcLayouts = host_image_copy_props_copy_src_layouts.data();
+            phys_dev_props_core14.copyDstLayoutCount = host_image_copy_props.copyDstLayoutCount;
+            phys_dev_props_core14.pCopyDstLayouts = host_imape_copy_props_copy_dst_layouts.data();
+            std::memcpy(phys_dev_props_core14.optimalTilingLayoutUUID, host_image_copy_props.optimalTilingLayoutUUID,
+                        sizeof(host_image_copy_props.optimalTilingLayoutUUID));
+            phys_dev_props_core14.identicalMemoryTypeRequirements = host_image_copy_props.identicalMemoryTypeRequirements;
+        }
+    }
+
+    // Extensions with properties to extract to DeviceExtensionProperties
+
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_nv_shading_rate_image,
+                                             &phys_dev_ext_props.shading_rate_image_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_nv_mesh_shader,
+                                             &phys_dev_ext_props.mesh_shader_props_nv);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_mesh_shader,
+                                             &phys_dev_ext_props.mesh_shader_props_ext);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_nv_cooperative_matrix,
+                                             &phys_dev_ext_props.cooperative_matrix_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_cooperative_matrix,
+                                             &phys_dev_ext_props.cooperative_matrix_props_khr);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_nv_cooperative_matrix2,
+                                             &phys_dev_ext_props.cooperative_matrix_props2_nv);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_transform_feedback,
+                                             &phys_dev_ext_props.transform_feedback_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_nv_ray_tracing,
+                                             &phys_dev_ext_props.ray_tracing_props_nv);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_ray_tracing_pipeline,
+                                             &phys_dev_ext_props.ray_tracing_props_khr);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_acceleration_structure,
+                                             &phys_dev_ext_props.acc_structure_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_fragment_density_map,
+                                             &phys_dev_ext_props.fragment_density_map_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_fragment_density_map2,
+                                             &phys_dev_ext_props.fragment_density_map2_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_qcom_fragment_density_map_offset,
+                                             &phys_dev_ext_props.fragment_density_map_offset_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_performance_query,
+                                             &phys_dev_ext_props.performance_query_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_sample_locations,
+                                             &phys_dev_ext_props.sample_locations_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_custom_border_color,
+                                             &phys_dev_ext_props.custom_border_color_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_multiview, &phys_dev_ext_props.multiview_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_portability_subset,
+                                             &phys_dev_ext_props.portability_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_fragment_shading_rate,
+                                             &phys_dev_ext_props.fragment_shading_rate_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_provoking_vertex,
+                                             &phys_dev_ext_props.provoking_vertex_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_multi_draw, &phys_dev_ext_props.multi_draw_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_discard_rectangles,
+                                             &phys_dev_ext_props.discard_rectangle_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_blend_operation_advanced,
+                                             &phys_dev_ext_props.blend_operation_advanced_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_conservative_rasterization,
+                                             &phys_dev_ext_props.conservative_rasterization_props);
+    if (api_version >= VK_API_VERSION_1_1) {
+        instance->GetPhysicalDeviceExtProperties(physical_device, kEnabledByCreateinfo, &phys_dev_ext_props.subgroup_props);
+    }
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_extended_dynamic_state3,
+                                             &phys_dev_ext_props.extended_dynamic_state3_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_qcom_image_processing,
+                                             &phys_dev_ext_props.image_processing_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_mesa_image_alignment_control,
+                                             &phys_dev_ext_props.image_alignment_control_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance7,
+                                             &phys_dev_ext_props.maintenance7_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_nested_command_buffer,
+                                             &phys_dev_ext_props.nested_command_buffer_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_descriptor_buffer,
+                                             &phys_dev_ext_props.descriptor_buffer_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_descriptor_buffer,
+                                             &phys_dev_ext_props.descriptor_buffer_density_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_device_generated_commands,
+                                             &phys_dev_ext_props.device_generated_commands_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_pipeline_binary,
+                                             &phys_dev_ext_props.pipeline_binary_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_map_memory_placed,
+                                             &phys_dev_ext_props.map_memory_placed_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_compute_shader_derivatives,
+                                             &phys_dev_ext_props.compute_shader_derivatives_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_nv_cooperative_vector,
+                                             &phys_dev_ext_props.cooperative_vector_props_nv);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_arm_render_pass_striped,
+                                             &phys_dev_ext_props.renderpass_striped_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_external_memory_host,
+                                             &phys_dev_ext_props.external_memory_host_props);
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_android_external_format_resolve,
+                                             &phys_dev_ext_props.android_format_resolve_props);
+#endif
+
     InitValidationObjects();
     InitObjectDispatchVectors();
     for (auto &vo : object_dispatch) {

@@ -237,27 +237,6 @@ class Instance : public vvl::base::Instance {
                                             const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                             VkDisplayModeKHR* pMode, const RecordObject& record_obj) override;
 
-    template <bool init = true, typename ExtProp>
-    void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtEnabled enabled, ExtProp* ext_prop) {
-        assert(ext_prop);
-        if (IsExtEnabled(enabled)) {
-            // Extensions that use two calls to get properties don't want to init on the second call
-            if constexpr (init) {
-                *ext_prop = vku::InitStructHelper();
-            }
-            VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
-            DispatchGetPhysicalDeviceProperties2Helper(api_version, gpu, &prop2);
-        }
-    }
-
-    template <typename ExtProp>
-    void GetPhysicalDeviceExtProperties(VkPhysicalDevice gpu, ExtProp* ext_prop) {
-        assert(ext_prop);
-        *ext_prop = vku::InitStructHelper();
-        VkPhysicalDeviceProperties2 prop2 = vku::InitStructHelper(ext_prop);
-        DispatchGetPhysicalDeviceProperties2Helper(api_version, gpu, &prop2);
-    }
-
     VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device, bool has_format_feature2,
                                                     bool has_drm_modifiers, VkDevice device, VkImage image, VkFormat format,
                                                     VkImageTiling tiling);
@@ -1884,16 +1863,6 @@ class Device : public vvl::base::Device {
     // Link for derived device objects back to their parent instance object
     vvl::Instance* instance_state;
 
-    // Device specific data
-    VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
-    VkPhysicalDeviceProperties phys_dev_props = {};
-    VkPhysicalDeviceVulkan11Properties phys_dev_props_core11 = {};
-    VkPhysicalDeviceVulkan12Properties phys_dev_props_core12 = {};
-    VkPhysicalDeviceVulkan13Properties phys_dev_props_core13 = {};
-    VkPhysicalDeviceVulkan14Properties phys_dev_props_core14 = {};
-    // To store the 2 lists from VkPhysicalDeviceHostImageCopyProperties
-    std::vector<VkImageLayout> host_image_copy_props_copy_src_layouts = {};
-    std::vector<VkImageLayout> host_imape_copy_props_copy_dst_layouts = {};
     VkDeviceGroupDeviceCreateInfo device_group_create_info = {};
     uint32_t physical_device_count;
     uint32_t custom_border_color_sampler_count = 0;
@@ -1911,47 +1880,6 @@ class Device : public vvl::base::Device {
     bool has_robust_image_access2;   // VK_EXT_robustness2
     bool has_robust_buffer_access2;  // VK_EXT_robustness2
 
-    // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
-    struct DeviceExtensionProperties {
-        VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
-        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props_nv;
-        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext;
-        VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
-        VkPhysicalDeviceCooperativeMatrixPropertiesKHR cooperative_matrix_props_khr;
-        VkPhysicalDeviceCooperativeMatrix2PropertiesNV cooperative_matrix_props2_nv;
-        VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
-        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props_nv;
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props_khr;
-        VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
-        VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
-        VkPhysicalDeviceFragmentDensityMap2PropertiesEXT fragment_density_map2_props;
-        VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM fragment_density_map_offset_props;
-        VkPhysicalDevicePerformanceQueryPropertiesKHR performance_query_props;
-        VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props;
-        VkPhysicalDeviceCustomBorderColorPropertiesEXT custom_border_color_props;
-        VkPhysicalDeviceMultiviewProperties multiview_props;
-        VkPhysicalDevicePortabilitySubsetPropertiesKHR portability_props;
-        VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
-        VkPhysicalDeviceProvokingVertexPropertiesEXT provoking_vertex_props;
-        VkPhysicalDeviceMultiDrawPropertiesEXT multi_draw_props;
-        VkPhysicalDeviceDiscardRectanglePropertiesEXT discard_rectangle_props;
-        VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props;
-        VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props;
-        VkPhysicalDeviceSubgroupProperties subgroup_props;
-        VkPhysicalDeviceExtendedDynamicState3PropertiesEXT extended_dynamic_state3_props;
-        VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props;
-        VkPhysicalDeviceImageAlignmentControlPropertiesMESA image_alignment_control_props;
-        VkPhysicalDeviceMaintenance7PropertiesKHR maintenance7_props;
-        VkPhysicalDeviceNestedCommandBufferPropertiesEXT nested_command_buffer_props;
-        VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_props;
-        VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT descriptor_buffer_density_props;
-        VkPhysicalDeviceDeviceGeneratedCommandsPropertiesEXT device_generated_commands_props;
-        VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_props;
-        VkPhysicalDeviceMapMemoryPlacedPropertiesEXT map_memory_placed_props;
-        VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR compute_shader_derivatives_props;
-        VkPhysicalDeviceCooperativeVectorPropertiesNV cooperative_vector_props_nv;
-    };
-    DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties_nv;
     std::vector<VkCooperativeMatrixPropertiesKHR> cooperative_matrix_properties_khr;
     std::vector<VkCooperativeMatrixFlexibleDimensionsPropertiesNV> cooperative_matrix_flexible_dimensions_properties;
