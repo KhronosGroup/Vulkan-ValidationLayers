@@ -1060,3 +1060,33 @@ const char *string_SyncHazardVUID(SyncHazard hazard) {
     }
     return "SYNC-HAZARD-INVALID";
 }
+
+SyncHazardInfo GetSyncHazardInfo(SyncHazard hazard) {
+    switch (hazard) {
+        case SyncHazard::NONE:
+            return SyncHazardInfo{};
+        case SyncHazard::READ_AFTER_WRITE:
+            return SyncHazardInfo{false, true};
+        case SyncHazard::WRITE_AFTER_READ:
+            return SyncHazardInfo{true, false};
+        case SyncHazard::WRITE_AFTER_WRITE:
+            return SyncHazardInfo{true, true};
+        case SyncHazard::READ_RACING_WRITE:
+            return SyncHazardInfo{false, true, true};
+        case SyncHazard::WRITE_RACING_WRITE:
+            return SyncHazardInfo{true, true, true};
+        case SyncHazard::WRITE_RACING_READ:
+            return SyncHazardInfo{true, false, true};
+        case SyncHazard::READ_AFTER_PRESENT:
+            return SyncHazardInfo{false, true};
+        case SyncHazard::WRITE_AFTER_PRESENT:
+            return SyncHazardInfo{true, true};
+        case SyncHazard::PRESENT_AFTER_WRITE:
+            return SyncHazardInfo{true, true};
+        case SyncHazard::PRESENT_AFTER_READ:
+            return SyncHazardInfo{true, false};
+        default:
+            assert(false && "Unhandled SyncHazard value");
+            return SyncHazardInfo{};
+    }
+}
