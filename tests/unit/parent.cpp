@@ -733,10 +733,12 @@ TEST_F(NegativeParent, UpdateDescriptorSetsCombinedImageSampler) {
                                          {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                      });
 
-    m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-06238");
-    ds.WriteDescriptorImageInfo(0, image_view, bad_sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-    ds.UpdateDescriptorSets();
-    m_errorMonitor->VerifyFound();
+    // TODO - This might involve state tracking in ObjectTracker, but likely will be resolved from
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4177
+    // m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-06238");
+    // ds.WriteDescriptorImageInfo(0, image_view, bad_sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    // ds.UpdateDescriptorSets();
+    // m_errorMonitor->VerifyFound();
 
     ds.Clear();
     m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239");

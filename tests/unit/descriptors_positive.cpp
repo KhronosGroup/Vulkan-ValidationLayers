@@ -1442,3 +1442,34 @@ TEST_F(PositiveDescriptors, CopyDestroyedMutableDescriptors) {
     vk::DestroySampler(device(), sampler, nullptr);
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
 }
+
+TEST_F(PositiveDescriptors, WriteDescriptorSetTypeStageMatch) {
+    TEST_DESCRIPTION("Overstep the current binding to another valid binding");
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                                  {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                                  {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                                  {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+
+    vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    VkDescriptorBufferInfo buffer_infos[5] = {};
+    for (int i = 0; i < 5; ++i) {
+        buffer_infos[i] = {uniform_buffer, 0, VK_WHOLE_SIZE};
+    }
+    descriptor_write.dstBinding = 2;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.pBufferInfo = buffer_infos;
+
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorCount = 4;
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+
+    descriptor_write.dstArrayElement = 1;
+    descriptor_write.descriptorCount = 3;
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+}

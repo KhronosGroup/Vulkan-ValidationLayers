@@ -2090,36 +2090,16 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                     }
                 }
             }
+            break;
         }
-            [[fallthrough]];
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
-            if (!update.pImageInfo) break;
             auto iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
-            for (uint32_t di = 0; di < update.descriptorCount && !iter.AtEnd(); ++di, ++iter) {
-                const Location image_info_loc = write_loc.dot(Field::pImageInfo, di);
-                const vvl::SamplerDescriptor &desc = (const vvl::SamplerDescriptor &)*iter;
-                // Because we need the descriptor state, can't use the ValidateObject() in ObjectTracker
-                if (!desc.IsImmutableSampler()) {
-                    const VkSampler sampler_handle = update.pImageInfo[di].sampler;
-                    if (Get<vvl::Sampler>(sampler_handle).get() == nullptr) {
-                        if (sampler_handle == VK_NULL_HANDLE) {
-                            const LogObjectList objlist(update.dstSet);
-                            skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00325", objlist,
-                                             image_info_loc.dot(Field::sampler),
-                                             "is VK_NULL_HANDLE but must be valid for a descriptorType of %s.",
-                                             string_VkDescriptorType(update.descriptorType));
-                        } else {
-                            const LogObjectList objlist(update.dstSet, update.pImageInfo[di].sampler);
-                            skip |= LogError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-06238", objlist,
-                                             image_info_loc.dot(Field::sampler),
-                                             "(%s) is an invalid sampler, most likely was created from a different VkDevice.",
-                                             FormatHandle(update.pImageInfo[di].sampler).c_str());
-                        }
-                    }
-                } else if (update.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER && !is_push_descriptor) {
-                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02752", update.dstSet, image_info_loc,
-                                     "Attempted write update to an immutable sampler descriptor.");
-                }
+            const vvl::SamplerDescriptor &desc = (const vvl::SamplerDescriptor &)*iter;
+            if (desc.IsImmutableSampler() && !is_push_descriptor) {
+                skip |=
+                    LogError("VUID-VkWriteDescriptorSet-descriptorType-02752", update.dstSet, write_loc.dot(Field::descriptorType),
+                             "is VK_DESCRIPTOR_TYPE_SAMPLER but can't update the immutable sampler from %s.",
+                             FormatHandle(dst_set.GetLayout().get()->Handle()).c_str());
             }
             break;
         }
