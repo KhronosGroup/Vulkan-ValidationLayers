@@ -214,13 +214,11 @@ bool Device::manual_PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandB
                                  "vertexAttributeInstanceRateDivisor feature was not enabled",
                                  pVertexBindingDescriptions[binding].divisor);
             } else {
-                if (pVertexBindingDescriptions[binding].divisor >
-                    phys_dev_ext_props.vertex_attribute_divisor_props.maxVertexAttribDivisor) {
+                if (pVertexBindingDescriptions[binding].divisor > phys_dev_props_core14.maxVertexAttribDivisor) {
                     skip |= LogError("VUID-VkVertexInputBindingDescription2EXT-divisor-06226", commandBuffer,
                                      binding_loc.dot(Field::divisor),
                                      "(%" PRIu32 ") is greater than maxVertexAttribDivisor (%" PRIu32 ")",
-                                     pVertexBindingDescriptions[binding].divisor,
-                                     phys_dev_ext_props.vertex_attribute_divisor_props.maxVertexAttribDivisor);
+                                     pVertexBindingDescriptions[binding].divisor, phys_dev_props_core14.maxVertexAttribDivisor);
                 }
 
                 if (pVertexBindingDescriptions[binding].inputRate != VK_VERTEX_INPUT_RATE_INSTANCE) {

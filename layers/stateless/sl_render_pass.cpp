@@ -754,11 +754,11 @@ bool Device::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBuffer
                              "is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
         }
 
-        if (!(depth_attachment.resolveMode & phys_dev_ext_props.depth_stencil_resolve_props.supportedDepthResolveModes)) {
-            skip |= LogError(
-                "VUID-VkRenderingInfo-pDepthAttachment-06102", commandBuffer, attachment_loc.dot(Field::resolveMode),
-                "is %s, but supportedDepthResolveModes is %s.", string_VkResolveModeFlagBits(depth_attachment.resolveMode),
-                string_VkResolveModeFlags(phys_dev_ext_props.depth_stencil_resolve_props.supportedDepthResolveModes).c_str());
+        if (!(depth_attachment.resolveMode & phys_dev_props_core12.supportedDepthResolveModes)) {
+            skip |=
+                LogError("VUID-VkRenderingInfo-pDepthAttachment-06102", commandBuffer, attachment_loc.dot(Field::resolveMode),
+                         "is %s, but supportedDepthResolveModes is %s.", string_VkResolveModeFlagBits(depth_attachment.resolveMode),
+                         string_VkResolveModeFlags(phys_dev_props_core12.supportedDepthResolveModes).c_str());
         }
     }
 
@@ -801,11 +801,11 @@ bool Device::ValidateBeginRenderingStencilAttachment(VkCommandBuffer commandBuff
                              "is VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
         }
 
-        if (!(stencil_attachment.resolveMode & phys_dev_ext_props.depth_stencil_resolve_props.supportedStencilResolveModes)) {
-            skip |= LogError(
-                "VUID-VkRenderingInfo-pStencilAttachment-06103", commandBuffer, attachment_loc.dot(Field::resolveMode),
-                "is %s, but supportedStencilResolveModes is %s.", string_VkResolveModeFlagBits(stencil_attachment.resolveMode),
-                string_VkResolveModeFlags(phys_dev_ext_props.depth_stencil_resolve_props.supportedStencilResolveModes).c_str());
+        if (!(stencil_attachment.resolveMode & phys_dev_props_core12.supportedStencilResolveModes)) {
+            skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-06103", commandBuffer, attachment_loc.dot(Field::resolveMode),
+                             "is %s, but supportedStencilResolveModes is %s.",
+                             string_VkResolveModeFlagBits(stencil_attachment.resolveMode),
+                             string_VkResolveModeFlags(phys_dev_props_core12.supportedStencilResolveModes).c_str());
         }
     }
 
