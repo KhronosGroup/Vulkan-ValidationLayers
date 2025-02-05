@@ -78,7 +78,7 @@ Instance* GetData(VkPhysicalDevice);
 void FreeData(void* key, VkInstance instance);
 
 class Device;
-void SetData(VkDevice dev, std::unique_ptr<Device>&&);
+void SetData(VkDevice dev, Device*);
 Device* GetData(VkDevice);
 Device* GetData(VkQueue);
 Device* GetData(VkCommandBuffer);

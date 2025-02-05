@@ -20,6 +20,7 @@
 #include "chassis/dispatch_object.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "state_tracker/pipeline_state.h"
+#include "containers/custom_containers.h"
 
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
 
@@ -39,7 +40,7 @@ static std::shared_mutex instance_mutex;
 static vvl::unordered_map<void *, std::unique_ptr<Instance>> instance_data;
 
 static std::shared_mutex device_mutex;
-static vvl::unordered_map<void *, std::unique_ptr<Device>> device_data;
+static small_unordered_map<void *, Device *, 1> device_data;
 
 static Instance *GetInstanceFromKey(void *key) {
     ReadLockGuard lock(instance_mutex);
@@ -63,7 +64,7 @@ void FreeData(void *key, VkInstance instance) {
 
 static Device *GetDeviceFromKey(void *key) {
     ReadLockGuard lock(device_mutex);
-    return device_data[key].get();
+    return device_data[key];
 }
 
 Device *GetData(VkDevice device) { return GetDeviceFromKey(GetDispatchKey(device)); }
@@ -72,20 +73,26 @@ Device *GetData(VkQueue queue) { return GetDeviceFromKey(GetDispatchKey(queue));
 
 Device *GetData(VkCommandBuffer cb) { return GetDeviceFromKey(GetDispatchKey(cb)); }
 
-void SetData(VkDevice device, std::unique_ptr<Device> &&data) {
+void SetData(VkDevice device, Device *data) {
     void *key = GetDispatchKey(device);
     WriteLockGuard lock(device_mutex);
-    device_data[key] = std::move(data);
+    device_data[key] = data;
 }
 
 void FreeData(void *key, VkDevice device) {
     WriteLockGuard lock(device_mutex);
-    device_data.erase(key);
+    if (device_data.contains(key)) {
+        delete device_data[key];
+        device_data.erase(key);
+    }
 }
 
 void FreeAllData() {
     {
         WriteLockGuard lock(device_mutex);
+        for (auto [key, device] : device_data) {
+            delete device;
+        }
         device_data.clear();
     }
     {
