@@ -65,6 +65,19 @@ enum class SyncOrdering : uint8_t {
 };
 const char *string_SyncHazardVUID(SyncHazard hazard);
 
+struct SyncHazardInfo {
+    bool is_write = false;
+    bool is_prior_write = false;
+    bool is_racing_hazard = false;
+
+    bool IsWrite() const { return is_write; }
+    bool IsRead() const { return !is_write; }
+    bool IsPriorWrite() const { return is_prior_write; }
+    bool IsPriorRead() const { return !is_prior_write; }
+    bool IsRacingHazard() const { return is_racing_hazard; }
+};
+SyncHazardInfo GetSyncHazardInfo(SyncHazard hazard);
+
 class HazardResult {
   public:
     struct HazardState {

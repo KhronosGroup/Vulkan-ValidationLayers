@@ -120,6 +120,27 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, VkBuffer buff
     return message;
 }
 
+// Given that access is hazardous, we check if at least stage or access part of it is covered
+// by the synchronization. If applied synchronization covers at least stage or access component
+// then we can provide more precise message by focusing on the other component.
+static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo& access, const SyncAccessFlags& write_barriers,
+                                                     const CommandBufferAccessContext& cb_context) {
+    const auto protected_stage_access_pairs =
+        ConvertSyncAccessesToCompactVkForm(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
+                                           cb_context.GetSyncState().extensions);
+    bool is_stage_protected = false;
+    bool is_access_protected = false;
+    for (const auto& protected_stage_access : protected_stage_access_pairs) {
+        if (protected_stage_access.first & access.stage_mask) {
+            is_stage_protected = true;
+        }
+        if (protected_stage_access.second & access.access_mask) {
+            is_access_protected = true;
+        }
+    }
+    return std::make_pair(is_stage_protected, is_access_protected);
+}
+
 std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffer buffer, uint32_t region_index,
                                              ResourceAccessRange region_range, const CommandBufferAccessContext& cb_context,
                                              const vvl::Func command) const {
@@ -128,17 +149,16 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
     const SyncAccessFlags write_barriers = hazard.State().access_state->GetWriteBarriers();
     const VkPipelineStageFlags2 read_barriers = hazard.State().access_state->GetReadBarriers(hazard.State().prior_access_index);
 
-    const SyncAccessInfo& sync_access = syncAccessInfoByAccessIndex()[hazard.State().access_index];
-    const SyncAccessInfo& sync_prior_access = syncAccessInfoByAccessIndex()[hazard.State().prior_access_index];
+    const SyncAccessInfo& access = syncAccessInfoByAccessIndex()[hazard.State().access_index];
+    const SyncAccessInfo& prior_access = syncAccessInfoByAccessIndex()[hazard.State().prior_access_index];
 
-    const auto vk_protected_accesses =
-        ConvertSyncAccessesToCompactVkForm(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
-                                           cb_context.GetSyncState().extensions);
-    const bool barrier_correct_access_wrong_stage =
-        std::find_if(vk_protected_accesses.begin(), vk_protected_accesses.end(), [&sync_access](const auto& protected_access) {
-            return (protected_access.second & sync_access.access_mask) != 0;
-        }) != vk_protected_accesses.end();
+    const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
+    const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
 
+    const bool missing_synchronization = (hazard_info.IsPriorWrite() && write_barriers.none()) ||
+                                         (hazard_info.IsPriorRead() && read_barriers == VK_PIPELINE_STAGE_2_NONE);
+
+    // Add properties that describe this hazard
     ReportKeyValues key_values;
     cb_context.FormatHazard(hazard, key_values);
     key_values.Add(kPropertyMessageType, "BufferRegionError");
@@ -147,27 +167,14 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
     key_values.Add(kPropertyCopyRegion, region_index);
     AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
 
-    const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
-
-    const bool is_write = IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_AFTER_WRITE, WRITE_RACING_WRITE, WRITE_RACING_READ,
-                                                  WRITE_AFTER_PRESENT, PRESENT_AFTER_READ, PRESENT_AFTER_WRITE});
-    const bool is_prior_write = IsValueIn(hazard_type, {READ_AFTER_WRITE, WRITE_AFTER_WRITE, READ_RACING_WRITE, WRITE_RACING_WRITE,
-                                                        WRITE_AFTER_PRESENT, READ_AFTER_PRESENT, PRESENT_AFTER_WRITE});
-    const bool is_racing = IsValueIn(hazard_type, {READ_RACING_WRITE, WRITE_RACING_WRITE, WRITE_RACING_READ});
-
-    const bool missing_synchronization =
-        (is_prior_write && write_barriers.none()) || (!is_prior_write && read_barriers == VK_PIPELINE_STAGE_2_NONE);
-
-    const char* access_type = is_write ? "write" : "read";
-    const char* prior_access_type = is_prior_write ? "write" : "read";
-
+    // Brief description of what happened
     std::stringstream ss;
     ss << string_SyncHazard(hazard_type) << " hazard detected. ";
     ss << vvl::String(command);
-    ss << (is_write ? " writes to " : " reads ");
+    ss << (hazard_info.IsWrite() ? " writes to " : " reads ");
     ss << validator_.FormatHandle(buffer);
-    ss << (is_racing ? ", which is being " : ", which was previously ");
-    ss << (is_prior_write ? "written by " : "read by ");
+    ss << (hazard_info.IsRacingHazard() ? ", which is being " : ", which was previously ");
+    ss << (hazard_info.IsPriorWrite() ? "written by " : "read by ");
     if (usage_info.command == command) {
         ss << "another " << vvl::String(usage_info.command) << " command";
     } else {
@@ -178,35 +185,36 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
     }
     ss << ". ";
 
+    // Synchronization information
     if (missing_synchronization) {
+        const char* access_type = hazard_info.IsWrite() ? "write" : "read";
+        const char* prior_access_type = hazard_info.IsPriorWrite() ? "write" : "read";
         ss << "No sufficient synchronization is present to ensure that a " << access_type << " (";
-        ss << string_VkAccessFlagBits2(sync_access.access_mask) << ") at ";
-        ss << string_VkPipelineStageFlagBits2(sync_access.stage_mask) << " does not conflict with a prior ";
-        ss << prior_access_type << " (" << string_VkAccessFlags2(sync_prior_access.access_mask) << ") at ";
-        if (sync_prior_access.stage_mask == sync_access.stage_mask) {
+        ss << string_VkAccessFlagBits2(access.access_mask) << ") at ";
+        ss << string_VkPipelineStageFlagBits2(access.stage_mask) << " does not conflict with a prior ";
+        ss << prior_access_type << " (" << string_VkAccessFlags2(prior_access.access_mask) << ") at ";
+        if (prior_access.stage_mask == access.stage_mask) {
             ss << "the same stage.";
         } else {
-            ss << string_VkPipelineStageFlagBits2(sync_prior_access.stage_mask) << ".";
+            ss << string_VkPipelineStageFlagBits2(prior_access.stage_mask) << ".";
         }
-    } else if (is_prior_write) {  // RAW/WAW hazards
-        if (barrier_correct_access_wrong_stage) {
-            ss << "The current synchronization protects ";
-            ss << FormatSyncAccesses(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
-                                     cb_context.GetSyncState().extensions, false);
-            ss << " but not at " << string_VkPipelineStageFlagBits2(sync_access.stage_mask) << ".";
+    } else if (hazard_info.IsPriorWrite()) {  // RAW/WAW hazards
+        ss << "The current synchronization allows ";
+        ss << FormatSyncAccesses(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
+                                 cb_context.GetSyncState().extensions, false);
+        auto [is_stage_protected, is_access_protected] = GetPartialProtectedInfo(access, write_barriers, cb_context);
+        if (is_access_protected) {
+            ss << " but not at " << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
         } else {
-            ss << "The current synchronization allows ";
-            ss << FormatSyncAccesses(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
-                                     cb_context.GetSyncState().extensions, false);
             ss << ", but to prevent this hazard, it must allow ";
-            ss << string_VkAccessFlagBits2(sync_access.access_mask) << " accesses at ";
-            ss << string_VkPipelineStageFlagBits2(sync_access.stage_mask) << ".";
+            ss << string_VkAccessFlagBits2(access.access_mask) << " accesses at ";
+            ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
         }
     } else {  // WAR hazard
         ss << "The current synchronization waits at ";
         ss << string_VkPipelineStageFlags2(read_barriers);
         ss << ", but to prevent this hazard, it must wait at ";
-        ss << string_VkPipelineStageFlagBits2(sync_access.stage_mask) << ".";
+        ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
     }
 
     // Copy region information
