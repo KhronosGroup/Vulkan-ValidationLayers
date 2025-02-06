@@ -22,6 +22,8 @@
 #include "state_tracker/pipeline_state.h"
 #include "containers/custom_containers.h"
 
+#include <atomic>
+
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
 
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
@@ -40,6 +42,7 @@ static std::shared_mutex instance_mutex;
 static vvl::unordered_map<void *, std::unique_ptr<Instance>> instance_data;
 
 static std::shared_mutex device_mutex;
+static std::atomic<Device *> last_used_device = nullptr;
 static small_unordered_map<void *, Device *, 1> device_data;
 
 static Instance *GetInstanceFromKey(void *key) {
@@ -63,8 +66,14 @@ void FreeData(void *key, VkInstance instance) {
 }
 
 static Device *GetDeviceFromKey(void *key) {
+    Device *last_device = last_used_device.load();
+    if (last_device && GetDispatchKey(last_device->device) == key) {
+        return last_device;
+    }
     ReadLockGuard lock(device_mutex);
-    return device_data[key];
+    last_device = device_data[key];
+    last_used_device.store(last_device);
+    return last_device;
 }
 
 Device *GetData(VkDevice device) { return GetDeviceFromKey(GetDispatchKey(device)); }
@@ -80,6 +89,7 @@ void SetData(VkDevice device, Device *data) {
 }
 
 void FreeData(void *key, VkDevice device) {
+    last_used_device.store(nullptr);
     WriteLockGuard lock(device_mutex);
     if (device_data.contains(key)) {
         delete device_data[key];
@@ -89,6 +99,7 @@ void FreeData(void *key, VkDevice device) {
 
 void FreeAllData() {
     {
+        last_used_device.store(nullptr);
         WriteLockGuard lock(device_mutex);
         for (auto [key, device] : device_data) {
             delete device;
