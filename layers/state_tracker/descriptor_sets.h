@@ -437,7 +437,7 @@ class SamplerDescriptor : public Descriptor {
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const;
 
-    void SetSamplerState(std::shared_ptr<vvl::Sampler> &&state);
+    void SetImmutableSampler(std::shared_ptr<vvl::Sampler> &&state);
     const vvl::Sampler *GetSamplerState() const { return sampler_state_.get(); }
     vvl::Sampler *GetSamplerState() { return sampler_state_.get(); }
     std::shared_ptr<vvl::Sampler> GetSharedSamplerState() const { return sampler_state_; }
@@ -494,7 +494,7 @@ class ImageSamplerDescriptor : public ImageDescriptor {
                     VkDescriptorType type) override;
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const;
-    void SetSamplerState(std::shared_ptr<vvl::Sampler> &&state);
+    void SetImmutableSampler(std::shared_ptr<vvl::Sampler> &&state);
     const vvl::Sampler *GetSamplerState() const { return sampler_state_.get(); }
     vvl::Sampler *GetSamplerState() { return sampler_state_.get(); }
     std::shared_ptr<vvl::Sampler> GetSharedSamplerState() const { return sampler_state_; }
@@ -833,7 +833,6 @@ class DescriptorSet : public StateObject {
     virtual void PerformCopyUpdate(const VkCopyDescriptorSet &, const DescriptorSet &src_set);
 
     const std::shared_ptr<DescriptorSetLayout const> &GetLayout() const { return layout_; };
-    VkDescriptorSetLayout GetDescriptorSetLayout() const { return layout_->VkHandle(); }
     VkDescriptorSet VkHandle() const { return handle_.Cast<VkDescriptorSet>(); };
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
