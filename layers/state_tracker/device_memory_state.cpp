@@ -379,7 +379,7 @@ std::pair<VkDeviceMemory, MemoryRange> vvl::Bindable::GetResourceMemoryOverlap(
 }
 
 VkDeviceSize vvl::Bindable::GetFakeBaseAddress() const {
-    assert(!sparse);  // not implemented yet
+    // TODO: Sparse resources are not implemented yet
     const auto *binding = Binding();
     return binding ? binding->memory_offset + binding->memory_state->fake_base_address : 0;
 }
