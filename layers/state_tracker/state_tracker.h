@@ -229,9 +229,6 @@ class Instance : public vvl::base::Instance {
     void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, const RecordObject& record_obj,
                                    vku::safe_VkDeviceCreateInfo* modified_create_info) override;
-    void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
-                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
-                                    const RecordObject& record_obj) override;
 
     void PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                             const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -737,7 +734,7 @@ class Device : public vvl::base::Device {
     void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                            const RecordObject& record_obj) override;
 
-    virtual void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc);
+    virtual void FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
 
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
                                     const RecordObject& record_obj) override;

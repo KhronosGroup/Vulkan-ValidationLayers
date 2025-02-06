@@ -431,7 +431,7 @@ void Instance::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const 
 }
 
 // Perform initializations that can be done at Create Device time.
-void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // GPU-AV not supported, exit early to prevent errors inside Validator::PostCallRecordCreateDevice
     if (api_version < VK_API_VERSION_1_1) {
         InternalError(device, loc, "GPU Shader Instrumentation requires Vulkan 1.1 or later.");
@@ -462,9 +462,9 @@ void Validator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Lo
         {glsl::kBindingInstVertexAttributeFetchLimits, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
     };
 
-    // TODO - Now that GPU-AV and DebugPrintf are merged, we should just have a single PostCreateDevice if possible (or at least
+    // TODO - Now that GPU-AV and DebugPrintf are merged, we should just have a single FinishDeviceSetup if possible (or at least
     // better divide what belongs where as it is easy to mess)
-    BaseClass::PostCreateDevice(pCreateInfo, loc);
+    BaseClass::FinishDeviceSetup(pCreateInfo, loc);
     // We might fail in parent class device creation if global requirements are not met
     if (aborted_) return;
 

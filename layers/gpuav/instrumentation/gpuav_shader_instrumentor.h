@@ -75,7 +75,7 @@ class GpuShaderInstrumentor : public vvl::Device {
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
-    void PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
+    void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
 

@@ -68,8 +68,8 @@ WriteLockGuard GpuShaderInstrumentor::WriteLock() {
 }
 
 // In charge of getting things for shader instrumentation that both GPU-AV and DebugPrintF will need
-void GpuShaderInstrumentor::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
-    BaseClass::PostCreateDevice(pCreateInfo, loc);
+void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+    BaseClass::FinishDeviceSetup(pCreateInfo, loc);
 
     VkPhysicalDeviceFeatures supported_features{};
     DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);

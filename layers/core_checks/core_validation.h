@@ -1467,7 +1467,7 @@ class CoreChecks : public vvl::Device {
                                                  const ErrorObject& error_obj) const override;
     bool ValidateDeferredOperation(VkDevice device, VkDeferredOperationKHR deferred_operation, const Location& loc,
                                    const char* vuid) const;
-    void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
+    void FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) override;
     bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                         VkDeviceSize dataSize, const void* pData, const ErrorObject& error_obj) const override;
     bool PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,

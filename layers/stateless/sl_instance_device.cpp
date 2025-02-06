@@ -335,26 +335,20 @@ void Instance::PreCallRecordDestroyInstance(VkInstance instance, const VkAllocat
     }
 }
 
-void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                          const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                          const RecordObject &record_obj) {
-    auto device_data = vvl::dispatch::GetData(*pDevice);
-    if (record_obj.result != VK_SUCCESS) return;
-    auto stateless_device = static_cast<Device *>(device_data->GetValidationObject(container_type));
-
-    memcpy(&stateless_device->device_limits, &stateless_device->phys_dev_props.limits, sizeof(VkPhysicalDeviceLimits));
+void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+    memcpy(&device_limits, &phys_dev_props.limits, sizeof(VkPhysicalDeviceLimits));
 
     std::vector<VkExtensionProperties> ext_props{};
     uint32_t ext_count = 0;
-    DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &ext_count, nullptr);
+    DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, nullptr);
     ext_props.resize(ext_count);
-    DispatchEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &ext_count, ext_props.data());
+    DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &ext_count, ext_props.data());
     for (const auto &prop : ext_props) {
         vvl::Extension extension = GetExtension(prop.extensionName);
         if (extension == vvl::Extension::_VK_EXT_discard_rectangles) {
-            stateless_device->discard_rectangles_extension_version = prop.specVersion;
+            discard_rectangles_extension_version = prop.specVersion;
         } else if (extension == vvl::Extension::_VK_NV_scissor_exclusive) {
-            stateless_device->scissor_exclusive_extension_version = prop.specVersion;
+            scissor_exclusive_extension_version = prop.specVersion;
         }
     }
 }

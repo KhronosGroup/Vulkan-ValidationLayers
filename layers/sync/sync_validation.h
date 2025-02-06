@@ -156,7 +156,7 @@ class SyncValidator : public vvl::Device, public SyncStageAccess {
     void RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, Func command);
     bool SupressedBoundDescriptorWAW(const HazardResult &hazard) const;
 
-    void PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
+    void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
 
     void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                        const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,

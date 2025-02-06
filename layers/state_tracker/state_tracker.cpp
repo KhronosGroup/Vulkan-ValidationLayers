@@ -674,96 +674,12 @@ VkFormatFeatureFlags2KHR Device::GetPotentialFormatFeatures(VkFormat format) con
     return format_features;
 }
 
-void Instance::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
-                                          const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                          const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
-
-    // The current object represents the VkInstance, look up / create the object for the device.
-    dispatch::Device *device_object = dispatch::GetData(*pDevice);
-    auto *validation_data = device_object->GetValidationObject(this->container_type);
-    auto *device_state = static_cast<Device *>(validation_data);
-
-    // finish setup in the object representing the device
-    device_state->PostCreateDevice(pCreateInfo, record_obj.location);
-
-    if (IsExtEnabled(extensions.vk_nv_cooperative_matrix)) {
-        uint32_t num_cooperative_matrix_properties_nv = 0;
-        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &num_cooperative_matrix_properties_nv, NULL);
-        device_state->cooperative_matrix_properties_nv.resize(num_cooperative_matrix_properties_nv,
-                                                              vku::InitStruct<VkCooperativeMatrixPropertiesNV>());
-
-        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &num_cooperative_matrix_properties_nv,
-                                                               device_state->cooperative_matrix_properties_nv.data());
-    }
-
-    if (IsExtEnabled(extensions.vk_khr_cooperative_matrix)) {
-        uint32_t num_cooperative_matrix_properties_khr = 0;
-        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu, &num_cooperative_matrix_properties_khr, NULL);
-        device_state->cooperative_matrix_properties_khr.resize(num_cooperative_matrix_properties_khr,
-                                                               vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
-
-        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(gpu, &num_cooperative_matrix_properties_khr,
-                                                                device_state->cooperative_matrix_properties_khr.data());
-    }
-
-    if (IsExtEnabled(extensions.vk_nv_cooperative_matrix2)) {
-        uint32_t num_cooperative_matrix_flexible_dimensions_properties = 0;
-        DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
-            gpu, &num_cooperative_matrix_flexible_dimensions_properties, NULL);
-        device_state->cooperative_matrix_flexible_dimensions_properties.resize(
-            num_cooperative_matrix_flexible_dimensions_properties,
-            vku::InitStruct<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>());
-
-        DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
-            gpu, &num_cooperative_matrix_flexible_dimensions_properties,
-            device_state->cooperative_matrix_flexible_dimensions_properties.data());
-    }
-
-    if (IsExtEnabled(extensions.vk_nv_cooperative_vector)) {
-        uint32_t num_cooperative_vector_properties_nv = 0;
-        DispatchGetPhysicalDeviceCooperativeVectorPropertiesNV(gpu, &num_cooperative_vector_properties_nv, NULL);
-        device_state->cooperative_vector_properties_nv.resize(num_cooperative_vector_properties_nv,
-                                                              vku::InitStruct<VkCooperativeVectorPropertiesNV>());
-
-        DispatchGetPhysicalDeviceCooperativeVectorPropertiesNV(gpu, &num_cooperative_vector_properties_nv,
-                                                               device_state->cooperative_vector_properties_nv.data());
-    }
-#if defined(VVL_TRACY_GPU)
-    std::vector<VkTimeDomainKHR> time_domains;
-    uint32_t time_domain_count = 0;
-    VkResult result = DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu, &time_domain_count, nullptr);
-    assert(result == VK_SUCCESS);
-    time_domains.resize(time_domain_count);
-    result = DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(gpu, &time_domain_count, time_domains.data());
-    assert(result == VK_SUCCESS);
-
-    bool found_tracy_required_time_domain = false;
-    for (VkTimeDomainEXT time_domain : time_domains) {
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-        if (time_domain == VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT) {
-            found_tracy_required_time_domain = true;
-            break;
-        }
-#else
-        if (time_domain == VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_EXT) {
-            found_tracy_required_time_domain = true;
-            break;
-        }
-#endif
-    }
-    (void)found_tracy_required_time_domain;
-    assert(found_tracy_required_time_domain);
-
-#endif
-}
-
 std::shared_ptr<Queue> Device::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
                                            VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties) {
     return std::make_shared<Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties);
 }
 
-void Device::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     const auto *device_group_ci = vku::FindStructInPNextChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
     if (device_group_ci) {
         physical_device_count = device_group_ci->physicalDeviceCount;
@@ -890,6 +806,76 @@ void Device::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Locat
     // internal pipeline cache control
     const auto *cache_control = vku::FindStructInPNextChain<VkDevicePipelineBinaryInternalCacheControlKHR>(pCreateInfo->pNext);
     disable_internal_pipeline_cache = cache_control && cache_control->disableInternalCache;
+
+    if (IsExtEnabled(extensions.vk_nv_cooperative_matrix)) {
+        uint32_t num_cooperative_matrix_properties_nv = 0;
+        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device, &num_cooperative_matrix_properties_nv, NULL);
+        cooperative_matrix_properties_nv.resize(num_cooperative_matrix_properties_nv,
+                                                vku::InitStruct<VkCooperativeMatrixPropertiesNV>());
+
+        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesNV(physical_device, &num_cooperative_matrix_properties_nv,
+                                                               cooperative_matrix_properties_nv.data());
+    }
+
+    if (IsExtEnabled(extensions.vk_khr_cooperative_matrix)) {
+        uint32_t num_cooperative_matrix_properties_khr = 0;
+        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physical_device, &num_cooperative_matrix_properties_khr, NULL);
+        cooperative_matrix_properties_khr.resize(num_cooperative_matrix_properties_khr,
+                                                 vku::InitStruct<VkCooperativeMatrixPropertiesKHR>());
+
+        DispatchGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physical_device, &num_cooperative_matrix_properties_khr,
+                                                                cooperative_matrix_properties_khr.data());
+    }
+
+    if (IsExtEnabled(extensions.vk_nv_cooperative_matrix2)) {
+        uint32_t num_cooperative_matrix_flexible_dimensions_properties = 0;
+        DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+            physical_device, &num_cooperative_matrix_flexible_dimensions_properties, NULL);
+        cooperative_matrix_flexible_dimensions_properties.resize(
+            num_cooperative_matrix_flexible_dimensions_properties,
+            vku::InitStruct<VkCooperativeMatrixFlexibleDimensionsPropertiesNV>());
+
+        DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+            physical_device, &num_cooperative_matrix_flexible_dimensions_properties,
+            cooperative_matrix_flexible_dimensions_properties.data());
+    }
+
+    if (IsExtEnabled(extensions.vk_nv_cooperative_vector)) {
+        uint32_t num_cooperative_vector_properties_nv = 0;
+        DispatchGetPhysicalDeviceCooperativeVectorPropertiesNV(physical_device, &num_cooperative_vector_properties_nv, NULL);
+        cooperative_vector_properties_nv.resize(num_cooperative_vector_properties_nv,
+                                                vku::InitStruct<VkCooperativeVectorPropertiesNV>());
+
+        DispatchGetPhysicalDeviceCooperativeVectorPropertiesNV(physical_device, &num_cooperative_vector_properties_nv,
+                                                               cooperative_vector_properties_nv.data());
+    }
+#if defined(VVL_TRACY_GPU)
+    std::vector<VkTimeDomainKHR> time_domains;
+    uint32_t time_domain_count = 0;
+    VkResult result = DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(physical_device, &time_domain_count, nullptr);
+    assert(result == VK_SUCCESS);
+    time_domains.resize(time_domain_count);
+    result = DispatchGetPhysicalDeviceCalibrateableTimeDomainsEXT(physical_device, &time_domain_count, time_domains.data());
+    assert(result == VK_SUCCESS);
+
+    bool found_tracy_required_time_domain = false;
+    for (VkTimeDomainEXT time_domain : time_domains) {
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+        if (time_domain == VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT) {
+            found_tracy_required_time_domain = true;
+            break;
+        }
+#else
+        if (time_domain == VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_EXT) {
+            found_tracy_required_time_domain = true;
+            break;
+        }
+#endif
+    }
+    (void)found_tracy_required_time_domain;
+    assert(found_tracy_required_time_domain);
+
+#endif
 }
 
 void Device::DestroyObjectMaps() {

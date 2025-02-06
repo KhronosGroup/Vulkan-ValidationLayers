@@ -350,10 +350,6 @@ class Instance : public vvl::base::Instance {
     bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
                                vvl::Extension extension, const Location &extension_loc) const;
 
-    void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                    const RecordObject &record_obj) override;
-
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                        VkInstance *pInstance, const ErrorObject &error_obj) const override;
 
@@ -489,6 +485,8 @@ class Device : public vvl::base::Device {
                                   const ErrorObject &error_obj) const;
 
     void RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo);
+
+    void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
 
     // Pre/PostCallRecord declarations
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,

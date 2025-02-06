@@ -730,9 +730,9 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuff
                                                            *pDependencyInfo);
 }
 
-void SyncValidator::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void SyncValidator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // The state tracker sets up the device state
-    BaseClass::PostCreateDevice(pCreateInfo, loc);
+    BaseClass::FinishDeviceSetup(pCreateInfo, loc);
 
     // Returns queues in the same order as advertised by the driver.
     // This allows to have deterministic QueueId between runs that simplifies debugging.

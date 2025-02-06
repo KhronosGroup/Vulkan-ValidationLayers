@@ -224,7 +224,7 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPu
                 skip |= ValidateObject(desc->pTexelBufferView[i], kVulkanObjectTypeBufferView, true,
                                        "VUID-VkWriteDescriptorSet-descriptorType-02994",
                                        "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06236", loc.dot(Field::pTexelBufferView, i));
-                if (!null_descriptor_enabled && desc->pTexelBufferView[i] == VK_NULL_HANDLE) {
+                if (!enabled_features.nullDescriptor && desc->pTexelBufferView[i] == VK_NULL_HANDLE) {
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02995", desc->dstSet,
                                      loc.dot(Field::pTexelBufferView, i), "is VK_NULL_HANDLE.");
                 }
@@ -240,7 +240,7 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPu
                                            "VUID-VkWriteDescriptorSet-descriptorType-02996",
                                            "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06239",
                                            loc.dot(Field::pImageInfo, i).dot(Field::imageView));
-                    if (!null_descriptor_enabled && desc->pImageInfo[i].imageView == VK_NULL_HANDLE) {
+                    if (!enabled_features.nullDescriptor && desc->pImageInfo[i].imageView == VK_NULL_HANDLE) {
                         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02997", desc->dstSet,
                                          loc.dot(Field::pImageInfo, i).dot(Field::imageView), "is VK_NULL_HANDLE.");
                     }
@@ -269,7 +269,7 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPu
                     skip |= ValidateObject(
                         desc->pBufferInfo[i].buffer, kVulkanObjectTypeBuffer, true, "VUID-VkDescriptorBufferInfo-buffer-parameter",
                         "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06237", loc.dot(Field::pBufferInfo, i).dot(Field::buffer));
-                    if (!null_descriptor_enabled && desc->pBufferInfo[i].buffer == VK_NULL_HANDLE) {
+                    if (!enabled_features.nullDescriptor && desc->pBufferInfo[i].buffer == VK_NULL_HANDLE) {
                         skip |= LogError("VUID-VkDescriptorBufferInfo-buffer-02998", desc->dstSet,
                                          loc.dot(Field::pBufferInfo, i).dot(Field::buffer), "is VK_NULL_HANDLE.");
                     }
@@ -699,12 +699,6 @@ void Instance::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const
                                           const RecordObject &record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     tracker.CreateObject(*pDevice, kVulkanObjectTypeDevice, pAllocator, record_obj.location, physicalDevice);
-
-    auto device_data = vvl::dispatch::GetData(*pDevice);
-    auto object_tracking = static_cast<Device *>(device_data->GetValidationObject(container_type));
-
-    const auto *robustness2_features = vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
-    object_tracking->null_descriptor_enabled = robustness2_features && robustness2_features->nullDescriptor;
 }
 
 bool Device::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,

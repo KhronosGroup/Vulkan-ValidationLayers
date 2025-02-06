@@ -337,9 +337,9 @@ bool core::Instance::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkD
     return skip;
 }
 
-void CoreChecks::PostCreateDevice(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+void CoreChecks::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     // The state tracker sets up the device state (also if extension and/or features are enabled)
-    BaseClass::PostCreateDevice(pCreateInfo, loc);
+    BaseClass::FinishDeviceSetup(pCreateInfo, loc);
 
     AdjustValidatorOptions(extensions, enabled_features, spirv_val_options, &spirv_val_option_hash);
 
