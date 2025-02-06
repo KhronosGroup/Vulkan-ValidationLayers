@@ -238,6 +238,10 @@ class Device : public Logger {
         return VK_SUCCESS;
     }
     // Manually generated pre/post hooks
+
+    // called after vkCreateDevice() completes successfully
+    virtual void FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) {}
+
     // Allow additional state parameter for CreateGraphicsPipelines
     virtual bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                         const VkGraphicsPipelineCreateInfo* pCreateInfos,

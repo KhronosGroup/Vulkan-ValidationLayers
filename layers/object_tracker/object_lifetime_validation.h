@@ -205,8 +205,6 @@ class Device : public vvl::base::Device {
 
     object_list_map_type linked_graphics_pipeline_map;
 
-    bool null_descriptor_enabled{false};
-
     // Constructor for object lifetime tracking
     Device(vvl::dispatch::Device *dev, Instance *instance);
     ~Device();

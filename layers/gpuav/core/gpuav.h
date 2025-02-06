@@ -102,7 +102,7 @@ class Validator : public GpuShaderInstrumentor {
                                             VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties& queueFamilyProperties) override;
 
-    void PostCreateDevice(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
+    void FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
 
     void InternalVmaError(LogObjectList objlist, const Location& loc, const char* const specific_message) const;
     VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer) const;

@@ -334,8 +334,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     vvl::dispatch::SetData(*pDevice, std::move(device_dispatch));
     for (auto& vo : instance_dispatch->object_dispatch) {
         // Send down modified create info as we want to mark enabled features that we sent down on behalf of the app
-        vo->PostCallRecordCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice,
-                                       record_obj);
+        vo->PostCallRecordCreateDevice(gpu, modified_create_info.ptr(), pAllocator, pDevice, record_obj);
+    }
+    // Note: device_dispatch is no longer valid since it was a std::move source above.
+    for (auto& vo : vvl::dispatch::GetData(*pDevice)->object_dispatch) {
+        vo->FinishDeviceSetup(modified_create_info.ptr(), record_obj.location);
     }
 
     return result;
