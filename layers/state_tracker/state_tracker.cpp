@@ -4588,6 +4588,10 @@ void Device::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModu
                                              const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) {
     if (pCreateInfo->codeSize == 0 || !pCreateInfo->pCode) {
         return;
+    } else if (chassis_state.module_state) {
+        // We store the shader module at a chassis stack level (because we need it for PostCallRecord in things like GPU-AV)
+        // Only one validaiton object needs to create it
+        return;
     }
 
     chassis_state.module_state =

@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -41,7 +41,7 @@ struct CreateShaderModule {
     // We build a spirv::Module at PreCallRecord time were we can do basic validation of the SPIR-V (which can crash drivers
     // if passed in the Dispatch). It is then passed to PostCallRecord to save in state tracking so it can be used at Pipeline
     // creation time where the rest of the information is needed to do the remaining SPIR-V validation.
-    std::shared_ptr<spirv::Module> module_state;  // contains SPIR-V to validate
+    std::shared_ptr<spirv::Module> module_state = nullptr;  // contains SPIR-V to validate
     spirv::StatelessData stateless_data;
 };
 
