@@ -2430,23 +2430,35 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
     if (dst_resource) {
         auto hazard = context->DetectHazard(*vs_state, dst_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
         if (hazard.IsHazard()) {
-            const auto error =
-                error_messages_.Error(hazard, "decode output picture", *cb_access_context, error_obj.location.function);
-            skip |= SyncError(hazard.Hazard(), dst_resource.image_view_state->Handle(),
-                              decode_info_loc.dot(Field::dstPictureResource), error);
+            std::stringstream ss;
+            ss << "decode output picture ";
+            ss << Location(Func::Empty, Field::pDecodeInfo).dot(Field::dstPictureResource).Fields();
+            ss << " ";
+            FormatVideoPictureResouce(*this, pDecodeInfo->dstPictureResource, ss);
+            const std::string resouce_description = ss.str();
+            const auto error = error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+            skip |= SyncError(hazard.Hazard(), dst_resource.image_view_state->Handle(), error_obj.location, error);
         }
     }
 
     if (pDecodeInfo->pSetupReferenceSlot != nullptr && pDecodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        auto setup_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pSetupReferenceSlot->pPictureResource);
+        const VkVideoPictureResourceInfoKHR &video_picture = *pDecodeInfo->pSetupReferenceSlot->pPictureResource;
+        auto setup_resource = vvl::VideoPictureResource(*this, video_picture);
         if (setup_resource && (setup_resource != dst_resource)) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_WRITE);
             if (hazard.IsHazard()) {
-                // TODO: there are no tests for this error
+                std::stringstream ss;
+                ss << "reconstructed picture ";
+                ss << Location(Func::Empty, Field::pDecodeInfo)
+                          .dot(Field::pSetupReferenceSlot)
+                          .dot(Field::pPictureResource)
+                          .Fields();
+                ss << " ";
+                FormatVideoPictureResouce(*this, video_picture, ss);
+                const std::string resouce_description = ss.str();
                 const auto error =
-                    error_messages_.Error(hazard, "reconstructed picture", *cb_access_context, error_obj.location.function);
-                skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(),
-                                  decode_info_loc.dot(Field::pSetupReferenceSlot).dot(Field::pPictureResource), error);
+                    error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+                skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(), error_obj.location, error);
             }
         }
     }
@@ -2541,27 +2553,39 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
         }
     }
 
-    auto src_resource = vvl::VideoPictureResource(*this, pEncodeInfo->srcPictureResource);
-    if (src_resource) {
+    if (auto src_resource = vvl::VideoPictureResource(*this, pEncodeInfo->srcPictureResource)) {
         auto hazard = context->DetectHazard(*vs_state, src_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
         if (hazard.IsHazard()) {
+            std::stringstream ss;
+            ss << "encode input picture ";
+            ss << Location(Func::Empty, Field::pEncodeInfo).dot(Field::srcPictureResource).Fields();
+            ss << " ";
+            FormatVideoPictureResouce(*this, pEncodeInfo->srcPictureResource, ss);
+            const std::string resouce_description = ss.str();
             // TODO: there are no tests for this error
-            const auto error =
-                error_messages_.Error(hazard, "encode input picture", *cb_access_context, error_obj.location.function);
-            skip |= SyncError(hazard.Hazard(), src_resource.image_view_state->Handle(),
-                              encode_info_loc.dot(Field::srcPictureResource), error);
+            const auto error = error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+            skip |= SyncError(hazard.Hazard(), src_resource.image_view_state->Handle(), error_obj.location, error);
         }
     }
 
     if (pEncodeInfo->pSetupReferenceSlot != nullptr && pEncodeInfo->pSetupReferenceSlot->pPictureResource != nullptr) {
-        auto setup_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pSetupReferenceSlot->pPictureResource);
+        const VkVideoPictureResourceInfoKHR &video_picture = *pEncodeInfo->pSetupReferenceSlot->pPictureResource;
+        auto setup_resource = vvl::VideoPictureResource(*this, video_picture);
         if (setup_resource) {
             auto hazard = context->DetectHazard(*vs_state, setup_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE);
             if (hazard.IsHazard()) {
+                std::stringstream ss;
+                ss << "reconstructed picture ";
+                ss << Location(Func::Empty, Field::pEncodeInfo)
+                          .dot(Field::pSetupReferenceSlot)
+                          .dot(Field::pPictureResource)
+                          .Fields();
+                ss << " ";
+                FormatVideoPictureResouce(*this, video_picture, ss);
+                const std::string resouce_description = ss.str();
                 const auto error =
-                    error_messages_.Error(hazard, "reconstructed picture", *cb_access_context, error_obj.location.function);
-                skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(),
-                                  encode_info_loc.dot(Field::pSetupReferenceSlot).dot(Field::pPictureResource), error);
+                    error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+                skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(), error_obj.location, error);
             }
         }
     }
@@ -2592,12 +2616,15 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
                 auto hazard = context->DetectHazard(*image_view_state, offset, extent, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ,
                                                     SyncOrdering::kOrderingNone);
                 if (hazard.IsHazard()) {
-                    // TODO: there are no tests for this error
+                    std::stringstream ss;
+                    ss << "quantization map ";
+                    ss << Location(Func::Empty, Field::pEncodeInfo).dot(Field::quantizationMap).Fields();
+                    ss << " ";
+                    FormatVideoQuantizationMap(*this, *quantization_map_info, ss);
+                    const std::string resouce_description = ss.str();
                     const auto error =
-                        error_messages_.Error(hazard, "quantization map", *cb_access_context, error_obj.location.function);
-                    skip |= SyncError(hazard.Hazard(), image_view_state->Handle(),
-                                      encode_info_loc.pNext(Struct::VkVideoEncodeQuantizationMapInfoKHR, Field::quantizationMap),
-                                      error);
+                        error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+                    skip |= SyncError(hazard.Hazard(), image_view_state->Handle(), error_obj.location, error);
                 }
             }
         }

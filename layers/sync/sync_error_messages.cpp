@@ -183,16 +183,18 @@ void ErrorMessages::AddCbContextExtraProperties(const CommandBufferAccessContext
 
 std::string ErrorMessages::Error(const HazardResult& hazard, const std::string& resouce_description,
                                  const CommandBufferAccessContext& cb_context, vvl::Func command) const {
-    const auto format = "Hazard %s for %s. Access info %s.";
     ReportKeyValues key_values;
+    cb_context.FormatHazard(hazard, key_values);
+    key_values.Add(kPropertyMessageType, "GeneralError");
+    key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+    key_values.Add(kPropertyCommand, vvl::String(command));
+    AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
 
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), resouce_description.c_str(), access_info.c_str());
+    std::stringstream ss;
+    FormatCommonMessage(hazard, resouce_description, command, key_values, cb_context, ss);
+
+    std::string message = ss.str();
     if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "GeneralError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;

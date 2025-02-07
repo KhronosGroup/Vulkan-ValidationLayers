@@ -18,6 +18,24 @@
 #include "sync/sync_reporting.h"
 #include "sync/sync_image.h"
 #include "sync/sync_validation.h"
+#include "error_message/error_strings.h"
+
+void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss) {
+    ss << "{";
+    ss << logger.FormatHandle(video_picture.imageViewBinding);
+    ss << ", codedOffset (" << string_VkOffset2D(video_picture.codedOffset) << ")";
+    ss << ", codedExtent (" << string_VkExtent2D(video_picture.codedExtent) << ")";
+    ss << ", baseArrayLayer = " << video_picture.baseArrayLayer;
+    ss << "}";
+}
+
+void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
+                                std::stringstream &ss) {
+    ss << "{";
+    ss << logger.FormatHandle(quantization_map.quantizationMap);
+    ss << ", quantizationMapExtent (" << string_VkExtent2D(quantization_map.quantizationMapExtent) << ")";
+    ss << "}";
+}
 
 SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::CommandBuffer *cb_state)
     : debug_report(sync_state.debug_report), node(cb_state), label("command_buffer") {}

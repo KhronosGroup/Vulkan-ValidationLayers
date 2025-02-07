@@ -26,10 +26,15 @@ class StateObject;
 class Image;
 class Queue;
 }  // namespace vvl
+class Logger;
 class DebugReport;
 class SyncValidator;
 struct DeviceFeatures;
 struct DeviceExtensions;
+
+void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss);
+void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
+                                std::stringstream &ss);
 
 struct SyncNodeFormatter {
     const DebugReport *debug_report;
