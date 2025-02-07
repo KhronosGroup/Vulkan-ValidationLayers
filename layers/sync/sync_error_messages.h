@@ -39,13 +39,13 @@ class ErrorMessages {
   public:
     explicit ErrorMessages(vvl::Device& validator);
 
-    std::string Error(const HazardResult& hazard, const char* description, const CommandBufferAccessContext& cb_context,
-                      vvl::Func command) const;
+    std::string Error(const HazardResult& hazard, const std::string& resouce_description,
+                      const CommandBufferAccessContext& cb_context, vvl::Func command) const;
 
     std::string BufferError(const HazardResult& hazard, VkBuffer buffer, const char* buffer_description,
                             const CommandBufferAccessContext& cb_context, vvl::Func command) const;
 
-    std::string BufferRegionError(const HazardResult& hazard, VkBuffer buffer, uint32_t region_index,
+    std::string BufferRegionError(const HazardResult& hazard, const std::string& resouce_description, uint32_t region_index,
                                   ResourceAccessRange region_range, const CommandBufferAccessContext& cb_context,
                                   const vvl::Func command) const;
 
