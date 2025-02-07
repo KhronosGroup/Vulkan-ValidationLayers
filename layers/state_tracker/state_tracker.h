@@ -829,7 +829,7 @@ class Device : public vvl::base::Device {
     bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                               const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                               ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                chassis::CreateComputePipelines& chassis_state) const override;
     void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                               const VkComputePipelineCreateInfo* pCreateInfos,
@@ -839,7 +839,7 @@ class Device : public vvl::base::Device {
     void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
                                            const RecordObject& record_obj) override;
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                               VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj,
+                                               VkDescriptorSet* pDescriptorSets, ErrorObject& error_obj,
                                                vvl::AllocateDescriptorSetsData& ads_state_data) const override;
     void PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
                                                  const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
@@ -885,7 +885,7 @@ class Device : public vvl::base::Device {
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                 chassis::CreateGraphicsPipelines& chassis_state) const override;
     void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkGraphicsPipelineCreateInfo* pCreateInfos,
@@ -944,7 +944,7 @@ class Device : public vvl::base::Device {
     bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                    const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                    ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                     chassis::CreateRayTracingPipelinesNV& chassis_state) const override;
     void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
@@ -959,7 +959,7 @@ class Device : public vvl::base::Device {
                                                      VkPipelineCache pipelineCache, uint32_t count,
                                                      const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                     const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                     ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                      chassis::CreateRayTracingPipelinesKHR& chassis_state) const override;
     void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     VkPipelineCache pipelineCache, uint32_t count,

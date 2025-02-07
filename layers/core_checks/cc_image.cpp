@@ -172,7 +172,7 @@ bool CoreChecks::ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo
 
 bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkImage *pImage,
-                                            const ErrorObject &error_obj) const {
+                                            ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -922,7 +922,7 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
-                                             const ErrorObject &error_obj) const {
+                                             ErrorObject &error_obj) const {
     bool skip = false;
     if (auto image_state = Get<vvl::Image>(image)) {
         if (image_state->IsSwapchainImage() && image_state->owned_by_swapchain) {
@@ -958,7 +958,7 @@ bool CoreChecks::ValidateClearImageSubresourceRange(const LogObjectList &objlist
 
 bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                    const VkClearColorValue *pColor, uint32_t rangeCount,
-                                                   const VkImageSubresourceRange *pRanges, const ErrorObject &error_obj) const {
+                                                   const VkImageSubresourceRange *pRanges, ErrorObject &error_obj) const {
     bool skip = false;
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -1046,8 +1046,7 @@ bool CoreChecks::ValidateClearDepthStencilValue(VkCommandBuffer commandBuffer, V
 
 bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                           const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                                          const VkImageSubresourceRange *pRanges,
-                                                          const ErrorObject &error_obj) const {
+                                                          const VkImageSubresourceRange *pRanges, ErrorObject &error_obj) const {
     bool skip = false;
 
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
@@ -1188,7 +1187,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(const vvl::CommandBuffer &cb_stat
 
 bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                    const VkClearRect *pRects, const ErrorObject &error_obj) const {
+                                                    const VkClearRect *pRects, ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state_ptr) {
@@ -1924,7 +1923,7 @@ bool FormatsEqualComponentBits(VkFormat format_a, VkFormat format_b) {
 
 bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                 [[maybe_unused]] const VkAllocationCallbacks *pAllocator,
-                                                [[maybe_unused]] VkImageView *pView, const ErrorObject &error_obj) const {
+                                                [[maybe_unused]] VkImageView *pView, ErrorObject &error_obj) const {
     bool skip = false;
     auto image_state_ptr = Get<vvl::Image>(pCreateInfo->image);
     ASSERT_AND_RETURN_SKIP(image_state_ptr);
@@ -2502,7 +2501,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 }
 
 bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator,
-                                                 const ErrorObject &error_obj) const {
+                                                 ErrorObject &error_obj) const {
     bool skip = false;
     if (auto image_view_state = Get<vvl::ImageView>(imageView)) {
         skip |= ValidateObjectNotInUse(image_view_state.get(), error_obj.location, "VUID-vkDestroyImageView-imageView-01026");
@@ -2655,7 +2654,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayout(const vvl::Image &image_state
 }
 
 bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
-                                                          VkSubresourceLayout *pLayout, const ErrorObject &error_obj) const {
+                                                          VkSubresourceLayout *pLayout, ErrorObject &error_obj) const {
     bool skip = false;
     auto image_state = Get<vvl::Image>(image);
     if (pSubresource && pLayout && image_state) {
@@ -2670,7 +2669,7 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
 }
 
 bool CoreChecks::PreCallValidateGetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2 *pSubresource,
-                                                           VkSubresourceLayout2 *pLayout, const ErrorObject &error_obj) const {
+                                                           VkSubresourceLayout2 *pLayout, ErrorObject &error_obj) const {
     bool skip = false;
     auto image_state = Get<vvl::Image>(image);
     if (pSubresource && pLayout && image_state) {
@@ -2682,21 +2681,19 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout2(VkDevice device, VkIm
 
 bool CoreChecks::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image,
                                                               const VkImageSubresource2KHR *pSubresource,
-                                                              VkSubresourceLayout2KHR *pLayout,
-                                                              const ErrorObject &error_obj) const {
+                                                              VkSubresourceLayout2KHR *pLayout, ErrorObject &error_obj) const {
     return PreCallValidateGetImageSubresourceLayout2(device, image, pSubresource, pLayout, error_obj);
 }
 
 bool CoreChecks::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, VkImage image,
                                                               const VkImageSubresource2EXT *pSubresource,
-                                                              VkSubresourceLayout2EXT *pLayout,
-                                                              const ErrorObject &error_obj) const {
+                                                              VkSubresourceLayout2EXT *pLayout, ErrorObject &error_obj) const {
     return PreCallValidateGetImageSubresourceLayout2(device, image, pSubresource, pLayout, error_obj);
 }
 
 bool CoreChecks::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage image,
                                                                        VkImageDrmFormatModifierPropertiesEXT *pProperties,
-                                                                       const ErrorObject &error_obj) const {
+                                                                       ErrorObject &error_obj) const {
     bool skip = false;
     if (auto image_state = Get<vvl::Image>(image)) {
         if (image_state->create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
@@ -2710,7 +2707,7 @@ bool CoreChecks::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice 
 
 bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t transitionCount,
                                                       const VkHostImageLayoutTransitionInfo *pTransitions,
-                                                      const ErrorObject &error_obj) const {
+                                                      ErrorObject &error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < transitionCount; ++i) {
@@ -2830,7 +2827,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
 
 bool CoreChecks::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                          const VkHostImageLayoutTransitionInfoEXT *pTransitions,
-                                                         const ErrorObject &error_obj) const {
+                                                         ErrorObject &error_obj) const {
     return PreCallValidateTransitionImageLayout(device, transitionCount, pTransitions, error_obj);
 }
 

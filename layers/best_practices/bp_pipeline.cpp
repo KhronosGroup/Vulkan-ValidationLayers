@@ -153,7 +153,7 @@ bool BestPractices::ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreat
 bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                           const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                           ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                            chassis::CreateGraphicsPipelines& chassis_state) const {
     bool skip = BaseClass::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                                   pPipelines, error_obj, pipeline_states, chassis_state);
@@ -266,7 +266,7 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
 bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                           const VkComputePipelineCreateInfo* pCreateInfos,
                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                          const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                          ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                           chassis::CreateComputePipelines& chassis_state) const {
     bool skip = BaseClass::PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                                  pPipelines, error_obj, pipeline_states, chassis_state);
@@ -519,7 +519,7 @@ void BestPractices::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipe
 
 bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                                         const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
         uint32_t descriptor_size = enabled_features.robustBufferAccess ? 4 : 2;
@@ -625,7 +625,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
 }
 
 bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                   VkPipeline pipeline, const ErrorObject& error_obj) const {
+                                                   VkPipeline pipeline, ErrorObject& error_obj) const {
     bool skip = false;
 
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {

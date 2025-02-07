@@ -112,7 +112,7 @@ ExtEnabled ExtensionStateByName(const ExtensionState &extensions, vvl::Extension
 }
 
 bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                             VkInstance *pInstance, const ErrorObject &error_obj) const {
+                                             VkInstance *pInstance, ErrorObject &error_obj) const {
     bool skip = false;
     Location loc = error_obj.location;
     // Note: From the spec--

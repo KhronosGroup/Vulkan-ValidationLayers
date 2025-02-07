@@ -21,7 +21,7 @@
 
 bool BestPractices::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->sharingMode == VK_SHARING_MODE_EXCLUSIVE)) {

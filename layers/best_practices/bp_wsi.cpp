@@ -36,7 +36,7 @@ bool bp_state::Instance::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery
 
 bool bp_state::Instance::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                             uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
-                                                                            const ErrorObject& error_obj) const {
+                                                                            ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, error_obj.location);
@@ -47,7 +47,7 @@ bool bp_state::Instance::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPh
 bool bp_state::Instance::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
                                                                        uint32_t planeIndex,
                                                                        VkDisplayPlaneCapabilitiesKHR* pCapabilities,
-                                                                       const ErrorObject& error_obj) const {
+                                                                       ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, error_obj.location);
@@ -58,7 +58,7 @@ bool bp_state::Instance::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysica
 bool bp_state::Instance::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                                         const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                                         VkDisplayPlaneCapabilities2KHR* pCapabilities,
-                                                                        const ErrorObject& error_obj) const {
+                                                                        ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, error_obj.location);
@@ -68,7 +68,7 @@ bool bp_state::Instance::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysic
 
 bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto* bp_pd_state = GetPhysicalDeviceState();
@@ -137,7 +137,7 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
 bool BestPractices::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                              const VkSwapchainCreateInfoKHR* pCreateInfos,
                                                              const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < swapchainCount; i++) {
@@ -181,7 +181,7 @@ void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkP
 bool bp_state::Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                            uint32_t* pSurfaceFormatCount,
                                                                            VkSurfaceFormatKHR* pSurfaceFormats,
-                                                                           const ErrorObject& error_obj) const {
+                                                                           ErrorObject& error_obj) const {
     bool skip = false;
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (!bp_pd_state || !pSurfaceFormats) return skip;
@@ -196,7 +196,7 @@ bool bp_state::Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhy
 }
 
 bool BestPractices::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
 
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
@@ -215,7 +215,7 @@ bool BestPractices::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresen
 
 bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
                                                        VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     auto swapchain_data = Get<vvl::Swapchain>(swapchain);
     bool skip = false;
     if (swapchain_data && swapchain_data->images.empty()) {

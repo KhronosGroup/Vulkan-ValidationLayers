@@ -1145,7 +1145,7 @@ bool SyncOpEndRenderPass::ReplayValidate(ReplayState &replay, ResourceUsageTag r
 void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag exec_tag) const {}
 
 ReplayState::ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
-                         const ErrorObject &error_obj, uint32_t index, ResourceUsageTag base_tag)
+                         ErrorObject &error_obj, uint32_t index, ResourceUsageTag base_tag)
     : exec_context_(exec_context), recorded_context_(recorded_context), error_obj_(error_obj), index_(index), base_tag_(base_tag) {}
 
 AccessContext *ReplayState::ReplayStateRenderPassBegin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op,

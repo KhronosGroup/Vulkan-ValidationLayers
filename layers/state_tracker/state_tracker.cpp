@@ -1697,7 +1697,7 @@ std::shared_ptr<Pipeline> Device::CreateGraphicsPipelineState(
 bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                    const ErrorObject &error_obj, PipelineStates &pipeline_states,
+                                                    ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                     chassis::CreateGraphicsPipelines &chassis_state) const {
     bool skip = false;
     // Set up the state that CoreChecks, gpu_validation and later StateTracker Record will use.
@@ -1755,7 +1755,7 @@ std::shared_ptr<Pipeline> Device::CreateComputePipelineState(const VkComputePipe
 bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkComputePipelineCreateInfo *pCreateInfos,
                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                   const ErrorObject &error_obj, PipelineStates &pipeline_states,
+                                                   ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                    chassis::CreateComputePipelines &chassis_state) const {
     pipeline_states.reserve(count);
     auto pipeline_cache = Get<PipelineCache>(pipelineCache);
@@ -1793,7 +1793,7 @@ std::shared_ptr<Pipeline> Device::CreateRayTracingPipelineState(const VkRayTraci
 bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                         const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                        const ErrorObject &error_obj, PipelineStates &pipeline_states,
+                                                        ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                         chassis::CreateRayTracingPipelinesNV &chassis_state) const {
     pipeline_states.reserve(count);
     auto pipeline_cache = Get<PipelineCache>(pipelineCache);
@@ -1832,7 +1832,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
                                                          VkPipelineCache pipelineCache, uint32_t count,
                                                          const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                         const ErrorObject &error_obj, PipelineStates &pipeline_states,
+                                                         ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                          chassis::CreateRayTracingPipelinesKHR &chassis_state) const {
     pipeline_states.reserve(count);
     auto pipeline_cache = Get<PipelineCache>(pipelineCache);
@@ -1951,7 +1951,7 @@ void Device::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool
 }
 
 bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                   VkDescriptorSet *pDescriptorSets, const ErrorObject &error_obj,
+                                                   VkDescriptorSet *pDescriptorSets, ErrorObject &error_obj,
                                                    AllocateDescriptorSetsData &ads_state) const {
     // Always update common data
     UpdateAllocateDescriptorSetsData(pAllocateInfo, ads_state);

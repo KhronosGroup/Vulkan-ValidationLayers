@@ -330,7 +330,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
             generate_pre_call_validate = (pre_call_validate and not self.allComments(pre_call_validate)) or function_signature_for_no_autogen
 
             if generate_pre_call_validate or command.name in self.no_validate_autogen_list:
-                prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
+                prePrototype = prototype.replace(')', ', ErrorObject& error_obj)')
                 out.append(f'bool PreCallValidate{prePrototype} const{terminator}')
 
             prototype = prototype.replace(')', ', const RecordObject& record_obj)')
@@ -439,7 +439,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
 
             # Output PreCallValidateAPI function if necessary
             if pre_call_validate and command.name not in self.no_validate_autogen_list:
-                prePrototype = prototype.replace(')', ', const ErrorObject& error_obj)')
+                prePrototype = prototype.replace(')', ', ErrorObject& error_obj)')
                 if self.allComments(pre_call_validate):
                      out.append(f'''
                         // {command.name}:

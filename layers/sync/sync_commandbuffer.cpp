@@ -155,7 +155,7 @@ std::string CommandBufferAccessContext::FormatUsage(const char *usage_string, co
     return out.str();
 }
 
-bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error_obj,
+bool CommandBufferAccessContext::ValidateBeginRendering(ErrorObject &error_obj,
                                                         syncval_state::BeginRenderingCmdState &cmd_state) const {
     bool skip = false;
     const syncval_state::DynamicRenderingInfo &info = cmd_state.GetRenderingInfo();
@@ -206,7 +206,7 @@ void CommandBufferAccessContext::RecordBeginRendering(syncval_state::BeginRender
     dynamic_rendering_info_ = std::move(cmd_state.info);
 }
 
-bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_obj) const {
+bool CommandBufferAccessContext::ValidateEndRendering(ErrorObject &error_obj) const {
     bool skip = false;
     if (dynamic_rendering_info_ && (0 == (dynamic_rendering_info_->info.flags & VK_RENDERING_SUSPENDING_BIT))) {
         // Only validate resolve and store if not suspending (as specified by BeginRendering)

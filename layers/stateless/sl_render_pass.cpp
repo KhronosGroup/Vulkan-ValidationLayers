@@ -55,7 +55,7 @@ bool Device::ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCre
 
 bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                       const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                      const ErrorObject &error_obj) const {
+                                      ErrorObject &error_obj) const {
     bool skip = false;
     uint32_t max_color_attachments = device_limits.maxColorAttachments;
     const bool use_rp2 = error_obj.location.function != Func::vkCreateRenderPass;
@@ -514,7 +514,7 @@ bool Device::ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, co
 }
 
 bool Device::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
-                                        const ErrorObject &error_obj) const {
+                                        ErrorObject &error_obj) const {
     bool skip = false;
     if ((rp_begin->clearValueCount != 0) && !rp_begin->pClearValues) {
         const LogObjectList objlist(commandBuffer, rp_begin->renderPass);

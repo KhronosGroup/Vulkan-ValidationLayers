@@ -1729,7 +1729,7 @@ bool CoreChecks::ForbidInheritedViewportScissor(const vvl::CommandBuffer& cb_sta
 }
 
 bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                                               const VkViewport* pViewports, const ErrorObject& error_obj) const {
+                                               const VkViewport* pViewports, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -1738,7 +1738,7 @@ bool CoreChecks::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, ui
 }
 
 bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
-                                              const VkRect2D* pScissors, const ErrorObject& error_obj) const {
+                                              const VkRect2D* pScissors, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -1748,7 +1748,7 @@ bool CoreChecks::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uin
 
 bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                          uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.exclusiveScissor) {
@@ -1762,7 +1762,7 @@ bool CoreChecks::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer command
 bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                    uint32_t viewportCount,
                                                                    const VkShadingRatePaletteNV* pShadingRatePalettes,
-                                                                   const ErrorObject& error_obj) const {
+                                                                   ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
 
@@ -1789,35 +1789,34 @@ bool CoreChecks::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuff
 
 bool CoreChecks::PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                          uint32_t viewportCount, const VkViewportWScalingNV* pViewportWScalings,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
-bool CoreChecks::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth,
-                                                const ErrorObject& error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                  uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
+                                                  uint16_t lineStipplePattern, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                     uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
+                                                     uint16_t lineStipplePattern, ErrorObject& error_obj) const {
     return PreCallValidateCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                     uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
+                                                     uint16_t lineStipplePattern, ErrorObject& error_obj) const {
     return PreCallValidateCmdSetLineStipple(commandBuffer, lineStippleFactor, lineStipplePattern, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
-                                                float depthBiasSlopeFactor, const ErrorObject& error_obj) const {
+                                                float depthBiasSlopeFactor, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -1860,7 +1859,7 @@ bool CoreChecks::ValidateDepthBiasRepresentationInfo(const Location& loc, const 
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT* pDepthBiasInfo,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
 
     if ((pDepthBiasInfo->depthBiasClamp != 0.0) && !enabled_features.depthBiasClamp) {
@@ -1877,13 +1876,13 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffe
 }
 
 bool CoreChecks::PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4],
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -1907,26 +1906,26 @@ bool CoreChecks::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
-                                                         uint32_t compareMask, const ErrorObject& error_obj) const {
+                                                         uint32_t compareMask, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
-                                                       uint32_t writeMask, const ErrorObject& error_obj) const {
+                                                       uint32_t writeMask, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
-                                                       uint32_t reference, const ErrorObject& error_obj) const {
+                                                       uint32_t reference, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                           uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     // Minimal validation for command buffer state
@@ -1957,7 +1956,7 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
 
 bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                          const VkSampleLocationsInfoEXT* pSampleLocationsInfo,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     // Minimal validation for command buffer state
@@ -1967,13 +1966,12 @@ bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer command
 }
 
 bool CoreChecks::PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
-bool CoreChecks::PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp,
-                                                 const ErrorObject& error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState2LogicOp && !enabled_features.shaderObject) {
@@ -1985,7 +1983,7 @@ bool CoreChecks::PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState2PatchControlPoints && !enabled_features.shaderObject) {
@@ -2006,7 +2004,7 @@ bool CoreChecks::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer comm
 }
 
 bool CoreChecks::PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState2 && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetRasterizerDiscardEnable-None-08970", commandBuffer, error_obj.location,
@@ -2017,13 +2015,13 @@ bool CoreChecks::PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer
 }
 
 bool CoreChecks::PreCallValidateCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState2 && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetDepthBiasEnable-None-08970", commandBuffer, error_obj.location,
@@ -2034,13 +2032,13 @@ bool CoreChecks::PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffer command
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState2 && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetPrimitiveRestartEnable-None-08970", commandBuffer, error_obj.location,
@@ -2051,13 +2049,13 @@ bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer 
 }
 
 bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetCullMode-None-08971", commandBuffer, error_obj.location,
@@ -2068,13 +2066,13 @@ bool CoreChecks::PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::PreCallValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetFrontFace-None-08971", commandBuffer, error_obj.location,
@@ -2085,13 +2083,13 @@ bool CoreChecks::PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer
 }
 
 bool CoreChecks::PreCallValidateCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetPrimitiveTopology-None-08971", commandBuffer, error_obj.location,
@@ -2102,13 +2100,13 @@ bool CoreChecks::PreCallValidateCmdSetPrimitiveTopologyEXT(VkCommandBuffer comma
 }
 
 bool CoreChecks::PreCallValidateCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                           const VkViewport* pViewports, const ErrorObject& error_obj) const {
+                                                           const VkViewport* pViewports, ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetViewportWithCount-None-08971", commandBuffer, error_obj.location,
@@ -2119,7 +2117,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer comma
 }
 
 bool CoreChecks::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                        const VkViewport* pViewports, const ErrorObject& error_obj) const {
+                                                        const VkViewport* pViewports, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -2128,7 +2126,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandB
 }
 
 bool CoreChecks::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                          const VkRect2D* pScissors, const ErrorObject& error_obj) const {
+                                                          const VkRect2D* pScissors, ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetScissorWithCount-None-08971", commandBuffer, error_obj.location,
@@ -2139,7 +2137,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer comman
 }
 
 bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                       const VkRect2D* pScissors, const ErrorObject& error_obj) const {
+                                                       const VkRect2D* pScissors, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -2148,7 +2146,7 @@ bool CoreChecks::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBu
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetDepthTestEnable-None-08971", commandBuffer, error_obj.location,
@@ -2159,13 +2157,13 @@ bool CoreChecks::PreCallValidateCmdSetDepthTestEnableEXT(VkCommandBuffer command
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetDepthWriteEnable-None-08971", commandBuffer, error_obj.location,
@@ -2176,13 +2174,13 @@ bool CoreChecks::PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuffer comman
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetDepthCompareOp-None-08971", commandBuffer, error_obj.location,
@@ -2193,13 +2191,13 @@ bool CoreChecks::PreCallValidateCmdSetDepthCompareOpEXT(VkCommandBuffer commandB
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetDepthBoundsTestEnable-None-08971", commandBuffer, error_obj.location,
@@ -2210,7 +2208,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer c
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -2223,7 +2221,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBoundsTestEnable(VkCommandBuffer comm
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetStencilTestEnable-None-08971", commandBuffer, error_obj.location,
@@ -2234,14 +2232,14 @@ bool CoreChecks::PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer comma
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                                    VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     if (!enabled_features.extendedDynamicState && !enabled_features.shaderObject) {
         skip |= LogError("VUID-vkCmdSetStencilOp-None-08971", commandBuffer, error_obj.location,
@@ -2253,14 +2251,14 @@ bool CoreChecks::PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer
 
 bool CoreChecks::PreCallValidateCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                                 VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer,
                                                                   VkTessellationDomainOrigin domainOrigin,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3TessellationDomainOrigin && !enabled_features.shaderObject) {
@@ -2272,7 +2270,7 @@ bool CoreChecks::PreCallValidateCmdSetTessellationDomainOriginEXT(VkCommandBuffe
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3DepthClampEnable && !enabled_features.shaderObject) {
@@ -2290,13 +2288,13 @@ bool CoreChecks::PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer comman
 
 bool CoreChecks::PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
                                                          const VkDepthClampRangeEXT* pDepthClampRange,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3PolygonMode && !enabled_features.shaderObject) {
@@ -2321,7 +2319,7 @@ bool CoreChecks::PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuff
 
 bool CoreChecks::PreCallValidateCmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer,
                                                               VkSampleCountFlagBits rasterizationSamples,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3RasterizationSamples && !enabled_features.shaderObject) {
@@ -2333,7 +2331,7 @@ bool CoreChecks::PreCallValidateCmdSetRasterizationSamplesEXT(VkCommandBuffer co
 }
 
 bool CoreChecks::PreCallValidateCmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples,
-                                                    const VkSampleMask* pSampleMask, const ErrorObject& error_obj) const {
+                                                    const VkSampleMask* pSampleMask, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3SampleMask && !enabled_features.shaderObject) {
@@ -2345,7 +2343,7 @@ bool CoreChecks::PreCallValidateCmdSetSampleMaskEXT(VkCommandBuffer commandBuffe
 }
 
 bool CoreChecks::PreCallValidateCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3AlphaToCoverageEnable && !enabled_features.shaderObject) {
@@ -2357,7 +2355,7 @@ bool CoreChecks::PreCallValidateCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer c
 }
 
 bool CoreChecks::PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3AlphaToOneEnable && !enabled_features.shaderObject) {
@@ -2374,7 +2372,7 @@ bool CoreChecks::PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuffer comman
 }
 
 bool CoreChecks::PreCallValidateCmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3LogicOpEnable && !enabled_features.shaderObject) {
@@ -2392,7 +2390,7 @@ bool CoreChecks::PreCallValidateCmdSetLogicOpEnableEXT(VkCommandBuffer commandBu
 
 bool CoreChecks::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                           uint32_t attachmentCount, const VkBool32* pColorBlendEnables,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3ColorBlendEnable && !enabled_features.shaderObject) {
@@ -2406,7 +2404,7 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer comman
 bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                             uint32_t attachmentCount,
                                                             const VkColorBlendEquationEXT* pColorBlendEquations,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3ColorBlendEquation && !enabled_features.shaderObject) {
@@ -2468,7 +2466,7 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
 
 bool CoreChecks::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                         uint32_t attachmentCount, const VkColorComponentFlags* pColorWriteMasks,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3ColorWriteMask && !enabled_features.shaderObject) {
@@ -2480,7 +2478,7 @@ bool CoreChecks::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandB
 }
 
 bool CoreChecks::PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3RasterizationStream && !enabled_features.shaderObject) {
@@ -2512,8 +2510,7 @@ bool CoreChecks::PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer com
 }
 
 bool CoreChecks::PreCallValidateCmdSetConservativeRasterizationModeEXT(
-    VkCommandBuffer commandBuffer, VkConservativeRasterizationModeEXT conservativeRasterizationMode,
-    const ErrorObject& error_obj) const {
+    VkCommandBuffer commandBuffer, VkConservativeRasterizationModeEXT conservativeRasterizationMode, ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3ConservativeRasterizationMode && !enabled_features.shaderObject) {
@@ -2526,7 +2523,7 @@ bool CoreChecks::PreCallValidateCmdSetConservativeRasterizationModeEXT(
 
 bool CoreChecks::PreCallValidateCmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBuffer commandBuffer,
                                                                           float extraPrimitiveOverestimationSize,
-                                                                          const ErrorObject& error_obj) const {
+                                                                          ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3ExtraPrimitiveOverestimationSize && !enabled_features.shaderObject) {
@@ -2548,7 +2545,7 @@ bool CoreChecks::PreCallValidateCmdSetExtraPrimitiveOverestimationSizeEXT(VkComm
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClipEnable,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3DepthClipEnable && !enabled_features.shaderObject) {
@@ -2565,7 +2562,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthClipEnableEXT(VkCommandBuffer command
 }
 
 bool CoreChecks::PreCallValidateCmdSetSampleLocationsEnableEXT(VkCommandBuffer commandBuffer, VkBool32 sampleLocationsEnable,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3SampleLocationsEnable && !enabled_features.shaderObject) {
@@ -2579,7 +2576,7 @@ bool CoreChecks::PreCallValidateCmdSetSampleLocationsEnableEXT(VkCommandBuffer c
 bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                             uint32_t attachmentCount,
                                                             const VkColorBlendAdvancedEXT* pColorBlendAdvanced,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3ColorBlendAdvanced && !enabled_features.shaderObject) {
@@ -2615,7 +2612,7 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
 
 bool CoreChecks::PreCallValidateCmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer,
                                                              VkProvokingVertexModeEXT provokingVertexMode,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3ProvokingVertexMode && !enabled_features.shaderObject) {
@@ -2634,7 +2631,7 @@ bool CoreChecks::PreCallValidateCmdSetProvokingVertexModeEXT(VkCommandBuffer com
 
 bool CoreChecks::PreCallValidateCmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer,
                                                                VkLineRasterizationModeEXT lineRasterizationMode,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3LineRasterizationMode && !enabled_features.shaderObject) {
@@ -2663,7 +2660,7 @@ bool CoreChecks::PreCallValidateCmdSetLineRasterizationModeEXT(VkCommandBuffer c
 }
 
 bool CoreChecks::PreCallValidateCmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3LineStippleEnable && !enabled_features.shaderObject) {
@@ -2675,7 +2672,7 @@ bool CoreChecks::PreCallValidateCmdSetLineStippleEnableEXT(VkCommandBuffer comma
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer, VkBool32 negativeOneToOne,
-                                                                   const ErrorObject& error_obj) const {
+                                                                   ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3DepthClipNegativeOneToOne && !enabled_features.shaderObject) {
@@ -2692,7 +2689,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthClipNegativeOneToOneEXT(VkCommandBuff
 }
 
 bool CoreChecks::PreCallValidateCmdSetViewportWScalingEnableNV(VkCommandBuffer commandBuffer, VkBool32 viewportWScalingEnable,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3ViewportWScalingEnable && !enabled_features.shaderObject) {
@@ -2705,7 +2702,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportWScalingEnableNV(VkCommandBuffer c
 
 bool CoreChecks::PreCallValidateCmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                         uint32_t viewportCount, const VkViewportSwizzleNV* pViewportSwizzles,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3ViewportSwizzle && !enabled_features.shaderObject) {
@@ -2717,7 +2714,7 @@ bool CoreChecks::PreCallValidateCmdSetViewportSwizzleNV(VkCommandBuffer commandB
 }
 
 bool CoreChecks::PreCallValidateCmdSetCoverageToColorEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageToColorEnable,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3CoverageToColorEnable && !enabled_features.shaderObject) {
@@ -2729,7 +2726,7 @@ bool CoreChecks::PreCallValidateCmdSetCoverageToColorEnableNV(VkCommandBuffer co
 }
 
 bool CoreChecks::PreCallValidateCmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, uint32_t coverageToColorLocation,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3CoverageToColorLocation && !enabled_features.shaderObject) {
@@ -2742,7 +2739,7 @@ bool CoreChecks::PreCallValidateCmdSetCoverageToColorLocationNV(VkCommandBuffer 
 
 bool CoreChecks::PreCallValidateCmdSetCoverageModulationModeNV(VkCommandBuffer commandBuffer,
                                                                VkCoverageModulationModeNV coverageModulationMode,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3CoverageModulationMode && !enabled_features.shaderObject) {
@@ -2755,7 +2752,7 @@ bool CoreChecks::PreCallValidateCmdSetCoverageModulationModeNV(VkCommandBuffer c
 
 bool CoreChecks::PreCallValidateCmdSetCoverageModulationTableEnableNV(VkCommandBuffer commandBuffer,
                                                                       VkBool32 coverageModulationTableEnable,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3CoverageModulationTableEnable && !enabled_features.shaderObject) {
@@ -2769,7 +2766,7 @@ bool CoreChecks::PreCallValidateCmdSetCoverageModulationTableEnableNV(VkCommandB
 bool CoreChecks::PreCallValidateCmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer,
                                                                 uint32_t coverageModulationTableCount,
                                                                 const float* pCoverageModulationTable,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3CoverageModulationTable && !enabled_features.shaderObject) {
@@ -2781,7 +2778,7 @@ bool CoreChecks::PreCallValidateCmdSetCoverageModulationTableNV(VkCommandBuffer 
 }
 
 bool CoreChecks::PreCallValidateCmdSetShadingRateImageEnableNV(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3ShadingRateImageEnable && !enabled_features.shaderObject) {
@@ -2794,7 +2791,7 @@ bool CoreChecks::PreCallValidateCmdSetShadingRateImageEnableNV(VkCommandBuffer c
 
 bool CoreChecks::PreCallValidateCmdSetRepresentativeFragmentTestEnableNV(VkCommandBuffer commandBuffer,
                                                                          VkBool32 representativeFragmentTestEnable,
-                                                                         const ErrorObject& error_obj) const {
+                                                                         ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3RepresentativeFragmentTestEnable && !enabled_features.shaderObject) {
@@ -2807,7 +2804,7 @@ bool CoreChecks::PreCallValidateCmdSetRepresentativeFragmentTestEnableNV(VkComma
 
 bool CoreChecks::PreCallValidateCmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer,
                                                               VkCoverageReductionModeNV coverageReductionMode,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.extendedDynamicState3CoverageReductionMode && !enabled_features.shaderObject) {
@@ -2820,7 +2817,7 @@ bool CoreChecks::PreCallValidateCmdSetCoverageReductionModeNV(VkCommandBuffer co
 
 bool CoreChecks::PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkEvent* pEvent,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
@@ -2834,7 +2831,7 @@ bool CoreChecks::PreCallValidateCreateEvent(VkDevice device, const VkEventCreate
 
 bool CoreChecks::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
                                                              const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.pipelineFragmentShadingRate && !enabled_features.primitiveFragmentShadingRate &&
@@ -2926,7 +2923,7 @@ bool CoreChecks::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer com
 }
 
 bool CoreChecks::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                                          const VkBool32* pColorWriteEnables, const ErrorObject& error_obj) const {
+                                                          const VkBool32* pColorWriteEnables, ErrorObject& error_obj) const {
     bool skip = false;
 
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -2949,7 +2946,7 @@ bool CoreChecks::PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuff
                                                      const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
                                                      uint32_t vertexAttributeDescriptionCount,
                                                      const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.vertexInputDynamicState && !enabled_features.shaderObject) {
@@ -2963,14 +2960,14 @@ bool CoreChecks::PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuff
 bool CoreChecks::PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
                                                           uint32_t customSampleOrderCount,
                                                           const VkCoarseSampleOrderCustomNV* pCustomSampleOrders,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetFragmentShadingRateEnumNV(VkCommandBuffer commandBuffer, VkFragmentShadingRateNV shadingRate,
                                                                 const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     if (!enabled_features.fragmentShadingRateEnums) {
@@ -2983,27 +2980,27 @@ bool CoreChecks::PreCallValidateCmdSetFragmentShadingRateEnumNV(VkCommandBuffer 
 
 bool CoreChecks::PreCallValidateCmdSetPerformanceMarkerINTEL(VkCommandBuffer commandBuffer,
                                                              const VkPerformanceMarkerInfoINTEL* pMarkerInfo,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetPerformanceStreamMarkerINTEL(VkCommandBuffer commandBuffer,
                                                                    const VkPerformanceStreamMarkerInfoINTEL* pMarkerInfo,
-                                                                   const ErrorObject& error_obj) const {
+                                                                   ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetPerformanceOverrideINTEL(VkCommandBuffer commandBuffer,
                                                                const VkPerformanceOverrideInfoINTEL* pOverrideInfo,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!enabled_features.attachmentFeedbackLoopDynamicState) {

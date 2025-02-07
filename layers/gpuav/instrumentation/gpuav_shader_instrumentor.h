@@ -85,11 +85,11 @@ class GpuShaderInstrumentor : public vvl::Device {
                                       uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                       uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                       uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
-                                      const ErrorObject &error_obj) const override;
+                                      ErrorObject &error_obj) const override;
     bool PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                          const VkDependencyInfoKHR *pDependencyInfos, const ErrorObject &error_obj) const override;
+                                          const VkDependencyInfoKHR *pDependencyInfos, ErrorObject &error_obj) const override;
     bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                       const VkDependencyInfo *pDependencyInfos, const ErrorObject &error_obj) const override;
+                                       const VkDependencyInfo *pDependencyInfos, ErrorObject &error_obj) const override;
     void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                            const RecordObject &record_obj, chassis::CreatePipelineLayout &chassis_state) override;

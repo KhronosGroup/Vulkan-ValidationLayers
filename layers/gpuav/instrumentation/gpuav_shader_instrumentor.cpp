@@ -180,19 +180,19 @@ bool GpuShaderInstrumentor::PreCallValidateCmdWaitEvents(
     VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
     VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-    const VkImageMemoryBarrier *pImageMemoryBarriers, const ErrorObject &error_obj) const {
+    const VkImageMemoryBarrier *pImageMemoryBarriers, ErrorObject &error_obj) const {
     return ValidateCmdWaitEvents(commandBuffer, static_cast<VkPipelineStageFlags2>(srcStageMask), error_obj.location);
 }
 
 bool GpuShaderInstrumentor::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount,
                                                              const VkEvent *pEvents, const VkDependencyInfoKHR *pDependencyInfos,
-                                                             const ErrorObject &error_obj) const {
+                                                             ErrorObject &error_obj) const {
     return PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, error_obj);
 }
 
 bool GpuShaderInstrumentor::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount,
                                                           const VkEvent *pEvents, const VkDependencyInfo *pDependencyInfos,
-                                                          const ErrorObject &error_obj) const {
+                                                          ErrorObject &error_obj) const {
     VkPipelineStageFlags2 src_stage_mask = 0;
 
     for (uint32_t i = 0; i < eventCount; i++) {

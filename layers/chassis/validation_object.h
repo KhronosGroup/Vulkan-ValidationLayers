@@ -246,7 +246,7 @@ class Device : public Logger {
     virtual bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                         const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                         const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                        const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                        ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                         chassis::CreateGraphicsPipelines& chassis_state) const {
         return PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                                       error_obj);
@@ -272,7 +272,7 @@ class Device : public Logger {
     virtual bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkComputePipelineCreateInfo* pCreateInfos,
                                                        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                       const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                       ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                        chassis::CreateComputePipelines& chassis_state) const {
         return PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                                      error_obj);
@@ -299,7 +299,7 @@ class Device : public Logger {
                                                             uint32_t createInfoCount,
                                                             const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                            const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                            ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                             chassis::CreateRayTracingPipelinesNV& chassis_state) const {
         return PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                           pPipelines, error_obj);
@@ -326,7 +326,7 @@ class Device : public Logger {
                                                              VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                              const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                              const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                             const ErrorObject& error_obj, PipelineStates& pipeline_states,
+                                                             ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                              chassis::CreateRayTracingPipelinesKHR& chassis_state) const {
         return PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
                                                            pAllocator, pPipelines, error_obj);
@@ -382,7 +382,7 @@ class Device : public Logger {
 
     // Allow AllocateDescriptorSets to use some local stack storage for performance purposes
     virtual bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                       VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj,
+                                                       VkDescriptorSet* pDescriptorSets, ErrorObject& error_obj,
                                                        vvl::AllocateDescriptorSetsData& ads_state) const {
         return PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj);
     }

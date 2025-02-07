@@ -22,7 +22,7 @@
 
 bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
 
     if (pCreateInfo->flags & VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {
@@ -36,7 +36,7 @@ bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCo
 }
 
 bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                          VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
+                                                          VkCommandBuffer* pCommandBuffers, ErrorObject& error_obj) const {
     bool skip = false;
 
     auto cp_state = Get<vvl::CommandPool>(pAllocateInfo->commandPool);
@@ -70,7 +70,7 @@ void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffe
 }
 
 bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
 
     if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
@@ -108,7 +108,7 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                                     VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const {
+                                                     VkQueryPool queryPool, uint32_t query, ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::pipelineStage),
@@ -118,13 +118,12 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuff
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
-                                                         VkQueryPool queryPool, uint32_t query,
-                                                         const ErrorObject& error_obj) const {
+                                                         VkQueryPool queryPool, uint32_t query, ErrorObject& error_obj) const {
     return PreCallValidateCmdWriteTimestamp2(commandBuffer, pipelineStage, queryPool, query, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 pipelineStage,
-                                                      VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const {
+                                                      VkQueryPool queryPool, uint32_t query, ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::pipelineStage), pipelineStage);
@@ -134,7 +133,7 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuf
 
 bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                        uint32_t queryCount, size_t dataSize, void* pData, VkDeviceSize stride,
-                                                       VkQueryResultFlags flags, const ErrorObject& error_obj) const {
+                                                       VkQueryResultFlags flags, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
@@ -232,7 +231,7 @@ struct EventValidator {
 }  // namespace
 
 bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                                      const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
+                                                      const VkCommandBuffer* pCommandBuffers, ErrorObject& error_obj) const {
     bool skip = false;
     EventValidator event_validator(*this);
     const auto primary = GetRead<bp_state::CommandBuffer>(commandBuffer);

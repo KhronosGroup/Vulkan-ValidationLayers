@@ -25,7 +25,7 @@
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       const ErrorObject &error_obj, PipelineStates &pipeline_states,
+                                                       ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                        chassis::CreateComputePipelines &chassis_state) const {
     bool skip = BaseClass::PreCallValidateCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                                  error_obj, pipeline_states, chassis_state);

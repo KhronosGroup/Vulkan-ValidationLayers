@@ -38,7 +38,7 @@ static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQue
 }
 
 bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator,
-                                                 const ErrorObject &error_obj) const {
+                                                 ErrorObject &error_obj) const {
     bool skip = false;
     if (disabled[query_validation]) return skip;
     if (queryPool == VK_NULL_HANDLE) return skip;
@@ -129,7 +129,7 @@ bool CoreChecks::ValidateQueryPoolWasReset(const vvl::QueryPool &query_pool_stat
 
 bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                     uint32_t queryCount, size_t dataSize, void *pData, VkDeviceSize stride,
-                                                    VkQueryResultFlags flags, const ErrorObject &error_obj) const {
+                                                    VkQueryResultFlags flags, ErrorObject &error_obj) const {
     if (disabled[query_validation]) return false;
     bool skip = false;
 
@@ -260,7 +260,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
 
 bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
-                                                const ErrorObject &error_obj) const {
+                                                ErrorObject &error_obj) const {
     if (disabled[query_validation]) return false;
     bool skip = false;
     skip |= ValidateDeviceQueueSupport(error_obj.location);
@@ -725,7 +725,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
 }
 
 bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
-                                              VkQueryControlFlags flags, const ErrorObject &error_obj) const {
+                                              VkQueryControlFlags flags, ErrorObject &error_obj) const {
     if (disabled[query_validation]) return false;
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -966,7 +966,7 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer &cb_state, VkQuery
 }
 
 bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
-                                            const ErrorObject &error_obj) const {
+                                            ErrorObject &error_obj) const {
     bool skip = false;
     if (disabled[query_validation]) return skip;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -1035,7 +1035,7 @@ bool CoreChecks::ValidateQueriesNotActive(const vvl::CommandBuffer &cb_state, Vk
 }
 
 bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                                  uint32_t queryCount, const ErrorObject &error_obj) const {
+                                                  uint32_t queryCount, ErrorObject &error_obj) const {
     bool skip = false;
     if (disabled[query_validation]) return skip;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -1113,7 +1113,7 @@ static QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags f
 bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                         uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                         VkDeviceSize stride, VkQueryResultFlags flags,
-                                                        const ErrorObject &error_obj) const {
+                                                        ErrorObject &error_obj) const {
     bool skip = false;
     if (disabled[query_validation]) return skip;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -1279,7 +1279,7 @@ bool CoreChecks::ValidateCmdWriteTimestamp(const vvl::CommandBuffer &cb_state, V
 }
 
 bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                                  VkQueryPool queryPool, uint32_t slot, const ErrorObject &error_obj) const {
+                                                  VkQueryPool queryPool, uint32_t slot, ErrorObject &error_obj) const {
     bool skip = false;
     if (disabled[query_validation]) return skip;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -1291,7 +1291,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage,
-                                                   VkQueryPool queryPool, uint32_t slot, const ErrorObject &error_obj) const {
+                                                   VkQueryPool queryPool, uint32_t slot, ErrorObject &error_obj) const {
     bool skip = false;
     if (disabled[query_validation]) return skip;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -1312,7 +1312,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer
 }
 
 bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
-                                                      VkQueryPool queryPool, uint32_t query, const ErrorObject &error_obj) const {
+                                                      VkQueryPool queryPool, uint32_t query, ErrorObject &error_obj) const {
     return PreCallValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, error_obj);
 }
 
@@ -1346,8 +1346,7 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
-                                                        VkQueryControlFlags flags, uint32_t index,
-                                                        const ErrorObject &error_obj) const {
+                                                        VkQueryControlFlags flags, uint32_t index, ErrorObject &error_obj) const {
     bool skip = false;
     if (disabled[query_validation]) return skip;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -1423,7 +1422,7 @@ void CoreChecks::PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffe
 }
 
 bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
-                                                      uint32_t index, const ErrorObject &error_obj) const {
+                                                      uint32_t index, ErrorObject &error_obj) const {
     bool skip = false;
     if (disabled[query_validation]) return skip;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -1474,7 +1473,7 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
 }
 
 bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                               const ErrorObject &error_obj) const {
+                                               ErrorObject &error_obj) const {
     bool skip = false;
     if (disabled[query_validation]) return skip;
 
@@ -1501,7 +1500,7 @@ bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool quer
 }
 
 bool CoreChecks::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                                  const ErrorObject &error_obj) const {
+                                                  ErrorObject &error_obj) const {
     return PreCallValidateResetQueryPool(device, queryPool, firstQuery, queryCount, error_obj);
 }
 
@@ -1540,7 +1539,7 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
     }
 }
 
-bool CoreChecks::PreCallValidateReleaseProfilingLockKHR(VkDevice device, const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateReleaseProfilingLockKHR(VkDevice device, ErrorObject &error_obj) const {
     bool skip = false;
 
     if (!performance_lock_acquired) {

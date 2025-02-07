@@ -281,9 +281,9 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const vvl::RenderPass &rp_state, const VkRect2D &render_area,
                                            const std::vector<const syncval_state::ImageViewState *> &attachment_views);
 
-    bool ValidateBeginRendering(const ErrorObject &error_obj, syncval_state::BeginRenderingCmdState &cmd_state) const;
+    bool ValidateBeginRendering(ErrorObject &error_obj, syncval_state::BeginRenderingCmdState &cmd_state) const;
     void RecordBeginRendering(syncval_state::BeginRenderingCmdState &cmd_state, const RecordObject &record_obj);
-    bool ValidateEndRendering(const ErrorObject &error_obj) const;
+    bool ValidateEndRendering(ErrorObject &error_obj) const;
     void RecordEndRendering(const RecordObject &record_obj);
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const Location &loc) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);

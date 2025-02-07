@@ -196,7 +196,7 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cb_st
 
 bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                        const VkClearAttachment* pAttachments, uint32_t rectCount,
-                                                       const VkClearRect* pRects, const ErrorObject& error_obj) const {
+                                                       const VkClearRect* pRects, ErrorObject& error_obj) const {
     bool skip = false;
     const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
 
@@ -356,7 +356,7 @@ bool BestPractices::ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkIm
 
 bool BestPractices::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                    VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                   const VkImageResolve* pRegions, const ErrorObject& error_obj) const {
+                                                   const VkImageResolve* pRegions, ErrorObject& error_obj) const {
     bool skip = false;
     skip |= ValidateCmdResolveImage(commandBuffer, srcImage, dstImage, error_obj.location);
     return skip;
@@ -364,12 +364,12 @@ bool BestPractices::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer
 
 bool BestPractices::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                                        const VkResolveImageInfo2KHR* pResolveImageInfo,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     return PreCallValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     skip |= ValidateCmdResolveImage(commandBuffer, pResolveImageInfo->srcImage, pResolveImageInfo->dstImage,
                                     error_obj.location.dot(Field::pResolveImageInfo));
@@ -534,24 +534,24 @@ bool BestPractices::ValidateCmdBlitImage(VkCommandBuffer command_buffer, uint32_
 
 bool BestPractices::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                const VkImageBlit* pRegions, VkFilter filter, const ErrorObject& error_obj) const {
+                                                const VkImageBlit* pRegions, VkFilter filter, ErrorObject& error_obj) const {
     return ValidateCmdBlitImage(commandBuffer, regionCount, pRegions, error_obj.location);
 }
 
 bool BestPractices::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     return PreCallValidateCmdBlitImage2(commandBuffer, pBlitImageInfo, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
                                 error_obj.location.dot(Field::pBlitImageInfo));
 }
 
 bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                       const VkClearColorValue* pColor, uint32_t rangeCount,
-                                                      const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
+                                                      const VkImageSubresourceRange* pRanges, ErrorObject& error_obj) const {
     bool skip = false;
 
     auto dst_image = Get<bp_state::Image>(image);
@@ -573,8 +573,7 @@ bool BestPractices::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
 bool BestPractices::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image,
                                                              VkImageLayout imageLayout,
                                                              const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
-                                                             const VkImageSubresourceRange* pRanges,
-                                                             const ErrorObject& error_obj) const {
+                                                             const VkImageSubresourceRange* pRanges, ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD)) {
         skip |=
@@ -595,7 +594,7 @@ bool BestPractices::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
 
 bool BestPractices::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                const VkImageCopy* pRegions, const ErrorObject& error_obj) const {
+                                                const VkImageCopy* pRegions, ErrorObject& error_obj) const {
     bool skip = false;
 
     if (VendorCheckEnabled(kBPVendorAMD)) {

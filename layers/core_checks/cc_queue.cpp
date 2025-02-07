@@ -137,7 +137,7 @@ private:
 };
 
 bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                            const ErrorObject &error_obj) const {
+                                            ErrorObject &error_obj) const {
     bool skip = false;
     if (auto fence_state = Get<vvl::Fence>(fence)) {
         const LogObjectList objlist(queue, fence);
@@ -293,7 +293,7 @@ bool CoreChecks::ValidateRenderPassStripeSubmitInfo(VkQueue queue, const vvl::Co
 }
 
 bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                                      const ErrorObject &error_obj) const {
+                                      ErrorObject &error_obj) const {
     bool skip = false;
     if (auto fence_state = Get<vvl::Fence>(fence)) {
         const LogObjectList objlist(queue, fence);
@@ -390,12 +390,12 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 }
 
 bool CoreChecks::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence, const ErrorObject &error_obj) const {
+                                                VkFence fence, ErrorObject &error_obj) const {
     return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
 bool CoreChecks::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
-                                             const ErrorObject &error_obj) const {
+                                             ErrorObject &error_obj) const {
     return ValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
@@ -632,7 +632,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
 }
 
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                                VkFence fence, const ErrorObject &error_obj) const {
+                                                VkFence fence, ErrorObject &error_obj) const {
     bool skip = false;
     if (auto fence_state = Get<vvl::Fence>(fence)) {
         const LogObjectList objlist(queue, fence);

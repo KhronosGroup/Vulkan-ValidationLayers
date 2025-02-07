@@ -11159,7 +11159,7 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
 }
 
 bool Instance::PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11171,7 +11171,7 @@ bool Instance::PreCallValidateDestroyInstance(VkInstance instance, const VkAlloc
 }
 
 bool Instance::PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
-                                                       VkPhysicalDevice* pPhysicalDevices, const ErrorObject& error_obj) const {
+                                                       VkPhysicalDevice* pPhysicalDevices, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11183,7 +11183,7 @@ bool Instance::PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -11196,7 +11196,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFeatures(VkPhysicalDevice physica
 
 bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                 VkFormatProperties* pFormatProperties,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -11213,7 +11213,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalD
                                                                      VkImageType type, VkImageTiling tiling,
                                                                      VkImageUsageFlags usage, VkImageCreateFlags flags,
                                                                      VkImageFormatProperties* pImageFormatProperties,
-                                                                     const ErrorObject& error_obj) const {
+                                                                     ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -11239,7 +11239,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties(VkPhysicalD
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties* pProperties,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -11253,7 +11253,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties(VkPhysicalDevice physi
 bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                      uint32_t* pQueueFamilyPropertyCount,
                                                                      VkQueueFamilyProperties* pQueueFamilyProperties,
-                                                                     const ErrorObject& error_obj) const {
+                                                                     ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -11277,7 +11277,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalD
 
 bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
                                                                 VkPhysicalDeviceMemoryProperties* pMemoryProperties,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -11290,7 +11290,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties(VkPhysicalDevice
 
 bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11580,8 +11580,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
     return skip;
 }
 
-bool Device::PreCallValidateDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
-                                          const ErrorObject& error_obj) const {
+bool Device::PreCallValidateDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11593,7 +11592,7 @@ bool Device::PreCallValidateDestroyDevice(VkDevice device, const VkAllocationCal
 }
 
 bool Device::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11602,7 +11601,7 @@ bool Device::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamily
 }
 
 bool Device::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
-                                        const ErrorObject& error_obj) const {
+                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11648,7 +11647,7 @@ bool Device::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     return skip;
 }
 
-bool Device::PreCallValidateQueueWaitIdle(VkQueue queue, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateQueueWaitIdle(VkQueue queue, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11656,7 +11655,7 @@ bool Device::PreCallValidateQueueWaitIdle(VkQueue queue, const ErrorObject& erro
     return skip;
 }
 
-bool Device::PreCallValidateDeviceWaitIdle(VkDevice device, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateDeviceWaitIdle(VkDevice device, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11666,7 +11665,7 @@ bool Device::PreCallValidateDeviceWaitIdle(VkDevice device, const ErrorObject& e
 
 bool Device::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11710,7 +11709,7 @@ bool Device::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAlloca
 }
 
 bool Device::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
-                                       const ErrorObject& error_obj) const {
+                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11722,7 +11721,7 @@ bool Device::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, c
 }
 
 bool Device::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
-                                      VkMemoryMapFlags flags, void** ppData, const ErrorObject& error_obj) const {
+                                      VkMemoryMapFlags flags, void** ppData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11733,7 +11732,7 @@ bool Device::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory memory, Vk
     return skip;
 }
 
-bool Device::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory memory, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory memory, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11742,7 +11741,7 @@ bool Device::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory memory, 
 }
 
 bool Device::PreCallValidateFlushMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
-                                                    const VkMappedMemoryRange* pMemoryRanges, const ErrorObject& error_obj) const {
+                                                    const VkMappedMemoryRange* pMemoryRanges, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11764,8 +11763,7 @@ bool Device::PreCallValidateFlushMappedMemoryRanges(VkDevice device, uint32_t me
 }
 
 bool Device::PreCallValidateInvalidateMappedMemoryRanges(VkDevice device, uint32_t memoryRangeCount,
-                                                         const VkMappedMemoryRange* pMemoryRanges,
-                                                         const ErrorObject& error_obj) const {
+                                                         const VkMappedMemoryRange* pMemoryRanges, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11788,7 +11786,7 @@ bool Device::PreCallValidateInvalidateMappedMemoryRanges(VkDevice device, uint32
 }
 
 bool Device::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory memory, VkDeviceSize* pCommittedMemoryInBytes,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11799,7 +11797,7 @@ bool Device::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceM
 }
 
 bool Device::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11809,7 +11807,7 @@ bool Device::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, V
 }
 
 bool Device::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11819,7 +11817,7 @@ bool Device::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDe
 }
 
 bool Device::PreCallValidateGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11830,7 +11828,7 @@ bool Device::PreCallValidateGetBufferMemoryRequirements(VkDevice device, VkBuffe
 }
 
 bool Device::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements* pMemoryRequirements,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11843,7 +11841,7 @@ bool Device::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkImage 
 bool Device::PreCallValidateGetImageSparseMemoryRequirements(VkDevice device, VkImage image,
                                                              uint32_t* pSparseMemoryRequirementCount,
                                                              VkSparseImageMemoryRequirements* pSparseMemoryRequirements,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -11864,12 +11862,9 @@ bool Device::PreCallValidateGetImageSparseMemoryRequirements(VkDevice device, Vk
     return skip;
 }
 
-bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                           VkImageType type, VkSampleCountFlagBits samples,
-                                                                           VkImageUsageFlags usage, VkImageTiling tiling,
-                                                                           uint32_t* pPropertyCount,
-                                                                           VkSparseImageFormatProperties* pProperties,
-                                                                           const ErrorObject& error_obj) const {
+bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(
+    VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkSampleCountFlagBits samples, VkImageUsageFlags usage,
+    VkImageTiling tiling, uint32_t* pPropertyCount, VkSparseImageFormatProperties* pProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -11902,7 +11897,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(VkPhy
 }
 
 bool Device::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12041,8 +12036,7 @@ bool Device::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCoun
 }
 
 bool Device::PreCallValidateCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkFence* pFence,
-                                        const ErrorObject& error_obj) const {
+                                        const VkAllocationCallbacks* pAllocator, VkFence* pFence, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12070,7 +12064,7 @@ bool Device::PreCallValidateCreateFence(VkDevice device, const VkFenceCreateInfo
 }
 
 bool Device::PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator,
-                                         const ErrorObject& error_obj) const {
+                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12082,7 +12076,7 @@ bool Device::PreCallValidateDestroyFence(VkDevice device, VkFence fence, const V
 }
 
 bool Device::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences,
-                                        const ErrorObject& error_obj) const {
+                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12091,7 +12085,7 @@ bool Device::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount, co
     return skip;
 }
 
-bool Device::PreCallValidateGetFenceStatus(VkDevice device, VkFence fence, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateGetFenceStatus(VkDevice device, VkFence fence, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12100,7 +12094,7 @@ bool Device::PreCallValidateGetFenceStatus(VkDevice device, VkFence fence, const
 }
 
 bool Device::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
-                                          uint64_t timeout, const ErrorObject& error_obj) const {
+                                          uint64_t timeout, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12112,7 +12106,7 @@ bool Device::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, 
 
 bool Device::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12143,7 +12137,7 @@ bool Device::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCr
 }
 
 bool Device::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12155,8 +12149,7 @@ bool Device::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaph
 }
 
 bool Device::PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkEvent* pEvent,
-                                        const ErrorObject& error_obj) const {
+                                        const VkAllocationCallbacks* pAllocator, VkEvent* pEvent, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12185,7 +12178,7 @@ bool Device::PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo
 }
 
 bool Device::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
-                                         const ErrorObject& error_obj) const {
+                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12196,7 +12189,7 @@ bool Device::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const V
     return skip;
 }
 
-bool Device::PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateGetEventStatus(VkDevice device, VkEvent event, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12204,7 +12197,7 @@ bool Device::PreCallValidateGetEventStatus(VkDevice device, VkEvent event, const
     return skip;
 }
 
-bool Device::PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateSetEvent(VkDevice device, VkEvent event, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12212,7 +12205,7 @@ bool Device::PreCallValidateSetEvent(VkDevice device, VkEvent event, const Error
     return skip;
 }
 
-bool Device::PreCallValidateResetEvent(VkDevice device, VkEvent event, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateResetEvent(VkDevice device, VkEvent event, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12222,7 +12215,7 @@ bool Device::PreCallValidateResetEvent(VkDevice device, VkEvent event, const Err
 
 bool Device::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkQueryPool* pQueryPool,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12265,7 +12258,7 @@ bool Device::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCr
 }
 
 bool Device::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12278,7 +12271,7 @@ bool Device::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryP
 
 bool Device::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                 size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12294,8 +12287,7 @@ bool Device::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool que
 }
 
 bool Device::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
-                                         const ErrorObject& error_obj) const {
+                                         const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12333,7 +12325,7 @@ bool Device::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateIn
 }
 
 bool Device::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,
-                                          const ErrorObject& error_obj) const {
+                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12346,7 +12338,7 @@ bool Device::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, cons
 
 bool Device::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkBufferView* pView,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12380,7 +12372,7 @@ bool Device::PreCallValidateCreateBufferView(VkDevice device, const VkBufferView
 }
 
 bool Device::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12392,8 +12384,7 @@ bool Device::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView buff
 }
 
 bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator, VkImage* pImage,
-                                        const ErrorObject& error_obj) const {
+                                        const VkAllocationCallbacks* pAllocator, VkImage* pImage, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12465,7 +12456,7 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
 }
 
 bool Device::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator,
-                                         const ErrorObject& error_obj) const {
+                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12477,7 +12468,7 @@ bool Device::PreCallValidateDestroyImage(VkDevice device, VkImage image, const V
 }
 
 bool Device::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource* pSubresource,
-                                                      VkSubresourceLayout* pLayout, const ErrorObject& error_obj) const {
+                                                      VkSubresourceLayout* pLayout, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12497,7 +12488,7 @@ bool Device::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage i
 
 bool Device::PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkImageView* pView,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12559,7 +12550,7 @@ bool Device::PreCallValidateCreateImageView(VkDevice device, const VkImageViewCr
 }
 
 bool Device::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12572,7 +12563,7 @@ bool Device::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageV
 
 bool Device::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12599,7 +12590,7 @@ bool Device::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderMo
 }
 
 bool Device::PreCallValidateDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
-                                                const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+                                                const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12612,7 +12603,7 @@ bool Device::PreCallValidateDestroyShaderModule(VkDevice device, VkShaderModule 
 
 bool Device::PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12643,7 +12634,7 @@ bool Device::PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelin
 }
 
 bool Device::PreCallValidateDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache,
-                                                 const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+                                                 const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12655,7 +12646,7 @@ bool Device::PreCallValidateDestroyPipelineCache(VkDevice device, VkPipelineCach
 }
 
 bool Device::PreCallValidateGetPipelineCacheData(VkDevice device, VkPipelineCache pipelineCache, size_t* pDataSize, void* pData,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12667,7 +12658,7 @@ bool Device::PreCallValidateGetPipelineCacheData(VkDevice device, VkPipelineCach
 }
 
 bool Device::PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache dstCache, uint32_t srcCacheCount,
-                                                const VkPipelineCache* pSrcCaches, const ErrorObject& error_obj) const {
+                                                const VkPipelineCache* pSrcCaches, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12681,7 +12672,7 @@ bool Device::PreCallValidateMergePipelineCaches(VkDevice device, VkPipelineCache
 bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                     const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12756,7 +12747,7 @@ bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
 bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                    const VkComputePipelineCreateInfo* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12849,7 +12840,7 @@ bool Device::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCa
 }
 
 bool Device::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12862,7 +12853,7 @@ bool Device::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline
 
 bool Device::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12903,7 +12894,7 @@ bool Device::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipeli
 }
 
 bool Device::PreCallValidateDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
-                                                  const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+                                                  const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12916,7 +12907,7 @@ bool Device::PreCallValidateDestroyPipelineLayout(VkDevice device, VkPipelineLay
 
 bool Device::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
-                                          const ErrorObject& error_obj) const {
+                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12975,7 +12966,7 @@ bool Device::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreate
 }
 
 bool Device::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -12988,7 +12979,7 @@ bool Device::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, c
 
 bool Device::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13034,8 +13025,7 @@ bool Device::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkD
 }
 
 bool Device::PreCallValidateDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
-                                                       const VkAllocationCallbacks* pAllocator,
-                                                       const ErrorObject& error_obj) const {
+                                                       const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13048,7 +13038,7 @@ bool Device::PreCallValidateDestroyDescriptorSetLayout(VkDevice device, VkDescri
 
 bool Device::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13094,7 +13084,7 @@ bool Device::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescri
 }
 
 bool Device::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                  const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+                                                  const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13106,7 +13096,7 @@ bool Device::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorP
 }
 
 bool Device::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13116,7 +13106,7 @@ bool Device::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPoo
 }
 
 bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                   VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const {
+                                                   VkDescriptorSet* pDescriptorSets, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13150,7 +13140,7 @@ bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDesc
 }
 
 bool Device::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                               const VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj) const {
+                                               const VkDescriptorSet* pDescriptorSets, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13164,7 +13154,7 @@ bool Device::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool
 
 bool Device::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                  const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
-                                                 const VkCopyDescriptorSet* pDescriptorCopies, const ErrorObject& error_obj) const {
+                                                 const VkCopyDescriptorSet* pDescriptorCopies, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13222,7 +13212,7 @@ bool Device::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descr
 
 bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13255,7 +13245,7 @@ bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebuff
 }
 
 bool Device::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks* pAllocator,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13268,7 +13258,7 @@ bool Device::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer fr
 
 bool Device::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13458,7 +13448,7 @@ bool Device::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPass
 }
 
 bool Device::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13470,7 +13460,7 @@ bool Device::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass rend
 }
 
 bool Device::PreCallValidateGetRenderAreaGranularity(VkDevice device, VkRenderPass renderPass, VkExtent2D* pGranularity,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13482,7 +13472,7 @@ bool Device::PreCallValidateGetRenderAreaGranularity(VkDevice device, VkRenderPa
 
 bool Device::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13508,7 +13498,7 @@ bool Device::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPo
 }
 
 bool Device::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13520,7 +13510,7 @@ bool Device::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool co
 }
 
 bool Device::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13531,7 +13521,7 @@ bool Device::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool comm
 }
 
 bool Device::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
-                                                   VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
+                                                   VkCommandBuffer* pCommandBuffers, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13558,7 +13548,7 @@ bool Device::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkComm
 }
 
 bool Device::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                               const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
+                                               const VkCommandBuffer* pCommandBuffers, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13570,7 +13560,7 @@ bool Device::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool co
 }
 
 bool Device::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13594,7 +13584,7 @@ bool Device::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, co
     return skip;
 }
 
-bool Device::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13603,7 +13593,7 @@ bool Device::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, cons
 }
 
 bool Device::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13614,7 +13604,7 @@ bool Device::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, Vk
 }
 
 bool Device::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                            VkPipeline pipeline, const ErrorObject& error_obj) const {
+                                            VkPipeline pipeline, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13625,7 +13615,7 @@ bool Device::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPip
 }
 
 bool Device::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                                           const VkViewport* pViewports, const ErrorObject& error_obj) const {
+                                           const VkViewport* pViewports, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13642,7 +13632,7 @@ bool Device::PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32
 }
 
 bool Device::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
-                                          const VkRect2D* pScissors, const ErrorObject& error_obj) const {
+                                          const VkRect2D* pScissors, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13652,7 +13642,7 @@ bool Device::PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_
     return skip;
 }
 
-bool Device::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13662,7 +13652,7 @@ bool Device::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float
 }
 
 bool Device::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
-                                            float depthBiasSlopeFactor, const ErrorObject& error_obj) const {
+                                            float depthBiasSlopeFactor, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13671,7 +13661,7 @@ bool Device::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float
 }
 
 bool Device::PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4],
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13680,7 +13670,7 @@ bool Device::PreCallValidateCmdSetBlendConstants(VkCommandBuffer commandBuffer, 
 }
 
 bool Device::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13689,7 +13679,7 @@ bool Device::PreCallValidateCmdSetDepthBounds(VkCommandBuffer commandBuffer, flo
 }
 
 bool Device::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
-                                                     uint32_t compareMask, const ErrorObject& error_obj) const {
+                                                     uint32_t compareMask, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13700,7 +13690,7 @@ bool Device::PreCallValidateCmdSetStencilCompareMask(VkCommandBuffer commandBuff
 }
 
 bool Device::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t writeMask,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13711,7 +13701,7 @@ bool Device::PreCallValidateCmdSetStencilWriteMask(VkCommandBuffer commandBuffer
 }
 
 bool Device::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13724,7 +13714,7 @@ bool Device::PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer
 bool Device::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                   VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                                   const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                  const uint32_t* pDynamicOffsets, const ErrorObject& error_obj) const {
+                                                  const uint32_t* pDynamicOffsets, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13741,7 +13731,7 @@ bool Device::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer,
 }
 
 bool Device::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                               VkIndexType indexType, const ErrorObject& error_obj) const {
+                                               VkIndexType indexType, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13753,7 +13743,7 @@ bool Device::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, Vk
 
 bool Device::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                  const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13769,7 +13759,7 @@ bool Device::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, 
 }
 
 bool Device::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                    uint32_t firstVertex, uint32_t firstInstance, const ErrorObject& error_obj) const {
+                                    uint32_t firstVertex, uint32_t firstInstance, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13779,7 +13769,7 @@ bool Device::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vert
 
 bool Device::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                            uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13788,7 +13778,7 @@ bool Device::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32
 }
 
 bool Device::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
-                                            uint32_t stride, const ErrorObject& error_obj) const {
+                                            uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13797,7 +13787,7 @@ bool Device::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuf
 }
 
 bool Device::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                   uint32_t drawCount, uint32_t stride, const ErrorObject& error_obj) const {
+                                                   uint32_t drawCount, uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13806,7 +13796,7 @@ bool Device::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer
 }
 
 bool Device::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                        uint32_t groupCountZ, const ErrorObject& error_obj) const {
+                                        uint32_t groupCountZ, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13815,7 +13805,7 @@ bool Device::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t 
 }
 
 bool Device::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13824,7 +13814,7 @@ bool Device::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, V
 }
 
 bool Device::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                          uint32_t regionCount, const VkBufferCopy* pRegions, const ErrorObject& error_obj) const {
+                                          uint32_t regionCount, const VkBufferCopy* pRegions, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13844,7 +13834,7 @@ bool Device::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffe
 
 bool Device::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                          VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                         const VkImageCopy* pRegions, const ErrorObject& error_obj) const {
+                                         const VkImageCopy* pRegions, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13881,7 +13871,7 @@ bool Device::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage 
 
 bool Device::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                          VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                         const VkImageBlit* pRegions, VkFilter filter, const ErrorObject& error_obj) const {
+                                         const VkImageBlit* pRegions, VkFilter filter, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13913,7 +13903,7 @@ bool Device::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage 
 
 bool Device::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                  VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                 const VkBufferImageCopy* pRegions, const ErrorObject& error_obj) const {
+                                                 const VkBufferImageCopy* pRegions, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13942,7 +13932,7 @@ bool Device::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
 
 bool Device::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                  VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13970,7 +13960,7 @@ bool Device::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
 }
 
 bool Device::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                            VkDeviceSize dataSize, const void* pData, const ErrorObject& error_obj) const {
+                                            VkDeviceSize dataSize, const void* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13982,7 +13972,7 @@ bool Device::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuf
 }
 
 bool Device::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                          VkDeviceSize size, uint32_t data, const ErrorObject& error_obj) const {
+                                          VkDeviceSize size, uint32_t data, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -13993,7 +13983,7 @@ bool Device::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffe
 
 bool Device::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                const VkClearColorValue* pColor, uint32_t rangeCount,
-                                               const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
+                                               const VkImageSubresourceRange* pRanges, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14019,7 +14009,7 @@ bool Device::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, Vk
 
 bool Device::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                       const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
-                                                      const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const {
+                                                      const VkImageSubresourceRange* pRanges, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14045,7 +14035,7 @@ bool Device::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuf
 
 bool Device::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                 const VkClearAttachment* pAttachments, uint32_t rectCount,
-                                                const VkClearRect* pRects, const ErrorObject& error_obj) const {
+                                                const VkClearRect* pRects, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14079,7 +14069,7 @@ bool Device::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, u
 
 bool Device::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                             VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                            const VkImageResolve* pRegions, const ErrorObject& error_obj) const {
+                                            const VkImageResolve* pRegions, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14115,7 +14105,7 @@ bool Device::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkIma
 }
 
 bool Device::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                        const ErrorObject& error_obj) const {
+                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14126,7 +14116,7 @@ bool Device::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent e
 }
 
 bool Device::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                          const ErrorObject& error_obj) const {
+                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14141,7 +14131,7 @@ bool Device::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_
                                           uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
                                           uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                           uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                          const ErrorObject& error_obj) const {
+                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14236,8 +14226,7 @@ bool Device::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, Vk
                                                uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
                                                uint32_t bufferMemoryBarrierCount,
                                                const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                               const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                               const ErrorObject& error_obj) const {
+                                               const VkImageMemoryBarrier* pImageMemoryBarriers, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14328,7 +14317,7 @@ bool Device::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, Vk
 }
 
 bool Device::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                          VkQueryControlFlags flags, const ErrorObject& error_obj) const {
+                                          VkQueryControlFlags flags, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14339,7 +14328,7 @@ bool Device::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQuery
 }
 
 bool Device::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                        const ErrorObject& error_obj) const {
+                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14348,7 +14337,7 @@ bool Device::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPo
 }
 
 bool Device::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                                              uint32_t queryCount, const ErrorObject& error_obj) const {
+                                              uint32_t queryCount, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14357,7 +14346,7 @@ bool Device::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQ
 }
 
 bool Device::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                              VkQueryPool queryPool, uint32_t query, const ErrorObject& error_obj) const {
+                                              VkQueryPool queryPool, uint32_t query, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14370,8 +14359,7 @@ bool Device::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkP
 
 bool Device::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                     uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                                    VkDeviceSize stride, VkQueryResultFlags flags,
-                                                    const ErrorObject& error_obj) const {
+                                                    VkDeviceSize stride, VkQueryResultFlags flags, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14383,8 +14371,7 @@ bool Device::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandBuffe
 }
 
 bool Device::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
-                                             uint32_t offset, uint32_t size, const void* pValues,
-                                             const ErrorObject& error_obj) const {
+                                             uint32_t offset, uint32_t size, const void* pValues, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14399,7 +14386,7 @@ bool Device::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPi
 }
 
 bool Device::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                               VkSubpassContents contents, const ErrorObject& error_obj) const {
+                                               VkSubpassContents contents, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14436,7 +14423,7 @@ bool Device::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, co
 }
 
 bool Device::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14445,7 +14432,7 @@ bool Device::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubp
     return skip;
 }
 
-bool Device::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14454,7 +14441,7 @@ bool Device::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
 }
 
 bool Device::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                               const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
+                                               const VkCommandBuffer* pCommandBuffers, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14464,7 +14451,7 @@ bool Device::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, ui
 }
 
 bool Device::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14492,7 +14479,7 @@ bool Device::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfo
 }
 
 bool Device::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14521,7 +14508,7 @@ bool Device::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoC
 bool Device::PreCallValidateGetDeviceGroupPeerMemoryFeatures(VkDevice device, uint32_t heapIndex, uint32_t localDeviceIndex,
                                                              uint32_t remoteDeviceIndex,
                                                              VkPeerMemoryFeatureFlags* pPeerMemoryFeatures,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14530,8 +14517,7 @@ bool Device::PreCallValidateGetDeviceGroupPeerMemoryFeatures(VkDevice device, ui
     return skip;
 }
 
-bool Device::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask,
-                                             const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14541,7 +14527,7 @@ bool Device::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint
 
 bool Device::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                             uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14551,7 +14537,7 @@ bool Device::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint3
 
 bool Instance::PreCallValidateEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                             VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14577,8 +14563,7 @@ bool Instance::PreCallValidateEnumeratePhysicalDeviceGroups(VkInstance instance,
 }
 
 bool Device::PreCallValidateGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
-                                                        VkMemoryRequirements2* pMemoryRequirements,
-                                                        const ErrorObject& error_obj) const {
+                                                        VkMemoryRequirements2* pMemoryRequirements, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14613,8 +14598,7 @@ bool Device::PreCallValidateGetImageMemoryRequirements2(VkDevice device, const V
 }
 
 bool Device::PreCallValidateGetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
-                                                         VkMemoryRequirements2* pMemoryRequirements,
-                                                         const ErrorObject& error_obj) const {
+                                                         VkMemoryRequirements2* pMemoryRequirements, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14646,7 +14630,7 @@ bool Device::PreCallValidateGetBufferMemoryRequirements2(VkDevice device, const 
 bool Device::PreCallValidateGetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
                                                               uint32_t* pSparseMemoryRequirementCount,
                                                               VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -14679,7 +14663,7 @@ bool Device::PreCallValidateGetImageSparseMemoryRequirements2(VkDevice device, c
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -14695,8 +14679,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFeatures2(VkPhysicalDevice physic
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
-                                                           VkPhysicalDeviceProperties2* pProperties,
-                                                           const ErrorObject& error_obj) const {
+                                                           VkPhysicalDeviceProperties2* pProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -14824,7 +14807,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
 
 bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                  VkFormatProperties2* pFormatProperties,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -14855,7 +14838,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevic
 bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                       const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                       VkImageFormatProperties2* pImageFormatProperties,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -14932,7 +14915,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysical
 bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                       uint32_t* pQueueFamilyPropertyCount,
                                                                       VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -14969,7 +14952,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysical
 
 bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties2(VkPhysicalDevice physicalDevice,
                                                                  VkPhysicalDeviceMemoryProperties2* pMemoryProperties,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -14997,7 +14980,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties2(VkPhysicalDevic
 
 bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
-    VkSparseImageFormatProperties2* pProperties, const ErrorObject& error_obj) const {
+    VkSparseImageFormatProperties2* pProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -15050,7 +15033,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2(
 }
 
 bool Device::PreCallValidateTrimCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15060,7 +15043,7 @@ bool Device::PreCallValidateTrimCommandPool(VkDevice device, VkCommandPool comma
 }
 
 bool Device::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15081,8 +15064,7 @@ bool Device::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQueue
 
 bool Device::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
-                                                         VkSamplerYcbcrConversion* pYcbcrConversion,
-                                                         const ErrorObject& error_obj) const {
+                                                         VkSamplerYcbcrConversion* pYcbcrConversion, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15147,8 +15129,7 @@ bool Device::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const 
 }
 
 bool Device::PreCallValidateDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                          const VkAllocationCallbacks* pAllocator,
-                                                          const ErrorObject& error_obj) const {
+                                                          const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15162,7 +15143,7 @@ bool Device::PreCallValidateDestroySamplerYcbcrConversion(VkDevice device, VkSam
 bool Device::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15209,8 +15190,7 @@ bool Device::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, cons
 }
 
 bool Device::PreCallValidateDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                            const VkAllocationCallbacks* pAllocator,
-                                                            const ErrorObject& error_obj) const {
+                                                            const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15223,7 +15203,7 @@ bool Device::PreCallValidateDestroyDescriptorUpdateTemplate(VkDevice device, VkD
 
 bool Device::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                             VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15234,7 +15214,7 @@ bool Device::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device, VkD
 
 bool Instance::PreCallValidateGetPhysicalDeviceExternalBufferProperties(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
-    VkExternalBufferProperties* pExternalBufferProperties, const ErrorObject& error_obj) const {
+    VkExternalBufferProperties* pExternalBufferProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -15286,7 +15266,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceExternalBufferProperties(
 bool Instance::PreCallValidateGetPhysicalDeviceExternalFenceProperties(VkPhysicalDevice physicalDevice,
                                                                        const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
                                                                        VkExternalFenceProperties* pExternalFenceProperties,
-                                                                       const ErrorObject& error_obj) const {
+                                                                       ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -15326,7 +15306,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceExternalFenceProperties(VkPhysica
 
 bool Instance::PreCallValidateGetPhysicalDeviceExternalSemaphoreProperties(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties* pExternalSemaphoreProperties, const ErrorObject& error_obj) const {
+    VkExternalSemaphoreProperties* pExternalSemaphoreProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -15369,8 +15349,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceExternalSemaphoreProperties(
 }
 
 bool Device::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
-                                                          VkDescriptorSetLayoutSupport* pSupport,
-                                                          const ErrorObject& error_obj) const {
+                                                          VkDescriptorSetLayoutSupport* pSupport, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15424,7 +15403,7 @@ bool Device::PreCallValidateGetDescriptorSetLayoutSupport(VkDevice device, const
 
 bool Device::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                 uint32_t stride, const ErrorObject& error_obj) const {
+                                                 uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15435,7 +15414,7 @@ bool Device::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, 
 
 bool Device::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                        uint32_t stride, const ErrorObject& error_obj) const {
+                                                        uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15446,7 +15425,7 @@ bool Device::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandB
 
 bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15735,7 +15714,7 @@ bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPas
 }
 
 bool Device::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                                const VkSubpassBeginInfo* pSubpassBeginInfo, const ErrorObject& error_obj) const {
+                                                const VkSubpassBeginInfo* pSubpassBeginInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15782,7 +15761,7 @@ bool Device::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, c
 }
 
 bool Device::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                            const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const {
+                                            const VkSubpassEndInfo* pSubpassEndInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15813,7 +15792,7 @@ bool Device::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const
 }
 
 bool Device::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15832,7 +15811,7 @@ bool Device::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, con
 }
 
 bool Device::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15841,7 +15820,7 @@ bool Device::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPoo
 }
 
 bool Device::PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t* pValue,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15851,7 +15830,7 @@ bool Device::PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphor
 }
 
 bool Device::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15879,7 +15858,7 @@ bool Device::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWai
 }
 
 bool Device::PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15896,7 +15875,7 @@ bool Device::PreCallValidateSignalSemaphore(VkDevice device, const VkSemaphoreSi
 }
 
 bool Device::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15914,7 +15893,7 @@ bool Device::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBuff
 }
 
 bool Device::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15933,7 +15912,7 @@ bool Device::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, const
 
 bool Device::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
                                                                 const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -15952,7 +15931,7 @@ bool Device::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
 
 bool Instance::PreCallValidateGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
                                                               VkPhysicalDeviceToolProperties* pToolProperties,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -15978,7 +15957,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceToolProperties(VkPhysicalDevice p
 
 bool Device::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16003,7 +15982,7 @@ bool Device::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPriva
 }
 
 bool Device::PreCallValidateDestroyPrivateDataSlot(VkDevice device, VkPrivateDataSlot privateDataSlot,
-                                                   const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+                                                   const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16015,7 +15994,7 @@ bool Device::PreCallValidateDestroyPrivateDataSlot(VkDevice device, VkPrivateDat
 }
 
 bool Device::PreCallValidateSetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
-                                           VkPrivateDataSlot privateDataSlot, uint64_t data, const ErrorObject& error_obj) const {
+                                           VkPrivateDataSlot privateDataSlot, uint64_t data, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16026,7 +16005,7 @@ bool Device::PreCallValidateSetPrivateData(VkDevice device, VkObjectType objectT
 }
 
 bool Device::PreCallValidateGetPrivateData(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
-                                           VkPrivateDataSlot privateDataSlot, uint64_t* pData, const ErrorObject& error_obj) const {
+                                           VkPrivateDataSlot privateDataSlot, uint64_t* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16038,7 +16017,7 @@ bool Device::PreCallValidateGetPrivateData(VkDevice device, VkObjectType objectT
 }
 
 bool Device::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
-                                         const ErrorObject& error_obj) const {
+                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16194,7 +16173,7 @@ bool Device::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent 
 }
 
 bool Device::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16206,7 +16185,7 @@ bool Device::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEven
 }
 
 bool Device::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                           const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
+                                           const VkDependencyInfo* pDependencyInfos, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16385,7 +16364,7 @@ bool Device::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32
 }
 
 bool Device::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16540,7 +16519,7 @@ bool Device::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, c
 }
 
 bool Device::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
-                                               uint32_t query, const ErrorObject& error_obj) const {
+                                               uint32_t query, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16551,7 +16530,7 @@ bool Device::PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, Vk
 }
 
 bool Device::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                         const ErrorObject& error_obj) const {
+                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16656,7 +16635,7 @@ bool Device::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, co
 }
 
 bool Device::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16690,7 +16669,7 @@ bool Device::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const 
 }
 
 bool Device::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
-                                          const ErrorObject& error_obj) const {
+                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16748,7 +16727,7 @@ bool Device::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const V
 
 bool Device::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                                                   const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16802,7 +16781,7 @@ bool Device::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
 
 bool Device::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                                                   const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16855,7 +16834,7 @@ bool Device::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
 }
 
 bool Device::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
-                                          const ErrorObject& error_obj) const {
+                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16915,7 +16894,7 @@ bool Device::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const V
 }
 
 bool Device::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -16975,7 +16954,7 @@ bool Device::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, cons
 }
 
 bool Device::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17116,7 +17095,7 @@ bool Device::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
     return skip;
 }
 
-bool Device::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17124,8 +17103,7 @@ bool Device::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const
     return skip;
 }
 
-bool Device::PreCallValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,
-                                           const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17134,8 +17112,7 @@ bool Device::PreCallValidateCmdSetCullMode(VkCommandBuffer commandBuffer, VkCull
     return skip;
 }
 
-bool Device::PreCallValidateCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace,
-                                            const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17145,7 +17122,7 @@ bool Device::PreCallValidateCmdSetFrontFace(VkCommandBuffer commandBuffer, VkFro
 }
 
 bool Device::PreCallValidateCmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17155,7 +17132,7 @@ bool Device::PreCallValidateCmdSetPrimitiveTopology(VkCommandBuffer commandBuffe
 }
 
 bool Device::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                    const VkViewport* pViewports, const ErrorObject& error_obj) const {
+                                                    const VkViewport* pViewports, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17173,7 +17150,7 @@ bool Device::PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffe
 }
 
 bool Device::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount, const VkRect2D* pScissors,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17187,7 +17164,7 @@ bool Device::PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer
 bool Device::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                   const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                                   const VkDeviceSize* pSizes, const VkDeviceSize* pStrides,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17199,7 +17176,7 @@ bool Device::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer,
 }
 
 bool Device::PreCallValidateCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17208,7 +17185,7 @@ bool Device::PreCallValidateCmdSetDepthTestEnable(VkCommandBuffer commandBuffer,
 }
 
 bool Device::PreCallValidateCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17217,7 +17194,7 @@ bool Device::PreCallValidateCmdSetDepthWriteEnable(VkCommandBuffer commandBuffer
 }
 
 bool Device::PreCallValidateCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17227,7 +17204,7 @@ bool Device::PreCallValidateCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, 
 }
 
 bool Device::PreCallValidateCmdSetDepthBoundsTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17236,7 +17213,7 @@ bool Device::PreCallValidateCmdSetDepthBoundsTestEnable(VkCommandBuffer commandB
 }
 
 bool Device::PreCallValidateCmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17246,7 +17223,7 @@ bool Device::PreCallValidateCmdSetStencilTestEnable(VkCommandBuffer commandBuffe
 
 bool Device::PreCallValidateCmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                             VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17265,7 +17242,7 @@ bool Device::PreCallValidateCmdSetStencilOp(VkCommandBuffer commandBuffer, VkSte
 }
 
 bool Device::PreCallValidateCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17274,7 +17251,7 @@ bool Device::PreCallValidateCmdSetRasterizerDiscardEnable(VkCommandBuffer comman
 }
 
 bool Device::PreCallValidateCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17283,7 +17260,7 @@ bool Device::PreCallValidateCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer,
 }
 
 bool Device::PreCallValidateCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17293,7 +17270,7 @@ bool Device::PreCallValidateCmdSetPrimitiveRestartEnable(VkCommandBuffer command
 
 bool Device::PreCallValidateGetDeviceBufferMemoryRequirements(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
                                                               VkMemoryRequirements2* pMemoryRequirements,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17351,7 +17328,7 @@ bool Device::PreCallValidateGetDeviceBufferMemoryRequirements(VkDevice device, c
 
 bool Device::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
                                                              VkMemoryRequirements2* pMemoryRequirements,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17448,7 +17425,7 @@ bool Device::PreCallValidateGetDeviceImageMemoryRequirements(VkDevice device, co
 bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
                                                                    uint32_t* pSparseMemoryRequirementCount,
                                                                    VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
-                                                                   const ErrorObject& error_obj) const {
+                                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17548,7 +17525,7 @@ bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirements(VkDevice devi
 }
 
 bool Device::PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                              uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
+                                              uint16_t lineStipplePattern, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17558,7 +17535,7 @@ bool Device::PreCallValidateCmdSetLineStipple(VkCommandBuffer commandBuffer, uin
 }
 
 bool Device::PreCallValidateMapMemory2(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
-                                       const ErrorObject& error_obj) const {
+                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17582,8 +17559,7 @@ bool Device::PreCallValidateMapMemory2(VkDevice device, const VkMemoryMapInfo* p
     return skip;
 }
 
-bool Device::PreCallValidateUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
-                                         const ErrorObject& error_obj) const {
+bool Device::PreCallValidateUnmapMemory2(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17605,7 +17581,7 @@ bool Device::PreCallValidateUnmapMemory2(VkDevice device, const VkMemoryUnmapInf
 }
 
 bool Device::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                VkDeviceSize size, VkIndexType indexType, const ErrorObject& error_obj) const {
+                                                VkDeviceSize size, VkIndexType indexType, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17616,7 +17592,7 @@ bool Device::PreCallValidateCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, V
 }
 
 bool Device::PreCallValidateGetRenderingAreaGranularity(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
-                                                        VkExtent2D* pGranularity, const ErrorObject& error_obj) const {
+                                                        VkExtent2D* pGranularity, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17635,7 +17611,7 @@ bool Device::PreCallValidateGetRenderingAreaGranularity(VkDevice device, const V
 }
 
 bool Device::PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
-                                                            VkSubresourceLayout2* pLayout, const ErrorObject& error_obj) const {
+                                                            VkSubresourceLayout2* pLayout, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17742,7 +17718,7 @@ bool Device::PreCallValidateGetDeviceImageSubresourceLayout(VkDevice device, con
 }
 
 bool Device::PreCallValidateGetImageSubresourceLayout2(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
-                                                       VkSubresourceLayout2* pLayout, const ErrorObject& error_obj) const {
+                                                       VkSubresourceLayout2* pLayout, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17777,8 +17753,7 @@ bool Device::PreCallValidateGetImageSubresourceLayout2(VkDevice device, VkImage 
 
 bool Device::PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                  VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                 const VkWriteDescriptorSet* pDescriptorWrites,
-                                                 const ErrorObject& error_obj) const {
+                                                 const VkWriteDescriptorSet* pDescriptorWrites, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17822,7 +17797,7 @@ bool Device::PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, 
 bool Device::PreCallValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
                                                              VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                              VkPipelineLayout layout, uint32_t set, const void* pData,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17833,7 +17808,7 @@ bool Device::PreCallValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer com
 
 bool Device::PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
                                                                const VkRenderingAttachmentLocationInfo* pLocationInfo,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17845,7 +17820,7 @@ bool Device::PreCallValidateCmdSetRenderingAttachmentLocations(VkCommandBuffer c
 
 bool Device::PreCallValidateCmdSetRenderingInputAttachmentIndices(
     VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17858,7 +17833,7 @@ bool Device::PreCallValidateCmdSetRenderingInputAttachmentIndices(
 
 bool Device::PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
                                                    const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17889,7 +17864,7 @@ bool Device::PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer
 }
 
 bool Device::PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17920,7 +17895,7 @@ bool Device::PreCallValidateCmdPushConstants2(VkCommandBuffer commandBuffer, con
 
 bool Device::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
                                                   const VkPushDescriptorSetInfo* pPushDescriptorSetInfo,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -17982,7 +17957,7 @@ bool Device::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
 
 bool Device::PreCallValidateCmdPushDescriptorSetWithTemplate2(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18013,7 +17988,7 @@ bool Device::PreCallValidateCmdPushDescriptorSetWithTemplate2(
 }
 
 bool Device::PreCallValidateCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18069,7 +18044,7 @@ bool Device::PreCallValidateCopyMemoryToImage(VkDevice device, const VkCopyMemor
 }
 
 bool Device::PreCallValidateCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18125,7 +18100,7 @@ bool Device::PreCallValidateCopyImageToMemory(VkDevice device, const VkCopyImage
 }
 
 bool Device::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18192,7 +18167,7 @@ bool Device::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyImageT
 
 bool Device::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t transitionCount,
                                                   const VkHostImageLayoutTransitionInfo* pTransitions,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18227,7 +18202,7 @@ bool Device::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t tran
 }
 
 bool Instance::PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18241,7 +18216,7 @@ bool Instance::PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKH
 
 bool Instance::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                  VkSurfaceKHR surface, VkBool32* pSupported,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18256,7 +18231,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevic
 
 bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                       VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18271,7 +18246,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysical
 
 bool Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                  uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18296,7 +18271,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevic
 
 bool Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                       uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18315,7 +18290,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(VkPhysical
 
 bool Device::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18392,7 +18367,7 @@ bool Device::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchai
 }
 
 bool Device::PreCallValidateDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18405,7 +18380,7 @@ bool Device::PreCallValidateDestroySwapchainKHR(VkDevice device, VkSwapchainKHR 
 }
 
 bool Device::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
-                                                  VkImage* pSwapchainImages, const ErrorObject& error_obj) const {
+                                                  VkImage* pSwapchainImages, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18419,7 +18394,7 @@ bool Device::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKH
 }
 
 bool Device::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                                VkFence fence, uint32_t* pImageIndex, const ErrorObject& error_obj) const {
+                                                VkFence fence, uint32_t* pImageIndex, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18432,8 +18407,7 @@ bool Device::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR 
     return skip;
 }
 
-bool Device::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo,
-                                            const ErrorObject& error_obj) const {
+bool Device::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18479,7 +18453,7 @@ bool Device::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKH
 }
 
 bool Device::PreCallValidateGetDeviceGroupPresentCapabilitiesKHR(
-    VkDevice device, VkDeviceGroupPresentCapabilitiesKHR* pDeviceGroupPresentCapabilities, const ErrorObject& error_obj) const {
+    VkDevice device, VkDeviceGroupPresentCapabilitiesKHR* pDeviceGroupPresentCapabilities, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18500,7 +18474,7 @@ bool Device::PreCallValidateGetDeviceGroupPresentCapabilitiesKHR(
 
 bool Device::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice device, VkSurfaceKHR surface,
                                                                  VkDeviceGroupPresentModeFlagsKHR* pModes,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18514,7 +18488,7 @@ bool Device::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(VkDevice device
 
 bool Instance::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                     uint32_t* pRectCount, VkRect2D* pRects,
-                                                                    const ErrorObject& error_obj) const {
+                                                                    ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18528,7 +18502,7 @@ bool Instance::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(VkPhysicalDe
 }
 
 bool Device::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo,
-                                                 uint32_t* pImageIndex, const ErrorObject& error_obj) const {
+                                                 uint32_t* pImageIndex, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18552,7 +18526,7 @@ bool Device::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquir
 
 bool Instance::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                     VkDisplayPropertiesKHR* pProperties,
-                                                                    const ErrorObject& error_obj) const {
+                                                                    ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18574,7 +18548,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDe
 
 bool Instance::PreCallValidateGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                          VkDisplayPlanePropertiesKHR* pProperties,
-                                                                         const ErrorObject& error_obj) const {
+                                                                         ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18596,7 +18570,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysi
 
 bool Instance::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                   uint32_t* pDisplayCount, VkDisplayKHR* pDisplays,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18611,7 +18585,7 @@ bool Instance::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevi
 
 bool Instance::PreCallValidateGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                           uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18634,7 +18608,7 @@ bool Instance::PreCallValidateGetDisplayModePropertiesKHR(VkPhysicalDevice physi
 bool Instance::PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                    const VkDisplayModeCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18666,7 +18640,7 @@ bool Instance::PreCallValidateCreateDisplayModeKHR(VkPhysicalDevice physicalDevi
 
 bool Instance::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
                                                              uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR* pCapabilities,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18681,7 +18655,7 @@ bool Instance::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice ph
 
 bool Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18728,7 +18702,7 @@ bool Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance instance, 
 bool Device::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                       const VkSwapchainCreateInfoKHR* pCreateInfos,
                                                       const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18817,7 +18791,7 @@ bool Device::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 bool Instance::PreCallValidateCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18844,7 +18818,7 @@ bool Instance::PreCallValidateCreateXlibSurfaceKHR(VkInstance instance, const Vk
 
 bool Instance::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                           uint32_t queueFamilyIndex, Display* dpy,
-                                                                          VisualID visualID, const ErrorObject& error_obj) const {
+                                                                          VisualID visualID, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18860,7 +18834,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPhys
 #ifdef VK_USE_PLATFORM_XCB_KHR
 bool Instance::PreCallValidateCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18887,7 +18861,7 @@ bool Instance::PreCallValidateCreateXcbSurfaceKHR(VkInstance instance, const VkX
 
 bool Instance::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                          xcb_connection_t* connection, xcb_visualid_t visual_id,
-                                                                         const ErrorObject& error_obj) const {
+                                                                         ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18903,7 +18877,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysi
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 bool Instance::PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18932,7 +18906,7 @@ bool Instance::PreCallValidateCreateWaylandSurfaceKHR(VkInstance instance, const
 
 bool Instance::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                              uint32_t queueFamilyIndex, struct wl_display* display,
-                                                                             const ErrorObject& error_obj) const {
+                                                                             ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -18949,7 +18923,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(VkP
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 bool Instance::PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -18980,7 +18954,7 @@ bool Instance::PreCallValidateCreateAndroidSurfaceKHR(VkInstance instance, const
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool Instance::PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19007,7 +18981,7 @@ bool Instance::PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const V
 
 bool Instance::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t queueFamilyIndex,
-                                                                           const ErrorObject& error_obj) const {
+                                                                           ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19022,7 +18996,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkPhy
 bool Instance::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
                                                                     const VkVideoProfileInfoKHR* pVideoProfile,
                                                                     VkVideoCapabilitiesKHR* pCapabilities,
-                                                                    const ErrorObject& error_obj) const {
+                                                                    ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19085,7 +19059,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysic
                                                                         const VkPhysicalDeviceVideoFormatInfoKHR* pVideoFormatInfo,
                                                                         uint32_t* pVideoFormatPropertyCount,
                                                                         VkVideoFormatPropertiesKHR* pVideoFormatProperties,
-                                                                        const ErrorObject& error_obj) const {
+                                                                        ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19136,7 +19110,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysic
 
 bool Device::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19210,7 +19184,7 @@ bool Device::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkVideo
 }
 
 bool Device::PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                   const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+                                                   const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19225,7 +19199,7 @@ bool Device::PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoSessi
 bool Device::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                                  uint32_t* pMemoryRequirementsCount,
                                                                  VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19251,7 +19225,7 @@ bool Device::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice device
 bool Device::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                       uint32_t bindSessionMemoryInfoCount,
                                                       const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19282,7 +19256,7 @@ bool Device::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
                                                             const VkVideoSessionParametersCreateInfoKHR* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkVideoSessionParametersKHR* pVideoSessionParameters,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19326,7 +19300,7 @@ bool Device::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
 
 bool Device::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
                                                             const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19354,7 +19328,7 @@ bool Device::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device, VkV
 
 bool Device::PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
                                                              const VkAllocationCallbacks* pAllocator,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19367,7 +19341,7 @@ bool Device::PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device, Vk
 }
 
 bool Device::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19444,7 +19418,7 @@ bool Device::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer
 }
 
 bool Device::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR* pEndCodingInfo,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19465,7 +19439,7 @@ bool Device::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, 
 
 bool Device::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
                                                      const VkVideoCodingControlInfoKHR* pCodingControlInfo,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19494,7 +19468,7 @@ bool Device::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer commandBuff
 }
 
 bool Device::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19624,7 +19598,7 @@ bool Device::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, con
 }
 
 bool Device::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19634,7 +19608,7 @@ bool Device::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
-bool Device::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19645,7 +19619,7 @@ bool Device::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, co
 }
 
 bool Instance::PreCallValidateGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19659,7 +19633,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice phy
 
 bool Instance::PreCallValidateGetPhysicalDeviceProperties2KHR(VkPhysicalDevice physicalDevice,
                                                               VkPhysicalDeviceProperties2* pProperties,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19673,7 +19647,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2KHR(VkPhysicalDevice p
 
 bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                     VkFormatProperties2* pFormatProperties,
-                                                                    const ErrorObject& error_obj) const {
+                                                                    ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19688,7 +19662,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties2KHR(VkPhysicalDe
 bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                          const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                          VkImageFormatProperties2* pImageFormatProperties,
-                                                                         const ErrorObject& error_obj) const {
+                                                                         ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19704,7 +19678,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysi
 bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                          uint32_t* pQueueFamilyPropertyCount,
                                                                          VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                         const ErrorObject& error_obj) const {
+                                                                         ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19719,7 +19693,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysi
 
 bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                     VkPhysicalDeviceMemoryProperties2* pMemoryProperties,
-                                                                    const ErrorObject& error_obj) const {
+                                                                    ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19733,7 +19707,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDe
 
 bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
-    VkSparseImageFormatProperties2* pProperties, const ErrorObject& error_obj) const {
+    VkSparseImageFormatProperties2* pProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19749,7 +19723,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2KHR(
 bool Device::PreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR(VkDevice device, uint32_t heapIndex, uint32_t localDeviceIndex,
                                                                 uint32_t remoteDeviceIndex,
                                                                 VkPeerMemoryFeatureFlags* pPeerMemoryFeatures,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19759,8 +19733,7 @@ bool Device::PreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR(VkDevice device,
     return skip;
 }
 
-bool Device::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask,
-                                                const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19771,7 +19744,7 @@ bool Device::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, u
 
 bool Device::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                                uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                               uint32_t groupCountZ, const ErrorObject& error_obj) const {
+                                               uint32_t groupCountZ, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19782,7 +19755,7 @@ bool Device::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, ui
 }
 
 bool Device::PreCallValidateTrimCommandPoolKHR(VkDevice device, VkCommandPool commandPool, VkCommandPoolTrimFlags flags,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19793,7 +19766,7 @@ bool Device::PreCallValidateTrimCommandPoolKHR(VkDevice device, VkCommandPool co
 
 bool Instance::PreCallValidateEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                                VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19806,7 +19779,7 @@ bool Instance::PreCallValidateEnumeratePhysicalDeviceGroupsKHR(VkInstance instan
 
 bool Instance::PreCallValidateGetPhysicalDeviceExternalBufferPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
-    VkExternalBufferProperties* pExternalBufferProperties, const ErrorObject& error_obj) const {
+    VkExternalBufferProperties* pExternalBufferProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19821,7 +19794,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceExternalBufferPropertiesKHR(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool Device::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
-                                                    HANDLE* pHandle, const ErrorObject& error_obj) const {
+                                                    HANDLE* pHandle, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19851,7 +19824,7 @@ bool Device::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const VkMem
 bool Device::PreCallValidateGetMemoryWin32HandlePropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                               HANDLE handle,
                                                               VkMemoryWin32HandlePropertiesKHR* pMemoryWin32HandleProperties,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19879,7 +19852,7 @@ bool Device::PreCallValidateGetMemoryWin32HandlePropertiesKHR(VkDevice device, V
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 bool Device::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR* pGetFdInfo, int* pFd,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19905,8 +19878,7 @@ bool Device::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdI
 }
 
 bool Device::PreCallValidateGetMemoryFdPropertiesKHR(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, int fd,
-                                                     VkMemoryFdPropertiesKHR* pMemoryFdProperties,
-                                                     const ErrorObject& error_obj) const {
+                                                     VkMemoryFdPropertiesKHR* pMemoryFdProperties, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19931,7 +19903,7 @@ bool Device::PreCallValidateGetMemoryFdPropertiesKHR(VkDevice device, VkExternal
 
 bool Instance::PreCallValidateGetPhysicalDeviceExternalSemaphorePropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties* pExternalSemaphoreProperties, const ErrorObject& error_obj) const {
+    VkExternalSemaphoreProperties* pExternalSemaphoreProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -19946,8 +19918,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceExternalSemaphorePropertiesKHR(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool Device::PreCallValidateImportSemaphoreWin32HandleKHR(
-    VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo,
-    const ErrorObject& error_obj) const {
+    VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -19976,7 +19947,7 @@ bool Device::PreCallValidateImportSemaphoreWin32HandleKHR(
 }
 
 bool Device::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
-                                                       HANDLE* pHandle, const ErrorObject& error_obj) const {
+                                                       HANDLE* pHandle, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20007,7 +19978,7 @@ bool Device::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, const Vk
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 bool Device::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20038,7 +20009,7 @@ bool Device::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImport
 }
 
 bool Device::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20065,8 +20036,7 @@ bool Device::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphore
 
 bool Device::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                     VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                    const VkWriteDescriptorSet* pDescriptorWrites,
-                                                    const ErrorObject& error_obj) const {
+                                                    const VkWriteDescriptorSet* pDescriptorWrites, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20080,7 +20050,7 @@ bool Device::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffe
 bool Device::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                                 VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                 VkPipelineLayout layout, uint32_t set, const void* pData,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20095,7 +20065,7 @@ bool Device::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice device,
                                                               const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
                                                               VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20107,7 +20077,7 @@ bool Device::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice device,
 
 bool Device::PreCallValidateDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                                const VkAllocationCallbacks* pAllocator,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20119,7 +20089,7 @@ bool Device::PreCallValidateDestroyDescriptorUpdateTemplateKHR(VkDevice device, 
 
 bool Device::PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                                VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                               const void* pData, const ErrorObject& error_obj) const {
+                                                               const void* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20131,7 +20101,7 @@ bool Device::PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, 
 
 bool Device::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20142,8 +20112,7 @@ bool Device::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRender
 }
 
 bool Device::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                                   const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                                   const ErrorObject& error_obj) const {
+                                                   const VkSubpassBeginInfo* pSubpassBeginInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20154,7 +20123,7 @@ bool Device::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer
 }
 
 bool Device::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                               const VkSubpassEndInfo* pSubpassEndInfo, const ErrorObject& error_obj) const {
+                                               const VkSubpassEndInfo* pSubpassEndInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20165,7 +20134,7 @@ bool Device::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, co
 }
 
 bool Device::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20175,7 +20144,7 @@ bool Device::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
-bool Device::PreCallValidateGetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateGetSwapchainStatusKHR(VkDevice device, VkSwapchainKHR swapchain, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20187,7 +20156,7 @@ bool Device::PreCallValidateGetSwapchainStatusKHR(VkDevice device, VkSwapchainKH
 
 bool Instance::PreCallValidateGetPhysicalDeviceExternalFencePropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
-    VkExternalFenceProperties* pExternalFenceProperties, const ErrorObject& error_obj) const {
+    VkExternalFenceProperties* pExternalFenceProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -20203,7 +20172,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceExternalFencePropertiesKHR(
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool Device::PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
                                                       const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20231,7 +20200,7 @@ bool Device::PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
 }
 
 bool Device::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
-                                                   HANDLE* pHandle, const ErrorObject& error_obj) const {
+                                                   HANDLE* pHandle, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20260,7 +20229,7 @@ bool Device::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenc
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 bool Device::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20291,7 +20260,7 @@ bool Device::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenc
 }
 
 bool Device::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd,
-                                          const ErrorObject& error_obj) const {
+                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20318,7 +20287,7 @@ bool Device::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInf
 
 bool Instance::PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pCounterCount, VkPerformanceCounterKHR* pCounters,
-    VkPerformanceCounterDescriptionKHR* pCounterDescriptions, const ErrorObject& error_obj) const {
+    VkPerformanceCounterDescriptionKHR* pCounterDescriptions, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -20354,7 +20323,7 @@ bool Instance::PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerformanceQuery
 
 bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
     VkPhysicalDevice physicalDevice, const VkQueryPoolPerformanceCreateInfoKHR* pPerformanceQueryCreateInfo, uint32_t* pNumPasses,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -20379,7 +20348,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyPerformanceQueryPasses
 }
 
 bool Device::PreCallValidateAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20399,7 +20368,7 @@ bool Device::PreCallValidateAcquireProfilingLockKHR(VkDevice device, const VkAcq
     return skip;
 }
 
-bool Device::PreCallValidateReleaseProfilingLockKHR(VkDevice device, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateReleaseProfilingLockKHR(VkDevice device, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20412,7 +20381,7 @@ bool Device::PreCallValidateReleaseProfilingLockKHR(VkDevice device, const Error
 bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                                        const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                        VkSurfaceCapabilities2KHR* pSurfaceCapabilities,
-                                                                       const ErrorObject& error_obj) const {
+                                                                       ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -20466,7 +20435,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevi
                                                                   const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                   uint32_t* pSurfaceFormatCount,
                                                                   VkSurfaceFormat2KHR* pSurfaceFormats,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -20511,7 +20480,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevi
 
 bool Instance::PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                      VkDisplayProperties2KHR* pProperties,
-                                                                     const ErrorObject& error_obj) const {
+                                                                     ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -20536,7 +20505,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalD
 
 bool Instance::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                           VkDisplayPlaneProperties2KHR* pProperties,
-                                                                          const ErrorObject& error_obj) const {
+                                                                          ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -20561,7 +20530,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhys
 
 bool Instance::PreCallValidateGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                                            uint32_t* pPropertyCount, VkDisplayModeProperties2KHR* pProperties,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -20592,7 +20561,7 @@ bool Instance::PreCallValidateGetDisplayModeProperties2KHR(VkPhysicalDevice phys
 bool Instance::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                               const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
                                                               VkDisplayPlaneCapabilities2KHR* pCapabilities,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -20624,7 +20593,7 @@ bool Instance::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice p
 
 bool Device::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                            VkMemoryRequirements2* pMemoryRequirements,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20636,7 +20605,7 @@ bool Device::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, cons
 
 bool Device::PreCallValidateGetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
                                                             VkMemoryRequirements2* pMemoryRequirements,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20649,7 +20618,7 @@ bool Device::PreCallValidateGetBufferMemoryRequirements2KHR(VkDevice device, con
 bool Device::PreCallValidateGetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImageSparseMemoryRequirementsInfo2* pInfo,
                                                                  uint32_t* pSparseMemoryRequirementCount,
                                                                  VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20663,7 +20632,7 @@ bool Device::PreCallValidateGetImageSparseMemoryRequirements2KHR(VkDevice device
 bool Device::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkSamplerYcbcrConversion* pYcbcrConversion,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20675,7 +20644,7 @@ bool Device::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device, con
 
 bool Device::PreCallValidateDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                              const VkAllocationCallbacks* pAllocator,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20686,7 +20655,7 @@ bool Device::PreCallValidateDestroySamplerYcbcrConversionKHR(VkDevice device, Vk
 }
 
 bool Device::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20696,7 +20665,7 @@ bool Device::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindI
 }
 
 bool Device::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20706,8 +20675,7 @@ bool Device::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindIn
 }
 
 bool Device::PreCallValidateGetDescriptorSetLayoutSupportKHR(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
-                                                             VkDescriptorSetLayoutSupport* pSupport,
-                                                             const ErrorObject& error_obj) const {
+                                                             VkDescriptorSetLayoutSupport* pSupport, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20718,7 +20686,7 @@ bool Device::PreCallValidateGetDescriptorSetLayoutSupportKHR(VkDevice device, co
 
 bool Device::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                    uint32_t stride, const ErrorObject& error_obj) const {
+                                                    uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20731,8 +20699,7 @@ bool Device::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffe
 
 bool Device::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                           uint32_t maxDrawCount, uint32_t stride,
-                                                           const ErrorObject& error_obj) const {
+                                                           uint32_t maxDrawCount, uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20744,7 +20711,7 @@ bool Device::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer comma
 }
 
 bool Device::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t* pValue,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20755,7 +20722,7 @@ bool Device::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemap
 }
 
 bool Device::PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20766,7 +20733,7 @@ bool Device::PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphore
 }
 
 bool Device::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20778,7 +20745,7 @@ bool Device::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphor
 
 bool Instance::PreCallValidateGetPhysicalDeviceFragmentShadingRatesKHR(
     VkPhysicalDevice physicalDevice, uint32_t* pFragmentShadingRateCount,
-    VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates, const ErrorObject& error_obj) const {
+    VkPhysicalDeviceFragmentShadingRateKHR* pFragmentShadingRates, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -20804,7 +20771,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceFragmentShadingRatesKHR(
 
 bool Device::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2D* pFragmentSize,
                                                          const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20820,7 +20787,7 @@ bool Device::PreCallValidateCmdSetFragmentShadingRateKHR(VkCommandBuffer command
 
 bool Device::PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffer commandBuffer,
                                                                   const VkRenderingAttachmentLocationInfo* pLocationInfo,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20832,7 +20799,7 @@ bool Device::PreCallValidateCmdSetRenderingAttachmentLocationsKHR(VkCommandBuffe
 
 bool Device::PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(
     VkCommandBuffer commandBuffer, const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20843,7 +20810,7 @@ bool Device::PreCallValidateCmdSetRenderingInputAttachmentIndicesKHR(
 }
 
 bool Device::PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20853,7 +20820,7 @@ bool Device::PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR sw
 }
 
 bool Device::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20864,7 +20831,7 @@ bool Device::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkB
 }
 
 bool Device::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20876,7 +20843,7 @@ bool Device::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, co
 
 bool Device::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice device,
                                                                    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo,
-                                                                   const ErrorObject& error_obj) const {
+                                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20887,8 +20854,7 @@ bool Device::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(VkDevice devi
 }
 
 bool Device::PreCallValidateCreateDeferredOperationKHR(VkDevice device, const VkAllocationCallbacks* pAllocator,
-                                                       VkDeferredOperationKHR* pDeferredOperation,
-                                                       const ErrorObject& error_obj) const {
+                                                       VkDeferredOperationKHR* pDeferredOperation, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20904,8 +20870,7 @@ bool Device::PreCallValidateCreateDeferredOperationKHR(VkDevice device, const Vk
 }
 
 bool Device::PreCallValidateDestroyDeferredOperationKHR(VkDevice device, VkDeferredOperationKHR operation,
-                                                        const VkAllocationCallbacks* pAllocator,
-                                                        const ErrorObject& error_obj) const {
+                                                        const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20919,7 +20884,7 @@ bool Device::PreCallValidateDestroyDeferredOperationKHR(VkDevice device, VkDefer
 }
 
 bool Device::PreCallValidateGetDeferredOperationMaxConcurrencyKHR(VkDevice device, VkDeferredOperationKHR operation,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20930,7 +20895,7 @@ bool Device::PreCallValidateGetDeferredOperationMaxConcurrencyKHR(VkDevice devic
 }
 
 bool Device::PreCallValidateGetDeferredOperationResultKHR(VkDevice device, VkDeferredOperationKHR operation,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20941,7 +20906,7 @@ bool Device::PreCallValidateGetDeferredOperationResultKHR(VkDevice device, VkDef
 }
 
 bool Device::PreCallValidateDeferredOperationJoinKHR(VkDevice device, VkDeferredOperationKHR operation,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20954,7 +20919,7 @@ bool Device::PreCallValidateDeferredOperationJoinKHR(VkDevice device, VkDeferred
 bool Device::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                                uint32_t* pExecutableCount,
                                                                VkPipelineExecutablePropertiesKHR* pProperties,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -20988,7 +20953,7 @@ bool Device::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, 
 bool Device::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo,
                                                                uint32_t* pStatisticCount,
                                                                VkPipelineExecutableStatisticKHR* pStatistics,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21021,7 +20986,7 @@ bool Device::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice device, 
 
 bool Device::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo, uint32_t* pInternalRepresentationCount,
-    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations, const ErrorObject& error_obj) const {
+    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21058,7 +21023,7 @@ bool Device::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
 }
 
 bool Device::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfo* pMemoryMapInfo, void** ppData,
-                                          const ErrorObject& error_obj) const {
+                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21068,7 +21033,7 @@ bool Device::PreCallValidateMapMemory2KHR(VkDevice device, const VkMemoryMapInfo
 }
 
 bool Device::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmapInfo* pMemoryUnmapInfo,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21079,7 +21044,7 @@ bool Device::PreCallValidateUnmapMemory2KHR(VkDevice device, const VkMemoryUnmap
 
 bool Instance::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR* pQualityLevelInfo,
-    VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, const ErrorObject& error_obj) const {
+    VkVideoEncodeQualityLevelPropertiesKHR* pQualityLevelProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -21148,8 +21113,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelProperties
 
 bool Device::PreCallValidateGetEncodedVideoSessionParametersKHR(
     VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR* pVideoSessionParametersInfo,
-    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData,
-    const ErrorObject& error_obj) const {
+    VkVideoEncodeSessionParametersFeedbackInfoKHR* pFeedbackInfo, size_t* pDataSize, void* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21198,7 +21162,7 @@ bool Device::PreCallValidateGetEncodedVideoSessionParametersKHR(
 }
 
 bool Device::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR* pEncodeInfo,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21325,7 +21289,7 @@ bool Device::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, con
 }
 
 bool Device::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21336,7 +21300,7 @@ bool Device::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEve
 }
 
 bool Device::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21347,7 +21311,7 @@ bool Device::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkE
 }
 
 bool Device::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                              const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
+                                              const VkDependencyInfo* pDependencyInfos, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21358,7 +21322,7 @@ bool Device::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uin
 }
 
 bool Device::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21369,7 +21333,7 @@ bool Device::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer
 }
 
 bool Device::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
-                                                  uint32_t query, const ErrorObject& error_obj) const {
+                                                  uint32_t query, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21380,7 +21344,7 @@ bool Device::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer,
 }
 
 bool Device::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                            const ErrorObject& error_obj) const {
+                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21391,7 +21355,7 @@ bool Device::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount,
 }
 
 bool Device::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21402,7 +21366,7 @@ bool Device::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, con
 }
 
 bool Device::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21414,7 +21378,7 @@ bool Device::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer, cons
 
 bool Device::PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                      const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21426,7 +21390,7 @@ bool Device::PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuff
 
 bool Device::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                      const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21437,7 +21401,7 @@ bool Device::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuff
 }
 
 bool Device::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21448,7 +21412,7 @@ bool Device::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, cons
 }
 
 bool Device::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21459,7 +21423,7 @@ bool Device::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer, c
 }
 
 bool Device::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21472,7 +21436,7 @@ bool Device::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuff
 
 bool Device::PreCallValidateGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo,
                                                                  VkMemoryRequirements2* pMemoryRequirements,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21483,7 +21447,7 @@ bool Device::PreCallValidateGetDeviceBufferMemoryRequirementsKHR(VkDevice device
 
 bool Device::PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
                                                                 VkMemoryRequirements2* pMemoryRequirements,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21495,7 +21459,7 @@ bool Device::PreCallValidateGetDeviceImageMemoryRequirementsKHR(VkDevice device,
 bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(VkDevice device, const VkDeviceImageMemoryRequirements* pInfo,
                                                                       uint32_t* pSparseMemoryRequirementCount,
                                                                       VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21506,7 +21470,7 @@ bool Device::PreCallValidateGetDeviceImageSparseMemoryRequirementsKHR(VkDevice d
 }
 
 bool Device::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                   VkDeviceSize size, VkIndexType indexType, const ErrorObject& error_obj) const {
+                                                   VkDeviceSize size, VkIndexType indexType, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21516,7 +21480,7 @@ bool Device::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer
 }
 
 bool Device::PreCallValidateGetRenderingAreaGranularityKHR(VkDevice device, const VkRenderingAreaInfo* pRenderingAreaInfo,
-                                                           VkExtent2D* pGranularity, const ErrorObject& error_obj) const {
+                                                           VkExtent2D* pGranularity, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21526,7 +21490,7 @@ bool Device::PreCallValidateGetRenderingAreaGranularityKHR(VkDevice device, cons
 }
 
 bool Device::PreCallValidateGetDeviceImageSubresourceLayoutKHR(VkDevice device, const VkDeviceImageSubresourceInfo* pInfo,
-                                                               VkSubresourceLayout2* pLayout, const ErrorObject& error_obj) const {
+                                                               VkSubresourceLayout2* pLayout, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21536,7 +21500,7 @@ bool Device::PreCallValidateGetDeviceImageSubresourceLayoutKHR(VkDevice device, 
 }
 
 bool Device::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
-                                                          VkSubresourceLayout2* pLayout, const ErrorObject& error_obj) const {
+                                                          VkSubresourceLayout2* pLayout, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21547,8 +21511,7 @@ bool Device::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkIma
 
 bool Device::PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
-                                                      VkPipelineBinaryHandlesInfoKHR* pBinaries,
-                                                      const ErrorObject& error_obj) const {
+                                                      VkPipelineBinaryHandlesInfoKHR* pBinaries, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21621,7 +21584,7 @@ bool Device::PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkP
 }
 
 bool Device::PreCallValidateDestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
-                                                     const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+                                                     const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21635,7 +21598,7 @@ bool Device::PreCallValidateDestroyPipelineBinaryKHR(VkDevice device, VkPipeline
 }
 
 bool Device::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR* pPipelineCreateInfo,
-                                              VkPipelineBinaryKeyKHR* pPipelineKey, const ErrorObject& error_obj) const {
+                                              VkPipelineBinaryKeyKHR* pPipelineKey, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21657,7 +21620,7 @@ bool Device::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipelineC
 
 bool Device::PreCallValidateGetPipelineBinaryDataKHR(VkDevice device, const VkPipelineBinaryDataInfoKHR* pInfo,
                                                      VkPipelineBinaryKeyKHR* pPipelineBinaryKey, size_t* pPipelineBinaryDataSize,
-                                                     void* pPipelineBinaryData, const ErrorObject& error_obj) const {
+                                                     void* pPipelineBinaryData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21690,8 +21653,7 @@ bool Device::PreCallValidateGetPipelineBinaryDataKHR(VkDevice device, const VkPi
 }
 
 bool Device::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
-                                                           const VkAllocationCallbacks* pAllocator,
-                                                           const ErrorObject& error_obj) const {
+                                                           const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21717,7 +21679,7 @@ bool Device::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, cons
 bool Instance::PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                               uint32_t* pPropertyCount,
                                                                               VkCooperativeMatrixPropertiesKHR* pProperties,
-                                                                              const ErrorObject& error_obj) const {
+                                                                              ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -21740,7 +21702,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesKHR(Vk
 }
 
 bool Device::PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                 uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
+                                                 uint16_t lineStipplePattern, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21753,7 +21715,7 @@ bool Device::PreCallValidateCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, 
 bool Instance::PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t* pTimeDomainCount,
                                                                            VkTimeDomainKHR* pTimeDomains,
-                                                                           const ErrorObject& error_obj) const {
+                                                                           ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -21768,7 +21730,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhy
 
 bool Device::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                        const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
-                                                       uint64_t* pMaxDeviation, const ErrorObject& error_obj) const {
+                                                       uint64_t* pMaxDeviation, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21801,7 +21763,7 @@ bool Device::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t
 
 bool Device::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuffer,
                                                       const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21811,7 +21773,7 @@ bool Device::PreCallValidateCmdBindDescriptorSets2KHR(VkCommandBuffer commandBuf
 }
 
 bool Device::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21822,7 +21784,7 @@ bool Device::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuffer, 
 
 bool Device::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuffer,
                                                      const VkPushDescriptorSetInfo* pPushDescriptorSetInfo,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21833,7 +21795,7 @@ bool Device::PreCallValidateCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuff
 
 bool Device::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
     VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21844,7 +21806,7 @@ bool Device::PreCallValidateCmdPushDescriptorSetWithTemplate2KHR(
 
 bool Device::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
     VkCommandBuffer commandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* pSetDescriptorBufferOffsetsInfo,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21888,7 +21850,7 @@ bool Device::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
 
 bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
     VkCommandBuffer commandBuffer, const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21926,8 +21888,7 @@ bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
 bool Instance::PreCallValidateCreateDebugReportCallbackEXT(VkInstance instance,
                                                            const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
-                                                           VkDebugReportCallbackEXT* pCallback,
-                                                           const ErrorObject& error_obj) const {
+                                                           VkDebugReportCallbackEXT* pCallback, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21955,8 +21916,7 @@ bool Instance::PreCallValidateCreateDebugReportCallbackEXT(VkInstance instance,
 }
 
 bool Instance::PreCallValidateDestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback,
-                                                            const VkAllocationCallbacks* pAllocator,
-                                                            const ErrorObject& error_obj) const {
+                                                            const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21971,7 +21931,7 @@ bool Instance::PreCallValidateDestroyDebugReportCallbackEXT(VkInstance instance,
 bool Instance::PreCallValidateDebugReportMessageEXT(VkInstance instance, VkDebugReportFlagsEXT flags,
                                                     VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location,
                                                     int32_t messageCode, const char* pLayerPrefix, const char* pMessage,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -21988,7 +21948,7 @@ bool Instance::PreCallValidateDebugReportMessageEXT(VkInstance instance, VkDebug
 }
 
 bool Device::PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarkerObjectTagInfoEXT* pTagInfo,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22012,7 +21972,7 @@ bool Device::PreCallValidateDebugMarkerSetObjectTagEXT(VkDevice device, const Vk
 }
 
 bool Device::PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT* pNameInfo,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22035,7 +21995,7 @@ bool Device::PreCallValidateDebugMarkerSetObjectNameEXT(VkDevice device, const V
 }
 
 bool Device::PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22054,7 +22014,7 @@ bool Device::PreCallValidateCmdDebugMarkerBeginEXT(VkCommandBuffer commandBuffer
     return skip;
 }
 
-bool Device::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22064,7 +22024,7 @@ bool Device::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuffer, 
 }
 
 bool Device::PreCallValidateCmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer, const VkDebugMarkerMarkerInfoEXT* pMarkerInfo,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22086,7 +22046,7 @@ bool Device::PreCallValidateCmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffe
 bool Device::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                                uint32_t bindingCount, const VkBuffer* pBuffers,
                                                                const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22107,8 +22067,7 @@ bool Device::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer c
 
 bool Device::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                                          uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
-                                                         const VkDeviceSize* pCounterBufferOffsets,
-                                                         const ErrorObject& error_obj) const {
+                                                         const VkDeviceSize* pCounterBufferOffsets, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22123,8 +22082,7 @@ bool Device::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer command
 
 bool Device::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
                                                        uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
-                                                       const VkDeviceSize* pCounterBufferOffsets,
-                                                       const ErrorObject& error_obj) const {
+                                                       const VkDeviceSize* pCounterBufferOffsets, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22138,7 +22096,7 @@ bool Device::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBu
 }
 
 bool Device::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                                    VkQueryControlFlags flags, uint32_t index, const ErrorObject& error_obj) const {
+                                                    VkQueryControlFlags flags, uint32_t index, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22151,7 +22109,7 @@ bool Device::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffe
 }
 
 bool Device::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
-                                                  uint32_t index, const ErrorObject& error_obj) const {
+                                                  uint32_t index, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22164,7 +22122,7 @@ bool Device::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer,
 bool Device::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                         uint32_t firstInstance, VkBuffer counterBuffer,
                                                         VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                                        uint32_t vertexStride, const ErrorObject& error_obj) const {
+                                                        uint32_t vertexStride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22176,7 +22134,7 @@ bool Device::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandB
 
 bool Device::PreCallValidateCreateCuModuleNVX(VkDevice device, const VkCuModuleCreateInfoNVX* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkCuModuleNVX* pModule,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22207,7 +22165,7 @@ bool Device::PreCallValidateCreateCuModuleNVX(VkDevice device, const VkCuModuleC
 
 bool Device::PreCallValidateCreateCuFunctionNVX(VkDevice device, const VkCuFunctionCreateInfoNVX* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkCuFunctionNVX* pFunction,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22234,7 +22192,7 @@ bool Device::PreCallValidateCreateCuFunctionNVX(VkDevice device, const VkCuFunct
 }
 
 bool Device::PreCallValidateDestroyCuModuleNVX(VkDevice device, VkCuModuleNVX module, const VkAllocationCallbacks* pAllocator,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22248,7 +22206,7 @@ bool Device::PreCallValidateDestroyCuModuleNVX(VkDevice device, VkCuModuleNVX mo
 }
 
 bool Device::PreCallValidateDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNVX function, const VkAllocationCallbacks* pAllocator,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22262,7 +22220,7 @@ bool Device::PreCallValidateDestroyCuFunctionNVX(VkDevice device, VkCuFunctionNV
 }
 
 bool Device::PreCallValidateCmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, const VkCuLaunchInfoNVX* pLaunchInfo,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22288,7 +22246,7 @@ bool Device::PreCallValidateCmdCuLaunchKernelNVX(VkCommandBuffer commandBuffer, 
 }
 
 bool Device::PreCallValidateGetImageViewHandleNVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22310,7 +22268,7 @@ bool Device::PreCallValidateGetImageViewHandleNVX(VkDevice device, const VkImage
 }
 
 bool Device::PreCallValidateGetImageViewHandle64NVX(VkDevice device, const VkImageViewHandleInfoNVX* pInfo,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22333,8 +22291,7 @@ bool Device::PreCallValidateGetImageViewHandle64NVX(VkDevice device, const VkIma
 }
 
 bool Device::PreCallValidateGetImageViewAddressNVX(VkDevice device, VkImageView imageView,
-                                                   VkImageViewAddressPropertiesNVX* pProperties,
-                                                   const ErrorObject& error_obj) const {
+                                                   VkImageViewAddressPropertiesNVX* pProperties, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22354,7 +22311,7 @@ bool Device::PreCallValidateGetImageViewAddressNVX(VkDevice device, VkImageView 
 
 bool Device::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                    uint32_t stride, const ErrorObject& error_obj) const {
+                                                    uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22367,8 +22324,7 @@ bool Device::PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffe
 
 bool Device::PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                            VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                           uint32_t maxDrawCount, uint32_t stride,
-                                                           const ErrorObject& error_obj) const {
+                                                           uint32_t maxDrawCount, uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22381,7 +22337,7 @@ bool Device::PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffer comma
 
 bool Device::PreCallValidateGetShaderInfoAMD(VkDevice device, VkPipeline pipeline, VkShaderStageFlagBits shaderStage,
                                              VkShaderInfoTypeAMD infoType, size_t* pInfoSize, void* pInfo,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22402,7 +22358,7 @@ bool Device::PreCallValidateGetShaderInfoAMD(VkDevice device, VkPipeline pipelin
 bool Instance::PreCallValidateCreateStreamDescriptorSurfaceGGP(VkInstance instance,
                                                                const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22432,7 +22388,7 @@ bool Instance::PreCallValidateCreateStreamDescriptorSurfaceGGP(VkInstance instan
 bool Instance::PreCallValidateGetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type, VkImageTiling tiling, VkImageUsageFlags usage,
     VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType,
-    VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties, const ErrorObject& error_obj) const {
+    VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -22463,7 +22419,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceExternalImageFormatPropertiesNV(
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool Device::PreCallValidateGetMemoryWin32HandleNV(VkDevice device, VkDeviceMemory memory,
                                                    VkExternalMemoryHandleTypeFlagsNV handleType, HANDLE* pHandle,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22482,7 +22438,7 @@ bool Device::PreCallValidateGetMemoryWin32HandleNV(VkDevice device, VkDeviceMemo
 #ifdef VK_USE_PLATFORM_VI_NN
 bool Instance::PreCallValidateCreateViSurfaceNN(VkInstance instance, const VkViSurfaceCreateInfoNN* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22509,7 +22465,7 @@ bool Instance::PreCallValidateCreateViSurfaceNN(VkInstance instance, const VkViS
 
 bool Device::PreCallValidateCmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
                                                             const VkConditionalRenderingBeginInfoEXT* pConditionalRenderingBegin,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22537,7 +22493,7 @@ bool Device::PreCallValidateCmdBeginConditionalRenderingEXT(VkCommandBuffer comm
     return skip;
 }
 
-bool Device::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22548,8 +22504,7 @@ bool Device::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer comman
 }
 
 bool Device::PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                                                     const VkViewportWScalingNV* pViewportWScalings,
-                                                     const ErrorObject& error_obj) const {
+                                                     const VkViewportWScalingNV* pViewportWScalings, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22571,7 +22526,7 @@ bool Device::PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuff
 }
 
 bool Instance::PreCallValidateReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -22585,7 +22540,7 @@ bool Instance::PreCallValidateReleaseDisplayEXT(VkPhysicalDevice physicalDevice,
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 bool Instance::PreCallValidateAcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -22599,7 +22554,7 @@ bool Instance::PreCallValidateAcquireXlibDisplayEXT(VkPhysicalDevice physicalDev
 }
 
 bool Instance::PreCallValidateGetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
-                                                       VkDisplayKHR* pDisplay, const ErrorObject& error_obj) const {
+                                                       VkDisplayKHR* pDisplay, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -22616,7 +22571,7 @@ bool Instance::PreCallValidateGetRandROutputDisplayEXT(VkPhysicalDevice physical
 
 bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                        VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
-                                                                       const ErrorObject& error_obj) const {
+                                                                       ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -22639,8 +22594,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysica
 }
 
 bool Device::PreCallValidateDisplayPowerControlEXT(VkDevice device, VkDisplayKHR display,
-                                                   const VkDisplayPowerInfoEXT* pDisplayPowerInfo,
-                                                   const ErrorObject& error_obj) const {
+                                                   const VkDisplayPowerInfoEXT* pDisplayPowerInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22664,7 +22618,7 @@ bool Device::PreCallValidateDisplayPowerControlEXT(VkDevice device, VkDisplayKHR
 
 bool Device::PreCallValidateRegisterDeviceEventEXT(VkDevice device, const VkDeviceEventInfoEXT* pDeviceEventInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkFence* pFence,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22692,7 +22646,7 @@ bool Device::PreCallValidateRegisterDeviceEventEXT(VkDevice device, const VkDevi
 bool Device::PreCallValidateRegisterDisplayEventEXT(VkDevice device, VkDisplayKHR display,
                                                     const VkDisplayEventInfoEXT* pDisplayEventInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkFence* pFence,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22720,7 +22674,7 @@ bool Device::PreCallValidateRegisterDisplayEventEXT(VkDevice device, VkDisplayKH
 }
 
 bool Device::PreCallValidateGetSwapchainCounterEXT(VkDevice device, VkSwapchainKHR swapchain, VkSurfaceCounterFlagBitsEXT counter,
-                                                   uint64_t* pCounterValue, const ErrorObject& error_obj) const {
+                                                   uint64_t* pCounterValue, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22737,7 +22691,7 @@ bool Device::PreCallValidateGetSwapchainCounterEXT(VkDevice device, VkSwapchainK
 
 bool Device::PreCallValidateGetRefreshCycleDurationGOOGLE(VkDevice device, VkSwapchainKHR swapchain,
                                                           VkRefreshCycleDurationGOOGLE* pDisplayTimingProperties,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22752,7 +22706,7 @@ bool Device::PreCallValidateGetRefreshCycleDurationGOOGLE(VkDevice device, VkSwa
 bool Device::PreCallValidateGetPastPresentationTimingGOOGLE(VkDevice device, VkSwapchainKHR swapchain,
                                                             uint32_t* pPresentationTimingCount,
                                                             VkPastPresentationTimingGOOGLE* pPresentationTimings,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22776,7 +22730,7 @@ bool Device::PreCallValidateGetPastPresentationTimingGOOGLE(VkDevice device, VkS
 
 bool Device::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                       uint32_t discardRectangleCount, const VkRect2D* pDiscardRectangles,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22793,7 +22747,7 @@ bool Device::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuf
 }
 
 bool Device::PreCallValidateCmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 discardRectangleEnable,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22806,7 +22760,7 @@ bool Device::PreCallValidateCmdSetDiscardRectangleEnableEXT(VkCommandBuffer comm
 
 bool Device::PreCallValidateCmdSetDiscardRectangleModeEXT(VkCommandBuffer commandBuffer,
                                                           VkDiscardRectangleModeEXT discardRectangleMode,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22819,7 +22773,7 @@ bool Device::PreCallValidateCmdSetDiscardRectangleModeEXT(VkCommandBuffer comman
 }
 
 bool Device::PreCallValidateSetHdrMetadataEXT(VkDevice device, uint32_t swapchainCount, const VkSwapchainKHR* pSwapchains,
-                                              const VkHdrMetadataEXT* pMetadata, const ErrorObject& error_obj) const {
+                                              const VkHdrMetadataEXT* pMetadata, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22847,7 +22801,7 @@ bool Device::PreCallValidateSetHdrMetadataEXT(VkDevice device, uint32_t swapchai
 #ifdef VK_USE_PLATFORM_IOS_MVK
 bool Instance::PreCallValidateCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22875,7 +22829,7 @@ bool Instance::PreCallValidateCreateIOSSurfaceMVK(VkInstance instance, const VkI
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 bool Instance::PreCallValidateCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22901,7 +22855,7 @@ bool Instance::PreCallValidateCreateMacOSSurfaceMVK(VkInstance instance, const V
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
 bool Device::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22919,7 +22873,7 @@ bool Device::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const Vk
 }
 
 bool Device::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT* pTagInfo,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22944,7 +22898,7 @@ bool Device::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkD
 }
 
 bool Device::PreCallValidateQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22963,7 +22917,7 @@ bool Device::PreCallValidateQueueBeginDebugUtilsLabelEXT(VkQueue queue, const Vk
     return skip;
 }
 
-bool Device::PreCallValidateQueueEndDebugUtilsLabelEXT(VkQueue queue, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateQueueEndDebugUtilsLabelEXT(VkQueue queue, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22973,7 +22927,7 @@ bool Device::PreCallValidateQueueEndDebugUtilsLabelEXT(VkQueue queue, const Erro
 }
 
 bool Device::PreCallValidateQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -22993,7 +22947,7 @@ bool Device::PreCallValidateQueueInsertDebugUtilsLabelEXT(VkQueue queue, const V
 }
 
 bool Device::PreCallValidateCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23012,7 +22966,7 @@ bool Device::PreCallValidateCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBu
     return skip;
 }
 
-bool Device::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23022,7 +22976,7 @@ bool Device::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuff
 }
 
 bool Device::PreCallValidateCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23044,8 +22998,7 @@ bool Device::PreCallValidateCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandB
 bool Instance::PreCallValidateCreateDebugUtilsMessengerEXT(VkInstance instance,
                                                            const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
-                                                           VkDebugUtilsMessengerEXT* pMessenger,
-                                                           const ErrorObject& error_obj) const {
+                                                           VkDebugUtilsMessengerEXT* pMessenger, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23083,8 +23036,7 @@ bool Instance::PreCallValidateCreateDebugUtilsMessengerEXT(VkInstance instance,
 }
 
 bool Instance::PreCallValidateDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger,
-                                                            const VkAllocationCallbacks* pAllocator,
-                                                            const ErrorObject& error_obj) const {
+                                                            const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23100,7 +23052,7 @@ bool Instance::PreCallValidateSubmitDebugUtilsMessageEXT(VkInstance instance,
                                                          VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                          VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                          const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23189,7 +23141,7 @@ bool Instance::PreCallValidateSubmitDebugUtilsMessageEXT(VkInstance instance,
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 bool Device::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                       VkAndroidHardwareBufferPropertiesANDROID* pProperties,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23219,8 +23171,7 @@ bool Device::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice d
 
 bool Device::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                   const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
-                                                                  struct AHardwareBuffer** pBuffer,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  struct AHardwareBuffer** pBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23248,7 +23199,7 @@ bool Device::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice device, V
                                                               uint32_t createInfoCount,
                                                               const VkExecutionGraphPipelineCreateInfoAMDX* pCreateInfos,
                                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23369,7 +23320,7 @@ bool Device::PreCallValidateCreateExecutionGraphPipelinesAMDX(VkDevice device, V
 
 bool Device::PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(VkDevice device, VkPipeline executionGraph,
                                                                      VkExecutionGraphPipelineScratchSizeAMDX* pSizeInfo,
-                                                                     const ErrorObject& error_obj) const {
+                                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23385,7 +23336,7 @@ bool Device::PreCallValidateGetExecutionGraphPipelineScratchSizeAMDX(VkDevice de
 
 bool Device::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(VkDevice device, VkPipeline executionGraph,
                                                                    const VkPipelineShaderStageNodeCreateInfoAMDX* pNodeInfo,
-                                                                   uint32_t* pNodeIndex, const ErrorObject& error_obj) const {
+                                                                   uint32_t* pNodeIndex, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23403,7 +23354,7 @@ bool Device::PreCallValidateGetExecutionGraphPipelineNodeIndexAMDX(VkDevice devi
 
 bool Device::PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer commandBuffer, VkPipeline executionGraph,
                                                                 VkDeviceAddress scratch, VkDeviceSize scratchSize,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23414,8 +23365,7 @@ bool Device::PreCallValidateCmdInitializeGraphScratchMemoryAMDX(VkCommandBuffer 
 }
 
 bool Device::PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch, VkDeviceSize scratchSize,
-                                                 const VkDispatchGraphCountInfoAMDX* pCountInfo,
-                                                 const ErrorObject& error_obj) const {
+                                                 const VkDispatchGraphCountInfoAMDX* pCountInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23428,7 +23378,7 @@ bool Device::PreCallValidateCmdDispatchGraphAMDX(VkCommandBuffer commandBuffer, 
 
 bool Device::PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                          VkDeviceSize scratchSize, const VkDispatchGraphCountInfoAMDX* pCountInfo,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23441,7 +23391,7 @@ bool Device::PreCallValidateCmdDispatchGraphIndirectAMDX(VkCommandBuffer command
 
 bool Device::PreCallValidateCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer commandBuffer, VkDeviceAddress scratch,
                                                               VkDeviceSize scratchSize, VkDeviceAddress countInfo,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23454,7 +23404,7 @@ bool Device::PreCallValidateCmdDispatchGraphIndirectCountAMDX(VkCommandBuffer co
 
 bool Device::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                      const VkSampleLocationsInfoEXT* pSampleLocationsInfo,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23487,7 +23437,7 @@ bool Device::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuff
 bool Instance::PreCallValidateGetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice,
                                                                         VkSampleCountFlagBits samples,
                                                                         VkMultisamplePropertiesEXT* pMultisampleProperties,
-                                                                        const ErrorObject& error_obj) const {
+                                                                        ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -23511,7 +23461,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceMultisamplePropertiesEXT(VkPhysic
 
 bool Device::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice device, VkImage image,
                                                                    VkImageDrmFormatModifierPropertiesEXT* pProperties,
-                                                                   const ErrorObject& error_obj) const {
+                                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23532,7 +23482,7 @@ bool Device::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(VkDevice devi
 
 bool Device::PreCallValidateCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator,
-                                                     VkValidationCacheEXT* pValidationCache, const ErrorObject& error_obj) const {
+                                                     VkValidationCacheEXT* pValidationCache, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23563,7 +23513,7 @@ bool Device::PreCallValidateCreateValidationCacheEXT(VkDevice device, const VkVa
 }
 
 bool Device::PreCallValidateDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache,
-                                                      const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+                                                      const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23577,7 +23527,7 @@ bool Device::PreCallValidateDestroyValidationCacheEXT(VkDevice device, VkValidat
 }
 
 bool Device::PreCallValidateMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount,
-                                                     const VkValidationCacheEXT* pSrcCaches, const ErrorObject& error_obj) const {
+                                                     const VkValidationCacheEXT* pSrcCaches, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23590,7 +23540,7 @@ bool Device::PreCallValidateMergeValidationCachesEXT(VkDevice device, VkValidati
 }
 
 bool Device::PreCallValidateGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize,
-                                                      void* pData, const ErrorObject& error_obj) const {
+                                                      void* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23604,7 +23554,7 @@ bool Device::PreCallValidateGetValidationCacheDataEXT(VkDevice device, VkValidat
 }
 
 bool Device::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
-                                                      VkImageLayout imageLayout, const ErrorObject& error_obj) const {
+                                                      VkImageLayout imageLayout, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23618,7 +23568,7 @@ bool Device::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer commandBuf
 bool Device::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                uint32_t viewportCount,
                                                                const VkShadingRatePaletteNV* pShadingRatePalettes,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23649,7 +23599,7 @@ bool Device::PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer c
 bool Device::PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
                                                       uint32_t customSampleOrderCount,
                                                       const VkCoarseSampleOrderCustomNV* pCustomSampleOrders,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23693,7 +23643,7 @@ bool Device::PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuf
 bool Device::PreCallValidateCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkAccelerationStructureNV* pAccelerationStructure,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23777,8 +23727,7 @@ bool Device::PreCallValidateCreateAccelerationStructureNV(VkDevice device, const
 }
 
 bool Device::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                           const VkAllocationCallbacks* pAllocator,
-                                                           const ErrorObject& error_obj) const {
+                                                           const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23792,7 +23741,7 @@ bool Device::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAc
 
 bool Device::PreCallValidateGetAccelerationStructureMemoryRequirementsNV(
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2KHR* pMemoryRequirements,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23830,7 +23779,7 @@ bool Device::PreCallValidateGetAccelerationStructureMemoryRequirementsNV(
 
 bool Device::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                               const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23866,7 +23815,7 @@ bool Device::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer comm
                                                             VkDeviceSize instanceOffset, VkBool32 update,
                                                             VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
                                                             VkBuffer scratch, VkDeviceSize scratchOffset,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23936,7 +23885,7 @@ bool Device::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer comm
 
 bool Device::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
                                                            VkAccelerationStructureNV src, VkCopyAccelerationStructureModeKHR mode,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23954,7 +23903,7 @@ bool Device::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuff
                                            VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
                                            VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                            VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                           uint32_t width, uint32_t height, uint32_t depth, const ErrorObject& error_obj) const {
+                                           uint32_t width, uint32_t height, uint32_t depth, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -23966,7 +23915,7 @@ bool Device::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuff
 bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                         const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                         const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24093,7 +24042,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipel
 
 bool Device::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                                uint32_t groupCount, size_t dataSize, void* pData,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24108,7 +24057,7 @@ bool Device::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice device, 
 
 bool Device::PreCallValidateGetRayTracingShaderGroupHandlesNV(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                               uint32_t groupCount, size_t dataSize, void* pData,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24118,7 +24067,7 @@ bool Device::PreCallValidateGetRayTracingShaderGroupHandlesNV(VkDevice device, V
 }
 
 bool Device::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                             size_t dataSize, void* pData, const ErrorObject& error_obj) const {
+                                                             size_t dataSize, void* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24136,7 +24085,7 @@ bool Device::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCommand
                                                                        uint32_t accelerationStructureCount,
                                                                        const VkAccelerationStructureNV* pAccelerationStructures,
                                                                        VkQueryType queryType, VkQueryPool queryPool,
-                                                                       uint32_t firstQuery, const ErrorObject& error_obj) const {
+                                                                       uint32_t firstQuery, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24153,8 +24102,7 @@ bool Device::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCommand
     return skip;
 }
 
-bool Device::PreCallValidateCompileDeferredNV(VkDevice device, VkPipeline pipeline, uint32_t shader,
-                                              const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCompileDeferredNV(VkDevice device, VkPipeline pipeline, uint32_t shader, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24166,7 +24114,7 @@ bool Device::PreCallValidateCompileDeferredNV(VkDevice device, VkPipeline pipeli
 bool Device::PreCallValidateGetMemoryHostPointerPropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                               const void* pHostPointer,
                                                               VkMemoryHostPointerPropertiesEXT* pMemoryHostPointerProperties,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24196,7 +24144,7 @@ bool Device::PreCallValidateGetMemoryHostPointerPropertiesEXT(VkDevice device, V
 
 bool Device::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                     VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24209,7 +24157,7 @@ bool Device::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer commandBuffe
 }
 
 bool Device::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkBuffer dstBuffer,
-                                                     VkDeviceSize dstOffset, uint32_t marker, const ErrorObject& error_obj) const {
+                                                     VkDeviceSize dstOffset, uint32_t marker, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24223,7 +24171,7 @@ bool Device::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuff
 bool Instance::PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhysicalDevice physicalDevice,
                                                                            uint32_t* pTimeDomainCount,
                                                                            VkTimeDomainKHR* pTimeDomains,
-                                                                           const ErrorObject& error_obj) const {
+                                                                           ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -24235,7 +24183,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPhy
 
 bool Device::PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
                                                        const VkCalibratedTimestampInfoKHR* pTimestampInfos, uint64_t* pTimestamps,
-                                                       uint64_t* pMaxDeviation, const ErrorObject& error_obj) const {
+                                                       uint64_t* pMaxDeviation, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24247,7 +24195,7 @@ bool Device::PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t
 }
 
 bool Device::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24257,7 +24205,7 @@ bool Device::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, ui
 }
 
 bool Device::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                       uint32_t drawCount, uint32_t stride, const ErrorObject& error_obj) const {
+                                                       uint32_t drawCount, uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24268,8 +24216,7 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBu
 
 bool Device::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                            uint32_t maxDrawCount, uint32_t stride,
-                                                            const ErrorObject& error_obj) const {
+                                                            uint32_t maxDrawCount, uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24281,7 +24228,7 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer comm
 
 bool Device::PreCallValidateCmdSetExclusiveScissorEnableNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                            uint32_t exclusiveScissorCount, const VkBool32* pExclusiveScissorEnables,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24299,7 +24246,7 @@ bool Device::PreCallValidateCmdSetExclusiveScissorEnableNV(VkCommandBuffer comma
 
 bool Device::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                      uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24316,7 +24263,7 @@ bool Device::PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuff
 }
 
 bool Device::PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24327,7 +24274,7 @@ bool Device::PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, co
 }
 
 bool Device::PreCallValidateGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckpointDataCount,
-                                                     VkCheckpointDataNV* pCheckpointData, const ErrorObject& error_obj) const {
+                                                     VkCheckpointDataNV* pCheckpointData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24349,7 +24296,7 @@ bool Device::PreCallValidateGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pC
 }
 
 bool Device::PreCallValidateGetQueueCheckpointData2NV(VkQueue queue, uint32_t* pCheckpointDataCount,
-                                                      VkCheckpointData2NV* pCheckpointData, const ErrorObject& error_obj) const {
+                                                      VkCheckpointData2NV* pCheckpointData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24372,7 +24319,7 @@ bool Device::PreCallValidateGetQueueCheckpointData2NV(VkQueue queue, uint32_t* p
 
 bool Device::PreCallValidateInitializePerformanceApiINTEL(VkDevice device,
                                                           const VkInitializePerformanceApiInfoINTEL* pInitializeInfo,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24389,7 +24336,7 @@ bool Device::PreCallValidateInitializePerformanceApiINTEL(VkDevice device,
     return skip;
 }
 
-bool Device::PreCallValidateUninitializePerformanceApiINTEL(VkDevice device, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateUninitializePerformanceApiINTEL(VkDevice device, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24401,7 +24348,7 @@ bool Device::PreCallValidateUninitializePerformanceApiINTEL(VkDevice device, con
 
 bool Device::PreCallValidateCmdSetPerformanceMarkerINTEL(VkCommandBuffer commandBuffer,
                                                          const VkPerformanceMarkerInfoINTEL* pMarkerInfo,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24420,7 +24367,7 @@ bool Device::PreCallValidateCmdSetPerformanceMarkerINTEL(VkCommandBuffer command
 
 bool Device::PreCallValidateCmdSetPerformanceStreamMarkerINTEL(VkCommandBuffer commandBuffer,
                                                                const VkPerformanceStreamMarkerInfoINTEL* pMarkerInfo,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24439,7 +24386,7 @@ bool Device::PreCallValidateCmdSetPerformanceStreamMarkerINTEL(VkCommandBuffer c
 
 bool Device::PreCallValidateCmdSetPerformanceOverrideINTEL(VkCommandBuffer commandBuffer,
                                                            const VkPerformanceOverrideInfoINTEL* pOverrideInfo,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24464,7 +24411,7 @@ bool Device::PreCallValidateCmdSetPerformanceOverrideINTEL(VkCommandBuffer comma
 bool Device::PreCallValidateAcquirePerformanceConfigurationINTEL(VkDevice device,
                                                                  const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
                                                                  VkPerformanceConfigurationINTEL* pConfiguration,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24488,7 +24435,7 @@ bool Device::PreCallValidateAcquirePerformanceConfigurationINTEL(VkDevice device
 }
 
 bool Device::PreCallValidateReleasePerformanceConfigurationINTEL(VkDevice device, VkPerformanceConfigurationINTEL configuration,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24499,7 +24446,7 @@ bool Device::PreCallValidateReleasePerformanceConfigurationINTEL(VkDevice device
 }
 
 bool Device::PreCallValidateQueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24510,7 +24457,7 @@ bool Device::PreCallValidateQueueSetPerformanceConfigurationINTEL(VkQueue queue,
 }
 
 bool Device::PreCallValidateGetPerformanceParameterINTEL(VkDevice device, VkPerformanceParameterTypeINTEL parameter,
-                                                         VkPerformanceValueINTEL* pValue, const ErrorObject& error_obj) const {
+                                                         VkPerformanceValueINTEL* pValue, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24523,7 +24470,7 @@ bool Device::PreCallValidateGetPerformanceParameterINTEL(VkDevice device, VkPerf
 }
 
 bool Device::PreCallValidateSetLocalDimmingAMD(VkDevice device, VkSwapchainKHR swapChain, VkBool32 localDimmingEnable,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24538,7 +24485,7 @@ bool Device::PreCallValidateSetLocalDimmingAMD(VkDevice device, VkSwapchainKHR s
 bool Instance::PreCallValidateCreateImagePipeSurfaceFUCHSIA(VkInstance instance,
                                                             const VkImagePipeSurfaceCreateInfoFUCHSIA* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24568,7 +24515,7 @@ bool Instance::PreCallValidateCreateImagePipeSurfaceFUCHSIA(VkInstance instance,
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool Instance::PreCallValidateCreateMetalSurfaceEXT(VkInstance instance, const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
                                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24594,7 +24541,7 @@ bool Instance::PreCallValidateCreateMetalSurfaceEXT(VkInstance instance, const V
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
 bool Device::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24606,7 +24553,7 @@ bool Device::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkB
 
 bool Instance::PreCallValidateGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
                                                                  VkPhysicalDeviceToolProperties* pToolProperties,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -24619,7 +24566,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevic
 bool Instance::PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesNV(VkPhysicalDevice physicalDevice,
                                                                              uint32_t* pPropertyCount,
                                                                              VkCooperativeMatrixPropertiesNV* pProperties,
-                                                                             const ErrorObject& error_obj) const {
+                                                                             ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -24642,7 +24589,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesNV(VkP
 
 bool Instance::PreCallValidateGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
     VkPhysicalDevice physicalDevice, uint32_t* pCombinationCount, VkFramebufferMixedSamplesCombinationNV* pCombinations,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -24668,7 +24615,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSupportedFramebufferMixedSamplesC
 bool Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysicalDevice physicalDevice,
                                                                        const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                        uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
-                                                                       const ErrorObject& error_obj) const {
+                                                                       ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -24700,7 +24647,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(VkPhysica
 }
 
 bool Device::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24711,7 +24658,7 @@ bool Device::PreCallValidateAcquireFullScreenExclusiveModeEXT(VkDevice device, V
 }
 
 bool Device::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24724,7 +24671,7 @@ bool Device::PreCallValidateReleaseFullScreenExclusiveModeEXT(VkDevice device, V
 
 bool Instance::PreCallValidateCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24751,7 +24698,7 @@ bool Instance::PreCallValidateCreateHeadlessSurfaceEXT(VkInstance instance, cons
 }
 
 bool Device::PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                 uint16_t lineStipplePattern, const ErrorObject& error_obj) const {
+                                                 uint16_t lineStipplePattern, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24762,7 +24709,7 @@ bool Device::PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, 
 }
 
 bool Device::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24773,7 +24720,7 @@ bool Device::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool query
 }
 
 bool Device::PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24783,8 +24730,7 @@ bool Device::PreCallValidateCmdSetCullModeEXT(VkCommandBuffer commandBuffer, VkC
     return skip;
 }
 
-bool Device::PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace,
-                                               const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, VkFrontFace frontFace, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24795,7 +24741,7 @@ bool Device::PreCallValidateCmdSetFrontFaceEXT(VkCommandBuffer commandBuffer, Vk
 }
 
 bool Device::PreCallValidateCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24806,7 +24752,7 @@ bool Device::PreCallValidateCmdSetPrimitiveTopologyEXT(VkCommandBuffer commandBu
 }
 
 bool Device::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                       const VkViewport* pViewports, const ErrorObject& error_obj) const {
+                                                       const VkViewport* pViewports, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24817,7 +24763,7 @@ bool Device::PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBu
 }
 
 bool Device::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                      const VkRect2D* pScissors, const ErrorObject& error_obj) const {
+                                                      const VkRect2D* pScissors, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24830,7 +24776,7 @@ bool Device::PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuf
 bool Device::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                      const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
                                                      const VkDeviceSize* pSizes, const VkDeviceSize* pStrides,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24842,7 +24788,7 @@ bool Device::PreCallValidateCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuff
 }
 
 bool Device::PreCallValidateCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24853,7 +24799,7 @@ bool Device::PreCallValidateCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuff
 }
 
 bool Device::PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24864,7 +24810,7 @@ bool Device::PreCallValidateCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuf
 }
 
 bool Device::PreCallValidateCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24875,7 +24821,7 @@ bool Device::PreCallValidateCmdSetDepthCompareOpEXT(VkCommandBuffer commandBuffe
 }
 
 bool Device::PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24886,7 +24832,7 @@ bool Device::PreCallValidateCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer comma
 }
 
 bool Device::PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24898,7 +24844,7 @@ bool Device::PreCallValidateCmdSetStencilTestEnableEXT(VkCommandBuffer commandBu
 
 bool Device::PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp,
                                                VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24909,7 +24855,7 @@ bool Device::PreCallValidateCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, Vk
 }
 
 bool Device::PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24920,7 +24866,7 @@ bool Device::PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCopyMe
 }
 
 bool Device::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24931,7 +24877,7 @@ bool Device::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCopyIm
 }
 
 bool Device::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfo* pCopyImageToImageInfo,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24943,7 +24889,7 @@ bool Device::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyIma
 
 bool Device::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
                                                      const VkHostImageLayoutTransitionInfo* pTransitions,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24954,7 +24900,7 @@ bool Device::PreCallValidateTransitionImageLayoutEXT(VkDevice device, uint32_t t
 }
 
 bool Device::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
-                                                          VkSubresourceLayout2* pLayout, const ErrorObject& error_obj) const {
+                                                          VkSubresourceLayout2* pLayout, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24966,7 +24912,7 @@ bool Device::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, VkIma
 }
 
 bool Device::PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -24994,7 +24940,7 @@ bool Device::PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkR
 bool Device::PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice device,
                                                                      const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
                                                                      VkMemoryRequirements2* pMemoryRequirements,
-                                                                     const ErrorObject& error_obj) const {
+                                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25032,7 +24978,7 @@ bool Device::PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice de
 
 bool Device::PreCallValidateCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
                                                              const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25075,7 +25021,7 @@ bool Device::PreCallValidateCmdPreprocessGeneratedCommandsNV(VkCommandBuffer com
 
 bool Device::PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
                                                           const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25118,8 +25064,7 @@ bool Device::PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommandBuffer comman
 }
 
 bool Device::PreCallValidateCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                         VkPipeline pipeline, uint32_t groupIndex,
-                                                         const ErrorObject& error_obj) const {
+                                                         VkPipeline pipeline, uint32_t groupIndex, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25134,7 +25079,7 @@ bool Device::PreCallValidateCmdBindPipelineShaderGroupNV(VkCommandBuffer command
 bool Device::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkIndirectCommandsLayoutNV* pIndirectCommandsLayout,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25213,8 +25158,7 @@ bool Device::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice device, cons
 }
 
 bool Device::PreCallValidateDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout,
-                                                            const VkAllocationCallbacks* pAllocator,
-                                                            const ErrorObject& error_obj) const {
+                                                            const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25228,7 +25172,7 @@ bool Device::PreCallValidateDestroyIndirectCommandsLayoutNV(VkDevice device, VkI
 }
 
 bool Device::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT* pDepthBiasInfo,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25249,7 +25193,7 @@ bool Device::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, c
 }
 
 bool Instance::PreCallValidateAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, VkDisplayKHR display,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -25262,7 +25206,7 @@ bool Instance::PreCallValidateAcquireDrmDisplayEXT(VkPhysicalDevice physicalDevi
 }
 
 bool Instance::PreCallValidateGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, int32_t drmFd, uint32_t connectorId,
-                                               VkDisplayKHR* display, const ErrorObject& error_obj) const {
+                                               VkDisplayKHR* display, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -25276,7 +25220,7 @@ bool Instance::PreCallValidateGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, 
 
 bool Device::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25286,7 +25230,7 @@ bool Device::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPr
 }
 
 bool Device::PreCallValidateDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot,
-                                                      const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+                                                      const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25296,8 +25240,7 @@ bool Device::PreCallValidateDestroyPrivateDataSlotEXT(VkDevice device, VkPrivate
 }
 
 bool Device::PreCallValidateSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
-                                              VkPrivateDataSlot privateDataSlot, uint64_t data,
-                                              const ErrorObject& error_obj) const {
+                                              VkPrivateDataSlot privateDataSlot, uint64_t data, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25307,8 +25250,7 @@ bool Device::PreCallValidateSetPrivateDataEXT(VkDevice device, VkObjectType obje
 }
 
 bool Device::PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
-                                              VkPrivateDataSlot privateDataSlot, uint64_t* pData,
-                                              const ErrorObject& error_obj) const {
+                                              VkPrivateDataSlot privateDataSlot, uint64_t* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25319,7 +25261,7 @@ bool Device::PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType obje
 
 bool Device::PreCallValidateCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25346,7 +25288,7 @@ bool Device::PreCallValidateCreateCudaModuleNV(VkDevice device, const VkCudaModu
 }
 
 bool Device::PreCallValidateGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25361,7 +25303,7 @@ bool Device::PreCallValidateGetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV
 
 bool Device::PreCallValidateCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25390,7 +25332,7 @@ bool Device::PreCallValidateCreateCudaFunctionNV(VkDevice device, const VkCudaFu
 }
 
 bool Device::PreCallValidateDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25405,7 +25347,7 @@ bool Device::PreCallValidateDestroyCudaModuleNV(VkDevice device, VkCudaModuleNV 
 }
 
 bool Device::PreCallValidateDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function,
-                                                  const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+                                                  const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25420,7 +25362,7 @@ bool Device::PreCallValidateDestroyCudaFunctionNV(VkDevice device, VkCudaFunctio
 }
 
 bool Device::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25440,7 +25382,7 @@ bool Device::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer,
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool Device::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25465,7 +25407,7 @@ bool Device::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetal
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
 bool Device::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
-                                                          VkDeviceSize* pLayoutSizeInBytes, const ErrorObject& error_obj) const {
+                                                          VkDeviceSize* pLayoutSizeInBytes, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25478,7 +25420,7 @@ bool Device::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDes
 }
 
 bool Device::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice device, VkDescriptorSetLayout layout, uint32_t binding,
-                                                                   VkDeviceSize* pOffset, const ErrorObject& error_obj) const {
+                                                                   VkDeviceSize* pOffset, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25491,7 +25433,7 @@ bool Device::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(VkDevice devi
 }
 
 bool Device::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptorGetInfoEXT* pDescriptorInfo, size_t dataSize,
-                                             void* pDescriptor, const ErrorObject& error_obj) const {
+                                             void* pDescriptor, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25516,7 +25458,7 @@ bool Device::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptor
 
 bool Device::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                         const VkDescriptorBufferBindingInfoEXT* pBindingInfos,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25546,7 +25488,7 @@ bool Device::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandB
 bool Device::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                                              const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25567,7 +25509,7 @@ bool Device::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer com
 bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommandBuffer commandBuffer,
                                                                        VkPipelineBindPoint pipelineBindPoint,
                                                                        VkPipelineLayout layout, uint32_t set,
-                                                                       const ErrorObject& error_obj) const {
+                                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25581,7 +25523,7 @@ bool Device::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(VkCommand
 
 bool Device::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                     const VkBufferCaptureDescriptorDataInfoEXT* pInfo, void* pData,
-                                                                    const ErrorObject& error_obj) const {
+                                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25604,7 +25546,7 @@ bool Device::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice dev
 
 bool Device::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                    const VkImageCaptureDescriptorDataInfoEXT* pInfo, void* pData,
-                                                                   const ErrorObject& error_obj) const {
+                                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25627,7 +25569,7 @@ bool Device::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(VkDevice devi
 
 bool Device::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                        const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
-                                                                       void* pData, const ErrorObject& error_obj) const {
+                                                                       void* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25650,7 +25592,7 @@ bool Device::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(VkDevice 
 
 bool Device::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                      const VkSamplerCaptureDescriptorDataInfoEXT* pInfo,
-                                                                     void* pData, const ErrorObject& error_obj) const {
+                                                                     void* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25672,8 +25614,7 @@ bool Device::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice de
 }
 
 bool Device::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
-    VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData,
-    const ErrorObject& error_obj) const {
+    VkDevice device, const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo, void* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25696,7 +25637,7 @@ bool Device::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataE
 
 bool Device::PreCallValidateCmdSetFragmentShadingRateEnumNV(VkCommandBuffer commandBuffer, VkFragmentShadingRateNV shadingRate,
                                                             const VkFragmentShadingRateCombinerOpKHR combinerOps[2],
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25711,7 +25652,7 @@ bool Device::PreCallValidateCmdSetFragmentShadingRateEnumNV(VkCommandBuffer comm
 }
 
 bool Device::PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT* pFaultCounts,
-                                                  VkDeviceFaultInfoEXT* pFaultInfo, const ErrorObject& error_obj) const {
+                                                  VkDeviceFaultInfoEXT* pFaultInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25737,7 +25678,7 @@ bool Device::PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFault
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool Instance::PreCallValidateAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -25748,7 +25689,7 @@ bool Instance::PreCallValidateAcquireWinrtDisplayNV(VkPhysicalDevice physicalDev
 }
 
 bool Instance::PreCallValidateGetWinrtDisplayNV(VkPhysicalDevice physicalDevice, uint32_t deviceRelativeId, VkDisplayKHR* pDisplay,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -25762,7 +25703,7 @@ bool Instance::PreCallValidateGetWinrtDisplayNV(VkPhysicalDevice physicalDevice,
 #ifdef VK_USE_PLATFORM_DIRECTFB_EXT
 bool Instance::PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance, const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25790,7 +25731,7 @@ bool Instance::PreCallValidateCreateDirectFBSurfaceEXT(VkInstance instance, cons
 
 bool Instance::PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(VkPhysicalDevice physicalDevice,
                                                                               uint32_t queueFamilyIndex, IDirectFB* dfb,
-                                                                              const ErrorObject& error_obj) const {
+                                                                              ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -25808,7 +25749,7 @@ bool Device::PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, 
                                                  const VkVertexInputBindingDescription2EXT* pVertexBindingDescriptions,
                                                  uint32_t vertexAttributeDescriptionCount,
                                                  const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25854,7 +25795,7 @@ bool Device::PreCallValidateCmdSetVertexInputEXT(VkCommandBuffer commandBuffer, 
 #ifdef VK_USE_PLATFORM_FUCHSIA
 bool Device::PreCallValidateGetMemoryZirconHandleFUCHSIA(VkDevice device,
                                                          const VkMemoryGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
-                                                         zx_handle_t* pZirconHandle, const ErrorObject& error_obj) const {
+                                                         zx_handle_t* pZirconHandle, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25885,7 +25826,7 @@ bool Device::PreCallValidateGetMemoryZirconHandleFUCHSIA(VkDevice device,
 
 bool Device::PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA(
     VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, zx_handle_t zirconHandle,
-    VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties, const ErrorObject& error_obj) const {
+    VkMemoryZirconHandlePropertiesFUCHSIA* pMemoryZirconHandleProperties, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25910,7 +25851,7 @@ bool Device::PreCallValidateGetMemoryZirconHandlePropertiesFUCHSIA(
 
 bool Device::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25945,7 +25886,7 @@ bool Device::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
 
 bool Device::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                             const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
-                                                            zx_handle_t* pZirconHandle, const ErrorObject& error_obj) const {
+                                                            zx_handle_t* pZirconHandle, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -25976,8 +25917,7 @@ bool Device::PreCallValidateGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
 
 bool Device::PreCallValidateCreateBufferCollectionFUCHSIA(VkDevice device, const VkBufferCollectionCreateInfoFUCHSIA* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator,
-                                                          VkBufferCollectionFUCHSIA* pCollection,
-                                                          const ErrorObject& error_obj) const {
+                                                          VkBufferCollectionFUCHSIA* pCollection, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26002,7 +25942,7 @@ bool Device::PreCallValidateCreateBufferCollectionFUCHSIA(VkDevice device, const
 
 bool Device::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                        const VkImageConstraintsInfoFUCHSIA* pImageConstraintsInfo,
-                                                                       const ErrorObject& error_obj) const {
+                                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26164,7 +26104,7 @@ bool Device::PreCallValidateSetBufferCollectionImageConstraintsFUCHSIA(VkDevice 
 
 bool Device::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(
     VkDevice device, VkBufferCollectionFUCHSIA collection, const VkBufferConstraintsInfoFUCHSIA* pBufferConstraintsInfo,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26225,8 +26165,7 @@ bool Device::PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA(
 }
 
 bool Device::PreCallValidateDestroyBufferCollectionFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
-                                                           const VkAllocationCallbacks* pAllocator,
-                                                           const ErrorObject& error_obj) const {
+                                                           const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26242,7 +26181,7 @@ bool Device::PreCallValidateDestroyBufferCollectionFUCHSIA(VkDevice device, VkBu
 
 bool Device::PreCallValidateGetBufferCollectionPropertiesFUCHSIA(VkDevice device, VkBufferCollectionFUCHSIA collection,
                                                                  VkBufferCollectionPropertiesFUCHSIA* pProperties,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26264,7 +26203,7 @@ bool Device::PreCallValidateGetBufferCollectionPropertiesFUCHSIA(VkDevice device
 
 bool Device::PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevice device, VkRenderPass renderpass,
                                                                           VkExtent2D* pMaxWorkgroupSize,
-                                                                          const ErrorObject& error_obj) const {
+                                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26276,7 +26215,7 @@ bool Device::PreCallValidateGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI(VkDevi
     return skip;
 }
 
-bool Device::PreCallValidateCmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26287,7 +26226,7 @@ bool Device::PreCallValidateCmdSubpassShadingHUAWEI(VkCommandBuffer commandBuffe
 }
 
 bool Device::PreCallValidateCmdBindInvocationMaskHUAWEI(VkCommandBuffer commandBuffer, VkImageView imageView,
-                                                        VkImageLayout imageLayout, const ErrorObject& error_obj) const {
+                                                        VkImageLayout imageLayout, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26300,7 +26239,7 @@ bool Device::PreCallValidateCmdBindInvocationMaskHUAWEI(VkCommandBuffer commandB
 
 bool Device::PreCallValidateGetMemoryRemoteAddressNV(VkDevice device,
                                                      const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo,
-                                                     VkRemoteAddressNV* pAddress, const ErrorObject& error_obj) const {
+                                                     VkRemoteAddressNV* pAddress, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26330,7 +26269,7 @@ bool Device::PreCallValidateGetMemoryRemoteAddressNV(VkDevice device,
 }
 
 bool Device::PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo,
-                                                     VkBaseOutStructure* pPipelineProperties, const ErrorObject& error_obj) const {
+                                                     VkBaseOutStructure* pPipelineProperties, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26351,7 +26290,7 @@ bool Device::PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPi
 }
 
 bool Device::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26362,7 +26301,7 @@ bool Device::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandB
 }
 
 bool Device::PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26373,7 +26312,7 @@ bool Device::PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer com
 }
 
 bool Device::PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26383,7 +26322,7 @@ bool Device::PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuff
     return skip;
 }
 
-bool Device::PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26395,7 +26334,7 @@ bool Device::PreCallValidateCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLo
 }
 
 bool Device::PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26408,7 +26347,7 @@ bool Device::PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer comm
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 bool Instance::PreCallValidateCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26436,7 +26375,7 @@ bool Instance::PreCallValidateCreateScreenSurfaceQNX(VkInstance instance, const 
 bool Instance::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice,
                                                                             uint32_t queueFamilyIndex,
                                                                             struct _screen_window* window,
-                                                                            const ErrorObject& error_obj) const {
+                                                                            ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -26451,7 +26390,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPh
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
 bool Device::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                                      const VkBool32* pColorWriteEnables, const ErrorObject& error_obj) const {
+                                                      const VkBool32* pColorWriteEnables, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26466,7 +26405,7 @@ bool Device::PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuf
 
 bool Device::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                             const VkMultiDrawInfoEXT* pVertexInfo, uint32_t instanceCount, uint32_t firstInstance,
-                                            uint32_t stride, const ErrorObject& error_obj) const {
+                                            uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26478,7 +26417,7 @@ bool Device::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint3
 bool Device::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                    const VkMultiDrawIndexedInfoEXT* pIndexInfo, uint32_t instanceCount,
                                                    uint32_t firstInstance, uint32_t stride, const int32_t* pVertexOffset,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26489,7 +26428,7 @@ bool Device::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer
 
 bool Device::PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapCreateInfoEXT* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkMicromapEXT* pMicromap,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26522,7 +26461,7 @@ bool Device::PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapC
 }
 
 bool Device::PreCallValidateDestroyMicromapEXT(VkDevice device, VkMicromapEXT micromap, const VkAllocationCallbacks* pAllocator,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26537,7 +26476,7 @@ bool Device::PreCallValidateDestroyMicromapEXT(VkDevice device, VkMicromapEXT mi
 }
 
 bool Device::PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, uint32_t infoCount,
-                                                 const VkMicromapBuildInfoEXT* pInfos, const ErrorObject& error_obj) const {
+                                                 const VkMicromapBuildInfoEXT* pInfos, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26580,7 +26519,7 @@ bool Device::PreCallValidateCmdBuildMicromapsEXT(VkCommandBuffer commandBuffer, 
 }
 
 bool Device::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
-                                              const VkMicromapBuildInfoEXT* pInfos, const ErrorObject& error_obj) const {
+                                              const VkMicromapBuildInfoEXT* pInfos, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26623,7 +26562,7 @@ bool Device::PreCallValidateBuildMicromapsEXT(VkDevice device, VkDeferredOperati
 }
 
 bool Device::PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                            const VkCopyMicromapInfoEXT* pInfo, const ErrorObject& error_obj) const {
+                                            const VkCopyMicromapInfoEXT* pInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26648,8 +26587,7 @@ bool Device::PreCallValidateCopyMicromapEXT(VkDevice device, VkDeferredOperation
 }
 
 bool Device::PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                    const VkCopyMicromapToMemoryInfoEXT* pInfo,
-                                                    const ErrorObject& error_obj) const {
+                                                    const VkCopyMicromapToMemoryInfoEXT* pInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26673,8 +26611,7 @@ bool Device::PreCallValidateCopyMicromapToMemoryEXT(VkDevice device, VkDeferredO
 }
 
 bool Device::PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationKHR deferredOperation,
-                                                    const VkCopyMemoryToMicromapInfoEXT* pInfo,
-                                                    const ErrorObject& error_obj) const {
+                                                    const VkCopyMemoryToMicromapInfoEXT* pInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26699,7 +26636,7 @@ bool Device::PreCallValidateCopyMemoryToMicromapEXT(VkDevice device, VkDeferredO
 
 bool Device::PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapCount, const VkMicromapEXT* pMicromaps,
                                                         VkQueryType queryType, size_t dataSize, void* pData, size_t stride,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26719,7 +26656,7 @@ bool Device::PreCallValidateWriteMicromapsPropertiesEXT(VkDevice device, uint32_
 }
 
 bool Device::PreCallValidateCmdCopyMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapInfoEXT* pInfo,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26744,7 +26681,7 @@ bool Device::PreCallValidateCmdCopyMicromapEXT(VkCommandBuffer commandBuffer, co
 }
 
 bool Device::PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBuffer, const VkCopyMicromapToMemoryInfoEXT* pInfo,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26768,7 +26705,7 @@ bool Device::PreCallValidateCmdCopyMicromapToMemoryEXT(VkCommandBuffer commandBu
 }
 
 bool Device::PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBuffer, const VkCopyMemoryToMicromapInfoEXT* pInfo,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26794,7 +26731,7 @@ bool Device::PreCallValidateCmdCopyMemoryToMicromapEXT(VkCommandBuffer commandBu
 bool Device::PreCallValidateCmdWriteMicromapsPropertiesEXT(VkCommandBuffer commandBuffer, uint32_t micromapCount,
                                                            const VkMicromapEXT* pMicromaps, VkQueryType queryType,
                                                            VkQueryPool queryPool, uint32_t firstQuery,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26813,7 +26750,7 @@ bool Device::PreCallValidateCmdWriteMicromapsPropertiesEXT(VkCommandBuffer comma
 
 bool Device::PreCallValidateGetDeviceMicromapCompatibilityEXT(VkDevice device, const VkMicromapVersionInfoEXT* pVersionInfo,
                                                               VkAccelerationStructureCompatibilityKHR* pCompatibility,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26838,7 +26775,7 @@ bool Device::PreCallValidateGetDeviceMicromapCompatibilityEXT(VkDevice device, c
 
 bool Device::PreCallValidateGetMicromapBuildSizesEXT(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType,
                                                      const VkMicromapBuildInfoEXT* pBuildInfo,
-                                                     VkMicromapBuildSizesInfoEXT* pSizeInfo, const ErrorObject& error_obj) const {
+                                                     VkMicromapBuildSizesInfoEXT* pSizeInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26890,7 +26827,7 @@ bool Device::PreCallValidateGetMicromapBuildSizesEXT(VkDevice device, VkAccelera
 }
 
 bool Device::PreCallValidateCmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                                 uint32_t groupCountZ, const ErrorObject& error_obj) const {
+                                                 uint32_t groupCountZ, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26901,7 +26838,7 @@ bool Device::PreCallValidateCmdDrawClusterHUAWEI(VkCommandBuffer commandBuffer, 
 }
 
 bool Device::PreCallValidateCmdDrawClusterIndirectHUAWEI(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26912,7 +26849,7 @@ bool Device::PreCallValidateCmdDrawClusterIndirectHUAWEI(VkCommandBuffer command
 }
 
 bool Device::PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26925,7 +26862,7 @@ bool Device::PreCallValidateSetDeviceMemoryPriorityEXT(VkDevice device, VkDevice
 
 bool Device::PreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE(
     VkDevice device, const VkDescriptorSetBindingReferenceVALVE* pBindingReference,
-    VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping, const ErrorObject& error_obj) const {
+    VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26957,7 +26894,7 @@ bool Device::PreCallValidateGetDescriptorSetLayoutHostMappingInfoVALVE(
 }
 
 bool Device::PreCallValidateGetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26970,7 +26907,7 @@ bool Device::PreCallValidateGetDescriptorSetHostMappingVALVE(VkDevice device, Vk
 }
 
 bool Device::PreCallValidateCmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress,
-                                                    uint32_t copyCount, uint32_t stride, const ErrorObject& error_obj) const {
+                                                    uint32_t copyCount, uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -26984,7 +26921,7 @@ bool Device::PreCallValidateCmdCopyMemoryToImageIndirectNV(VkCommandBuffer comma
                                                            uint32_t copyCount, uint32_t stride, VkImage dstImage,
                                                            VkImageLayout dstImageLayout,
                                                            const VkImageSubresourceLayers* pImageSubresources,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27010,7 +26947,7 @@ bool Device::PreCallValidateCmdCopyMemoryToImageIndirectNV(VkCommandBuffer comma
 
 bool Device::PreCallValidateCmdDecompressMemoryNV(VkCommandBuffer commandBuffer, uint32_t decompressRegionCount,
                                                   const VkDecompressMemoryRegionNV* pDecompressMemoryRegions,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27038,7 +26975,7 @@ bool Device::PreCallValidateCmdDecompressMemoryNV(VkCommandBuffer commandBuffer,
 bool Device::PreCallValidateCmdDecompressMemoryIndirectCountNV(VkCommandBuffer commandBuffer,
                                                                VkDeviceAddress indirectCommandsAddress,
                                                                VkDeviceAddress indirectCommandsCountAddress, uint32_t stride,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27050,7 +26987,7 @@ bool Device::PreCallValidateCmdDecompressMemoryIndirectCountNV(VkCommandBuffer c
 
 bool Device::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkDevice device, const VkComputePipelineCreateInfo* pCreateInfo,
                                                                     VkMemoryRequirements2* pMemoryRequirements,
-                                                                    const ErrorObject& error_obj) const {
+                                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27142,7 +27079,7 @@ bool Device::PreCallValidateGetPipelineIndirectMemoryRequirementsNV(VkDevice dev
 }
 
 bool Device::PreCallValidateCmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                              VkPipeline pipeline, const ErrorObject& error_obj) const {
+                                                              VkPipeline pipeline, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27155,7 +27092,7 @@ bool Device::PreCallValidateCmdUpdatePipelineIndirectBufferNV(VkCommandBuffer co
 }
 
 bool Device::PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27179,7 +27116,7 @@ bool Device::PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice device, 
 }
 
 bool Device::PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27190,7 +27127,7 @@ bool Device::PreCallValidateCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuf
 }
 
 bool Device::PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27202,7 +27139,7 @@ bool Device::PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, 
 }
 
 bool Device::PreCallValidateCmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits rasterizationSamples,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27216,7 +27153,7 @@ bool Device::PreCallValidateCmdSetRasterizationSamplesEXT(VkCommandBuffer comman
 }
 
 bool Device::PreCallValidateCmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples,
-                                                const VkSampleMask* pSampleMask, const ErrorObject& error_obj) const {
+                                                const VkSampleMask* pSampleMask, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27231,7 +27168,7 @@ bool Device::PreCallValidateCmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, V
 }
 
 bool Device::PreCallValidateCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27242,7 +27179,7 @@ bool Device::PreCallValidateCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer comma
 }
 
 bool Device::PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27253,7 +27190,7 @@ bool Device::PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuf
 }
 
 bool Device::PreCallValidateCmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27265,7 +27202,7 @@ bool Device::PreCallValidateCmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer
 
 bool Device::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                       uint32_t attachmentCount, const VkBool32* pColorBlendEnables,
-                                                      const ErrorObject& error_obj) const {
+                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27281,7 +27218,7 @@ bool Device::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuf
 bool Device::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                         uint32_t attachmentCount,
                                                         const VkColorBlendEquationEXT* pColorBlendEquations,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27324,7 +27261,7 @@ bool Device::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandB
 
 bool Device::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                     uint32_t attachmentCount, const VkColorComponentFlags* pColorWriteMasks,
-                                                    const ErrorObject& error_obj) const {
+                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27339,7 +27276,7 @@ bool Device::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffe
 
 bool Device::PreCallValidateCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer,
                                                               VkTessellationDomainOrigin domainOrigin,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27351,7 +27288,7 @@ bool Device::PreCallValidateCmdSetTessellationDomainOriginEXT(VkCommandBuffer co
 }
 
 bool Device::PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27363,7 +27300,7 @@ bool Device::PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer command
 
 bool Device::PreCallValidateCmdSetConservativeRasterizationModeEXT(VkCommandBuffer commandBuffer,
                                                                    VkConservativeRasterizationModeEXT conservativeRasterizationMode,
-                                                                   const ErrorObject& error_obj) const {
+                                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27377,7 +27314,7 @@ bool Device::PreCallValidateCmdSetConservativeRasterizationModeEXT(VkCommandBuff
 
 bool Device::PreCallValidateCmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBuffer commandBuffer,
                                                                       float extraPrimitiveOverestimationSize,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27388,7 +27325,7 @@ bool Device::PreCallValidateCmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandB
 }
 
 bool Device::PreCallValidateCmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClipEnable,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27399,7 +27336,7 @@ bool Device::PreCallValidateCmdSetDepthClipEnableEXT(VkCommandBuffer commandBuff
 }
 
 bool Device::PreCallValidateCmdSetSampleLocationsEnableEXT(VkCommandBuffer commandBuffer, VkBool32 sampleLocationsEnable,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27412,7 +27349,7 @@ bool Device::PreCallValidateCmdSetSampleLocationsEnableEXT(VkCommandBuffer comma
 bool Device::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                         uint32_t attachmentCount,
                                                         const VkColorBlendAdvancedEXT* pColorBlendAdvanced,
-                                                        const ErrorObject& error_obj) const {
+                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27448,7 +27385,7 @@ bool Device::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandB
 
 bool Device::PreCallValidateCmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer,
                                                          VkProvokingVertexModeEXT provokingVertexMode,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27461,7 +27398,7 @@ bool Device::PreCallValidateCmdSetProvokingVertexModeEXT(VkCommandBuffer command
 
 bool Device::PreCallValidateCmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer,
                                                            VkLineRasterizationModeEXT lineRasterizationMode,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27472,7 +27409,7 @@ bool Device::PreCallValidateCmdSetLineRasterizationModeEXT(VkCommandBuffer comma
 }
 
 bool Device::PreCallValidateCmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27483,7 +27420,7 @@ bool Device::PreCallValidateCmdSetLineStippleEnableEXT(VkCommandBuffer commandBu
 }
 
 bool Device::PreCallValidateCmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer, VkBool32 negativeOneToOne,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27494,7 +27431,7 @@ bool Device::PreCallValidateCmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer c
 }
 
 bool Device::PreCallValidateCmdSetViewportWScalingEnableNV(VkCommandBuffer commandBuffer, VkBool32 viewportWScalingEnable,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27505,8 +27442,7 @@ bool Device::PreCallValidateCmdSetViewportWScalingEnableNV(VkCommandBuffer comma
 }
 
 bool Device::PreCallValidateCmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                                                    const VkViewportSwizzleNV* pViewportSwizzles,
-                                                    const ErrorObject& error_obj) const {
+                                                    const VkViewportSwizzleNV* pViewportSwizzles, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27535,7 +27471,7 @@ bool Device::PreCallValidateCmdSetViewportSwizzleNV(VkCommandBuffer commandBuffe
 }
 
 bool Device::PreCallValidateCmdSetCoverageToColorEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageToColorEnable,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27546,7 +27482,7 @@ bool Device::PreCallValidateCmdSetCoverageToColorEnableNV(VkCommandBuffer comman
 }
 
 bool Device::PreCallValidateCmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, uint32_t coverageToColorLocation,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27558,7 +27494,7 @@ bool Device::PreCallValidateCmdSetCoverageToColorLocationNV(VkCommandBuffer comm
 
 bool Device::PreCallValidateCmdSetCoverageModulationModeNV(VkCommandBuffer commandBuffer,
                                                            VkCoverageModulationModeNV coverageModulationMode,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27572,7 +27508,7 @@ bool Device::PreCallValidateCmdSetCoverageModulationModeNV(VkCommandBuffer comma
 
 bool Device::PreCallValidateCmdSetCoverageModulationTableEnableNV(VkCommandBuffer commandBuffer,
                                                                   VkBool32 coverageModulationTableEnable,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27583,8 +27519,7 @@ bool Device::PreCallValidateCmdSetCoverageModulationTableEnableNV(VkCommandBuffe
 }
 
 bool Device::PreCallValidateCmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer, uint32_t coverageModulationTableCount,
-                                                            const float* pCoverageModulationTable,
-                                                            const ErrorObject& error_obj) const {
+                                                            const float* pCoverageModulationTable, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27598,7 +27533,7 @@ bool Device::PreCallValidateCmdSetCoverageModulationTableNV(VkCommandBuffer comm
 }
 
 bool Device::PreCallValidateCmdSetShadingRateImageEnableNV(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27610,7 +27545,7 @@ bool Device::PreCallValidateCmdSetShadingRateImageEnableNV(VkCommandBuffer comma
 
 bool Device::PreCallValidateCmdSetRepresentativeFragmentTestEnableNV(VkCommandBuffer commandBuffer,
                                                                      VkBool32 representativeFragmentTestEnable,
-                                                                     const ErrorObject& error_obj) const {
+                                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27622,7 +27557,7 @@ bool Device::PreCallValidateCmdSetRepresentativeFragmentTestEnableNV(VkCommandBu
 
 bool Device::PreCallValidateCmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer,
                                                           VkCoverageReductionModeNV coverageReductionMode,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27635,8 +27570,7 @@ bool Device::PreCallValidateCmdSetCoverageReductionModeNV(VkCommandBuffer comman
 }
 
 bool Device::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
-                                                         VkShaderModuleIdentifierEXT* pIdentifier,
-                                                         const ErrorObject& error_obj) const {
+                                                         VkShaderModuleIdentifierEXT* pIdentifier, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27656,7 +27590,7 @@ bool Device::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShad
 
 bool Device::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                                                    VkShaderModuleIdentifierEXT* pIdentifier,
-                                                                   const ErrorObject& error_obj) const {
+                                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27687,7 +27621,7 @@ bool Device::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice devi
 
 bool Instance::PreCallValidateGetPhysicalDeviceOpticalFlowImageFormatsNV(
     VkPhysicalDevice physicalDevice, const VkOpticalFlowImageFormatInfoNV* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
-    VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties, const ErrorObject& error_obj) const {
+    VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties, ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -27722,7 +27656,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceOpticalFlowImageFormatsNV(
 
 bool Device::PreCallValidateCreateOpticalFlowSessionNV(VkDevice device, const VkOpticalFlowSessionCreateInfoNV* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkOpticalFlowSessionNV* pSession,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27777,8 +27711,7 @@ bool Device::PreCallValidateCreateOpticalFlowSessionNV(VkDevice device, const Vk
 }
 
 bool Device::PreCallValidateDestroyOpticalFlowSessionNV(VkDevice device, VkOpticalFlowSessionNV session,
-                                                        const VkAllocationCallbacks* pAllocator,
-                                                        const ErrorObject& error_obj) const {
+                                                        const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27793,7 +27726,7 @@ bool Device::PreCallValidateDestroyOpticalFlowSessionNV(VkDevice device, VkOptic
 
 bool Device::PreCallValidateBindOpticalFlowSessionImageNV(VkDevice device, VkOpticalFlowSessionNV session,
                                                           VkOpticalFlowSessionBindingPointNV bindingPoint, VkImageView view,
-                                                          VkImageLayout layout, const ErrorObject& error_obj) const {
+                                                          VkImageLayout layout, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27807,8 +27740,7 @@ bool Device::PreCallValidateBindOpticalFlowSessionImageNV(VkDevice device, VkOpt
 }
 
 bool Device::PreCallValidateCmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffer, VkOpticalFlowSessionNV session,
-                                                    const VkOpticalFlowExecuteInfoNV* pExecuteInfo,
-                                                    const ErrorObject& error_obj) const {
+                                                    const VkOpticalFlowExecuteInfoNV* pExecuteInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27833,7 +27765,7 @@ bool Device::PreCallValidateCmdOpticalFlowExecuteNV(VkCommandBuffer commandBuffe
     return skip;
 }
 
-bool Device::PreCallValidateAntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateAntiLagUpdateAMD(VkDevice device, const VkAntiLagDataAMD* pData, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27861,7 +27793,7 @@ bool Device::PreCallValidateAntiLagUpdateAMD(VkDevice device, const VkAntiLagDat
 
 bool Device::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                              const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27954,7 +27886,7 @@ bool Device::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInf
 }
 
 bool Device::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator,
-                                             const ErrorObject& error_obj) const {
+                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27967,7 +27899,7 @@ bool Device::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT shader
 }
 
 bool Device::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27982,7 +27914,7 @@ bool Device::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT 
 
 bool Device::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,
                                               const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders,
-                                              const ErrorObject& error_obj) const {
+                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -27995,8 +27927,7 @@ bool Device::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer, uin
 }
 
 bool Device::PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT depthClampMode,
-                                                     const VkDepthClampRangeEXT* pDepthClampRange,
-                                                     const ErrorObject& error_obj) const {
+                                                     const VkDepthClampRangeEXT* pDepthClampRange, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28009,8 +27940,7 @@ bool Device::PreCallValidateCmdSetDepthClampRangeEXT(VkCommandBuffer commandBuff
 }
 
 bool Device::PreCallValidateGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount,
-                                                             VkTilePropertiesQCOM* pProperties,
-                                                             const ErrorObject& error_obj) const {
+                                                             VkTilePropertiesQCOM* pProperties, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28039,8 +27969,7 @@ bool Device::PreCallValidateGetFramebufferTilePropertiesQCOM(VkDevice device, Vk
 }
 
 bool Device::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo,
-                                                                  VkTilePropertiesQCOM* pProperties,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  VkTilePropertiesQCOM* pProperties, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28200,7 +28129,7 @@ bool Device::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice devic
 bool Instance::PreCallValidateGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
                                                                              uint32_t* pPropertyCount,
                                                                              VkCooperativeVectorPropertiesNV* pProperties,
-                                                                             const ErrorObject& error_obj) const {
+                                                                             ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -28244,7 +28173,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceCooperativeVectorPropertiesNV(VkP
 }
 
 bool Device::PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice device, const VkConvertCooperativeVectorMatrixInfoNV* pInfo,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28285,7 +28214,7 @@ bool Device::PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice device, co
 
 bool Device::PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer commandBuffer, uint32_t infoCount,
                                                                 const VkConvertCooperativeVectorMatrixInfoNV* pInfos,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28331,8 +28260,7 @@ bool Device::PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuffer 
 }
 
 bool Device::PreCallValidateSetLatencySleepModeNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                  const VkLatencySleepModeInfoNV* pSleepModeInfo,
-                                                  const ErrorObject& error_obj) const {
+                                                  const VkLatencySleepModeInfoNV* pSleepModeInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28351,7 +28279,7 @@ bool Device::PreCallValidateSetLatencySleepModeNV(VkDevice device, VkSwapchainKH
 }
 
 bool Device::PreCallValidateLatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLatencySleepInfoNV* pSleepInfo,
-                                           const ErrorObject& error_obj) const {
+                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28367,8 +28295,7 @@ bool Device::PreCallValidateLatencySleepNV(VkDevice device, VkSwapchainKHR swapc
 }
 
 bool Device::PreCallValidateSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain,
-                                               const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo,
-                                               const ErrorObject& error_obj) const {
+                                               const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28386,7 +28313,7 @@ bool Device::PreCallValidateSetLatencyMarkerNV(VkDevice device, VkSwapchainKHR s
 }
 
 bool Device::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain,
-                                                VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, const ErrorObject& error_obj) const {
+                                                VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28413,7 +28340,7 @@ bool Device::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR 
 }
 
 bool Device::PreCallValidateQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28430,7 +28357,7 @@ bool Device::PreCallValidateQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfB
 }
 
 bool Device::PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28443,8 +28370,7 @@ bool Device::PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffe
 
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 bool Device::PreCallValidateGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
-                                                         VkScreenBufferPropertiesQNX* pProperties,
-                                                         const ErrorObject& error_obj) const {
+                                                         VkScreenBufferPropertiesQNX* pProperties, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28470,7 +28396,7 @@ bool Device::PreCallValidateGetScreenBufferPropertiesQNX(VkDevice device, const 
 bool Device::PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
                                                                         const VkClusterAccelerationStructureInputInfoNV* pInfo,
                                                                         VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
-                                                                        const ErrorObject& error_obj) const {
+                                                                        ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28552,7 +28478,7 @@ bool Device::PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice
 
 bool Device::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
     VkCommandBuffer commandBuffer, const VkClusterAccelerationStructureCommandsInfoNV* pCommandInfos,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28652,7 +28578,7 @@ bool Device::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
 
 bool Device::PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV(
     VkDevice device, const VkPartitionedAccelerationStructureInstancesInputNV* pInfo,
-    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo, const ErrorObject& error_obj) const {
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28690,8 +28616,7 @@ bool Device::PreCallValidateGetPartitionedAccelerationStructuresBuildSizesNV(
 }
 
 bool Device::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
-    VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo,
-    const ErrorObject& error_obj) const {
+    VkCommandBuffer commandBuffer, const VkBuildPartitionedAccelerationStructureInfoNV* pBuildInfo, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28729,7 +28654,7 @@ bool Device::PreCallValidateCmdBuildPartitionedAccelerationStructuresNV(
 bool Device::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
                                                                       const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
                                                                       VkMemoryRequirements2* pMemoryRequirements,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28769,8 +28694,7 @@ bool Device::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevice d
 
 bool Device::PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
                                                               const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
-                                                              VkCommandBuffer stateCommandBuffer,
-                                                              const ErrorObject& error_obj) const {
+                                                              VkCommandBuffer stateCommandBuffer, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28798,7 +28722,7 @@ bool Device::PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer co
 
 bool Device::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
                                                            const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28828,7 +28752,7 @@ bool Device::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
                                                             const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28886,7 +28810,7 @@ bool Device::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
 
 bool Device::PreCallValidateDestroyIndirectCommandsLayoutEXT(VkDevice device, VkIndirectCommandsLayoutEXT indirectCommandsLayout,
                                                              const VkAllocationCallbacks* pAllocator,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28902,7 +28826,7 @@ bool Device::PreCallValidateDestroyIndirectCommandsLayoutEXT(VkDevice device, Vk
 bool Device::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkIndirectExecutionSetEXT* pIndirectExecutionSet,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28929,8 +28853,7 @@ bool Device::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const
 }
 
 bool Device::PreCallValidateDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
-                                                           const VkAllocationCallbacks* pAllocator,
-                                                           const ErrorObject& error_obj) const {
+                                                           const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28946,7 +28869,7 @@ bool Device::PreCallValidateDestroyIndirectExecutionSetEXT(VkDevice device, VkIn
 bool Device::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
                                                                   uint32_t executionSetWriteCount,
                                                                   const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28972,7 +28895,7 @@ bool Device::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(VkDevice devic
 bool Device::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
                                                                 uint32_t executionSetWriteCount,
                                                                 const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -28997,7 +28920,7 @@ bool Device::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device,
 
 bool Instance::PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
-    const ErrorObject& error_obj) const {
+    ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
@@ -29021,7 +28944,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensio
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool Device::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
-                                                    void** pHandle, const ErrorObject& error_obj) const {
+                                                    void** pHandle, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29050,7 +28973,7 @@ bool Device::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMem
 bool Device::PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                               const void* pHandle,
                                                               VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29079,7 +29002,7 @@ bool Device::PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, V
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29123,8 +29046,7 @@ bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, cons
 }
 
 bool Device::PreCallValidateDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
-                                                            const VkAllocationCallbacks* pAllocator,
-                                                            const ErrorObject& error_obj) const {
+                                                            const VkAllocationCallbacks* pAllocator, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29140,7 +29062,7 @@ bool Device::PreCallValidateDestroyAccelerationStructureKHR(VkDevice device, VkA
 
 bool Device::PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, const ErrorObject& error_obj) const {
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29231,7 +29153,7 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkCommandB
                                                                       const VkDeviceAddress* pIndirectDeviceAddresses,
                                                                       const uint32_t* pIndirectStrides,
                                                                       const uint32_t* const* ppMaxPrimitiveCounts,
-                                                                      const ErrorObject& error_obj) const {
+                                                                      ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29322,7 +29244,7 @@ bool Device::PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDe
                                                            uint32_t infoCount,
                                                            const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
                                                            const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos,
-                                                           const ErrorObject& error_obj) const {
+                                                           ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29410,7 +29332,7 @@ bool Device::PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDe
 
 bool Device::PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                          const VkCopyAccelerationStructureInfoKHR* pInfo,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29437,7 +29359,7 @@ bool Device::PreCallValidateCopyAccelerationStructureKHR(VkDevice device, VkDefe
 
 bool Device::PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                  const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29463,7 +29385,7 @@ bool Device::PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device
 
 bool Device::PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                  const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29490,7 +29412,7 @@ bool Device::PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device
 bool Device::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevice device, uint32_t accelerationStructureCount,
                                                                      const VkAccelerationStructureKHR* pAccelerationStructures,
                                                                      VkQueryType queryType, size_t dataSize, void* pData,
-                                                                     size_t stride, const ErrorObject& error_obj) const {
+                                                                     size_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29512,7 +29434,7 @@ bool Device::PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevice de
 
 bool Device::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                             const VkCopyAccelerationStructureInfoKHR* pInfo,
-                                                            const ErrorObject& error_obj) const {
+                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29539,7 +29461,7 @@ bool Device::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer comm
 
 bool Device::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
                                                                     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
-                                                                    const ErrorObject& error_obj) const {
+                                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29565,7 +29487,7 @@ bool Device::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuf
 
 bool Device::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
                                                                     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
-                                                                    const ErrorObject& error_obj) const {
+                                                                    ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29591,7 +29513,7 @@ bool Device::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuf
 
 bool Device::PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevice device,
                                                                      const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
-                                                                     const ErrorObject& error_obj) const {
+                                                                     ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29615,7 +29537,7 @@ bool Device::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(VkComman
                                                                         uint32_t accelerationStructureCount,
                                                                         const VkAccelerationStructureKHR* pAccelerationStructures,
                                                                         VkQueryType queryType, VkQueryPool queryPool,
-                                                                        uint32_t firstQuery, const ErrorObject& error_obj) const {
+                                                                        uint32_t firstQuery, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29636,7 +29558,7 @@ bool Device::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(VkComman
 
 bool Device::PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(
     VkDevice device, const VkAccelerationStructureVersionInfoKHR* pVersionInfo,
-    VkAccelerationStructureCompatibilityKHR* pCompatibility, const ErrorObject& error_obj) const {
+    VkAccelerationStructureCompatibilityKHR* pCompatibility, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29665,7 +29587,7 @@ bool Device::PreCallValidateGetAccelerationStructureBuildSizesKHR(VkDevice devic
                                                                   const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
                                                                   const uint32_t* pMaxPrimitiveCounts,
                                                                   VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29753,7 +29675,7 @@ bool Device::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                             const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                             const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                             const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width,
-                                            uint32_t height, uint32_t depth, const ErrorObject& error_obj) const {
+                                            uint32_t height, uint32_t depth, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29778,7 +29700,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
                                                          VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                          const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                         const ErrorObject& error_obj) const {
+                                                         ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29958,7 +29880,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDefe
 bool Device::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline,
                                                                             uint32_t firstGroup, uint32_t groupCount,
                                                                             size_t dataSize, void* pData,
-                                                                            const ErrorObject& error_obj) const {
+                                                                            ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -29979,7 +29901,7 @@ bool Device::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffe
                                                     const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable,
                                                     const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                                     const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
-                                                    VkDeviceAddress indirectDeviceAddress, const ErrorObject& error_obj) const {
+                                                    VkDeviceAddress indirectDeviceAddress, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -30001,8 +29923,7 @@ bool Device::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffe
 }
 
 bool Device::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice device, VkPipeline pipeline, uint32_t group,
-                                                                 VkShaderGroupShaderKHR groupShader,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 VkShaderGroupShaderKHR groupShader, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -30015,7 +29936,7 @@ bool Device::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice device
 }
 
 bool Device::PreCallValidateCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -30026,7 +29947,7 @@ bool Device::PreCallValidateCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer
 }
 
 bool Device::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                                uint32_t groupCountZ, const ErrorObject& error_obj) const {
+                                                uint32_t groupCountZ, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -30036,7 +29957,7 @@ bool Device::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, u
 }
 
 bool Device::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                        uint32_t drawCount, uint32_t stride, const ErrorObject& error_obj) const {
+                                                        uint32_t drawCount, uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
@@ -30047,8 +29968,7 @@ bool Device::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandB
 
 bool Device::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                             uint32_t maxDrawCount, uint32_t stride,
-                                                             const ErrorObject& error_obj) const {
+                                                             uint32_t maxDrawCount, uint32_t stride, ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;

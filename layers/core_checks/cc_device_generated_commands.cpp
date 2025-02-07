@@ -49,7 +49,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
                                                                 const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkIndirectCommandsLayoutEXT* pIndirectCommandsLayout,
-                                                                const ErrorObject& error_obj) const {
+                                                                ErrorObject& error_obj) const {
     bool skip = false;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -224,7 +224,7 @@ bool CoreChecks::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
 bool CoreChecks::PreCallValidateDestroyIndirectCommandsLayoutEXT(VkDevice device,
                                                                  VkIndirectCommandsLayoutEXT indirectCommandsLayout,
                                                                  const VkAllocationCallbacks* pAllocator,
-                                                                 const ErrorObject& error_obj) const {
+                                                                 ErrorObject& error_obj) const {
     bool skip = false;
     if (auto indirect_commands_layout = Get<vvl::IndirectCommandsLayout>(indirectCommandsLayout)) {
         skip |= ValidateObjectNotInUse(indirect_commands_layout.get(), error_obj.location,
@@ -341,7 +341,7 @@ bool CoreChecks::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device,
                                                               const VkIndirectExecutionSetCreateInfoEXT* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
                                                               VkIndirectExecutionSetEXT* pIndirectExecutionSet,
-                                                              const ErrorObject& error_obj) const {
+                                                              ErrorObject& error_obj) const {
     bool skip = false;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -360,7 +360,7 @@ bool CoreChecks::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device,
 
 bool CoreChecks::PreCallValidateDestroyIndirectExecutionSetEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
                                                                const VkAllocationCallbacks* pAllocator,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
     if (auto indirect_execution_set = Get<vvl::IndirectExecutionSet>(indirectExecutionSet)) {
         skip |= ValidateObjectNotInUse(indirect_execution_set.get(), error_obj.location,
@@ -529,7 +529,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
 
 bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
                                                                const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
-                                                               const ErrorObject& error_obj) const {
+                                                               ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -688,7 +688,7 @@ bool CoreChecks::ValidatePreprocessGeneratedCommandsStateCommandBuffer(const vvl
 bool CoreChecks::PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffer commandBuffer,
                                                                   const VkGeneratedCommandsInfoEXT* pGeneratedCommandsInfo,
                                                                   VkCommandBuffer stateCommandBuffer,
-                                                                  const ErrorObject& error_obj) const {
+                                                                  ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto& cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -723,7 +723,7 @@ bool CoreChecks::PreCallValidateCmdPreprocessGeneratedCommandsEXT(VkCommandBuffe
 bool CoreChecks::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevice device,
                                                                           const VkGeneratedCommandsMemoryRequirementsInfoEXT* pInfo,
                                                                           VkMemoryRequirements2* pMemoryRequirements,
-                                                                          const ErrorObject& error_obj) const {
+                                                                          ErrorObject& error_obj) const {
     bool skip = false;
 
     const Location info_loc = error_obj.location.dot(Field::pInfo);
@@ -791,7 +791,7 @@ bool CoreChecks::PreCallValidateGetGeneratedCommandsMemoryRequirementsEXT(VkDevi
 
 bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
     VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount,
-    const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites, const ErrorObject& error_obj) const {
+    const VkWriteIndirectExecutionSetPipelineEXT* pExecutionSetWrites, ErrorObject& error_obj) const {
     bool skip = false;
     auto indirect_execution_set = Get<vvl::IndirectExecutionSet>(indirectExecutionSet);
     ASSERT_AND_RETURN_SKIP(indirect_execution_set);
@@ -967,7 +967,7 @@ bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetPipelineEXT(
 bool CoreChecks::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet,
                                                                     uint32_t executionSetWriteCount,
                                                                     const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites,
-                                                                    const ErrorObject& error_obj) const {
+                                                                    ErrorObject& error_obj) const {
     bool skip = false;
     auto indirect_execution_set = Get<vvl::IndirectExecutionSet>(indirectExecutionSet);
     ASSERT_AND_RETURN_SKIP(indirect_execution_set);

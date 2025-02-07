@@ -35,7 +35,7 @@ bool CoreChecks::FormatRequiresYcbcrConversionExplicitly(const VkFormat format) 
 bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator,
                                                              VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                             const ErrorObject &error_obj) const {
+                                                             ErrorObject &error_obj) const {
     bool skip = false;
     const VkFormat conversion_format = pCreateInfo->format;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -137,6 +137,6 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
                                                                 const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 VkSamplerYcbcrConversion *pYcbcrConversion,
-                                                                const ErrorObject &error_obj) const {
+                                                                ErrorObject &error_obj) const {
     return PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion, error_obj);
 }

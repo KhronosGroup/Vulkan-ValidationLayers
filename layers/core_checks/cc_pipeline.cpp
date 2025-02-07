@@ -164,7 +164,7 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipel
 bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR *pPipelineInfo,
                                                                    uint32_t *pExecutableCount,
                                                                    VkPipelineExecutablePropertiesKHR *pProperties,
-                                                                   const ErrorObject &error_obj) const {
+                                                                   ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidatePipelineExecutableInfo(device, nullptr, error_obj.location,
                                            "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableInfo-03270");
@@ -204,7 +204,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
                                                                    const VkPipelineExecutableInfoKHR *pExecutableInfo,
                                                                    uint32_t *pStatisticCount,
                                                                    VkPipelineExecutableStatisticKHR *pStatistics,
-                                                                   const ErrorObject &error_obj) const {
+                                                                   ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, error_obj.location,
                                            "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272");
@@ -222,7 +222,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
 
 bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo, uint32_t *pInternalRepresentationCount,
-    VkPipelineExecutableInternalRepresentationKHR *pStatistics, const ErrorObject &error_obj) const {
+    VkPipelineExecutableInternalRepresentationKHR *pStatistics, ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidatePipelineExecutableInfo(device, pExecutableInfo, error_obj.location,
                                            "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
@@ -240,7 +240,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
 }
 
 bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator,
-                                                const ErrorObject &error_obj) const {
+                                                ErrorObject &error_obj) const {
     bool skip = false;
     if (auto pipeline_state = Get<vvl::Pipeline>(pipeline)) {
         skip |= ValidateObjectNotInUse(pipeline_state.get(), error_obj.location, "VUID-vkDestroyPipeline-pipeline-00765");
@@ -313,7 +313,7 @@ bool CoreChecks::ValidateCmdBindPipelineRenderPassMultisample(const vvl::Command
 }
 
 bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                VkPipeline pipeline, const ErrorObject &error_obj) const {
+                                                VkPipeline pipeline, ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
 
     bool skip = false;
@@ -695,7 +695,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
 }
 
 bool CoreChecks::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipelineCreateInfoKHR *pPipelineCreateInfo,
-                                                  VkPipelineBinaryKeyKHR *pPipelineKey, const ErrorObject &error_obj) const {
+                                                  VkPipelineBinaryKeyKHR *pPipelineKey, ErrorObject &error_obj) const {
     bool skip = false;
 
     // Used when getting global key
@@ -728,7 +728,7 @@ bool CoreChecks::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipel
 
 bool CoreChecks::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR *pInfo,
                                                                const VkAllocationCallbacks *pAllocator,
-                                                               const ErrorObject &error_obj) const {
+                                                               ErrorObject &error_obj) const {
     auto pipeline_state = Get<vvl::Pipeline>(pInfo->pipeline);
     bool skip = false;
 
