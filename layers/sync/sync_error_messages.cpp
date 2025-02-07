@@ -71,55 +71,6 @@ static const char* string_SyncHazard(SyncHazard hazard) {
     return "INVALID HAZARD";
 }
 
-namespace syncval {
-
-ErrorMessages::ErrorMessages(vvl::Device& validator)
-    : validator_(validator),
-      extra_properties_(validator_.syncval_settings.message_extra_properties),
-      pretty_print_extra_(validator_.syncval_settings.message_extra_properties_pretty_print) {}
-
-void ErrorMessages::AddCbContextExtraProperties(const CommandBufferAccessContext& cb_context, ResourceUsageTag tag,
-                                                ReportKeyValues& key_values) const {
-    if (validator_.syncval_settings.message_extra_properties) {
-        cb_context.AddUsageRecordExtraProperties(tag, key_values);
-    }
-}
-
-std::string ErrorMessages::Error(const HazardResult& hazard, const char* description, const CommandBufferAccessContext& cb_context,
-                                 vvl::Func command) const {
-    const auto format = "Hazard %s for %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), description, access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "GeneralError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::BufferError(const HazardResult& hazard, VkBuffer buffer, const char* buffer_description,
-                                       const CommandBufferAccessContext& cb_context, vvl::Func command) const {
-    const auto format = "Hazard %s for %s %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), buffer_description,
-                                 validator_.FormatHandle(buffer).c_str(), access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "BufferError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
 // Given that access is hazardous, we check if at least stage or access part of it is covered
 // by the synchronization. If applied synchronization covers at least stage or access component
 // then we can provide more precise message by focusing on the other component.
@@ -141,38 +92,27 @@ static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo& acces
     return std::make_pair(is_stage_protected, is_access_protected);
 }
 
-std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffer buffer, uint32_t region_index,
-                                             ResourceAccessRange region_range, const CommandBufferAccessContext& cb_context,
-                                             const vvl::Func command) const {
+static void FormatCommonMessage(const HazardResult& hazard, const std::string& resouce_description, const vvl::Func command,
+                                const ReportKeyValues& key_values, const CommandBufferAccessContext& cb_context,
+                                std::stringstream& ss) {
     const SyncHazard hazard_type = hazard.Hazard();
+    const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
 
-    const SyncAccessFlags write_barriers = hazard.State().access_state->GetWriteBarriers();
-    const VkPipelineStageFlags2 read_barriers = hazard.State().access_state->GetReadBarriers(hazard.State().prior_access_index);
+    const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
 
     const SyncAccessInfo& access = syncAccessInfoByAccessIndex()[hazard.State().access_index];
     const SyncAccessInfo& prior_access = syncAccessInfoByAccessIndex()[hazard.State().prior_access_index];
 
-    const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
-    const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
+    const SyncAccessFlags write_barriers = hazard.State().access_state->GetWriteBarriers();
+    const VkPipelineStageFlags2 read_barriers = hazard.State().access_state->GetReadBarriers(hazard.State().prior_access_index);
 
     const bool missing_synchronization = (hazard_info.IsPriorWrite() && write_barriers.none()) ||
                                          (hazard_info.IsPriorRead() && read_barriers == VK_PIPELINE_STAGE_2_NONE);
 
-    // Add properties that describe this hazard
-    ReportKeyValues key_values;
-    cb_context.FormatHazard(hazard, key_values);
-    key_values.Add(kPropertyMessageType, "BufferRegionError");
-    key_values.Add(kPropertyHazardType, string_SyncHazard(hazard_type));
-    key_values.Add(kPropertyCommand, vvl::String(command));
-    key_values.Add(kPropertyCopyRegion, region_index);
-    AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-
     // Brief description of what happened
-    std::stringstream ss;
     ss << string_SyncHazard(hazard_type) << " hazard detected. ";
     ss << vvl::String(command);
-    ss << (hazard_info.IsWrite() ? " writes to " : " reads ");
-    ss << validator_.FormatHandle(buffer);
+    ss << (hazard_info.IsWrite() ? " writes to " : " reads ") << resouce_description;
     ss << (hazard_info.IsRacingHazard() ? ", which is being " : ", which was previously ");
     ss << (hazard_info.IsPriorWrite() ? "written by " : "read by ");
     if (usage_info.command == command) {
@@ -225,6 +165,70 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
     if (IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_RACING_READ, PRESENT_AFTER_READ})) {
         ss << " An execution dependency is sufficient to prevent this hazard.";
     }
+}
+
+namespace syncval {
+
+ErrorMessages::ErrorMessages(vvl::Device& validator)
+    : validator_(validator),
+      extra_properties_(validator_.syncval_settings.message_extra_properties),
+      pretty_print_extra_(validator_.syncval_settings.message_extra_properties_pretty_print) {}
+
+void ErrorMessages::AddCbContextExtraProperties(const CommandBufferAccessContext& cb_context, ResourceUsageTag tag,
+                                                ReportKeyValues& key_values) const {
+    if (validator_.syncval_settings.message_extra_properties) {
+        cb_context.AddUsageRecordExtraProperties(tag, key_values);
+    }
+}
+
+std::string ErrorMessages::Error(const HazardResult& hazard, const std::string& resouce_description,
+                                 const CommandBufferAccessContext& cb_context, vvl::Func command) const {
+    const auto format = "Hazard %s for %s. Access info %s.";
+    ReportKeyValues key_values;
+
+    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
+    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), resouce_description.c_str(), access_info.c_str());
+    if (extra_properties_) {
+        key_values.Add(kPropertyMessageType, "GeneralError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
+        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+    }
+    return message;
+}
+
+std::string ErrorMessages::BufferError(const HazardResult& hazard, VkBuffer buffer, const char* buffer_description,
+                                       const CommandBufferAccessContext& cb_context, vvl::Func command) const {
+    const auto format = "Hazard %s for %s %s. Access info %s.";
+    ReportKeyValues key_values;
+
+    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
+    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), buffer_description,
+                                 validator_.FormatHandle(buffer).c_str(), access_info.c_str());
+    if (extra_properties_) {
+        key_values.Add(kPropertyMessageType, "BufferError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
+        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+    }
+    return message;
+}
+
+std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, const std::string& resouce_description,
+                                             uint32_t region_index, ResourceAccessRange region_range,
+                                             const CommandBufferAccessContext& cb_context, const vvl::Func command) const {
+    ReportKeyValues key_values;
+    cb_context.FormatHazard(hazard, key_values);
+    key_values.Add(kPropertyMessageType, "BufferRegionError");
+    key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+    key_values.Add(kPropertyCommand, vvl::String(command));
+    key_values.Add(kPropertyCopyRegion, region_index);
+    AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
+
+    std::stringstream ss;
+    FormatCommonMessage(hazard, resouce_description, command, key_values, cb_context, ss);
 
     // Copy region information
     ss << " Hazardous copy region: " << region_index << " (offset = " << region_range.begin;
