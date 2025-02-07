@@ -3468,6 +3468,12 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
                              ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
                              FormatHandle(pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
         }
+        if (cb_state.IsPrimary() && (rendering_info.flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) != 0 &&
+            (rendering_info.flags & VK_RENDERING_CONTENTS_INLINE_BIT_KHR) == 0) {
+            skip |= LogError(vuid.rendering_contents_10582, cb_state.Handle(), vuid.loc(),
+                             "Render pass was begun with VkRenderingInfo::flags %s",
+                             string_VkRenderingFlags(rendering_info.flags).c_str());
+        }
     }
 
     if ((pipeline.active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) != 0) {
