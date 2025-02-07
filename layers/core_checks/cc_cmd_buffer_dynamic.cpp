@@ -1869,7 +1869,7 @@ bool CoreChecks::PreCallValidateCmdSetDepthBias2EXT(VkCommandBuffer commandBuffe
     }
 
     if (const auto *depth_bias_representation = vku::FindStructInPNextChain<VkDepthBiasRepresentationInfoEXT>(pDepthBiasInfo->pNext)) {
-        skip |= ValidateDepthBiasRepresentationInfo(error_obj.location, error_obj.objlist, *depth_bias_representation);
+        skip |= ValidateDepthBiasRepresentationInfo(error_obj.location, error_obj.log.objlist, *depth_bias_representation);
     }
 
     return skip;

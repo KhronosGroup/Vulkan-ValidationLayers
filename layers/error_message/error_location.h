@@ -91,13 +91,14 @@ struct Location {
 struct ErrorObject {
     const Location location;   // starting location (Always the function entrypoint)
     const VulkanTypedHandle handle;  // dispatchable handle is always first parameter of the function call
-    const LogObjectList objlist;
     const chassis::HandleData* handle_data;
 
+    ChassisLog log;
+
     ErrorObject(vvl::Func command_, VulkanTypedHandle handle_)
-        : location(Location(command_)), handle(handle_), objlist(handle), handle_data(nullptr) {}
+        : location(Location(command_)), handle(handle_), handle_data(nullptr), log(handle_) {}
     ErrorObject(vvl::Func command_, VulkanTypedHandle handle_, const chassis::HandleData* handle_data_)
-        : location(Location(command_)), handle(handle_), objlist(handle), handle_data(handle_data_) {}
+        : location(Location(command_)), handle(handle_), handle_data(handle_data_), log(handle_) {}
 };
 
 namespace vvl {

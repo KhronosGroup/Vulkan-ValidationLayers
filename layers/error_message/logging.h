@@ -75,7 +75,22 @@ struct LogObjectList {
     [[nodiscard]] auto begin() const { return object_list.begin(); }
     [[nodiscard]] auto end() const { return object_list.end(); }
 
+    // Every function call has a "base" handle (aka the dispatch handle) that will be first in something like the ChassisLog. We
+    // need a way to quickly remove additional handles added between errors that may need different handles in the list
+    void reset() { object_list.resize(1); }
+
     LogObjectList(){};
+};
+
+// This is a mutable object that starts at the chassis level and used in all PreCallValidate functions.
+// It allows things like LogError to track things
+// background - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9248
+struct ChassisLog {
+    LogObjectList objlist;
+    bool has_logged = false;
+    bool skip_dispatch = false;
+
+    ChassisLog(VulkanTypedHandle handle_) : objlist(handle_) {}
 };
 
 typedef struct VkLayerDbgFunctionState {
@@ -269,6 +284,16 @@ class Logger {
         const bool result = debug_report->LogMsg(kErrorBit, objlist, loc, vuid_text, format, argptr);
         va_end(argptr);
         return result;
+    }
+
+    bool DECORATE_PRINTF(5, 6)
+        LogError(std::string_view vuid_text, ChassisLog &log, const Location &loc, const char *format, ...) const {
+        log.has_logged = true;
+        va_list argptr;
+        va_start(argptr, format);
+        log.skip_dispatch = debug_report->LogMsg(kErrorBit, log.objlist, loc, vuid_text, format, argptr);
+        va_end(argptr);
+        return log.skip_dispatch;
     }
 
     // Currently works like LogWarning, but allows developer to better categorize the warning

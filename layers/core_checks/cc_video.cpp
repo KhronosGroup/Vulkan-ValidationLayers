@@ -849,18 +849,18 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
     const char *profile_pnext_msg = "chain does not contain a %s structure.";
 
     if (GetBitSetCount(profile->chromaSubsampling) != 1) {
-        skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07013", error_obj.objlist,
+        skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07013", error_obj.log.objlist,
                                loc.dot(Field::chromaSubsampling), "must have a single bit set.");
     }
 
     if (GetBitSetCount(profile->lumaBitDepth) != 1) {
-        skip |= state.LogError("VUID-VkVideoProfileInfoKHR-lumaBitDepth-07014", error_obj.objlist, loc.dot(Field::lumaBitDepth),
+        skip |= state.LogError("VUID-VkVideoProfileInfoKHR-lumaBitDepth-07014", error_obj.log.objlist, loc.dot(Field::lumaBitDepth),
                                "must have a single bit set.");
     }
 
     if (profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR) {
         if (GetBitSetCount(profile->chromaBitDepth) != 1) {
-            skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07015", error_obj.objlist,
+            skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07015", error_obj.log.objlist,
                                    loc.dot(Field::chromaBitDepth), "must have a single bit set.");
         }
     }
@@ -869,7 +869,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
             const auto decode_h264 = vku::FindStructInPNextChain<VkVideoDecodeH264ProfileInfoKHR>(profile->pNext);
             if (decode_h264 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07179", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07179", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoDecodeH264ProfileInfoKHR");
             }
             break;
@@ -878,7 +878,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
             const auto decode_h265 = vku::FindStructInPNextChain<VkVideoDecodeH265ProfileInfoKHR>(profile->pNext);
             if (decode_h265 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07180", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07180", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoDecodeH265ProfileInfoKHR");
             }
             break;
@@ -887,7 +887,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
         case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
             const auto decode_av1 = vku::FindStructInPNextChain<VkVideoDecodeAV1ProfileInfoKHR>(profile->pNext);
             if (decode_av1 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-09256", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-09256", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoDecodeAV1ProfileInfoKHR");
             }
             break;
@@ -896,7 +896,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
             const auto encode_h264 = vku::FindStructInPNextChain<VkVideoEncodeH264ProfileInfoKHR>(profile->pNext);
             if (encode_h264 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07181", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07181", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoEncodeH264ProfileInfoKHR");
             }
             break;
@@ -905,7 +905,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
             const auto encode_h265 = vku::FindStructInPNextChain<VkVideoEncodeH265ProfileInfoKHR>(profile->pNext);
             if (encode_h265 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07182", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07182", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoEncodeH265ProfileInfoKHR");
             }
             break;
@@ -935,15 +935,15 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
                             assert(false);
                             break;
                     }
-                    skip |=
-                        state.LogError(vuid, error_obj.objlist, loc.dot(Field::videoCodecOperation), codec_feature_not_enabled_msg,
-                                       string_VkVideoCodecOperationFlagBitsKHR(profile->videoCodecOperation), "videoEncodeAV1");
+                    skip |= state.LogError(vuid, error_obj.log.objlist, loc.dot(Field::videoCodecOperation),
+                                           codec_feature_not_enabled_msg,
+                                           string_VkVideoCodecOperationFlagBitsKHR(profile->videoCodecOperation), "videoEncodeAV1");
                 }
             }
 
             const auto encode_av1 = vku::FindStructInPNextChain<VkVideoEncodeAV1ProfileInfoKHR>(profile->pNext);
             if (encode_av1 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-10262", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-10262", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoEncodeAV1ProfileInfoKHR");
             }
             break;
@@ -981,7 +981,7 @@ bool core::ValidateVideoProfileListInfo(const StateObject &state, const VkVideoP
                 case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
                 case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
                     if (has_decode_profile) {
-                        skip |= state.LogError("VUID-VkVideoProfileListInfoKHR-pProfiles-06813", error_obj.objlist, loc,
+                        skip |= state.LogError("VUID-VkVideoProfileListInfoKHR-pProfiles-06813", error_obj.log.objlist, loc,
                                                "contains more than one profile with decode codec operation.");
                     }
                     has_decode_profile = true;
@@ -1002,12 +1002,12 @@ bool core::ValidateVideoProfileListInfo(const StateObject &state, const VkVideoP
     }
 
     if (expect_decode_profile && !has_decode_profile) {
-        skip |= state.LogError(missing_decode_profile_msg_code, error_obj.objlist, loc.dot(vvl::Field::pProfiles),
+        skip |= state.LogError(missing_decode_profile_msg_code, error_obj.log.objlist, loc.dot(vvl::Field::pProfiles),
                                "contains no video profile specifying a video decode operation.");
     }
 
     if (expect_encode_profile && !has_encode_profile) {
-        skip |= state.LogError(missing_encode_profile_msg_code, error_obj.objlist, loc.dot(vvl::Field::pProfiles),
+        skip |= state.LogError(missing_encode_profile_msg_code, error_obj.log.objlist, loc.dot(vvl::Field::pProfiles),
                                "contains no video profile specifying a video encode operation.");
     }
 

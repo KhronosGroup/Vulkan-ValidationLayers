@@ -1893,7 +1893,7 @@ class CoreChecks : public vvl::Device {
                                     ErrorObject& error_obj) const override;
     void PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                   const RecordObject& record_obj) override;
-    bool ValidateQueryPoolIndex(LogObjectList objlist, const vvl::QueryPool& query_pool_state, uint32_t firstQuery,
+    bool ValidateQueryPoolIndex(ChassisLog& chassis_log, const vvl::QueryPool& query_pool_state, uint32_t firstQuery,
                                 uint32_t queryCount, const Location& loc, const char* first_vuid, const char* sum_vuid) const;
     bool ValidateQueriesNotActive(const vvl::CommandBuffer& cb_state, VkQueryPool queryPool, uint32_t firstQuery,
                                   uint32_t queryCount, const Location& loc, const char* vuid) const;
@@ -2265,7 +2265,7 @@ class CoreChecks : public vvl::Device {
                                        ErrorObject& error_obj) const override;
     bool ValidateQueryPoolStride(const std::string& vuid_not_64, const std::string& vuid_64, const VkDeviceSize stride,
                                  vvl::Field field_name, const uint64_t parameter_value, const VkQueryResultFlags flags,
-                                 const LogObjectList& objlist, const Location& loc) const;
+                                 ChassisLog& chassis_log, const Location& loc) const;
     bool ValidateCmdDrawStrideWithStruct(const vvl::CommandBuffer& cb_state, const std::string& vuid, const uint32_t stride,
                                          Struct struct_name, const uint32_t struct_size, const Location& loc) const;
     bool ValidateCmdDrawStrideWithBuffer(const vvl::CommandBuffer& cb_state, const std::string& vuid, const uint32_t stride,
