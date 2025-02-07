@@ -192,7 +192,11 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
         ss << "No sufficient synchronization is present to ensure that a " << access_type << " (";
         ss << string_VkAccessFlagBits2(access.access_mask) << ") at ";
         ss << string_VkPipelineStageFlagBits2(access.stage_mask) << " does not conflict with a prior ";
-        ss << prior_access_type << " (" << string_VkAccessFlags2(prior_access.access_mask) << ") at ";
+        ss << prior_access_type;
+        if (prior_access.access_mask != access.access_mask) {
+            ss << " (" << string_VkAccessFlags2(prior_access.access_mask) << ")";
+        }
+        ss << " at ";
         if (prior_access.stage_mask == access.stage_mask) {
             ss << "the same stage.";
         } else {
@@ -217,14 +221,14 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, VkBuffe
         ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
     }
 
-    // Copy region information
-    ss << " Hazardous copy region: " << region_index << " (offset = " << region_range.begin;
-    ss << ", size = " << region_range.end - region_range.begin << ").";
-
     // Give a hint for WAR hazard
     if (IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_RACING_READ, PRESENT_AFTER_READ})) {
         ss << " An execution dependency is sufficient to prevent this hazard.";
     }
+
+    // Copy region information
+    ss << " Hazardous copy region: " << region_index << " (offset = " << region_range.begin;
+    ss << ", size = " << region_range.end - region_range.begin << ").";
 
     std::string message = ss.str();
     if (extra_properties_) {
