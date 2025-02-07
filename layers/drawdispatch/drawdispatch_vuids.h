@@ -1,6 +1,6 @@
 /* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2024 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -308,6 +308,7 @@ struct DrawDispatchVuid {
     const char* color_write_mask_07629 = kVUIDUndefined;
     const char* color_blend_advanced_07635 = kVUIDUndefined;
     const char* image_layout_09600 = kVUIDUndefined;
+    const char* rendering_contents_10582 = kVUIDUndefined;
     // Ray tracing
     const char* ray_tracing_pipeline_stack_size_09458 = kVUIDUndefined;
 };
