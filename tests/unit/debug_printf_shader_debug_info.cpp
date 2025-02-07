@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+ * Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,8 +150,7 @@ void main() {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredFailureMsg(
-        kInformationBit,
-        "Debug shader printf message generated in file a.comp at line 5\n\n5:     debugPrintfEXT(\"float == %f\", myfloat);");
+        kInformationBit, "Debug shader printf message generated at a.comp:5\n\n5:     debugPrintfEXT(\"float == %f\", myfloat);");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -239,8 +238,7 @@ void main() {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredFailureMsg(
-        kInformationBit,
-        "Debug shader printf message generated in file a.comp at line 5\n\n5:     debugPrintfEXT(\"float == %f\", myfloat);");
+        kInformationBit, "Debug shader printf message generated at a.comp:5\n\n5:     debugPrintfEXT(\"float == %f\", myfloat);");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

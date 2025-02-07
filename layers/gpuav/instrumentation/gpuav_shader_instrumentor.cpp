@@ -1379,7 +1379,7 @@ static std::string FindShaderSource(std::ostringstream &ss, const std::vector<ui
     const uint32_t last_line_inst_offset = ::spirv::GetDebugLineOffset(instrumented_spirv, instruction_position);
     if (last_line_inst_offset != 0) {
         Instruction last_line_inst(instrumented_spirv.data() + last_line_inst_offset);
-        ss << (debug_printf_only ? "Debug shader printf message generated " : "Shader validation error occurred ");
+        ss << (debug_printf_only ? "Debug shader printf message generated at " : "Shader validation error occurred at ");
         GetShaderSourceInfo(ss, instrumented_spirv, last_line_inst);
     } else {
         ss << "Unable to source. Build shader with debug info to get source information.\n";

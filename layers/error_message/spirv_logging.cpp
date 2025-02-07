@@ -45,7 +45,8 @@ struct SpirvLoggingInfo {
     uint32_t file_string_id = 0;  // OpString with filename
     uint32_t line_number_start = 0;
     uint32_t line_number_end = 0;
-    uint32_t column_number = 0;            // most compiler will just give zero here, so just try and get a start column
+    // sometimes compiler will just give zero here, so will need to ignore then
+    uint32_t column_number = 0;
     bool using_shader_debug_info = false;  // NonSemantic.Shader.DebugInfo.100
     std::string reported_filename;
 };
@@ -217,27 +218,27 @@ static bool GetLineAndFilename(std::ostringstream &ss, const std::vector<uint32_
 
     const char *file_string_insn = spirv::GetOpString(instructions, logging_info.file_string_id);
     if (!file_string_insn) {
-        ss << "(Unable to find SPIR-V OpString from " << debug_info_type << " instruction.\n";
-        ss << "File ID = " << logging_info.file_string_id << ", Line Number = " << logging_info.line_number_start
-           << ", Column = " << logging_info.column_number << ")\n";
+        // This error should be caught in spirv-val
+        ss << "(Unable to find SPIR-V OpString " << logging_info.file_string_id << " from " << debug_info_type << " instruction)\n";
         return false;
     }
 
+    // We print out lines the same way gcc/clang does
+    //    somefile.cpp:33:22
+    // Where 33 is the line and 22 is the column
+    // Currently we don't have a real good use to try and use the end line/columns (we are not selecting)
     logging_info.reported_filename = std::string(file_string_insn);
     if (!logging_info.reported_filename.empty()) {
-        ss << "in file " << logging_info.reported_filename << " ";
+        ss << logging_info.reported_filename << ':';
+    } else {
+        ss << "<source>:";
     }
-
-    ss << "at line " << logging_info.line_number_start;
-    if (logging_info.line_number_end > logging_info.line_number_start) {
-        ss << " to " << logging_info.line_number_end;
-    }
-
+    ss << logging_info.line_number_start;
     if (logging_info.column_number != 0) {
-        ss << ", column " << logging_info.column_number;
+        ss << ':' << logging_info.column_number;
     }
-    ss << '\n';
 
+    ss << '\n';
     return true;
 }
 
@@ -294,9 +295,13 @@ static void GetSourceLines(std::ostringstream &ss, const std::vector<std::string
             }
             ss << line_index << ": " << source_lines[line_index - 1] << '\n';
         }
-        // Only show column if since line is displayed
+        // Only show column if since a single line is displayed
         if (logging_info.column_number > 0 && logging_info.line_number_start == logging_info.line_number_end) {
-            std::string spaces(logging_info.column_number - 1, ' ');
+            // If normally it would be '  someCode' it will look like '23:   someCode'
+            // We need to add columns for the line number prefix we are adding prior
+            const size_t line_index_spaces = std::to_string(logging_info.line_number_start).length();
+            const size_t column_count = logging_info.column_number + line_index_spaces + 1;
+            std::string spaces(column_count, ' ');
             ss << spaces << '^';
         }
 

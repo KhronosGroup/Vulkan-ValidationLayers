@@ -1323,7 +1323,7 @@ bool CoreChecks::ValidateAtomicsTypes(const spirv::Module &module_state, const s
             if (!valid_16_float_vector) {
                 skip |=
                     LogError("VUID-RuntimeSpirv-shaderFloat16VectorAtomics-09581", module_state.handle(), loc,
-                             "SPIR-V is using 16-bit float vector atomics operationswith %s storage class, but "
+                             "SPIR-V is using 16-bit float vector atomics operations with %s storage class, but "
                              "shaderFloat16VectorAtomics was not enabled.\n%s\n",
                              string_SpvStorageClass(atomic.storage_class), module_state.DescribeInstruction(atomic_def).c_str());
             }

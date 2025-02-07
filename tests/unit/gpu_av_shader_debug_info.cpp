@@ -106,7 +106,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, OpLine) {
                OpFunctionEnd
     )";
 
-    BasicSingleStorageBufferComputeOOB(shader_source, "Shader validation error occurred at line 42, column 24");
+    BasicSingleStorageBufferComputeOOB(shader_source, "Shader validation error occurred at <source>:42:24");
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, OpLineColumn) {
@@ -363,8 +363,7 @@ void main() {
     )";
 
     BasicSingleStorageBufferComputeOOB(
-        shader_source,
-        "SPIR-V Instruction Index = 52\nShader validation error occurred in file a.comp at line 11\n\n    x = data.indices[16];");
+        shader_source, "SPIR-V Instruction Index = 52\nShader validation error occurred at a.comp:11\n\n    x = data.indices[16];");
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, GlslLineDerective) {
@@ -430,8 +429,8 @@ void main()  {
                OpFunctionEnd
     )";
 
-    BasicSingleStorageBufferComputeOOB(
-        shader_source, "Shader validation error occurred in file a.comp at line 9000\n\n9000:     x = data.indices[16];");
+    BasicSingleStorageBufferComputeOOB(shader_source,
+                                       "Shader validation error occurred at a.comp:9000\n\n9000:     x = data.indices[16];");
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfo) {
@@ -545,9 +544,9 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfo) {
                OpFunctionEnd
     )";
 
-    BasicSingleStorageBufferComputeOOB(shader_source,
-                                       "SPIR-V Instruction Index = 95\nShader validation error occurred in file a.comp at line "
-                                       "11\nNo Text operand found in DebugSource");
+    BasicSingleStorageBufferComputeOOB(
+        shader_source,
+        "SPIR-V Instruction Index = 95\nShader validation error occurred at a.comp:11\nNo Text operand found in DebugSource");
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSource) {
@@ -673,9 +672,9 @@ void main() {
                OpFunctionEnd
     )";
 
-    BasicSingleStorageBufferComputeOOB(shader_source,
-                                       "SPIR-V Instruction Index = 96\nShader validation error occurred in file a.comp at line "
-                                       "11\n\n11:     x = data.indices[16];");
+    BasicSingleStorageBufferComputeOOB(
+        shader_source,
+        "SPIR-V Instruction Index = 96\nShader validation error occurred at a.comp:11\n\n11:     x = data.indices[16];");
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugInfoColumns) {
@@ -753,7 +752,7 @@ void main() {
                OpFunctionEnd
     )";
 
-    BasicSingleStorageBufferComputeOOB(shader_source, "    x = data.indices[16];\n             ^");
+    BasicSingleStorageBufferComputeOOB(shader_source, "    x = data.indices[16];\n                 ^");
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugSourceContinued) {
@@ -833,7 +832,7 @@ layout(buffer_reference, std430) readonly buffer IndexBuffer {
                OpFunctionEnd
     )";
 
-    BasicSingleStorageBufferComputeOOB(shader_source, "    x = data.indices[16];\n             ^");
+    BasicSingleStorageBufferComputeOOB(shader_source, "    x = data.indices[16];\n                 ^");
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugLineMultiLine) {

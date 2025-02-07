@@ -4359,9 +4359,9 @@ TEST_F(NegativeShaderObject, MeshOutputVertices) {
 TEST_F(NegativeShaderObject, Atomics) {
     TEST_DESCRIPTION("Test atomics with shader objects.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::shaderSharedInt64Atomics);  // to allow OpCapability Int64Atomics
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     std::string cs_src = R"glsl(
@@ -4382,7 +4382,6 @@ TEST_F(NegativeShaderObject, Atomics) {
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06278");
-    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08740");
     vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
