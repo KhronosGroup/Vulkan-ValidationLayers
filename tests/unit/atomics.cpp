@@ -179,18 +179,6 @@ TEST_F(NegativeAtomic, Int64) {
     AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(Init());
 
-    // For sanity check without GL_EXT_shader_atomic_int64
-    std::string cs_positive = R"glsl(
-        #version 450
-        #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
-        #extension GL_KHR_memory_scope_semantics : enable
-        shared uint64_t x;
-        layout(set = 0, binding = 0) buffer ssbo { uint64_t y; };
-        void main() {
-           y = x + 1;
-        }
-    )glsl";
-
     std::string cs_base = R"glsl(
         #version 450
         #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
@@ -224,8 +212,6 @@ TEST_F(NegativeAtomic, Int64) {
     )glsl";
     // clang-format on
 
-    { VkShaderObj const cs(this, cs_positive.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1); }
-
     {
         // shaderBufferInt64Atomics
         m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
@@ -248,6 +234,53 @@ TEST_F(NegativeAtomic, Int64) {
         VkShaderObj const cs(this, cs_workgroup.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(NegativeAtomic, Int64Slang) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::shaderBufferInt64Atomics);  // to allow OpCapability Int64Atomics
+    RETURN_IF_SKIP(Init());
+
+    std::string cs_source = R"(
+               OpCapability Int64
+               OpCapability Int64Atomics
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %atomicVariable %gl_GlobalInvocationID
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource Slang 1
+               OpName %value "value"
+               OpName %atomicVariable "atomicVariable"
+               OpName %main "main"
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %v3uint = OpTypeVector %uint 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3uint
+      %ulong = OpTypeInt 64 0
+    %ulong_4 = OpConstant %ulong 4
+     %uint_1 = OpConstant %uint 1
+     %uint_0 = OpConstant %uint 0
+%_ptr_Workgroup_ulong = OpTypePointer Workgroup %ulong
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+%atomicVariable = OpVariable %_ptr_Workgroup_ulong Workgroup
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+          %7 = OpLoad %v3uint %gl_GlobalInvocationID
+         %10 = OpCompositeExtract %uint %7 0
+         %12 = OpUConvert %ulong %10
+      %value = OpIMul %ulong %ulong_4 %12
+               OpAtomicStore %atomicVariable %uint_1 %uint_0 %value
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06279");
+    VkShaderObj const cs(this, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeAtomic, ImageInt64) {
