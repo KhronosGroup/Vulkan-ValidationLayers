@@ -322,7 +322,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
 
             # Generate pre-call validation source code
             out.append('''{
-                VVL_ZoneScopedN("PreCallValidate");
+                VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
             ''')
             if not command.instance:
                 out.append(f'for (const auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallValidate{command.name[2:]}]) {{\n')
@@ -337,7 +337,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             # Generate pre-call state recording source code
             out.append(f'RecordObject record_obj(vvl::Func::{command.name});\n')
             out.append('''{
-                VVL_ZoneScopedN("PreCallRecord");
+                VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
             ''')
             if not command.instance:
                 out.append(f'for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallRecord{command.name[2:]}]) {{\n')
@@ -364,7 +364,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
 
             # Tracy profiler
             out.append('''{
-                VVL_ZoneScopedN("Dispatch");
+                VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
             ''')
 
             if "QueueSubmit" in command.name:
@@ -404,7 +404,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
 
             # Generate post-call object processing source code
             out.append('''{
-                VVL_ZoneScopedN("PostCallRecord");
+                VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
             ''')
 
             if not command.instance:
