@@ -1254,3 +1254,55 @@ TEST_F(PositiveDynamicRendering, VertexOnlyDepth) {
     pipe.gp_ci_.pDepthStencilState = &ds_state;
     pipe.CreateGraphicsPipeline();
 }
+
+TEST_F(PositiveDynamicRendering, ContentsSecondaryCommandBuffersBit) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    InitRenderTarget();
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &m_render_target_fmt;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::ImageView render_target_view = m_renderTargets[0]->CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = render_target_view.handle();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info = vku::InitStructHelper();
+    inheritance_rendering_info.colorAttachmentCount = 1u;
+    inheritance_rendering_info.pColorAttachmentFormats = &m_render_target_fmt;
+    inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    const VkCommandBufferInheritanceInfo cmdbuff_ii = vku::InitStructHelper(&inheritance_rendering_info);
+
+    VkCommandBufferBeginInfo cmdbuff_bi = vku::InitStructHelper();
+    cmdbuff_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    cmdbuff_bi.pInheritanceInfo = &cmdbuff_ii;
+
+    secondary.Begin(&cmdbuff_bi);
+    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(secondary.handle(), 4u, 1u, 0u, 0u);
+    secondary.End();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+    rendering_info.renderArea = m_renderPassBeginInfo.renderArea;
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &secondary.handle());
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
