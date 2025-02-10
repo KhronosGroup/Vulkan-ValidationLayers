@@ -18,6 +18,7 @@
 #pragma once
 
 #include "sync/sync_renderpass.h"  // DynamicRenderingInfo::Attachment
+#include "sync/sync_reporting.h"
 
 #include <vulkan/vulkan.h>
 #include <string>
@@ -39,15 +40,16 @@ class ErrorMessages {
   public:
     explicit ErrorMessages(vvl::Device& validator);
 
-    std::string Error(const HazardResult& hazard, const std::string& resouce_description,
-                      const CommandBufferAccessContext& cb_context, vvl::Func command) const;
+    std::string Error(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                      const std::string& resouce_description, const std::string& additional_information = {},
+                      const ReportKeyValues& additional_properties = {}) const;
 
-    std::string BufferError(const HazardResult& hazard, VkBuffer buffer, const char* buffer_description,
-                            const CommandBufferAccessContext& cb_context, vvl::Func command) const;
+    std::string BufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                            const std::string& resource_description, const ResourceAccessRange range) const;
 
-    std::string BufferRegionError(const HazardResult& hazard, const std::string& resouce_description, uint32_t region_index,
-                                  ResourceAccessRange region_range, const CommandBufferAccessContext& cb_context,
-                                  const vvl::Func command) const;
+    std::string BufferRegionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, const vvl::Func command,
+                                  const std::string& resouce_description, uint32_t region_index,
+                                  ResourceAccessRange region_range) const;
 
     std::string ImageRegionError(const HazardResult& hazard, VkImage image, bool is_src_image, uint32_t region_index,
                                  const CommandBufferAccessContext& cb_context, vvl::Func command) const;
