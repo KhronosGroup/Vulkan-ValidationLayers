@@ -442,7 +442,7 @@ bool Instance::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, 
 bool Device::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                   const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                                                   VkDeviceGroupPresentModeFlagsKHR *pModes,
-                                                                  const ErrorObject &error_obj) const {
+                                                                  ErrorObject &error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     if (!IsExtEnabled(extensions.vk_khr_swapchain))

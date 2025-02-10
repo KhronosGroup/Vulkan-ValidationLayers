@@ -98,7 +98,7 @@ bool bp_state::Instance::ValidateSpecialUseExtensions(const Location& loc, vvl::
 
 bool bp_state::Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator, VkInstance* pInstance,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
@@ -118,7 +118,7 @@ bool bp_state::Instance::PreCallValidateCreateInstance(const VkInstanceCreateInf
 
 bool bp_state::Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
 
     // get API version of physical device passed when creating device.
@@ -220,7 +220,7 @@ bool bp_state::Instance::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(co
 bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                                uint32_t* pQueueFamilyPropertyCount,
                                                                                VkQueueFamilyProperties* pQueueFamilyProperties,
-                                                                               const ErrorObject& error_obj) const {
+                                                                               ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(*bp_pd_state, *pQueueFamilyPropertyCount,
@@ -233,7 +233,7 @@ bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(V
 bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                                 uint32_t* pQueueFamilyPropertyCount,
                                                                                 VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                                const ErrorObject& error_obj) const {
+                                                                                ErrorObject& error_obj) const {
     const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
         return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(*bp_pd_state, *pQueueFamilyPropertyCount,
@@ -246,7 +246,7 @@ bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(
 bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                                    uint32_t* pQueueFamilyPropertyCount,
                                                                                    VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                                   const ErrorObject& error_obj) const {
+                                                                                   ErrorObject& error_obj) const {
     return PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
                                                                   error_obj);
 }
@@ -374,7 +374,7 @@ struct EventValidator {
 }  // namespace
 
 bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     EventValidator event_validator(*this);
 
@@ -404,12 +404,12 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 }
 
 bool BestPractices::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits,
-                                                   VkFence fence, const ErrorObject& error_obj) const {
+                                                   VkFence fence, ErrorObject& error_obj) const {
     return PreCallValidateQueueSubmit2(queue, submitCount, pSubmits, fence, error_obj);
 }
 
 bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
-                                                const ErrorObject& error_obj) const {
+                                                ErrorObject& error_obj) const {
     bool skip = false;
     EventValidator event_validator(*this);
 
@@ -433,7 +433,7 @@ bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCo
 }
 
 bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
-                                                   VkFence fence, const ErrorObject& error_obj) const {
+                                                   VkFence fence, ErrorObject& error_obj) const {
     bool skip = false;
 
     for (uint32_t bind_idx = 0; bind_idx < bindInfoCount; bind_idx++) {

@@ -97,7 +97,7 @@ void BestPractices::RecordCmdResetEvent(bp_state::CommandBuffer& command_buffer,
 }
 
 bool BestPractices::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::stageMask), stageMask);
@@ -114,12 +114,12 @@ void BestPractices::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEv
 }
 
 bool BestPractices::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
-                                                   const VkDependencyInfoKHR* pDependencyInfo, const ErrorObject& error_obj) const {
+                                                   const VkDependencyInfoKHR* pDependencyInfo, ErrorObject& error_obj) const {
     return PreCallValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
-                                                const VkDependencyInfo* pDependencyInfo, const ErrorObject& error_obj) const {
+                                                const VkDependencyInfo* pDependencyInfo, ErrorObject& error_obj) const {
     bool skip = false;
     skip |= CheckDependencyInfo(commandBuffer, error_obj.location.dot(Field::pDependencyInfo), *pDependencyInfo);
     auto cb_state = Get<bp_state::CommandBuffer>(commandBuffer);
@@ -140,7 +140,7 @@ void BestPractices::PreCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkE
 }
 
 bool BestPractices::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::stageMask), stageMask);
     return skip;
@@ -154,12 +154,12 @@ void BestPractices::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, Vk
 }
 
 bool BestPractices::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
-                                                     VkPipelineStageFlags2KHR stageMask, const ErrorObject& error_obj) const {
+                                                     VkPipelineStageFlags2KHR stageMask, ErrorObject& error_obj) const {
     return PreCallValidateCmdResetEvent2(commandBuffer, event, stageMask, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::stageMask), stageMask);
     return skip;
@@ -183,7 +183,7 @@ bool BestPractices::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
                                                  uint32_t bufferMemoryBarrierCount,
                                                  const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                                  uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::srcStageMask), srcStageMask);
@@ -193,13 +193,12 @@ bool BestPractices::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, 
 }
 
 bool BestPractices::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                                     const VkDependencyInfoKHR* pDependencyInfos,
-                                                     const ErrorObject& error_obj) const {
+                                                     const VkDependencyInfoKHR* pDependencyInfos, ErrorObject& error_obj) const {
     return PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                                  const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
+                                                  const VkDependencyInfo* pDependencyInfos, ErrorObject& error_obj) const {
     bool skip = false;
     for (uint32_t i = 0; i < eventCount; i++) {
         skip |= CheckDependencyInfo(commandBuffer, error_obj.location.dot(Field::pDependencyInfos, i), pDependencyInfos[i]);
@@ -336,7 +335,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
     VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
     VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-    const VkImageMemoryBarrier* pImageMemoryBarriers, const ErrorObject& error_obj) const {
+    const VkImageMemoryBarrier* pImageMemoryBarriers, ErrorObject& error_obj) const {
     bool skip = false;
 
     skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::srcStageMask), srcStageMask);
@@ -409,12 +408,12 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
 }
 
 bool BestPractices::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR* pDependencyInfo,
-                                                          const ErrorObject& error_obj) const {
+                                                          ErrorObject& error_obj) const {
     return PreCallValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, error_obj);
 }
 
 bool BestPractices::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
 
     const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfo);
@@ -517,7 +516,7 @@ void BestPractices::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer command
 
 bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore,
-                                                   const ErrorObject& error_obj) const {
+                                                   ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         const size_t count = Count<vvl::Semaphore>();
@@ -538,7 +537,7 @@ bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSema
 
 bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkFence* pFence,
-                                               const ErrorObject& error_obj) const {
+                                               ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorNVIDIA)) {
         const size_t count = Count<vvl::Fence>();

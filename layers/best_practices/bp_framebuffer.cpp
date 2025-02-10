@@ -76,7 +76,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
 
 bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer,
-                                                     const ErrorObject& error_obj) const {
+                                                     ErrorObject& error_obj) const {
     bool skip = false;
 
     auto rp_state = Get<vvl::RenderPass>(pCreateInfo->renderPass);

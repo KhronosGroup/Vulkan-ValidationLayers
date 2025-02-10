@@ -321,7 +321,7 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
 
 bool core::Instance::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                                 const ErrorObject &error_obj) const {
+                                                 ErrorObject &error_obj) const {
     bool skip = false;
     // TODO: object_tracker should perhaps do this instead
     //       and it does not seem to currently work anyway -- the loader just crashes before this point
@@ -415,7 +415,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
 }
 
 bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue,
-                                               const ErrorObject &error_obj) const {
+                                               ErrorObject &error_obj) const {
     bool skip = false;
 
     skip |= ValidateDeviceQueueFamily(queueFamilyIndex, error_obj.location.dot(Field::queueFamilyIndex),
@@ -449,7 +449,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
 }
 
 bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue,
-                                                const ErrorObject &error_obj) const {
+                                                ErrorObject &error_obj) const {
     bool skip = false;
 
     if (pQueueInfo) {
@@ -499,7 +499,7 @@ bool CoreChecks::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQ
 bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice gpu,
                                                                      const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
                                                                      VkImageFormatProperties2 *pImageFormatProperties,
-                                                                     const ErrorObject &error_obj) const {
+                                                                     ErrorObject &error_obj) const {
     bool skip = false;
     const auto *copy_perf_query = vku::FindStructInPNextChain<VkHostImageCopyDevicePerformanceQuery>(pImageFormatProperties->pNext);
     if (copy_perf_query) {
@@ -516,7 +516,7 @@ bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalD
 
 bool core::Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
+    VkImageFormatProperties2 *pImageFormatProperties, ErrorObject &error_obj) const {
     // Can't wrap AHB-specific validation in a device extension check here, but no harm
     bool skip = false;
     skip |=
@@ -527,7 +527,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2(
 
 bool core::Instance::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
+    VkImageFormatProperties2 *pImageFormatProperties, ErrorObject &error_obj) const {
     return PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                                   error_obj);
 }
@@ -592,8 +592,7 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
     return result;
 }
 
-bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask,
-                                                 const ErrorObject &error_obj) const {
+bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state_ptr) {
@@ -611,20 +610,19 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask,
-                                                    const ErrorObject &error_obj) const {
+                                                    ErrorObject &error_obj) const {
     return PreCallValidateCmdSetDeviceMask(commandBuffer, deviceMask, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator,
-                                                         VkPrivateDataSlotEXT *pPrivateDataSlot,
-                                                         const ErrorObject &error_obj) const {
+                                                         VkPrivateDataSlotEXT *pPrivateDataSlot, ErrorObject &error_obj) const {
     return PreCallValidateCreatePrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPrivateDataSlotCreateInfo *pCreateInfo,
                                                       const VkAllocationCallbacks *pAllocator, VkPrivateDataSlot *pPrivateDataSlot,
-                                                      const ErrorObject &error_obj) const {
+                                                      ErrorObject &error_obj) const {
     bool skip = false;
     if (!enabled_features.privateData) {
         skip |= LogError("VUID-vkCreatePrivateDataSlot-privateData-04564", device, error_obj.location,
@@ -635,7 +633,7 @@ bool CoreChecks::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkP
 
 bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
-                                                  const ErrorObject &error_obj) const {
+                                                  ErrorObject &error_obj) const {
     bool skip = false;
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
     skip |= ValidateDeviceQueueFamily(pCreateInfo->queueFamilyIndex, create_info_loc.dot(Field::queueFamilyIndex),
@@ -649,7 +647,7 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
 }
 
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
-                                                   const VkAllocationCallbacks *pAllocator, const ErrorObject &error_obj) const {
+                                                   const VkAllocationCallbacks *pAllocator, ErrorObject &error_obj) const {
     bool skip = false;
     // In case of DEVICE_LOST, all execution is considered over
     if (is_device_lost) return skip;
@@ -668,7 +666,7 @@ bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPoo
 }
 
 bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
-                                                 const ErrorObject &error_obj) const {
+                                                 ErrorObject &error_obj) const {
     bool skip = false;
     auto cp_state = Get<vvl::CommandPool>(commandPool);
     ASSERT_AND_RETURN_SKIP(cp_state);
@@ -703,7 +701,7 @@ bool CoreChecks::ValidateObjectNotInUse(const vvl::StateObject *obj_node, const 
 bool CoreChecks::PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint32_t timestampCount,
                                                            const VkCalibratedTimestampInfoEXT *pTimestampInfos,
                                                            uint64_t *pTimestamps, uint64_t *pMaxDeviation,
-                                                           const ErrorObject &error_obj) const {
+                                                           ErrorObject &error_obj) const {
     return PreCallValidateGetCalibratedTimestampsKHR(device, timestampCount, pTimestampInfos, pTimestamps, pMaxDeviation,
                                                      error_obj);
 }
@@ -711,7 +709,7 @@ bool CoreChecks::PreCallValidateGetCalibratedTimestampsEXT(VkDevice device, uint
 bool CoreChecks::PreCallValidateGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                                            const VkCalibratedTimestampInfoKHR *pTimestampInfos,
                                                            uint64_t *pTimestamps, uint64_t *pMaxDeviation,
-                                                           const ErrorObject &error_obj) const {
+                                                           ErrorObject &error_obj) const {
     bool skip = false;
 
     auto query_function = (error_obj.location.function == Func::vkGetCalibratedTimestampsKHR)
@@ -822,7 +820,7 @@ bool CoreChecks::ValidateDeviceQueueSupport(const Location &loc) const {
 }
 
 bool CoreChecks::PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceFaultCountsEXT *pFaultCounts,
-                                                      VkDeviceFaultInfoEXT *pFaultInfo, const ErrorObject &error_obj) const {
+                                                      VkDeviceFaultInfoEXT *pFaultInfo, ErrorObject &error_obj) const {
     bool skip = false;
     if (!is_device_lost) {
         skip |= LogError("VUID-vkGetDeviceFaultInfoEXT-device-07336", device, error_obj.location,
@@ -833,9 +831,7 @@ bool CoreChecks::PreCallValidateGetDeviceFaultInfoEXT(VkDevice device, VkDeviceF
 
 bool CoreChecks::PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR *pCreateInfo,
                                                           const VkAllocationCallbacks *pAllocator,
-                                                          VkPipelineBinaryHandlesInfoKHR *pBinaries,
-                                                          const ErrorObject &error_obj) const {
-
+                                                          VkPipelineBinaryHandlesInfoKHR *pBinaries, ErrorObject &error_obj) const {
     bool skip = false;
 
     uint32_t pointerCount = 0;

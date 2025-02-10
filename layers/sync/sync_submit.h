@@ -315,7 +315,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
                                                          SignalsUpdate &signals_update);
 
     bool ValidateSubmit(const std::vector<CommandBufferConstPtr> &command_buffers, uint64_t submit_index, uint32_t batch_index,
-                        std::vector<std::string> &current_label_stack, const ErrorObject &error_obj);
+                        std::vector<std::string> &current_label_stack, ErrorObject &error_obj);
     void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     // For Present

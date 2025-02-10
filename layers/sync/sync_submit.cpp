@@ -610,7 +610,7 @@ std::vector<BatchContextConstPtr> QueueBatchContext::ResolveSubmitWaits(vvl::spa
 
 bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>& command_buffers, uint64_t submit_index,
                                        uint32_t batch_index, std::vector<std::string>& current_label_stack,
-                                       const ErrorObject& error_obj) {
+                                       ErrorObject& error_obj) {
     bool skip = false;
 
     BatchAccessLog::BatchRecord batch{queue_state_, submit_index, batch_index};

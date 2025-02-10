@@ -854,18 +854,17 @@ bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer s
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                              uint32_t regionCount, const VkBufferCopy *pRegions,
-                                              const ErrorObject &error_obj) const {
+                                              uint32_t regionCount, const VkBufferCopy *pRegions, ErrorObject &error_obj) const {
     return ValidateCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions, error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
-                                                  const ErrorObject &error_obj) const {
+                                                  ErrorObject &error_obj) const {
     return PreCallValidateCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
-                                               const ErrorObject &error_obj) const {
+                                               ErrorObject &error_obj) const {
     return ValidateCmdCopyBuffer(commandBuffer, pCopyBufferInfo->srcBuffer, pCopyBufferInfo->dstBuffer,
                                  pCopyBufferInfo->regionCount, pCopyBufferInfo->pRegions,
                                  error_obj.location.dot(Field::pCopyBufferInfo));
@@ -1914,18 +1913,18 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
 bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                             const VkImageCopy *pRegions, const ErrorObject &error_obj) const {
+                                             const VkImageCopy *pRegions, ErrorObject &error_obj) const {
     return ValidateCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions,
                                 error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
-                                                 const ErrorObject &error_obj) const {
+                                                 ErrorObject &error_obj) const {
     return PreCallValidateCmdCopyImage2(commandBuffer, pCopyImageInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
-                                              const ErrorObject &error_obj) const {
+                                              ErrorObject &error_obj) const {
     return ValidateCmdCopyImage(commandBuffer, pCopyImageInfo->srcImage, pCopyImageInfo->srcImageLayout, pCopyImageInfo->dstImage,
                                 pCopyImageInfo->dstImageLayout, pCopyImageInfo->regionCount, pCopyImageInfo->pRegions,
                                 error_obj.location.dot(Field::pCopyImageInfo));
@@ -2343,20 +2342,20 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
 
 bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                      VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions,
-                                                     const ErrorObject &error_obj) const {
+                                                     ErrorObject &error_obj) const {
     return ValidateCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions,
                                         error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
                                                          const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo,
-                                                         const ErrorObject &error_obj) const {
+                                                         ErrorObject &error_obj) const {
     return PreCallValidateCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                                                       const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo,
-                                                      const ErrorObject &error_obj) const {
+                                                      ErrorObject &error_obj) const {
     return ValidateCmdCopyImageToBuffer(commandBuffer, pCopyImageToBufferInfo->srcImage, pCopyImageToBufferInfo->srcImageLayout,
                                         pCopyImageToBufferInfo->dstBuffer, pCopyImageToBufferInfo->regionCount,
                                         pCopyImageToBufferInfo->pRegions, error_obj.location.dot(Field::pCopyImageToBufferInfo));
@@ -2502,20 +2501,20 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
 
 bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                      VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                     const VkBufferImageCopy *pRegions, const ErrorObject &error_obj) const {
+                                                     const VkBufferImageCopy *pRegions, ErrorObject &error_obj) const {
     return ValidateCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
                                         error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
                                                          const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo,
-                                                         const ErrorObject &error_obj) const {
+                                                         ErrorObject &error_obj) const {
     return PreCallValidateCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                                                       const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo,
-                                                      const ErrorObject &error_obj) const {
+                                                      ErrorObject &error_obj) const {
     return ValidateCmdCopyBufferToImage(commandBuffer, pCopyBufferToImageInfo->srcBuffer, pCopyBufferToImageInfo->dstImage,
                                         pCopyBufferToImageInfo->dstImageLayout, pCopyBufferToImageInfo->regionCount,
                                         pCopyBufferToImageInfo->pRegions, error_obj.location.dot(Field::pCopyBufferToImageInfo));
@@ -2825,7 +2824,7 @@ bool CoreChecks::ValidateHostCopyImageLayout(const VkImage image, const uint32_t
 }
 
 bool CoreChecks::PreCallValidateCopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo *pCopyMemoryToImageInfo,
-                                                  const ErrorObject &error_obj) const {
+                                                  ErrorObject &error_obj) const {
     bool skip = false;
     const Location copy_loc = error_obj.location.dot(Field::pCopyMemoryToImageInfo);
     auto dst_image = pCopyMemoryToImageInfo->dstImage;
@@ -2839,12 +2838,12 @@ bool CoreChecks::PreCallValidateCopyMemoryToImage(VkDevice device, const VkCopyM
 }
 
 bool CoreChecks::PreCallValidateCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT *pCopyMemoryToImageInfo,
-                                                     const ErrorObject &error_obj) const {
+                                                     ErrorObject &error_obj) const {
     return PreCallValidateCopyMemoryToImage(device, pCopyMemoryToImageInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo *pCopyImageToMemoryInfo,
-                                                  const ErrorObject &error_obj) const {
+                                                  ErrorObject &error_obj) const {
     bool skip = false;
     const Location copy_loc = error_obj.location.dot(Field::pCopyImageToMemoryInfo);
     auto src_image = pCopyImageToMemoryInfo->srcImage;
@@ -2858,7 +2857,7 @@ bool CoreChecks::PreCallValidateCopyImageToMemory(VkDevice device, const VkCopyI
 }
 
 bool CoreChecks::PreCallValidateCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT *pCopyImageToMemoryInfo,
-                                                     const ErrorObject &error_obj) const {
+                                                     ErrorObject &error_obj) const {
     return PreCallValidateCopyImageToMemory(device, pCopyImageToMemoryInfo, error_obj);
 }
 
@@ -2925,7 +2924,7 @@ bool CoreChecks::ValidateHostCopyMultiplane(const VkImageCopy2 &region, const vv
 }
 
 bool CoreChecks::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyImageToImageInfo *pCopyImageToImageInfo,
-                                                 const ErrorObject &error_obj) const {
+                                                 ErrorObject &error_obj) const {
     bool skip = false;
     auto info_ptr = pCopyImageToImageInfo;
     const Location loc = error_obj.location.dot(Field::pCopyImageToImageInfo);
@@ -2996,7 +2995,7 @@ bool CoreChecks::PreCallValidateCopyImageToImage(VkDevice device, const VkCopyIm
 }
 
 bool CoreChecks::PreCallValidateCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT *pCopyImageToImageInfo,
-                                                    const ErrorObject &error_obj) const {
+                                                    ErrorObject &error_obj) const {
     return PreCallValidateCopyImageToImage(device, pCopyImageToImageInfo, error_obj);
 }
 
@@ -3421,18 +3420,18 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
 
 bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                             const VkImageBlit *pRegions, VkFilter filter, const ErrorObject &error_obj) const {
+                                             const VkImageBlit *pRegions, VkFilter filter, ErrorObject &error_obj) const {
     return ValidateCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter,
                                 error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
-                                                 const ErrorObject &error_obj) const {
+                                                 ErrorObject &error_obj) const {
     return PreCallValidateCmdBlitImage2(commandBuffer, pBlitImageInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo,
-                                              const ErrorObject &error_obj) const {
+                                              ErrorObject &error_obj) const {
     return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                                 pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
                                 pBlitImageInfo->filter, error_obj.location.dot(Field::pBlitImageInfo));
@@ -3757,18 +3756,18 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
 
 bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                const VkImageResolve *pRegions, const ErrorObject &error_obj) const {
+                                                const VkImageResolve *pRegions, ErrorObject &error_obj) const {
     return ValidateCmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions,
                                    error_obj.location);
 }
 
 bool CoreChecks::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR *pResolveImageInfo,
-                                                    const ErrorObject &error_obj) const {
+                                                    ErrorObject &error_obj) const {
     return PreCallValidateCmdResolveImage2(commandBuffer, pResolveImageInfo, error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
-                                                 const ErrorObject &error_obj) const {
+                                                 ErrorObject &error_obj) const {
     return ValidateCmdResolveImage(commandBuffer, pResolveImageInfo->srcImage, pResolveImageInfo->srcImageLayout,
                                    pResolveImageInfo->dstImage, pResolveImageInfo->dstImageLayout, pResolveImageInfo->regionCount,
                                    pResolveImageInfo->pRegions, error_obj.location.dot(Field::pResolveImageInfo));

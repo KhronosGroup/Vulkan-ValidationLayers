@@ -280,7 +280,7 @@ bool CoreChecks::ValidateCreateShadersMesh(const VkShaderCreateInfoEXT& create_i
 
 bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInfoCount,
                                                  const VkShaderCreateInfoEXT* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                                 VkShaderEXT* pShaders, const ErrorObject& error_obj) const {
+                                                 VkShaderEXT* pShaders, ErrorObject& error_obj) const {
     bool skip = false;
 
     // the spec clarifies that VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT works on VK_EXT_shader_object as well
@@ -410,7 +410,7 @@ bool CoreChecks::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t creat
 }
 
 bool CoreChecks::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT shader, const VkAllocationCallbacks* pAllocator,
-                                                 const ErrorObject& error_obj) const {
+                                                 ErrorObject& error_obj) const {
     bool skip = false;
 
     if (enabled_features.shaderObject == VK_FALSE) {
@@ -428,7 +428,7 @@ bool CoreChecks::PreCallValidateDestroyShaderEXT(VkDevice device, VkShaderEXT sh
 
 bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,
                                                   const VkShaderStageFlagBits* pStages, const VkShaderEXT* pShaders,
-                                                  const ErrorObject& error_obj) const {
+                                                  ErrorObject& error_obj) const {
     bool skip = false;
 
     const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
@@ -538,7 +538,7 @@ bool CoreChecks::PreCallValidateCmdBindShadersEXT(VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData,
-                                                       const ErrorObject& error_obj) const {
+                                                       ErrorObject& error_obj) const {
     bool skip = false;
 
     if (enabled_features.shaderObject == VK_FALSE) {

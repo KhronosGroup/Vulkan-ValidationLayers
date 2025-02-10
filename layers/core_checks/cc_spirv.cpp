@@ -3116,13 +3116,13 @@ bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo &
 
 bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                   const ErrorObject &error_obj) const {
+                                                   ErrorObject &error_obj) const {
     return ValidateShaderModuleCreateInfo(*pCreateInfo, error_obj.location.dot(Field::pCreateInfo));
 }
 
 bool CoreChecks::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                              VkShaderModuleIdentifierEXT *pIdentifier,
-                                                             const ErrorObject &error_obj) const {
+                                                             ErrorObject &error_obj) const {
     bool skip = false;
     if (!(enabled_features.shaderModuleIdentifier)) {
         skip |= LogError("VUID-vkGetShaderModuleIdentifierEXT-shaderModuleIdentifier-06884", shaderModule, error_obj.location,
@@ -3133,7 +3133,7 @@ bool CoreChecks::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, Vk
 
 bool CoreChecks::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                                        VkShaderModuleIdentifierEXT *pIdentifier,
-                                                                       const ErrorObject &error_obj) const {
+                                                                       ErrorObject &error_obj) const {
     bool skip = false;
     if (!(enabled_features.shaderModuleIdentifier)) {
         skip |= LogError("VUID-vkGetShaderModuleCreateInfoIdentifierEXT-shaderModuleIdentifier-06885", device, error_obj.location,

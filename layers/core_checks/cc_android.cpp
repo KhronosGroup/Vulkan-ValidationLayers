@@ -86,7 +86,7 @@ static inline const char *string_AHardwareBufferGpuUsage(uint64_t usage) {
 //
 bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer *buffer,
                                                                           VkAndroidHardwareBufferPropertiesANDROID *pProperties,
-                                                                          const ErrorObject &error_obj) const {
+                                                                          ErrorObject &error_obj) const {
     bool skip = false;
     //  buffer must be a valid Android hardware buffer object with at least one of the AHARDWAREBUFFER_USAGE_GPU_* usage flags.
     AHardwareBuffer_Desc ahb_desc;
@@ -106,7 +106,7 @@ bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevi
 bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                       const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
                                                                       struct AHardwareBuffer **pBuffer,
-                                                                      const ErrorObject &error_obj) const {
+                                                                      ErrorObject &error_obj) const {
     bool skip = false;
     auto mem_info = Get<vvl::DeviceMemory>(pInfo->memory);
     ASSERT_AND_RETURN_SKIP(mem_info);
@@ -401,7 +401,7 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
 
 bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     VkPhysicalDevice physical_device, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    const VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
+    const VkImageFormatProperties2 *pImageFormatProperties, ErrorObject &error_obj) const {
     bool skip = false;
     const auto *ahb_usage = vku::FindStructInPNextChain<VkAndroidHardwareBufferUsageANDROID>(pImageFormatProperties->pNext);
     if (ahb_usage) {
@@ -594,7 +594,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
 
 bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     VkPhysicalDevice physical_device, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
-    const VkImageFormatProperties2 *pImageFormatProperties, const ErrorObject &error_obj) const {
+    const VkImageFormatProperties2 *pImageFormatProperties, ErrorObject &error_obj) const {
     return false;
 }
 

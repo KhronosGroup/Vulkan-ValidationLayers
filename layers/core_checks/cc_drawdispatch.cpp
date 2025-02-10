@@ -152,7 +152,7 @@ bool CoreChecks::ValidateMeshShaderStage(const vvl::CommandBuffer &cb_state, con
 }
 
 bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                        uint32_t firstVertex, uint32_t firstInstance, const ErrorObject &error_obj) const {
+                                        uint32_t firstVertex, uint32_t firstInstance, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -166,7 +166,7 @@ bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t 
 
 bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                 const VkMultiDrawInfoEXT *pVertexInfo, uint32_t instanceCount,
-                                                uint32_t firstInstance, uint32_t stride, const ErrorObject &error_obj) const {
+                                                uint32_t firstInstance, uint32_t stride, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -227,7 +227,7 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_s
 
 bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                                uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
-                                               const ErrorObject &error_obj) const {
+                                               ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -245,7 +245,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
 bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
                                                        const VkMultiDrawIndexedInfoEXT *pIndexInfo, uint32_t instanceCount,
                                                        uint32_t firstInstance, uint32_t stride, const int32_t *pVertexOffset,
-                                                       const ErrorObject &error_obj) const {
+                                                       ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -290,7 +290,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
 }
 
 bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                uint32_t drawCount, uint32_t stride, const ErrorObject &error_obj) const {
+                                                uint32_t drawCount, uint32_t stride, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -338,7 +338,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
 }
 
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                       uint32_t drawCount, uint32_t stride, const ErrorObject &error_obj) const {
+                                                       uint32_t drawCount, uint32_t stride, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -389,7 +389,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
 }
 
 bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                            uint32_t groupCountZ, const ErrorObject &error_obj) const {
+                                            uint32_t groupCountZ, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -423,7 +423,7 @@ bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint3
 
 bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                                 uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                uint32_t groupCountZ, const ErrorObject &error_obj) const {
+                                                uint32_t groupCountZ, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -505,13 +505,13 @@ bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, u
 
 bool CoreChecks::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                                    uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                   uint32_t groupCountZ, const ErrorObject &error_obj) const {
+                                                   uint32_t groupCountZ, ErrorObject &error_obj) const {
     return PreCallValidateCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
                                           error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                    const ErrorObject &error_obj) const {
+                                                    ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -537,7 +537,7 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
 }
 bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                     uint32_t stride, const ErrorObject &error_obj) const {
+                                                     uint32_t stride, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -582,15 +582,14 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
 
 bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                        uint32_t stride, const ErrorObject &error_obj) const {
+                                                        uint32_t stride, ErrorObject &error_obj) const {
     return PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                                error_obj);
 }
 
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                            uint32_t maxDrawCount, uint32_t stride,
-                                                            const ErrorObject &error_obj) const {
+                                                            uint32_t maxDrawCount, uint32_t stride, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -636,7 +635,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                                uint32_t maxDrawCount, uint32_t stride,
-                                                               const ErrorObject &error_obj) const {
+                                                               ErrorObject &error_obj) const {
     return PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
                                                       stride, error_obj);
 }
@@ -644,7 +643,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
 bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                             uint32_t firstInstance, VkBuffer counterBuffer,
                                                             VkDeviceSize counterBufferOffset, uint32_t counterOffset,
-                                                            uint32_t vertexStride, const ErrorObject &error_obj) const {
+                                                            uint32_t vertexStride, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -699,8 +698,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                                                VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
                                                VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                                VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                               uint32_t width, uint32_t height, uint32_t depth,
-                                               const ErrorObject &error_obj) const {
+                                               uint32_t width, uint32_t height, uint32_t depth, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -949,7 +947,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                 const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
-                                                uint32_t height, uint32_t depth, const ErrorObject &error_obj) const {
+                                                uint32_t height, uint32_t depth, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -966,7 +964,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
                                                         const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                                         const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
-                                                        VkDeviceAddress indirectDeviceAddress, const ErrorObject &error_obj) const {
+                                                        VkDeviceAddress indirectDeviceAddress, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -979,7 +977,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
 }
 
 bool CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
-                                                         const ErrorObject &error_obj) const {
+                                                         ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -990,7 +988,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer command
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask,
-                                                   const ErrorObject &error_obj) const {
+                                                   ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -1010,8 +1008,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                           uint32_t drawCount, uint32_t stride,
-                                                           const ErrorObject &error_obj) const {
+                                                           uint32_t drawCount, uint32_t stride, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -1062,7 +1059,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                                 uint32_t maxDrawCount, uint32_t stride,
-                                                                const ErrorObject &error_obj) const {
+                                                                ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -1098,7 +1095,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                                    uint32_t groupCountZ, const ErrorObject &error_obj) const {
+                                                    uint32_t groupCountZ, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -1161,8 +1158,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffe
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                            uint32_t drawCount, uint32_t stride,
-                                                            const ErrorObject &error_obj) const {
+                                                            uint32_t drawCount, uint32_t stride, ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(cb_state, error_obj.location);
@@ -1210,7 +1206,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                  VkDeviceSize offset, VkBuffer countBuffer,
                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                                 uint32_t stride, const ErrorObject &error_obj) const {
+                                                                 uint32_t stride, ErrorObject &error_obj) const {
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
     bool skip = false;

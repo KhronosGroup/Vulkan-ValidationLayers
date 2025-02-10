@@ -840,7 +840,7 @@ bool CoreChecks::ValidateVideoPictureResource(const vvl::VideoPictureResource &p
 }
 
 template <typename StateObject>
-bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfileInfoKHR *profile, const ErrorObject &error_obj,
+bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfileInfoKHR *profile, ErrorObject &error_obj,
                                     const Location &loc) {
     using Field = vvl::Field;
 
@@ -849,18 +849,18 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
     const char *profile_pnext_msg = "chain does not contain a %s structure.";
 
     if (GetBitSetCount(profile->chromaSubsampling) != 1) {
-        skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07013", error_obj.objlist,
+        skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07013", error_obj.log.objlist,
                                loc.dot(Field::chromaSubsampling), "must have a single bit set.");
     }
 
     if (GetBitSetCount(profile->lumaBitDepth) != 1) {
-        skip |= state.LogError("VUID-VkVideoProfileInfoKHR-lumaBitDepth-07014", error_obj.objlist, loc.dot(Field::lumaBitDepth),
+        skip |= state.LogError("VUID-VkVideoProfileInfoKHR-lumaBitDepth-07014", error_obj.log.objlist, loc.dot(Field::lumaBitDepth),
                                "must have a single bit set.");
     }
 
     if (profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR) {
         if (GetBitSetCount(profile->chromaBitDepth) != 1) {
-            skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07015", error_obj.objlist,
+            skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07015", error_obj.log.objlist,
                                    loc.dot(Field::chromaBitDepth), "must have a single bit set.");
         }
     }
@@ -869,7 +869,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
             const auto decode_h264 = vku::FindStructInPNextChain<VkVideoDecodeH264ProfileInfoKHR>(profile->pNext);
             if (decode_h264 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07179", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07179", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoDecodeH264ProfileInfoKHR");
             }
             break;
@@ -878,7 +878,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
             const auto decode_h265 = vku::FindStructInPNextChain<VkVideoDecodeH265ProfileInfoKHR>(profile->pNext);
             if (decode_h265 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07180", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07180", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoDecodeH265ProfileInfoKHR");
             }
             break;
@@ -887,7 +887,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
         case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
             const auto decode_av1 = vku::FindStructInPNextChain<VkVideoDecodeAV1ProfileInfoKHR>(profile->pNext);
             if (decode_av1 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-09256", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-09256", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoDecodeAV1ProfileInfoKHR");
             }
             break;
@@ -896,7 +896,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
             const auto encode_h264 = vku::FindStructInPNextChain<VkVideoEncodeH264ProfileInfoKHR>(profile->pNext);
             if (encode_h264 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07181", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07181", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoEncodeH264ProfileInfoKHR");
             }
             break;
@@ -905,7 +905,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
             const auto encode_h265 = vku::FindStructInPNextChain<VkVideoEncodeH265ProfileInfoKHR>(profile->pNext);
             if (encode_h265 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07182", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-07182", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoEncodeH265ProfileInfoKHR");
             }
             break;
@@ -935,15 +935,15 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
                             assert(false);
                             break;
                     }
-                    skip |=
-                        state.LogError(vuid, error_obj.objlist, loc.dot(Field::videoCodecOperation), codec_feature_not_enabled_msg,
-                                       string_VkVideoCodecOperationFlagBitsKHR(profile->videoCodecOperation), "videoEncodeAV1");
+                    skip |= state.LogError(vuid, error_obj.log.objlist, loc.dot(Field::videoCodecOperation),
+                                           codec_feature_not_enabled_msg,
+                                           string_VkVideoCodecOperationFlagBitsKHR(profile->videoCodecOperation), "videoEncodeAV1");
                 }
             }
 
             const auto encode_av1 = vku::FindStructInPNextChain<VkVideoEncodeAV1ProfileInfoKHR>(profile->pNext);
             if (encode_av1 == nullptr) {
-                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-10262", error_obj.objlist,
+                skip |= state.LogError("VUID-VkVideoProfileInfoKHR-videoCodecOperation-10262", error_obj.log.objlist,
                                        loc.dot(Field::pNext), profile_pnext_msg, "VkVideoEncodeAV1ProfileInfoKHR");
             }
             break;
@@ -958,13 +958,13 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
     return skip;
 }
 template bool core::ValidateVideoProfileInfo<core::Instance>(const core::Instance &state, const VkVideoProfileInfoKHR *profile,
-                                                             const ErrorObject &error_obj, const Location &loc);
+                                                             ErrorObject &error_obj, const Location &loc);
 template bool core::ValidateVideoProfileInfo<CoreChecks>(const CoreChecks &state, const VkVideoProfileInfoKHR *profile,
-                                                         const ErrorObject &error_obj, const Location &loc);
+                                                         ErrorObject &error_obj, const Location &loc);
 
 template <typename StateObject>
 bool core::ValidateVideoProfileListInfo(const StateObject &state, const VkVideoProfileListInfoKHR *profile_list,
-                                        const ErrorObject &error_obj, const Location &loc, bool expect_decode_profile,
+                                        ErrorObject &error_obj, const Location &loc, bool expect_decode_profile,
                                         const char *missing_decode_profile_msg_code, bool expect_encode_profile,
                                         const char *missing_encode_profile_msg_code) {
     bool skip = false;
@@ -981,7 +981,7 @@ bool core::ValidateVideoProfileListInfo(const StateObject &state, const VkVideoP
                 case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
                 case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
                     if (has_decode_profile) {
-                        skip |= state.LogError("VUID-VkVideoProfileListInfoKHR-pProfiles-06813", error_obj.objlist, loc,
+                        skip |= state.LogError("VUID-VkVideoProfileListInfoKHR-pProfiles-06813", error_obj.log.objlist, loc,
                                                "contains more than one profile with decode codec operation.");
                     }
                     has_decode_profile = true;
@@ -1002,23 +1002,23 @@ bool core::ValidateVideoProfileListInfo(const StateObject &state, const VkVideoP
     }
 
     if (expect_decode_profile && !has_decode_profile) {
-        skip |= state.LogError(missing_decode_profile_msg_code, error_obj.objlist, loc.dot(vvl::Field::pProfiles),
+        skip |= state.LogError(missing_decode_profile_msg_code, error_obj.log.objlist, loc.dot(vvl::Field::pProfiles),
                                "contains no video profile specifying a video decode operation.");
     }
 
     if (expect_encode_profile && !has_encode_profile) {
-        skip |= state.LogError(missing_encode_profile_msg_code, error_obj.objlist, loc.dot(vvl::Field::pProfiles),
+        skip |= state.LogError(missing_encode_profile_msg_code, error_obj.log.objlist, loc.dot(vvl::Field::pProfiles),
                                "contains no video profile specifying a video encode operation.");
     }
 
     return skip;
 }
 template bool core::ValidateVideoProfileListInfo<core::Instance>(
-    const core::Instance &state, const VkVideoProfileListInfoKHR *profile_list, const ErrorObject &error_obj, const Location &loc,
+    const core::Instance &state, const VkVideoProfileListInfoKHR *profile_list, ErrorObject &error_obj, const Location &loc,
     bool expect_decode_profile, const char *missing_decode_profile_msg_code, bool expect_encode_profile,
     const char *missing_encode_profile_msg_code);
 template bool core::ValidateVideoProfileListInfo<CoreChecks>(const CoreChecks &state, const VkVideoProfileListInfoKHR *profile_list,
-                                                             const ErrorObject &error_obj, const Location &loc,
+                                                             ErrorObject &error_obj, const Location &loc,
                                                              bool expect_decode_profile,
                                                              const char *missing_decode_profile_msg_code,
                                                              bool expect_encode_profile,
@@ -3351,7 +3351,7 @@ bool CoreChecks::ValidateReferencePictureUseCount(const vvl::CommandBuffer &cb_s
 bool core::Instance::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
                                                                           const VkVideoProfileInfoKHR *pVideoProfile,
                                                                           VkVideoCapabilitiesKHR *pCapabilities,
-                                                                          const ErrorObject &error_obj) const {
+                                                                          ErrorObject &error_obj) const {
     bool skip = false;
 
     skip |= ValidateVideoProfileInfo(*this, pVideoProfile, error_obj, error_obj.location.dot(Field::pVideoProfile));
@@ -3431,7 +3431,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhys
 
 bool core::Instance::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoFormatInfoKHR *pVideoFormatInfo,
-    uint32_t *pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR *pVideoFormatProperties, const ErrorObject &error_obj) const {
+    uint32_t *pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR *pVideoFormatProperties, ErrorObject &error_obj) const {
     bool skip = false;
 
     const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pVideoFormatInfo->pNext);
@@ -3453,7 +3453,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
 
 bool core::Instance::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR *pQualityLevelInfo,
-    VkVideoEncodeQualityLevelPropertiesKHR *pQualityLevelProperties, const ErrorObject &error_obj) const {
+    VkVideoEncodeQualityLevelPropertiesKHR *pQualityLevelProperties, ErrorObject &error_obj) const {
     bool skip = false;
 
     const Location quality_level_info_loc = error_obj.location.dot(Field::pQualityLevelInfo);
@@ -3519,7 +3519,7 @@ bool core::Instance::PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelProp
 
 bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR *pCreateInfo,
                                                       const VkAllocationCallbacks *pAllocator, VkVideoSessionKHR *pVideoSession,
-                                                      const ErrorObject &error_obj) const {
+                                                      ErrorObject &error_obj) const {
     bool skip = false;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -3732,8 +3732,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkV
 }
 
 bool CoreChecks::PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
-                                                       const VkAllocationCallbacks *pAllocator,
-                                                       const ErrorObject &error_obj) const {
+                                                       const VkAllocationCallbacks *pAllocator, ErrorObject &error_obj) const {
     bool skip = false;
     if (auto video_session_state = Get<vvl::VideoSession>(videoSession)) {
         skip |= ValidateObjectNotInUse(video_session_state.get(), error_obj.location,
@@ -3745,7 +3744,7 @@ bool CoreChecks::PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoS
 bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                           uint32_t bindSessionMemoryInfoCount,
                                                           const VkBindVideoSessionMemoryInfoKHR *pBindSessionMemoryInfos,
-                                                          const ErrorObject &error_obj) const {
+                                                          ErrorObject &error_obj) const {
     bool skip = false;
 
     auto vs_state = Get<vvl::VideoSession>(videoSession);
@@ -3841,7 +3840,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
                                                                 const VkVideoSessionParametersCreateInfoKHR *pCreateInfo,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 VkVideoSessionParametersKHR *pVideoSessionParameters,
-                                                                const ErrorObject &error_obj) const {
+                                                                ErrorObject &error_obj) const {
     bool skip = false;
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -4056,7 +4055,7 @@ bool CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
 
 bool CoreChecks::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
                                                                 const VkVideoSessionParametersUpdateInfoKHR *pUpdateInfo,
-                                                                const ErrorObject &error_obj) const {
+                                                                ErrorObject &error_obj) const {
     bool skip = false;
 
     auto vsp_state = Get<vvl::VideoSessionParameters>(videoSessionParameters);
@@ -4355,7 +4354,7 @@ bool CoreChecks::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device,
 bool CoreChecks::PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device,
                                                                  VkVideoSessionParametersKHR videoSessionParameters,
                                                                  const VkAllocationCallbacks *pAllocator,
-                                                                 const ErrorObject &error_obj) const {
+                                                                 ErrorObject &error_obj) const {
     bool skip = false;
     if (auto video_session_parameters_state = Get<vvl::VideoSessionParameters>(videoSessionParameters)) {
         skip |= ValidateObjectNotInUse(video_session_parameters_state.get(), error_obj.location,
@@ -4366,8 +4365,7 @@ bool CoreChecks::PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device
 
 bool CoreChecks::PreCallValidateGetEncodedVideoSessionParametersKHR(
     VkDevice device, const VkVideoEncodeSessionParametersGetInfoKHR *pVideoSessionParametersInfo,
-    VkVideoEncodeSessionParametersFeedbackInfoKHR *pFeedbackInfo, size_t *pDataSize, void *pData,
-    const ErrorObject &error_obj) const {
+    VkVideoEncodeSessionParametersFeedbackInfoKHR *pFeedbackInfo, size_t *pDataSize, void *pData, ErrorObject &error_obj) const {
     bool skip = false;
 
     const auto vsp_state = Get<vvl::VideoSessionParameters>(pVideoSessionParametersInfo->videoSessionParameters);
@@ -4483,7 +4481,7 @@ bool CoreChecks::PreCallValidateGetEncodedVideoSessionParametersKHR(
 }
 
 bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR *pBeginInfo,
-                                                       const ErrorObject &error_obj) const {
+                                                       ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;
@@ -4838,7 +4836,7 @@ void CoreChecks::PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuff
 }
 
 bool CoreChecks::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR *pEndCodingInfo,
-                                                     const ErrorObject &error_obj) const {
+                                                     ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;
@@ -4855,7 +4853,7 @@ bool CoreChecks::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuff
 
 bool CoreChecks::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
                                                          const VkVideoCodingControlInfoKHR *pCodingControlInfo,
-                                                         const ErrorObject &error_obj) const {
+                                                         ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;
@@ -4937,7 +4935,7 @@ void CoreChecks::PreCallRecordCmdControlVideoCodingKHR(VkCommandBuffer commandBu
 }
 
 bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR *pDecodeInfo,
-                                                  const ErrorObject &error_obj) const {
+                                                  ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;
@@ -5346,7 +5344,7 @@ void CoreChecks::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, c
 }
 
 bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR *pEncodeInfo,
-                                                  const ErrorObject &error_obj) const {
+                                                  ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     if (!cb_state) return false;

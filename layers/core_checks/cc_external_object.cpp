@@ -44,7 +44,7 @@ bool CoreChecks::CanFenceExportFromImported(VkExternalFenceHandleTypeFlagBits ex
 }
 
 bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo, int *pFd,
-                                               const ErrorObject &error_obj) const {
+                                               ErrorObject &error_obj) const {
     bool skip = false;
     if (const auto memory_state = Get<vvl::DeviceMemory>(pGetFdInfo->memory)) {
         const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory_state->allocate_info.pNext);
@@ -65,7 +65,7 @@ bool CoreChecks::PreCallValidateGetMemoryFdKHR(VkDevice device, const VkMemoryGe
 }
 
 bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo,
-                                                     const ErrorObject &error_obj) const {
+                                                     ErrorObject &error_obj) const {
     bool skip = false;
     auto sem_state = Get<vvl::Semaphore>(pImportSemaphoreFdInfo->semaphore);
     ASSERT_AND_RETURN_SKIP(sem_state);
@@ -107,7 +107,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkIm
 }
 
 bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd,
-                                                  const ErrorObject &error_obj) const {
+                                                  ErrorObject &error_obj) const {
     bool skip = false;
     auto sem_state = Get<vvl::Semaphore>(pGetFdInfo->semaphore);
     ASSERT_AND_RETURN_SKIP(sem_state);
@@ -159,13 +159,13 @@ bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const Loca
 }
 
 bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo,
-                                                 const ErrorObject &error_obj) const {
+                                                 ErrorObject &error_obj) const {
     return ValidateImportFence(pImportFenceFdInfo->fence, "VUID-vkImportFenceFdKHR-fence-01463",
                                error_obj.location.dot(Field::pImportFenceFdInfo));
 }
 
 bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd,
-                                              const ErrorObject &error_obj) const {
+                                              ErrorObject &error_obj) const {
     bool skip = false;
     if (auto fence_state = Get<vvl::Fence>(pGetFdInfo->fence)) {
         const Location info_loc = error_obj.location.dot(Field::pGetFdInfo);
@@ -195,7 +195,7 @@ bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetF
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool CoreChecks::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR *pGetWin32HandleInfo,
-                                                        HANDLE *pHandle, const ErrorObject &error_obj) const {
+                                                        HANDLE *pHandle, ErrorObject &error_obj) const {
     bool skip = false;
     if (const auto memory_state = Get<vvl::DeviceMemory>(pGetWin32HandleInfo->memory)) {
         const auto export_info = vku::FindStructInPNextChain<VkExportMemoryAllocateInfo>(memory_state->allocate_info.pNext);
@@ -216,8 +216,7 @@ bool CoreChecks::PreCallValidateGetMemoryWin32HandleKHR(VkDevice device, const V
 }
 
 bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(
-    VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo,
-    const ErrorObject &error_obj) const {
+    VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo, ErrorObject &error_obj) const {
     bool skip = false;
     if (auto sem_state = Get<vvl::Semaphore>(pImportSemaphoreWin32HandleInfo->semaphore)) {
         // Waiting for: https://gitlab.khronos.org/vulkan/vulkan/-/issues/3507
@@ -235,7 +234,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(
 
 bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
                                                            const VkSemaphoreGetWin32HandleInfoKHR *pGetWin32HandleInfo,
-                                                           HANDLE *pHandle, const ErrorObject &error_obj) const {
+                                                           HANDLE *pHandle, ErrorObject &error_obj) const {
     bool skip = false;
     if (auto sem_state = Get<vvl::Semaphore>(pGetWin32HandleInfo->semaphore)) {
         if ((pGetWin32HandleInfo->handleType & sem_state->export_handle_types) == 0) {
@@ -260,13 +259,13 @@ bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
 
 bool CoreChecks::PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
                                                           const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo,
-                                                          const ErrorObject &error_obj) const {
+                                                          ErrorObject &error_obj) const {
     return ValidateImportFence(pImportFenceWin32HandleInfo->fence, "VUID-vkImportFenceWin32HandleKHR-fence-04448",
                                error_obj.location.dot(Field::pImportFenceWin32HandleInfo));
 }
 
 bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *pGetWin32HandleInfo,
-                                                       HANDLE *pHandle, const ErrorObject &error_obj) const {
+                                                       HANDLE *pHandle, ErrorObject &error_obj) const {
     bool skip = false;
     if (auto fence_state = Get<vvl::Fence>(pGetWin32HandleInfo->fence)) {
         if ((pGetWin32HandleInfo->handleType & fence_state->export_handle_types) == 0) {
@@ -293,7 +292,7 @@ bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const Vk
 #ifdef VK_USE_PLATFORM_FUCHSIA
 bool CoreChecks::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA *pImportSemaphoreZirconHandleInfo,
-    const ErrorObject &error_obj) const {
+    ErrorObject &error_obj) const {
     bool skip = false;
     if (auto sem_state = Get<vvl::Semaphore>(pImportSemaphoreZirconHandleInfo->semaphore)) {
         skip |= ValidateObjectNotInUse(sem_state.get(), error_obj.location,
@@ -326,7 +325,7 @@ void CoreChecks::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo,
-                                                      const ErrorObject &error_obj) const {
+                                                      ErrorObject &error_obj) const {
     bool skip = false;
     const VkBaseOutStructure *metal_objects_info_ptr = reinterpret_cast<const VkBaseOutStructure *>(pMetalObjectsInfo->pNext);
     while (metal_objects_info_ptr) {
@@ -658,7 +657,7 @@ bool CoreChecks::ValidateAllocateMemoryMetal(const VkMemoryAllocateInfo &allocat
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool CoreChecks::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT *pGetMetalHandleInfo,
-                                                        void **pHandle, const ErrorObject &error_obj) const {
+                                                        void **pHandle, ErrorObject &error_obj) const {
     bool skip = false;
     const Location get_metal_handle_info = error_obj.location.dot(Field::pGetMetalHandleInfo);
     auto memory = Get<vvl::DeviceMemory>(pGetMetalHandleInfo->memory);
@@ -689,7 +688,7 @@ bool CoreChecks::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const V
 bool CoreChecks::PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType,
                                                                   const void *handle,
                                                                   VkMemoryMetalHandlePropertiesEXT *pMemoryMetalHandleProperties,
-                                                                  const ErrorObject &error_obj) const {
+                                                                  ErrorObject &error_obj) const {
     bool skip = false;
 
     if ((handleType != VK_EXTERNAL_MEMORY_HANDLE_TYPE_MTLBUFFER_BIT_EXT) &&

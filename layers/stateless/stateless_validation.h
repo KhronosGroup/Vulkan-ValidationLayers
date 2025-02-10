@@ -37,13 +37,13 @@ class Context {
 
   public:
     const Logger &log;
-    const ErrorObject &error_obj;
+    ErrorObject &error_obj;
     const DeviceExtensions &extensions;
     // Used to control the VK_KHR_maintenance5 behavior of VkPhysicalDevice calls
     // where unknown enum values are allowed.
     bool ignore_unknown_enums;
 
-    Context(const Logger &log_, const ErrorObject &err_, const DeviceExtensions &exts_, bool ignore_unknown_enums_ = false)
+    Context(const Logger &log_, ErrorObject &err_, const DeviceExtensions &exts_, bool ignore_unknown_enums_ = false)
         : log(log_), error_obj(err_), extensions(exts_), ignore_unknown_enums(ignore_unknown_enums_) {}
 
     bool ValidateNotZero(bool is_zero, const char *vuid, const Location &loc) const;
@@ -351,7 +351,7 @@ class Instance : public vvl::base::Instance {
                                vvl::Extension extension, const Location &extension_loc) const;
 
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                       VkInstance *pInstance, const ErrorObject &error_obj) const override;
+                                       VkInstance *pInstance, ErrorObject &error_obj) const override;
 
     void CommonPostCallRecordEnumeratePhysicalDevice(const VkPhysicalDevice *phys_devices, const int count);
     void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
@@ -481,8 +481,7 @@ class Device : public vvl::base::Device {
                                       VkPipelineStageFlags2 stages, const char *vuid, const Location &loc) const;
 
     bool ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                  const ErrorObject &error_obj) const;
+                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass, ErrorObject &error_obj) const;
 
     void RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateInfo2 *pCreateInfo);
 
@@ -852,7 +851,7 @@ class Device : public vvl::base::Device {
 
     bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                                               VkDeviceGroupPresentModeFlagsKHR *pModes,
-                                                              const ErrorObject &error_obj) const override;
+                                                              ErrorObject &error_obj) const override;
 #endif
 
     bool manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
@@ -994,7 +993,7 @@ class Device : public vvl::base::Device {
     bool ValidateRenderPassStripeBeginInfo(VkCommandBuffer commandBuffer, const void *pNext, const VkRect2D render_area,
                                            const Location &loc) const;
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *const rp_begin,
-                                    const ErrorObject &error_obj) const;
+                                    ErrorObject &error_obj) const;
     bool manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                   VkSubpassContents, const Context &context) const;
     bool manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,

@@ -172,7 +172,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
             parameters = ' '.join(parameters.split()) # remove duplicate whitespace
 
             out.extend(guard_helper.add_guard(command.protect))
-            out.append(f'        virtual bool PreCallValidate{command.name[2:]}({parameters}, const ErrorObject& error_obj) const {{ return false; }}\n')
+            out.append(f'        virtual bool PreCallValidate{command.name[2:]}({parameters}, ErrorObject& error_obj) const {{ return false; }}\n')
             out.append(f'        virtual void PreCallRecord{command.name[2:]}({parameters}, const RecordObject& record_obj) {{}}\n')
             out.append(f'        virtual void PostCallRecord{command.name[2:]}({parameters}, const RecordObject& record_obj) {{}}\n')
         out.extend(guard_helper.add_guard(None))

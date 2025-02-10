@@ -242,7 +242,7 @@ bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &
 
 bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                             const ErrorObject &error_obj) const {
+                                             ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
@@ -336,7 +336,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
 
 bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkBufferView *pView,
-                                                 const ErrorObject &error_obj) const {
+                                                 ErrorObject &error_obj) const {
     bool skip = false;
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     auto buffer_state_ptr = Get<vvl::Buffer>(pCreateInfo->buffer);
@@ -450,7 +450,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
 }
 
 bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
-                                              const ErrorObject &error_obj) const {
+                                              ErrorObject &error_obj) const {
     bool skip = false;
     if (auto buffer_state = Get<vvl::Buffer>(buffer)) {
         skip |= ValidateObjectNotInUse(buffer_state.get(), error_obj.location, "VUID-vkDestroyBuffer-buffer-00922");
@@ -459,7 +459,7 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 }
 
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks *pAllocator,
-                                                  const ErrorObject &error_obj) const {
+                                                  ErrorObject &error_obj) const {
     bool skip = false;
     if (auto buffer_view_state = Get<vvl::BufferView>(bufferView)) {
         skip |= ValidateObjectNotInUse(buffer_view_state.get(), error_obj.location, "VUID-vkDestroyBufferView-bufferView-00936");
@@ -468,7 +468,7 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
 }
 
 bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                              VkDeviceSize size, uint32_t data, const ErrorObject &error_obj) const {
+                                              VkDeviceSize size, uint32_t data, ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state_ptr = GetRead<vvl::CommandBuffer>(commandBuffer);
     auto buffer_state = Get<vvl::Buffer>(dstBuffer);

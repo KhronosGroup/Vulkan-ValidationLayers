@@ -23,7 +23,7 @@
 bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                                         uint32_t* pMemoryRequirementsCount,
                                                                         VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements,
-                                                                        const ErrorObject& error_obj) const {
+                                                                        ErrorObject& error_obj) const {
     bool skip = false;
     if (auto vs_state = Get<vvl::VideoSession>(videoSession)) {
         if (pMemoryRequirements != nullptr && !vs_state->memory_binding_count_queried) {
@@ -42,7 +42,7 @@ bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice
 bool BestPractices::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
                                                              uint32_t bindSessionMemoryInfoCount,
                                                              const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
-                                                             const ErrorObject& error_obj) const {
+                                                             ErrorObject& error_obj) const {
     bool skip = false;
 
     if (auto vs_state = Get<vvl::VideoSession>(videoSession)) {

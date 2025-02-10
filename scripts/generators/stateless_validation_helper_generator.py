@@ -339,7 +339,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             prototype = prototype.replace(');', ') const override;\n')
             if 'ValidationCache' in command.name:
                 prototype = prototype.replace('const override', 'const')
-            prototype = prototype.replace(')', ',\n    const ErrorObject&                          error_obj)')
+            prototype = prototype.replace(')', ',\n    ErrorObject&                          error_obj)')
             out.append(prototype)
         out.extend(guard_helper.add_guard(None))
         self.write("".join(out))
@@ -504,7 +504,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             out.extend(guard_helper.add_guard(command.protect, extra_newline=True))
 
             prototype = (command.cPrototype.split('VKAPI_CALL ')[1])[2:-1]
-            prototype = prototype.replace(')', ', const ErrorObject& error_obj)')
+            prototype = prototype.replace(')', ', ErrorObject& error_obj)')
             classname = 'Instance' if command.instance else 'Device'
             out.append(f'bool {classname}::PreCallValidate{prototype} const {{\n')
             out.append('    bool skip = false;\n')
@@ -758,7 +758,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         lines = []    # Generated lines of code
         duplicateCountVuid = [] # prevent duplicate VUs being generated
 
-        # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings" 
+        # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings"
         validatePNextRegex = re.compile(r'(.*ValidateStructPnext\(.*)(\).*\n*)', re.M)
 
         # Special struct since lots of functions have this, but it can be all combined to the same call (since it is always from the top level of a funciton)

@@ -409,7 +409,7 @@ class ReplayState {
     bool DetectFirstUseHazard(const ResourceUsageRange &first_use_range) const;
 
     ReplayState(CommandExecutionContext &exec_context, const CommandBufferAccessContext &recorded_context,
-                const ErrorObject &error_object, uint32_t index, ResourceUsageTag base_tag);
+                ErrorObject &error_object, uint32_t index, ResourceUsageTag base_tag);
 
     CommandExecutionContext &GetExecutionContext() const { return exec_context_; }
     ResourceUsageTag GetBaseTag() const { return base_tag_; }
@@ -424,7 +424,7 @@ class ReplayState {
 
     CommandExecutionContext &exec_context_;
     const CommandBufferAccessContext &recorded_context_;
-    const ErrorObject &error_obj_;
+    ErrorObject &error_obj_;
     const uint32_t index_;
     const ResourceUsageTag base_tag_;
     RenderPassReplayState rp_replay_;

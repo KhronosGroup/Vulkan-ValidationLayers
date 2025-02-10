@@ -39,7 +39,7 @@
 bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                        const ErrorObject &error_obj, PipelineStates &pipeline_states,
+                                                        ErrorObject &error_obj, PipelineStates &pipeline_states,
                                                         chassis::CreateGraphicsPipelines &chassis_state) const {
     bool skip = BaseClass::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                   pPipelines, error_obj, pipeline_states, chassis_state);
