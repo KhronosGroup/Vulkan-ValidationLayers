@@ -181,17 +181,25 @@ void ErrorMessages::AddCbContextExtraProperties(const CommandBufferAccessContext
     }
 }
 
-std::string ErrorMessages::Error(const HazardResult& hazard, const std::string& resouce_description,
-                                 const CommandBufferAccessContext& cb_context, vvl::Func command) const {
+std::string ErrorMessages::Error(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                 const std::string& resouce_description, const std::string& additional_information,
+                                 const ReportKeyValues& additional_properties) const {
     ReportKeyValues key_values;
     cb_context.FormatHazard(hazard, key_values);
     key_values.Add(kPropertyMessageType, "GeneralError");
     key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
     key_values.Add(kPropertyCommand, vvl::String(command));
+    for (const auto& kv : additional_properties.key_values) {
+        key_values.Add(kv.key, kv.value);
+    }
     AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
 
     std::stringstream ss;
     FormatCommonMessage(hazard, resouce_description, command, key_values, cb_context, ss);
+
+    if (!additional_information.empty()) {
+        ss << " " << additional_information;
+    }
 
     std::string message = ss.str();
     if (extra_properties_) {
@@ -200,47 +208,27 @@ std::string ErrorMessages::Error(const HazardResult& hazard, const std::string& 
     return message;
 }
 
-std::string ErrorMessages::BufferError(const HazardResult& hazard, VkBuffer buffer, const char* buffer_description,
-                                       const CommandBufferAccessContext& cb_context, vvl::Func command) const {
-    const auto format = "Hazard %s for %s %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), buffer_description,
-                                 validator_.FormatHandle(buffer).c_str(), access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "BufferError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
+std::string ErrorMessages::BufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                       const std::string& resource_description, const ResourceAccessRange range) const {
+    std::stringstream ss;
+    ss << "Buffer access region: (offset = " << range.begin;
+    ss << ", size = " << range.end - range.begin << ").";
+    const std::string additional_information = ss.str();
+    return Error(hazard, cb_context, command, resource_description, additional_information);
 }
 
-std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, const std::string& resouce_description,
-                                             uint32_t region_index, ResourceAccessRange region_range,
-                                             const CommandBufferAccessContext& cb_context, const vvl::Func command) const {
-    ReportKeyValues key_values;
-    cb_context.FormatHazard(hazard, key_values);
-    key_values.Add(kPropertyMessageType, "BufferRegionError");
-    key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-    key_values.Add(kPropertyCommand, vvl::String(command));
-    key_values.Add(kPropertyCopyRegion, region_index);
-    AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-
+std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                             const vvl::Func command, const std::string& resource_description,
+                                             uint32_t region_index, ResourceAccessRange region_range) const {
     std::stringstream ss;
-    FormatCommonMessage(hazard, resouce_description, command, key_values, cb_context, ss);
-
-    // Copy region information
-    ss << " Hazardous copy region: " << region_index << " (offset = " << region_range.begin;
+    ss << "Buffer copy region: " << region_index << " (offset = " << region_range.begin;
     ss << ", size = " << region_range.end - region_range.begin << ").";
+    const std::string additional_information = ss.str();
 
-    std::string message = ss.str();
-    if (extra_properties_) {
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
+    ReportKeyValues additional_properties;
+    additional_properties.Add(kPropertyCopyRegion, region_index);
+
+    return Error(hazard, cb_context, command, resource_description, additional_information, additional_properties);
 }
 
 std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, VkImage image, bool is_src_image, uint32_t region_index,

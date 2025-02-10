@@ -364,8 +364,8 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
             auto hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, srcBuffer);
-                const auto error = error_messages_.BufferRegionError(hazard, FormatHandle(srcBuffer), region_index, src_range,
-                                                                     *cb_context, error_obj.location.function);
+                const auto error = error_messages_.BufferRegionError(hazard, *cb_context, error_obj.location.function,
+                                                                     FormatHandle(srcBuffer), region_index, src_range);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -374,8 +374,8 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
             auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, dstBuffer);
-                const auto error = error_messages_.BufferRegionError(hazard, FormatHandle(dstBuffer), region_index, dst_range,
-                                                                     *cb_context, error_obj.location.function);
+                const auto error = error_messages_.BufferRegionError(hazard, *cb_context, error_obj.location.function,
+                                                                     FormatHandle(dstBuffer), region_index, dst_range);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -433,8 +433,9 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
                 // TODO -- add tag information to log msg when useful.
                 // TODO: there are no tests for this error
                 const LogObjectList objlist(commandBuffer, pCopyBufferInfo->srcBuffer);
-                const auto error = error_messages_.BufferRegionError(hazard, FormatHandle(pCopyBufferInfo->srcBuffer), region_index,
-                                                                     src_range, *cb_context, error_obj.location.function);
+                const auto error =
+                    error_messages_.BufferRegionError(hazard, *cb_context, error_obj.location.function,
+                                                      FormatHandle(pCopyBufferInfo->srcBuffer), region_index, src_range);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -444,8 +445,9 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer,
             if (hazard.IsHazard()) {
                 // TODO: there are no tests for this error
                 const LogObjectList objlist(commandBuffer, pCopyBufferInfo->dstBuffer);
-                const auto error = error_messages_.BufferRegionError(hazard, FormatHandle(pCopyBufferInfo->dstBuffer), region_index,
-                                                                     dst_range, *cb_context, error_obj.location.function);
+                const auto error =
+                    error_messages_.BufferRegionError(hazard, *cb_context, error_obj.location.function,
+                                                      FormatHandle(pCopyBufferInfo->dstBuffer), region_index, dst_range);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -1079,8 +1081,8 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
                 if (hazard.IsHazard()) {
                     // PHASE1 TODO -- add tag information to log msg when useful.
                     const LogObjectList objlist(commandBuffer, srcBuffer);
-                    const auto error = error_messages_.BufferRegionError(hazard, FormatHandle(srcBuffer), region_index, src_range,
-                                                                         *cb_access_context, loc.function);
+                    const auto error = error_messages_.BufferRegionError(hazard, *cb_access_context, loc.function,
+                                                                         FormatHandle(srcBuffer), region_index, src_range);
                     skip |= SyncError(hazard.Hazard(), objlist, loc, error);
                 }
             }
@@ -1215,8 +1217,8 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
                 hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
                 if (hazard.IsHazard()) {
                     const LogObjectList objlist(commandBuffer, dstBuffer);
-                    const auto error = error_messages_.BufferRegionError(hazard, FormatHandle(dstBuffer), region_index, dst_range,
-                                                                         *cb_access_context, loc.function);
+                    const auto error = error_messages_.BufferRegionError(hazard, *cb_access_context, loc.function,
+                                                                         FormatHandle(dstBuffer), region_index, dst_range);
                     skip |= SyncError(hazard.Hazard(), objlist, loc, error);
                 }
             }
@@ -1460,7 +1462,8 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
         auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(cb_context.GetCBState().Handle(), buf_state->Handle());
-            const auto error = error_messages_.BufferError(hazard, buffer, "indirect", cb_context, loc.function);
+            const std::string resource_description = "dispatch parameters " + FormatHandle(buffer);
+            const auto error = error_messages_.BufferError(hazard, cb_context, loc.function, resource_description, range);
             skip |= SyncError(hazard.Hazard(), objlist, loc, error);
         }
     } else {
@@ -1469,7 +1472,8 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
             auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(cb_context.GetCBState().Handle(), buf_state->Handle());
-                const auto error = error_messages_.BufferError(hazard, buffer, "indirect", cb_context, loc.function);
+                const std::string resource_description = "dispatch parameters " + FormatHandle(buffer);
+                const auto error = error_messages_.BufferError(hazard, cb_context, loc.function, resource_description, range);
                 skip |= SyncError(hazard.Hazard(), objlist, loc, error);
                 break;
             }
@@ -1509,7 +1513,8 @@ bool SyncValidator::ValidateCountBuffer(const CommandBufferAccessContext &cb_con
     auto hazard = context.DetectHazard(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
     if (hazard.IsHazard()) {
         const LogObjectList objlist(cb_context.GetCBState().Handle(), count_buf_state->Handle());
-        const auto error = error_messages_.BufferError(hazard, buffer, "countBuffer", cb_context, loc.function);
+        const std::string resource_description = "draw count " + FormatHandle(buffer);
+        const auto error = error_messages_.BufferError(hazard, cb_context, loc.function, resource_description, range);
         skip |= SyncError(hazard.Hazard(), objlist, loc, error);
     }
     return skip;
@@ -2046,8 +2051,9 @@ bool SyncValidator::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer comma
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(commandBuffer, queryPool, dstBuffer);
+            const std::string resource_description = "dstBuffer " + FormatHandle(dstBuffer);
             const auto error =
-                error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context, error_obj.location.function);
+                error_messages_.BufferError(hazard, *cb_access_context, error_obj.location.function, resource_description, range);
             skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
         }
     }
@@ -2100,8 +2106,9 @@ bool SyncValidator::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, 
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(commandBuffer, dstBuffer);
+            const std::string resource_description = "dstBuffer " + FormatHandle(dstBuffer);
             const auto error =
-                error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context, error_obj.location.function);
+                error_messages_.BufferError(hazard, *cb_access_context, error_obj.location.function, resource_description, range);
             skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
         }
     }
@@ -2320,8 +2327,9 @@ bool SyncValidator::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_CLEAR_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(commandBuffer, dstBuffer);
+            const std::string resource_description = "dstBuffer " + FormatHandle(dstBuffer);
             const auto error =
-                error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context, error_obj.location.function);
+                error_messages_.BufferError(hazard, *cb_access_context, error_obj.location.function, resource_description, range);
             skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
         }
     }
@@ -2368,8 +2376,9 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarkerAMD(VkCommandBuffer comma
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
+            const std::string resource_description = "dstBuffer " + FormatHandle(dstBuffer);
             const auto error =
-                error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context, error_obj.location.function);
+                error_messages_.BufferError(hazard, *cb_access_context, error_obj.location.function, resource_description, range);
             skip |= SyncError(hazard.Hazard(), dstBuffer, error_obj.location, error);
         }
     }
@@ -2412,17 +2421,16 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
     const auto vs_state = cb_state->bound_video_session.get();
     if (!vs_state) return skip;
 
-    const Location decode_info_loc = error_obj.location.dot(Field::pDecodeInfo);
-
     auto src_buffer = Get<vvl::Buffer>(pDecodeInfo->srcBuffer);
     if (src_buffer) {
         const ResourceAccessRange src_range = MakeRange(*src_buffer, pDecodeInfo->srcBufferOffset, pDecodeInfo->srcBufferRange);
         auto hazard = context->DetectHazard(*src_buffer, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ, src_range);
         if (hazard.IsHazard()) {
+            const std::string resource_description = "bitstream buffer " + FormatHandle(pDecodeInfo->srcBuffer);
             // TODO: there are no tests for this error
-            const auto error = error_messages_.BufferError(hazard, pDecodeInfo->srcBuffer, "bitstream buffer", *cb_access_context,
-                                                           error_obj.location.function);
-            skip |= SyncError(hazard.Hazard(), src_buffer->Handle(), decode_info_loc.dot(Field::srcBuffer), error);
+            const auto error = error_messages_.BufferError(hazard, *cb_access_context, error_obj.location.function,
+                                                           resource_description, src_range);
+            skip |= SyncError(hazard.Hazard(), src_buffer->Handle(), error_obj.location, error);
         }
     }
 
@@ -2436,7 +2444,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
             ss << " ";
             FormatVideoPictureResouce(*this, pDecodeInfo->dstPictureResource, ss);
             const std::string resouce_description = ss.str();
-            const auto error = error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+            const auto error = error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resouce_description);
             skip |= SyncError(hazard.Hazard(), dst_resource.image_view_state->Handle(), error_obj.location, error);
         }
     }
@@ -2457,7 +2465,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
                 FormatVideoPictureResouce(*this, video_picture, ss);
                 const std::string resouce_description = ss.str();
                 const auto error =
-                    error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+                    error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resouce_description);
                 skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(), error_obj.location, error);
             }
         }
@@ -2480,7 +2488,7 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
                     FormatVideoPictureResouce(*this, video_picture, ss);
                     const std::string resouce_description = ss.str();
                     const auto error =
-                        error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+                        error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resouce_description);
                     skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(), error_obj.location, error);
                 }
             }
@@ -2549,16 +2557,15 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
     const auto vs_state = cb_state->bound_video_session.get();
     if (!vs_state) return skip;
 
-    const Location encode_info_loc = error_obj.location.dot(Field::pEncodeInfo);
-
     auto dst_buffer = Get<vvl::Buffer>(pEncodeInfo->dstBuffer);
     if (dst_buffer) {
-        const ResourceAccessRange src_range = MakeRange(*dst_buffer, pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange);
-        auto hazard = context->DetectHazard(*dst_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, src_range);
+        const ResourceAccessRange dst_range = MakeRange(*dst_buffer, pEncodeInfo->dstBufferOffset, pEncodeInfo->dstBufferRange);
+        auto hazard = context->DetectHazard(*dst_buffer, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_WRITE, dst_range);
         if (hazard.IsHazard()) {
-            const auto error = error_messages_.BufferError(hazard, pEncodeInfo->dstBuffer, "bitstream buffer", *cb_access_context,
-                                                           error_obj.location.function);
-            skip |= SyncError(hazard.Hazard(), dst_buffer->Handle(), encode_info_loc.dot(Field::dstBuffer), error);
+            const std::string resource_description = "bitstream buffer " + FormatHandle(pEncodeInfo->dstBuffer);
+            const auto error = error_messages_.BufferError(hazard, *cb_access_context, error_obj.location.function,
+                                                           resource_description, dst_range);
+            skip |= SyncError(hazard.Hazard(), dst_buffer->Handle(), error_obj.location, error);
         }
     }
 
@@ -2572,7 +2579,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
             FormatVideoPictureResouce(*this, pEncodeInfo->srcPictureResource, ss);
             const std::string resouce_description = ss.str();
             // TODO: there are no tests for this error
-            const auto error = error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+            const auto error = error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resouce_description);
             skip |= SyncError(hazard.Hazard(), src_resource.image_view_state->Handle(), error_obj.location, error);
         }
     }
@@ -2593,7 +2600,7 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
                 FormatVideoPictureResouce(*this, video_picture, ss);
                 const std::string resouce_description = ss.str();
                 const auto error =
-                    error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+                    error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resouce_description);
                 skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(), error_obj.location, error);
             }
         }
@@ -2614,9 +2621,9 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
                               .Fields();
                     ss << " ";
                     FormatVideoPictureResouce(*this, video_picture, ss);
-                    const std::string resouce_description = ss.str();
+                    const std::string resource_description = ss.str();
                     const auto error =
-                        error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+                        error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resource_description);
                     skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(), error_obj.location, error);
                 }
             }
@@ -2639,9 +2646,9 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
                     ss << Location(Func::Empty, Field::pEncodeInfo).dot(Field::quantizationMap).Fields();
                     ss << " ";
                     FormatVideoQuantizationMap(*this, *quantization_map_info, ss);
-                    const std::string resouce_description = ss.str();
+                    const std::string resource_description = ss.str();
                     const auto error =
-                        error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+                        error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resource_description);
                     skip |= SyncError(hazard.Hazard(), image_view_state->Handle(), error_obj.location, error);
                 }
             }
@@ -2931,9 +2938,10 @@ bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer comm
         const ResourceAccessRange range = MakeRange(dstOffset, 4);
         auto hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, range);
         if (hazard.IsHazard()) {
+            const std::string resource_description = "dstBuffer " + FormatHandle(dstBuffer);
             // TODO: there are no tests for this error
             const auto error =
-                error_messages_.BufferError(hazard, dstBuffer, "dstBuffer", *cb_access_context, error_obj.location.function);
+                error_messages_.BufferError(hazard, *cb_access_context, error_obj.location.function, resource_description, range);
             skip |= SyncError(hazard.Hazard(), dstBuffer, error_obj.location, error);
         }
     }
@@ -3675,8 +3683,9 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
         auto hazard = context.DetectHazard(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(commandBuffer, scratch_buffer.Handle());
-            const auto error = error_messages_.BufferError(hazard, scratch_buffer.VkHandle(), "scratch buffer", cb_context,
-                                                           error_obj.location.function);
+            const std::string resource_description = "scratch buffer " + FormatHandle(scratch_buffer.VkHandle());
+            const auto error =
+                error_messages_.BufferError(hazard, cb_context, error_obj.location.function, resource_description, range);
             skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
         }
     }
