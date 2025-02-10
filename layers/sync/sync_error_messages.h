@@ -151,9 +151,6 @@ class ErrorMessages {
                              const VulkanTypedHandle& swapchain_handle, uint32_t image_index, const VulkanTypedHandle& image_handle,
                              vvl::Func command) const;
 
-    std::string VideoReferencePictureError(const HazardResult& hazard, uint32_t reference_picture_index,
-                                           const CommandBufferAccessContext& cb_context, vvl::Func command) const;
-
   private:
     void AddCbContextExtraProperties(const CommandBufferAccessContext& cb_context, ResourceUsageTag tag,
                                      ReportKeyValues& key_values) const;
