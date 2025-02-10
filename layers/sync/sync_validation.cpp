@@ -2465,14 +2465,23 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
 
     for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
         if (pDecodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            auto reference_resource = vvl::VideoPictureResource(*this, *pDecodeInfo->pReferenceSlots[i].pPictureResource);
+            const VkVideoPictureResourceInfoKHR &video_picture = *pDecodeInfo->pReferenceSlots[i].pPictureResource;
+            auto reference_resource = vvl::VideoPictureResource(*this, video_picture);
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_DECODE_VIDEO_DECODE_READ);
                 if (hazard.IsHazard()) {
+                    std::stringstream ss;
+                    ss << "reference picture " << i << " ";
+                    ss << Location(Func::Empty, Field::pDecodeInfo)
+                              .dot(Field::pReferenceSlots, i)
+                              .dot(Field::pPictureResource)
+                              .Fields();
+                    ss << " ";
+                    FormatVideoPictureResouce(*this, video_picture, ss);
+                    const std::string resouce_description = ss.str();
                     const auto error =
-                        error_messages_.VideoReferencePictureError(hazard, i, *cb_access_context, error_obj.location.function);
-                    skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(),
-                                      decode_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource), error);
+                        error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+                    skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(), error_obj.location, error);
                 }
             }
         }
@@ -2592,14 +2601,23 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
 
     for (uint32_t i = 0; i < pEncodeInfo->referenceSlotCount; ++i) {
         if (pEncodeInfo->pReferenceSlots[i].pPictureResource != nullptr) {
-            auto reference_resource = vvl::VideoPictureResource(*this, *pEncodeInfo->pReferenceSlots[i].pPictureResource);
+            const VkVideoPictureResourceInfoKHR &video_picture = *pEncodeInfo->pReferenceSlots[i].pPictureResource;
+            auto reference_resource = vvl::VideoPictureResource(*this, video_picture);
             if (reference_resource) {
                 auto hazard = context->DetectHazard(*vs_state, reference_resource, SYNC_VIDEO_ENCODE_VIDEO_ENCODE_READ);
                 if (hazard.IsHazard()) {
+                    std::stringstream ss;
+                    ss << "reference picture " << i << " ";
+                    ss << Location(Func::Empty, Field::pEncodeInfo)
+                              .dot(Field::pReferenceSlots, i)
+                              .dot(Field::pPictureResource)
+                              .Fields();
+                    ss << " ";
+                    FormatVideoPictureResouce(*this, video_picture, ss);
+                    const std::string resouce_description = ss.str();
                     const auto error =
-                        error_messages_.VideoReferencePictureError(hazard, i, *cb_access_context, error_obj.location.function);
-                    skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(),
-                                      encode_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource), error);
+                        error_messages_.Error(hazard, resouce_description, *cb_access_context, error_obj.location.function);
+                    skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(), error_obj.location, error);
                 }
             }
         }
