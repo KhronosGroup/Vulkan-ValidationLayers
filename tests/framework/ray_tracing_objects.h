@@ -348,6 +348,7 @@ class Pipeline {
     uint32_t GetShaderGroupsCount();
     std::vector<uint8_t> GetRayTracingShaderGroupHandles();
     std::vector<uint8_t> GetRayTracingCaptureReplayShaderGroupHandles();
+    std::vector<VkRayTracingShaderGroupCreateInfoKHR> GetRayTracingShaderGroupCreateInfos();
 
   private:
     VkLayerTest& test_;
