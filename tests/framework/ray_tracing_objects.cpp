@@ -334,7 +334,7 @@ void AccelerationStructureKHR::Build() {
         VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
         alloc_flags.flags = buffer_memory_allocate_flags_;
         VkBufferCreateInfo ci = vku::InitStructHelper();
-        ci.size = vk_info_.size;
+        ci.size = vk_info_.offset + vk_info_.size;
         ci.usage = buffer_usage_flags_;
         if (buffer_init_no_mem_) {
             device_buffer_.InitNoMemory(*device_, ci);

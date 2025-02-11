@@ -40,3 +40,22 @@ TEST_F(NegativeSyncValRayTracing, ScratchBufferHazard) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncValRayTracing, AccelerationStructureBufferHazard) {
+    TEST_DESCRIPTION("Write to accelerationn structure buffer during acceleration structure build");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    blas.SetupBuild(true);
+
+    const vkt::Buffer& accel_buffer = blas.GetDstAS()->GetBuffer();
+    vkt::Buffer copy_buffer(*m_device, accel_buffer.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(accel_buffer, copy_buffer);  // READ acceleration structure
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);  // WRITE without proper barrier
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
