@@ -23,6 +23,7 @@
 #include "sync/sync_validation.h"
 #include "sync/sync_image.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/ray_tracing_state.h"
 #include "utils/convert_utils.h"
 #include "utils/ray_tracing_utils.h"
 #include "utils/text_utils.h"
@@ -3658,35 +3659,48 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
     auto &cb_context = cb_state->access_context;
     auto &context = *cb_context.GetCurrentAccessContext();
 
-    for (uint32_t i = 0; i < infoCount; i++) {
-        const auto &info = pInfos[i];
-        const auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress);
-        if (scratch_buffers.empty()) {
-            continue;
-        }
-        if (scratch_buffers.size() > 1) {
-            continue;  // postpone handling this case until syncval memory aliasing support is ready
-        }
-        const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
-        const vvl::Buffer &scratch_buffer = *scratch_buffers[0];
-
-        // Skip invalid configurations
-        {
-            const sparse_container::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
-                                                                      info.scratchData.deviceAddress + scratch_size);
-            if (!scratch_buffer.DeviceAddressRange().includes(scratch_range)) {
-                continue;  // [core validation check]: invalid scratch range
+    for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
+        // Validate scratch buffer
+        if (const auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress); scratch_buffers.size() == 1) {
+            // NOTE: the above size check - do not handle mutlipe buffers until syncval aliasing support is here
+            const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
+            const vvl::Buffer &scratch_buffer = *scratch_buffers[0];
+            // Skip invalid configurations
+            {
+                const sparse_container::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
+                                                                          info.scratchData.deviceAddress + scratch_size);
+                if (!scratch_buffer.DeviceAddressRange().includes(scratch_range)) {
+                    continue;  // [core validation check]: invalid scratch range
+                }
+            }
+            const ResourceAccessRange range =
+                MakeRange(info.scratchData.deviceAddress - scratch_buffer.deviceAddress, scratch_size);
+            auto hazard =
+                context.DetectHazard(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, range);
+            if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, scratch_buffer.Handle());
+                const std::string resource_description = "scratch buffer " + FormatHandle(scratch_buffer.VkHandle());
+                const auto error =
+                    error_messages_.BufferError(hazard, cb_context, error_obj.location.function, resource_description, range);
+                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
-
-        const ResourceAccessRange range = MakeRange(info.scratchData.deviceAddress - scratch_buffer.deviceAddress, scratch_size);
-        auto hazard = context.DetectHazard(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, range);
-        if (hazard.IsHazard()) {
-            const LogObjectList objlist(commandBuffer, scratch_buffer.Handle());
-            const std::string resource_description = "scratch buffer " + FormatHandle(scratch_buffer.VkHandle());
-            const auto error =
-                error_messages_.BufferError(hazard, cb_context, error_obj.location.function, resource_description, range);
-            skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
+        // Validate access to the acceleration structure being built
+        if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure)) {
+            const ResourceAccessRange dst_range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+            auto hazard = context.DetectHazard(*dst_accel->buffer_state,
+                                               SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, dst_range);
+            if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, dst_accel->buffer_state->Handle());
+                std::stringstream ss;
+                ss << FormatHandle(dst_accel->buffer_state->VkHandle());
+                ss << ", which backs ";
+                ss << FormatHandle(info.dstAccelerationStructure);
+                const std::string resource_description = ss.str();
+                const auto error =
+                    error_messages_.BufferError(hazard, cb_context, error_obj.location.function, resource_description, dst_range);
+                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
+            }
         }
     }
     return skip;
@@ -3702,31 +3716,33 @@ void SyncValidator::PreCallRecordCmdBuildAccelerationStructuresKHR(
 
     const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
 
-    for (uint32_t i = 0; i < infoCount; i++) {
-        const auto &info = pInfos[i];
-        const auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress);
-        if (scratch_buffers.empty()) {
-            continue;
-        }
-        if (scratch_buffers.size() > 1) {
-            continue;  // postpone handling this case until syncval memory aliasing support is ready
-        }
-        const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
-        const vvl::Buffer &scratch_buffer = *scratch_buffers[0];
-
-        // Skip invalid configurations
-        {
-            const sparse_container::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
-                                                                      info.scratchData.deviceAddress + scratch_size);
-            if (!scratch_buffer.DeviceAddressRange().includes(scratch_range)) {
-                continue;  // [core validation check]: invalid scratch range
+    for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
+        // Record scratch buffer access
+        if (const auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress); scratch_buffers.size() == 1) {
+            // NOTE: the above size check - do not handle mutlipe buffers until syncval aliasing support is here
+            const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
+            const vvl::Buffer &scratch_buffer = *scratch_buffers[0];
+            // Skip invalid configurations
+            {
+                const sparse_container::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
+                                                                          info.scratchData.deviceAddress + scratch_size);
+                if (!scratch_buffer.DeviceAddressRange().includes(scratch_range)) {
+                    continue;  // [core validation check]: invalid scratch range
+                }
             }
+            const ResourceAccessRange scratch_range =
+                MakeRange(info.scratchData.deviceAddress - scratch_buffer.deviceAddress, scratch_size);
+            const ResourceUsageTagEx scratch_tag_ex = cb_context.AddCommandHandle(tag, scratch_buffer.Handle());
+            context.UpdateAccessState(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
+                                      SyncOrdering::kNonAttachment, scratch_range, scratch_tag_ex);
         }
-
-        const ResourceAccessRange range = MakeRange(info.scratchData.deviceAddress - scratch_buffer.deviceAddress, scratch_size);
-        auto tag_ex = cb_context.AddCommandHandle(tag, scratch_buffer.Handle());
-        context.UpdateAccessState(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
-                                  SyncOrdering::kNonAttachment, range, tag_ex);
+        // Record access to destination acceleration structure
+        if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure)) {
+            const ResourceAccessRange dst_range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+            const ResourceUsageTagEx dst_tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
+            context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
+                                      SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
+        }
     }
 }
 

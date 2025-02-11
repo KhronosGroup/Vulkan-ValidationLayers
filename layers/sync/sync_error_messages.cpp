@@ -109,11 +109,15 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     const bool missing_synchronization = (hazard_info.IsPriorWrite() && write_barriers.none()) ||
                                          (hazard_info.IsPriorRead() && read_barriers == VK_PIPELINE_STAGE_2_NONE);
 
+    // TODO: collect more use cases and generalize if needed
+    bool use_and_conjunction = command == vvl::Func::vkCmdBuildAccelerationStructuresKHR;
+
     // Brief description of what happened
     ss << string_SyncHazard(hazard_type) << " hazard detected. ";
     ss << vvl::String(command);
     ss << (hazard_info.IsWrite() ? " writes to " : " reads ") << resouce_description;
-    ss << (hazard_info.IsRacingHazard() ? ", which is being " : ", which was previously ");
+    ss << (use_and_conjunction ? " and " : ", which ");
+    ss << (hazard_info.IsRacingHazard() ? "is being " : "was previously ");
     ss << (hazard_info.IsPriorWrite() ? "written by " : "read by ");
     if (usage_info.command == command) {
         ss << "another " << vvl::String(usage_info.command) << " command";
