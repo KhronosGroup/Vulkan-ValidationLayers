@@ -1943,5 +1943,7 @@ std::vector<uint8_t> Pipeline::GetRayTracingCaptureReplayShaderGroupHandles() {
     return sbt_host_storage;
 }
 
+std::vector<VkRayTracingShaderGroupCreateInfoKHR> Pipeline::GetRayTracingShaderGroupCreateInfos() { return shader_group_cis_; }
+
 }  // namespace rt
 }  // namespace vkt
