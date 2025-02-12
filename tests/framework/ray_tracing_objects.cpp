@@ -250,8 +250,6 @@ GeometryKHR &GeometryKHR::SetInstanceShaderBindingTableRecordOffset(uint32_t ins
     return *this;
 }
 
-GeometryKHR &GeometryKHR::Build() { return *this; }
-
 VkAccelerationStructureBuildRangeInfoKHR GeometryKHR::GetFullBuildRange() const {
     VkAccelerationStructureBuildRangeInfoKHR range_info{};
     range_info.primitiveCount = primitive_count_;
@@ -326,7 +324,7 @@ VkDeviceAddress AccelerationStructureKHR::GetAccelerationStructureDeviceAddress(
     return as_address;
 }
 
-void AccelerationStructureKHR::Build() {
+void AccelerationStructureKHR::Create() {
     assert(handle() == VK_NULL_HANDLE);
 
     // Create a buffer to store acceleration structure
@@ -512,22 +510,17 @@ void BuildGeometryInfoKHR::UpdateDstAccelStructSize() {
 }
 
 void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeometries /*= true*/) {
-    // Build geometries
-    for (auto &geometry : geometries_) {
-        geometry.Build();
-    }
-
     if (update_dst_as_size_before_build_ && !dst_as_->IsNull() && !dst_as_->IsBuilt()) {
         UpdateDstAccelStructSize();
     }
 
     // Build source and destination acceleration structures
     if (!src_as_->IsNull() && !src_as_->IsBuilt()) {
-        src_as_->Build();
+        src_as_->Create();
     }
     vk_info_.srcAccelerationStructure = src_as_->handle();
     if (!dst_as_->IsNull() && !dst_as_->IsBuilt()) {
-        dst_as_->Build();
+        dst_as_->Create();
     }
     vk_info_.dstAccelerationStructure = dst_as_->handle();
 

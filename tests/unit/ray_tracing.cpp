@@ -571,10 +571,10 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
 
     auto blas_no_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
     blas_no_mem->SetDeviceBufferInitNoMem(true);
-    blas_no_mem->Build();
+    blas_no_mem->Create();
 
     auto valid_blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
-    valid_blas->Build();
+    valid_blas->Create();
 
     VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
     copy_info.src = blas_no_mem->handle();
@@ -635,7 +635,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureOverlappingMemory) {
 
     auto blas_2 = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
     blas_2->SetDeviceBuffer(std::move(buffer_2));
-    blas_2->Build();
+    blas_2->Create();
 
     VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
     copy_info.src = blas_1.GetDstAS()->handle();
@@ -683,11 +683,11 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
     blas->SetDeviceBuffer(std::move(buffer));
-    blas->Build();
+    blas->Create();
 
     auto blas_no_mem = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
     blas_no_mem->SetDeviceBufferInitNoMem(true);
-    blas_no_mem->Build();
+    blas_no_mem->Create();
 
     VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
     copy_info.src = blas_no_mem->handle();
@@ -739,11 +739,11 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureNoHostMem) {
     vk::BindBufferMemory(m_device->handle(), buffer.handle(), device_memory.handle(), 0);
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, 4096);
-    blas->Build();
+    blas->Create();
 
     auto blas_no_host_mem = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, 4096);
     blas_no_host_mem->SetDeviceBuffer(std::move(buffer));
-    blas_no_host_mem->Build();
+    blas_no_host_mem->Create();
 
     VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
     copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
@@ -791,7 +791,7 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructure) {
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 0);
     blas->SetDeviceBuffer(std::move(dst_buffer));
-    blas->Build();
+    blas->Create();
 
     VkCopyMemoryToAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
     copy_info.src.deviceAddress = src_buffer.Address();
@@ -917,7 +917,7 @@ TEST_F(NegativeRayTracing, CopyMemoryToAccelerationStructureHostAddress) {
     RETURN_IF_SKIP(Init());
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, 4096);
-    blas->Build();
+    blas->Create();
 
     VkDeviceOrHostAddressConstKHR output_data;
     output_data.hostAddress = reinterpret_cast<void *>(0x00000021);
@@ -957,7 +957,7 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, buffer_ci.size);
     blas->SetDeviceBuffer(std::move(non_host_visible_buffer));
-    blas->Build();
+    blas->Create();
 
     uint8_t output[4096];
     uint8_t *aligned_output = reinterpret_cast<uint8_t *>(Align<uintptr_t>(reinterpret_cast<uintptr_t>(output), 16));
@@ -1143,7 +1143,7 @@ TEST_F(NegativeRayTracing, GetAccelerationStructureAddressBabBuffer) {
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
     blas->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
-    blas->Build();
+    blas->Create();
 
     blas->GetBuffer().Memory().destroy();
     m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09541");
@@ -2193,7 +2193,7 @@ TEST_F(NegativeRayTracing, CmdCopyAccelerationStructureToMemoryKHR) {
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
     blas->SetDeviceBufferInitNoMem(true);
-    blas->Build();
+    blas->Create();
 
     VkDeviceOrHostAddressKHR output_data;
     output_data.deviceAddress = 256;
@@ -2239,7 +2239,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureToMemoryKHR) {
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
     blas->SetDeviceBuffer(std::move(buffer));
-    blas->Build();
+    blas->Create();
 
     std::vector<uint8_t> data(4096, 0);
     VkDeviceOrHostAddressKHR output_data;
@@ -2269,7 +2269,7 @@ TEST_F(NegativeRayTracing, CmdCopyMemoryToAccelerationStructureKHRInvalidSrcBuff
     RETURN_IF_SKIP(InitState());
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
-    blas->Build();
+    blas->Create();
 
     VkCopyMemoryToAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
     copy_info.src.deviceAddress = 256;
@@ -2528,7 +2528,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDeviceBlasNotBui
 
     vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
-    blas.GetDstAS()->Build();
+    blas.GetDstAS()->Create();
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, 1);
 
@@ -2668,7 +2668,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDataSizeTooSmall
     vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
     blas.GetDstAS()->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     blas.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
-    blas.GetDstAS()->Build();
+    blas.GetDstAS()->Create();
 
     constexpr size_t stride = 1;
     constexpr size_t data_size = sizeof(VkDeviceSize) * stride;
@@ -3859,7 +3859,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureMode) {
     blas1.BuildHost();
 
     auto blas2 = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, 4096);
-    blas2->Build();
+    blas2->Create();
 
     VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
     copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;

@@ -591,7 +591,7 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets.data());
 
     auto tlas = vkt::as::blueprint::AccelStructSimpleOnDeviceTopLevel(*m_device, 4096);
-    tlas->Build();
+    tlas->Create();
 
     VkWriteDescriptorSetAccelerationStructureKHR blas_descriptor = vku::InitStructHelper();
     blas_descriptor.accelerationStructureCount = 1;

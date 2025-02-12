@@ -5463,7 +5463,7 @@ TEST_F(NegativeDescriptors, UpdateDescriptorSetWithAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
-    blas->Build();
+    blas->Create();
 
     VkAccelerationStructureKHR null_acceleration_structure = VK_NULL_HANDLE;
 
