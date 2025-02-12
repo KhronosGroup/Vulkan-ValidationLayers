@@ -55,8 +55,10 @@ class ErrorMessages {
                                  const std::string& resource_description, uint32_t region_index, const VkOffset3D& offset,
                                  const VkExtent3D& extent, const VkImageSubresourceLayers& subresource) const;
 
-    std::string ImageSubresourceRangeError(const HazardResult& hazard, VkImage image, uint32_t subresource_range_index,
-                                           const CommandBufferAccessContext& cb_context, vvl::Func command) const;
+    std::string ImageSubresourceRangeError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                           vvl::Func command, const std::string& resource_description,
+                                           uint32_t subresource_range_index,
+                                           const VkImageSubresourceRange& subresource_range) const;
 
     std::string BeginRenderingError(const HazardResult& hazard, const syncval_state::DynamicRenderingInfo::Attachment& attachment,
                                     const CommandBufferAccessContext& cb_context, vvl::Func command) const;

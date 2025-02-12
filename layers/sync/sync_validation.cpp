@@ -1903,16 +1903,13 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
     assert(context);
     if (!context) return skip;
 
-    auto image_state = Get<ImageState>(image);
-
-    for (uint32_t index = 0; index < rangeCount; index++) {
-        const auto &range = pRanges[index];
-        if (image_state) {
+    if (auto image_state = Get<ImageState>(image)) {
+        for (const auto [range_index, range] : vvl::enumerate(pRanges, rangeCount)) {
             auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, image);
-                const auto error = error_messages_.ImageSubresourceRangeError(hazard, image, index, *cb_access_context,
-                                                                              error_obj.location.function);
+                const auto error = error_messages_.ImageSubresourceRangeError(
+                    hazard, *cb_access_context, error_obj.location.function, FormatHandle(image), range_index, range);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -1960,16 +1957,13 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
     assert(context);
     if (!context) return skip;
 
-    auto image_state = Get<ImageState>(image);
-
-    for (uint32_t index = 0; index < rangeCount; index++) {
-        const auto &range = pRanges[index];
-        if (image_state) {
+    if (auto image_state = Get<ImageState>(image)) {
+        for (const auto [range_index, range] : vvl::enumerate(pRanges, rangeCount)) {
             auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, image);
-                const auto error = error_messages_.ImageSubresourceRangeError(hazard, image, index, *cb_access_context,
-                                                                              error_obj.location.function);
+                const auto error = error_messages_.ImageSubresourceRangeError(
+                    hazard, *cb_access_context, error_obj.location.function, FormatHandle(image), range_index, range);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
