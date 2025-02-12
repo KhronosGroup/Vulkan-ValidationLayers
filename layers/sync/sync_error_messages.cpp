@@ -249,7 +249,7 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, const C
     const std::string additional_information = ss.str();
 
     ReportKeyValues additional_properties;
-    additional_properties.Add(kPropertyCopyRegion, region_index);
+    additional_properties.Add(kPropertyRegionIndex, region_index);
 
     return Error(hazard, cb_context, command, resource_description, additional_information, additional_properties);
 }
@@ -267,27 +267,24 @@ std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, const Co
     const std::string additional_information = ss.str();
 
     ReportKeyValues additional_properties;
-    additional_properties.Add(kPropertyCopyRegion, region_index);
+    additional_properties.Add(kPropertyRegionIndex, region_index);
 
     return Error(hazard, cb_context, command, resource_description, additional_information, additional_properties);
 }
 
-std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard, VkImage image, uint32_t subresource_range_index,
-                                                      const CommandBufferAccessContext& cb_context, vvl::Func command) const {
-    const auto format = "Hazard %s for %s, range index %" PRIu32 ". Access info %s.";
-    ReportKeyValues key_values;
+std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                      vvl::Func command, const std::string& resource_description,
+                                                      uint32_t subresource_range_index,
+                                                      const VkImageSubresourceRange& subresource_range) const {
+    std::stringstream ss;
+    ss << "Image clear range: index = " << subresource_range_index;
+    ss << ", subresource range = {" << string_VkImageSubresourceRange(subresource_range) << "}.";
+    const std::string additional_information = ss.str();
 
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), validator_.FormatHandle(image).c_str(),
-                                 subresource_range_index, access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "ImageSubresourceRangeError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
+    ReportKeyValues additional_properties;
+    additional_properties.Add(kPropertyRegionIndex, subresource_range_index);
+
+    return Error(hazard, cb_context, command, resource_description, additional_information, additional_properties);
 }
 
 std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard,
