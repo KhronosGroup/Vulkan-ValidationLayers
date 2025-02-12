@@ -20,6 +20,7 @@
 #include "sync/sync_image.h"
 #include "sync/sync_reporting.h"
 #include "sync/sync_validation.h"
+#include "error_message/error_strings.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "utils/text_utils.h"
@@ -118,7 +119,15 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     ss << (hazard_info.IsWrite() ? " writes to " : " reads ") << resouce_description;
     ss << (use_and_conjunction ? " and " : ", which ");
     ss << (hazard_info.IsRacingHazard() ? "is being " : "was previously ");
-    ss << (hazard_info.IsPriorWrite() ? "written by " : "read by ");
+    if (hazard_info.IsPriorWrite()) {
+        if (prior_access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
+            ss << "written during an image layout transition initiated by ";
+        } else {
+            ss << "written by ";
+        }
+    } else {
+        ss << "read by ";
+    }
     if (usage_info.command == command) {
         ss << "another " << vvl::String(usage_info.command) << " command";
     } else {
@@ -136,16 +145,26 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
         ss << "No sufficient synchronization is present to ensure that a " << access_type << " (";
         ss << string_VkAccessFlagBits2(access.access_mask) << ") at ";
         ss << string_VkPipelineStageFlagBits2(access.stage_mask) << " does not conflict with a prior ";
-        ss << prior_access_type;
-        if (prior_access.access_mask != access.access_mask) {
-            ss << " (" << string_VkAccessFlags2(prior_access.access_mask) << ")";
-        }
-        ss << " at ";
-        if (prior_access.stage_mask == access.stage_mask) {
-            ss << "the same stage.";
+
+        if (prior_access.access_mask != VK_ACCESS_2_NONE) {
+            ss << prior_access_type;
+            if (prior_access.access_mask != access.access_mask) {
+                ss << " (" << string_VkAccessFlags2(prior_access.access_mask) << ")";
+            }
         } else {
-            ss << string_VkPipelineStageFlagBits2(prior_access.stage_mask) << ".";
+            if (prior_access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
+                ss << "layout transition write";
+            }
         }
+        if (prior_access.stage_mask != VK_PIPELINE_STAGE_2_NONE) {
+            ss << " at ";
+            if (prior_access.stage_mask == access.stage_mask) {
+                ss << "the same stage";
+            } else {
+                ss << string_VkPipelineStageFlagBits2(prior_access.stage_mask);
+            }
+        }
+        ss << ".";
     } else if (hazard_info.IsPriorWrite()) {  // RAW/WAW hazards
         ss << "The current synchronization allows ";
         ss << FormatSyncAccesses(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
@@ -235,23 +254,22 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, const C
     return Error(hazard, cb_context, command, resource_description, additional_information, additional_properties);
 }
 
-std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, VkImage image, bool is_src_image, uint32_t region_index,
-                                            const CommandBufferAccessContext& cb_context, vvl::Func command) const {
-    const auto format = "Hazard %s for %s %s, region %" PRIu32 ". Access info %s.";
-    ReportKeyValues key_values;
+std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                            vvl::Func command, const std::string& resource_description, uint32_t region_index,
+                                            const VkOffset3D& offset, const VkExtent3D& extent,
+                                            const VkImageSubresourceLayers& subresource) const {
+    const bool is_blit = IsValueIn(command, {vvl::Func::vkCmdBlitImage, vvl::Func::vkCmdBlitImage2, vvl::Func::vkCmdBlitImage2KHR});
+    std::stringstream ss;
+    ss << "Image " << (is_blit ? "blit" : "copy") << " region: " << region_index;
+    ss << " (offset = {" << string_VkOffset3D(offset) << "}, ";
+    ss << "extent = {" << string_VkExtent3D(extent) << "}, ";
+    ss << "subresource = {" << string_VkImageSubresourceLayers(subresource) << "}).";
+    const std::string additional_information = ss.str();
 
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* resource_parameter = is_src_image ? "srcImage" : "dstImage";
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), resource_parameter,
-                                 validator_.FormatHandle(image).c_str(), region_index, access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "ImageRegionError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
+    ReportKeyValues additional_properties;
+    additional_properties.Add(kPropertyCopyRegion, region_index);
+
+    return Error(hazard, cb_context, command, resource_description, additional_information, additional_properties);
 }
 
 std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard, VkImage image, uint32_t subresource_range_index,
