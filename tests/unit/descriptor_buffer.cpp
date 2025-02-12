@@ -381,7 +381,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledGetAccelerationStructureOpaqueCapture
     RETURN_IF_SKIP(Init());
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
-    blas->Build();
+    blas->Create();
 
     uint8_t data[256];
 

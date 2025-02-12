@@ -1637,7 +1637,7 @@ TEST_F(PositiveRayTracing, SerializeAccelerationStructure) {
     deserialized_blas.AddFlags(
         VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR /*| VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR*/);
     deserialized_blas.GetDstAS()->SetSize(Align<VkDeviceSize>(serialized_accel_struct_size, 256));
-    deserialized_blas.GetDstAS()->Build();
+    deserialized_blas.GetDstAS()->Create();
 
     VkCopyMemoryToAccelerationStructureInfoKHR copy_memory_to_accel_struct_info = vku::InitStructHelper();
     copy_memory_to_accel_struct_info.src.deviceAddress = serialized_accel_struct_buffer.Address();

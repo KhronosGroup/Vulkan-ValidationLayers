@@ -97,8 +97,6 @@ class GeometryKHR {
     GeometryKHR& SetInstanceHostAddress(void* address);
     GeometryKHR& SetInstanceShaderBindingTableRecordOffset(uint32_t instance_i, uint32_t instance_sbt_record_offset);
 
-    GeometryKHR& Build();
-
     const auto& GetVkObj() const { return vk_obj_; }
     VkAccelerationStructureBuildRangeInfoKHR GetFullBuildRange() const;
     const auto& GetTriangles() const { return triangles_; }
@@ -140,7 +138,7 @@ class AccelerationStructureKHR : public vkt::internal::NonDispHandle<VkAccelerat
     // Null check is done in BuildGeometryInfoKHR::Build(). Object is build iff it is not null.
     void SetNull(bool is_null) { is_null_ = is_null; }
     bool IsNull() const { return is_null_; }
-    void Build();
+    void Create();
     bool IsBuilt() const { return initialized(); }
     void Destroy();
 
