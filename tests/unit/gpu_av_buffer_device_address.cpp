@@ -14,7 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
-#include "../layers/containers/range_vector.h"
+#include "../layers/containers/range.h"
 
 class NegativeGpuAVBufferDeviceAddress : public GpuAVBufferDeviceAddressTest {};
 
@@ -620,7 +620,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     vkt::Buffer storage_buffer(*m_device, storage_buffer_size, 0, vkt::device_address);
 
     // Get device address of buffer to write to
-    using AddrRange = sparse_container::range<VkDeviceAddress>;
+    using AddrRange = vvl::range<VkDeviceAddress>;
     const VkDeviceAddress storage_buffer_addr = storage_buffer.Address();
     const AddrRange shader_writes_range(storage_buffer_addr, storage_buffer_addr + storage_buffer_size + 4);
 

@@ -20,7 +20,7 @@
 #pragma once
 #include <variant>
 #include "state_tracker/device_memory_state.h"
-#include "containers/range_vector.h"
+#include "containers/range.h"
 
 namespace vvl {
 
@@ -68,9 +68,7 @@ class Buffer : public Bindable {
         return buffer_state ? buffer_state->GetRegionSize(offset, size) : 0;
     }
 
-    sparse_container::range<VkDeviceAddress> DeviceAddressRange() const {
-        return {deviceAddress, deviceAddress + create_info.size};
-    }
+    vvl::range<VkDeviceAddress> DeviceAddressRange() const { return {deviceAddress, deviceAddress + create_info.size}; }
 
     // This function is only used for comparing Imported External Dedicated Memory
     bool CompareCreateInfo(const Buffer &other) const;

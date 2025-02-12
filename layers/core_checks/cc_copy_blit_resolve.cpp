@@ -786,10 +786,9 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buff
                     "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are bound to "
                     "the same memory (%s), "
                     "and end up overlapping on memory range %s.",
-                    sparse_container::string_range(*src_ranges_it).c_str(), FormatHandle(src_buffer_state.VkHandle()).c_str(),
-                    sparse_container::string_range(*dst_ranges_it).c_str(), FormatHandle(dst_buffer_state.VkHandle()).c_str(),
-                    FormatHandle(src_binding->memory_state->VkHandle()).c_str(),
-                    sparse_container::string_range(memory_range_overlap).c_str());
+                    vvl::string_range(*src_ranges_it).c_str(), FormatHandle(src_buffer_state.VkHandle()).c_str(),
+                    vvl::string_range(*dst_ranges_it).c_str(), FormatHandle(dst_buffer_state.VkHandle()).c_str(),
+                    FormatHandle(src_binding->memory_state->VkHandle()).c_str(), vvl::string_range(memory_range_overlap).c_str());
             }
 
             if (*src_ranges_it < *dst_ranges_it) {
@@ -1992,8 +1991,8 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
 
         for (uint32_t i = 0; i < regionCount; ++i) {
             const RegionType &region = pRegions[i];
-            src_ranges[i] = sparse_container::range<VkDeviceSize>{region.srcOffset, region.srcOffset + region.size};
-            dst_ranges[i] = sparse_container::range<VkDeviceSize>{region.dstOffset, region.dstOffset + region.size};
+            src_ranges[i] = vvl::range<VkDeviceSize>{region.srcOffset, region.srcOffset + region.size};
+            dst_ranges[i] = vvl::range<VkDeviceSize>{region.dstOffset, region.dstOffset + region.size};
 
             src_ranges_bounds.begin = std::min(src_ranges_bounds.begin, region.srcOffset);
             src_ranges_bounds.end = std::max(src_ranges_bounds.end, region.srcOffset + region.size);
@@ -2032,11 +2031,11 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
                                 "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are "
                                 "bound to the same memory (%s), "
                                 "and end up overlapping on memory range %s.",
-                                sparse_container::string_range(src_ranges_it->second).c_str(),
+                                vvl::string_range(src_ranges_it->second).c_str(),
                                 FormatHandle(src_buffer_state->VkHandle()).c_str(),
-                                sparse_container::string_range(dst_ranges_it->second).c_str(),
+                                vvl::string_range(dst_ranges_it->second).c_str(),
                                 FormatHandle(dst_buffer_state->VkHandle()).c_str(), FormatHandle(vk_memory).c_str(),
-                                sparse_container::string_range(memory_range_overlap).c_str());
+                                vvl::string_range(memory_range_overlap).c_str());
                         }
 
                         if (src_ranges_it->first < dst_ranges_it->first) {
@@ -2215,8 +2214,8 @@ bool CoreChecks::ValidateImageBufferCopyMemoryOverlap(const vvl::CommandBuffer &
         copy_size = static_cast<VkDeviceSize>(
             ((region.imageExtent.width * region.imageExtent.height * region.imageExtent.depth) * texel_size));
     }
-    auto image_region = sparse_container::range<VkDeviceSize>{image_offset, image_offset + copy_size};
-    auto buffer_region = sparse_container::range<VkDeviceSize>{region.bufferOffset, region.bufferOffset + copy_size};
+    auto image_region = vvl::range<VkDeviceSize>{image_offset, image_offset + copy_size};
+    auto buffer_region = vvl::range<VkDeviceSize>{region.bufferOffset, region.bufferOffset + copy_size};
     if (image_state.DoesResourceMemoryOverlap(image_region, &buffer_state, buffer_region)) {
         const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
         skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::MemoryOverlap_00173), objlist, region_loc,

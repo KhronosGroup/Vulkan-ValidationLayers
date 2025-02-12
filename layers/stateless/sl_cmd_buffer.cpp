@@ -18,7 +18,7 @@
 
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
-#include "containers/range_vector.h"
+#include "containers/range.h"
 
 namespace stateless {
 ReadLockGuard Device::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
@@ -931,10 +931,9 @@ bool Device::manual_PreCallValidateConvertCooperativeVectorMatrixNV(VkDevice dev
     }
 
     if (pInfo->dstData.hostAddress != nullptr) {
-        sparse_container::range<size_t> src_range((uintptr_t)pInfo->srcData.hostAddress,
-                                                  (uintptr_t)pInfo->srcData.hostAddress + pInfo->srcSize);
-        sparse_container::range<size_t> dst_range((uintptr_t)pInfo->dstData.hostAddress,
-                                                  (uintptr_t)pInfo->dstData.hostAddress + *pInfo->pDstSize);
+        vvl::range<size_t> src_range((uintptr_t)pInfo->srcData.hostAddress, (uintptr_t)pInfo->srcData.hostAddress + pInfo->srcSize);
+        vvl::range<size_t> dst_range((uintptr_t)pInfo->dstData.hostAddress,
+                                     (uintptr_t)pInfo->dstData.hostAddress + *pInfo->pDstSize);
         if (src_range.intersects(dst_range)) {
             skip |= LogError("VUID-vkConvertCooperativeVectorMatrixNV-pInfo-10076", device, info_loc,
                              "Source [%zx,%zx) and destination [%zx,%zx) ranges overlap", src_range.begin, src_range.end,
@@ -953,8 +952,8 @@ bool Device::manual_PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommand
     bool skip = false;
     const auto &error_obj = context.error_obj;
 
-    std::vector<sparse_container::range<VkDeviceAddress>> src_memory_ranges;
-    std::vector<sparse_container::range<VkDeviceAddress>> dst_memory_ranges;
+    std::vector<vvl::range<VkDeviceAddress>> src_memory_ranges;
+    std::vector<vvl::range<VkDeviceAddress>> dst_memory_ranges;
 
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto const &info = pInfos[i];

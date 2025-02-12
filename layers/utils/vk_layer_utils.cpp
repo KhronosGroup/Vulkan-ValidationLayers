@@ -19,9 +19,10 @@
 
 #include <string.h>
 #include <sys/stat.h>
+#include <sstream>
 #include <vulkan/vk_enum_string_helper.h>
 
-#include "containers/range_vector.h"
+#include "containers/range.h"
 #include "vulkan/vulkan_core.h"
 #include "vk_layer_config.h"
 

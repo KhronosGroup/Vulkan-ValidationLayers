@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  */
 #pragma once
 #include "containers/subresource_adapter.h"
-#include "containers/range_vector.h"
+#include "containers/range.h"
 #include "generated/sync_validation_types.h"
 #include <set>
 
@@ -48,9 +48,9 @@ using ResourceUsageTag = size_t;
 constexpr static ResourceUsageTag kMaxIndex = std::numeric_limits<ResourceUsageTag>::max();
 constexpr static ResourceUsageTag kInvalidTag = kMaxIndex;
 
-using ResourceUsageRange = sparse_container::range<ResourceUsageTag>;
+using ResourceUsageRange = vvl::range<ResourceUsageTag>;
 using ResourceAddress = VkDeviceSize;
-using ResourceAccessRange = sparse_container::range<ResourceAddress>;
+using ResourceAccessRange = vvl::range<ResourceAddress>;
 
 // Usage tag extended with resource handle information
 struct ResourceUsageTagEx {

@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2024 The Khronos Group Inc.
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
- * Copyright (C) 2019-2024 Google Inc.
+/* Copyright (c) 2019-2025 The Khronos Group Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (C) 2019-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,134 +28,12 @@
 #include <sstream>
 #include <utility>
 #include <cstdint>
-#include "custom_containers.h"
+#include "containers/range.h"
+#include "containers/custom_containers.h"
 
 #define RANGE_ASSERT(b) assert(b)
 
 namespace sparse_container {
-// range_map
-//
-// Implements an ordered map of non-overlapping, non-empty ranges
-//
-template <typename Index>
-struct range {
-    using index_type = Index;
-    index_type begin;  // Inclusive lower bound of range
-    index_type end;    // Exlcusive upper bound of range
-
-    inline bool empty() const { return begin == end; }
-    inline bool valid() const { return begin <= end; }
-    inline bool invalid() const { return !valid(); }
-    inline bool non_empty() const { return begin < end; }  //  valid and !empty
-
-    inline bool is_prior_to(const range &other) const { return end == other.begin; }
-    inline bool is_subsequent_to(const range &other) const { return begin == other.end; }
-    inline bool includes(const index_type &index) const { return (begin <= index) && (index < end); }
-    inline bool includes(const range &other) const { return (begin <= other.begin) && (other.end <= end); }
-    inline bool excludes(const index_type &index) const { return (index < begin) || (end <= index); }
-    inline bool excludes(const range &other) const { return (other.end <= begin) || (end <= other.begin); }
-    inline bool intersects(const range &other) const { return includes(other.begin) || other.includes(begin); }
-    inline index_type distance() const { return end - begin; }
-
-    inline bool operator==(const range &rhs) const { return (begin == rhs.begin) && (end == rhs.end); }
-    inline bool operator!=(const range &rhs) const { return (begin != rhs.begin) || (end != rhs.end); }
-
-    inline range &operator-=(const index_type &offset) {
-        begin = begin - offset;
-        end = end - offset;
-        return *this;
-    }
-
-    inline range &operator+=(const index_type &offset) {
-        begin = begin + offset;
-        end = end + offset;
-        return *this;
-    }
-
-    inline range operator+(const index_type &offset) const { return range(begin + offset, end + offset); }
-
-    // for a reversible/transitive < operator compare first on begin and then end
-    // only less or begin is less or if end is less when begin is equal
-    bool operator<(const range &rhs) const {
-        bool result = false;
-        if (invalid()) {
-            // all invalid < valid, allows map/set validity check by looking at begin()->first
-            // all invalid are equal, thus only equal if this is invalid and rhs is valid
-            result = rhs.valid();
-        } else if (begin < rhs.begin) {
-            result = true;
-        } else if ((begin == rhs.begin) && (end < rhs.end)) {
-            result = true;  // Simple common case -- boundary case require equality check for correctness.
-        }
-        return result;
-    }
-
-    // use as "strictly less/greater than" to check for non-overlapping ranges
-    bool strictly_less(const range &rhs) const { return end <= rhs.begin; }
-    bool strictly_less(const index_type &index) const { return end <= index; }
-    bool strictly_greater(const range &rhs) const { return rhs.end <= begin; }
-    bool strictly_greater(const index_type &index) const { return index < begin; }
-
-    range &operator=(const range &rhs) {
-        begin = rhs.begin;
-        end = rhs.end;
-        return *this;
-    }
-
-    // Compute ranges intersection. Returns empty range on non-intersection
-    range operator&(const range &rhs) const {
-        if (includes(rhs.begin)) {
-            return range(rhs.begin, std::min(end, rhs.end));
-        } else if (rhs.includes(begin)) {
-            return range(begin, std::min(end, rhs.end));
-        }
-        return range();
-    }
-
-    index_type size() const { return end - begin; }
-    range() : begin(), end() {}
-    range(const index_type &begin_, const index_type &end_) : begin(begin_), end(end_) {}
-    range(const range &other) : begin(other.begin), end(other.end) {}
-};
-
-template <typename Range>
-class range_view {
-  public:
-    using index_type = typename Range::index_type;
-    class iterator {
-      public:
-        iterator &operator++() {
-            ++current;
-            return *this;
-        }
-        const index_type &operator*() const { return current; }
-        bool operator!=(const iterator &rhs) const { return current != rhs.current; }
-        iterator(index_type value) : current(value) {}
-
-      private:
-        index_type current;
-    };
-    range_view(const Range &range) : range_(range) {}
-    const iterator begin() const { return iterator(range_.begin); }
-    const iterator end() const { return iterator(range_.end); }
-
-  private:
-    const Range &range_;
-};
-
-template <typename Range>
-std::string string_range(const Range &range) {
-    std::stringstream ss;
-    ss << "[" << range.begin << ", " << range.end << ')';
-    return ss.str();
-}
-
-template <typename Range>
-std::string string_range_hex(const Range &range) {
-    std::stringstream ss;
-    ss << std::hex << "[0x" << range.begin << ", 0x" << range.end << ')';
-    return ss.str();
-}
 
 // Type parameters for the range_map(s)
 struct insert_range_no_split_bounds {
@@ -186,8 +64,11 @@ enum class value_precedence { prefer_source, prefer_dest };
 template <typename Iterator, typename Map, typename Range>
 Iterator split(Iterator in, Map &map, const Range &range);
 
-// The range based sparse map implemented on the ImplMap
-template <typename Key, typename T, typename RangeKey = range<Key>, typename ImplMap = std::map<RangeKey, T>>
+// range_map
+//
+// The range based sparse map implemented on the ImplMap.
+// Implements an ordered map of non-overlapping, non-empty ranges
+template <typename Key, typename T, typename RangeKey = vvl::range<Key>, typename ImplMap = std::map<RangeKey, T>>
 class range_map {
   public:
   protected:
@@ -195,6 +76,8 @@ class range_map {
     ImplMap impl_map_;
     using ImplIterator = typename ImplMap::iterator;
     using ImplConstIterator = typename ImplMap::const_iterator;
+    template <typename IndexType>
+    using range = vvl::range<IndexType>;
 
   public:
     using mapped_type = typename ImplMap::mapped_type;
@@ -758,9 +641,9 @@ using const_correct_iterator = decltype(std::declval<Container>().begin());
 //
 // Assumes RangeKey::index_type is unsigned (TBD is it useful to generalize to unsigned?)
 // Assumes RangeKey implements begin, end, < and (TBD) from template range above
-template <typename Key, typename T, typename RangeKey = range<Key>, size_t N = 64, typename SmallIndex = uint8_t>
+template <typename Key, typename T, typename RangeKey = vvl::range<Key>, size_t N = 64, typename SmallIndex = uint8_t>
 class small_range_map {
-    using SmallRange = range<SmallIndex>;
+    using SmallRange = vvl::range<SmallIndex>;
 
   public:
     using mapped_type = T;
@@ -2033,11 +1916,3 @@ void consolidate(RangeMap &map) {
 }
 
 }  // namespace sparse_container
-
-// Returns the intersection of the ranges [x, x + x_size) and [y, y + y_size)
-static inline sparse_container::range<int64_t> GetRangeIntersection(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
-    int64_t intersection_min = std::max(x, y);
-    int64_t intersection_max = std::min(x + static_cast<int64_t>(x_size), y + static_cast<int64_t>(y_size));
-
-    return {intersection_min, intersection_max};
-}

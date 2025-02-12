@@ -18,7 +18,7 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
-#include "containers/range_vector.h"
+#include "containers/range_map.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 
 namespace vvl {
@@ -100,8 +100,8 @@ struct MemoryBinding {
 
 class BindableMemoryTracker {
   public:
-    using BufferRange = sparse_container::range<VkDeviceSize>;
-    using MemoryRange = sparse_container::range<VkDeviceSize>;
+    using BufferRange = vvl::range<VkDeviceSize>;
+    using MemoryRange = vvl::range<VkDeviceSize>;
     using BoundMemoryRange = std::map<VkDeviceMemory, std::vector<MemoryRange>>;
     using BoundRanges = vvl::unordered_map<VkDeviceMemory, std::vector<std::pair<MemoryRange, BufferRange>>>;
     using DeviceMemoryState = unordered_set<std::shared_ptr<vvl::DeviceMemory>>;
