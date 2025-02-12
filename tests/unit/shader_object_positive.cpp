@@ -1172,18 +1172,24 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
     attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
-    VkRenderingInfo renderingInfo = vku::InitStructHelper();
-    renderingInfo.renderArea = {{0, 0}, {100u, 100u}};
-    renderingInfo.layerCount = 1u;
-    renderingInfo.colorAttachmentCount = 2u;
-    renderingInfo.pColorAttachments = attachments;
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {m_width, m_height}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 2u;
+    rendering_info.pColorAttachments = attachments;
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &rendering_info);
     SetDefaultDynamicStatesExclude();
+    VkBool32 blend_enable = VK_TRUE;
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 1u, 1u, &blend_enable);
+    VkColorBlendEquationEXT color_blend_equation = {};
+    vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 1u, 1u, &color_blend_equation);
+    VkColorComponentFlags color_write_mask = VK_COLOR_COMPONENT_R_BIT;
+    vk::CmdSetColorWriteMaskEXT(m_command_buffer.handle(), 1u, 1u, &color_write_mask);
     m_command_buffer.BindVertFragShader(vertShader, fragShader);
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
-    m_command_buffer.EndRendering();
+    vk::CmdEndRenderingKHR(m_command_buffer.handle());
     m_command_buffer.End();
 }
 
