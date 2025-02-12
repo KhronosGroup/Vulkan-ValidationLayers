@@ -15,16 +15,40 @@ The specific areas covered by this layer are currently tracked in the
 [Synchronization Validation Project](https://github.com/KhronosGroup/Vulkan-ValidationLayers/projects/5).
 Requests for additional checks can be requested by creating a [Github issue](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues).
 
+## Enabling Synchronization Validation
 
-## Configuring Synchronization Validation
-For an overview of how to configure layers, refer to the [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document.
+Synchronization Validation is just a [normal layer setting](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/settings.md) that can be turned on. 
 
-Synchronization Validation settings are managed by configuring the Validation Layer. These settings are described in the
-[VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details) document.
+The main 3 ways to turn on Sync
 
-The `khronos_validation.validate_sync` configuration variable enables Synchronization Validation. Additional configuration settings have this naming pattern: `khronos_validation.syncval_*`.
+1. We **highly** suggest people to use [VkConfig](https://www.lunarg.com/introducing-the-new-vulkan-configurator-vkconfig/) and use the Synchronization Preset.
 
-Synchronization Validation settings can also be managed using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK.
+>  **NOTE** - This will turn off other non-sync validation for you makeing Synchronization Validation run faster.
+
+2. Use `VK_EXT_layer_settings`
+
+```c++
+// Will turn on as an additional setting with core validation
+const VkBool32 verbose_value = true;
+const VkLayerSettingEXT layer_setting = {"VK_LAYER_KHRONOS_validation", "validate_sync", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &verbose_value};
+VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting};
+
+VkInstanceCreateInfo instance_ci = GetYourCreateInfo();
+instance_ci.pNext = &layer_settings_create_info;
+```
+
+3. Set as an environment variable (will turn on as an additional setting with core validation)
+
+```bash
+# Windows
+set VK_LAYER_VALIDATE_SYNC=1
+
+# Linux
+export VK_LAYER_VALIDATE_SYNC=1
+
+# Android
+adb setprop debug.vulkan.khronos_validation.validate_sync=1
+```
 
 ## Synchronization Validation Functionality
 
