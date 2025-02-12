@@ -97,6 +97,14 @@
     return ss.str();
 }
 
+[[maybe_unused]] static std::string string_VkImageSubresourceLayers(VkImageSubresourceLayers subresource_layers) {
+    std::stringstream ss;
+    ss << "aspectMask = " << string_VkImageAspectFlags(subresource_layers.aspectMask)
+       << ", mipLevel = " << subresource_layers.mipLevel << ", baseArrayLayer = " << subresource_layers.baseArrayLayer
+       << ", layerCount = " << subresource_layers.layerCount;
+    return ss.str();
+}
+
 [[maybe_unused]] static std::string string_VkComponentMapping(VkComponentMapping components) {
     std::stringstream ss;
     ss << "r swizzle = " << string_VkComponentSwizzle(components.r) << "\n";
