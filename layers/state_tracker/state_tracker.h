@@ -28,7 +28,7 @@
 #include "error_message/logging.h"
 #include "containers/custom_containers.h"
 #include "utils/android_ndk_types.h"
-#include "containers/range_vector.h"
+#include "containers/range_map.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include <atomic>
 #include <functional>
@@ -621,7 +621,7 @@ class Device : public vvl::base::Device {
     }
 
     // Return a count pair, {written addresses count, total address ranges count}
-    using BufferAddressRange = sparse_container::range<VkDeviceAddress>;
+    using BufferAddressRange = vvl::range<VkDeviceAddress>;
     [[nodiscard]] std::pair<size_t, size_t> GetBufferAddressRanges(BufferAddressRange* ranges, size_t ranges_size) const {
         ReadLockGuard guard(buffer_address_lock_);
 

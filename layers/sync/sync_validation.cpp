@@ -3667,8 +3667,8 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
             const vvl::Buffer &scratch_buffer = *scratch_buffers[0];
             // Skip invalid configurations
             {
-                const sparse_container::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
-                                                                          info.scratchData.deviceAddress + scratch_size);
+                const vvl::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
+                                                             info.scratchData.deviceAddress + scratch_size);
                 if (!scratch_buffer.DeviceAddressRange().includes(scratch_range)) {
                     continue;  // [core validation check]: invalid scratch range
                 }
@@ -3724,8 +3724,8 @@ void SyncValidator::PreCallRecordCmdBuildAccelerationStructuresKHR(
             const vvl::Buffer &scratch_buffer = *scratch_buffers[0];
             // Skip invalid configurations
             {
-                const sparse_container::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
-                                                                          info.scratchData.deviceAddress + scratch_size);
+                const vvl::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
+                                                             info.scratchData.deviceAddress + scratch_size);
                 if (!scratch_buffer.DeviceAddressRange().includes(scratch_range)) {
                     continue;  // [core validation check]: invalid scratch range
                 }

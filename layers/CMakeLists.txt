@@ -147,7 +147,8 @@ target_sources(vvl PRIVATE
     chassis/chassis_manual.cpp
     chassis/dispatch_object_manual.cpp
     containers/qfo_transfer.h
-    containers/range_vector.h
+    containers/range.h
+    containers/range_map.h
     containers/subresource_adapter.cpp
     containers/subresource_adapter.h
     core_checks/cc_android.cpp

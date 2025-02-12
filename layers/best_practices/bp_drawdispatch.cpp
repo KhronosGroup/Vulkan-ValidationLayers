@@ -54,7 +54,7 @@ bool BestPractices::ValidateCmdDispatchType(VkCommandBuffer cmd_buffer, const Lo
 }
 
 bool BestPractices::ValidatePushConstants(VkCommandBuffer cmd_buffer, const Location& loc) const {
-    using Range = sparse_container::range<uint32_t>;
+    using Range = vvl::range<uint32_t>;
 
     bool skip = false;
 

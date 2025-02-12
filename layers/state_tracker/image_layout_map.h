@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2024 The Khronos Group Inc.
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
- * Copyright (C) 2019-2024 Google Inc.
+/* Copyright (c) 2019-2025 The Khronos Group Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (C) 2019-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 
 #include <functional>
 
-#include "containers/range_vector.h"
+#include "containers/range.h"
 #include "containers/subresource_adapter.h"
 #include "utils/vk_layer_utils.h"
 #include "vulkan/vulkan.h"
@@ -39,7 +39,7 @@ const static VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 
 // Common types for this namespace
 using IndexType = subresource_adapter::IndexType;
-using IndexRange = sparse_container::range<IndexType>;
+using IndexRange = vvl::range<IndexType>;
 using Encoder = subresource_adapter::RangeEncoder;
 using RangeGenerator = subresource_adapter::RangeGenerator;
 

@@ -2884,7 +2884,7 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
                    if (address_info->range >
                        buffer_state->create_info.size - (address_info->address - buffer_state->deviceAddress)) {
                        if (out_error_msg) {
-                           const sparse_container::range<VkDeviceAddress> buffer_address_range{
+                           const vvl::range<VkDeviceAddress> buffer_address_range{
                                buffer_state->deviceAddress, buffer_state->deviceAddress + buffer_state->create_info.size};
                            *out_error_msg += "buffer has range " + string_range_hex(buffer_address_range);
                        }
@@ -2893,8 +2893,8 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(const VkDescriptorAddressInfoE
                    return true;
                },
                [&address_info]() {
-                   const sparse_container::range<VkDeviceAddress> address_range{address_info->address,
-                                                                                address_info->address + address_info->range};
+                   const vvl::range<VkDeviceAddress> address_range{address_info->address,
+                                                                   address_info->address + address_info->range};
                    return "The following buffers do not contain address range " + string_range_hex(address_range) + ":";
                }}}}};
 

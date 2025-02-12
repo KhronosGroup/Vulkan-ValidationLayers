@@ -147,7 +147,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device
 bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(const LogObjectList &objlist, uint32_t infoCount,
                                                                const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
                                                                uint32_t info_i, const ErrorObject &error_obj) const {
-    using sparse_container::range;
+    using vvl::range;
 
     bool skip = false;
     const VkAccelerationStructureBuildGeometryInfoKHR &info = pInfos[info_i];
@@ -218,7 +218,7 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(const LogObjectLi
 bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAlisasing(
     const LogObjectList &objlist, uint32_t info_count, const VkAccelerationStructureBuildGeometryInfoKHR *p_infos, uint32_t info_i,
     const VkAccelerationStructureBuildRangeInfoKHR *const *pp_range_infos, const ErrorObject &error_obj) const {
-    using sparse_container::range;
+    using vvl::range;
 
     bool skip = false;
     const VkAccelerationStructureBuildGeometryInfoKHR &info = p_infos[info_i];
@@ -583,8 +583,8 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
         const VkDeviceSize scratch_size = info_loc.function == Func::vkCmdBuildAccelerationStructuresKHR
                                               ? rt::ComputeScratchSize(rt::BuildType::Device, device, info, geometry_build_ranges)
                                               : 1;
-        const sparse_container::range<VkDeviceSize> scratch_address_range(info.scratchData.deviceAddress,
-                                                                          info.scratchData.deviceAddress + scratch_size);
+        const vvl::range<VkDeviceSize> scratch_address_range(info.scratchData.deviceAddress,
+                                                             info.scratchData.deviceAddress + scratch_size);
         const char *scratch_address_range_vuid = info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR
                                                      ? pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03671",
                                                                  "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03671")
@@ -614,7 +614,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
 
             {scratch_address_range_vuid,
              [scratch_address_range](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
-                 const sparse_container::range<VkDeviceSize> buffer_address_range = buffer_state->DeviceAddressRange();
+                 const vvl::range<VkDeviceSize> buffer_address_range = buffer_state->DeviceAddressRange();
 
                  if (!buffer_address_range.includes(scratch_address_range)) {
                      if (out_error_msg) {
@@ -850,7 +850,7 @@ bool CoreChecks::CommonBuildAccelerationStructureValidation(const VkAcceleration
 bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const {
-    using sparse_container::range;
+    using vvl::range;
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(*cb_state, error_obj.location);
@@ -987,7 +987,7 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
         skip |= ValidateAccelerationStructuresMemoryAlisasing(LogObjectList(), infoCount, pInfos, info_i, error_obj);
         const VkDeviceSize scratch_i_size = rt::ComputeScratchSize(rt::BuildType::Host, device, info, ppBuildRangeInfos[info_i]);
         auto scratch_i_host_addr = reinterpret_cast<uint64_t>(info.scratchData.hostAddress);
-        const sparse_container::range<uint64_t> scratch_addr_range(scratch_i_host_addr, scratch_i_host_addr + scratch_i_size);
+        const vvl::range<uint64_t> scratch_addr_range(scratch_i_host_addr, scratch_i_host_addr + scratch_i_size);
 
         assert(infoCount > info_i);
         for (auto [other_info_j, other_info] : vvl::enumerate(pInfos + info_i + 1, infoCount - (info_i + 1))) {
@@ -995,7 +995,7 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
             const VkDeviceSize other_scratch_size =
                 rt::ComputeScratchSize(rt::BuildType::Host, device, other_info, ppBuildRangeInfos[other_info_j]);
             auto other_scratch_host_addr = reinterpret_cast<uint64_t>(other_info.scratchData.hostAddress);
-            const sparse_container::range<uint64_t> other_scratch_addr_range(other_scratch_host_addr,
+            const vvl::range<uint64_t> other_scratch_addr_range(other_scratch_host_addr,
                                                                              other_scratch_host_addr + other_scratch_size);
 
             if (scratch_addr_range.intersects(other_scratch_addr_range)) {
@@ -1996,8 +1996,8 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
         skip |= LogError("VUID-VkStridedDeviceAddressRegionKHR-size-04631", commandBuffer, table_loc.dot(Field::deviceAddress),
                          "(0x%" PRIx64 ") has no buffer associated with it.", binding_table.deviceAddress);
     } else {
-        const sparse_container::range<VkDeviceSize> requested_range(binding_table.deviceAddress,
-                                                                    binding_table.deviceAddress + binding_table.size - 1);
+        const vvl::range<VkDeviceSize> requested_range(binding_table.deviceAddress,
+                                                       binding_table.deviceAddress + binding_table.size - 1);
 
         BufferAddressValidation<4> buffer_address_validator = {{{
             {vuid_single_device_memory,

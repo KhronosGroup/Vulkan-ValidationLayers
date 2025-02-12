@@ -105,8 +105,8 @@ bool CoreChecks::ValidateAccelStructsMemoryDoNotOverlap(const Location &function
     const vvl::Buffer &buffer_a = *accel_struct_a.buffer_state;
     const vvl::Buffer &buffer_b = *accel_struct_b.buffer_state;
 
-    const sparse_container::range<VkDeviceSize> range_a(accel_struct_a.create_info.offset, accel_struct_a.create_info.size);
-    const sparse_container::range<VkDeviceSize> range_b(accel_struct_b.create_info.offset, accel_struct_b.create_info.size);
+    const vvl::range<VkDeviceSize> range_a(accel_struct_a.create_info.offset, accel_struct_a.create_info.size);
+    const vvl::range<VkDeviceSize> range_b(accel_struct_b.create_info.offset, accel_struct_b.create_info.size);
 
     if (const auto [memory, overlap_range] = buffer_a.GetResourceMemoryOverlap(range_a, &buffer_b, range_b);
         memory != VK_NULL_HANDLE) {
@@ -124,11 +124,11 @@ bool CoreChecks::ValidateAccelStructsMemoryDoNotOverlap(const Location &function
 }
 
 static bool ValidateBufferAndAccelStructsMemoryDoNotOverlap(const CoreChecks &validator, const vvl::Buffer &buffer_a,
-                                                            sparse_container::range<VkDeviceSize> range_a,
+                                                            vvl::range<VkDeviceSize> range_a,
                                                             const vvl::AccelerationStructureKHR &accel_struct_b,
                                                             const Location &loc_b, std::string *err_msg) {
     const vvl::Buffer &buffer_b = *accel_struct_b.buffer_state;
-    const sparse_container::range<VkDeviceSize> range_b(accel_struct_b.create_info.offset, accel_struct_b.create_info.size);
+    const vvl::range<VkDeviceSize> range_b(accel_struct_b.create_info.offset, accel_struct_b.create_info.size);
 
     if (const auto [memory, overlap_range] = buffer_a.GetResourceMemoryOverlap(range_a, &buffer_b, range_b);
         memory != VK_NULL_HANDLE) {
@@ -171,7 +171,7 @@ bool CoreChecks::ValidateScratchMemoryNoOverlap(const Location &function_loc, Lo
          [this, scratch_a_address, scratch_a_size, &dst_accel_struct, &loc_dst_accel_struct](vvl::Buffer *const scratch_a,
                                                                                              std::string *out_error_msg) {
              const VkDeviceSize scratch_a_offset = scratch_a_address - scratch_a->deviceAddress;
-             const sparse_container::range<VkDeviceSize> scratch_a_range(scratch_a_offset, scratch_a_offset + scratch_a_size);
+             const vvl::range<VkDeviceSize> scratch_a_range(scratch_a_offset, scratch_a_offset + scratch_a_size);
 
              const bool no_overlap_found = ValidateBufferAndAccelStructsMemoryDoNotOverlap(
                  *this, *scratch_a, scratch_a_range, dst_accel_struct, loc_dst_accel_struct, out_error_msg);
@@ -191,7 +191,7 @@ bool CoreChecks::ValidateScratchMemoryNoOverlap(const Location &function_loc, Lo
              [this, scratch_a_address, scratch_a_size, src_accel_struct, &loc_src_accel_struct](vvl::Buffer *const scratch_a,
                                                                                                 std::string *out_error_msg) {
                  const VkDeviceSize scratch_a_offset = scratch_a_address - scratch_a->deviceAddress;
-                 const sparse_container::range<VkDeviceSize> scratch_a_range(scratch_a_offset, scratch_a_offset + scratch_a_size);
+                 const vvl::range<VkDeviceSize> scratch_a_range(scratch_a_offset, scratch_a_offset + scratch_a_size);
 
                  const bool no_overlap_found = ValidateBufferAndAccelStructsMemoryDoNotOverlap(
                      *this, *scratch_a, scratch_a_range, *src_accel_struct, loc_src_accel_struct, out_error_msg);
@@ -212,12 +212,11 @@ bool CoreChecks::ValidateScratchMemoryNoOverlap(const Location &function_loc, Lo
              [this, scratch_a_address, scratch_a_size, scratches_b, scratch_b_address, scratch_b_size](vvl::Buffer *const scratch_a,
                                                                                                        std::string *out_error_msg) {
                  const VkDeviceSize scratch_a_offset = scratch_a_address - scratch_a->deviceAddress;
-                 const sparse_container::range<VkDeviceSize> scratch_a_range(scratch_a_offset, scratch_a_offset + scratch_a_size);
+                 const vvl::range<VkDeviceSize> scratch_a_range(scratch_a_offset, scratch_a_offset + scratch_a_size);
 
                  for (auto scratch_b : scratches_b) {
                      const VkDeviceSize scratch_b_offset = scratch_b_address - scratch_b->deviceAddress;
-                     const sparse_container::range<VkDeviceSize> scratch_b_range(scratch_b_offset,
-                                                                                 scratch_b_offset + scratch_b_size);
+                     const vvl::range<VkDeviceSize> scratch_b_range(scratch_b_offset, scratch_b_offset + scratch_b_size);
 
                      if (auto [mem, mem_range] = scratch_b->GetResourceMemoryOverlap(scratch_b_range, scratch_a, scratch_a_range);
                          mem != VK_NULL_HANDLE) {

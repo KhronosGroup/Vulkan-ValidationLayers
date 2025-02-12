@@ -248,7 +248,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
                 const bool matches = ImageLayoutMatches(aspect_mask, image_layout, initial_layout);
                 if (!matches) {
                     // We can report all the errors for the intersected range directly
-                    for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
+                    for (auto index : vvl::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->subresource_encoder.Decode(index);
                         const LogObjectList objlist(cb_state.Handle(), image_state->Handle());
                         // TODO - We need a way to map the action command to which caused this error
