@@ -3686,6 +3686,26 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
+        // Validate access to source acceleration structure
+        if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure)) {
+            const ResourceAccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+            auto hazard = context.DetectHazard(*src_accel->buffer_state,
+                                               SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ, range);
+            if (hazard.IsHazard()) {
+                const LogObjectList objlist(commandBuffer, src_accel->buffer_state->Handle());
+                std::stringstream ss;
+                ss << FormatHandle(src_accel->buffer_state->VkHandle());
+                ss << " (" << Location(vvl::Func::Empty, vvl::Field::srcAccelerationStructure).Fields() << ")";
+                const std::string resource_description = ss.str();
+
+                syncval::AdditionalMessageInfo additional_info;
+                additional_info.pre_synchronization_text = "The buffer backs " + FormatHandle(info.srcAccelerationStructure) + ". ";
+
+                const auto error = error_messages_.BufferError(hazard, cb_context, error_obj.location.function,
+                                                               resource_description, range, additional_info);
+                skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
+            }
+        }
         // Validate access to the acceleration structure being built
         if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure)) {
             const ResourceAccessRange dst_range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
@@ -3695,11 +3715,14 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 const LogObjectList objlist(commandBuffer, dst_accel->buffer_state->Handle());
                 std::stringstream ss;
                 ss << FormatHandle(dst_accel->buffer_state->VkHandle());
-                ss << ", which backs ";
-                ss << FormatHandle(info.dstAccelerationStructure);
+                ss << " (" << Location(vvl::Func::Empty, vvl::Field::dstAccelerationStructure).Fields() << ")";
                 const std::string resource_description = ss.str();
-                const auto error =
-                    error_messages_.BufferError(hazard, cb_context, error_obj.location.function, resource_description, dst_range);
+
+                syncval::AdditionalMessageInfo additional_info;
+                additional_info.pre_synchronization_text = "The buffer backs " + FormatHandle(info.dstAccelerationStructure) + ". ";
+
+                const auto error = error_messages_.BufferError(hazard, cb_context, error_obj.location.function,
+                                                               resource_description, dst_range, additional_info);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -3737,8 +3760,21 @@ void SyncValidator::PreCallRecordCmdBuildAccelerationStructuresKHR(
             context.UpdateAccessState(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
                                       SyncOrdering::kNonAttachment, scratch_range, scratch_tag_ex);
         }
-        // Record access to destination acceleration structure
-        if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure)) {
+
+        const auto src_accel = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure);
+        const auto dst_accel = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
+
+        // Record source acceleration structure access (READ).
+        // If the source is the same as the destination then no need to record READ
+        // (destination update will replace access with WRITE anyway).
+        if (src_accel && src_accel != dst_accel) {
+            const ResourceAccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+            const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
+            context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ,
+                                      SyncOrdering::kNonAttachment, range, tag_ex);
+        }
+        // Record destination acceleration structure access (WRITE)
+        if (dst_accel) {
             const ResourceAccessRange dst_range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
             const ResourceUsageTagEx dst_tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
             context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
