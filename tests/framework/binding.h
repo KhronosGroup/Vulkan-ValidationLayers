@@ -892,8 +892,11 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
 class Shader : public internal::NonDispHandle<VkShaderEXT> {
   public:
     Shader() = default;
+    Shader(const Device &dev, VkShaderEXT shader) { NonDispHandle::init(dev.handle(), shader); }
     Shader(const Device &dev, const VkShaderCreateInfoEXT &info) { init(dev, info); }
     Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint32_t> &spv,
+           const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
+    Shader(const Device &dev, const VkShaderStageFlagBits stage, const char* code,
            const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
     Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::vector<uint8_t> &binary,
            const VkDescriptorSetLayout *descriptorSetLayout = nullptr, const VkPushConstantRange *pushConstRange = nullptr);
@@ -1162,8 +1165,15 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void BeginRenderingColor(const VkImageView imageView, VkRect2D render_area);
     void EndRendering();
 
-    void BindVertFragShader(const vkt::Shader &vert_shader, const vkt::Shader &frag_shader);
+    void BindShaders(const vkt::Shader &vert_shader, const vkt::Shader &frag_shader);
+    void BindShaders(const vkt::Shader &vert_shader, const vkt::Shader &geom_shader, const vkt::Shader &frag_shader);
+    void BindShaders(const vkt::Shader &vert_shader, const vkt::Shader &tesc_shader, const vkt::Shader &tese_shader,
+                     const vkt::Shader &frag_shader);
+    void BindShaders(const vkt::Shader &vert_shader, const vkt::Shader &tesc_shader, const vkt::Shader &tese_shader,
+                     const vkt::Shader &geom_shader, const vkt::Shader &frag_shader);
     void BindCompShader(const vkt::Shader &comp_shader);
+    void BindMeshShaders(const vkt::Shader &mesh_shader, const vkt::Shader &frag_shader);
+    void BindMeshShaders(const vkt::Shader &task_shader, const vkt::Shader &mesh_shader, const vkt::Shader &frag_shader);
 
     void BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo);
     void ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo);
