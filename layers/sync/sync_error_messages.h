@@ -36,16 +36,22 @@ class Pipeline;
 
 namespace syncval {
 
+struct AdditionalMessageInfo {
+    ReportKeyValues properties;
+    std::string pre_synchronization_text;
+    std::string message_end_text;
+};
+
 class ErrorMessages {
   public:
     explicit ErrorMessages(vvl::Device& validator);
 
     std::string Error(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
-                      const std::string& resouce_description, const std::string& additional_information = {},
-                      const ReportKeyValues& additional_properties = {}) const;
+                      const std::string& resouce_description, const AdditionalMessageInfo& additional_info = {}) const;
 
     std::string BufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
-                            const std::string& resource_description, const ResourceAccessRange range) const;
+                            const std::string& resource_description, const ResourceAccessRange range,
+                            AdditionalMessageInfo additional_info = {}) const;
 
     std::string BufferRegionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, const vvl::Func command,
                                   const std::string& resouce_description, uint32_t region_index,
