@@ -82,3 +82,77 @@ TEST_F(PositiveSyncValRayTracing, BuildAccelerationStructureThenBarrier) {
     vk::CmdFillBuffer(m_command_buffer, accel_buffer, 0, 4, 0x80386);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncValRayTracing, UseSourceAccelerationStructureThenBarrier) {
+    TEST_DESCRIPTION("Use barrier to wait for the source acceleration structure when building in update mode");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    // Prepare source acceleration structure
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    blas.SetupBuild(true);
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+
+    // Create another acceleration structure to be built in update mode
+    auto blas2 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas2.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    blas2.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    blas2.SetSrcAS(blas.GetDstAS());
+    blas2.SetupBuild(true);
+    const vkt::Buffer& src_accel_buffer = blas2.GetSrcAS()->GetBuffer();
+
+    // Execution dependency is sufficient to prevent WRITE after READ
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_CLEAR_BIT;
+    barrier.buffer = src_accel_buffer;
+    barrier.offset = 0;
+    barrier.size = 4;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &barrier;
+
+    m_command_buffer.Begin();
+    // Build in update mode READs source acceleration structure
+    blas2.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    // WRITE to source acceleration structure
+    vk::CmdFillBuffer(m_command_buffer, src_accel_buffer, 0, 4, 0x80486);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRayTracing, UpdateAccelerationStructureInPlace) {
+    TEST_DESCRIPTION("In-place update reads and writes the same acceleration structure, ensure this does not trigger error");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    // Initial build
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    blas.SetupBuild(true);
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+
+    // Update acceleration structure in-place
+    blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
+    blas.SetSrcAS(blas.GetDstAS());
+    blas.SetupBuild(true);
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+}
