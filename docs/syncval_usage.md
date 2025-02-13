@@ -50,6 +50,7 @@ export VK_LAYER_VALIDATE_SYNC=1
 adb setprop debug.vulkan.khronos_validation.validate_sync=1
 ```
 
+[Additional configuration settings](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html) will all share the `VK_LAYER_SYNCVAL_`/`khronos_validation.syncval_*` prefix namespace.
 ## Synchronization Validation Functionality
 
 ### Overview
