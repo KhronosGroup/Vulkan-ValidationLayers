@@ -1140,7 +1140,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchShaderObject) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    m_command_buffer.BindShaders(vertShader, fragShader);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpEntryPoint-07754");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1179,7 +1179,7 @@ TEST_F(NegativeShaderInterface, VsFsTypeMismatchVectorSizeShaderObject) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    m_command_buffer.BindShaders(vertShader, fragShader);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maintenance4-06817");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();

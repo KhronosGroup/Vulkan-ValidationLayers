@@ -2161,7 +2161,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectFragment) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(renderingInfo);
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
-    m_command_buffer.BindVertFragShader(vert_shader, frag_shader);
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023-2024 Nintendo
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_command_buffer.BindVertFragShader(vertShader, fragShader);
+    m_command_buffer.BindShaders(vertShader, fragShader);
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                               &vert_descriptor_set.set_, 0u, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
@@ -100,7 +100,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_command_buffer.BindVertFragShader(vertShader2, fragShader);
+    m_command_buffer.BindShaders(vertShader2, fragShader);
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                               &vert_descriptor_set.set_, 0u, nullptr);
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
@@ -228,7 +228,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    m_command_buffer.BindVertFragShader(vs, fs);
+    m_command_buffer.BindShaders(vs, fs);
 
     vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, shader_pcr_byte_size,
                          &push_constants);
@@ -423,7 +423,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
 
-    m_command_buffer.BindVertFragShader(vs, fs);
+    m_command_buffer.BindShaders(vs, fs);
     m_command_buffer.BindCompShader(cs);
 
     vk::CmdPushConstants(m_command_buffer.handle(), graphics_pipeline_layout.handle(),
