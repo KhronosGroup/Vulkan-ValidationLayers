@@ -506,7 +506,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     VkDeviceSize offset = 0u;
-    m_command_buffer.BindVertFragShader(vert_shader, frag_shader);
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
     SetDefaultDynamicStatesExclude();
     vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0u, 1u, &m_vertex_buffer->handle(), &offset);
     vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1u, &binding_desc, 1u, &attr_desc);
