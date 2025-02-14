@@ -372,7 +372,7 @@ std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQueueFlag
     bool first = true;
     for (const auto &[stages, accesses] : report_accesses) {
         if (!first) {
-            out << ":";
+            out << (format_as_extra_property ? ":" : ", ");
         }
         if (format_as_extra_property) {
             if (accesses == sync_utils::kAllAccesses) {
