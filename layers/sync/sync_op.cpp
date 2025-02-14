@@ -602,10 +602,11 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                     const auto missing_bits = sync_event->scope.mask_param & ~src_exec_scope.mask_param;
                     // Issue error message that event waited for is not in wait events scope
                     const char *const vuid = "VUID-vkCmdWaitEvents-srcStageMask-01158";
-                    const char *const message = "%s stageMask %" PRIx64 " includes bits not present in srcStageMask 0x%" PRIx64
-                                                ". Bits missing from srcStageMask %s. %s";
+                    const char *const message =
+                        "%s stageMask %s includes stages not present in srcStageMask %s. Stages missing from srcStageMask: %s. %s";
                     skip |= sync_state.LogError(vuid, event_handle, loc, message, sync_state.FormatHandle(event_handle).c_str(),
-                                                sync_event->scope.mask_param, src_exec_scope.mask_param,
+                                                sync_utils::StringPipelineStageFlags(sync_event->scope.mask_param).c_str(),
+                                                sync_utils::StringPipelineStageFlags(src_exec_scope.mask_param).c_str(),
                                                 sync_utils::StringPipelineStageFlags(missing_bits).c_str(), kIgnored);
                     break;
                 }
