@@ -1194,6 +1194,8 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void Copy(const Buffer &src, const Buffer &dst);
     void ExecuteCommands(const CommandBuffer &secondary);
 
+    void FullMemoryBarrier();
+
   private:
     VkDevice dev_handle_;
     VkCommandPool cmd_pool_;
