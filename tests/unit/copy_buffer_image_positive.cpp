@@ -54,7 +54,7 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
 
     vk::CmdCopyImage(m_command_buffer.handle(), image_a.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
-
+    m_command_buffer.FullMemoryBarrier();
     // layerCount can explicitly list value
     copy_region.dstSubresource.layerCount = 6;
     vk::CmdCopyImage(m_command_buffer.handle(), image_a.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.handle(),
@@ -188,6 +188,7 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
     region.imageExtent = {32, 32, 1};
     m_command_buffer.Begin();
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1, &region);
+    m_command_buffer.FullMemoryBarrier();
     vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_command_buffer.End();
 }
@@ -242,6 +243,7 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemoryCompressed) {
 
     m_command_buffer.Begin();
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1, &region);
+    m_command_buffer.FullMemoryBarrier();
     vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_command_buffer.End();
 }
@@ -284,18 +286,7 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
     copy_region.extent = {10, 10, 1};  // Dimensions in (uncompressed) texels
     vk::CmdCopyImage(m_command_buffer.handle(), uncomp_10x10t_image.handle(), VK_IMAGE_LAYOUT_GENERAL,
                      comp_10x10b_40x40t_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    // The next copy swaps source and dest s.t. we need an execution barrier on for the prior source and an access barrier for
-    // prior dest
-    VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
-    image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    image_barrier.image = comp_10x10b_40x40t_image.handle();
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &image_barrier);
-
+    m_command_buffer.FullMemoryBarrier();
     // And from compressed to uncompressed
     copy_region.extent = {40, 40, 1};  // Dimensions in (compressed) texels
     vk::CmdCopyImage(m_command_buffer.handle(), comp_10x10b_40x40t_image.handle(), VK_IMAGE_LAYOUT_GENERAL,
@@ -397,10 +388,11 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
 
     VkImageSubresourceRange src_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageMemoryBarrier image_barriers[2];
+    const VkImageAspectFlags full_transfer = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
 
     image_barriers[0] = vku::InitStructHelper();
     image_barriers[0].srcAccessMask = 0;
-    image_barriers[0].dstAccessMask = 0;
+    image_barriers[0].dstAccessMask = full_transfer;
     image_barriers[0].image = image.handle();
     image_barriers[0].subresourceRange = src_range;
     image_barriers[0].oldLayout = init_layout;
@@ -423,7 +415,7 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     VkImageSubresourceRange dst_range{VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 3, 1};
     image_barriers[1] = vku::InitStructHelper();
     image_barriers[1].srcAccessMask = 0;
-    image_barriers[1].dstAccessMask = 0;
+    image_barriers[1].dstAccessMask = full_transfer;
     image_barriers[1].image = image.handle();
     image_barriers[1].subresourceRange = dst_range;
     image_barriers[1].oldLayout = init_layout;
@@ -436,8 +428,12 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
 
     image_barriers[0].oldLayout = src_layout;
     image_barriers[0].newLayout = final_layout;
+    image_barriers[0].srcAccessMask = full_transfer;
+    image_barriers[0].dstAccessMask = 0;
     image_barriers[1].oldLayout = dst_layout;
     image_barriers[1].newLayout = final_layout;
+    image_barriers[1].srcAccessMask = full_transfer;
+    image_barriers[1].dstAccessMask = 0;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 2,
                            image_barriers);
     m_command_buffer.End();
@@ -777,16 +773,10 @@ TEST_F(PositiveCopyBufferImage, ImageBufferCopyDepthStencil) {
     ds_region.imageOffset = {0, 0, 0};
     ds_region.imageExtent = {256, 256, 1};
 
-    VkMemoryBarrier mem_barrier = vku::InitStructHelper();
-    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
     m_command_buffer.Begin();
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_4D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              buffer_256k.handle(), 1, &ds_region);
-
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
-                           &mem_barrier, 0, nullptr, 0, nullptr);
+    m_command_buffer.FullMemoryBarrier();
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_3D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              buffer_256k.handle(), 1, &ds_region);
 
@@ -795,19 +785,13 @@ TEST_F(PositiveCopyBufferImage, ImageBufferCopyDepthStencil) {
 
     // Stencil
     ds_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
-                           &mem_barrier, 0, nullptr, 0, nullptr);
+    m_command_buffer.FullMemoryBarrier();
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_4D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              buffer_64k.handle(), 1, &ds_region);
-
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
-                           &mem_barrier, 0, nullptr, 0, nullptr);
+    m_command_buffer.FullMemoryBarrier();
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_3D_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              buffer_64k.handle(), 1, &ds_region);
-
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1,
-                           &mem_barrier, 0, nullptr, 0, nullptr);
+    m_command_buffer.FullMemoryBarrier();
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              buffer_64k.handle(), 1, &ds_region);
 }

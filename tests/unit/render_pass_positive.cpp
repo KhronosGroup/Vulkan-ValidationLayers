@@ -57,8 +57,8 @@ TEST_F(PositiveRenderPass, InitialLayoutUndefined) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
     m_command_buffer.EndRenderPass();
+    m_errorMonitor->SetAllowedFailureMsg("SYNC-HAZARD-WRITE-AFTER-WRITE");
     m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
-
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }

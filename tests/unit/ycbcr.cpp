@@ -1442,10 +1442,15 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
     if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, can hit issues with imageViewFormatReinterpretation";
     }
+    const VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+
+    if (!(m_device->FormatFeaturesOptimal(mp_format) & VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Missing MIDPOINT_CHROMA_SAMPLES support";
+    }
 
     VkImageCreateInfo ci = vku::InitStructHelper();
     ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    ci.format = mp_format;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     ci.extent = {128, 128, 1};
@@ -1477,7 +1482,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
         vkt::Image image(*m_device, ci, vkt::set_layout);
 
         VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = vku::InitStructHelper();
-        ycbcr_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+        ycbcr_create_info.format = mp_format;
         ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
         ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
         ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -1492,7 +1497,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageViewAspectMasks) {
         ycbcr_info.conversion = conversion;
 
         ivci.image = image.handle();
-        ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+        ivci.format = mp_format;
         ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT;
         ivci.pNext = &ycbcr_info;
         CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subresourceRange-07818");

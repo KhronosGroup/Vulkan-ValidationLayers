@@ -2066,6 +2066,16 @@ void CommandBuffer::Copy(const Buffer &src, const Buffer &dst) {
 
 void CommandBuffer::ExecuteCommands(const CommandBuffer &secondary) { vk::CmdExecuteCommands(handle(), 1, &secondary.handle()); }
 
+// For positive tests, if you run with sync val, ideally want no errors.
+// Many tests need a simple quick way to sync multiple commands
+void CommandBuffer::FullMemoryBarrier() {
+    VkMemoryBarrier mem_barrier = vku::InitStructHelper();
+    mem_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    vk::CmdPipelineBarrier(handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1, &mem_barrier, 0,
+                           nullptr, 0, nullptr);
+}
+
 void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass, dev, &info);
 }

@@ -3101,6 +3101,7 @@ TEST_F(NegativeCopyBufferImage, InterleavedRegions) {
     m_command_buffer.Begin();
 
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer.handle(), buffer.handle(), 4, copy_infos);
+    m_command_buffer.FullMemoryBarrier();
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer.handle(), buffer_shared_memory.handle(), 4, copy_infos);
 
     copy_infos[2].dstOffset = 21;
@@ -3244,7 +3245,7 @@ TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenacne8DepthStencil) {
     AddRequiredFeature(vkt::Feature::maintenance8);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    auto ds_format = FindSupportedDepthStencilFormat(Gpu());
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
     // Add Transfer support for all used formats
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
@@ -3252,7 +3253,7 @@ TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenacne8DepthStencil) {
         GTEST_SKIP() << "Required VK_FORMAT_R32_SFLOAT features not supported";
     } else if (!FormatFeaturesAreSupported(Gpu(), ds_format, VK_IMAGE_TILING_OPTIMAL,
                                            VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
-        GTEST_SKIP() << "Required VK_FORMAT_D32_SFLOAT features not supported";
+        GTEST_SKIP() << "Required Depth/Stencil features not supported";
     }
 
     vkt::Image color_image(*m_device, 128, 128, 1, VK_FORMAT_R32_SFLOAT,
@@ -3269,13 +3270,17 @@ TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenacne8DepthStencil) {
     copy_region.extent = {64, 64, 1};
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01548");
+    if (ds_format == VK_FORMAT_D16_UNORM_S8_UINT) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01548");
+    }
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcSubresource-10214");
     vk::CmdCopyImage(m_command_buffer.handle(), color_image, VK_IMAGE_LAYOUT_GENERAL, ds_image, VK_IMAGE_LAYOUT_GENERAL, 1,
                      &copy_region);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01548");
+    if (ds_format == VK_FORMAT_D16_UNORM_S8_UINT) {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01548");
+    }
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstSubresource-10215");
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

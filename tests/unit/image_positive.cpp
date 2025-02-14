@@ -543,7 +543,7 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
 
     vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), image.Layout(), image.handle(), image.Layout(), 1, &blitRegion,
                      VK_FILTER_NEAREST);
-
+    m_command_buffer.FullMemoryBarrier();
     blitRegion.dstSubresource.layerCount = 2;  // same as VK_REMAINING_ARRAY_LAYERS
     vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), image.Layout(), image.handle(), image.Layout(), 1, &blitRegion,
                      VK_FILTER_NEAREST);
