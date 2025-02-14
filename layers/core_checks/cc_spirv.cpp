@@ -2706,8 +2706,23 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
 
     if (!stage_state.entrypoint) {
         const char *vuid = pipeline ? "VUID-VkPipelineShaderStageCreateInfo-pName-00707" : "VUID-VkShaderCreateInfoEXT-pName-08440";
-        return LogError(vuid, device, loc.dot(Field::pName), "`%s` entrypoint not found for stage %s.", stage_state.GetPName(),
-                        string_VkShaderStageFlagBits(stage));
+        std::stringstream err;
+        err << "\"" << stage_state.GetPName() << "\" entry point not found for stage " << string_VkShaderStageFlagBits(stage)
+            << ".";
+        if (stage_state.spirv_state->static_data_.entry_points.size() == 1) {
+            auto entry_point = stage_state.spirv_state->static_data_.entry_points[0];
+            if (entry_point) {
+                err << " (The only entry point found was \"" << entry_point->name << "\" for "
+                    << string_VkShaderStageFlagBits(entry_point->stage) << ")";
+            }
+        } else {
+            err << " The following entry points were found in the SPIR-V module:\n";
+            for (const auto &entry_point : stage_state.spirv_state->static_data_.entry_points) {
+                if (!entry_point) continue;
+                err << "\"" << entry_point->name << "\"\t(" << string_VkShaderStageFlagBits(entry_point->stage) << ")\n";
+            }
+        }
+        return LogError(vuid, device, loc.dot(Field::pName), "%s", err.str().c_str());
     }
     const spirv::EntryPoint &entrypoint = *stage_state.entrypoint;
 

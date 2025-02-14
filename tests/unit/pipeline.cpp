@@ -1023,6 +1023,42 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
     }
 }
 
+TEST_F(NegativePipeline, MissingEntrypoint2) {
+    RETURN_IF_SKIP(Init());
+
+    char const *shader_source = R"(
+        OpCapability Shader
+        OpMemoryModel Logical GLSL450
+        OpEntryPoint GLCompute %foo "foo"
+        OpEntryPoint GLCompute %not_main "not_main"
+        OpEntryPoint GLCompute %not_main "still_no_main"
+        OpEntryPoint Vertex %not_this "not_this"
+        OpExecutionMode %foo LocalSize 1 1 1
+        OpExecutionMode %not_main LocalSize 1 1 1
+%void = OpTypeVoid
+   %4 = OpTypeFunction %void
+ %foo = OpFunction %void None %4
+  %l0 = OpLabel
+        OpReturn
+        OpFunctionEnd
+%not_main = OpFunction %void None %4
+  %l1 = OpLabel
+        OpReturn
+        OpFunctionEnd
+%not_this = OpFunction %void None %4
+  %l2 = OpLabel
+        OpReturn
+        OpFunctionEnd
+)";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+                                             nullptr, "main");
+    m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pName-00707");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativePipeline, DepthStencilRequired) {
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-09028");
 
