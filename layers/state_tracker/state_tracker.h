@@ -688,6 +688,11 @@ class Device : public vvl::base::Device {
     void PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                   HANDLE* pHandle, const RecordObject& record_obj) override;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    void PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
+                                                       const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
+                                                       zx_handle_t* pZirconHandle, const RecordObject& record_obj) override;
+#endif  // VK_USE_PLATFORM_FUCHSIA
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     void PostCallRecordGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                HANDLE* pHandle, const RecordObject& record_obj) override;
@@ -708,6 +713,11 @@ class Device : public vvl::base::Device {
                                                      const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo,
                                                      const RecordObject& record_obj) override;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    void PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
+        VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo,
+        const RecordObject& record_obj) override;
+#endif  // VK_USE_PLATFORM_FUCHSIA
     void PreCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
                                          const RecordObject& record_obj) override;
     void PreCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo,
