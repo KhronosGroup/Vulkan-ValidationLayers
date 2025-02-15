@@ -3385,6 +3385,25 @@ void Device::PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFence
 }
 #endif
 
+#ifdef VK_USE_PLATFORM_FUCHSIA
+void Device::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
+    VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA *pImportSemaphoreZirconHandleInfo,
+    const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
+    RecordImportSemaphoreState(pImportSemaphoreZirconHandleInfo->semaphore, pImportSemaphoreZirconHandleInfo->handleType,
+                               pImportSemaphoreZirconHandleInfo->flags);
+}
+
+void Device::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
+                                                           const VkSemaphoreGetZirconHandleInfoFUCHSIA *pGetZirconHandleInfo,
+                                                           zx_handle_t *pZirconHandle, const RecordObject &record_obj) {
+    if (VK_SUCCESS != record_obj.result) return;
+    if (auto semaphore_state = Get<vvl::Semaphore>(pGetZirconHandleInfo->semaphore)) {
+        RecordGetExternalSemaphoreState(*semaphore_state, pGetZirconHandleInfo->handleType);
+    }
+}
+#endif  // VK_USE_PLATFORM_FUCHSIA
+
 void Device::PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd,
                                              const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
