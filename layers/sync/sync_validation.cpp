@@ -3192,6 +3192,7 @@ void SyncValidator::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresent
 
     // Update the state with the data from the validate phase
     std::shared_ptr<QueueSyncState> queue_state = std::const_pointer_cast<QueueSyncState>(std::move(cmd_state->queue));
+    if (!queue_state) return;  // Invalid Queue
     ApplySignalsUpdate(cmd_state->signals_update, queue_state->PendingLastBatch());
     for (auto &presented : cmd_state->presented_images) {
         presented.ExportToSwapchain(*this);
