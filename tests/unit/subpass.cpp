@@ -463,6 +463,7 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
 
     m_command_buffer.EndRenderPass();
 
+    m_command_buffer.FullMemoryBarrier();
     // subtest 2: bind in correct subpass, then transition to next subpass
     m_command_buffer.BeginRenderPass(rp.handle(), fb.handle(), 32, 32);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());

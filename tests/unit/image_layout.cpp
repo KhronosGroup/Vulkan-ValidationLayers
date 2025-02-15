@@ -542,6 +542,7 @@ TEST_F(NegativeImageLayout, Basic) {
                                              1,
                                              &copy_region2};
 
+        m_command_buffer.FullMemoryBarrier();
         vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
 
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-srcImageLayout-00128");
@@ -552,6 +553,7 @@ TEST_F(NegativeImageLayout, Basic) {
 
         // Now verify same checks for dst
         copy_image_info2.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        m_command_buffer.FullMemoryBarrier();
         vk::CmdCopyImage2KHR(m_command_buffer.handle(), &copy_image_info2);
 
         m_errorMonitor->SetDesiredError("VUID-VkCopyImageInfo2-dstImageLayout-00133");
@@ -566,7 +568,7 @@ TEST_F(NegativeImageLayout, Basic) {
     transfer_dst_image_barrier[0] = vku::InitStructHelper();
     transfer_dst_image_barrier[0].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     transfer_dst_image_barrier[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    transfer_dst_image_barrier[0].srcAccessMask = 0;
+    transfer_dst_image_barrier[0].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     transfer_dst_image_barrier[0].dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     transfer_dst_image_barrier[0].image = dst_image.handle();
     transfer_dst_image_barrier[0].subresourceRange.layerCount = image_create_info.arrayLayers;
