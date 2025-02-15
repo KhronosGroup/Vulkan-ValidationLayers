@@ -320,7 +320,8 @@ void CoreChecks::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                                const VkSemaphoreGetZirconHandleInfoFUCHSIA *pGetZirconHandleInfo,
                                                                zx_handle_t *pZirconHandle, const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    RecordGetExternalSemaphoreState(pGetZirconHandleInfo->semaphore, pGetZirconHandleInfo->handleType);
+    auto semaphore_state = Get<vvl::Semaphore>(pGetZirconHandleInfo->semaphore);
+    RecordGetExternalSemaphoreState(*semaphore_state, pGetZirconHandleInfo->handleType);
 }
 #endif
 
