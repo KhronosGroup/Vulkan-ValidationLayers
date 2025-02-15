@@ -443,6 +443,16 @@ vvl_sources = [
   "layers/vulkan/generated/vk_validation_error_messages.h",
 ]
 
+if (is_fuchsia) {
+  # TODO(https://fxbug.dev/396761837): vk_function_pointers is not yet
+  # supported on Fuchsia. We can skip building it as it is only used
+  # in tests.
+  vvl_sources -= [
+    "layers/vulkan/generated/vk_function_pointers.cpp",
+    "layers/vulkan/generated/vk_function_pointers.h",
+  ]
+}
+
 layers = [ [
       "khronos_validation",
       vvl_sources,
