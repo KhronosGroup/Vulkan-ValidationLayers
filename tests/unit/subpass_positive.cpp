@@ -164,7 +164,7 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     {
         vkt::Event event(*m_device);
         m_command_buffer.Begin();
-        vk::CmdSetEvent(m_command_buffer, event, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+        vk::CmdSetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
         m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
         vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, nullptr, 0, nullptr, 1, &barrier);

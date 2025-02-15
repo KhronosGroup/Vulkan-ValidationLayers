@@ -65,6 +65,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
 
+    m_command_buffer.FullMemoryBarrier();
     m_command_buffer.BeginRenderPass(rp.handle(), fb.handle(), 32, 32);
     VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
     img_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -3456,6 +3457,7 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferFail) {
     m_command_buffer.Begin();
     vk::CmdSetEvent(m_command_buffer.handle(), event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     // wrong srcStageMask
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdWaitEvents-srcStageMask-01158");
     vk::CmdWaitEvents(m_command_buffer.handle(), 1, &event.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     m_command_buffer.End();

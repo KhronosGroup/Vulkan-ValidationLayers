@@ -2824,6 +2824,7 @@ TEST_F(NegativeCommand, EndConditionalRendering) {
     m_command_buffer.EndRenderPass();
     vk::CmdEndConditionalRenderingEXT(m_command_buffer.handle());
 
+    m_command_buffer.FullMemoryBarrier();
     vk::CmdBeginRenderPass(m_command_buffer.handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBeginConditionalRenderingEXT(m_command_buffer.handle(), &conditional_rendering_begin);
     m_command_buffer.NextSubpass();

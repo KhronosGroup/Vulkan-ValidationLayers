@@ -470,6 +470,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
                 const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[1]);
                 ASSERT_EQ(VK_SUCCESS, err);
                 renderpass_bi.framebuffer = framebuffers[1];
+                m_command_buffer.FullMemoryBarrier();
                 m_command_buffer.BeginRenderPass(renderpass_bi);
             }
 
@@ -505,6 +506,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
                 if (use_dynamic_rendering) {
                     m_command_buffer.BeginRendering(begin_rendering_info);
                 } else {
+                    m_command_buffer.FullMemoryBarrier();
                     m_command_buffer.BeginRenderPass(renderpass_bi);
                 }
 
@@ -532,6 +534,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
                 if (use_dynamic_rendering) {
                     m_command_buffer.BeginRendering(begin_rendering_info);
                 } else {
+                    m_command_buffer.FullMemoryBarrier();
                     m_command_buffer.BeginRenderPass(renderpass_bi);
                 }
 
@@ -555,6 +558,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
 
             // Clear color, subpass has unused attachments
             if (!use_dynamic_rendering) {
+                m_command_buffer.FullMemoryBarrier();
                 m_command_buffer.BeginRenderPass(renderpass_bi);
                 m_command_buffer.NextSubpass();
                 std::array<VkClearAttachment, 4> clears = {{{VK_IMAGE_ASPECT_DEPTH_BIT, 0},
