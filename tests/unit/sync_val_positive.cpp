@@ -2228,3 +2228,48 @@ TEST_F(PositiveSyncVal, AmdBufferMarker) {
     m_command_buffer.Copy(buffer_b, buffer_a);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, VertexBufferWithEventSync) {
+    TEST_DESCRIPTION("Use Event to synchronize vertex buffer accesses");
+    RETURN_IF_SKIP(InitSyncValFramework());
+    void *p_next = nullptr;
+    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features = vku::InitStructHelper();
+    if (IsExtensionsEnabled(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
+        p_next = &portability_subset_features;
+        GetPhysicalDeviceFeatures2(portability_subset_features);
+        if (!portability_subset_features.events) {
+            GTEST_SKIP() << "VkPhysicalDevicePortabilitySubsetFeaturesKHR::events not supported";
+        }
+    }
+    RETURN_IF_SKIP(InitState(nullptr, p_next));
+    InitRenderTarget();
+
+    vkt::Buffer vertex_buffer(*m_device, 12, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer source_buffer(*m_device, 12, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    const VkDeviceSize offset = 0;
+
+    VkBufferMemoryBarrier barrier = vku::InitStructHelper();
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.buffer = vertex_buffer;
+    barrier.size = 12;
+
+    vkt::Event event(*m_device);
+
+    CreatePipelineHelper gfx_pipe(*this);
+    gfx_pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(source_buffer, vertex_buffer);
+    m_command_buffer.SetEvent(event, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &offset);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
+    vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0,
+                      nullptr, 1, &barrier, 0, nullptr);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
