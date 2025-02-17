@@ -110,8 +110,8 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     const bool missing_synchronization = (hazard_info.IsPriorWrite() && write_barriers.none()) ||
                                          (hazard_info.IsPriorRead() && read_barriers == VK_PIPELINE_STAGE_2_NONE);
     // Brief description of what happened
-    ss << string_SyncHazard(hazard_type) << " hazard detected. ";
-    ss << vvl::String(command);
+    ss << "\n" << string_SyncHazard(hazard_type) << " hazard detected. ";
+    ss << (additional_info.access_initiator.empty() ? vvl::String(command) : additional_info.access_initiator);
     ss << (hazard_info.IsWrite() ? " writes to " : " reads ") << resouce_description;
     ss << ", which ";
     ss << (hazard_info.IsRacingHazard() ? "is being " : "was previously ");
@@ -140,6 +140,7 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     }
 
     // Synchronization information
+    ss << "\n";
     if (missing_synchronization) {
         const char* access_type = hazard_info.IsWrite() ? "write" : "read";
         const char* prior_access_type = hazard_info.IsPriorWrite() ? "write" : "read";
@@ -288,148 +289,64 @@ std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
-std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard,
-                                               const syncval_state::DynamicRenderingInfo::Attachment& attachment,
-                                               const CommandBufferAccessContext& cb_context, vvl::Func command) const {
-    const auto format = "(%s), with loadOp %s. Access info %s.";
-    ReportKeyValues key_values;
+std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                 vvl::Func command, const std::string& resource_description,
+                                                 const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
+                                                 VkDescriptorType descriptor_type, uint32_t descriptor_binding,
+                                                 uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
+    const char* descriptor_type_str = string_VkDescriptorType(descriptor_type);
 
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* load_op_str = string_VkAttachmentLoadOp(attachment.info.loadOp);
-    std::string message =
-        Format(format, validator_.FormatHandle(attachment.view->Handle()).c_str(), load_op_str, access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "BeginRenderingError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyLoadOp, load_op_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+    AdditionalMessageInfo additional_info;
+    additional_info.properties.Add(kPropertyDescriptorType, descriptor_type_str);
+    additional_info.properties.Add(kPropertyDescriptorBinding, descriptor_binding);
+    additional_info.properties.Add(kPropertyDescriptorArrayElement, descriptor_array_element);
+    additional_info.access_initiator = std::string("Shader stage ") + string_VkShaderStageFlagBits(shader_stage);
+
+    std::stringstream ss;
+    ss << "\nThe buffer is referenced by a ";
+    ss << descriptor_type_str << " descriptor in ";
+    ss << validator_.FormatHandle(descriptor_set);
+    ss << ", binding " << descriptor_binding;
+    if (descriptor_set.GetDescriptorCountFromBinding(descriptor_binding) > 1) {
+        ss << ", array element " << descriptor_array_element;
     }
-    return message;
+    ss << ", " << validator_.FormatHandle(pipeline);
+    ss << ".";
+    additional_info.pre_synchronization_text = ss.str();
+
+    return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
-std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
-                                                    VkResolveModeFlagBits resolve_mode,
-                                                    const CommandBufferAccessContext& cb_context, vvl::Func command) const {
-    const auto format = "(%s), during resolve with resolveMode %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* resolve_mode_str = string_VkResolveModeFlagBits(resolve_mode);
-    std::string message = Format(format, validator_.FormatHandle(image_view_handle).c_str(), resolve_mode_str, access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "EndRenderingResolveError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyResolveMode, resolve_mode_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
-                                                  VkAttachmentStoreOp store_op, const CommandBufferAccessContext& cb_context,
-                                                  vvl::Func command) const {
-    const auto format = "(%s), during store with storeOp %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* store_op_str = string_VkAttachmentStoreOp(store_op);
-    std::string message = Format(format, validator_.FormatHandle(image_view_handle).c_str(), store_op_str, access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "EndRenderingStoreError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyStoreOp, store_op_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::DrawDispatchImageError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                  const vvl::ImageView& image_view, const vvl::Pipeline& pipeline,
-                                                  const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
-                                                  VkImageLayout image_layout, uint32_t descriptor_binding, uint32_t binding_index,
-                                                  vvl::Func command) const {
-    const auto format =
-        "Hazard %s for %s, in %s, and %s, %s, type: %s, imageLayout: %s, binding #%" PRIu32 ", index %" PRIu32 ". Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
+std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                vvl::Func command, const std::string& resource_description,
+                                                const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
+                                                VkDescriptorType descriptor_type, uint32_t descriptor_binding,
+                                                uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage,
+                                                VkImageLayout image_layout) const {
     const char* descriptor_type_str = string_VkDescriptorType(descriptor_type);
     const char* image_layout_str = string_VkImageLayout(image_layout);
-    std::string message =
-        Format(format, string_SyncHazard(hazard.Hazard()), validator_.FormatHandle(image_view.Handle()).c_str(),
-               validator_.FormatHandle(cb_context.Handle()).c_str(), validator_.FormatHandle(pipeline.Handle()).c_str(),
-               validator_.FormatHandle(descriptor_set.Handle()).c_str(), descriptor_type_str, image_layout_str, descriptor_binding,
-               binding_index, access_info.c_str());
 
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "DrawDispatchImageError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyDescriptorType, descriptor_type_str);
-        key_values.Add(kPropertyImageLayout, image_layout_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+    AdditionalMessageInfo additional_info;
+    additional_info.properties.Add(kPropertyDescriptorType, descriptor_type_str);
+    additional_info.properties.Add(kPropertyDescriptorBinding, descriptor_binding);
+    additional_info.properties.Add(kPropertyDescriptorArrayElement, descriptor_array_element);
+    additional_info.access_initiator = std::string("Shader stage ") + string_VkShaderStageFlagBits(shader_stage);
+    additional_info.properties.Add(kPropertyImageLayout, image_layout_str);
+
+    std::stringstream ss;
+    ss << "\nThe image is referenced by a ";
+    ss << descriptor_type_str << " descriptor in ";
+    ss << validator_.FormatHandle(descriptor_set);
+    ss << ", binding " << descriptor_binding;
+    if (descriptor_set.GetDescriptorCountFromBinding(descriptor_binding) > 1) {
+        ss << ", array element " << descriptor_array_element;
     }
-    return message;
-}
+    ss << ", image layout " << string_VkImageLayout(image_layout);
+    ss << ", " << validator_.FormatHandle(pipeline);
+    ss << ".";
+    additional_info.pre_synchronization_text = ss.str();
 
-std::string ErrorMessages::DrawDispatchTexelBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                        const vvl::BufferView& buffer_view, const vvl::Pipeline& pipeline,
-                                                        const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
-                                                        uint32_t descriptor_binding, uint32_t binding_index,
-                                                        vvl::Func command) const {
-    const auto format = "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%" PRIu32 " index %" PRIu32 ". Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* descriptor_type_str = string_VkDescriptorType(descriptor_type);
-    std::string message =
-        Format(format, string_SyncHazard(hazard.Hazard()), validator_.FormatHandle(buffer_view.Handle()).c_str(),
-               validator_.FormatHandle(cb_context.Handle()).c_str(), validator_.FormatHandle(pipeline.Handle()).c_str(),
-               validator_.FormatHandle(descriptor_set.Handle()).c_str(), descriptor_type_str, descriptor_binding, binding_index,
-               access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "DrawDispatchTexelBufferError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyDescriptorType, descriptor_type_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::DrawDispatchBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                   const vvl::Buffer& buffer, const vvl::Pipeline& pipeline,
-                                                   const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
-                                                   uint32_t descriptor_binding, uint32_t binding_index, vvl::Func command) const {
-    const auto format = "Hazard %s for %s in %s, %s, and %s, type: %s, binding #%" PRIu32 " index %" PRIu32 ". Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* descriptor_type_str = string_VkDescriptorType(descriptor_type);
-    std::string message =
-        Format(format, string_SyncHazard(hazard.Hazard()), validator_.FormatHandle(buffer.Handle()).c_str(),
-               validator_.FormatHandle(cb_context.Handle()).c_str(), validator_.FormatHandle(pipeline.Handle()).c_str(),
-               validator_.FormatHandle(descriptor_set.Handle()).c_str(), descriptor_type_str, descriptor_binding, binding_index,
-               access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "DrawDispatchBufferError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyDescriptorType, descriptor_type_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
+    return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
 std::string ErrorMessages::DrawVertexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -587,6 +504,67 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
         // TODO: ensure correct command is used here, currently it's always empty
         // key_values.Add(kPropertyCommand, vvl::String(command));
         exec_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+    }
+    return message;
+}
+
+std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard,
+                                               const syncval_state::DynamicRenderingInfo::Attachment& attachment,
+                                               const CommandBufferAccessContext& cb_context, vvl::Func command) const {
+    const auto format = "(%s), with loadOp %s. Access info %s.";
+    ReportKeyValues key_values;
+
+    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
+    const char* load_op_str = string_VkAttachmentLoadOp(attachment.info.loadOp);
+    std::string message =
+        Format(format, validator_.FormatHandle(attachment.view->Handle()).c_str(), load_op_str, access_info.c_str());
+    if (extra_properties_) {
+        key_values.Add(kPropertyMessageType, "BeginRenderingError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
+        key_values.Add(kPropertyLoadOp, load_op_str);
+        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+    }
+    return message;
+}
+
+std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
+                                                    VkResolveModeFlagBits resolve_mode,
+                                                    const CommandBufferAccessContext& cb_context, vvl::Func command) const {
+    const auto format = "(%s), during resolve with resolveMode %s. Access info %s.";
+    ReportKeyValues key_values;
+
+    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
+    const char* resolve_mode_str = string_VkResolveModeFlagBits(resolve_mode);
+    std::string message = Format(format, validator_.FormatHandle(image_view_handle).c_str(), resolve_mode_str, access_info.c_str());
+    if (extra_properties_) {
+        key_values.Add(kPropertyMessageType, "EndRenderingResolveError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
+        key_values.Add(kPropertyResolveMode, resolve_mode_str);
+        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
+        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+    }
+    return message;
+}
+
+std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
+                                                  VkAttachmentStoreOp store_op, const CommandBufferAccessContext& cb_context,
+                                                  vvl::Func command) const {
+    const auto format = "(%s), during store with storeOp %s. Access info %s.";
+    ReportKeyValues key_values;
+
+    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
+    const char* store_op_str = string_VkAttachmentStoreOp(store_op);
+    std::string message = Format(format, validator_.FormatHandle(image_view_handle).c_str(), store_op_str, access_info.c_str());
+    if (extra_properties_) {
+        key_values.Add(kPropertyMessageType, "EndRenderingStoreError");
+        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+        key_values.Add(kPropertyCommand, vvl::String(command));
+        key_values.Add(kPropertyStoreOp, store_op_str);
+        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;

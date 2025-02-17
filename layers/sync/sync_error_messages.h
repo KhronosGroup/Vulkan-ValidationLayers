@@ -38,6 +38,7 @@ namespace syncval {
 
 struct AdditionalMessageInfo {
     ReportKeyValues properties;
+    std::string access_initiator;  // when we need something more complex than vvl::Func
     std::string pre_synchronization_text;
     std::string message_end_text;
 };
@@ -66,6 +67,27 @@ class ErrorMessages {
                                            uint32_t subresource_range_index,
                                            const VkImageSubresourceRange& subresource_range) const;
 
+    std::string BufferDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                      const std::string& resource_description, const vvl::Pipeline& pipeline,
+                                      const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
+                                      uint32_t descriptor_binding, uint32_t descriptor_array_element,
+                                      VkShaderStageFlagBits shader_stage) const;
+
+    std::string ImageDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                     const std::string& resource_description, const vvl::Pipeline& pipeline,
+                                     const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
+                                     uint32_t descriptor_binding, uint32_t descriptor_array_element,
+                                     VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const;
+
+    std::string DrawVertexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                      const vvl::Buffer& vertex_buffer, vvl::Func command) const;
+
+    std::string DrawIndexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                     const vvl::Buffer& index_buffer, vvl::Func command) const;
+
+    std::string DrawAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                    const vvl::ImageView& attachment_view, vvl::Func command) const;
+
     std::string BeginRenderingError(const HazardResult& hazard, const syncval_state::DynamicRenderingInfo::Attachment& attachment,
                                     const CommandBufferAccessContext& cb_context, vvl::Func command) const;
 
@@ -76,31 +98,6 @@ class ErrorMessages {
     std::string EndRenderingStoreError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
                                        VkAttachmentStoreOp store_op, const CommandBufferAccessContext& cb_context,
                                        vvl::Func command) const;
-
-    std::string DrawDispatchImageError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                       const vvl::ImageView& image_view, const vvl::Pipeline& pipeline,
-                                       const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
-                                       VkImageLayout image_layout, uint32_t descriptor_binding, uint32_t binding_index,
-                                       vvl::Func command) const;
-
-    std::string DrawDispatchTexelBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                             const vvl::BufferView& buffer_view, const vvl::Pipeline& pipeline,
-                                             const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
-                                             uint32_t descriptor_binding, uint32_t binding_index, vvl::Func command) const;
-
-    std::string DrawDispatchBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                        const vvl::Buffer& buffer, const vvl::Pipeline& pipeline,
-                                        const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
-                                        uint32_t descriptor_binding, uint32_t binding_index, vvl::Func command) const;
-
-    std::string DrawVertexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                      const vvl::Buffer& vertex_buffer, vvl::Func command) const;
-
-    std::string DrawIndexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                     const vvl::Buffer& index_buffer, vvl::Func command) const;
-
-    std::string DrawAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                    const vvl::ImageView& attachment_view, vvl::Func command) const;
 
     std::string ClearColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                           const std::string& subpass_attachment_info, vvl::Func command) const;

@@ -90,6 +90,8 @@ inline constexpr const char *kPropertyResolveMode = "resolve_mode";
 inline constexpr const char *kPropertyOldLayout = "old_layout";
 inline constexpr const char *kPropertyNewLayout = "new_layout";
 inline constexpr const char *kPropertyDescriptorType = "descriptor_type";
+inline constexpr const char *kPropertyDescriptorBinding = "descriptor_binding";
+inline constexpr const char *kPropertyDescriptorArrayElement = "descriptor_array_element";
 inline constexpr const char *kPropertyImageLayout = "image_layout";
 inline constexpr const char *kPropertyImageAspect = "image_aspect";
 
