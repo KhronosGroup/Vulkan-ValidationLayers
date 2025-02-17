@@ -1631,7 +1631,7 @@ TEST_F(NegativeSyncVal, UniformBufferDescriptorHazard) {
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                        });
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, 2048);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, 2048, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
     const char* cs_source = R"glsl(
