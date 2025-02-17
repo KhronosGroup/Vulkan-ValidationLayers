@@ -19,7 +19,7 @@
 #include <memory>
 #include <spirv/unified1/spirv.hpp>
 #include "containers/custom_containers.h"
-#include "instruction.h"
+#include "state_tracker/shader_instruction.h"
 
 namespace gpuav {
 namespace spirv {
@@ -30,6 +30,7 @@ struct Function;
 // Core data structure of module.
 // The vector acts as our linked list to iterator and make occasional insertions.
 // The unique_ptr allows us to create instructions outside module scope and bring them back.
+using Instruction = ::spirv::Instruction;
 using InstructionList = std::vector<std::unique_ptr<Instruction>>;
 using InstructionIt = InstructionList::iterator;
 

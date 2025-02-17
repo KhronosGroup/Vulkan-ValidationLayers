@@ -15,7 +15,7 @@
 
 #include "descriptor_class_general_buffer_pass.h"
 #include "generated/spirv_grammar_helper.h"
-#include "instruction.h"
+#include "state_tracker/shader_instruction.h"
 #include "utils/vk_layer_utils.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
@@ -193,7 +193,7 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
                 injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = target_instruction_->position_index_;
+                const uint32_t inst_position = target_instruction_->GetPositionIndex();
                 auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
                 injection_data.inst_position_id = inst_position_constant.Id();
 

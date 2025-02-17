@@ -14,7 +14,7 @@
  */
 
 #include "function_basic_block.h"
-#include "instruction.h"
+#include "state_tracker/shader_instruction.h"
 #include "module.h"
 
 namespace gpuav {

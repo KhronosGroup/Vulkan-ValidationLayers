@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 #pragma once
 
 #include <vector>
-#include "instruction.h"
+#include "state_tracker/shader_instruction.h"
 #include "generated/spirv_grammar_helper.h"
 
 namespace gpuav {
 namespace spirv {
+using Instruction = ::spirv::Instruction;
 
 class Module;
 class TypeManager;

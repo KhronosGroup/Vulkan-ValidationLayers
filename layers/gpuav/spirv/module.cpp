@@ -26,6 +26,8 @@
 namespace gpuav {
 namespace spirv {
 
+static constexpr uint32_t kLinkedInstruction = std::numeric_limits<uint32_t>::max();
+
 Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const Settings& settings,
                const DeviceFeatures& enabled_features,
                const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut)
@@ -445,8 +447,8 @@ void Module::LinkFunction(const LinkInfo& info) {
                 case SpvType::kForwardPointer: {
                     // forward reference id swap
                     type_id = TakeNextId();
-                    old_result_id = new_inst->words_[1];
-                    new_inst->words_[1] = type_id;
+                    old_result_id = new_inst->Word(1);
+                    new_inst->UpdateWord(1, type_id);
                     type_manager_.AddType(std::move(new_inst), spv_type);
                     break;
                 }
@@ -497,7 +499,7 @@ void Module::LinkFunction(const LinkInfo& info) {
 
                 // Replace LinkConstants
                 if (constant_value == glsl::kLinkShaderId) {
-                    new_inst->words_[3] = shader_id_;
+                    new_inst->UpdateWord(3, shader_id_);
                 }
             }
 
@@ -573,14 +575,14 @@ void Module::LinkFunction(const LinkInfo& info) {
         const uint32_t length = new_inst->Length();
 
         if (opcode == spv::OpFunction) {
-            new_inst->words_[1] = id_swap_map[new_inst->words_[1]];
-            new_inst->words_[2] = info.function_id;
+            new_inst->UpdateWord(1, id_swap_map[new_inst->Word(1)]);
+            new_inst->UpdateWord(2, info.function_id);
             // We can easily inject the same function hundreds of times and really don't want to inline it.
             // Have found that if drivers don't inline, can get a 20x speed-up at compiling large bloated shaders.
             // There is no way to query this or test if the driver does consume this, also currently most drivers
             // will ignore this as it is not hooked up... but worth trying
-            new_inst->words_[3] = spv::FunctionControlDontInlineMask;
-            new_inst->words_[4] = function_type_id;
+            new_inst->UpdateWord(3, spv::FunctionControlDontInlineMask);
+            new_inst->UpdateWord(4, function_type_id);
         } else if (opcode == spv::OpLabel) {
             uint32_t new_result_id = id_swap_map[new_inst->ResultId()];
             new_inst->ReplaceResultId(new_result_id);
@@ -631,7 +633,7 @@ void Module::LinkFunction(const LinkInfo& info) {
             continue;  // remove linkage info
         } else if (decoration->Word(2) == spv::DecorationDescriptorSet) {
             // only should be one DescriptorSet to update
-            decoration->words_[3] = output_buffer_descriptor_set_;
+            decoration->UpdateWord(3, output_buffer_descriptor_set_);
         }
 
         decoration->ReplaceLinkedId(id_swap_map);
@@ -651,7 +653,7 @@ void Module::PostProcess() {
     if (use_bda_) {
         // Adjust the original addressing model to be PhysicalStorageBuffer64 if not already.
         // A module can only have one OpMemoryModel
-        memory_model_[0]->words_[1] = spv::AddressingModelPhysicalStorageBuffer64;
+        memory_model_[0]->UpdateWord(1, spv::AddressingModelPhysicalStorageBuffer64);
         if (!HasCapability(spv::CapabilityPhysicalStorageBufferAddresses)) {
             AddCapability(spv::CapabilityPhysicalStorageBufferAddresses);
             AddExtension("SPV_KHR_physical_storage_buffer");
