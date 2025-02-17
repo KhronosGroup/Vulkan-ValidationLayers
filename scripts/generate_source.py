@@ -265,6 +265,11 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
             'genCombined': True,
             'regenerate' : True
         },
+        'spirv_validation_helper.h' : {
+            'generator' : SpirvValidationHelperOutputGenerator,
+            'genCombined': False,
+            'options' : [grammar],
+        },
         'spirv_validation_helper.cpp' : {
             'generator' : SpirvValidationHelperOutputGenerator,
             'genCombined': False,
