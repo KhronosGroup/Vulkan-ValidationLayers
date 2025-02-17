@@ -73,7 +73,8 @@ class DescriptorValidator {
    bool ValidateSamplerDescriptor(const spirv::ResourceInterfaceVariable& binding_info, uint32_t index, VkSampler sampler,
                                   bool is_immutable, const vvl::Sampler* sampler_state) const;
 
-   std::string DescribeDescriptor(const spirv::ResourceInterfaceVariable& binding_info, uint32_t index) const;
+   std::string DescribeDescriptor(const spirv::ResourceInterfaceVariable& binding_info, uint32_t index,
+                                  VkDescriptorType type) const;
 
    vvl::Device& dev_state;
    vvl::CommandBuffer& cb_state;
