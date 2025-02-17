@@ -21,9 +21,10 @@ namespace spirv {
 
 Instruction::Instruction(std::vector<uint32_t>::const_iterator it)
     : position_index_(0), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
-    words_.emplace_back(*it++);
-    words_.reserve(Length());
-    for (uint32_t i = 1; i < Length(); i++) {
+    // Get Length manually to save allocation of vector
+    const uint32_t length = (*it >> 16);
+    words_.reserve(length);
+    for (uint32_t i = 0; i < length; i++) {
         words_.emplace_back(*it++);
     }
     SetResultTypeIndex();
@@ -31,12 +32,11 @@ Instruction::Instruction(std::vector<uint32_t>::const_iterator it)
 }
 
 Instruction::Instruction(const uint32_t* it) : position_index_(0), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
-    words_.emplace_back(*it);
-    it++;
-    words_.reserve(Length());
-    for (uint32_t i = 1; i < Length(); i++) {
-        words_.emplace_back(*it);
-        it++;
+    // Get Length manually to save allocation of vector
+    const uint32_t length = (*it >> 16);
+    words_.reserve(length);
+    for (uint32_t i = 0; i < length; i++) {
+        words_.emplace_back(*it++);
     }
     SetResultTypeIndex();
     UpdateDebugInfo();
@@ -44,12 +44,12 @@ Instruction::Instruction(const uint32_t* it) : position_index_(0), operand_info_
 
 Instruction::Instruction(spirv_iterator it, uint32_t position)
     : position_index_(position), operand_info_(GetOperandInfo(*it & 0x0ffffu)) {
-    words_.emplace_back(*it++);
-    words_.reserve(Length());
-    for (uint32_t i = 1; i < Length(); i++) {
+    // Get Length manually to save allocation of vector
+    const uint32_t length = (*it >> 16);
+    words_.reserve(length);
+    for (uint32_t i = 0; i < length; i++) {
         words_.emplace_back(*it++);
     }
-
     SetResultTypeIndex();
     UpdateDebugInfo();
 }
