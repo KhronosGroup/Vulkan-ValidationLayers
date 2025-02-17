@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
 #include "generated/spirv_grammar_helper.h"
-#include "instruction.h"
+#include "state_tracker/shader_instruction.h"
 #include "module.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
 

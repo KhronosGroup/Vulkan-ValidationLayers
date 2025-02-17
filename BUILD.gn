@@ -211,8 +211,6 @@ vvl_sources = [
   "layers/gpuav/spirv/vertex_attribute_fetch_oob.h",
   "layers/gpuav/spirv/function_basic_block.cpp",
   "layers/gpuav/spirv/function_basic_block.h",
-  "layers/gpuav/spirv/instruction.cpp",
-  "layers/gpuav/spirv/instruction.h",
   "layers/gpuav/spirv/interface.h",
   "layers/gpuav/spirv/link.h",
   "layers/gpuav/spirv/module.cpp",

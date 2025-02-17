@@ -35,8 +35,6 @@ target_sources(gpu_av_spirv PRIVATE
     vertex_attribute_fetch_oob.cpp
 
     # Framework
-    instruction.h
-    instruction.cpp
     function_basic_block.h
     function_basic_block.cpp
     interface.h

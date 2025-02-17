@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ bool Type::operator==(Type const& other) const {
     }
     // word[1] is the result ID which might be different
     for (uint32_t i = 2; i < inst_.Length(); i++) {
-        if (inst_.words_[i] != other.inst_.words_[i]) {
+        if (inst_.Word(i) != other.inst_.Word(i)) {
             return false;
         }
     }
@@ -214,9 +214,8 @@ const Type& TypeManager::GetTypeAccelerationStructure() {
 
 const Type& TypeManager::GetTypeInt(uint32_t bit_width, bool is_signed) {
     for (const auto type : int_types_) {
-        const auto& words = type->inst_.words_;
-        const bool int_is_signed = words[3] != 0;
-        if (words[2] == bit_width && int_is_signed == is_signed) {
+        const bool int_is_signed = type->inst_.Word(3) != 0;
+        if (type->inst_.Word(2) == bit_width && int_is_signed == is_signed) {
             return *type;
         }
     }
@@ -230,8 +229,7 @@ const Type& TypeManager::GetTypeInt(uint32_t bit_width, bool is_signed) {
 
 const Type& TypeManager::GetTypeFloat(uint32_t bit_width) {
     for (const auto type : float_types_) {
-        const auto& words = type->inst_.words_;
-        if ((words[2] == bit_width)) {
+        if (type->inst_.Word(2) == bit_width) {
             return *type;
         }
     }
@@ -274,12 +272,11 @@ const Type& TypeManager::GetTypeRuntimeArray(const Type& element_type) {
 
 const Type& TypeManager::GetTypeVector(const Type& component_type, uint32_t component_count) {
     for (const auto type : vector_types_) {
-        const auto& words = type->inst_.words_;
-        if (words[3] != component_count) {
+        if (type->inst_.Word(3) != component_count) {
             continue;
         }
 
-        const Type* vector_component_type = FindTypeById(words[2]);
+        const Type* vector_component_type = FindTypeById(type->inst_.Word(2));
         if (vector_component_type && (*vector_component_type == component_type)) {
             return *type;
         }
@@ -293,12 +290,11 @@ const Type& TypeManager::GetTypeVector(const Type& component_type, uint32_t comp
 
 const Type& TypeManager::GetTypeMatrix(const Type& column_type, uint32_t column_count) {
     for (const auto type : matrix_types_) {
-        const auto& words = type->inst_.words_;
-        if (words[3] != column_count) {
+        if (type->inst_.Word(3) != column_count) {
             continue;
         }
 
-        const Type* matrix_column_type = FindTypeById(words[2]);
+        const Type* matrix_column_type = FindTypeById(type->inst_.Word(2));
         if (matrix_column_type && (*matrix_column_type == column_type)) {
             return *type;
         }
@@ -312,8 +308,7 @@ const Type& TypeManager::GetTypeMatrix(const Type& column_type, uint32_t column_
 
 const Type& TypeManager::GetTypeSampledImage(const Type& image_type) {
     for (const auto type : sampled_image_types_) {
-        const auto& words = type->inst_.words_;
-        const Type* this_image_type = FindTypeById(words[2]);
+        const Type* this_image_type = FindTypeById(type->inst_.Word(2));
         if (this_image_type && (*this_image_type == image_type)) {
             return *type;
         }
@@ -327,12 +322,11 @@ const Type& TypeManager::GetTypeSampledImage(const Type& image_type) {
 
 const Type& TypeManager::GetTypePointer(spv::StorageClass storage_class, const Type& pointer_type) {
     for (const auto type : pointer_types_) {
-        const auto& words = type->inst_.words_;
-        if (words[2] != storage_class) {
+        if (type->inst_.Word(2) != storage_class) {
             continue;
         }
 
-        const Type* this_pointer_type = FindTypeById(words[3]);
+        const Type* this_pointer_type = FindTypeById(type->inst_.Word(3));
         if (this_pointer_type && (*this_pointer_type == pointer_type)) {
             return *type;
         }
