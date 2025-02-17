@@ -29,6 +29,7 @@
 #include "core_checks/cc_vuid_maps.h"
 #include "core_validation.h"
 #include "generated/spirv_grammar_helper.h"
+#include "generated/spirv_validation_helper.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/shader_stage_state.h"
 #include "utils/hash_util.h"

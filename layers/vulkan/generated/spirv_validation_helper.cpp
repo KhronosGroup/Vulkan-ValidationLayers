@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2020-2024 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@
  * to SPIR-V. Anything related to the SPIR-V grammar belongs in spirv_grammar_helper
  *
  ****************************************************************************/
+
 // NOLINTBEGIN
+
 #include <string>
 #include <string_view>
 #include <functional>
@@ -787,10 +789,10 @@ static inline const char *string_SpvCapability(uint32_t input_value) {
 }
 
 // Will return the Vulkan format for a given SPIR-V image format value
-// Note: will return VK_FORMAT_UNDEFINED if non valid input
+// Note: will return VK_FORMAT_UNDEFINED if non valid input (or if ImageFormatUnknown)
 // This was in vk_format_utils but the SPIR-V Header dependency was an issue
 //   see https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4647
-VkFormat CoreChecks::CompatibleSpirvImageFormat(uint32_t spirv_image_format) const {
+VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) {
     switch (spirv_image_format) {
         case spv::ImageFormatR8:
             return VK_FORMAT_R8_UNORM;
@@ -1324,4 +1326,5 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instructio
     }  // spv::OpExtension
     return skip;
 }
+
 // NOLINTEND

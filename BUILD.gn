@@ -415,6 +415,7 @@ vvl_sources = [
   "layers/vulkan/generated/spirv_grammar_helper.h",
   "layers/vulkan/generated/spirv_tools_commit_id.h",
   "layers/vulkan/generated/spirv_validation_helper.cpp",
+  "layers/vulkan/generated/spirv_validation_helper.h",
   "layers/vulkan/generated/stateless_device_methods.h",
   "layers/vulkan/generated/stateless_instance_methods.h",
   "layers/vulkan/generated/stateless_validation_helper.cpp",
