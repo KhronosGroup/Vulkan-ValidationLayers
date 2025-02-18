@@ -21,6 +21,7 @@
 
 #pragma once
 #include <atomic>
+#include <list>
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_enum_string_helper.h>
@@ -232,7 +233,7 @@ class Instance : public HandleWrapper {
     APIVersion api_version;
     DeviceExtensions extensions{};
 
-    mutable std::vector<std::unique_ptr<base::Instance>> object_dispatch;
+    mutable std::list<std::unique_ptr<base::Instance>> object_dispatch;
 
     VkInstance instance = VK_NULL_HANDLE;
     VkLayerInstanceDispatchTable instance_dispatch_table;
@@ -293,9 +294,9 @@ class Device : public HandleWrapper {
     VkDevice device = VK_NULL_HANDLE;
     VkLayerDispatchTable device_dispatch_table;
 
-    mutable std::vector<std::unique_ptr<base::Device>> object_dispatch;
-    mutable std::vector<std::unique_ptr<base::Device>> aborted_object_dispatch;
-    mutable std::vector<std::vector<base::Device*>> intercept_vectors;
+    mutable std::list<std::unique_ptr<base::Device>> object_dispatch;
+    mutable std::list<std::unique_ptr<base::Device>> aborted_object_dispatch;
+    mutable std::vector<std::list<base::Device*>> intercept_vectors;
     // Handle Wrapping Data
     // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
     vvl::unordered_map<uint64_t, std::unique_ptr<TemplateState>> desc_template_createinfo_map;
