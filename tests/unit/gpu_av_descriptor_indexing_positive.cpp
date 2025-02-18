@@ -828,8 +828,9 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingBDA) {
     m_default_queue->Wait();
 }
 
+// Disabled as this is a perf testing test, not much value in normal CI
 // If on Mesa, also add MESA_SHADER_CACHE_DISABLE=1
-TEST_F(PositiveGpuAVDescriptorIndexing, Stress) {
+TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress) {
     TEST_DESCRIPTION("Do many indexing into the shader");
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
@@ -930,6 +931,72 @@ TEST_F(PositiveGpuAVDescriptorIndexing, Stress) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
+// Disabled as this is a perf testing test, not much value in normal CI
+TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress2) {
+    TEST_DESCRIPTION("Do many indexing into the shader");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+
+    // Will look like
+    //     layout(set = 0, binding = 0) buffer SSBO {
+    //         float a0;
+    //         uint b0, b1, b2, ... bn;
+    //     } x[2];
+    //     void main() {
+    //         float a = x[1].a0;
+    //         x[1].b0 = floatBitsToUint(a * 0);
+    //         x[1].b0 = floatBitsToUint(a * 1);
+    //         x[1].b0 = floatBitsToUint(a * 2);
+    //         // ...
+    //         x[1].bn = floatBitsToUint(a * n);
+    //     }
+    const uint32_t field_count = 100;
+    std::stringstream cs_source;
+    cs_source << R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO {
+            float a0;
+            uint )glsl";
+    for (uint32_t i = 0; i < field_count; i++) {
+        cs_source << "b" << i << ", ";
+    }
+    cs_source << R"glsl(bn;
+        } x[2];
+        void main() {
+            float a = x[1].a0;
+    )glsl";
+
+    for (uint32_t i = 0; i < field_count; i++) {
+        cs_source << "x[1].b" << i << " = floatBitsToUint(a * " << i << ".0);\n";
+    }
+    cs_source << "\n}";
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    OneOffDescriptorIndexingSet descriptor_set(m_device, {
+                                                             {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr,
+                                                              VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
+                                                         });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout.handle();
     pipe.CreateComputePipeline();
 
