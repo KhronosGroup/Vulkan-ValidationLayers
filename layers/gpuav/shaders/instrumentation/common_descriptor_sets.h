@@ -1,6 +1,6 @@
-// Copyright (c) 2024 The Khronos Group Inc.
-// Copyright (c) 2024 Valve Corporation
-// Copyright (c) 2024 LunarG, Inc.
+// Copyright (c) 2024-2025 The Khronos Group Inc.
+// Copyright (c) 2024-2025 Valve Corporation
+// Copyright (c) 2024-2025 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference_uvec2 : require
+#if defined(GL_ARB_gpu_shader_int64)
+#extension GL_ARB_gpu_shader_int64 : require
+#else
+#error No extension available for 64-bit integers.
+#endif
+
+#include "gpuav_error_header.h"
+#include "gpuav_shaders_constants.h"
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstErrorBuffer, std430) buffer OutputBuffer {
     uint flags;
