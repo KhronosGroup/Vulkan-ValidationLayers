@@ -1266,13 +1266,6 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                                  "VkAccelerationStructureInfoNV::flags.");
             }
         }
-        if (dst_as_state && !dst_as_state->update_scratch_memory_requirements_checked) {
-            skip |= LogWarning("WARNING-vkCmdBuildAccelerationStructureNV-update-requirements", dst, error_obj.location,
-                               "Updating %s but vkGetAccelerationStructureMemoryRequirementsNV() "
-                               "has not been called for update scratch memory.",
-                               FormatHandle(dst_as_state->Handle()).c_str());
-            // Use requirements fetched at create time
-        }
         if (scratch_buffer_state && dst_as_state &&
             dst_as_state->update_scratch_memory_requirements.size > (scratch_buffer_state->create_info.size - scratchOffset)) {
             skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-update-02492", commandBuffer, error_obj.location,
@@ -1285,13 +1278,6 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                              "or equal to the size of scratch minus scratchOffset");
         }
     } else {
-        if (dst_as_state && !dst_as_state->build_scratch_memory_requirements_checked) {
-            skip |= LogWarning("WARNING-vkCmdBuildAccelerationStructureNV-scratch-requirements", dst, error_obj.location,
-                               "Assigning scratch buffer to %s but "
-                               "vkGetAccelerationStructureMemoryRequirementsNV() has not been called for scratch memory.",
-                               FormatHandle(dst_as_state->Handle()).c_str());
-            // Use requirements fetched at create time
-        }
         if (scratch_buffer_state && dst_as_state &&
             dst_as_state->build_scratch_memory_requirements.size > (scratch_buffer_state->create_info.size - scratchOffset)) {
             skip |= LogError("VUID-vkCmdBuildAccelerationStructureNV-update-02491", commandBuffer, error_obj.location,
