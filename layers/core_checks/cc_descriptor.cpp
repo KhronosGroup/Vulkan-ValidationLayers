@@ -1283,7 +1283,8 @@ bool CoreChecks::ValidateImageUpdate(const vvl::ImageView &view_state, VkImageLa
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
             if (view_state.samplerConversion != VK_NULL_HANDLE) {
                 skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-01946", objlist, image_info_loc.dot(Field::imageView),
-                                 "is used as VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but was created with %s",
+                                 "is used as VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, but was created with %s. (YCbCr Conversion Sampler "
+                                 "must be done with VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)",
                                  FormatHandle(view_state.samplerConversion).c_str());
             }
             [[fallthrough]];
