@@ -576,8 +576,10 @@ bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vert
 
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
             if (hazard.IsHazard()) {
-                const auto error = error_messages_.DrawVertexBufferError(hazard, *this, *buf_state, loc.function);
-                skip |= sync_state_.SyncError(hazard.Hazard(), buf_state->Handle(), loc, error);
+                LogObjectList objlist(cb_state_->Handle(), buf_state->Handle(), pipe->Handle());
+                const std::string resource_description = "vertex " + sync_state_.FormatHandle(*buf_state);
+                const auto error = error_messages_.BufferError(hazard, *this, loc.function, resource_description, range);
+                skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
             }
         }
     }
@@ -630,8 +632,13 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, u
 
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.IsHazard()) {
-        const auto error = error_messages_.DrawIndexBufferError(hazard, *this, *index_buf_state, loc.function);
-        skip |= sync_state_.SyncError(hazard.Hazard(), index_buf_state->Handle(), loc, error);
+        LogObjectList objlist(cb_state_->Handle(), index_buf_state->Handle());
+        if (const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+            objlist.add(pipe->Handle());
+        }
+        const std::string resource_description = "index " + sync_state_.FormatHandle(*index_buf_state);
+        const auto error = error_messages_.BufferError(hazard, *this, loc.function, resource_description, range);
+        skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
     }
 
     // TODO: Shader instrumentation support is needed to read index buffer content and determine more accurate range

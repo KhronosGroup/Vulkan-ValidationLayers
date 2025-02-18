@@ -349,45 +349,6 @@ std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, cons
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
-std::string ErrorMessages::DrawVertexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                 const vvl::Buffer& vertex_buffer, vvl::Func command) const {
-    const auto format = "Hazard %s for vertex %s in %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message =
-        Format(format, string_SyncHazard(hazard.Hazard()), validator_.FormatHandle(vertex_buffer.Handle()).c_str(),
-               validator_.FormatHandle(cb_context.Handle()).c_str(), access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "DrawVertexBufferError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::DrawIndexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                const vvl::Buffer& index_buffer, vvl::Func command) const {
-    const auto format = "Hazard %s for index %s in %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), validator_.FormatHandle(index_buffer.Handle()).c_str(),
-                                 validator_.FormatHandle(cb_context.Handle()).c_str(), access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "DrawIndexBufferError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
 std::string ErrorMessages::DrawAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                const vvl::ImageView& attachment_view, vvl::Func command) const {
     const auto format = "(%s). Access info %s.";

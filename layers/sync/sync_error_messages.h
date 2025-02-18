@@ -79,12 +79,6 @@ class ErrorMessages {
                                      uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                      VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const;
 
-    std::string DrawVertexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                      const vvl::Buffer& vertex_buffer, vvl::Func command) const;
-
-    std::string DrawIndexBufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                     const vvl::Buffer& index_buffer, vvl::Func command) const;
-
     std::string DrawAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                     const vvl::ImageView& attachment_view, vvl::Func command) const;
 
