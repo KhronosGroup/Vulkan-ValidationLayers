@@ -337,8 +337,16 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         vo->PostCallRecordCreateDevice(gpu, modified_create_info.ptr(), pAllocator, pDevice, record_obj);
     }
     // Note: device_dispatch is no longer valid since it was a std::move source above.
-    for (auto& vo : vvl::dispatch::GetData(*pDevice)->object_dispatch) {
+    // Note 2: GPU-AV can be disabled if some conditions are not met,
+    // and removed from object_dispatches, thus disallowing proper usage of a range-based
+    // for loop => just use a classic one instead
+    auto& object_dispatches = vvl::dispatch::GetData(*pDevice)->object_dispatch;
+    for (size_t i = 0; i < object_dispatches.size(); ++i) {
+        auto& vo = object_dispatches[i];
         vo->FinishDeviceSetup(modified_create_info.ptr(), record_obj.location);
+        if (!object_dispatches[i]) {
+            --i;
+        }
     }
 
     return result;
