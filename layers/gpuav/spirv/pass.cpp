@@ -26,7 +26,7 @@ namespace spirv {
 
 bool Pass::Run() {
     const bool modified = Instrument();
-    if (module_.print_debug_info_) {
+    if (module_.settings_.print_debug_info) {
         PrintDebugInfo();
     }
     return modified;
