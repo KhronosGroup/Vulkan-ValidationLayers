@@ -309,6 +309,7 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
         case spv::OpConvertFToS:
         case spv::OpConvertSToF:
         case spv::OpConvertUToF:
+        case spv::OpConvertUToPtr:
             swap(1);
             swap(3);
             break;
@@ -419,6 +420,7 @@ void Instruction::ReplaceLinkedId(vvl::unordered_map<uint32_t, uint32_t>& id_swa
             swap_to_end(2);
             break;
         case spv::OpExtInst:
+            swap(1);
             swap(3);
             swap_to_end(5);
             break;
