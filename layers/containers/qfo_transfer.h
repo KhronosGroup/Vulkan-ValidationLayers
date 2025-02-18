@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@
  */
 #pragma once
 #include "custom_containers.h"
+#include "generated/error_location_helper.h"
 #include "sync/sync_utils.h"
 #include "utils/hash_util.h"
 
@@ -79,15 +80,7 @@ struct QFOImageTransferBarrier : public QFOTransferBarrierBase<VkImage> {
         // Ignoring layout w.r.t. equality. See comment in hash above.
         return (static_cast<BaseType>(*this) == static_cast<BaseType>(rhs)) && (subresourceRange == rhs.subresourceRange);
     }
-    // TODO: codegen a comprehensive complie time type -> string (and or other traits) template family
-    static const char *BarrierName() { return "VkImageMemoryBarrier"; }
-    static const char *HandleName() { return "VkImage"; }
-    // QFO transfer image barrier must not duplicate QFO recorded in command buffer
-    static const char *DuplicateQFOInCB() { return "WARNING-VkImageMemoryBarrier-image-00001"; }
-    // QFO transfer image barrier must not duplicate QFO submitted in batch
-    static const char *DuplicateQFOInSubmit() { return "WARNING-VkImageMemoryBarrier-image-00002"; }
-    // QFO transfer image barrier must not duplicate QFO submitted previously
-    static const char *DuplicateQFOSubmitted() { return "WARNING-VkImageMemoryBarrier-image-00003"; }
+    static vvl::Struct BarrierName() { return vvl::Struct::VkImageMemoryBarrier; }
 };
 
 // Buffer barrier specific implementation
@@ -108,14 +101,7 @@ struct QFOBufferTransferBarrier : public QFOTransferBarrierBase<VkBuffer> {
     bool operator==(const QFOBufferTransferBarrier &rhs) const {
         return (static_cast<BaseType>(*this) == static_cast<BaseType>(rhs)) && (offset == rhs.offset) && (size == rhs.size);
     }
-    static const char *BarrierName() { return "VkBufferMemoryBarrier"; }
-    static const char *HandleName() { return "VkBuffer"; }
-    // QFO transfer buffer barrier must not duplicate QFO recorded in command buffer
-    static const char *DuplicateQFOInCB() { return "WARNING-VkBufferMemoryBarrier-buffer-00001"; }
-    // QFO transfer buffer barrier must not duplicate QFO submitted in batch
-    static const char *DuplicateQFOInSubmit() { return "WARNING-VkBufferMemoryBarrier-buffer-00002"; }
-    // QFO transfer buffer barrier must not duplicate QFO submitted previously
-    static const char *DuplicateQFOSubmitted() { return "WARNING-VkBufferMemoryBarrier-buffer-00003"; }
+    static vvl::Struct BarrierName() { return vvl::Struct::VkBufferMemoryBarrier; }
 };
 
 template <typename TransferBarrier>

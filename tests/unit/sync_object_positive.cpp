@@ -103,6 +103,39 @@ TEST_F(PositiveSyncObject, Sync2OwnershipTranfersBuffer) {
     ValidOwnershipTransfer(m_errorMonitor, no_gfx_queue, no_gfx_cb, m_default_queue, m_command_buffer, &buffer_barrier, nullptr);
 }
 
+TEST_F(PositiveSyncObject, BarrierQueueFamily2) {
+    TEST_DESCRIPTION("Create and submit barriers with invalid queue families");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    RETURN_IF_SKIP(Init());
+
+    // Find queues of two families
+    const uint32_t submit_family = m_device->graphics_queue_node_index_;
+    const uint32_t queue_family_count = static_cast<uint32_t>(m_device->Physical().queue_properties_.size());
+    const uint32_t other_family = submit_family != 0 ? 0 : 1;
+    const bool only_one_family = (queue_family_count == 1) ||
+                                 (m_device->Physical().queue_properties_[other_family].queueCount == 0) ||
+                                 ((m_device->Physical().queue_properties_[other_family].queueFlags & VK_QUEUE_TRANSFER_BIT) == 0);
+
+    if (only_one_family) {
+        GTEST_SKIP() << "Single queue family found";
+    }
+    std::vector<uint32_t> qf_indices{{submit_family, other_family}};
+    BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
+
+    BarrierQueueFamilyTestHelper excl_test(&test_context);
+    excl_test.Init(nullptr);
+
+    // Although other_family does not match submit_family, because the barrier families are
+    // equal here, no ownership transfer actually happens, and this barrier is valid by the spec.
+    excl_test(other_family, other_family, submit_family);
+
+    // positive test (testing both the index logic and the QFO transfer tracking.
+    excl_test(submit_family, other_family, submit_family);
+    excl_test(submit_family, other_family, other_family);
+    excl_test(other_family, submit_family, other_family);
+    excl_test(other_family, submit_family, submit_family);
+}
+
 TEST_F(PositiveSyncObject, LayoutFromPresentWithoutAccessMemoryRead) {
     // Transition an image away from PRESENT_SRC_KHR without ACCESS_MEMORY_READ
     // in srcAccessMask.
