@@ -2084,25 +2084,6 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, co
     }
 }
 
-template <typename TransferBarrier, typename Scoreboard>
-bool CoreChecks::ValidateAndUpdateQFOScoreboard(const vvl::CommandBuffer &cb_state, const char *operation,
-                                                const TransferBarrier &barrier, Scoreboard *scoreboard, const Location &loc) const {
-    // Record to the scoreboard or report that we have a duplication
-    bool skip = false;
-    auto inserted = scoreboard->emplace(barrier, &cb_state);
-    if (!inserted.second && inserted.first->second != &cb_state) {
-        // This is a duplication (but don't report duplicates from the same CB, as we do that at record time
-        const LogObjectList objlist(cb_state.Handle(), barrier.handle, inserted.first->second->Handle());
-        skip |= LogWarning(TransferBarrier::DuplicateQFOInSubmit(), objlist, loc,
-                           "%s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
-                           " duplicates existing barrier submitted in this batch from %s.",
-                           TransferBarrier::BarrierName(), operation, TransferBarrier::HandleName(),
-                           FormatHandle(barrier.handle).c_str(), barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex,
-                           FormatHandle(inserted.first->second->Handle()).c_str());
-    }
-    return skip;
-}
-
 template <typename TransferBarrier>
 bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_state,
                                                    QFOTransferCBScoreboards<TransferBarrier> *scoreboards,
@@ -2110,26 +2091,7 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_
                                                    const Location &loc) const {
     bool skip = false;
     const auto &cb_barriers = cb_state.GetQFOBarrierSets(TransferBarrier());
-    const char *barrier_name = TransferBarrier::BarrierName();
-    const char *handle_name = TransferBarrier::HandleName();
-    // No release should have an extant duplicate (WARNING)
-    for (const auto &release : cb_barriers.release) {
-        // Check the global pending release barriers
-        const auto set_it = global_release_barriers.find(release.handle);
-        if (set_it != global_release_barriers.cend()) {
-            const QFOTransferBarrierSet<TransferBarrier> &set_for_handle = set_it->second;
-            const auto found = set_for_handle.find(release);
-            if (found != set_for_handle.cend()) {
-                skip |= LogWarning(TransferBarrier::DuplicateQFOSubmitted(), cb_state.Handle(), loc,
-                                   "%s releasing queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
-                                   " to dstQueueFamilyIndex %" PRIu32
-                                   " duplicates existing barrier queued for execution, without intervening acquire operation.",
-                                   barrier_name, handle_name, FormatHandle(found->handle).c_str(), found->srcQueueFamilyIndex,
-                                   found->dstQueueFamilyIndex);
-            }
-        }
-        skip |= ValidateAndUpdateQFOScoreboard(cb_state, "releasing", release, &scoreboards->release, loc);
-    }
+
     // Each acquire must have a matching release (ERROR)
     for (const auto &acquire : cb_barriers.acquire) {
         const auto set_it = global_release_barriers.find(acquire.handle);
@@ -2142,12 +2104,11 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_
             const char *vuid = (loc.function == vvl::Func::vkQueueSubmit) ? "VUID-vkQueueSubmit-pSubmits-02207"
                                                                           : "VUID-vkQueueSubmit2-commandBuffer-03879";
             skip |= LogError(vuid, cb_state.Handle(), loc,
-                             "in submitted command buffer %s acquiring ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
+                             "in submitted command buffer %s acquiring ownership of (%s), from srcQueueFamilyIndex %" PRIu32
                              " to dstQueueFamilyIndex %" PRIu32 " has no matching release barrier queued for execution.",
-                             barrier_name, handle_name, FormatHandle(acquire.handle).c_str(), acquire.srcQueueFamilyIndex,
-                             acquire.dstQueueFamilyIndex);
+                             String(TransferBarrier::BarrierName()), FormatHandle(acquire.handle).c_str(),
+                             acquire.srcQueueFamilyIndex, acquire.dstQueueFamilyIndex);
         }
-        skip |= ValidateAndUpdateQFOScoreboard(cb_state, "acquiring", acquire, &scoreboards->acquire, loc);
     }
     return skip;
 }
@@ -2199,40 +2160,6 @@ void CoreChecks::RecordQueuedQFOTransfers(vvl::CommandBuffer &cb_state) {
     RecordQueuedQFOTransferBarriers<QFOImageTransferBarrier>(cb_state.qfo_transfer_image_barriers, qfo_release_image_barrier_map);
     RecordQueuedQFOTransferBarriers<QFOBufferTransferBarrier>(cb_state.qfo_transfer_buffer_barriers,
                                                               qfo_release_buffer_barrier_map);
-}
-
-template <typename Barrier, typename TransferBarrier>
-bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const Location &barrier_loc, const vvl::CommandBuffer &cb_state,
-                                                      const Barrier &barrier,
-                                                      const QFOTransferBarrierSets<TransferBarrier> &barrier_sets) const {
-    bool skip = false;
-    const char *handle_name = TransferBarrier::HandleName();
-    const char *transfer_type = nullptr;
-    if (!IsOwnershipTransfer(barrier)) {
-        return skip;
-    }
-    const TransferBarrier *barrier_record = nullptr;
-    if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
-        const auto found = barrier_sets.release.find(barrier);
-        if (found != barrier_sets.release.cend()) {
-            barrier_record = &(*found);
-            transfer_type = "releasing";
-        }
-    } else if (cb_state.IsAcquireOp(barrier) && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
-        const auto found = barrier_sets.acquire.find(barrier);
-        if (found != barrier_sets.acquire.cend()) {
-            barrier_record = &(*found);
-            transfer_type = "acquiring";
-        }
-    }
-    if (barrier_record != nullptr) {
-        skip |= LogWarning(TransferBarrier::DuplicateQFOInCB(), cb_state.Handle(), barrier_loc,
-                           "%s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32 " to dstQueueFamilyIndex %" PRIu32
-                           " duplicates existing barrier recorded in this command buffer.",
-                           transfer_type, handle_name, FormatHandle(barrier_record->handle).c_str(),
-                           barrier_record->srcQueueFamilyIndex, barrier_record->dstQueueFamilyIndex);
-    }
-    return skip;
 }
 
 bool CoreChecks::ValidateBarrierQueueFamilies(const LogObjectList &objects, const Location &barrier_loc, const Location &field_loc,
@@ -2331,8 +2258,6 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
 
     bool skip = false;
 
-    skip |= ValidateQFOTransferBarrierUniqueness(barrier_loc, cb_state, mem_barrier, cb_state.qfo_transfer_buffer_barriers);
-
     // Validate buffer barrier queue family indices
     if (auto buffer_state = Get<vvl::Buffer>(mem_barrier.buffer)) {
         auto buf_loc = barrier_loc.dot(Field::buffer);
@@ -2371,7 +2296,6 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
                                       const ImageBarrier &mem_barrier) const {
     bool skip = false;
 
-    skip |= ValidateQFOTransferBarrierUniqueness(barrier_loc, cb_state, mem_barrier, cb_state.qfo_transfer_image_barriers);
     const VkImageLayout old_layout = mem_barrier.oldLayout;
     const VkImageLayout new_layout = mem_barrier.newLayout;
 

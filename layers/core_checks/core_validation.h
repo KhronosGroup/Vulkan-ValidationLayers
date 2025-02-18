@@ -633,19 +633,10 @@ class CoreChecks : public vvl::Device {
                                     QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards,
                                     const Location& loc) const;
 
-    template <typename Barrier, typename Scoreboard>
-    bool ValidateAndUpdateQFOScoreboard(const vvl::CommandBuffer& cb_state, const char* operation, const Barrier& barrier,
-                                        Scoreboard* scoreboard, const Location& loc) const;
-
     void RecordBarrierValidationInfo(const Location& loc, vvl::CommandBuffer& cb_state, const BufferBarrier& barrier,
                                      QFOTransferBarrierSets<QFOBufferTransferBarrier>& barrier_sets);
     void RecordBarrierValidationInfo(const Location& loc, vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
                                      QFOTransferBarrierSets<QFOImageTransferBarrier>& barrier_sets);
-
-    template <typename Barrier, typename TransferBarrier>
-    bool ValidateQFOTransferBarrierUniqueness(const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
-                                              const Barrier& barrier,
-                                              const QFOTransferBarrierSets<TransferBarrier>& barrier_sets) const;
 
     bool ValidatePrimaryCommandBufferState(const Location& loc, const vvl::CommandBuffer& cb_state, uint32_t current_submit_count,
                                            QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
