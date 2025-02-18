@@ -295,7 +295,6 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     bool ValidateDrawDynamicRenderingAttachment(const Location &loc) const;
     void RecordDrawAttachment(ResourceUsageTag tag);
     void RecordDrawDynamicRenderingAttachment(ResourceUsageTag tag);
-    ClearAttachmentInfo GetClearAttachmentInfo(const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
     bool ValidateClearAttachment(const Location &loc, const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
     void RecordClearAttachment(ResourceUsageTag tag, const VkClearAttachment &clear_attachment, const VkClearRect &rect);
 
@@ -362,8 +361,13 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     // As this is passing around a shared pointer to record, move to avoid needless atomics.
     void RecordSyncOp(SyncOpPointer &&sync_op);
 
-    bool ValidateClearAttachment(const Location &loc, const ClearAttachmentInfo &info) const;
-    void RecordClearAttachment(ResourceUsageTag tag, const ClearAttachmentInfo &clear_info);
+    struct ClearAttachmentInfo {
+        const syncval_state::ImageViewState &attachment_view;
+        VkImageAspectFlags aspects_to_clear = 0;
+        VkImageSubresourceRange subresource_range{};
+    };
+    std::optional<ClearAttachmentInfo> GetClearAttachmentInfo(const VkClearAttachment &clear_attachment,
+                                                              const VkClearRect &rect) const;
 
     void CheckCommandTagDebugCheckpoint();
 
