@@ -271,7 +271,6 @@ class ImageView : public StateObject {
     const VkImageSubresourceRange normalized_subresource_range;
     const image_layout_map::RangeGenerator range_generator;
     const VkSampleCountFlagBits samples;
-    const uint32_t descriptor_format_bits;
     const VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
     const VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;
     const float min_lod;

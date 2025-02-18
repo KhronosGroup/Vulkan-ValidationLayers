@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <vulkan/vulkan_core.h>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -409,14 +410,17 @@ struct ResourceInterfaceVariable : public VariableBase {
     // Online example to showcase various arrays we do/don't care about here https://godbolt.org/z/h9jhsKaPn
     bool is_runtime_descriptor_array;
 
-    // Sampled Type width of the OpTypeImage the variable points to, 0 if doesn't use the image
-    const uint32_t image_sampled_type_width;
-
     // All info regarding what will be validated from requirements imposed by the pipeline on a descriptor. These
     // can't be checked at pipeline creation time as they depend on the Image or ImageView bound.
     // That is perf-critical code and hashing if 2 variables have same info provides a 20% perf bonus
     struct Info {
-        NumericType image_format_type;
+        // the 'format' operand of OpTypeImage as the corresponding Vulkan Format
+        VkFormat image_format{VK_FORMAT_UNDEFINED};
+        // the 'Sampled Type' operand of OpTypeImage,as a numeric type (float, uint, int)
+        NumericType image_sampled_type_numeric{NumericTypeUnknown};
+        // the 'Sampled Type' operand of OpTypeImage as the bit width (64 is the largest bit width in SPIR-V)
+        uint8_t image_sampled_type_width{0};
+
         spv::Dim image_dim;
         bool is_image_array;
         bool is_multisampled;
@@ -441,7 +445,7 @@ struct ResourceInterfaceVariable : public VariableBase {
         uint32_t access_mask{AccessBit::empty};
     } info;
     uint64_t descriptor_hash = 0;
-    bool IsImage() const { return info.image_format_type != NumericTypeUnknown; }
+    bool IsImage() const { return base_type.Opcode() == spv::OpTypeImage; }
 
     // Type of resource type (vkspec.html#interfaces-resources-storage-class-correspondence)
     bool is_storage_image{false};
@@ -455,8 +459,6 @@ struct ResourceInterfaceVariable : public VariableBase {
 
   protected:
     static const Instruction &FindBaseType(ResourceInterfaceVariable &variable, const Module &module_state);
-    static uint32_t FindImageSampledTypeWidth(const Module &module_state, const Instruction &base_type);
-    static NumericType FindImageFormatType(const Module &module_state, const Instruction &base_type);
     static bool IsStorageBuffer(const ResourceInterfaceVariable &variable);
 };
 
