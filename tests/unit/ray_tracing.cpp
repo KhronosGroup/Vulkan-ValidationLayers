@@ -3956,3 +3956,185 @@ TEST_F(NegativeRayTracing, InvalidAsCopy) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeRayTracing, CmdTraceRays) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline rt_pipeline(*this, m_device);
+
+    rt_pipeline.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+
+    rt_pipeline.AddGlslMissShader(kRayTracingPayloadMinimalGlsl);
+    rt_pipeline.AddGlslClosestHitShader(kRayTracingPayloadMinimalGlsl);
+
+    rt_pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    rt_pipeline.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    rt_pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    rt_pipeline.GetDescriptorSet().UpdateDescriptorSets();
+
+    rt_pipeline.Build();
+
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
+    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
+    vk::GetPhysicalDeviceProperties2(gpu_, &props2);
+
+    const uint32_t handle_size_base_aligned =
+        Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupBaseAlignment);
+    const uint32_t handle_size_aligned =
+        Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
+
+    const auto sbt = rt_pipeline.GetTraceRaysSbt();
+
+    m_command_buffer.Begin();
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rt_pipeline.Handle());
+
+    {
+        VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();
+        sbt_buffer_info.size = handle_size_aligned;
+        sbt_buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        vkt::Buffer invalid_buffer(*m_device, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
+
+        VkDeviceAddress invalid_buffer_address = invalid_buffer.Address();
+
+        VkStridedDeviceAddressRegionKHR invalid_closest_hit_sbt{};
+        invalid_buffer_address = Align<VkDeviceAddress>(invalid_buffer_address, rt_pipeline_props.shaderGroupBaseAlignment);
+        invalid_closest_hit_sbt.deviceAddress = invalid_buffer_address;
+        invalid_closest_hit_sbt.stride = handle_size_aligned;
+        invalid_closest_hit_sbt.size = handle_size_aligned;
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03688");
+        vk::CmdTraceRaysKHR(m_command_buffer.handle(), &sbt.ray_gen_sbt, &sbt.miss_sbt, &invalid_closest_hit_sbt, &sbt.callable_sbt,
+                            100, 100, 1);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();
+        sbt_buffer_info.size = handle_size_base_aligned;
+        sbt_buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        vkt::Buffer invalid_buffer(*m_device, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
+
+        VkDeviceAddress invalid_buffer_address = invalid_buffer.Address();
+
+        VkStridedDeviceAddressRegionKHR invalid_ray_gen_sbt{};
+        invalid_buffer_address = Align<VkDeviceAddress>(invalid_buffer_address, rt_pipeline_props.shaderGroupBaseAlignment);
+        invalid_ray_gen_sbt.deviceAddress = invalid_buffer_address;
+        invalid_ray_gen_sbt.stride = handle_size_base_aligned;
+        invalid_ray_gen_sbt.size = handle_size_base_aligned;
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03681");
+        vk::CmdTraceRaysKHR(m_command_buffer.handle(), &invalid_ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 100,
+                            100, 1);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();
+        sbt_buffer_info.size = handle_size_aligned;
+        sbt_buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        vkt::Buffer invalid_buffer(*m_device, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
+
+        VkDeviceAddress invalid_buffer_address = invalid_buffer.Address();
+
+        VkStridedDeviceAddressRegionKHR invalid_miss_sbt{};
+        invalid_buffer_address = Align<VkDeviceAddress>(invalid_buffer_address, rt_pipeline_props.shaderGroupBaseAlignment);
+        invalid_miss_sbt.deviceAddress = invalid_buffer_address;
+        invalid_miss_sbt.stride = handle_size_aligned;
+        invalid_miss_sbt.size = handle_size_aligned;
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03684");
+        vk::CmdTraceRaysKHR(m_command_buffer.handle(), &sbt.ray_gen_sbt, &invalid_miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 100,
+                            100, 1);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();
+        sbt_buffer_info.size = handle_size_aligned;
+        sbt_buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        vkt::Buffer invalid_buffer(*m_device, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
+
+        VkDeviceAddress invalid_buffer_address = invalid_buffer.Address();
+
+        VkStridedDeviceAddressRegionKHR invalid_callable_sbt{};
+        invalid_buffer_address = Align<VkDeviceAddress>(invalid_buffer_address, rt_pipeline_props.shaderGroupBaseAlignment);
+        invalid_callable_sbt.deviceAddress = invalid_buffer_address;
+        invalid_callable_sbt.stride = handle_size_aligned;
+        invalid_callable_sbt.size = handle_size_aligned;
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03692");
+        vk::CmdTraceRaysKHR(m_command_buffer.handle(), &sbt.ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &invalid_callable_sbt, 100,
+                            100, 1);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();
+        sbt_buffer_info.size = handle_size_aligned;
+        sbt_buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+                                VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+        VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        vkt::Buffer invalid_buffer(*m_device, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
+
+        VkDeviceAddress invalid_buffer_address = invalid_buffer.Address();
+
+        VkStridedDeviceAddressRegionKHR invalid_callable_sbt{};
+        invalid_buffer_address = Align<VkDeviceAddress>(invalid_buffer_address, rt_pipeline_props.shaderGroupBaseAlignment) + 1;
+        invalid_callable_sbt.deviceAddress = invalid_buffer_address;
+        invalid_callable_sbt.stride = handle_size_aligned;
+        invalid_callable_sbt.size = handle_size_aligned;
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03693");
+        vk::CmdTraceRaysKHR(m_command_buffer.handle(), &sbt.ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &invalid_callable_sbt, 100,
+                            100, 1);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();
+        sbt_buffer_info.size = handle_size_base_aligned;
+        sbt_buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        vkt::Buffer invalid_buffer(*m_device, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
+
+        VkDeviceAddress invalid_buffer_address = invalid_buffer.Address();
+
+        VkStridedDeviceAddressRegionKHR invalid_ray_gen_sbt{};
+        invalid_buffer_address = Align<VkDeviceAddress>(invalid_buffer_address, rt_pipeline_props.shaderGroupBaseAlignment);
+        invalid_ray_gen_sbt.deviceAddress = invalid_buffer_address;
+        invalid_ray_gen_sbt.stride = handle_size_base_aligned / 2u;
+        invalid_ray_gen_sbt.size = handle_size_base_aligned;
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-size-04023");
+        vk::CmdTraceRaysKHR(m_command_buffer.handle(), &invalid_ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 100,
+                            100, 1);
+        m_errorMonitor->VerifyFound();
+    }
+
+    vk::CmdTraceRaysKHR(m_command_buffer.handle(), &sbt.ray_gen_sbt, &sbt.miss_sbt, &sbt.hit_sbt, &sbt.callable_sbt, 100, 100, 1);
+
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+
+    m_device->Wait();
+}

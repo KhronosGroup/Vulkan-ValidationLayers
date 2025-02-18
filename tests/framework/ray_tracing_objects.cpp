@@ -1820,6 +1820,8 @@ vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*
     return out;
 }
 
+const vkt::Buffer& Pipeline::GetTraceRaysSbtBuffer() { return sbt_buffer_; }
+
 vkt::Buffer Pipeline::GetTraceRaysSbtIndirectBuffer(uint32_t ray_gen_shader_i, uint32_t width, uint32_t height, uint32_t depth) {
     TraceRaysSbt sbt = GetTraceRaysSbt(ray_gen_shader_i);
 
