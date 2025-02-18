@@ -37,9 +37,14 @@ struct ModuleHeader {
 };
 
 struct Settings {
+    // provides a way to map back and know which original SPIR-V this was from
     uint32_t shader_id;
+    // Will replace the "OpDecorate DescriptorSet" for the output buffer in the incoming linked module
+    // This allows anything to be set in the GLSL for the set value, as we change it at runtime
     uint32_t output_buffer_descriptor_set;
+    // Used to help debug
     bool print_debug_info;
+    // zero is same as "unlimited"
     uint32_t max_instrumentations_count;
     bool support_non_semantic_info;
     bool has_bindless_descriptors;
@@ -94,15 +99,10 @@ class Module {
     void AddDecoration(uint32_t target_id, spv::Decoration decoration, const std::vector<uint32_t>& operands);
     void AddMemberDecoration(uint32_t target_id, uint32_t index, spv::Decoration decoration, const std::vector<uint32_t>& operands);
 
-    const uint32_t max_instrumentations_count_ = 0;  // zero is same as "unlimited"
-    bool use_bda_ = false;
-    // provides a way to map back and know which original SPIR-V this was from
-    const uint32_t shader_id_;
-    // Will replace the "OpDecorate DescriptorSet" for the output buffer in the incoming linked module
-    // This allows anything to be set in the GLSL for the set value, as we change it at runtime
-    const uint32_t output_buffer_descriptor_set_;
+    const Settings& settings_;
 
-    const bool support_non_semantic_info_;
+    bool use_bda_ = false;
+
     const DeviceFeatures& enabled_features_;
 
     // TODO - To make things simple to start, decide if the whole shader has anything bindless or not. The next step will be a
@@ -110,9 +110,6 @@ class Module {
     // descriptors. This will require special consideration as it will break a simple way to test standalone version of the
     // instrumentation
     bool has_bindless_descriptors_ = false;
-
-    // Used to help debug
-    const bool print_debug_info_;
 
     // To keep the GPU Shader Instrumentation a standalone sub-project, the runtime version needs to pass in info to allow for
     // warnings/errors to be piped into the normal callback (otherwise will be sent to stdout)

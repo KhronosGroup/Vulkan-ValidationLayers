@@ -32,13 +32,9 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
                const DeviceFeatures& enabled_features,
                const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut)
     : type_manager_(*this),
-      max_instrumentations_count_(settings.max_instrumentations_count),
-      shader_id_(settings.shader_id),
-      output_buffer_descriptor_set_(settings.output_buffer_descriptor_set),
-      support_non_semantic_info_(settings.support_non_semantic_info),
+      settings_(settings),
       enabled_features_(enabled_features),
       has_bindless_descriptors_(settings.has_bindless_descriptors),
-      print_debug_info_(settings.print_debug_info),
       debug_report_(debug_report),
       set_index_to_bindings_layout_lut_(set_index_to_bindings_layout_lut) {
     uint32_t instruction_count = 0;
@@ -499,7 +495,7 @@ void Module::LinkFunction(const LinkInfo& info) {
 
                 // Replace LinkConstants
                 if (constant_value == glsl::kLinkShaderId) {
-                    new_inst->UpdateWord(3, shader_id_);
+                    new_inst->UpdateWord(3, settings_.shader_id);
                 }
             }
 
@@ -633,7 +629,7 @@ void Module::LinkFunction(const LinkInfo& info) {
             continue;  // remove linkage info
         } else if (decoration->Word(2) == spv::DecorationDescriptorSet) {
             // only should be one DescriptorSet to update
-            decoration->UpdateWord(3, output_buffer_descriptor_set_);
+            decoration->UpdateWord(3, settings_.output_buffer_descriptor_set);
         }
 
         decoration->ReplaceLinkedId(id_swap_map);

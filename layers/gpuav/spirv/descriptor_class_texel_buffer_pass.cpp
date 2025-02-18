@@ -192,7 +192,8 @@ bool DescriptorClassTexelBufferPass::Instrument() {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                 if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
 
-                if (module_.max_instrumentations_count_ != 0 && instrumentations_count_ >= module_.max_instrumentations_count_) {
+                if (module_.settings_.max_instrumentations_count != 0 &&
+                    instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
                     return true;  // hit limit
                 }
                 instrumentations_count_++;

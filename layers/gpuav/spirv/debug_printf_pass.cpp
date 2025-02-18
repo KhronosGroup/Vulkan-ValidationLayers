@@ -308,7 +308,8 @@ void DebugPrintfPass::CreateDescriptorSet() {
     module_.type_manager_.AddVariable(std::move(new_inst), pointer_type);
     module_.AddInterfaceVariables(output_buffer_variable_id_, spv::StorageClassStorageBuffer);
 
-    module_.AddDecoration(output_buffer_variable_id_, spv::DecorationDescriptorSet, {module_.output_buffer_descriptor_set_});
+    module_.AddDecoration(output_buffer_variable_id_, spv::DecorationDescriptorSet,
+                          {module_.settings_.output_buffer_descriptor_set});
     module_.AddDecoration(output_buffer_variable_id_, spv::DecorationBinding, {binding_slot_});
 }
 
@@ -426,7 +427,7 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
         store_block->CreateInstruction(spv::OpAccessChain,
                                        {pointer_type_id, access_chain_id, output_buffer_variable_id_, one_id, int_add_id});
 
-        const uint32_t shader_id = module_.type_manager_.GetConstantUInt32(module_.shader_id_).Id();
+        const uint32_t shader_id = module_.type_manager_.GetConstantUInt32(module_.settings_.shader_id).Id();
         store_block->CreateInstruction(spv::OpStore, {access_chain_id, shader_id});
     }
 
@@ -492,7 +493,7 @@ bool DebugPrintfPass::Instrument() {
                         const uint32_t string_id = (*inst_it)->Word(5);
                         if (debug_inst->Opcode() == spv::OpString && debug_inst->ResultId() == string_id) {
                             intenral_only_debug_printf_.emplace_back(
-                                InternalOnlyDebugPrintf{module_.shader_id_, string_id, debug_inst->GetAsString(2)});
+                                InternalOnlyDebugPrintf{module_.settings_.shader_id, string_id, debug_inst->GetAsString(2)});
                         }
                     }
                 }
@@ -500,7 +501,7 @@ bool DebugPrintfPass::Instrument() {
                 CreateFunctionCall(block_it, &inst_it);
 
                 // remove the OpExtInst incase they don't support VK_KHR_non_semantic_info
-                if (!module_.support_non_semantic_info_) {
+                if (!module_.settings_.support_non_semantic_info) {
                     inst_it = block_instructions.erase(inst_it);
                     inst_it--;
                 }
@@ -521,7 +522,7 @@ bool DebugPrintfPass::Instrument() {
     }
 
     // remove the everything else possible incase they don't support VK_KHR_non_semantic_info
-    if (!module_.support_non_semantic_info_) {
+    if (!module_.settings_.support_non_semantic_info) {
         bool other_non_semantic = false;
         for (auto inst_it = module_.ext_inst_imports_.begin(); inst_it != module_.ext_inst_imports_.end(); ++inst_it) {
             const char* import_string = (inst_it->get())->GetAsString(2);
