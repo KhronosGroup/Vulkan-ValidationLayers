@@ -21,6 +21,7 @@
 
 #include "utils/hash_util.h"
 #include "generated/spirv_grammar_helper.h"
+#include "generated/spirv_validation_helper.h"
 
 #include <spirv/unified1/spirv.hpp>
 #include <spirv/1.2/GLSL.std.450.h>
@@ -1997,14 +1998,6 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
     return *type;
 }
 
-uint32_t ResourceInterfaceVariable::FindImageSampledTypeWidth(const Module& module_state, const Instruction& base_type) {
-    return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetTypeBitsSize(&base_type) : 0;
-}
-
-NumericType ResourceInterfaceVariable::FindImageFormatType(const Module& module_state, const Instruction& base_type) {
-    return (base_type.Opcode() == spv::OpTypeImage) ? module_state.GetNumericType(base_type.Word(2)) : NumericTypeUnknown;
-}
-
 bool ResourceInterfaceVariable::IsStorageBuffer(const ResourceInterfaceVariable& variable) {
     // before VK_KHR_storage_buffer_storage_class Storage Buffer were a Uniform storage class
     const bool physical_storage_buffer = variable.storage_class == spv::StorageClassPhysicalStorageBuffer;
@@ -2027,17 +2020,19 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
       is_sampled_image(false),
       base_type(FindBaseType(*this, module_state)),
       is_runtime_descriptor_array(module_state.HasRuntimeArray(type_id)),
-      image_sampled_type_width(FindImageSampledTypeWidth(module_state, base_type)),
       is_storage_buffer(IsStorageBuffer(*this)) {
     // to make sure no padding in-between the struct produce noise and force same data to become a different hash
     info = {};  // will be cleared with c++11 initialization
-    info.image_format_type = FindImageFormatType(module_state, base_type);
     info.image_dim = base_type.FindImageDim();
     info.is_image_array = base_type.IsImageArray();
     info.is_multisampled = base_type.IsImageMultisampled();
 
     // Handle anything specific to the base type
     if (base_type.Opcode() == spv::OpTypeImage) {
+        info.image_format = CompatibleSpirvImageFormat(base_type.Word(8));
+        info.image_sampled_type_numeric = module_state.GetNumericType(base_type.Word(2));
+        info.image_sampled_type_width = (uint8_t)module_state.GetTypeBitsSize(&base_type);
+
         // Things marked regardless of the image being accessed or not
         const bool is_sampled_without_sampler = base_type.Word(7) == 2;  // Word(7) == Sampled
         if (is_sampled_without_sampler) {

@@ -123,11 +123,7 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
-
-    VkFormatProperties3KHR fmt_props_3 = vku::InitStructHelper();
-    VkFormatProperties2 fmt_props = vku::InitStructHelper(&fmt_props_3);
-    vk::GetPhysicalDeviceFormatProperties2(Gpu(), VK_FORMAT_R8G8B8A8_UINT, &fmt_props);
-    if ((fmt_props_3.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
+    if ((m_device->FormatFeaturesBuffer(format) & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
 
@@ -147,6 +143,99 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &ds.set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageWrite-04469");
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderStorageTexel, ComponentTypeMismatch) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+        GTEST_SKIP() << "Format doesn't support storage texel buffer";
+    }
+    if ((m_device->FormatFeaturesBuffer(format) & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
+        GTEST_SKIP() << "Format doesn't support storage write without format";
+    }
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) writeonly uniform iimageBuffer storageTexelBuffer;
+        void main() {
+            imageStore(storageTexelBuffer, 0, ivec4(0));
+        }
+    )glsl";
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
+    buff_view_ci.buffer = buffer;
+    buff_view_ci.format = format;
+    buff_view_ci.range = VK_WHOLE_SIZE;
+    vkt::BufferView buffer_view(*m_device, buff_view_ci);
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferView(0, buffer_view);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-format-07753");
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderStorageTexel, FormatComponentTypeMismatch) {
+    RETURN_IF_SKIP(Init());
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+        GTEST_SKIP() << "Format doesn't support storage texel buffer";
+    }
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0, R8ui) writeonly uniform uimageBuffer storageTexelBuffer;
+        void main() {
+            imageStore(storageTexelBuffer, 0, uvec4(0));
+        }
+    )glsl";
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
+    buff_view_ci.buffer = buffer;
+    buff_view_ci.format = format;
+    buff_view_ci.range = VK_WHOLE_SIZE;
+    vkt::BufferView buffer_view(*m_device, buff_view_ci);
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferView(0, buffer_view);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-StorageImage-FormatMismatch");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
