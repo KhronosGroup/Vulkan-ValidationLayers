@@ -79,9 +79,6 @@ class ErrorMessages {
                                      uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                      VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const;
 
-    std::string DrawAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                    const vvl::ImageView& attachment_view, vvl::Func command) const;
-
     std::string BeginRenderingError(const HazardResult& hazard, const syncval_state::DynamicRenderingInfo::Attachment& attachment,
                                     const CommandBufferAccessContext& cb_context, vvl::Func command) const;
 

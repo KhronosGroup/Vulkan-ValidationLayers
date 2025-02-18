@@ -349,24 +349,6 @@ std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, cons
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
-std::string ErrorMessages::DrawAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                               const vvl::ImageView& attachment_view, vvl::Func command) const {
-    const auto format = "(%s). Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, validator_.FormatHandle(attachment_view.Handle()).c_str(), access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "DrawAttachmentError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
 std::string ErrorMessages::ClearColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                      const std::string& subpass_attachment_info, vvl::Func command) const {
     const auto format = "Hazard %s while clearing color attachment%s. Access info %s.";

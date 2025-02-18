@@ -675,6 +675,8 @@ bool CommandBufferAccessContext::ValidateDrawAttachment(const Location &loc) con
 }
 
 bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Location &location) const {
+    // TODO: Add tests. This is never called by existing tests.
+    // TODO: Check for opportunities to improve error message after this covered by the tests.
     bool skip = false;
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto &last_bound_state = cb_state_->lastBound[lv_bind_point];
@@ -695,7 +697,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
         if (hazard.IsHazard()) {
             LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(location, output_location);
-            const auto error = error_messages_.DrawAttachmentError(hazard, *this, *attachment.view, location.function);
+            const auto error = error_messages_.Error(hazard, *this, location.function, sync_state_.FormatHandle(*attachment.view));
             skip |= sync_state_.SyncError(hazard.Hazard(), obj_list, loc.dot(vvl::Field::imageView), error);
         }
     }
@@ -718,7 +720,8 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
                 Location loc = attachment.GetLocation(location);
-                const auto error = error_messages_.DrawAttachmentError(hazard, *this, *attachment.view, location.function);
+                const auto error =
+                    error_messages_.Error(hazard, *this, location.function, sync_state_.FormatHandle(*attachment.view));
                 skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
             }
         }
