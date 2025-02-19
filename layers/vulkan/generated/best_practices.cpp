@@ -511,7 +511,6 @@ void BestPractices::PostCallRecordAllocateDescriptorSets(VkDevice device, const 
                                                          VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
                                                          vvl::AllocateDescriptorSetsData& chassis_state) {
     BaseClass::PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj, chassis_state);
-    ManualPostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj, chassis_state);
     bp_state::LogResult(*this, device, record_obj);
 }
 
@@ -713,7 +712,6 @@ void bp_state::Instance::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(V
                                                                                VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
                                                                                const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, record_obj);
-    ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, record_obj);
     bp_state::LogResult(*this, physicalDevice, record_obj);
 }
 
@@ -723,8 +721,6 @@ void bp_state::Instance::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhys
                                                                           const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats,
                                                                 record_obj);
-    ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats,
-                                                           record_obj);
     bp_state::LogResult(*this, physicalDevice, record_obj);
 }
 
@@ -734,8 +730,6 @@ void bp_state::Instance::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(V
                                                                                const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes,
                                                                      record_obj);
-    ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes,
-                                                                record_obj);
     bp_state::LogResult(*this, physicalDevice, record_obj);
 }
 
@@ -749,7 +743,6 @@ void BestPractices::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSw
 void BestPractices::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                                         VkImage* pSwapchainImages, const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
-    ManualPostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, record_obj);
     bp_state::LogResult(*this, device, record_obj);
 }
 
@@ -806,7 +799,6 @@ void bp_state::Instance::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKH
                                                                                   VkDisplayPlanePropertiesKHR* pProperties,
                                                                                   const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
-    ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
     bp_state::LogResult(*this, physicalDevice, record_obj);
 }
 
@@ -1097,7 +1089,6 @@ void bp_state::Instance::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
                                                                                 const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities,
                                                                       record_obj);
-    ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities, record_obj);
     bp_state::LogResult(*this, physicalDevice, record_obj);
 }
 
@@ -1108,8 +1099,6 @@ void bp_state::Instance::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhy
                                                                            const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats,
                                                                  record_obj);
-    ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats,
-                                                            record_obj);
     bp_state::LogResult(*this, physicalDevice, record_obj);
 }
 
@@ -1421,7 +1410,6 @@ void bp_state::Instance::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(
                                                                                 VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
                                                                                 const RecordObject& record_obj) {
     BaseClass::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities, record_obj);
-    ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities, record_obj);
     bp_state::LogResult(*this, physicalDevice, record_obj);
 }
 

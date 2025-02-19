@@ -23,8 +23,8 @@
 bool bp_state::Instance::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
                                                                                  const Location& loc) const {
     bool skip = false;
-    if (const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        if (bp_pd_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
+    if (const auto bp_pd_state = Get<vvl::PhysicalDevice>(physicalDevice)) {
+        if (bp_pd_state->GetCallState(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR) == vvl::UNCALLED) {
             skip |= LogWarning("BestPractices-vkGetDisplayPlaneSupportedDisplaysKHR-properties-not-retrieved", physicalDevice, loc,
                                "was called without first retrieving properties from "
                                "vkGetPhysicalDeviceDisplayPlanePropertiesKHR or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.");
@@ -71,25 +71,22 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
 
-    const auto* bp_pd_state = GetPhysicalDeviceState();
-    if (bp_pd_state) {
-        if (bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
-            skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-capabilities-no-surface", device, error_obj.location,
-                               "called before getting surface capabilities from "
-                               "vkGetPhysicalDeviceSurfaceCapabilitiesKHR().");
-        }
+    if (physical_device_state->GetCallState(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilitiesKHR) == vvl::UNCALLED) {
+        skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-capabilities-no-surface", device, error_obj.location,
+                           "called before getting surface capabilities from "
+                           "vkGetPhysicalDeviceSurfaceCapabilitiesKHR().");
+    }
 
-        if ((pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR) &&
-            (bp_pd_state->vkGetPhysicalDeviceSurfacePresentModesKHRState != QUERY_DETAILS)) {
-            skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-present-mode-no-surface", device, error_obj.location,
-                               "called before getting surface present mode(s) from "
-                               "vkGetPhysicalDeviceSurfacePresentModesKHR().");
-        }
+    if ((pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR) &&
+        (physical_device_state->GetCallState(vvl::Func::vkGetPhysicalDeviceSurfacePresentModesKHR) != vvl::QUERY_DETAILS)) {
+        skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-present-mode-no-surface", device, error_obj.location,
+                           "called before getting surface present mode(s) from "
+                           "vkGetPhysicalDeviceSurfacePresentModesKHR().");
+    }
 
-        if (bp_pd_state->vkGetPhysicalDeviceSurfaceFormatsKHRState != QUERY_DETAILS) {
-            skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-formats-no-surface", device, error_obj.location,
-                               "called before getting surface format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().");
-        }
+    if (physical_device_state->GetCallState(vvl::Func::vkGetPhysicalDeviceSurfaceFormatsKHR) != vvl::QUERY_DETAILS) {
+        skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-formats-no-surface", device, error_obj.location,
+                           "called before getting surface format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().");
     }
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
@@ -183,7 +180,7 @@ bool bp_state::Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhy
                                                                            VkSurfaceFormatKHR* pSurfaceFormats,
                                                                            const ErrorObject& error_obj) const {
     bool skip = false;
-    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
+    const auto bp_pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     if (!bp_pd_state || !pSurfaceFormats) return skip;
 
     if (pSurfaceFormatCount && *pSurfaceFormatCount > bp_pd_state->surface_formats_count) {
@@ -224,123 +221,4 @@ bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapch
                            "vkGetSwapchainImagesKHR after swapchain creation.");
     }
     return skip;
-}
-
-void bp_state::Instance::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice,
-                                                                                     VkSurfaceKHR surface,
-                                                                                     VkSurfaceCapabilitiesKHR* pSurfaceCapabilities,
-                                                                                     const RecordObject& record_obj) {
-    if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
-    }
-}
-
-void bp_state::Instance::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-    VkSurfaceCapabilities2KHR* pSurfaceCapabilities, const RecordObject& record_obj) {
-    if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
-    }
-}
-
-void bp_state::Instance::ManualPostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(
-    VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkSurfaceCapabilities2EXT* pSurfaceCapabilities,
-    const RecordObject& record_obj) {
-    if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        bp_pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
-    }
-}
-
-void bp_state::Instance::ManualPostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
-                                                                                     VkSurfaceKHR surface,
-                                                                                     uint32_t* pPresentModeCount,
-                                                                                     VkPresentModeKHR* pPresentModes,
-                                                                                     const RecordObject& record_obj) {
-    if (auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        auto& call_state = bp_pd_data->vkGetPhysicalDeviceSurfacePresentModesKHRState;
-
-        if (*pPresentModeCount) {
-            if (call_state < QUERY_COUNT) {
-                call_state = QUERY_COUNT;
-            }
-        }
-        if (pPresentModes) {
-            if (call_state < QUERY_DETAILS) {
-                call_state = QUERY_DETAILS;
-            }
-        }
-    }
-}
-
-void bp_state::Instance::ManualPostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice,
-                                                                                VkSurfaceKHR surface, uint32_t* pSurfaceFormatCount,
-                                                                                VkSurfaceFormatKHR* pSurfaceFormats,
-                                                                                const RecordObject& record_obj) {
-    if (auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        auto& call_state = bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState;
-
-        if (*pSurfaceFormatCount) {
-            if (call_state < QUERY_COUNT) {
-                call_state = QUERY_COUNT;
-            }
-            bp_pd_data->surface_formats_count = *pSurfaceFormatCount;
-        }
-        if (pSurfaceFormats) {
-            if (call_state < QUERY_DETAILS) {
-                call_state = QUERY_DETAILS;
-            }
-        }
-    }
-}
-
-void bp_state::Instance::ManualPostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(
-    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo, uint32_t* pSurfaceFormatCount,
-    VkSurfaceFormat2KHR* pSurfaceFormats, const RecordObject& record_obj) {
-    if (auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        if (*pSurfaceFormatCount) {
-            if (bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState < QUERY_COUNT) {
-                bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState = QUERY_COUNT;
-            }
-            bp_pd_data->surface_formats_count = *pSurfaceFormatCount;
-        }
-        if (pSurfaceFormats) {
-            if (bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState < QUERY_DETAILS) {
-                bp_pd_data->vkGetPhysicalDeviceSurfaceFormatsKHRState = QUERY_DETAILS;
-            }
-        }
-    }
-}
-
-void bp_state::Instance::ManualPostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
-                                                                                        uint32_t* pPropertyCount,
-                                                                                        VkDisplayPlanePropertiesKHR* pProperties,
-                                                                                        const RecordObject& record_obj) {
-    if (auto bp_pd_data = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        if (*pPropertyCount) {
-            if (bp_pd_data->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState < QUERY_COUNT) {
-                bp_pd_data->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = QUERY_COUNT;
-            }
-        }
-        if (pProperties) {
-            if (bp_pd_data->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState < QUERY_DETAILS) {
-                bp_pd_data->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = QUERY_DETAILS;
-            }
-        }
-    }
-}
-
-void BestPractices::ManualPostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                              uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages,
-                                                              const RecordObject& record_obj) {
-    auto swapchain_state = Get<bp_state::Swapchain>(swapchain);
-    if (swapchain_state && (pSwapchainImages || *pSwapchainImageCount)) {
-        if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_DETAILS) {
-            swapchain_state->vkGetSwapchainImagesKHRState = QUERY_DETAILS;
-        }
-    }
-}
-
-std::shared_ptr<vvl::Swapchain> BestPractices::CreateSwapchainState(const VkSwapchainCreateInfoKHR* create_info,
-                                                                    VkSwapchainKHR handle) {
-    return std::static_pointer_cast<vvl::Swapchain>(std::make_shared<bp_state::Swapchain>(*this, create_info, handle));
 }

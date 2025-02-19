@@ -284,17 +284,11 @@ bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t
     return PreCallValidateBindImageMemory2(device, bindInfoCount, pBindInfos, error_obj);
 }
 
-void BestPractices::PostCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
-                                                             const RecordObject& record_obj) {
-    auto mem_info = std::static_pointer_cast<bp_state::DeviceMemory>(Get<vvl::DeviceMemory>(memory));
-    mem_info->dynamic_priority.emplace(priority);
-}
-
 bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory, const Location& loc) const {
     bool skip = false;
 
     if (VendorCheckEnabled(kBPVendorNVIDIA) && IsExtEnabled(extensions.vk_ext_pageable_device_local_memory)) {
-        auto mem_info = std::static_pointer_cast<const bp_state::DeviceMemory>(Get<vvl::DeviceMemory>(memory));
+        auto mem_info = Get<vvl::DeviceMemory>(memory);
         bool has_static_priority = vku::FindStructInPNextChain<VkMemoryPriorityAllocateInfoEXT>(mem_info->allocate_info.pNext);
         if (!mem_info->dynamic_priority && !has_static_priority) {
             skip |=
@@ -308,13 +302,6 @@ bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory, c
     }
 
     return skip;
-}
-
-std::shared_ptr<vvl::DeviceMemory> BestPractices::CreateDeviceMemoryState(
-    VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_info, uint64_t fake_address, const VkMemoryType& memory_type,
-    const VkMemoryHeap& memory_heap, std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count) {
-    return std::static_pointer_cast<vvl::DeviceMemory>(std::make_shared<bp_state::DeviceMemory>(
-        handle, allocate_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding), physical_device_count));
 }
 
 void BestPractices::ManualPostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
