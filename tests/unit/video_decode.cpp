@@ -424,6 +424,74 @@ TEST_F(NegativeVideoDecode, DecodeImageLayouts) {
     cb.End();
 }
 
+TEST_F(NegativeVideoDecode, DecodeOutputImageLayoutDistinctOnlyNoDpb) {
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - decode output layout check when no DPB is used with DISTINCT mode");
+
+    RETURN_IF_SKIP(Init());
+
+    auto config = GetConfig(
+        FilterConfigs(GetConfigsDecode(), [](const VideoConfig& config) { return !config.SupportsDecodeOutputCoincide(); }));
+    if (!config) {
+        GTEST_SKIP() << "Test requires a video decode profile with support only for "
+                        "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR";
+    }
+
+    VideoContext context(m_device, config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    cb.Begin();
+    cb.BeginVideoCoding(context.Begin());
+
+    // Decode output must be in DECODE_DST layout if no reconstructed picture is specified (no DPB slots are used)
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL));
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07252");
+    cb.DecodeVideo(context.DecodeFrame());
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    cb.DecodeVideo(context.DecodeFrame());
+
+    cb.EndVideoCoding(context.End());
+    cb.End();
+}
+
+TEST_F(NegativeVideoDecode, DecodeOutputImageLayoutCoincideOnlyNoDpb) {
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR - decode output layout check when no DPB is used with COINCIDE mode");
+
+    RETURN_IF_SKIP(Init());
+
+    auto config = GetConfig(
+        FilterConfigs(GetConfigsDecode(), [](const VideoConfig& config) { return !config.SupportsDecodeOutputDistinct(); }));
+    if (!config) {
+        GTEST_SKIP() << "Test requires a video decode profile with support only for "
+                        "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR";
+    }
+
+    VideoContext context(m_device, config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    cb.Begin();
+    cb.BeginVideoCoding(context.Begin());
+
+    // Decode output must be in DECODE_DST layout if no reconstructed picture is specified (no DPB slots are used)
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL));
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07252");
+    cb.DecodeVideo(context.DecodeFrame());
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    cb.DecodeVideo(context.DecodeFrame());
+
+    cb.EndVideoCoding(context.End());
+    cb.End();
+}
+
 TEST_F(NegativeVideoDecode, DecodeInvalidResourceLayer) {
     TEST_DESCRIPTION("vkCmdDecodeVideoKHR - out-of-bounds layer index in VkVideoPictureResourceInfoKHR");
 
