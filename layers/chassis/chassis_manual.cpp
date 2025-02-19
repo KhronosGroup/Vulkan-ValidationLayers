@@ -201,6 +201,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateInstance, VulkanTypedHandle());
     for (const auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         skip |= vo->PreCallValidateCreateInstance(pCreateInfo, pAllocator, pInstance, error_obj);
         if (skip) {
             return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -209,6 +212,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
 
     RecordObject record_obj(vvl::Func::vkCreateInstance);
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PreCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, record_obj);
     }
 
@@ -219,6 +225,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     record_obj.result = result;
     instance_dispatch->instance = *pInstance;
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->CopyDispatchState();
     }
 
@@ -231,6 +240,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo* pCreat
     vvl::dispatch::SetData(*pInstance, std::move(instance_dispatch));
 
     for (auto& vo : id->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, record_obj);
     }
 
@@ -247,11 +259,17 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     ErrorObject error_obj(vvl::Func::vkDestroyInstance, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
 
     for (const auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PreCallValidateDestroyInstance(instance, pAllocator, error_obj);
     }
 
     RecordObject record_obj(vvl::Func::vkDestroyInstance);
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
     }
 
@@ -262,6 +280,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
 
     VVL_TracyCZone(tracy_zone_postcall, true);
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PostCallRecordDestroyInstance(instance, pAllocator, record_obj);
     }
 
@@ -295,12 +316,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     // This is odd but we need to set the current extensions in all of the
     // instance validation objects so that they are available for validating CreateDevice
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->extensions = device_dispatch->extensions;
     }
 
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkCreateDevice, VulkanTypedHandle(gpu, kVulkanObjectTypePhysicalDevice));
     for (const auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         skip |= vo->PreCallValidateCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, error_obj);
         if (skip) {
             return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -313,6 +340,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     RecordObject record_obj(vvl::Func::vkCreateDevice);
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, record_obj, &modified_create_info);
     }
     // Recalculate enabled_features based on any changes made
@@ -332,6 +362,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     instance_dispatch->debug_report->device_created++;
 
     for (auto& vo : device_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->CopyDispatchState();
     }
     DeviceExtensionWhitelist(device_dispatch.get(), pCreateInfo, *pDevice);
@@ -343,11 +376,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     vvl::dispatch::SetData(*pDevice, std::move(device_dispatch));
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         // Send down modified create info as we want to mark enabled features that we sent down on behalf of the app
         vo->PostCallRecordCreateDevice(gpu, modified_create_info.ptr(), pAllocator, pDevice, record_obj);
     }
     // Note: device_dispatch is no longer valid since it was a std::move source above.
     for (auto& vo : vvl::dispatch::GetData(*pDevice)->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->FinishDeviceSetup(modified_create_info.ptr(), record_obj.location);
     }
 
@@ -363,16 +402,25 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     auto device_dispatch = vvl::dispatch::GetData(device);
     ErrorObject error_obj(vvl::Func::vkDestroyDevice, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
     for (const auto& vo : device_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PreCallValidateDestroyDevice(device, pAllocator, error_obj);
     }
 
     RecordObject record_obj(vvl::Func::vkDestroyDevice);
     for (auto& vo : device_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
 
     // Before device is destroyed, allow aborted objects to clean up
     for (auto& vo : device_dispatch->aborted_object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
 
@@ -383,6 +431,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
     device_dispatch->DestroyDevice(device, pAllocator);
 
     for (auto& vo : device_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PostCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
 
@@ -409,6 +460,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     {
         VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
         for (const auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                                pPipelines, error_obj, pipeline_states[vo->container_type],
@@ -421,6 +475,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     {
         VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                                      record_obj, pipeline_states[vo->container_type], chassis_state);
@@ -438,6 +495,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     {
         VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                                       record_obj, pipeline_states[vo->container_type], chassis_state);
@@ -462,6 +522,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     {
         VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
         for (const auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                               pPipelines, error_obj, pipeline_states[vo->container_type],
@@ -474,6 +537,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     {
         VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                                     record_obj, pipeline_states[vo->container_type], chassis_state);
@@ -491,6 +557,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     {
         VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                                      record_obj, pipeline_states[vo->container_type], chassis_state);
@@ -510,6 +579,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
     chassis::CreateRayTracingPipelinesNV chassis_state(pCreateInfos);
 
     for (const auto& vo : device_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         auto lock = vo->ReadLock();
         skip |= vo->PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
                                                                pPipelines, error_obj, pipeline_states[vo->container_type],
@@ -519,6 +591,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
 
     RecordObject record_obj(vvl::Func::vkCreateRayTracingPipelinesNV);
     for (auto& vo : device_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         auto lock = vo->WriteLock();
         vo->PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                                      record_obj, pipeline_states[vo->container_type], chassis_state);
@@ -529,6 +604,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
     record_obj.result = result;
 
     for (auto& vo : device_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         auto lock = vo->WriteLock();
         vo->PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
                                                       record_obj, pipeline_states[vo->container_type], chassis_state);
@@ -552,6 +630,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
     {
         VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
         for (const auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                                     pCreateInfos, pAllocator, pPipelines, error_obj,
@@ -564,6 +645,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
     {
         VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
                                                           pAllocator, pPipelines, record_obj, pipeline_states[vo->container_type],
@@ -582,6 +666,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
     {
         VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
                                                            pAllocator, pPipelines, record_obj, pipeline_states[vo->container_type],
@@ -603,6 +690,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     {
         VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
         for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCreatePipelineLayout]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -616,6 +706,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     {
         VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj, chassis_state);
         }
@@ -631,6 +724,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     {
         VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreatePipelineLayout]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
         }
@@ -650,6 +746,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     {
         VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
         for (const auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -662,6 +761,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     {
         VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
         }
@@ -678,6 +780,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     {
         VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
         }
@@ -699,6 +804,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     {
         VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
         for (const auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -709,6 +817,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     {
         VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                               chassis_state);
@@ -728,6 +839,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     {
         VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                                chassis_state);
@@ -749,6 +863,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
     {
         VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
         for (const auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             ads_state[vo->container_type].Init(pAllocateInfo->descriptorSetCount);
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj,
@@ -761,6 +878,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
     {
         VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordAllocateDescriptorSets]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PreCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj);
         }
@@ -776,6 +896,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
     {
         VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj,
                                                      ads_state[vo->container_type]);
@@ -796,6 +919,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     {
         VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
         for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCreateBuffer]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -809,6 +935,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     {
         VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj, chassis_state);
         }
@@ -824,6 +953,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     {
         VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateBuffer]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, record_obj);
         }
@@ -841,6 +973,9 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
     {
         VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
         for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateQueuePresentKHR]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateQueuePresentKHR(queue, pPresentInfo, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -850,6 +985,9 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
     {
         VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordQueuePresentKHR]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PreCallRecordQueuePresentKHR(queue, pPresentInfo, record_obj);
         }
@@ -878,6 +1016,9 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
     {
         VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordQueuePresentKHR]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
 
             if (result == VK_ERROR_DEVICE_LOST) {
@@ -902,6 +1043,9 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
     {
         VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
         for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateBeginCommandBuffer]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateBeginCommandBuffer(commandBuffer, pBeginInfo, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -912,6 +1056,9 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
     {
         VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordBeginCommandBuffer]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
         }
@@ -927,6 +1074,9 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
     {
         VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordBeginCommandBuffer]) {
+            if (!vo) {
+                continue;
+            }
             auto lock = vo->WriteLock();
             vo->PostCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
         }
@@ -961,12 +1111,18 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
     }
 
     for (const auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         skip |= vo->PreCallValidateGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
     RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceToolPropertiesEXT);
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PreCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
 
@@ -980,6 +1136,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevi
     (*pToolCount)++;
 
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PostCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
     return result;
@@ -1001,12 +1160,18 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice 
     }
 
     for (const auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         skip |= vo->PreCallValidateGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, error_obj);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
     RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceToolProperties);
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PreCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
 
@@ -1020,6 +1185,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolProperties(VkPhysicalDevice 
     (*pToolCount)++;
 
     for (auto& vo : instance_dispatch->object_dispatch) {
+        if (!vo) {
+            continue;
+        }
         vo->PostCallRecordGetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties, record_obj);
     }
     return result;
