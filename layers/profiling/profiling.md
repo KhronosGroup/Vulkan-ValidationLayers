@@ -2,7 +2,7 @@
 
 The [Tracy](https://github.com/wolfpld/tracy) profiler has been setup. Get the doc [here](https://github.com/wolfpld/tracy/releases/latest/download/tracy.pdf).
 
-Tested with Tracy version 0.11.1
+Used Tracy version: 0.11.2 (alpha)
 
 Relevant CMake options:
 - `-D VVL_ENABLE_TRACY` Enable Tracy
@@ -40,5 +40,9 @@ Those features seem to be present on all drivers used by the main VVL developper
 
 ⚠️ Required features are added by hacking into `ValidationStateTracker::PreCallRecordCreateDevice`, so profiling can only work if `ValidationStateTracker` is somehow instantiated.
 
-When looking at the `Statistics > GPU` window of a trace, you may noticed that some action commands are missing compared to the amount of action commands submitted by the host.
-It just means that by the time application shuts down, not all GPU time stamp queries have been retrieved.
+As of writing, the Tracy GPU profiling implementations only allows to trace individual commands, and expects every profiled commands to actually be submitted, otherwise due to the current query collecting algorithm queries made after un-submitted commands will never be seen. 
+Profiling is supposed to work on any applications, and some do have this failing case. 
+To cope, a custom Tracy fork is now used, with new features allowing to profile at queue submit level: for every `vkQueueSubmit`, a timestamp is inserted before and after its submissions. This way only actually executed GPU workloads will be profiled, bypassing the previously mentioned limitation.
+For now, this coarse profiling level is enough.
+
+When looking at the `Statistics > GPU` window of a trace, you may noticed that some action submits are missing. It just means that by the time application shuts down, not all GPU time stamp queries have been retrieved.

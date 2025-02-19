@@ -454,8 +454,8 @@ if (VVL_ENABLE_TRACY)
     include(FetchContent)
     FetchContent_Declare(
         tracy
-        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
-        GIT_TAG v0.11.1
+        GIT_REPOSITORY https://github.com/arno-lunarg/tracy.git
+        GIT_TAG v0.11.1-arno
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE)
 
