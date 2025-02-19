@@ -849,42 +849,47 @@ std::optional<CommandBufferAccessContext::ClearAttachmentInfo> CommandBufferAcce
 }
 
 bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, const VkClearAttachment &clear_attachment,
-                                                         const VkClearRect &rect) const {
+                                                         uint32_t clear_rect_index, const VkClearRect &clear_rect) const {
     bool skip = false;
 
-    const auto optional_info = GetClearAttachmentInfo(clear_attachment, rect);
+    const auto optional_info = GetClearAttachmentInfo(clear_attachment, clear_rect);
     if (!optional_info) {
         return skip;
     }
     const ClearAttachmentInfo &info = *optional_info;
 
-    const VkOffset3D offset = CastTo3D(rect.rect.offset);
-    const VkExtent3D extent = CastTo3D(rect.rect.extent);
+    const VkOffset3D offset = CastTo3D(clear_rect.rect.offset);
+    const VkExtent3D extent = CastTo3D(clear_rect.rect.extent);
     VkImageSubresourceRange subresource_range = info.subresource_range;
 
     if (info.aspects_to_clear & kColorAspects) {
+        // [core validation check]: if COLOR_ASPECT is included then PLANE aspects are not allowed,
+        // and if PLANE aspect is included then only one is allowed.
         assert(GetBitSetCount(info.aspects_to_clear) == 1);
-        subresource_range.aspectMask = info.aspects_to_clear;
+        const VkImageAspectFlagBits aspect = static_cast<VkImageAspectFlagBits>(info.aspects_to_clear);
+        subresource_range.aspectMask = aspect;
 
         HazardResult hazard = current_context_->DetectHazard(
             *info.attachment_view.GetImageState(), subresource_range, offset, extent, info.attachment_view.IsDepthSliced(),
             SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment);
         if (hazard.IsHazard()) {
-            const LogObjectList objlist(cb_state_->Handle(), info.attachment_view.Handle());
-            std::string attachment_info;
+            std::stringstream ss;
+            ss << string_VkImageAspectFlagBits(aspect);
+            ss << " aspect of color attachment " << clear_attachment.colorAttachment;
+            ss << " (" << sync_state_.FormatHandle(info.attachment_view) << ")";
             if (current_renderpass_context_) {
-                std::stringstream ss;
-                ss << " " << clear_attachment.colorAttachment;
                 ss << " in subpass " << current_renderpass_context_->GetCurrentSubpass();
-                attachment_info = ss.str();
             }
-            const auto error = error_messages_.ClearColorAttachmentError(hazard, *this, attachment_info, loc.function);
+            const std::string resource_description = ss.str();
+            const LogObjectList objlist(cb_state_->Handle(), info.attachment_view.Handle());
+            const auto error = error_messages_.ClearAttachmentError(hazard, *this, loc.function, resource_description, aspect,
+                                                                    clear_rect_index, clear_rect);
             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
         }
     }
 
     constexpr VkImageAspectFlagBits depth_stencil_aspects[2] = {VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_ASPECT_STENCIL_BIT};
-    for (const auto aspect : depth_stencil_aspects) {
+    for (const VkImageAspectFlagBits aspect : depth_stencil_aspects) {
         if (info.aspects_to_clear & aspect) {
             // Original aspect mask can contain both stencil and depth but here we track each aspect separately
             subresource_range.aspectMask = aspect;
@@ -896,15 +901,17 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
                 SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kDepthStencilAttachment);
 
             if (hazard.IsHazard()) {
-                std::string attachment_info;
+                std::stringstream ss;
+                ss << string_VkImageAspectFlagBits(aspect);
+                ss << " aspect of depth-stencil attachment (";
+                ss << sync_state_.FormatHandle(info.attachment_view) << ")";
                 if (current_renderpass_context_) {
-                    std::stringstream ss;
                     ss << " in subpass " << current_renderpass_context_->GetCurrentSubpass();
-                    attachment_info = ss.str();
                 }
+                const std::string resource_description = ss.str();
                 const LogObjectList objlist(cb_state_->Handle(), info.attachment_view.Handle());
-                const auto error =
-                    error_messages_.ClearDepthStencilAttachmentError(hazard, *this, attachment_info, aspect, loc.function);
+                const auto error = error_messages_.ClearAttachmentError(hazard, *this, loc.function, resource_description, aspect,
+                                                                        clear_rect_index, clear_rect);
                 skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
             }
         }

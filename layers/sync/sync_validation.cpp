@@ -2001,16 +2001,12 @@ bool SyncValidator::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                                                        const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                        const VkClearRect *pRects, const ErrorObject &error_obj) const {
     bool skip = false;
-
     const auto cb_state = Get<syncval_state::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return skip;
+    ASSERT_AND_RETURN_SKIP(cb_state);
 
-    for (const auto [attachment_index, attachment] : vvl::enumerate(pAttachments, attachmentCount)) {
-        Location attachment_loc = error_obj.location.dot(Field::pAttachments, attachment_index);
+    for (const VkClearAttachment &attachment : vvl::make_span(pAttachments, attachmentCount)) {
         for (const auto [rect_index, rect] : vvl::enumerate(pRects, rectCount)) {
-            Location rect_loc = attachment_loc.dot(Field::pRects, rect_index);
-            skip |= cb_state->access_context.ValidateClearAttachment(rect_loc, attachment, rect);
+            skip |= cb_state->access_context.ValidateClearAttachment(error_obj.location, attachment, rect_index, rect);
         }
     }
     return skip;

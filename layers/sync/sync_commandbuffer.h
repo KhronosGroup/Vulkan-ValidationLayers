@@ -295,8 +295,9 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     bool ValidateDrawDynamicRenderingAttachment(const Location &loc) const;
     void RecordDrawAttachment(ResourceUsageTag tag);
     void RecordDrawDynamicRenderingAttachment(ResourceUsageTag tag);
-    bool ValidateClearAttachment(const Location &loc, const VkClearAttachment &clear_attachment, const VkClearRect &rect) const;
-    void RecordClearAttachment(ResourceUsageTag tag, const VkClearAttachment &clear_attachment, const VkClearRect &rect);
+    bool ValidateClearAttachment(const Location &loc, const VkClearAttachment &clear_attachment, uint32_t clear_rect_index,
+                                 const VkClearRect &clear_rect) const;
+    void RecordClearAttachment(ResourceUsageTag tag, const VkClearAttachment &clear_attachment, const VkClearRect &clear_rect);
 
     ResourceUsageTag RecordNextSubpass(vvl::Func command);
     ResourceUsageTag RecordEndRenderPass(vvl::Func command);

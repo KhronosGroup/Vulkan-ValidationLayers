@@ -38,7 +38,14 @@ namespace syncval {
 
 struct AdditionalMessageInfo {
     ReportKeyValues properties;
-    std::string access_initiator;  // when we need something more complex than vvl::Func
+
+    // When we need something more complex than vvl::Func
+    std::string access_initiator;
+
+    // Replaces standard "writes to"/"reads" access wording.
+    // For example, "clears" for a clear operation might be more specific than a write
+    std::string access_action;
+
     std::string pre_synchronization_text;
     std::string message_end_text;
 };
@@ -79,6 +86,10 @@ class ErrorMessages {
                                      uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                      VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const;
 
+    std::string ClearAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                     const std::string& resource_description, VkImageAspectFlagBits aspect,
+                                     uint32_t clear_rect_index, const VkClearRect& clear_rect) const;
+
     std::string BeginRenderingError(const HazardResult& hazard, const syncval_state::DynamicRenderingInfo::Attachment& attachment,
                                     const CommandBufferAccessContext& cb_context, vvl::Func command) const;
 
@@ -89,13 +100,6 @@ class ErrorMessages {
     std::string EndRenderingStoreError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
                                        VkAttachmentStoreOp store_op, const CommandBufferAccessContext& cb_context,
                                        vvl::Func command) const;
-
-    std::string ClearColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                          const std::string& subpass_attachment_info, vvl::Func command) const;
-
-    std::string ClearDepthStencilAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                 const std::string& subpass_attachment_info, VkImageAspectFlagBits aspect,
-                                                 vvl::Func command) const;
 
     std::string PipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                      uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const;
