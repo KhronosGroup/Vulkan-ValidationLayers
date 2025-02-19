@@ -54,8 +54,8 @@
 
 [[maybe_unused]] static std::string string_VkRect2D(VkRect2D rect) {
     std::stringstream ss;
-    ss << "offset.x = " << rect.offset.x << ", offset.y = " << rect.offset.y << ", extent.width = " << rect.extent.width
-       << ", extent.height = " << rect.extent.height;
+    ss << "offset = {" << rect.offset.x << ", " << rect.offset.y << "}, extent = {" << rect.extent.width << ", "
+       << rect.extent.height << "}";
     return ss.str();
 }
 

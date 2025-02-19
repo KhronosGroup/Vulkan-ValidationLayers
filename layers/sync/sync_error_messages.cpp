@@ -109,11 +109,17 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
 
     const bool missing_synchronization = (hazard_info.IsPriorWrite() && write_barriers.none()) ||
                                          (hazard_info.IsPriorRead() && read_barriers == VK_PIPELINE_STAGE_2_NONE);
+
     // Brief description of what happened
     ss << "\n" << string_SyncHazard(hazard_type) << " hazard detected. ";
     ss << (additional_info.access_initiator.empty() ? vvl::String(command) : additional_info.access_initiator);
-    ss << (hazard_info.IsWrite() ? " writes to " : " reads ") << resouce_description;
-    ss << ", which ";
+    ss << " ";
+    if (!additional_info.access_action.empty()) {
+        ss << additional_info.access_action;
+    } else {
+        ss << (hazard_info.IsWrite() ? "writes to" : "reads");
+    }
+    ss << " " << resouce_description << ", which ";
     ss << (hazard_info.IsRacingHazard() ? "is being " : "was previously ");
     if (hazard_info.IsPriorWrite()) {
         if (prior_access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
@@ -349,45 +355,24 @@ std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, cons
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
-std::string ErrorMessages::ClearColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                     const std::string& subpass_attachment_info, vvl::Func command) const {
-    const auto format = "Hazard %s while clearing color attachment%s. Access info %s.";
-    ReportKeyValues key_values;
+std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                vvl::Func command, const std::string& resource_description,
+                                                VkImageAspectFlagBits aspect, uint32_t clear_rect_index,
+                                                const VkClearRect& clear_rect) const {
+    std::stringstream ss;
+    ss << "\nClear region: {\n";
+    ss << "  region_index = " << clear_rect_index << ",\n";
+    ss << "  rect = {" << string_VkRect2D(clear_rect.rect) << "},\n";
+    ss << "  baseArrayLayer = " << clear_rect.baseArrayLayer << ",\n";
+    ss << "  layerCount = " << clear_rect.layerCount << "\n";
+    ss << "}\n";
 
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), subpass_attachment_info.c_str(), access_info.c_str());
+    AdditionalMessageInfo additional_info;
+    additional_info.properties.Add(kPropertyImageAspect, string_VkImageAspectFlagBits(aspect));
+    additional_info.access_action = "clears";
+    additional_info.message_end_text = ss.str();
 
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "ClearColorAttachmentError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::ClearDepthStencilAttachmentError(const HazardResult& hazard,
-                                                            const CommandBufferAccessContext& cb_context,
-                                                            const std::string& subpass_attachment_info,
-                                                            VkImageAspectFlagBits aspect, vvl::Func command) const {
-    const auto format = "Hazard %s when clearing %s aspect of depth-stencil attachment%s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* image_aspect_str = string_VkImageAspectFlagBits(aspect);
-    std::string message =
-        Format(format, string_SyncHazard(hazard.Hazard()), image_aspect_str, subpass_attachment_info.c_str(), access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "ClearDepthStencilAttachmentError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyImageAspect, image_aspect_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
+    return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
 std::string ErrorMessages::PipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
