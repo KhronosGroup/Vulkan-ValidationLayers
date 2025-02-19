@@ -786,8 +786,8 @@ class VideoSessionParameters : public StateObject {
     void AddEncodeH265(VkVideoEncodeH265SessionParametersAddInfoKHR const *info);
 };
 
-using VideoSessionUpdateList = std::vector<std::function<bool(const Device &dev_data, const VideoSession *vs_state,
-                                                              VideoSessionDeviceState &dev_state, bool do_validate)>>;
+using VideoSessionUpdateList =
+    std::vector<std::function<bool(const VideoSession *vs_state, VideoSessionDeviceState &dev_state, bool do_validate)>>;
 using VideoSessionUpdateMap = unordered_map<VkVideoSessionKHR, VideoSessionUpdateList>;
 
 }  // namespace vvl

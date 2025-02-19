@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -74,7 +74,7 @@ struct CommandBufferSubmitState {
 
         // Call submit-time functions to validate or update local mirrors of state (to preserve const-ness at validate time)
         for (auto &function : cb_state.queue_submit_functions) {
-            skip |= function(core, queue_state, cb_state);
+            skip |= function(queue_state, cb_state);
         }
         for (auto &function : cb_state.event_updates) {
             skip |= function(const_cast<vvl::CommandBuffer &>(cb_state), /*do_validate*/ true, local_event_signal_info,
@@ -93,7 +93,7 @@ struct CommandBufferSubmitState {
                 local_state_it = local_video_session_state.insert({it.first, video_session_state->DeviceStateCopy()}).first;
             }
             for (const auto &function : it.second) {
-                skip |= function(core, video_session_state.get(), local_state_it->second, /*do_validate*/ true);
+                skip |= function(video_session_state.get(), local_state_it->second, /*do_validate*/ true);
             }
         }
         return skip;
