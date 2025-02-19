@@ -28,6 +28,8 @@
 #include "state_tracker/ray_tracing_state.h"
 #include "error_message/error_strings.h"
 
+#include <algorithm>
+
 bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const vvl::DeviceMemory &mem_info,
                                                                 VkDeviceSize mem_offset, const Location &loc) const {
     return ValidateInsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset, loc);
@@ -215,67 +217,234 @@ bool CoreChecks::ValidateAccelerationStructuresMemoryAlisasing(const LogObjectLi
     return skip;
 }
 
-bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAlisasing(
-    const LogObjectList &objlist, uint32_t info_count, const VkAccelerationStructureBuildGeometryInfoKHR *p_infos, uint32_t info_i,
+bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAliasing(
+    VkCommandBuffer cmd_buffer, uint32_t info_count, const VkAccelerationStructureBuildGeometryInfoKHR *p_infos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *pp_range_infos, const ErrorObject &error_obj) const {
-    using vvl::range;
-
     bool skip = false;
-    const VkAccelerationStructureBuildGeometryInfoKHR &info = p_infos[info_i];
-    const Location info_i_loc = error_obj.location.dot(Field::pInfos, info_i);
-    const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure);
-    const auto dst_as_state = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
-    const rt::BuildType rt_build_type =
-        error_obj.location.function == Func::vkBuildAccelerationStructuresKHR ? rt::BuildType::Host : rt::BuildType::Device;
 
-    const bool info_in_mode_update = info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+    enum class AddressRangeOrigin : uint8_t { Undefined, SrcAccelStruct, DstAccelStruct, Scratch };
+    struct AddressRange {
+        vvl::range<VkDeviceAddress> range = {};
+        uint32_t info_i = 0;
+        AddressRangeOrigin origin = AddressRangeOrigin::Undefined;
+    };
+    // Gather all address ranges  from source acceleration structtures, destination acceleration structures
+    // and scratch buffers in a single sorted vector, to more rapidly lookup overlaps
+    std::vector<AddressRange> address_ranges;
+    address_ranges.reserve(3 * info_count);
 
-    // Cannot compute scratch buffer size from the CPU with indirect calls,
-    // so cannot perform validation
-    vvl::span<vvl::Buffer *const> info_scratches = GetBuffersByAddress(info.scratchData.deviceAddress);
-    const VkDeviceSize assumed_scratch_size = rt::ComputeScratchSize(rt_build_type, device, info, pp_range_infos[info_i]);
+    const auto insert_address = [](std::vector<AddressRange> &address_ranges, const AddressRange address_range) {
+        std::optional<AddressRange> overlapped_range = std::nullopt;
+        auto insert_pos = std::lower_bound(
+            address_ranges.begin(), address_ranges.end(), address_range,
+            [&overlapped_range](const AddressRange iter, const AddressRange new_elt) -> bool {
+                const vvl::range<VkDeviceAddress> intersection = iter.range & new_elt.range;
+                if (intersection.non_empty()) {
+                    const bool both_src_as_ranges =
+                        iter.origin == AddressRangeOrigin::SrcAccelStruct && new_elt.origin == AddressRangeOrigin::SrcAccelStruct;
+                    // #ARNO_TODO make sure VUID 03668 is correctly handled
+                    const bool as_update =
+                        iter.info_i == new_elt.info_i && ((iter.origin == AddressRangeOrigin::SrcAccelStruct &&
+                                                           new_elt.origin == AddressRangeOrigin::DstAccelStruct) ||
+                                                          (new_elt.origin == AddressRangeOrigin::SrcAccelStruct &&
+                                                           iter.origin == AddressRangeOrigin::DstAccelStruct));
 
-    if (dst_as_state) {
-        vvl::span<vvl::Buffer *const> dummy(nullptr, 0);
-        skip |= ValidateScratchMemoryNoOverlap(error_obj.location, objlist, info_scratches, info.scratchData.deviceAddress,
-                                               assumed_scratch_size, info_i_loc.dot(Field::scratchData).dot(Field::deviceAddress),
-                                               info_in_mode_update ? src_as_state.get() : nullptr,
-                                               info_i_loc.dot(Field::srcAccelerationStructure), *dst_as_state,
-                                               info_i_loc.dot(Field::dstAccelerationStructure), dummy, 0, 0, nullptr);
-    }
+                    if (!both_src_as_ranges && !as_update) {
+                        overlapped_range = iter;
+                    }
+                }
 
-    // Loop on other acceleration structure builds info.
-    // Given that comparisons are commutative, only need to consider elements after info_i
-    assert(info_count > info_i);
-    for (uint32_t other_info_j = info_i + 1; other_info_j < info_count; ++other_info_j) {
-        // Validate that scratch buffer's memory does not overlap destination acceleration structure's memory, or source
-        // acceleration structure's memory if build mode is update, or other scratch buffers' memory.
-        // Here validation is pessimistic: if one buffer associated to pInfos[other_info_j].scratchData.deviceAddress has an
-        // overlap, an error will be logged.
+                return iter.range < new_elt.range;
+            });
 
-        const VkAccelerationStructureBuildGeometryInfoKHR &other_info = p_infos[other_info_j];
-        const Location other_info_j_loc = error_obj.location.dot(Field::pInfos, other_info_j);
+        address_ranges.insert(insert_pos, address_range);
+        return overlapped_range;
+    };
 
-        const auto other_dst_as_state = Get<vvl::AccelerationStructureKHR>(other_info.dstAccelerationStructure);
-        const auto other_src_as_state = Get<vvl::AccelerationStructureKHR>(other_info.srcAccelerationStructure);
+    for (const auto [info_i, info] : vvl::enumerate(p_infos, info_count)) {
+        const Location info_i_loc = error_obj.location.dot(Field::pInfos, info_i);
 
-        const bool other_info_in_update_mode = other_info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+        const auto dst_as_state = Get<vvl::AccelerationStructureKHR>(info.dstAccelerationStructure);
 
-        if (other_dst_as_state) {
-            auto other_info_scratches = GetBuffersByAddress(other_info.scratchData.deviceAddress);
-            const VkDeviceSize assumed_other_scratch_size =
-                rt::ComputeScratchSize(rt_build_type, device, other_info, pp_range_infos[other_info_j]);
+        if (const auto src_as_state = Get<vvl::AccelerationStructureKHR>(info.srcAccelerationStructure);
+            src_as_state && info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
+            if (src_as_state->buffer_state && !src_as_state->buffer_state->sparse) {
+                const vvl::range<VkDeviceAddress> src_as_range = src_as_state->GetDeviceAddressRange();
 
-            const Location other_scratch_loc = other_info_j_loc.dot(Field::scratchData);
-            const Location other_scratch_address_loc = other_scratch_loc.dot(Field::deviceAddress);
+                if (dst_as_state && dst_as_state->VkHandle() != src_as_state->VkHandle()) {
+                    const vvl::range<VkDeviceAddress> dst_as_range = dst_as_state->GetDeviceAddressRange();
 
-            skip |= ValidateScratchMemoryNoOverlap(
-                error_obj.location, objlist, info_scratches, info.scratchData.deviceAddress, assumed_scratch_size,
-                info_i_loc.dot(Field::scratchData).dot(Field::deviceAddress),
-                other_info_in_update_mode ? other_src_as_state.get() : nullptr,
-                other_info_j_loc.dot(Field::srcAccelerationStructure), *other_dst_as_state,
-                other_info_j_loc.dot(Field::dstAccelerationStructure), other_info_scratches, other_info.scratchData.deviceAddress,
-                assumed_other_scratch_size, &other_scratch_address_loc);
+                    if (const vvl::range<VkDeviceAddress> dst_as_src_as_intersection = dst_as_range & src_as_range;
+                        dst_as_src_as_intersection.non_empty()) {
+                        skip |=
+                            LogError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03668",
+                                     LogObjectList(cmd_buffer, src_as_state->VkHandle(), dst_as_state->VkHandle()),
+                                     info_i_loc.dot(Field::dstAccelerationStructure),
+                                     "overlaps with srcAccelerationStructure, which is in update mode, on device address range %s.",
+                                     string_range_hex(dst_as_src_as_intersection).c_str());
+                    }
+                }
+
+                const AddressRange src_as_address_range = {src_as_range, info_i, AddressRangeOrigin::SrcAccelStruct};
+                const std::optional<AddressRange> overlapped_address_range = insert_address(address_ranges, src_as_address_range);
+                if (overlapped_address_range.has_value()) {
+                    switch (overlapped_address_range->origin) {
+                        case AddressRangeOrigin::SrcAccelStruct: {
+                            // Valid overlap, source acceleration structures being read only
+                            break;
+                        }
+                        case AddressRangeOrigin::DstAccelStruct: {
+                            if (const auto other_dst_as_state = Get<vvl::AccelerationStructureKHR>(
+                                    p_infos[overlapped_address_range->info_i].dstAccelerationStructure)) {
+                                const vvl::range<VkDeviceAddress> src_as_other_dst_as_intersection =
+                                    src_as_address_range.range & overlapped_address_range->range;
+
+                                skip |= LogError(
+                                    "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03701",
+                                    LogObjectList(cmd_buffer, src_as_state->VkHandle(), other_dst_as_state->VkHandle()),
+                                    info_i_loc.dot(Field::srcAccelerationStructure),
+                                    ", in update mode, overlaps with dstAccelerationStructure of pInfos[%" PRIu32
+                                    "], on device address range %s.",
+                                    overlapped_address_range->info_i, string_range_hex(src_as_other_dst_as_intersection).c_str());
+                            }
+                            break;
+                        }
+                        case AddressRangeOrigin::Scratch: {
+                            const vvl::range<VkDeviceAddress> src_as_other_scratch_intersection =
+                                src_as_address_range.range & overlapped_address_range->range;
+                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03705",
+                                             LogObjectList(cmd_buffer, src_as_state->VkHandle()),
+                                             info_i_loc.dot(Field::srcAccelerationStructure),
+                                             "overlaps with scratch buffer of pInfos[%" PRIu32 "] on device address range %s.",
+                                             overlapped_address_range->info_i,
+                                             string_range_hex(src_as_other_scratch_intersection).c_str());
+                            break;
+                        }
+                        default:
+                            assert(false);
+                            break;
+                    }
+                }
+            }
+        }
+
+        if (dst_as_state) {
+            if (dst_as_state->buffer_state && !dst_as_state->buffer_state->sparse) {
+                const AddressRange dst_as_address_range = {dst_as_state->GetDeviceAddressRange(), info_i,
+                                                           AddressRangeOrigin::DstAccelStruct};
+                const std::optional<AddressRange> overlapped_address_range = insert_address(address_ranges, dst_as_address_range);
+                if (overlapped_address_range.has_value()) {
+                    switch (overlapped_address_range->origin) {
+                        case AddressRangeOrigin::SrcAccelStruct: {
+                            if (const auto other_src_as_state = Get<vvl::AccelerationStructureKHR>(
+                                    p_infos[overlapped_address_range->info_i].srcAccelerationStructure)) {
+                                const vvl::range<VkDeviceAddress> dst_as_other_src_as_intersection =
+                                    dst_as_address_range.range & overlapped_address_range->range;
+
+                                skip |= LogError(
+                                    "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03701",
+                                    LogObjectList(cmd_buffer, dst_as_state->VkHandle(), other_src_as_state->VkHandle()),
+                                    info_i_loc.dot(Field::dstAccelerationStructure),
+                                    ", overlaps with srcAccelerationStructure of pInfos[%" PRIu32
+                                    "], which is in update mode, on device address range %s.",
+                                    overlapped_address_range->info_i, string_range_hex(dst_as_other_src_as_intersection).c_str());
+                            }
+                            break;
+                        }
+                        case AddressRangeOrigin::DstAccelStruct: {
+                            if (const auto other_dst_as_state = Get<vvl::AccelerationStructureKHR>(
+                                    p_infos[overlapped_address_range->info_i].dstAccelerationStructure)) {
+                                const vvl::range<VkDeviceAddress> dst_as_other_dst_as_intersection =
+                                    dst_as_address_range.range & overlapped_address_range->range;
+
+                                skip |= LogError(
+                                    "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702",
+                                    LogObjectList(cmd_buffer, dst_as_state->VkHandle(), other_dst_as_state->VkHandle()),
+                                    info_i_loc.dot(Field::dstAccelerationStructure),
+                                    "overlaps with dstAccelerationStructure of pInfos[%" PRIu32 "], on device address range %s.",
+                                    overlapped_address_range->info_i, string_range_hex(dst_as_other_dst_as_intersection).c_str());
+                            }
+                            break;
+                        }
+                        case AddressRangeOrigin::Scratch: {
+                            const vvl::range<VkDeviceAddress> src_as_other_scratch_intersection =
+                                dst_as_address_range.range & overlapped_address_range->range;
+                            skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03703",
+                                             LogObjectList(cmd_buffer, dst_as_state->VkHandle()),
+                                             info_i_loc.dot(Field::dstAccelerationStructure),
+                                             "overlaps with scratch buffer of pInfos[%" PRIu32 "] on device address range %s.",
+                                             overlapped_address_range->info_i,
+                                             string_range_hex(src_as_other_scratch_intersection).c_str());
+                            break;
+                        }
+                        default:
+                            assert(false);
+                            break;
+                    }
+                }
+            }
+        }
+
+        // Do not attempt looking for memory overlaps here if any buffer associated to scratch address is sparse
+        const auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress);
+        const bool any_scratch_sparse = std::any_of(scratch_buffers.begin(), scratch_buffers.end(),
+                                                    [](const vvl::Buffer *buffer) { return buffer && buffer->sparse; });
+        if (!any_scratch_sparse) {
+            assert(error_obj.location.function != Func::vkBuildAccelerationStructuresKHR);
+            const VkDeviceSize assumed_scratch_size =
+                rt::ComputeScratchSize(rt::BuildType::Device, device, info, pp_range_infos[info_i]);
+
+            const vvl::range<VkDeviceAddress> scratch_range = {info.scratchData.deviceAddress,
+                                                               info.scratchData.deviceAddress + assumed_scratch_size};
+
+            const AddressRange scratch_address_range = {scratch_range, info_i, AddressRangeOrigin::Scratch};
+            const std::optional<AddressRange> overlapped_address_range = insert_address(address_ranges, scratch_address_range);
+            if (overlapped_address_range.has_value()) {
+                switch (overlapped_address_range->origin) {
+                    case AddressRangeOrigin::SrcAccelStruct: {
+                        if (const auto other_src_as_state = Get<vvl::AccelerationStructureKHR>(
+                                p_infos[overlapped_address_range->info_i].srcAccelerationStructure)) {
+                            const vvl::range<VkDeviceAddress> scratch_other_src_as_intersection =
+                                scratch_address_range.range & overlapped_address_range->range;
+
+                            skip |= LogError(
+                                "VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03705",
+                                LogObjectList(cmd_buffer, other_src_as_state->VkHandle()), info_i_loc.dot(Field::scratchData),
+                                ", overlaps with srcAccelerationStructure of pInfos[%" PRIu32
+                                "], which is in update mode, on device address range %s.",
+                                overlapped_address_range->info_i, string_range_hex(scratch_other_src_as_intersection).c_str());
+                        }
+                        break;
+                    }
+                    case AddressRangeOrigin::DstAccelStruct: {
+                        if (const auto other_dst_as_state = Get<vvl::AccelerationStructureKHR>(
+                                p_infos[overlapped_address_range->info_i].dstAccelerationStructure)) {
+                            const vvl::range<VkDeviceAddress> dst_as_other_dst_as_intersection =
+                                scratch_address_range.range & overlapped_address_range->range;
+
+                            skip |= LogError(
+                                "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03703",
+                                LogObjectList(cmd_buffer, other_dst_as_state->VkHandle()), info_i_loc.dot(Field::scratchData),
+                                "overlaps with dstAccelerationStructure of pInfos[%" PRIu32 "], on device address range %s.",
+                                overlapped_address_range->info_i, string_range_hex(dst_as_other_dst_as_intersection).c_str());
+                        }
+                        break;
+                    }
+                    case AddressRangeOrigin::Scratch: {
+                        const vvl::range<VkDeviceAddress> src_as_other_scratch_intersection =
+                            scratch_address_range.range & overlapped_address_range->range;
+                        skip |=
+                            LogError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704", LogObjectList(cmd_buffer),
+                                     info_i_loc.dot(Field::scratchData),
+                                     "overlaps with scratch buffer of pInfos[%" PRIu32 "] on device address range %s.",
+                                     overlapped_address_range->info_i, string_range_hex(src_as_other_scratch_intersection).c_str());
+                        break;
+                    }
+                    default:
+                        assert(false);
+                        break;
+                }
+            }
         }
     }
 
@@ -906,12 +1075,10 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
         skip |= CommonBuildAccelerationStructureValidation(info, info_loc, commandBuffer);
 
         skip |= ValidateAccelerationBuffers(commandBuffer, info_i, info, ppBuildRangeInfos[info_i], info_loc);
-
-        skip |= ValidateAccelerationStructuresMemoryAlisasing(commandBuffer, infoCount, pInfos, info_i, error_obj);
-
-        skip |= ValidateAccelerationStructuresDeviceScratchBufferMemoryAlisasing(commandBuffer, infoCount, pInfos, info_i,
-                                                                                 ppBuildRangeInfos, error_obj);
     }
+
+    skip |= ValidateAccelerationStructuresDeviceScratchBufferMemoryAliasing(commandBuffer, infoCount, pInfos, ppBuildRangeInfos,
+                                                                            error_obj);
 
     return skip;
 }

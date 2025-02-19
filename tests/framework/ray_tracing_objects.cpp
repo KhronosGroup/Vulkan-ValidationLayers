@@ -765,7 +765,7 @@ void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<Buil
     size_t range_infos_offset = 0;
     size_t pRange_infos_offset = 0;
 
-    for (auto &build_info : infos) {
+    for (BuildGeometryInfoKHR &build_info : infos) {
         build_info.SetupBuild(true);
 
         // Fill current vk_info_ with geometry data in ppGeometries, and get build ranges
@@ -790,7 +790,7 @@ void BuildAccelerationStructuresKHR(VkCommandBuffer cmd_buffer, std::vector<Buil
     vk::CmdBuildAccelerationStructuresKHR(cmd_buffer, static_cast<uint32_t>(vk_infos.size()), vk_infos.data(), pRange_infos.data());
 
     // Clean
-    for (auto &build_info : infos) {
+    for (BuildGeometryInfoKHR &build_info : infos) {
         // pGeometries is going to be destroyed
         build_info.vk_info_.geometryCount = 0;
         build_info.vk_info_.ppGeometries = nullptr;

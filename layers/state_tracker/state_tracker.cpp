@@ -368,6 +368,21 @@ std::shared_ptr<Buffer> Device::CreateBufferState(VkBuffer handle, const VkBuffe
     return std::make_shared<Buffer>(*this, handle, create_info);
 }
 
+void Device::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                       const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, const RecordObject &record_obj,
+                                       chassis::CreateBuffer &chassis_state) {
+    if (pCreateInfo->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {
+        // When it comes to validation acceleration memory overlaps, it is much faster to
+        // work on device address ranges directly, but for that to be possible,
+        // buffers used to back acceleration structures must have been created with the
+        // VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT usage flag
+        // => Enforce it.
+        // Doing so will not modify VVL state tracking, and if the application forgot to set
+        // this flag, it will still be detected.
+        chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    }
+}
+
 void Device::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                         const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
                                         const RecordObject &record_obj) {
@@ -2227,7 +2242,7 @@ void Device::PostCallRecordCreateAccelerationStructureNV(VkDevice device, const 
 std::shared_ptr<AccelerationStructureKHR> Device::CreateAccelerationStructureState(
     VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *create_info,
     std::shared_ptr<Buffer> &&buf_state) {
-    return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state));
+    return std::make_shared<AccelerationStructureKHR>(api_version, device, handle, create_info, std::move(buf_state));
 }
 
 void Device::PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR *pCreateInfo,

@@ -1835,6 +1835,11 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP()
+            << "Test needs acceleration structures addresses to be related to the buffer backing them, mock ICD does not do that";
+    }
+
     constexpr size_t build_info_count = 3;
 
     // All buffers used to back source/destination acceleration structures will be bound to this memory chunk
@@ -1862,11 +1867,11 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
             build_infos.emplace_back(std::move(blas));
         }
 
-        // Since all the destination acceleration structures are bound to the same memory, 03702 will be triggered for each pair of
-        // elements in `build_infos`
-        for (size_t i = 0; i < binom<size_t>(build_info_count, 2); ++i) {
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702");
-        }
+        // Since all the destination acceleration structures are bound to the same memory, 03702 should be triggered for each pair
+        // of elements in `build_infos`
+        // => due to validation code optimisations, not *all* overlaps will be detected,
+        // but if there is *at least one*, it will *always+ be detected.
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702", 2);
         m_command_buffer.Begin();
         vkt::as::BuildAccelerationStructuresKHR(m_command_buffer.handle(), build_infos);
         m_command_buffer.End();
@@ -1911,12 +1916,13 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
             blas_vec.emplace_back(std::move(blas));
         }
 
-        // Since all the source and destination acceleration structures are bound to the same memory, 03701 and 03702 will be
+        // Since all the source and destination acceleration structures are bound to the same memory, 03701 and 03702 should be
         // triggered for each pair of elements in `build_infos`, and 03668 for each element
-        for (size_t i = 0; i < binom<size_t>(build_info_count, 2); ++i) {
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03701");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702");
-        }
+        // => due to validation code optimisations, not *all* overlaps described by 03701 and 03702 will be detected,
+        // but if there is *at least one*, it will *always+ be detected.
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03701", 2);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702", 2);
+
         for (size_t i = 0; i < build_info_count; ++i) {
             m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03668");
         }
@@ -1977,9 +1983,9 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory2) {
 
         // Since all the scratch buffers are bound to the same memory, 03704 will be triggered for each pair of elements in
         // `build_infos`
-        for (size_t i = 0; i < binom<size_t>(build_info_count, 2); ++i) {
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704");
-        }
+        // => due to validation code optimisations, not *all* overlaps will be detected,
+        // but if there is *at least one*, it will *always+ be detected.
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704", 2);
         m_command_buffer.Begin();
         vkt::as::BuildAccelerationStructuresKHR(m_command_buffer.handle(), build_infos);
         m_command_buffer.End();
@@ -2045,15 +2051,14 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory3) {
         }
 
         // Since all the destination acceleration structures and scratch buffers are bound to the same memory, 03702, 03703 and
-        // 03704 will be triggered for each pair of elements in `build_infos`. 03703 will also be triggered for individual elements.
-        for (size_t i = 0; i < binom<size_t>(build_info_count, 2); ++i) {
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03703");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704");
-        }
-        for (size_t i = 0; i < build_info_count; ++i) {
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03703");
-        }
+        // 03704 *should* be triggered for each pair of elements in `build_infos`. 03703 *should* also be triggered for individual
+        // elements.
+        // => due to validation code optimisations, not *all* overlaps will be detected,
+        // but if there is *at least one*, it will *always+ be detected.
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03703");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704");
+
         m_command_buffer.Begin();
         vkt::as::BuildAccelerationStructuresKHR(m_command_buffer.handle(), blas_vec);
         m_command_buffer.End();
@@ -2135,15 +2140,12 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory4) {
             blas_vec.emplace_back(std::move(blas));
         }
 
-        // Since all the source and destination acceleration structures are bound to the same memory, 03704 and 03705 will be
-        // triggered for each pair of elements in `build_infos`. 03705 will also be triggered for individual elements.
-        for (size_t i = 0; i < binom<size_t>(build_info_count, 2); ++i) {
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704");
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03705");
-        }
-        for (size_t i = 0; i < build_info_count; ++i) {
-            m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03705");
-        }
+        // Since all the source and destination acceleration structures are bound to the same memory, 03704 and 03705 *should* be
+        // triggered for each pair of elements in `build_infos`. 03705 *should* also be triggered for individual elements.
+        // => due to validation code optimisations, not *all* overlaps will be detected,
+        // but if there is *at least one*, it will *always+ be detected.
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704", 2);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03705", 3);
 
         m_command_buffer.Begin();
         vkt::as::BuildAccelerationStructuresKHR(m_command_buffer.handle(), blas_vec);
