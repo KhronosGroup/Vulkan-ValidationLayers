@@ -91,8 +91,9 @@ void Sampler::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
 }
 
 AccelerationStructureKHR::AccelerationStructureKHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
-                                                   std::shared_ptr<vvl::Buffer> &&buf_state, DescriptorHeap &desc_heap_)
-    : vvl::AccelerationStructureKHR(as, ci, std::move(buf_state)),
+                                                   std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress buffer_address,
+                                                   DescriptorHeap &desc_heap_)
+    : vvl::AccelerationStructureKHR(as, ci, std::move(buf_state), buffer_address),
       desc_heap(desc_heap_),
       id(desc_heap.NextId(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureKHR))) {}
 

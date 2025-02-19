@@ -592,6 +592,8 @@ class Device : public vvl::base::Device {
         return found_it->second;
     }
 
+    VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer) const;
+
     // From the spec:
     // If multiple VkBuffer objects are bound to overlapping ranges of VkDeviceMemory, implementations may return
     // address ranges which overlap. In this case, it is ambiguous which VkBuffer is associated with any given
@@ -787,6 +789,9 @@ class Device : public vvl::base::Device {
                                                       const RecordObject& record_obj) override;
 
     virtual std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer handle, const VkBufferCreateInfo* create_info);
+    void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                   VkBuffer* pBuffer, const RecordObject& record_obj,
+                                   chassis::CreateBuffer& chassis_state) override;
     void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkBuffer* pBuffer, const RecordObject& record_obj) override;
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator,

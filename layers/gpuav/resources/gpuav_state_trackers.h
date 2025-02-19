@@ -230,7 +230,7 @@ class Sampler : public vvl::Sampler {
 class AccelerationStructureKHR : public vvl::AccelerationStructureKHR {
   public:
     AccelerationStructureKHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
-                             std::shared_ptr<vvl::Buffer> &&buf_state, DescriptorHeap &desc_heap_);
+                             std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress buffer_address, DescriptorHeap &desc_heap_);
 
     void Destroy() final;
     void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;

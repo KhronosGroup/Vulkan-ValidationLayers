@@ -54,7 +54,15 @@ std::shared_ptr<vvl::Sampler> Validator::CreateSamplerState(VkSampler handle, co
 std::shared_ptr<vvl::AccelerationStructureKHR> Validator::CreateAccelerationStructureState(
     VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *create_info,
     std::shared_ptr<vvl::Buffer> &&buf_state) {
-    return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state), *desc_heap_);
+    // If the buffer's device address has not been queried,
+    // get it here. Since it is used for the purpose of
+    // validation, do not try to update buffer_state, since
+    // it only tracks application state.
+    const VkDeviceAddress buffer_address =
+        buf_state ? buf_state->deviceAddress != 0 ? buf_state->deviceAddress : GetBufferDeviceAddressHelper(buf_state->VkHandle())
+                  : 0;
+
+    return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state), buffer_address, *desc_heap_);
 }
 
 std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool *pool,
@@ -406,17 +414,6 @@ void Validator::InternalVmaError(LogObjectList objlist, const Location &loc, con
     // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
     // with errors making it hard to see the first error with the real source of the problem).
     dispatch_device_->ReleaseValidationObject(LayerObjectTypeGpuAssisted);
-}
-
-VkDeviceAddress Validator::GetBufferDeviceAddressHelper(VkBuffer buffer) const {
-    VkBufferDeviceAddressInfo address_info = vku::InitStructHelper();
-    address_info.buffer = buffer;
-
-    if (api_version >= VK_API_VERSION_1_2) {
-        return DispatchGetBufferDeviceAddress(device, &address_info);
-    } else {
-        return DispatchGetBufferDeviceAddressKHR(device, &address_info);
-    }
 }
 
 }  // namespace gpuav
