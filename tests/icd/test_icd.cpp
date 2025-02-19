@@ -1696,8 +1696,7 @@ static VKAPI_ATTR void VKAPI_CALL GetShaderModuleIdentifierEXT(VkDevice device, 
 
 static VKAPI_ATTR VkDeviceAddress VKAPI_CALL
 GetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) {
-    // arbitrary - need to be aligned to 256 bytes
-    return 0x262144;
+    return VkDeviceAddress(pInfo->accelerationStructure) << 8u;
 }
 
 static VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureBuildSizesKHR(
