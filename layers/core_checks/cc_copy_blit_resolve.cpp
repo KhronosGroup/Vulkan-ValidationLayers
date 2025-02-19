@@ -2003,8 +2003,7 @@ void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer src
 
         auto queue_submit_validation = [this, commandBuffer, src_buffer_state, dst_buffer_state, src_ranges = std::move(src_ranges),
                                         dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds, loc,
-                                        vuid](const vvl::Device &device_data, const class vvl::Queue &queue_state,
-                                              const vvl::CommandBuffer &cb_state) -> bool {
+                                        vuid](const class vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state) -> bool {
             bool skip = false;
 
             auto src_vk_memory_to_ranges_map = src_buffer_state->GetBoundRanges(src_ranges_bounds, src_ranges);
