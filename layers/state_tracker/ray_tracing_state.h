@@ -75,12 +75,16 @@ class AccelerationStructureNV : public Bindable {
 
 class AccelerationStructureKHR : public StateObject {
   public:
-    AccelerationStructureKHR(VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
-                             std::shared_ptr<Buffer> &&buf_state)
+    AccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR handle,
+                             const VkAccelerationStructureCreateInfoKHR *pCreateInfo, std::shared_ptr<Buffer> &&buf_state)
         : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR),
           safe_create_info(pCreateInfo),
           create_info(*safe_create_info.ptr()),
-          buffer_state(buf_state) {}
+          buffer_state(buf_state) {
+        VkAccelerationStructureDeviceAddressInfoKHR device_addr_info = vku::InitStructHelper();
+        device_addr_info.accelerationStructure = handle;
+        device_address = DispatchGetAccelerationStructureDeviceAddressKHR(device, &device_addr_info);
+    }
     AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
 
     virtual ~AccelerationStructureKHR() {
@@ -120,10 +124,13 @@ class AccelerationStructureKHR : public StateObject {
         }
     }
 
+    vvl::range<VkDeviceAddress> GetDeviceAddressRange() const { return {device_address, device_address + safe_create_info.size}; }
+
     const vku::safe_VkAccelerationStructureCreateInfoKHR safe_create_info;
     const VkAccelerationStructureCreateInfoKHR &create_info;
 
     uint64_t opaque_handle = 0;
+    VkDeviceAddress device_address = 0;
     std::shared_ptr<vvl::Buffer> buffer_state{};
     std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> build_info_khr{};
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
