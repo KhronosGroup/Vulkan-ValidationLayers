@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
@@ -18,6 +18,7 @@
  */
 #pragma once
 #include "state_tracker/state_object.h"
+#include "error_message/error_location.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include <vector>
 
@@ -35,17 +36,24 @@ class SurfacelessQueryState {
 
 namespace vvl {
 
+enum CALL_STATE {
+    UNCALLED,       // Function has not been called
+    QUERY_COUNT,    // Function called once to query a count
+    QUERY_DETAILS,  // Function called w/ a count to query details
+};
+
 class PhysicalDevice : public StateObject {
   public:
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
     const std::vector<VkQueueFamilyProperties> queue_family_properties;
     const VkQueueFlags supported_queues;
-    // TODO These are currently used by CoreChecks, but should probably be refactored
-    bool vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = false;
     uint32_t display_plane_property_count = 0;
+    uint32_t surface_formats_count = 0;
 
     // Map of queue family index to QueueFamilyPerfCounters
     unordered_map<uint32_t, std::unique_ptr<QueueFamilyPerfCounters>> perf_counters;
+
+    unordered_map<Func, CALL_STATE> call_state;
 
     // Surfaceless Query extension needs 'global' surface_state data
     SurfacelessQueryState surfaceless_query_state{};
@@ -53,6 +61,21 @@ class PhysicalDevice : public StateObject {
     PhysicalDevice(VkPhysicalDevice handle);
 
     VkPhysicalDevice VkHandle() const { return handle_.Cast<VkPhysicalDevice>(); }
+
+    void SetCallState(vvl::Func func, bool has_ptr) {
+        CALL_STATE new_state = has_ptr ? QUERY_DETAILS : QUERY_COUNT;
+        auto result = call_state.emplace(func, new_state);
+        if (!result.second) {
+            if (result.first->second < new_state) {
+                result.first->second = new_state;
+            }
+        }
+    }
+
+    CALL_STATE GetCallState(vvl::Func func) const {
+        auto iter = call_state.find(func);
+        return iter != call_state.end() ? iter->second : UNCALLED;
+    }
 
   private:
     const std::vector<VkQueueFamilyProperties> GetQueueFamilyProps(VkPhysicalDevice phys_dev);

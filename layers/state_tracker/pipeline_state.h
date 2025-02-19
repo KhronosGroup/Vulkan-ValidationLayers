@@ -148,13 +148,11 @@ class Pipeline : public StateObject {
         VkPipeline frag_out_lib = VK_NULL_HANDLE;
     } instrumentation_data;
 
-    // Executable or legacy pipeline
     Pipeline(const Device &state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-             std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
+             std::shared_ptr<const vvl::PipelineCache> pipe_cache, std::shared_ptr<const vvl::RenderPass> &&rpstate,
              std::shared_ptr<const vvl::PipelineLayout> &&layout,
              spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]);
 
-    // Compute pipeline
     Pipeline(const Device &state_data, const VkComputePipelineCreateInfo *pCreateInfo,
              std::shared_ptr<const vvl::PipelineCache> &&pipe_cache, std::shared_ptr<const vvl::PipelineLayout> &&layout,
              spirv::StatelessData *stateless_data);

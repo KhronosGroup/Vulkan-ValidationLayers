@@ -51,18 +51,19 @@ vvl::DescriptorPool::DescriptorPool(vvl::Device &dev, const VkDescriptorPool han
 void vvl::DescriptorPool::Allocate(const VkDescriptorSetAllocateInfo *alloc_info, const VkDescriptorSet *descriptor_sets,
                                    const vvl::AllocateDescriptorSetsData &ds_data) {
     auto guard = WriteLock();
+    const auto alloc_count = alloc_info->descriptorSetCount;
     // Account for sets and individual descriptors allocated from pool
-    available_sets_ -= alloc_info->descriptorSetCount;
+    available_sets_ -= alloc_count;
     for (auto it = ds_data.required_descriptors_by_type.begin(); it != ds_data.required_descriptors_by_type.end(); ++it) {
         available_counts_[it->first] -= ds_data.required_descriptors_by_type.at(it->first);
     }
 
     const auto *variable_count_info = vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(alloc_info->pNext);
     const bool variable_count_valid =
-        variable_count_info && variable_count_info->descriptorSetCount == alloc_info->descriptorSetCount;
+        variable_count_info && variable_count_info->descriptorSetCount == alloc_count;
 
     // Create tracking object for each descriptor set; insert into global map and the pool's set.
-    for (uint32_t i = 0; i < alloc_info->descriptorSetCount; i++) {
+    for (uint32_t i = 0; i < alloc_count; i++) {
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
         auto new_ds = dev_data_.CreateDescriptorSet(descriptor_sets[i], this, ds_data.layout_nodes[i], variable_count);
@@ -70,12 +71,20 @@ void vvl::DescriptorPool::Allocate(const VkDescriptorSetAllocateInfo *alloc_info
         sets_.emplace(descriptor_sets[i], new_ds.get());
         dev_data_.Add(std::move(new_ds));
     }
+    // clamp the unsigned subtraction to the range [0, last_free_count]
+    if (freed_count > alloc_count) {
+        freed_count -= alloc_count;
+    } else {
+        freed_count = 0;
+    }
 }
 
 void vvl::DescriptorPool::Free(uint32_t count, const VkDescriptorSet *descriptor_sets) {
     auto guard = WriteLock();
     // Update available descriptor sets in pool
     available_sets_ += count;
+    // we want to track frees because we're interested in suggesting re-use
+    freed_count += count;
 
     // For each freed descriptor add its resources back into the pool as available and remove from pool and device data
     for (uint32_t i = 0; i < count; ++i) {
