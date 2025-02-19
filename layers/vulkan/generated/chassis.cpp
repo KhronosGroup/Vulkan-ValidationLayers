@@ -99,6 +99,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -107,6 +110,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, record_obj);
         }
     }
@@ -119,6 +125,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDevices(VkInstance instance, uin
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices, record_obj);
         }
     }
@@ -135,6 +144,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDe
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceFeatures(physicalDevice, pFeatures, error_obj);
             if (skip) return;
         }
@@ -143,6 +155,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDe
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures, record_obj);
         }
     }
@@ -153,6 +168,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDe
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures, record_obj);
         }
     }
@@ -169,6 +187,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties(VkPhysicalDevice ph
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties, error_obj);
             if (skip) return;
         }
@@ -177,6 +198,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties(VkPhysicalDevice ph
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties, record_obj);
         }
     }
@@ -187,6 +211,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties(VkPhysicalDevice ph
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceFormatProperties(physicalDevice, format, pFormatProperties, record_obj);
         }
     }
@@ -205,6 +232,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties(VkPhysical
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags,
                                                                               pImageFormatProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -214,6 +244,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties(VkPhysical
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags,
                                                                     pImageFormatProperties, record_obj);
         }
@@ -228,6 +261,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties(VkPhysical
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceImageFormatProperties(physicalDevice, format, type, tiling, usage, flags,
                                                                      pImageFormatProperties, record_obj);
         }
@@ -245,6 +281,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties(VkPhysicalDevice physical
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceProperties(physicalDevice, pProperties, error_obj);
             if (skip) return;
         }
@@ -253,6 +292,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties(VkPhysicalDevice physical
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceProperties(physicalDevice, pProperties, record_obj);
         }
     }
@@ -263,6 +305,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties(VkPhysicalDevice physical
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceProperties(physicalDevice, pProperties, record_obj);
         }
     }
@@ -280,6 +325,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevi
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
                                                                               pQueueFamilyProperties, error_obj);
             if (skip) return;
@@ -289,6 +337,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevi
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
                                                                     pQueueFamilyProperties, record_obj);
         }
@@ -301,6 +352,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevi
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
                                                                      pQueueFamilyProperties, record_obj);
         }
@@ -318,6 +372,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDevice ph
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties, error_obj);
             if (skip) return;
         }
@@ -326,6 +383,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDevice ph
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties, record_obj);
         }
     }
@@ -336,6 +396,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties(VkPhysicalDevice ph
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceMemoryProperties(physicalDevice, pMemoryProperties, record_obj);
         }
     }
@@ -971,6 +1034,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysic
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage,
                                                                                     tiling, pPropertyCount, pProperties, error_obj);
             if (skip) return;
@@ -980,6 +1046,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysic
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling,
                                                                           pPropertyCount, pProperties, record_obj);
         }
@@ -992,6 +1061,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties(VkPhysic
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, format, type, samples, usage, tiling,
                                                                            pPropertyCount, pProperties, record_obj);
         }
@@ -4812,6 +4884,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(VkInstance instance
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount,
                                                                      pPhysicalDeviceGroupProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -4821,6 +4896,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(VkInstance instance
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
                                                            record_obj);
         }
@@ -4835,6 +4913,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroups(VkInstance instance
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordEnumeratePhysicalDeviceGroups(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
                                                             record_obj);
         }
@@ -4964,6 +5045,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalD
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, error_obj);
             if (skip) return;
         }
@@ -4972,6 +5056,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalD
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
         }
     }
@@ -4982,6 +5069,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalD
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
         }
     }
@@ -4997,6 +5087,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice physica
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceProperties2(physicalDevice, pProperties, error_obj);
             if (skip) return;
         }
@@ -5005,6 +5098,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice physica
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceProperties2(physicalDevice, pProperties, record_obj);
         }
     }
@@ -5015,6 +5111,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice physica
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceProperties2(physicalDevice, pProperties, record_obj);
         }
     }
@@ -5031,6 +5130,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice p
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, error_obj);
             if (skip) return;
         }
@@ -5039,6 +5141,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice p
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, record_obj);
         }
     }
@@ -5049,6 +5154,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2(VkPhysicalDevice p
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceFormatProperties2(physicalDevice, format, pFormatProperties, record_obj);
         }
     }
@@ -5066,6 +5174,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2(VkPhysica
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo,
                                                                                pImageFormatProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -5075,6 +5186,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2(VkPhysica
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                                      record_obj);
         }
@@ -5089,6 +5203,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2(VkPhysica
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                                       record_obj);
         }
@@ -5108,6 +5225,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDev
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                                pQueueFamilyProperties, error_obj);
             if (skip) return;
@@ -5117,6 +5237,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDev
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                      pQueueFamilyProperties, record_obj);
         }
@@ -5129,6 +5252,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDev
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
                                                                       pQueueFamilyProperties, record_obj);
         }
@@ -5146,6 +5272,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice p
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties, error_obj);
             if (skip) return;
         }
@@ -5154,6 +5283,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice p
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties, record_obj);
         }
     }
@@ -5164,6 +5296,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2(VkPhysicalDevice p
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceMemoryProperties2(physicalDevice, pMemoryProperties, record_obj);
         }
     }
@@ -5182,6 +5317,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(VkPhysi
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount,
                                                                                      pProperties, error_obj);
             if (skip) return;
@@ -5191,6 +5329,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(VkPhysi
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount, pProperties,
                                                                            record_obj);
         }
@@ -5202,6 +5343,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2(VkPhysi
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSparseImageFormatProperties2(physicalDevice, pFormatInfo, pPropertyCount,
                                                                             pProperties, record_obj);
         }
@@ -5485,6 +5629,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferProperties(VkPhysicalD
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo,
                                                                                  pExternalBufferProperties, error_obj);
             if (skip) return;
@@ -5494,6 +5641,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferProperties(VkPhysicalD
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo,
                                                                        pExternalBufferProperties, record_obj);
         }
@@ -5506,6 +5656,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferProperties(VkPhysicalD
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceExternalBufferProperties(physicalDevice, pExternalBufferInfo,
                                                                         pExternalBufferProperties, record_obj);
         }
@@ -5524,6 +5677,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFenceProperties(VkPhysicalDe
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo,
                                                                                 pExternalFenceProperties, error_obj);
             if (skip) return;
@@ -5533,6 +5689,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFenceProperties(VkPhysicalDe
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties,
                                                                       record_obj);
         }
@@ -5544,6 +5703,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFenceProperties(VkPhysicalDe
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceExternalFenceProperties(physicalDevice, pExternalFenceInfo, pExternalFenceProperties,
                                                                        record_obj);
         }
@@ -5562,6 +5724,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphoreProperties(
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
                                                                                     pExternalSemaphoreProperties, error_obj);
             if (skip) return;
@@ -5571,6 +5736,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphoreProperties(
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
                                                                           pExternalSemaphoreProperties, record_obj);
         }
@@ -5583,6 +5751,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphoreProperties(
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceExternalSemaphoreProperties(physicalDevice, pExternalSemaphoreInfo,
                                                                            pExternalSemaphoreProperties, record_obj);
         }
@@ -8149,6 +8320,9 @@ VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR s
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateDestroySurfaceKHR(instance, surface, pAllocator, error_obj);
             if (skip) return;
         }
@@ -8157,6 +8331,9 @@ VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR s
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordDestroySurfaceKHR(instance, surface, pAllocator, record_obj);
         }
     }
@@ -8167,6 +8344,9 @@ VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(VkInstance instance, VkSurfaceKHR s
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordDestroySurfaceKHR(instance, surface, pAllocator, record_obj);
         }
     }
@@ -8183,6 +8363,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevi
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported,
                                                                           error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -8192,6 +8375,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevi
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported, record_obj);
         }
     }
@@ -8204,6 +8390,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevi
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported, record_obj);
         }
     }
@@ -8221,6 +8410,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysica
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities,
                                                                                error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -8230,6 +8422,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysica
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, record_obj);
         }
     }
@@ -8242,6 +8437,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysica
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities, record_obj);
         }
     }
@@ -8260,6 +8458,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevi
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount,
                                                                           pSurfaceFormats, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -8269,6 +8470,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevi
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats,
                                                                 record_obj);
         }
@@ -8283,6 +8487,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevi
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats,
                                                                  record_obj);
         }
@@ -8302,6 +8509,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysica
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount,
                                                                                pPresentModes, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -8311,6 +8521,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysica
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes,
                                                                      record_obj);
         }
@@ -8325,6 +8538,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModesKHR(VkPhysica
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes,
                                                                       record_obj);
         }
@@ -8581,6 +8797,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDevicePresentRectanglesKHR(VkPhysicalD
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |=
                 vo->PreCallValidateGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -8590,6 +8809,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDevicePresentRectanglesKHR(VkPhysicalD
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects, record_obj);
         }
     }
@@ -8602,6 +8824,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDevicePresentRectanglesKHR(VkPhysicalD
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects, record_obj);
         }
     }
@@ -8662,6 +8887,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalD
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |=
                 vo->PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -8671,6 +8899,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalD
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -8683,6 +8914,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalD
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -8700,6 +8934,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhys
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties,
                                                                                   error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -8709,6 +8946,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhys
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -8721,6 +8961,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhys
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -8738,6 +8981,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDev
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays,
                                                                            error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -8747,6 +8993,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDev
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays, record_obj);
         }
     }
@@ -8759,6 +9008,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDev
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays, record_obj);
         }
     }
@@ -8776,6 +9028,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice phys
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -8784,6 +9039,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice phys
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -8796,6 +9054,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModePropertiesKHR(VkPhysicalDevice phys
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -8813,6 +9074,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayModeKHR(VkPhysicalDevice physicalDev
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -8821,6 +9085,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayModeKHR(VkPhysicalDevice physicalDev
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, record_obj);
         }
     }
@@ -8833,6 +9100,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayModeKHR(VkPhysicalDevice physicalDev
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode, record_obj);
         }
     }
@@ -8850,6 +9120,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice p
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -8858,6 +9131,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice p
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities, record_obj);
         }
     }
@@ -8870,6 +9146,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice p
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities, record_obj);
         }
     }
@@ -8886,6 +9165,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayPlaneSurfaceKHR(VkInstance instance,
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -8894,6 +9176,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayPlaneSurfaceKHR(VkInstance instance,
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -8906,6 +9191,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDisplayPlaneSurfaceKHR(VkInstance instance,
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -8968,6 +9256,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const V
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -8976,6 +9267,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const V
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -8988,6 +9282,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXlibSurfaceKHR(VkInstance instance, const V
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -9006,6 +9303,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhy
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID,
                                                                                    error_obj);
             if (skip) return VK_FALSE;
@@ -9015,6 +9315,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhy
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID,
                                                                          record_obj);
         }
@@ -9027,6 +9330,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXlibPresentationSupportKHR(VkPhy
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID,
                                                                           record_obj);
         }
@@ -9046,6 +9352,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const Vk
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -9054,6 +9363,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const Vk
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -9066,6 +9378,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateXcbSurfaceKHR(VkInstance instance, const Vk
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -9084,6 +9399,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhys
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection,
                                                                                   visual_id, error_obj);
             if (skip) return VK_FALSE;
@@ -9093,6 +9411,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhys
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id,
                                                                         record_obj);
         }
@@ -9106,6 +9427,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceXcbPresentationSupportKHR(VkPhys
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id,
                                                                          record_obj);
         }
@@ -9125,6 +9449,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, cons
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -9133,6 +9460,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, cons
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -9145,6 +9475,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWaylandSurfaceKHR(VkInstance instance, cons
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -9163,6 +9496,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(Vk
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display,
                                                                                       error_obj);
             if (skip) return VK_FALSE;
@@ -9172,6 +9508,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(Vk
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display, record_obj);
         }
     }
@@ -9183,6 +9522,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWaylandPresentationSupportKHR(Vk
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display, record_obj);
         }
     }
@@ -9201,6 +9543,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, cons
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -9209,6 +9554,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, cons
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -9221,6 +9569,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateAndroidSurfaceKHR(VkInstance instance, cons
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -9239,6 +9590,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const 
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -9247,6 +9601,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const 
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -9259,6 +9616,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateWin32SurfaceKHR(VkInstance instance, const 
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -9276,6 +9636,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPh
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex, error_obj);
             if (skip) return VK_FALSE;
         }
@@ -9284,6 +9647,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPh
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex, record_obj);
         }
     }
@@ -9295,6 +9661,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(VkPh
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex, record_obj);
         }
     }
@@ -9314,6 +9683,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalD
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |=
                 vo->PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -9323,6 +9695,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalD
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities, record_obj);
         }
     }
@@ -9335,6 +9710,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalD
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities, record_obj);
         }
     }
@@ -9354,6 +9732,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysi
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
                 physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -9363,6 +9744,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysi
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount,
                                                                        pVideoFormatProperties, record_obj);
         }
@@ -9377,6 +9761,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysi
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount,
                                                                         pVideoFormatProperties, record_obj);
         }
@@ -9887,6 +10274,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physic
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures, error_obj);
             if (skip) return;
         }
@@ -9895,6 +10285,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physic
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures, record_obj);
         }
     }
@@ -9905,6 +10298,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physic
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures, record_obj);
         }
     }
@@ -9921,6 +10317,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2KHR(VkPhysicalDevice phys
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties, error_obj);
             if (skip) return;
         }
@@ -9929,6 +10328,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2KHR(VkPhysicalDevice phys
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties, record_obj);
         }
     }
@@ -9939,6 +10341,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2KHR(VkPhysicalDevice phys
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceProperties2KHR(physicalDevice, pProperties, record_obj);
         }
     }
@@ -9955,6 +10360,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevic
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties, error_obj);
             if (skip) return;
         }
@@ -9963,6 +10371,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevic
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties, record_obj);
         }
     }
@@ -9973,6 +10384,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevic
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties, record_obj);
         }
     }
@@ -9990,6 +10404,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2KHR(VkPhys
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo,
                                                                                   pImageFormatProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -9999,6 +10416,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2KHR(VkPhys
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                                         record_obj);
         }
@@ -10013,6 +10433,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceImageFormatProperties2KHR(VkPhys
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties,
                                                                          record_obj);
         }
@@ -10032,6 +10455,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysical
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
                                                                                   pQueueFamilyProperties, error_obj);
             if (skip) return;
@@ -10041,6 +10467,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysical
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
                                                                         pQueueFamilyProperties, record_obj);
         }
@@ -10053,6 +10482,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysical
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount,
                                                                          pQueueFamilyProperties, record_obj);
         }
@@ -10070,6 +10502,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevic
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties, error_obj);
             if (skip) return;
         }
@@ -10078,6 +10513,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevic
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties, record_obj);
         }
     }
@@ -10088,6 +10526,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevic
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties, record_obj);
         }
     }
@@ -10105,6 +10546,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2KHR(
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
                                                                                         pProperties, error_obj);
             if (skip) return;
@@ -10114,6 +10558,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2KHR(
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
                                                                               pProperties, record_obj);
         }
@@ -10126,6 +10573,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceSparseImageFormatProperties2KHR(
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount,
                                                                                pProperties, record_obj);
         }
@@ -10294,6 +10744,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(VkInstance insta
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount,
                                                                         pPhysicalDeviceGroupProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -10303,6 +10756,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(VkInstance insta
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
                                                               record_obj);
         }
@@ -10317,6 +10773,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceGroupsKHR(VkInstance insta
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordEnumeratePhysicalDeviceGroupsKHR(instance, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties,
                                                                record_obj);
         }
@@ -10336,6 +10795,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferPropertiesKHR(
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo,
                                                                                     pExternalBufferProperties, error_obj);
             if (skip) return;
@@ -10345,6 +10807,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferPropertiesKHR(
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo,
                                                                           pExternalBufferProperties, record_obj);
         }
@@ -10357,6 +10822,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalBufferPropertiesKHR(
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo,
                                                                            pExternalBufferProperties, record_obj);
         }
@@ -10536,6 +11004,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphorePropertiesKHR(
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
                                                                                        pExternalSemaphoreProperties, error_obj);
             if (skip) return;
@@ -10545,6 +11016,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphorePropertiesKHR(
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
                                                                              pExternalSemaphoreProperties, record_obj);
         }
@@ -10557,6 +11031,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalSemaphorePropertiesKHR(
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo,
                                                                               pExternalSemaphoreProperties, record_obj);
         }
@@ -11123,6 +11600,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysica
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo,
                                                                                    pExternalFenceProperties, error_obj);
             if (skip) return;
@@ -11132,6 +11612,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysica
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo,
                                                                          pExternalFenceProperties, record_obj);
         }
@@ -11144,6 +11627,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalFencePropertiesKHR(VkPhysica
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo,
                                                                           pExternalFenceProperties, record_obj);
         }
@@ -11318,6 +11804,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceQuer
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
                 physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -11327,6 +11816,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceQuer
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
                 physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, record_obj);
         }
@@ -11341,6 +11833,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceQuer
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
                 physicalDevice, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions, record_obj);
         }
@@ -11359,6 +11854,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
                 physicalDevice, pPerformanceQueryCreateInfo, pNumPasses, error_obj);
             if (skip) return;
@@ -11368,6 +11866,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physicalDevice, pPerformanceQueryCreateInfo,
                                                                                    pNumPasses, record_obj);
         }
@@ -11380,6 +11881,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physicalDevice, pPerformanceQueryCreateInfo,
                                                                                     pNumPasses, record_obj);
         }
@@ -11471,6 +11975,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysic
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities,
                                                                                 error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -11480,6 +11987,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysic
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities,
                                                                       record_obj);
         }
@@ -11493,6 +12003,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysic
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities,
                                                                        record_obj);
         }
@@ -11513,6 +12026,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount,
                                                                            pSurfaceFormats, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -11522,6 +12038,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats,
                                                                  record_obj);
         }
@@ -11536,6 +12055,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDev
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount,
                                                                   pSurfaceFormats, record_obj);
         }
@@ -11554,6 +12076,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysical
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |=
                 vo->PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -11563,6 +12088,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysical
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -11575,6 +12103,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayProperties2KHR(VkPhysical
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -11593,6 +12124,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhy
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties,
                                                                                    error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -11602,6 +12136,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhy
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -11614,6 +12151,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhy
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -11631,6 +12171,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice phy
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |=
                 vo->PreCallValidateGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -11640,6 +12183,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice phy
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -11652,6 +12198,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayModeProperties2KHR(VkPhysicalDevice phy
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties, record_obj);
         }
     }
@@ -11670,6 +12219,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice 
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -11678,6 +12230,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice 
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities, record_obj);
         }
     }
@@ -11690,6 +12245,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDisplayPlaneCapabilities2KHR(VkPhysicalDevice 
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities, record_obj);
         }
     }
@@ -12218,6 +12776,9 @@ GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount,
                                                                                 pFragmentShadingRates, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -12227,6 +12788,9 @@ GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount,
                                                                       pFragmentShadingRates, record_obj);
         }
@@ -12241,6 +12805,9 @@ GetPhysicalDeviceFragmentShadingRatesKHR(VkPhysicalDevice physicalDevice, uint32
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceFragmentShadingRatesKHR(physicalDevice, pFragmentShadingRateCount,
                                                                        pFragmentShadingRates, record_obj);
         }
@@ -12924,6 +13491,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertie
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo,
                                                                                              pQualityLevelProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -12933,6 +13503,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertie
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo,
                                                                                    pQualityLevelProperties, record_obj);
         }
@@ -12947,6 +13520,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoEncodeQualityLevelPropertie
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(physicalDevice, pQualityLevelInfo,
                                                                                     pQualityLevelProperties, record_obj);
         }
@@ -13971,6 +14547,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(V
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties,
                                                                                        error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -13980,6 +14559,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(V
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties,
                                                                              record_obj);
         }
@@ -13993,6 +14575,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(V
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesKHR(physicalDevice, pPropertyCount, pProperties,
                                                                               record_obj);
         }
@@ -14048,6 +14633,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPh
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains,
                                                                                     error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -14057,6 +14645,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPh
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains,
                                                                           record_obj);
         }
@@ -14070,6 +14661,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPh
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsKHR(physicalDevice, pTimeDomainCount, pTimeDomains,
                                                                            record_obj);
         }
@@ -14355,6 +14949,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -14363,6 +14960,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, record_obj);
         }
     }
@@ -14376,6 +14976,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(VkInstance instance,
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, record_obj);
         }
     }
@@ -14392,6 +14995,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateDestroyDebugReportCallbackEXT(instance, callback, pAllocator, error_obj);
             if (skip) return;
         }
@@ -14400,6 +15006,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator, record_obj);
         }
     }
@@ -14411,6 +15020,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(VkInstance instance, Vk
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator, record_obj);
         }
     }
@@ -14427,6 +15039,9 @@ VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugRep
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateDebugReportMessageEXT(instance, flags, objectType, object, location, messageCode,
                                                              pLayerPrefix, pMessage, error_obj);
             if (skip) return;
@@ -14436,6 +15051,9 @@ VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugRep
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordDebugReportMessageEXT(instance, flags, objectType, object, location, messageCode, pLayerPrefix,
                                                    pMessage, record_obj);
         }
@@ -14448,6 +15066,9 @@ VKAPI_ATTR void VKAPI_CALL DebugReportMessageEXT(VkInstance instance, VkDebugRep
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordDebugReportMessageEXT(instance, flags, objectType, object, location, messageCode, pLayerPrefix,
                                                     pMessage, record_obj);
         }
@@ -15307,6 +15928,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateStreamDescriptorSurfaceGGP(VkInstance insta
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -15315,6 +15939,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateStreamDescriptorSurfaceGGP(VkInstance insta
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -15327,6 +15954,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateStreamDescriptorSurfaceGGP(VkInstance insta
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -15347,6 +15977,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceExternalImageFormatPropertiesNV(
                 physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -15356,6 +15989,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
                 physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties, record_obj);
         }
@@ -15370,6 +16006,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
                 physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties, record_obj);
         }
@@ -15429,6 +16068,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(VkInstance instance, const VkVi
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -15437,6 +16079,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(VkInstance instance, const VkVi
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -15449,6 +16094,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(VkInstance instance, const VkVi
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -15575,6 +16223,9 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(VkPhysicalDevice physicalDevice
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateReleaseDisplayEXT(physicalDevice, display, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -15583,6 +16234,9 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(VkPhysicalDevice physicalDevice
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordReleaseDisplayEXT(physicalDevice, display, record_obj);
         }
     }
@@ -15595,6 +16249,9 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(VkPhysicalDevice physicalDevice
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordReleaseDisplayEXT(physicalDevice, display, record_obj);
         }
     }
@@ -15611,6 +16268,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDe
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateAcquireXlibDisplayEXT(physicalDevice, dpy, display, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -15619,6 +16279,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDe
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, record_obj);
         }
     }
@@ -15631,6 +16294,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDe
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, record_obj);
         }
     }
@@ -15648,6 +16314,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physica
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -15656,6 +16325,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physica
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, record_obj);
         }
     }
@@ -15668,6 +16340,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physica
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, record_obj);
         }
     }
@@ -15686,6 +16361,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysic
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities,
                                                                                 error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -15695,6 +16373,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysic
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities, record_obj);
         }
     }
@@ -15707,6 +16388,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysic
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities, record_obj);
         }
     }
@@ -16124,6 +16808,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const Vk
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -16132,6 +16819,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const Vk
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -16144,6 +16834,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateIOSSurfaceMVK(VkInstance instance, const Vk
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -16162,6 +16855,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const 
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -16170,6 +16866,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const 
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -16182,6 +16881,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMacOSSurfaceMVK(VkInstance instance, const 
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -16493,6 +17195,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -16501,6 +17206,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, record_obj);
         }
     }
@@ -16514,6 +17222,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(VkInstance instance,
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, record_obj);
         }
     }
@@ -16530,6 +17241,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, Vk
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator, error_obj);
             if (skip) return;
         }
@@ -16538,6 +17252,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, Vk
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator, record_obj);
         }
     }
@@ -16549,6 +17266,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(VkInstance instance, Vk
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator, record_obj);
         }
     }
@@ -16565,6 +17285,9 @@ VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDeb
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |=
                 vo->PreCallValidateSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData, error_obj);
             if (skip) return;
@@ -16574,6 +17297,9 @@ VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDeb
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData, record_obj);
         }
     }
@@ -16584,6 +17310,9 @@ VKAPI_ATTR void VKAPI_CALL SubmitDebugUtilsMessageEXT(VkInstance instance, VkDeb
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData, record_obj);
         }
     }
@@ -16997,6 +17726,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalD
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties,
                                                                                  error_obj);
             if (skip) return;
@@ -17006,6 +17738,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalD
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties, record_obj);
         }
     }
@@ -17016,6 +17751,9 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalD
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceMultisamplePropertiesEXT(physicalDevice, samples, pMultisampleProperties,
                                                                         record_obj);
         }
@@ -17806,6 +18544,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPh
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains,
                                                                                     error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -17815,6 +18556,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPh
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains,
                                                                           record_obj);
         }
@@ -17828,6 +18572,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCalibrateableTimeDomainsEXT(VkPh
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(physicalDevice, pTimeDomainCount, pTimeDomains,
                                                                            record_obj);
         }
@@ -18577,6 +19324,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -18585,6 +19335,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -18597,6 +19350,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateImagePipeSurfaceFUCHSIA(VkInstance instance
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -18615,6 +19371,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const 
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -18623,6 +19382,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const 
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -18635,6 +19397,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(VkInstance instance, const 
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -18692,6 +19457,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(Vk
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties,
                                                                                       error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -18701,6 +19469,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(Vk
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties,
                                                                             record_obj);
         }
@@ -18714,6 +19485,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(Vk
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(physicalDevice, pPropertyCount, pProperties,
                                                                              record_obj);
         }
@@ -18732,6 +19506,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSupportedFramebufferMixedSamples
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
                 physicalDevice, pCombinationCount, pCombinations, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -18741,6 +19518,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSupportedFramebufferMixedSamples
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount,
                                                                                              pCombinations, record_obj);
         }
@@ -18755,6 +19535,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSupportedFramebufferMixedSamples
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount,
                                                                                               pCombinations, record_obj);
         }
@@ -18776,6 +19559,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
                                                                                 pPresentModes, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -18785,6 +19571,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
                                                                       pPresentModes, record_obj);
         }
@@ -18799,6 +19588,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount,
                                                                        pPresentModes, record_obj);
         }
@@ -18933,6 +19725,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateHeadlessSurfaceEXT(VkInstance instance, con
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -18941,6 +19736,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateHeadlessSurfaceEXT(VkInstance instance, con
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -18953,6 +19751,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateHeadlessSurfaceEXT(VkInstance instance, con
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -19964,6 +20765,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(VkPhysicalDevice physicalDev
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateAcquireDrmDisplayEXT(physicalDevice, drmFd, display, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -19972,6 +20776,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(VkPhysicalDevice physicalDev
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display, record_obj);
         }
     }
@@ -19984,6 +20791,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireDrmDisplayEXT(VkPhysicalDevice physicalDev
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordAcquireDrmDisplayEXT(physicalDevice, drmFd, display, record_obj);
         }
     }
@@ -20000,6 +20810,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDrmDisplayEXT(VkPhysicalDevice physicalDevice,
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -20008,6 +20821,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDrmDisplayEXT(VkPhysicalDevice physicalDevice,
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, record_obj);
         }
     }
@@ -20020,6 +20836,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDrmDisplayEXT(VkPhysicalDevice physicalDevice,
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display, record_obj);
         }
     }
@@ -20959,6 +21778,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDe
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateAcquireWinrtDisplayNV(physicalDevice, display, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -20967,6 +21789,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDe
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordAcquireWinrtDisplayNV(physicalDevice, display, record_obj);
         }
     }
@@ -20979,6 +21804,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AcquireWinrtDisplayNV(VkPhysicalDevice physicalDe
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordAcquireWinrtDisplayNV(physicalDevice, display, record_obj);
         }
     }
@@ -20995,6 +21823,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -21003,6 +21834,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, record_obj);
         }
     }
@@ -21015,6 +21849,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetWinrtDisplayNV(VkPhysicalDevice physicalDevice
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay, record_obj);
         }
     }
@@ -21033,6 +21870,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(VkInstance instance, con
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -21041,6 +21881,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(VkInstance instance, con
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -21053,6 +21896,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDirectFBSurfaceEXT(VkInstance instance, con
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateDirectFBSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -21070,6 +21916,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(V
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb,
                                                                                        error_obj);
             if (skip) return VK_FALSE;
@@ -21079,6 +21928,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(V
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb, record_obj);
         }
     }
@@ -21090,6 +21942,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceDirectFBPresentationSupportEXT(V
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceDirectFBPresentationSupportEXT(physicalDevice, queueFamilyIndex, dfb, record_obj);
         }
     }
@@ -21889,6 +22744,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(VkInstance instance, const
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
         }
@@ -21897,6 +22755,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(VkInstance instance, const
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -21909,6 +22770,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateScreenSurfaceQNX(VkInstance instance, const
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordCreateScreenSurfaceQNX(instance, pCreateInfo, pAllocator, pSurface, record_obj);
         }
     }
@@ -21927,6 +22791,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(VkP
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window,
                                                                                      error_obj);
             if (skip) return VK_FALSE;
@@ -21936,6 +22803,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(VkP
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window, record_obj);
         }
     }
@@ -21947,6 +22817,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceScreenPresentationSupportQNX(VkP
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(physicalDevice, queueFamilyIndex, window, record_obj);
         }
     }
@@ -24287,6 +25160,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceOpticalFlowImageFormatsNV(
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo,
                                                                                   pFormatCount, pImageFormatProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -24296,6 +25172,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceOpticalFlowImageFormatsNV(
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo, pFormatCount,
                                                                         pImageFormatProperties, record_obj);
         }
@@ -24310,6 +25189,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceOpticalFlowImageFormatsNV(
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(physicalDevice, pOpticalFlowImageFormatInfo, pFormatCount,
                                                                          pImageFormatProperties, record_obj);
         }
@@ -24740,6 +25622,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(Vk
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties,
                                                                                       error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -24749,6 +25634,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(Vk
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties,
                                                                             record_obj);
         }
@@ -24762,6 +25650,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(Vk
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(physicalDevice, pPropertyCount, pProperties,
                                                                              record_obj);
         }
@@ -25631,6 +26522,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensi
     {
         VVL_ZoneScopedN("PreCallValidate");
         for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             skip |= vo->PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
                 physicalDevice, pPropertyCount, pProperties, error_obj);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
@@ -25640,6 +26534,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensi
     {
         VVL_ZoneScopedN("PreCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PreCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(physicalDevice, pPropertyCount,
                                                                                               pProperties, record_obj);
         }
@@ -25654,6 +26551,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensi
     {
         VVL_ZoneScopedN("PostCallRecord");
         for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
             vo->PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(physicalDevice, pPropertyCount,
                                                                                                pProperties, record_obj);
         }

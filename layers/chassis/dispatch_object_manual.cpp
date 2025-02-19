@@ -718,7 +718,8 @@ void Device::ReleaseValidationObject(LayerObjectTypeId type_id) const {
         if ((*object_it)->container_type == type_id) {
             auto object = std::move(*object_it);
 
-            object_dispatch.erase(object_it);
+            // Do not remove the smart pointer, to not invalidate object_dispatch iterators
+            // object_dispatch.erase(object_it);
 
             for (auto intercept_vector_it = intercept_vectors.begin(); intercept_vector_it != intercept_vectors.end();
                  intercept_vector_it++) {
