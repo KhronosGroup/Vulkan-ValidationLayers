@@ -326,9 +326,16 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             ''')
             if not command.instance:
                 out.append(f'for (const auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallValidate{command.name[2:]}]) {{\n')
+                out.append(f'   if (!vo) {{\n')
+                out.append(f'      continue;\n')
+                out.append(f'   }}\n')
                 out.append('    auto lock = vo->ReadLock();\n')
             else:
                 out.append(f'for (const auto& vo : {dispatch}->object_dispatch) {{\n')
+                out.append('    if (!vo) {\n')
+                out.append('        continue;\n')
+                out.append('    }\n')
+
             out.append(f'    skip |= vo->PreCallValidate{command.name[2:]}({paramsList}, error_obj);\n')
             out.append(f'    if (skip) {return_map[command.returnType]}\n')
             out.append('}\n')
@@ -341,9 +348,16 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             ''')
             if not command.instance:
                 out.append(f'for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallRecord{command.name[2:]}]) {{\n')
+                out.append(f'   if (!vo) {{\n')
+                out.append(f'      continue;\n')
+                out.append(f'   }}\n')
                 out.append('    auto lock = vo->WriteLock();\n')
             else:
                 out.append(f'for (auto& vo : {dispatch}->object_dispatch) {{\n')
+                out.append('    if (!vo) {\n')
+                out.append('        continue;\n')
+                out.append('    }\n')
+
             out.append(f'vo->PreCallRecord{command.name[2:]}({paramsList}, record_obj);\n')
             out.append('    }\n')
             out.append('}\n')
@@ -413,6 +427,10 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                 out.append(f'for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPostCallRecord{command.name[2:]}]) {{\n')
             else:
                 out.append(f'for (auto& vo : {dispatch}->object_dispatch) {{\n')
+            out.append('    if (!vo) {\n')
+            out.append('        continue;\n')
+            out.append('    }\n')
+
 
             # These commands perform blocking operations during PostRecord phase. We might need to
             # release base::Device's lock for the period of blocking operation to avoid deadlocks.
