@@ -76,11 +76,12 @@ class AccelerationStructureNV : public Bindable {
 class AccelerationStructureKHR : public StateObject {
   public:
     AccelerationStructureKHR(VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
-                             std::shared_ptr<Buffer> &&buf_state)
+                             std::shared_ptr<Buffer> &&buf_state, const VkDeviceAddress buffer_device_address)
         : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR),
           safe_create_info(pCreateInfo),
           create_info(*safe_create_info.ptr()),
-          buffer_state(buf_state) {}
+          buffer_state(buf_state),
+          buffer_device_address(buffer_device_address) {}
     AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
 
     virtual ~AccelerationStructureKHR() {
@@ -120,11 +121,30 @@ class AccelerationStructureKHR : public StateObject {
         }
     }
 
+    // Returns the device address range effectively occupied by the acceleration structure,
+    // as defined by its creation info.
+    // It does NOT take into account the acceleration structure address as returned by
+    // vkGetAccelerationStructureDeviceAddress, this address may be at an offset
+    // of the buffer range backing the acceleration structure
+    vvl::range<VkDeviceAddress> GetDeviceAddressRange() const {
+        if (!buffer_state) {
+            return {};
+        }
+        if (buffer_state->deviceAddress != 0) {
+            return {buffer_state->deviceAddress + safe_create_info.offset,
+                    buffer_state->deviceAddress + safe_create_info.offset + safe_create_info.size};
+        }
+        return {buffer_device_address + safe_create_info.offset,
+                buffer_device_address + safe_create_info.offset + safe_create_info.size};
+    }
+
     const vku::safe_VkAccelerationStructureCreateInfoKHR safe_create_info;
     const VkAccelerationStructureCreateInfoKHR &create_info;
 
     uint64_t opaque_handle = 0;
     std::shared_ptr<vvl::Buffer> buffer_state{};
+    // Used in case buffer_state->deviceAddress is 0 (happens if app never queried address)
+    const VkDeviceAddress buffer_device_address = 0;
     std::optional<vku::safe_VkAccelerationStructureBuildGeometryInfoKHR> build_info_khr{};
     std::vector<VkAccelerationStructureBuildRangeInfoKHR> build_range_infos{};
     // You can't have is_built == false and a build_info_khr, but you can have is_built == true and no build_info_khr,

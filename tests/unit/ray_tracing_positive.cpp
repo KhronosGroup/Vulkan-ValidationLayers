@@ -1663,3 +1663,75 @@ TEST_F(PositiveRayTracing, SerializeAccelerationStructure) {
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
+
+TEST_F(PositiveRayTracing, AccelerationStructuresAndScratchBuffersAddressSharing) {
+    TEST_DESCRIPTION(
+        "Make sure that buffers backing acceleration structures and scratch buffers backed by the same VkDeviceMemory share the "
+        "same base address");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Only need to test on a real driver";
+    }
+
+    constexpr size_t build_info_count = 3;
+
+    // All buffers used to back destination acceleration struct and scratch will be bound to this memory chunk
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = 1u << 17;
+    vkt::DeviceMemory buffer_memory(*m_device, alloc_info);
+
+    // Test overlapping destination acceleration structure and scratch buffer
+    {
+        VkBufferCreateInfo dst_blas_buffer_ci = vku::InitStructHelper();
+        dst_blas_buffer_ci.size = 4096;
+        dst_blas_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                   VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                   VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        VkBufferCreateInfo scratch_buffer_ci = vku::InitStructHelper();
+        scratch_buffer_ci.size = alloc_info.allocationSize;
+        scratch_buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+        std::vector<vkt::Buffer> dst_blas_buffers(build_info_count);
+        std::vector<std::shared_ptr<vkt::Buffer>> scratch_buffers(build_info_count);
+        std::vector<vkt::as::BuildGeometryInfoKHR> blas_vec;
+
+        VkDeviceAddress ref_address = 0;
+        for (size_t i = 0; i < build_info_count; ++i) {
+            dst_blas_buffers[i].InitNoMemory(*m_device, dst_blas_buffer_ci);
+            vk::BindBufferMemory(device(), dst_blas_buffers[i].handle(), buffer_memory.handle(), 0);
+            scratch_buffers[i] = std::make_shared<vkt::Buffer>();
+            scratch_buffers[i]->InitNoMemory(*m_device, scratch_buffer_ci);
+            vk::BindBufferMemory(device(), scratch_buffers[i]->handle(), buffer_memory.handle(), 0);
+
+            const VkDeviceAddress scratch_address = scratch_buffers[i]->Address();
+            if (ref_address == 0) {
+                ref_address = scratch_address;
+            } else if (scratch_address != ref_address) {
+                ADD_FAILURE() << "Scratch buffer does not have the expected base address";
+            }
+
+            auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+            blas.GetDstAS()->SetDeviceBuffer(std::move(dst_blas_buffers[i]));
+            blas.GetDstAS()->SetSize(4096);
+            blas.SetScratchBuffer(std::move(scratch_buffers[i]));
+            blas.SetupBuild(true);
+
+            const VkDeviceAddress dst_as_address = blas.GetDstAS()->GetBuffer().Address();
+            if (dst_as_address != ref_address) {
+                ADD_FAILURE() << "Buffer backing destination acceleration structure does not have the expected base address";
+            }
+            blas_vec.emplace_back(std::move(blas));
+        }
+    }
+}

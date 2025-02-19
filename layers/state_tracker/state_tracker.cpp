@@ -48,6 +48,21 @@
 namespace vvl {
 Device::~Device() { DestroyObjectMaps(); }
 
+VkDeviceAddress Device::GetBufferDeviceAddressHelper(VkBuffer buffer) const {
+    VkBufferDeviceAddressInfo address_info = vku::InitStructHelper();
+    address_info.buffer = buffer;
+
+    if (api_version >= VK_API_VERSION_1_2) {
+        return DispatchGetBufferDeviceAddress(device, &address_info);
+    } else {
+        if (IsExtEnabled(extensions.vk_khr_buffer_device_address)) {
+            return DispatchGetBufferDeviceAddressKHR(device, &address_info);
+        } else {
+            return 0;
+        }
+    }
+}
+
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.
 static std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
@@ -366,6 +381,21 @@ struct BufferAddressInfillUpdateOps {
 
 std::shared_ptr<Buffer> Device::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *create_info) {
     return std::make_shared<Buffer>(*this, handle, create_info);
+}
+
+void Device::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                       const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, const RecordObject &record_obj,
+                                       chassis::CreateBuffer &chassis_state) {
+    if (pCreateInfo->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR) {
+        // When it comes to validation acceleration memory overlaps, it is much faster to
+        // work on device address ranges directly, but for that to be possible,
+        // buffers used to back acceleration structures must have been created with the
+        // VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT usage flag
+        // => Enforce it.
+        // Doing so will not modify VVL state tracking, and if the application forgot to set
+        // this flag, it will still be detected.
+        chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    }
 }
 
 void Device::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
@@ -2227,7 +2257,19 @@ void Device::PostCallRecordCreateAccelerationStructureNV(VkDevice device, const 
 std::shared_ptr<AccelerationStructureKHR> Device::CreateAccelerationStructureState(
     VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *create_info,
     std::shared_ptr<Buffer> &&buf_state) {
-    return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state));
+    // If the buffer's device address has not been queried,
+    // get it here. Since it is used for the purpose of
+    // validation, do not try to update buffer_state, since
+    // it only tracks application state.
+    VkDeviceAddress buffer_address = 0;
+    if (buf_state) {
+        if (buf_state->deviceAddress != 0) {
+            buffer_address = buf_state->deviceAddress;
+        } else if (buf_state->Binding()) {
+            buffer_address = GetBufferDeviceAddressHelper(buf_state->VkHandle());
+        }
+    }
+    return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state), buffer_address);
 }
 
 void Device::PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
