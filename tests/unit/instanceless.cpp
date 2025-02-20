@@ -338,13 +338,6 @@ TEST_F(NegativeInstanceless, ExtensionStructsWithoutExtensions) {
     vk::CreateInstance(&ici, nullptr, &instance);
     m_errorMonitor->VerifyFound();
 
-    VkValidationFeaturesEXT features = vku::InitStructHelper();
-    features.pNext = m_errorMonitor->GetDebugCreateInfo();
-    ici.pNext = &features;
-    m_errorMonitor->SetDesiredError("VUID-VkInstanceCreateInfo-pNext-10243");
-    vk::CreateInstance(&ici, nullptr, &instance);
-    m_errorMonitor->VerifyFound();
-
     // This must be last because it messes up the extension list
     VkDebugUtilsMessengerCreateInfoEXT debug_utils_messenger = vku::InitStructHelper();
     debug_utils_messenger.pNext = m_errorMonitor->GetDebugCreateInfo();

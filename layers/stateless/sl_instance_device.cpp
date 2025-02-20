@@ -226,13 +226,7 @@ bool Instance::PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreate
         return skip;
     }
 
-    const auto *validation_features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
-    if (validation_features && !instance_extensions.vk_ext_validation_features) {
-        skip |= LogError("VUID-VkInstanceCreateInfo-pNext-10243", instance, create_info_loc.dot(Field::ppEnabledExtensionNames),
-                         "does not include VK_EXT_validation_features, but the pNext chain includes VkValidationFeaturesEXT");
-        return skip;
-    }
-    if (validation_features) {
+    if (const auto *validation_features = vku::FindStructInPNextChain<VkValidationFeaturesEXT>(pCreateInfo->pNext)) {
         bool debug_printf = false;
         bool gpu_assisted = false;
         bool reserve_slot = false;
