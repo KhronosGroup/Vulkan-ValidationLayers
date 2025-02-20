@@ -29,6 +29,7 @@
 #include "error_message/error_strings.h"
 
 #include <algorithm>
+#include <iostream>
 
 bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const vvl::DeviceMemory &mem_info,
                                                                 VkDeviceSize mem_offset, const Location &loc) const {
@@ -270,6 +271,8 @@ bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAliasing
             src_as_state && info.mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
             const vvl::range<VkDeviceAddress> src_as_range = src_as_state->GetDeviceAddressRange();
 
+            std::cout << "pInfos[" << info_i << "].src_as addr range: " << string_range_hex(src_as_range) << std::endl;
+
             if (dst_as_state && dst_as_state->VkHandle() != src_as_state->VkHandle()) {
                 const vvl::range<VkDeviceAddress> dst_as_range = dst_as_state->GetDeviceAddressRange();
 
@@ -327,6 +330,10 @@ bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAliasing
         if (dst_as_state) {
             const AddressRange dst_as_address_range = {dst_as_state->GetDeviceAddressRange(), info_i,
                                                        AddressRangeOrigin::DstAccelStruct};
+
+            std::cout << "pInfos[" << info_i << "].dst_as addr range: " << string_range_hex(dst_as_address_range.range)
+                      << std::endl;
+
             const std::optional<AddressRange> overlapped_address_range = insert_address(address_ranges, dst_as_address_range);
             if (overlapped_address_range.has_value()) {
                 switch (overlapped_address_range->origin) {
@@ -387,6 +394,9 @@ bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAliasing
                                                                info.scratchData.deviceAddress + assumed_scratch_size};
 
             const AddressRange scratch_address_range = {scratch_range, info_i, AddressRangeOrigin::Scratch};
+
+            std::cout << "pInfos[" << info_i << "].scratch addr range: " << string_range_hex(scratch_range) << std::endl;
+
             const std::optional<AddressRange> overlapped_address_range = insert_address(address_ranges, scratch_address_range);
             if (overlapped_address_range.has_value()) {
                 switch (overlapped_address_range->origin) {
