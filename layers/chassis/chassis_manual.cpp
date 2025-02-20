@@ -37,32 +37,44 @@ namespace vulkan_layer_chassis {
 // Check enabled instance extensions against supported instance extension whitelist
 static void InstanceExtensionWhitelist(vvl::dispatch::Instance* layer_data, const VkInstanceCreateInfo* pCreateInfo,
                                        VkInstance instance) {
+    Location loc(vvl::Func::vkCreateInstance);
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        // Check for recognized instance extensions
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
-        if (!IsInstanceExtension(extension)) {
-            Location loc(vvl::Func::vkCreateInstance);
-            layer_data->LogWarning(kVUIDUndefined, layer_data->instance,
+        if (extension == vvl::Extension::Empty) {
+            layer_data->LogWarning("UNASSIGNED-CreateInstance-extension-not-found", layer_data->instance,
                                    loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
-                                   "%s is not supported by this layer.  Using this extension may adversely affect validation "
-                                   "results and/or produce undefined behavior.",
+                                   "%s is not a known extension string. Please make sure the spelling is correct. (If working on a "
+                                   "new extension, the validation code generation needs to be ran with the new vk.xml)",
                                    pCreateInfo->ppEnabledExtensionNames[i]);
+        } else if (!IsInstanceExtension(extension)) {
+            layer_data->LogWarning(
+                "UNASSIGNED-CreateInstance-extension-wrong-type", layer_data->instance,
+                loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
+                "%s is a device extension, not a instance extension. It should be set later during vkCreateDevice() time. (If you "
+                "are trying to enable the device extensions because it has some physical device level info, it is valid to query "
+                "the VkPhysicalDevice regardless of the extensions it supports.)",
+                pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 }
 
 // Check enabled device extensions against supported device extension whitelist
 static void DeviceExtensionWhitelist(vvl::dispatch::Device* layer_data, const VkDeviceCreateInfo* pCreateInfo, VkDevice device) {
+    Location loc(vvl::Func::vkCreateDevice);
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        // Check for recognized device extensions
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
-        if (!IsDeviceExtension(extension)) {
-            Location loc(vvl::Func::vkCreateDevice);
-            layer_data->LogWarning(kVUIDUndefined, layer_data->device,
+        if (extension == vvl::Extension::Empty) {
+            layer_data->LogWarning("UNASSIGNED-CreateDevice-extension-not-found", layer_data->device,
                                    loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
-                                   "%s is not supported by this layer.  Using this extension may adversely affect validation "
-                                   "results and/or produce undefined behavior.",
+                                   "%s is not a known extension string. Please make sure the spelling is correct. (If working on a "
+                                   "new extension, the validation code generation needs to be ran with the new vk.xml)",
                                    pCreateInfo->ppEnabledExtensionNames[i]);
+        } else if (!IsDeviceExtension(extension)) {
+            layer_data->LogWarning(
+                "UNASSIGNED-CreateDevice-extension-wrong-type", layer_data->device,
+                loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
+                "%s is a instance extension, not a device extension. It should be set before at vkCreateInstance().",
+                pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 }
