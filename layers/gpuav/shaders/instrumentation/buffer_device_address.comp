@@ -30,15 +30,15 @@ struct Range {
 // Ranges are supposed to:
 // 1) be stored for low to high
 // 2) not overlap
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBufferDeviceAddress, std430) buffer BuffAddrInputBuffer {
-    uint64_t bda_ranges_count;
+layout(buffer_reference, std430) buffer BDAInputBuffer {
+    // It is common that an app only has a single BDA address and it is used to poke inside a struct.
+    // This likely means there is only a single range being accessed, and for shader that do multiple checks,
+    // we can hopefully speed up runtime perf by hitting this early and leaving fast
+    // TODO - This was a workgroup temp variable, but compiler seem to not be able to handle it
+    uint index_cache;
+    uint bda_range_count;
     Range bda_ranges[];
 };
-
-// It is common that an app only has a single BDA address and it is used to poke inside a struct.
-// This likely means there is only a single range being accessed, and for shader that do multiple checks,
-// we can hopefully speed up runtime perf by hitting this early and leaving fast
-uint index_cache;
 
 bool inst_buffer_device_address(
     const uint inst_num,
@@ -54,15 +54,19 @@ bool inst_buffer_device_address(
     if ((addr & (alignment - 1)) != 0) {
         error_sub_code = kErrorSubCodeBufferDeviceAddressAlignment;
     } else {
-        const Range cache_range = bda_ranges[index_cache];
+        RootNode root_node = RootNode(root_node_address);
+        BDAInputBuffer in_buffer = root_node.binding_buffer_device_address;
+
+        const Range cache_range = in_buffer.bda_ranges[in_buffer.index_cache];
         if (addr >= cache_range.begin && ((addr + access_byte_size) <= cache_range.end)) {
             return true;
         }
 
         // Find out if addr is valid
         // ---
-        for (uint range_i = 0; range_i < uint(bda_ranges_count); ++range_i) {
-            const Range range = bda_ranges[range_i];
+        const uint max_count = in_buffer.bda_range_count;
+        for (uint range_i = 0; range_i < max_count; ++range_i) {
+            const Range range = in_buffer.bda_ranges[range_i];
             if (addr < range.begin) {
                 // Invalid address, proceed to error logging
                 break;
@@ -75,7 +79,7 @@ bool inst_buffer_device_address(
             if ((addr + access_byte_size) <= range.end) {
                 // addr >= range.begin && addr + access_byte_size <= range.end
                 // ==> valid access
-                index_cache = range_i;
+                in_buffer.index_cache = range_i;
                 return true;
             }
             // Address is above current range, proceed to next range.
