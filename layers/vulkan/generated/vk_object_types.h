@@ -3,10 +3,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,7 @@ typedef enum VulkanObjectType {
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type);
 const char* string_VulkanObjectType(VulkanObjectType type);
+const char* string_VkObjectTypeHandleName(VkObjectType type);
 
 // Helper function to get Official Vulkan VkObjectType enum from the internal layers version
 static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType internal_type) {
