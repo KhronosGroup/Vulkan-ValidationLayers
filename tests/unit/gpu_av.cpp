@@ -21,21 +21,10 @@ class NegativeGpuAV : public GpuAVTest {};
 
 TEST_F(NegativeGpuAV, ValidationAbort) {
     TEST_DESCRIPTION("GPU validation: Verify that aborting GPU-AV is safe.");
-    RETURN_IF_SKIP(InitGpuAvFramework());
-
-    PFN_vkSetPhysicalDeviceFeaturesEXT fpvkSetPhysicalDeviceFeaturesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFeaturesEXT fpvkGetOriginalPhysicalDeviceFeaturesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFeaturesEXT, fpvkGetOriginalPhysicalDeviceFeaturesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
-
-    VkPhysicalDeviceFeatures features = {};
-    fpvkGetOriginalPhysicalDeviceFeaturesEXT(Gpu(), &features);
-
-    // Disable features necessary for GPU-AV so initialization aborts
-    features.vertexPipelineStoresAndAtomics = false;
-    features.fragmentStoresAndAtomics = false;
-    fpvkSetPhysicalDeviceFeaturesEXT(Gpu(), features);
+    // GPU Shader Instrumentation requires Vulkan 1.1 or later
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
+    RETURN_IF_SKIP(InitFramework(&validation_features));
     m_errorMonitor->SetDesiredError("GPU-AV is being disabled");
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->VerifyFound();
@@ -342,7 +331,7 @@ TEST_F(NegativeGpuAV, ForceUniformAndStorageBuffer8BitAccess) {
     m_errorMonitor->SetAllowedFailureMsg(
         "Buffer device address validation option was enabled, but required buffer device address extension and/or features are not "
         "enabled");
-    m_errorMonitor->SetAllowedFailureMsg("Ray Query validation option was enabled, but the rayQuery feature is not enabled");
+    m_errorMonitor->SetAllowedFailureMsg("Ray Query validation option was enabled");
     m_errorMonitor->SetAllowedFailureMsg(
         "vkGetDeviceProcAddr(): pName is trying to grab vkGetPhysicalDeviceCalibrateableTimeDomainsKHR which is an instance level "
         "function");

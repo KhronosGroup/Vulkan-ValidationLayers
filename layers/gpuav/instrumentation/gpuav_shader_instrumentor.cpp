@@ -71,18 +71,33 @@ WriteLockGuard GpuShaderInstrumentor::WriteLock() {
 void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     BaseClass::FinishDeviceSetup(pCreateInfo, loc);
 
-    VkPhysicalDeviceFeatures supported_features{};
-    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
-    if (!supported_features.fragmentStoresAndAtomics) {
+    // Check hard requirements for GPU-AV (after BaseClass::FinishDeviceSetup has set enabled_features)
+    if (!enabled_features.fragmentStoresAndAtomics) {
         InternalError(
             device, loc,
             "GPU Shader Instrumentation requires fragmentStoresAndAtomics to allow writting out data inside the fragment shader.");
         return;
     }
-    if (!supported_features.vertexPipelineStoresAndAtomics) {
+    if (!enabled_features.vertexPipelineStoresAndAtomics) {
         InternalError(device, loc,
                       "GPU Shader Instrumentation requires vertexPipelineStoresAndAtomics to allow writting out data inside the "
                       "vertex shader.");
+        return;
+    }
+    if (!enabled_features.timelineSemaphore) {
+        InternalError(device, loc,
+                      "GPU Shader Instrumentation requires timelineSemaphore to manage when command buffers are submitted at queue "
+                      "submit time.");
+        return;
+    }
+    if (!enabled_features.bufferDeviceAddress) {
+        InternalError(device, loc, "GPU Shader Instrumentation requires bufferDeviceAddress to manage writting out of the shader.");
+        return;
+    }
+    if (enabled_features.vulkanMemoryModel && !enabled_features.vulkanMemoryModelDeviceScope) {
+        InternalError(device, loc,
+                      "GPU Shader Instrumentation requires vulkanMemoryModelDeviceScope feature (if vulkanMemoryModel is enabled) "
+                      "to let us call atomicAdd to the output buffer.");
         return;
     }
 
@@ -1194,7 +1209,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
 
     // Post Process instrumentation passes assume the things inside are valid, but putting at the end, things above will wrap checks
     // in a if/else, this means they will be gaurded as if they were inside the above passes
-    if (gpuav_settings.shader_instrumentation.post_process_descriptor_index) {
+    if (gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) {
         spirv::PostProcessDescriptorIndexingPass pass(module);
         modified |= pass.Run();
     }
