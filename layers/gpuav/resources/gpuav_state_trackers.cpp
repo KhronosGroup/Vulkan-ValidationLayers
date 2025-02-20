@@ -16,6 +16,7 @@
  */
 
 #include "gpuav/resources/gpuav_state_trackers.h"
+#include <cstdint>
 
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/core/gpuav.h"
@@ -200,7 +201,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
     // BDA snapshot
     if (gpuav->gpuav_settings.shader_instrumentation.buffer_device_address) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         buffer_info.size = GetBdaRangesBufferByteSize();
         // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
@@ -308,11 +309,13 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
 
     // Update buffer device address table
     // ---
-    auto bda_table_ptr = (VkDeviceAddress *)bda_ranges_snapshot_.GetMappedPtr();
+    auto bda_table_ptr = (uint32_t *)bda_ranges_snapshot_.GetMappedPtr();
 
     // Buffer device address table layout
     // Ranges are sorted from low to high, and do not overlap
-    // QWord 0 | Number of *ranges* (1 range occupies 2 QWords)
+    // QWord 0 | split up into two dwords
+    //     DWord 0 | Number of *ranges* (1 range occupies 2 QWords)
+    //     DWord 1 | unused
     // QWord 1 | Range 1 begin
     // QWord 2 | Range 1 end
     // QWord 3 | Range 2 begin
@@ -321,10 +324,10 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
 
     const size_t max_recordable_ranges =
         static_cast<size_t>((GetBdaRangesBufferByteSize() - sizeof(uint64_t)) / (2 * sizeof(VkDeviceAddress)));
-    auto bda_ranges = reinterpret_cast<vvl::Device::BufferAddressRange *>(bda_table_ptr + 1);
+    auto bda_ranges = reinterpret_cast<vvl::Device::BufferAddressRange *>(bda_table_ptr + 2);
     const auto [ranges_to_update_count, total_address_ranges_count] =
         gpuav->GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
-    bda_table_ptr[0] = ranges_to_update_count;
+    bda_table_ptr[0] = static_cast<uint32_t>(ranges_to_update_count);
 
     if (total_address_ranges_count > size_t(gpuav->gpuav_settings.max_bda_in_use)) {
         std::ostringstream problem_string;
@@ -341,6 +344,9 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
     // Flush the BDA buffer before un-mapping so that the new state is visible to the GPU
     bda_ranges_snapshot_.FlushAllocation(loc);
     bda_ranges_snapshot_version_ = gpuav->buffer_device_address_ranges_version;
+
+    auto root_node_ptr = (glsl::RootNode *)gpuav->root_node_.GetMappedPtr();
+    root_node_ptr->binding_buffer_device_address = bda_ranges_snapshot_.Address();
 
     return true;
 }

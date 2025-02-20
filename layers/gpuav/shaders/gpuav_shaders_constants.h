@@ -1,6 +1,6 @@
-// Copyright (c) 2021-2024 The Khronos Group Inc.
-// Copyright (c) 2021-2024 Valve Corporation
-// Copyright (c) 2021-2024 LunarG, Inc.
+// Copyright (c) 2021-2025 The Khronos Group Inc.
+// Copyright (c) 2021-2025 Valve Corporation
+// Copyright (c) 2021-2025 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,7 +41,14 @@ const uint kMaxErrorsPerCmd = 6;
 // Instead of having to create a variable and pass it in each time for every function call made, we use these values to map
 // constants in the GLSL to be updated with constant values known when we are doing the linking at GPU-AV runtime. (Similar to
 // Specialization Constant)
+// Even if the app uses the same constant, it will have been swapped out prior to linking.
 const uint kLinkShaderId = 0x0DEAD001;
+// This will look like in the SPIR-V
+//   %a = OpConstant %2 0x0DEAD002
+//   %b = OpConstant %2 0x0DEAD003
+//   %c = OpConstantComposite %uvec2 %a %b
+const uint kLinkRootNodeAddressLow = 0x0DEAD002;
+const uint kLinkRootNodeAddressHigh = 0x0DEAD003;
 
 // This is just a placeholder, honestly could be anything, will be replaced when linking to the runtime descriptor set choosen
 const int kInstDefaultDescriptorSet = 7;
@@ -55,11 +62,10 @@ const int kBindingInstErrorBuffer = 1;
 const int kBindingInstPostProcess = 2;
 // Each check that requires additional input to be sent must reserve its own binding slot
 const int kBindingInstDescriptorIndexingOOB = 3;
-const int kBindingInstBufferDeviceAddress = 4;
-const int kBindingInstActionIndex = 5;
-const int kBindingInstCmdResourceIndex = 6;
-const int kBindingInstCmdErrorsCount = 7;
-const int kBindingInstVertexAttributeFetchLimits = 8;
+const int kBindingInstActionIndex = 4;
+const int kBindingInstCmdResourceIndex = 5;
+const int kBindingInstCmdErrorsCount = 6;
+const int kBindingInstVertexAttributeFetchLimits = 7;
 
 // Diagnostic calls
 // ---

@@ -165,3 +165,11 @@ sample(imageArray[8], c);  // access 3
 Here we normally check all 3 access for being valid and safely wrap it in a `if` statement so the application will not crash. With `unsafe mode` we will only check the first access to `imageArray[8]` because it is valid, it will save the exponential cost of compiling to check the rest.
 
 The goal with `unsafe mode` is to help people get going with GPU-AV by making it faster, If they are still finding a crash with `unsafe mode`, it hopefully can be isolated so they can then turn off `unsafe mode` to do the full validaition without crashing. A future extension will hopefully provide another mechanism to stop the shader upon the first invalid access.
+
+## Creating a BDA Root Node
+
+We have used descriptors in the past to bind our buffers, but are moving to doing it all ourselves with Buffer Device Address. This gives GPU-AV full control and flexibility for us control of how we bind our resources for the shaders.
+
+The diagram below shows how we create a "Root Node" that works like a descriptor set and then instead of bindings, we just apply our addresses to the root node.
+
+![alt_text](images/gpu_av_bda_for_descriptors.svg "gpu_av_bda_for_descriptors.svg")

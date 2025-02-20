@@ -76,7 +76,7 @@ class Validator : public GpuShaderInstrumentor {
 
   public:
     Validator(vvl::dispatch::Device* dev, Instance* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted), indices_buffer_(*this) {}
+        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted), root_node_(*this), indices_buffer_(*this) {}
 
     // gpuav_setup.cpp
     // -------------
@@ -444,6 +444,10 @@ class Validator : public GpuShaderInstrumentor {
 
     VmaAllocator vma_allocator_ = {};
     std::unique_ptr<vko::DescriptorSetManager> desc_set_manager_;
+
+    // Acts as a "descriptor set slot" and is the buffer that points to the other bda pointers
+    // see docs/gpu_av_shader_instrumentation.md
+    vko::Buffer root_node_;
 
     vko::Buffer indices_buffer_;
     unsigned int indices_buffer_alignment_ = 0;

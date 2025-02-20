@@ -349,22 +349,6 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
         desc_writes.emplace_back(wds);
     }
 
-    // BDA snapshot buffer
-    VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
-    if (gpuav.gpuav_settings.shader_instrumentation.buffer_device_address) {
-        bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-        bda_input_desc_buffer_info.buffer = cb_state.GetBdaRangesSnapshot().VkHandle();
-        bda_input_desc_buffer_info.offset = 0;
-
-        VkWriteDescriptorSet wds = vku::InitStructHelper();
-        wds.dstBinding = glsl::kBindingInstBufferDeviceAddress;
-        wds.descriptorCount = 1;
-        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        wds.pBufferInfo = &bda_input_desc_buffer_info;
-        wds.dstSet = instrumentation_desc_set;
-        desc_writes.emplace_back(wds);
-    }
-
     // Vertex attribute fetching
     VkDescriptorBufferInfo vertex_attribute_fetch_limits_buffer_bi = {};
     if (gpuav.gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob) {
@@ -449,7 +433,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
 
     // Pathetic way of trying to make sure we take care of updating all
     // bindings of the instrumentation descriptor set
-    assert(gpuav.instrumentation_bindings_.size() == 9);
+    assert(gpuav.instrumentation_bindings_.size() == 8);
 
     if (gpuav.gpuav_settings.debug_printf_enabled) {
         if (!debug_printf::UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, bind_point, loc)) {

@@ -16,12 +16,15 @@
  */
 #pragma once
 
+#include <vulkan/vulkan_core.h>
 #include "containers/custom_containers.h"
 #include "error_message/error_location.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/state_tracker.h"
 #include "gpuav/spirv/interface.h"
+#include "gpuav/resources/gpuav_vulkan_objects.h"
 
+#include <cstdint>
 #include <vector>
 
 // There is a spirv::Instruction used for normal validation.
@@ -218,6 +221,10 @@ class GpuShaderInstrumentor : public vvl::Device {
     // It should only be used after calls that might abort, not to be used for guarding a function (unless a case is found that make
     // sense too)
     mutable bool aborted_ = false;
+
+    // We need a copy here because we can't have the vko::Buffer object in this class, but also need to pass this in during shader
+    // instrumentation
+    VkDeviceAddress root_node_address_;
 
     std::atomic<uint32_t> unique_shader_module_id_ = 1;  // zero represents no shader module found
     // The descriptor slot we will be injecting our error buffer into

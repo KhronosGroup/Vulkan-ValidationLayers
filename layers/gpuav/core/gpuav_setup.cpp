@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstring>
 #include <string>
+#include "gpuav/resources/gpuav_shader_resources.h"
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #include <unistd.h>
 #endif
@@ -227,8 +228,6 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
         {glsl::kBindingInstPostProcess, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Buffer holding input from CPU into the shader for descriptor indexing
         {glsl::kBindingInstDescriptorIndexingOOB, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-        // Buffer holding buffer device addresses
-        {glsl::kBindingInstBufferDeviceAddress, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Buffer holding action command index in command buffer
         {glsl::kBindingInstActionIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
         // Buffer holding a resource index from the per command buffer command resources list
@@ -291,6 +290,22 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
             InternalVmaError(device, loc, "Unable to find memory type index.");
             return;
         }
+    }
+
+    // Create buffer for Root Note
+    {
+        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        buffer_info.size = sizeof(glsl::RootNode);
+
+        VmaAllocationCreateInfo alloc_info{};
+        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        const bool success = root_node_.Create(loc, &buffer_info, &alloc_info);
+        if (!success) {
+            return;
+        }
+        root_node_address_ = root_node_.Address();
     }
 
     // Create command indices buffer
