@@ -5111,7 +5111,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                              FormatHandle(dst_resource.image_state->Handle()).c_str(), FormatHandle(*vs_state).c_str());
         }
 
-        bool dst_same_as_setup = (setup_resource == dst_resource);
+        bool dst_same_as_setup = (setup_resource == dst_resource) || !setup_resource;
 
         VkImageLayout expected_layout =
             dst_same_as_setup ? VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR : VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR;
