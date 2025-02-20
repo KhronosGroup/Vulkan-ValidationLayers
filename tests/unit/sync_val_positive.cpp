@@ -707,8 +707,8 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
 
     const vkt::Buffer buffer0(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     const vkt::Buffer buffer1(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
-    const vkt::BufferView buffer_view0(*m_device, vkt::BufferView::CreateInfo(buffer0, VK_FORMAT_R8G8B8A8_UINT));
-    const vkt::BufferView buffer_view1(*m_device, vkt::BufferView::CreateInfo(buffer1, VK_FORMAT_R8G8B8A8_UINT));
+    const vkt::BufferView buffer_view0(*m_device, buffer0, VK_FORMAT_R8G8B8A8_UINT);
+    const vkt::BufferView buffer_view1(*m_device, buffer1, VK_FORMAT_R8G8B8A8_UINT);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
