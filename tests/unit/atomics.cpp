@@ -1335,12 +1335,7 @@ TEST_F(NegativeAtomic, InvalidStorageOperation) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
-
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = buffer.handle();
-    bvci.format = buffer_view_format;
-    bvci.range = VK_WHOLE_SIZE;
-    vkt::BufferView buffer_view(*m_device, bvci);
+    vkt::BufferView buffer_view(*m_device, buffer, buffer_view_format);
 
     char const *fsSource = R"glsl(
         #version 450

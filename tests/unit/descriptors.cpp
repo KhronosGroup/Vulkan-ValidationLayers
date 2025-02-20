@@ -2065,14 +2065,8 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
     vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
     vkt::Buffer storage_texel_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
 
-    auto buff_view_ci = vkt::BufferView::CreateInfo(buffer.handle(), VK_FORMAT_R8_UNORM);
-    vkt::BufferView buffer_view_obj, storage_texel_buffer_view_obj;
-    buffer_view_obj.init(*m_device, buff_view_ci);
-    buff_view_ci.buffer = storage_texel_buffer.handle();
-    storage_texel_buffer_view_obj.init(*m_device, buff_view_ci);
-    ASSERT_TRUE(buffer_view_obj.initialized() && storage_texel_buffer_view_obj.initialized());
-    VkBufferView buffer_view = buffer_view_obj.handle();
-    VkBufferView storage_texel_buffer_view = storage_texel_buffer_view_obj.handle();
+    vkt::BufferView buffer_view_obj(*m_device, buffer, VK_FORMAT_R8_UNORM);
+    vkt::BufferView storage_texel_buffer_view_obj(*m_device, storage_texel_buffer, VK_FORMAT_R8_UNORM);
 
     // Create an image to be used for invalid updates
     vkt::Image image_obj(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -2089,7 +2083,7 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
-    descriptor_write.pTexelBufferView = &buffer_view;
+    descriptor_write.pTexelBufferView = &buffer_view_obj.handle();
     descriptor_write.pBufferInfo = &buff_info;
     descriptor_write.pImageInfo = &img_info;
 
@@ -2111,7 +2105,8 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
     for (uint32_t i = 1; i < kLocalDescriptorTypeRangeSize; ++i) {
         if (VkDescriptorType(i) == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
             // Now check for UNIFORM_TEXEL_BUFFER using storage_texel_buffer_view
-            descriptor_write.pTexelBufferView = &storage_texel_buffer_view;
+            descriptor_write.pTexelBufferView = &storage_texel_buffer_view_obj.handle();
+            ;
         }
         descriptor_write.descriptorType = VkDescriptorType(i);
         descriptor_write.dstSet = descriptor_sets[i]->handle();
@@ -2121,7 +2116,8 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
 
         m_errorMonitor->VerifyFound();
         if (VkDescriptorType(i) == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
-            descriptor_write.pTexelBufferView = &buffer_view;
+            descriptor_write.pTexelBufferView = &buffer_view_obj.handle();
+            ;
         }
     }
 }
@@ -2148,12 +2144,7 @@ TEST_F(NegativeDescriptors, DSUsageBitsFlags2) {
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
     vkt::Buffer buffer(*m_device, buffer_create_info);
-
-    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
-    buff_view_ci.buffer = buffer.handle();
-    buff_view_ci.format = buffer_format;
-    buff_view_ci.range = VK_WHOLE_SIZE;
-    vkt::BufferView buffer_view(*m_device, buff_view_ci);
+    vkt::BufferView buffer_view(*m_device, buffer, buffer_format);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},

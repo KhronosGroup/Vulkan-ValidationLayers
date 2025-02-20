@@ -682,6 +682,10 @@ class BufferView : public internal::NonDispHandle<VkBufferView> {
   public:
     BufferView() = default;
     BufferView(const Device &dev, const VkBufferViewCreateInfo &info) { init(dev, info); }
+    BufferView(const Device &dev, VkBuffer buffer, VkFormat format, VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE) {
+        VkBufferViewCreateInfo buffer_view_ci = CreateInfo(buffer, format, offset, range);
+        init(dev, buffer_view_ci);
+    }
     ~BufferView() noexcept;
     void destroy() noexcept;
 
