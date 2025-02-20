@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <array>
 #include <cmath>
 #include <cstring>
 #include <string>
@@ -74,34 +75,6 @@ std::shared_ptr<vvl::Queue> Validator::CreateQueue(VkQueue handle, uint32_t fami
                                                    const VkQueueFamilyProperties &queueFamilyProperties) {
     return std::static_pointer_cast<vvl::Queue>(
         std::make_shared<Queue>(*this, handle, family_index, queue_index, flags, queueFamilyProperties, timeline_khr_));
-}
-
-static std::vector<VkExtensionProperties> GetExtensions(VkPhysicalDevice physical_device) {
-    VkResult err;
-    uint32_t extension_count = 512;
-    std::vector<VkExtensionProperties> extensions(extension_count);
-    for (;;) {
-        err = DispatchEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, extensions.data());
-        if (err == VK_SUCCESS) {
-            extensions.resize(extension_count);
-            return extensions;
-        } else if (err == VK_INCOMPLETE) {
-            extension_count *= 2;  // wasn't enough space, increase it
-            extensions.resize(extension_count);
-        } else {
-            return {};
-        }
-    }
-}
-
-static bool IsExtensionAvailable(const char *extension_name, const std::vector<VkExtensionProperties> &available_extensions) {
-    for (const VkExtensionProperties &ext : available_extensions) {
-        if (strncmp(extension_name, ext.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 // Trampolines to make VMA call Dispatch for Vulkan calls
@@ -175,16 +148,14 @@ static VKAPI_ATTR void VKAPI_CALL gpuVkCmdCopyBuffer(VkCommandBuffer commandBuff
 }
 
 static VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device, VkDevice device,
-                                  bool use_buffer_device_address, VmaAllocator *pAllocator) {
+                                  VmaAllocator *pAllocator) {
     VmaVulkanFunctions functions;
     VmaAllocatorCreateInfo allocator_info = {};
     allocator_info.instance = instance;
     allocator_info.device = device;
     allocator_info.physicalDevice = physical_device;
 
-    if (use_buffer_device_address) {
-        allocator_info.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-    }
+    allocator_info.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     functions.vkGetInstanceProcAddr = static_cast<PFN_vkGetInstanceProcAddr>(gpuVkGetInstanceProcAddr);
     functions.vkGetDeviceProcAddr = static_cast<PFN_vkGetDeviceProcAddr>(gpuVkGetDeviceProcAddr);
@@ -221,213 +192,7 @@ void Instance::PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const 
         return;
     }
 
-    // In PreCallRecord this is all about trying to turn on as many feature/extension as possible on behalf of the app
-    // If the features are not supported, can't internal error until post device creation
-    VkPhysicalDeviceFeatures supported_features{};
-    DispatchGetPhysicalDeviceFeatures(physicalDevice, &supported_features);
-
-    VkPhysicalDeviceFeatures *enabled_features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
-    if (!enabled_features) {
-        // Look in a potential VkPhysicalDeviceFeatures2 feature struct
-        if (auto *enabled_features_2 = const_cast<VkPhysicalDeviceFeatures2 *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext))) {
-            enabled_features = &enabled_features_2->features;
-        }
-    }
-    if (enabled_features) {
-        if (supported_features.fragmentStoresAndAtomics && !enabled_features->fragmentStoresAndAtomics) {
-            InternalWarning(instance, record_obj.location, "Forcing fragmentStoresAndAtomics to VK_TRUE");
-            enabled_features->fragmentStoresAndAtomics = VK_TRUE;
-        }
-        if (supported_features.vertexPipelineStoresAndAtomics && !enabled_features->vertexPipelineStoresAndAtomics) {
-            InternalWarning(instance, record_obj.location, "Forcing vertexPipelineStoresAndAtomics to VK_TRUE");
-            enabled_features->vertexPipelineStoresAndAtomics = VK_TRUE;
-        }
-        if (supported_features.shaderInt64 && !enabled_features->shaderInt64) {
-            InternalWarning(instance, record_obj.location, "Forcing shaderInt64 to VK_TRUE");
-            enabled_features->shaderInt64 = VK_TRUE;
-        }
-    }
-
-    std::vector<VkExtensionProperties> available_extensions = GetExtensions(physicalDevice);
-
-    auto add_missing_features = [this, &record_obj, modified_create_info]() {
-        // Add timeline semaphore feature - This is required as we use it to manage when command buffers are submitted at queue
-        // submit time
-        if (auto *ts_features = const_cast<VkPhysicalDeviceTimelineSemaphoreFeatures *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceTimelineSemaphoreFeatures>(modified_create_info))) {
-            if (ts_features->timelineSemaphore == VK_FALSE) {
-                InternalWarning(instance, record_obj.location,
-                                "Forcing VkPhysicalDeviceTimelineSemaphoreFeatures::timelineSemaphore to VK_TRUE");
-                ts_features->timelineSemaphore = VK_TRUE;
-            }
-        } else {
-            InternalWarning(instance, record_obj.location,
-                            "Adding a VkPhysicalDeviceTimelineSemaphoreFeatures to pNext with timelineSemaphore set to VK_TRUE");
-            VkPhysicalDeviceTimelineSemaphoreFeatures new_ts_features = vku::InitStructHelper();
-            new_ts_features.timelineSemaphore = VK_TRUE;
-            vku::AddToPnext(*modified_create_info, new_ts_features);
-        }
-
-        // need vulkanMemoryModelDeviceScope feature to let us call atomicAdd to the output buffer
-        if (auto *mm_features = const_cast<VkPhysicalDeviceVulkanMemoryModelFeatures *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceVulkanMemoryModelFeatures>(modified_create_info))) {
-            if (mm_features->vulkanMemoryModel == VK_FALSE) {
-                InternalWarning(instance, record_obj.location,
-                                "Forcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModel to VK_TRUE");
-                mm_features->vulkanMemoryModel = VK_TRUE;
-            }
-            if (mm_features->vulkanMemoryModelDeviceScope == VK_FALSE) {
-                InternalWarning(instance, record_obj.location,
-                                "Forcing VkPhysicalDeviceVulkanMemoryModelFeatures::vulkanMemoryModelDeviceScope to VK_TRUE");
-                mm_features->vulkanMemoryModelDeviceScope = VK_TRUE;
-            }
-        } else {
-            InternalWarning(instance, record_obj.location,
-                            "Adding a VkPhysicalDeviceVulkanMemoryModelFeatures to pNext with vulkanMemoryModel and "
-                            "vulkanMemoryModelDeviceScope set to VK_TRUE");
-            VkPhysicalDeviceVulkanMemoryModelFeatures new_mm_features = vku::InitStructHelper();
-            new_mm_features.vulkanMemoryModel = VK_TRUE;
-            new_mm_features.vulkanMemoryModelDeviceScope = VK_TRUE;
-            vku::AddToPnext(*modified_create_info, new_mm_features);
-        }
-    };
-
-    if (api_version > VK_API_VERSION_1_1) {
-        if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
-            if (features12->timelineSemaphore == VK_FALSE) {
-                InternalWarning(instance, record_obj.location,
-                                "Forcing VkPhysicalDeviceVulkan12Features::timelineSemaphore to VK_TRUE");
-                features12->timelineSemaphore = VK_TRUE;
-            }
-
-            if (features12->vulkanMemoryModel == VK_FALSE) {
-                InternalWarning(instance, record_obj.location,
-                                "Forcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModel to VK_TRUE");
-                features12->vulkanMemoryModel = VK_TRUE;
-            }
-            if (features12->vulkanMemoryModelDeviceScope == VK_FALSE) {
-                InternalWarning(instance, record_obj.location,
-                                "Forcing VkPhysicalDeviceVulkan12Features::vulkanMemoryModelDeviceScope to VK_TRUE");
-                features12->vulkanMemoryModelDeviceScope = VK_TRUE;
-            }
-        } else {
-            add_missing_features();
-        }
-    } else if (api_version == VK_API_VERSION_1_1) {
-        // Add our new extensions (will only add if found)
-        const std::string_view ts_ext{"VK_KHR_timeline_semaphore"};
-        vku::AddExtension(*modified_create_info, ts_ext.data());
-        const std::string_view mm_ext{"VK_KHR_vulkan_memory_model"};
-        vku::AddExtension(*modified_create_info, mm_ext.data());
-        add_missing_features();
-        timeline_khr_ = true;
-    }
-
-    // Force bufferDeviceAddress feature if available
-    // ---
-    auto add_bda_feature = [this, &record_obj, modified_create_info]() {
-        // Add buffer device address feature
-        if (auto *bda_features = const_cast<VkPhysicalDeviceBufferDeviceAddressFeatures *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceBufferDeviceAddressFeatures>(modified_create_info))) {
-            if (!bda_features->bufferDeviceAddress) {
-                InternalWarning(instance, record_obj.location,
-                                "Forcing VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress to VK_TRUE");
-                bda_features->bufferDeviceAddress = VK_TRUE;
-            }
-        } else {
-            InternalWarning(
-                instance, record_obj.location,
-                "Adding a VkPhysicalDeviceBufferDeviceAddressFeatures to pNext with bufferDeviceAddress set to VK_TRUE");
-            VkPhysicalDeviceBufferDeviceAddressFeatures new_bda_features = vku::InitStructHelper();
-            new_bda_features.bufferDeviceAddress = VK_TRUE;
-            vku::AddToPnext(*modified_create_info, new_bda_features);
-        }
-    };
-
-    if (api_version >= VK_API_VERSION_1_2) {
-        if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
-            if (!features12->bufferDeviceAddress) {
-                InternalWarning(instance, record_obj.location,
-                                "Forcing VkPhysicalDeviceVulkan12Features::bufferDeviceAddress to VK_TRUE");
-                features12->bufferDeviceAddress = VK_TRUE;
-            }
-        } else {
-            add_bda_feature();
-        }
-    } else if (IsExtensionAvailable(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, available_extensions)) {
-        // Add our new extensions, only add if not found
-        vku::AddExtension(*modified_create_info, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-        add_bda_feature();
-    }
-
-    // Force uniformAndStorageBuffer8BitAccess feature if available and needed
-    // ---
-    if (gpuav_settings.validate_buffer_copies) {
-        VkPhysicalDevice8BitStorageFeatures eight_bit_feature = vku::InitStructHelper();
-        VkPhysicalDeviceFeatures2 features_2 = vku::InitStructHelper(&eight_bit_feature);
-        DispatchGetPhysicalDeviceFeatures2(physicalDevice, &features_2);
-        // uniformAndStorageBuffer8BitAccess is optional in 1.2. Only force on if available.
-        if (eight_bit_feature.uniformAndStorageBuffer8BitAccess) {
-            auto add_8bit_access_feature = [this, &record_obj, modified_create_info]() {
-                // Add uniformAndStorageBuffer8BitAccess feature
-                if (auto *eight_bit_access_feature = const_cast<VkPhysicalDevice8BitStorageFeatures *>(
-                        vku::FindStructInPNextChain<VkPhysicalDevice8BitStorageFeatures>(modified_create_info))) {
-                    if (!eight_bit_access_feature->uniformAndStorageBuffer8BitAccess) {
-                        InternalWarning(
-                            instance, record_obj.location,
-                            "Forcing VkPhysicalDevice8BitStorageFeatures::uniformAndStorageBuffer8BitAccess to VK_TRUE");
-                        eight_bit_access_feature->uniformAndStorageBuffer8BitAccess = VK_TRUE;
-                    }
-                } else {
-                    InternalWarning(instance, record_obj.location,
-                                    "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with uniformAndStorageBuffer8BitAccess "
-                                    "set to VK_TRUE");
-                    VkPhysicalDevice8BitStorageFeatures new_bda_features = vku::InitStructHelper();
-                    new_bda_features.uniformAndStorageBuffer8BitAccess = VK_TRUE;
-                    vku::AddToPnext(*modified_create_info, new_bda_features);
-                }
-            };
-
-            if (api_version >= VK_API_VERSION_1_2) {
-                if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
-                        vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
-                    if (!features12->uniformAndStorageBuffer8BitAccess) {
-                        InternalWarning(instance, record_obj.location,
-                                        "Forcing VkPhysicalDeviceVulkan12Features::uniformAndStorageBuffer8BitAccess to VK_TRUE");
-                        features12->uniformAndStorageBuffer8BitAccess = VK_TRUE;
-                    }
-                } else {
-                    add_8bit_access_feature();
-                }
-            } else if (IsExtensionAvailable(VK_KHR_8BIT_STORAGE_EXTENSION_NAME, available_extensions)) {
-                // Add our new extensions, only if not found
-                vku::AddExtension(*modified_create_info, VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
-                add_8bit_access_feature();
-            }
-        }
-    }
-
-    // shaderInt64
-    // ---
-    VkPhysicalDeviceFeatures physical_device_features{};
-    DispatchGetPhysicalDeviceFeatures(physicalDevice, &physical_device_features);
-    if (physical_device_features.shaderInt64) {
-        if (enabled_features) {
-            enabled_features->shaderInt64 = VK_TRUE;
-        } else if (auto *features = const_cast<VkPhysicalDeviceFeatures2 *>(
-                       vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext))) {
-            features->features.shaderInt64 = VK_TRUE;
-        } else {
-            // Need to add a VkPhysicalDeviceFeatures pointer
-            enabled_features = new VkPhysicalDeviceFeatures;
-            memset(enabled_features, 0, sizeof(VkPhysicalDeviceFeatures));
-            enabled_features->shaderInt64 = VK_TRUE;
-            modified_create_info->pEnabledFeatures = enabled_features;
-        }
-    }
+    AddFeatures(physicalDevice, modified_create_info, record_obj.location);
 }
 
 // Perform initializations that can be done at Create Device time.
@@ -471,7 +236,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
     // Need the device to be created before we can query features for settings
     InitSettings(loc);
 
-    VkResult result = UtilInitializeVma(instance, physical_device, device, enabled_features.bufferDeviceAddress, &vma_allocator_);
+    VkResult result = UtilInitializeVma(instance, physical_device, device, &vma_allocator_);
     if (result != VK_SUCCESS) {
         InternalVmaError(device, loc, "Could not initialize VMA");
         return;
@@ -554,59 +319,69 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
     }
 }
 
+namespace setting {
+
+// Each setting in GPU-AV has a common interface to make adding a new setting easier
+struct Setting {
+    virtual bool IsEnabled(const GpuAVSettings &settings) = 0;
+    virtual bool HasRequiredFeatures(const DeviceFeatures &features) = 0;
+    virtual void Disable(GpuAVSettings &settings) = 0;
+    virtual std::string DisableMessage() = 0;
+};
+
+struct BufferDeviceAddress : public Setting {
+    bool IsEnabled(const GpuAVSettings &settings) { return settings.shader_instrumentation.buffer_device_address; }
+    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64; }
+    void Disable(GpuAVSettings &settings) { settings.shader_instrumentation.buffer_device_address = false; }
+    std::string DisableMessage() {
+        return "Buffer Device Address validation option was enabled, but the shaderInt64 feature was not supported [Disabling "
+               "gpuav_buffer_address_oob]";
+    }
+};
+
+struct RayQuery : public Setting {
+    bool IsEnabled(const GpuAVSettings &settings) { return settings.shader_instrumentation.ray_query; }
+    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.rayQuery; }
+    void Disable(GpuAVSettings &settings) { settings.shader_instrumentation.ray_query = false; }
+    std::string DisableMessage() {
+        return "Ray Query validation option was enabled, but the rayQuery feature was not supported [Disabling "
+               "gpuav_validate_ray_query]";
+    }
+};
+struct BufferCopies : public Setting {
+    bool IsEnabled(const GpuAVSettings &settings) { return settings.validate_buffer_copies; }
+    // copy_buffer_to_image.comp relies on uint8_t buffers to perform validation
+    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.uniformAndStorageBuffer8BitAccess; }
+    void Disable(GpuAVSettings &settings) { settings.validate_buffer_copies = false; }
+    std::string DisableMessage() {
+        return "Buffer copies option was enabled, but the uniformAndStorageBuffer8BitAccess feature was not supported [Disabling "
+               "gpuav_buffer_copies]";
+    }
+};
+struct BufferContent : public Setting {
+    bool IsEnabled(const GpuAVSettings &settings) { return settings.IsBufferValidationEnabled(); }
+    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.shaderInt64; }
+    void Disable(GpuAVSettings &settings) { settings.SetBufferValidationEnabled(false); }
+    std::string DisableMessage() {
+        return "Buffer content validation option was enabled, but the shaderInt64 feature was not supported [Disabling "
+               "gpuav_buffers_validation]";
+    }
+};
+}  // namespace setting
+
 // At this point extensions/features may have been turned on by us in PreCallRecord.
 // Now that we have all the information, here is where we might disable GPU-AV settings that are missing requirements
 void Validator::InitSettings(const Location &loc) {
-    VkPhysicalDeviceFeatures supported_features{};
-    DispatchGetPhysicalDeviceFeatures(physical_device, &supported_features);
+    setting::BufferDeviceAddress buffer_device_address;
+    setting::RayQuery ray_query;
+    setting::BufferCopies buffer_copies;
+    setting::BufferContent buffer_content;
+    std::array<setting::Setting *, 4> all_settings = {&buffer_device_address, &ray_query, &buffer_copies, &buffer_content};
 
-    GpuAVSettings::ShaderInstrumentation &shader_instrumentation = gpuav_settings.shader_instrumentation;
-    if (shader_instrumentation.descriptor_checks || shader_instrumentation.post_process_descriptor_index) {
-        if (!enabled_features.bufferDeviceAddress) {
-            shader_instrumentation.descriptor_checks = false;
-            shader_instrumentation.post_process_descriptor_index = false;
-            InternalWarning(device, loc,
-                            "Descriptors Indexing Validation optin was enabled. but the bufferDeviceAddress was not supported "
-                            "[Disabling gpuav_descriptor_checks and gpuav_post_process_descriptor_indexing]");
-        }
-    }
-
-    if (shader_instrumentation.buffer_device_address) {
-        const bool bda_validation_possible =
-            ((IsExtEnabled(extensions.vk_ext_buffer_device_address) || IsExtEnabled(extensions.vk_khr_buffer_device_address)) &&
-             enabled_features.shaderInt64 && enabled_features.bufferDeviceAddress);
-        if (!bda_validation_possible) {
-            shader_instrumentation.buffer_device_address = false;
-            if (!enabled_features.shaderInt64) {
-                InternalWarning(
-                    device, loc,
-                    "Buffer device address validation option was enabled, but the shaderInt64 feature is not supported. "
-                    "[Disabling gpuav_buffer_address_oob].");
-            } else {
-                InternalWarning(device, loc,
-                                "Buffer device address validation option was enabled, but required buffer device address extension "
-                                "and/or features are not enabled. [Disabling gpuav_buffer_address_oob]");
-            }
-        }
-    }
-
-    if (shader_instrumentation.ray_query) {
-        if (!enabled_features.rayQuery) {
-            // TODO - Force on if possible, issue is we need to potentially enable all the dependency extensions
-            shader_instrumentation.ray_query = false;
-            InternalWarning(device, loc,
-                            "Ray Query validation option was enabled, but the rayQuery feature is not enabled. "
-                            "[Disabling gpuav_validate_ray_query]");
-        }
-    }
-
-    // copy_buffer_to_image.comp relies on uint8_t buffers to perform validation
-    if (gpuav_settings.validate_buffer_copies) {
-        if (!enabled_features.uniformAndStorageBuffer8BitAccess) {
-            gpuav_settings.validate_buffer_copies = false;
-            InternalWarning(device, loc,
-                            "Buffer copies option was enabled, but the uniformAndStorageBuffer8BitAccess feature is not supported. "
-                            "[Disabling gpuav_buffer_copies]");
+    for (auto &setting_object : all_settings) {
+        if (setting_object->IsEnabled(gpuav_settings) && !setting_object->HasRequiredFeatures(enabled_features)) {
+            setting_object->Disable(gpuav_settings);
+            InternalWarning(device, loc, setting_object->DisableMessage().c_str());
         }
     }
 
@@ -618,21 +393,6 @@ void Validator::InitSettings(const Location &loc) {
         // Because of VUs like VUID-VkPipelineLayoutCreateInfo-pSetLayouts-08008 we currently would need to rework the entire shader
         // instrumentation logic
         gpuav_settings.DisableShaderInstrumentationAndOptions();
-    }
-
-    if (gpuav_settings.IsBufferValidationEnabled()) {
-        if (phys_dev_props.limits.maxPushConstantsSize < 9 * sizeof(uint32_t)) {
-            gpuav_settings.SetBufferValidationEnabled(false);
-            InternalWarning(device, loc,
-                            "Device does not support required minimum maxPushConstantsSize. Buffer validation needs at least 9 * "
-                            "sizeof(uint32_t) bytes. No indirect buffer checking will be "
-                            "attempted");
-        } else if (!supported_features.shaderInt64) {
-            InternalWarning(
-                device, loc,
-                "shaderInt64 feature not available, indirect trace rays validation and countBuffer (as seen in commands like "
-                "vkCmdDrawIndexedIndirectCount) validation cannot be performed.");
-        }
     }
 
     // If we have turned off all the possible things to instrument, turn off everything fully

@@ -3254,21 +3254,18 @@ TEST_F(NegativeDebugPrintf, MisformattedNewLine) {
 
 TEST_F(NegativeDebugPrintf, ValidationAbort) {
     TEST_DESCRIPTION("Verify that aborting DebugPrintf is safe.");
-    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 
-    PFN_vkSetPhysicalDeviceFeaturesEXT fpvkSetPhysicalDeviceFeaturesEXT = nullptr;
-    PFN_vkGetOriginalPhysicalDeviceFeaturesEXT fpvkGetOriginalPhysicalDeviceFeaturesEXT = nullptr;
-    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFeaturesEXT, fpvkGetOriginalPhysicalDeviceFeaturesEXT)) {
-        GTEST_SKIP() << "Failed to load device profile layer.";
-    }
+    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
+    VkValidationFeaturesEXT features = vku::InitStructHelper();
+    // Most tests don't need to reserve the slot, so keep it as an option for now
+    features.enabledValidationFeatureCount = 1;
+    features.disabledValidationFeatureCount = 0;
+    features.pEnabledValidationFeatures = enables;
+    RETURN_IF_SKIP(InitFramework(&features));
 
-    VkPhysicalDeviceFeatures features = {};
-    fpvkGetOriginalPhysicalDeviceFeaturesEXT(Gpu(), &features);
-
-    // Disable features so initialization aborts
-    features.vertexPipelineStoresAndAtomics = false;
-    features.fragmentStoresAndAtomics = false;
-    fpvkSetPhysicalDeviceFeaturesEXT(Gpu(), features);
     m_errorMonitor->SetDesiredError("DebugPrintf is being disabled");
     RETURN_IF_SKIP(InitState());
     m_errorMonitor->VerifyFound();

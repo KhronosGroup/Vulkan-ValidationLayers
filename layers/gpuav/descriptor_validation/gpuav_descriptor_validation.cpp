@@ -64,7 +64,7 @@ void PreCallActionCommandPostProcess(Validator &gpuav, CommandBuffer &cb_state, 
 
 void PreCallActionCommand(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point, const Location &loc) {
     // Currently this is only for updating the binding_req_map which is used for post processing only
-    if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_index) return;
+    if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) return;
 
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto const &last_bound = cb_state.lastBound[lv_bind_point];
@@ -74,7 +74,7 @@ void PreCallActionCommand(Validator &gpuav, CommandBuffer &cb_state, VkPipelineB
 
 void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBuffer &cb_state, const LastBound &last_bound,
                                        DescriptorCommandBinding &descriptor_command_binding, const Location &loc) {
-    if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_index) return;
+    if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) return;
 
     // Create a new buffer to hold our BDA pointers
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
@@ -149,7 +149,7 @@ void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBuffer &cb_
 
 void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location &loc) {
-    if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_index &&
+    if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing &&
         !gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
         return;
     }

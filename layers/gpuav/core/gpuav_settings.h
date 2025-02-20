@@ -1,7 +1,7 @@
 
-/* Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+/* Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,13 +47,13 @@ struct GpuAVSettings {
         bool descriptor_checks = true;
         bool buffer_device_address = true;
         bool ray_query = true;
-        bool post_process_descriptor_index = true;
+        bool post_process_descriptor_indexing = true;
         bool vertex_attribute_fetch_oob = true;
     } shader_instrumentation;
 
     bool IsShaderInstrumentationEnabled() const {
         return shader_instrumentation.descriptor_checks || shader_instrumentation.buffer_device_address ||
-               shader_instrumentation.ray_query || shader_instrumentation.post_process_descriptor_index ||
+               shader_instrumentation.ray_query || shader_instrumentation.post_process_descriptor_indexing ||
                shader_instrumentation.vertex_attribute_fetch_oob;
     }
     bool IsSpirvModified() const { return IsShaderInstrumentationEnabled() || debug_printf_enabled; }
@@ -63,7 +63,7 @@ struct GpuAVSettings {
         shader_instrumentation.descriptor_checks = false;
         shader_instrumentation.buffer_device_address = false;
         shader_instrumentation.ray_query = false;
-        shader_instrumentation.post_process_descriptor_index = false;
+        shader_instrumentation.post_process_descriptor_indexing = false;
         shader_instrumentation.vertex_attribute_fetch_oob = false;
         // Because of this setting, cannot really have an "enabled" parameter to pass to this method
         select_instrumented_shaders = false;

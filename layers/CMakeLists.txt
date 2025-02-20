@@ -260,6 +260,7 @@ target_sources(vvl PRIVATE
     gpuav/core/gpuav.h
     gpuav/core/gpuav_record.cpp
     gpuav/core/gpuav_setup.cpp
+    gpuav/core/gpuav_features.cpp
     gpuav/debug_printf/debug_printf.cpp
     gpuav/debug_printf/debug_printf.h
     gpuav/error_message/gpuav_vuids.cpp
