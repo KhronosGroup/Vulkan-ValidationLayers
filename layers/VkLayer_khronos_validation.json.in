@@ -86,7 +86,7 @@
                         { "key": "printf_enable", "value": false },
                         { "key": "gpuav_enable", "value": false },
                         { "key": "validate_best_practices", "value": false },
-                        { "key": "report_flags", "value": [ "error" ] },
+                        { "key": "report_flags", "value": [ "error", "warn" ] },
                         { "key": "debug_action", "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ] },
                         { "key": "enable_message_limit", "value": true }
                     ]

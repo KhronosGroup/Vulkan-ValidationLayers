@@ -818,7 +818,7 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
         }
     }
 
-    std::vector<std::string> report_flags_list = {"error"};  // Default
+    std::vector<std::string> report_flags_list = {"error", "warn"};  // Default
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_REPORT_FLAGS)) {
         vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_REPORT_FLAGS, report_flags_list);
     }
