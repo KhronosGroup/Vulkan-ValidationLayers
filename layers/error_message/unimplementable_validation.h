@@ -54,6 +54,16 @@ const char* unimplementable_validation[] = {
     "VUID-vkGetPrivateData-device-parameter",
     "VUID-vkSetPrivateData-device-parameter",
 
+    // These were added for "completeness" (by us!) and serve no real purpose.
+    // 1. VK_EXT_validation_features/VK_EXT_validation_flags are implemented by us and we don't even care
+    //    if the extension name is enabled or not
+    // 2. It would crazy for a layer to suddenly not have VK_EXT_layer_settings work if the extension name is not provided
+    //
+    // Until there is a real world usecase where these are needed, we are just going to defer validating them.
+    "VUID-VkInstanceCreateInfo-pNext-10242",
+    "VUID-VkInstanceCreateInfo-pNext-10243",
+    "VUID-VkInstanceCreateInfo-pNext-10244",
+
     // These ask if pData is a certain size, but no way to validate a pointer to memory is a certain size.
     // There is already another implicit VU checking if pData is not null.
     "VUID-vkGetBufferOpaqueCaptureDescriptorDataEXT-pData-08073",
