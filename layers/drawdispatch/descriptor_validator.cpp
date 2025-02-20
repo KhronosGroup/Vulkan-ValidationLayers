@@ -71,15 +71,19 @@ std::string DescriptorValidator::DescribeDescriptor(const spirv::ResourceInterfa
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
             ss << "storage image ";
             break;
-        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
             ss << "uniform buffer ";
             break;
-        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+            ss << "uniform texel buffer ";
+            break;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
             ss << "storage buffer ";
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            ss << "storage texel buffer ";
             break;
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
             ss << "input attachment ";
@@ -364,32 +368,48 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                       string_VkImageViewType(image_view_ci.viewType), string_SpvDim(dim), is_image_array);
         }
 
-        if ((resource_variable.info.image_format_type & image_view_state->descriptor_format_bits) == 0) {
+        const uint32_t view_numeric_type = spirv::GetFormatType(image_view_ci.format);
+        const uint32_t variable_numeric_type = resource_variable.info.image_sampled_type_numeric;
+        // When the image has a external format the views format must be VK_FORMAT_UNDEFINED and it is required to use a sampler
+        // Ycbcr conversion. Thus we can't extract any meaningful information from the format parameter.
+        if (image_view_ci.format != VK_FORMAT_UNDEFINED && ((variable_numeric_type & view_numeric_type) == 0)) {
             const bool signed_override =
-                ((resource_variable.info.image_format_type & spirv::NumericTypeUint) && resource_variable.info.is_sign_extended);
+                ((variable_numeric_type & spirv::NumericTypeUint) && resource_variable.info.is_sign_extended);
             const bool unsigned_override =
-                ((resource_variable.info.image_format_type & spirv::NumericTypeSint) && resource_variable.info.is_zero_extended);
+                ((variable_numeric_type & spirv::NumericTypeSint) && resource_variable.info.is_zero_extended);
             if (!signed_override && !unsigned_override) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, image_view);
                 return dev_state.LogError(vuids.image_view_numeric_format_07753, objlist, loc,
                                           "the %s requires %s component type, but bound descriptor format is %s.",
                                           DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                          spirv::string_NumericType(resource_variable.info.image_format_type),
-                                          string_VkFormat(image_view_ci.format));
+                                          spirv::string_NumericType(variable_numeric_type), string_VkFormat(image_view_ci.format));
             }
+        }
+
+        if (image_view_ci.format != VK_FORMAT_UNDEFINED && resource_variable.info.image_format != VK_FORMAT_UNDEFINED &&
+            image_view_ci.format != resource_variable.info.image_format) {
+            auto set = descriptor_set.Handle();
+            const LogObjectList objlist(set, image_view);
+            skip |= dev_state.LogUndefinedValue(
+                "Undefined-Value-StorageImage-FormatMismatch", objlist, loc,
+                "the %s is accessed by a OpTypeImage that has a format operand of %s which doesn't match the %s format (%s). Any "
+                "loads or stores with the variable will produce undefined values.",
+                DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+                string_VkFormat(resource_variable.info.image_format), dev_state.FormatHandle(image_view).c_str(),
+                string_VkFormat(image_view_ci.format));
         }
 
         const bool image_format_width_64 = vkuFormatHasComponentSize(image_view_ci.format, 64);
         if (image_format_width_64) {
-            if (resource_variable.image_sampled_type_width != 64) {
+            if (resource_variable.info.image_sampled_type_width != 64) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, image_view);
                 return dev_state.LogError(vuids.image_view_access_64_04470, objlist, loc,
                                           "the %s has a 64-bit component ImageView format (%s) but the OpTypeImage's "
                                           "Sampled Type has a width of %" PRIu32 ".",
                                           DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                          string_VkFormat(image_view_ci.format), resource_variable.image_sampled_type_width);
+                                          string_VkFormat(image_view_ci.format), resource_variable.info.image_sampled_type_width);
             } else if (!dev_state.enabled_features.sparseImageInt64Atomics && image_state->sparse_residency) {
                 auto set = descriptor_set.Handle();
                 const LogObjectList objlist(set, image_view, image_state->Handle());
@@ -398,14 +418,14 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                           "sparseImageInt64Atomics is not enabled.",
                                           DescribeDescriptor(resource_variable, index, descriptor_type).c_str());
             }
-        } else if (!image_format_width_64 && resource_variable.image_sampled_type_width != 32) {
+        } else if (!image_format_width_64 && resource_variable.info.image_sampled_type_width != 32) {
             auto set = descriptor_set.Handle();
             const LogObjectList objlist(set, image_view);
             return dev_state.LogError(vuids.image_view_access_32_04471, objlist, loc,
                                       "the %s has a 32-bit component ImageView format (%s) but the OpTypeImage's "
                                       "Sampled Type has a width of %" PRIu32 ".",
                                       DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                      string_VkFormat(image_view_ci.format), resource_variable.image_sampled_type_width);
+                                      string_VkFormat(image_view_ci.format), resource_variable.info.image_sampled_type_width);
         }
     }
 
@@ -909,7 +929,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         }
     }
 
-    return false;
+    return skip;
 }
 
 bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, const uint32_t index,
@@ -926,6 +946,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
 bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, const uint32_t index,
                                              VkDescriptorType descriptor_type, const TexelDescriptor &texel_descriptor) const {
+    bool skip = false;
     const VkBufferView buffer_view = texel_descriptor.GetBufferView();
     auto buffer_view_state = texel_descriptor.GetBufferViewState();
     if ((!buffer_view_state && !dev_state.enabled_features.nullDescriptor) || (buffer_view_state && buffer_view_state->Destroyed())) {
@@ -937,9 +958,9 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
     // BufferView could be null via nullDescriptor and accessing it is legal
     if (buffer_view == VK_NULL_HANDLE) {
-        return false;
+        return skip;
     }
-    if (!resource_variable.IsAccessed()) return false;
+    if (!resource_variable.IsAccessed()) return skip;
 
     auto buffer = buffer_view_state->create_info.buffer;
     const auto *buffer_state = buffer_view_state->buffer_state.get();
@@ -949,41 +970,54 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             vuids.descriptor_buffer_bit_set_08114, set, loc, "the %s is using buffer %s that has been destroyed.",
             DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), dev_state.FormatHandle(buffer).c_str());
     }
-    const VkFormat buffer_view_format = buffer_view_state->create_info.format;
-    const uint32_t format_bits = spirv::GetFormatType(buffer_view_format);
 
-    if ((resource_variable.info.image_format_type & format_bits) == 0) {
-        const bool signed_override =
-            ((resource_variable.info.image_format_type & spirv::NumericTypeUint) && resource_variable.info.is_sign_extended);
+    const VkFormat buffer_view_format = buffer_view_state->create_info.format;
+    const uint32_t view_numeric_type = spirv::GetFormatType(buffer_view_format);
+    const uint32_t variable_numeric_type = resource_variable.info.image_sampled_type_numeric;
+    if ((variable_numeric_type & view_numeric_type) == 0) {
+        const bool signed_override = ((variable_numeric_type & spirv::NumericTypeUint) && resource_variable.info.is_sign_extended);
         const bool unsigned_override =
-            ((resource_variable.info.image_format_type & spirv::NumericTypeSint) && resource_variable.info.is_zero_extended);
+            ((variable_numeric_type & spirv::NumericTypeSint) && resource_variable.info.is_zero_extended);
         if (!signed_override && !unsigned_override) {
             auto set = descriptor_set.Handle();
-            return dev_state.LogError(vuids.descriptor_buffer_bit_set_08114, set, loc,
+            const LogObjectList objlist(set, buffer_view);
+            return dev_state.LogError(vuids.image_view_numeric_format_07753, set, loc,
                                       "the %s requires %s component type, but bound descriptor format is %s.",
                                       DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                      spirv::string_NumericType(resource_variable.info.image_format_type),
-                                      string_VkFormat(buffer_view_format));
+                                      spirv::string_NumericType(variable_numeric_type), string_VkFormat(buffer_view_format));
         }
     }
 
+    if (buffer_view_format != VK_FORMAT_UNDEFINED && resource_variable.info.image_format != VK_FORMAT_UNDEFINED &&
+        buffer_view_format != resource_variable.info.image_format) {
+        auto set = descriptor_set.Handle();
+        const LogObjectList objlist(set, buffer_view);
+        skip |= dev_state.LogUndefinedValue(
+            "Undefined-Value-StorageImage-FormatMismatch", objlist, loc,
+            "the %s is accessed by a OpTypeImage that has a format operand of %s which doesn't match the %s format (%s). Any loads "
+            "or stores with the variable will produce undefined values.",
+            DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
+            string_VkFormat(resource_variable.info.image_format), dev_state.FormatHandle(buffer_view).c_str(),
+            string_VkFormat(buffer_view_format));
+    }
+
     const bool buffer_format_width_64 = vkuFormatHasComponentSize(buffer_view_format, 64);
-    if (buffer_format_width_64 && resource_variable.image_sampled_type_width != 64) {
+    if (buffer_format_width_64 && resource_variable.info.image_sampled_type_width != 64) {
         auto set = descriptor_set.Handle();
         const LogObjectList objlist(set, buffer_view);
         return dev_state.LogError(vuids.buffer_view_access_64_04472, objlist, loc,
                                   "the %s has a 64-bit component BufferView format (%s) but the OpTypeImage's Sampled "
                                   "Type has a width of %" PRIu32 ".",
                                   DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                  string_VkFormat(buffer_view_format), resource_variable.image_sampled_type_width);
-    } else if (!buffer_format_width_64 && resource_variable.image_sampled_type_width != 32) {
+                                  string_VkFormat(buffer_view_format), resource_variable.info.image_sampled_type_width);
+    } else if (!buffer_format_width_64 && resource_variable.info.image_sampled_type_width != 32) {
         auto set = descriptor_set.Handle();
         const LogObjectList objlist(set, buffer_view);
         return dev_state.LogError(vuids.buffer_view_access_32_04473, objlist, loc,
                                   "the %s has a 32-bit component BufferView format (%s) but the OpTypeImage's Sampled "
                                   "Type has a width of %" PRIu32 ".",
                                   DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                                  string_VkFormat(buffer_view_format), resource_variable.image_sampled_type_width);
+                                  string_VkFormat(buffer_view_format), resource_variable.info.image_sampled_type_width);
     }
 
     const VkFormatFeatureFlags2 buffer_format_features = buffer_view_state->buffer_format_features;
@@ -1060,7 +1094,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
         }
     }
 
-    return false;
+    return skip;
 }
 
 bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVariable &resource_variable, const uint32_t index,
