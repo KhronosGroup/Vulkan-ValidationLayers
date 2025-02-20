@@ -198,7 +198,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     return skip;
 }
 
-static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipeline& pipe_state) {
+static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(vvl::Pipeline& pipe_state) {
     std::vector<bp_state::AttachmentInfo> result;
     auto rp = pipe_state.RenderPassState();
     if (!rp || rp->UsesDynamicRendering()) {
@@ -238,20 +238,6 @@ static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(bp_state::Pipel
         }
     }
     return result;
-}
-
-bp_state::Pipeline::Pipeline(const vvl::Device& state_data, const VkGraphicsPipelineCreateInfo* create_info,
-                             std::shared_ptr<const vvl::PipelineCache>&& pipe_cache,
-                             std::shared_ptr<const vvl::RenderPass>&& rpstate, std::shared_ptr<const vvl::PipelineLayout>&& layout)
-    : vvl::Pipeline(state_data, create_info, std::move(pipe_cache), std::move(rpstate), std::move(layout), nullptr),
-      access_framebuffer_attachments(GetAttachmentAccess(*this)) {}
-
-std::shared_ptr<vvl::Pipeline> BestPractices::CreateGraphicsPipelineState(
-    const VkGraphicsPipelineCreateInfo* create_info, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
-    std::shared_ptr<const vvl::RenderPass>&& render_pass, std::shared_ptr<const vvl::PipelineLayout>&& layout,
-    spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) const {
-    return std::static_pointer_cast<vvl::Pipeline>(std::make_shared<bp_state::Pipeline>(
-        *this, create_info, std::move(pipeline_cache), std::move(render_pass), std::move(layout)));
 }
 
 void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -429,11 +415,11 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
 
     if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         // check for depth/blend state tracking
-        if (auto pipeline_state = Get<bp_state::Pipeline>(pipeline)) {
+        if (auto pipeline_state = Get<vvl::Pipeline>(pipeline)) {
             auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
             auto& render_pass_state = cb_state->render_pass_state;
 
-            render_pass_state.nextDrawTouchesAttachments = pipeline_state->access_framebuffer_attachments;
+            render_pass_state.nextDrawTouchesAttachments = GetAttachmentAccess(*pipeline_state);
             render_pass_state.drawTouchAttachments = true;
 
             const auto* blend_state = pipeline_state->ColorBlendState();

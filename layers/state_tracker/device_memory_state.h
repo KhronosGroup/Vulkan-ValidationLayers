@@ -61,6 +61,7 @@ class DeviceMemory : public StateObject {
 #endif                                     // VK_USE_PLATFORM_METAL_EXT
     void *p_driver_data;                   // Pointer to application's actual memory
     const VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
+    std::optional<float> dynamic_priority;  // VK_EXT_pageable_device_local_memory priority
 
     DeviceMemory(VkDeviceMemory memory, const VkMemoryAllocateInfo *allocate_info, uint64_t fake_address,
                  const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,

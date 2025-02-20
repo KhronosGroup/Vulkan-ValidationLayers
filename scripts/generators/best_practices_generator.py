@@ -54,18 +54,9 @@ class BestPracticesOutputGenerator(BaseGenerator):
         }
         # Commands that have a manually written post-call-record step which needs to be called from the autogen'd fcn
         self.manual_postcallrecord_list = [
-            'vkAllocateDescriptorSets',
             'vkQueuePresentKHR',
             'vkQueueBindSparse',
             'vkCreateGraphicsPipelines',
-            'vkGetPhysicalDeviceSurfaceCapabilitiesKHR',
-            'vkGetPhysicalDeviceSurfaceCapabilities2KHR',
-            'vkGetPhysicalDeviceSurfaceCapabilities2EXT',
-            'vkGetPhysicalDeviceSurfacePresentModesKHR',
-            'vkGetPhysicalDeviceSurfaceFormatsKHR',
-            'vkGetPhysicalDeviceSurfaceFormats2KHR',
-            'vkGetPhysicalDeviceDisplayPlanePropertiesKHR',
-            'vkGetSwapchainImagesKHR',
             'vkBindBufferMemory2',
             'vkBindImageMemory2',
             # AMD tracked

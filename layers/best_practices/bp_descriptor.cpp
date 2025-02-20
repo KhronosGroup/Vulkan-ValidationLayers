@@ -27,12 +27,12 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
     skip |= BaseClass::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj, ads_state_data);
     if (skip) return skip;
 
-    const auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool);
+    const auto pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
     ASSERT_AND_RETURN_SKIP(pool_state);
 
     // if the number of freed sets > 0, it implies they could be recycled instead if desirable
     // this warning is specific to Arm
-    if (VendorCheckEnabled(kBPVendorArm) && (pool_state->freed_count > 0)) {
+    if (VendorCheckEnabled(kBPVendorArm) && (pool_state->GetFreedCount() > 0)) {
         skip |= LogPerformanceWarning(
             "BestPractices-Arm-vkAllocateDescriptorSets-suboptimal-reuse", device, error_obj.location,
             "%s Descriptor set memory was allocated via vkAllocateDescriptorSets() for sets which were previously freed in the "
@@ -68,34 +68,6 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
     }
 
     return skip;
-}
-
-void BestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                               VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
-                                                               vvl::AllocateDescriptorSetsData& ads_state) {
-    if (record_obj.result == VK_SUCCESS) {
-        if (auto pool_state = Get<bp_state::DescriptorPool>(pAllocateInfo->descriptorPool)) {
-            // we record successful allocations by subtracting the allocation count from the last recorded free count
-            const auto alloc_count = pAllocateInfo->descriptorSetCount;
-            // clamp the unsigned subtraction to the range [0, last_free_count]
-            if (pool_state->freed_count > alloc_count) {
-                pool_state->freed_count -= alloc_count;
-            } else {
-                pool_state->freed_count = 0;
-            }
-        }
-    }
-}
-
-void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                                     const VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj) {
-    BaseClass::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets, record_obj);
-    if (record_obj.result == VK_SUCCESS) {
-        // we want to track frees because we're interested in suggesting re-use
-        if (auto pool_state = Get<bp_state::DescriptorPool>(descriptorPool)) {
-            pool_state->freed_count += descriptorSetCount;
-        }
-    }
 }
 
 bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
@@ -193,7 +165,3 @@ bool BestPractices::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice devic
     return skip;
 }
 
-std::shared_ptr<vvl::DescriptorPool> BestPractices::CreateDescriptorPoolState(VkDescriptorPool handle,
-                                                                              const VkDescriptorPoolCreateInfo* create_info) {
-    return std::static_pointer_cast<vvl::DescriptorPool>(std::make_shared<bp_state::DescriptorPool>(*this, handle, create_info));
-}

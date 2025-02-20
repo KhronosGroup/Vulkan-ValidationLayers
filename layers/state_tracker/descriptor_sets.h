@@ -90,6 +90,10 @@ class DescriptorPool : public StateObject {
     using TypeCountMap = vvl::unordered_map<uint32_t, uint32_t>;
     const TypeCountMap maxDescriptorTypeCount;  // Max # of descriptors of each type in this pool
 
+    uint32_t GetFreedCount() const {
+        auto guard = ReadLock();
+        return freed_count;
+    }
   protected:
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
@@ -98,6 +102,7 @@ class DescriptorPool : public StateObject {
     vvl::unordered_map<VkDescriptorSet, vvl::DescriptorSet *> sets_;  // Collection of all sets in this pool
     Device &dev_data_;
     mutable std::shared_mutex lock_;
+    uint32_t freed_count{0};
 };
 
 class DescriptorUpdateTemplate : public StateObject {

@@ -1093,8 +1093,8 @@ void Device::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocat
         WriteLockGuard guard(fd_handle_map_lock_);
         fd_handle_map_.erase(import_memory_fd_info->fd);
     }
-    Add(CreateDeviceMemoryState(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
-                                physical_device_count));
+    Add(std::make_shared<DeviceMemory>(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap,
+                                       std::move(dedicated_binding), physical_device_count));
     return;
 }
 
@@ -1128,6 +1128,14 @@ void Device::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const 
     }
 #endif
     Destroy<DeviceMemory>(mem);
+}
+
+void Device::PostCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority,
+                                                      const RecordObject &record_obj) {
+    auto mem_info = Get<vvl::DeviceMemory>(memory);
+    if (mem_info) {
+        mem_info->dynamic_priority.emplace(priority);
+    }
 }
 
 void Device::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo, VkFence fence,
@@ -1691,14 +1699,6 @@ void Device::PreCallRecordDestroyPipelineCache(VkDevice device, VkPipelineCache 
     Destroy<PipelineCache>(pipelineCache);
 }
 
-std::shared_ptr<Pipeline> Device::CreateGraphicsPipelineState(
-    const VkGraphicsPipelineCreateInfo *create_info, std::shared_ptr<const PipelineCache> pipeline_cache,
-    std::shared_ptr<const RenderPass> &&render_pass, std::shared_ptr<const PipelineLayout> &&layout,
-    spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) const {
-    return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(render_pass), std::move(layout),
-                                      stateless_data);
-}
-
 bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -1728,9 +1728,8 @@ bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
                 skip = true;
             }
         }
-
-        pipeline_states.push_back(CreateGraphicsPipelineState(&create_info, pipeline_cache, std::move(render_pass),
-                                                              std::move(layout_state), chassis_state.stateless_data));
+        pipeline_states.push_back(std::make_shared<Pipeline>(*this, &create_info, pipeline_cache, std::move(render_pass),
+                                                             std::move(layout_state), chassis_state.stateless_data));
     }
     return skip;
 }
@@ -1929,11 +1928,6 @@ void Device::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelin
     Add(std::make_shared<PipelineLayout>(*this, *pPipelineLayout, pCreateInfo));
 }
 
-std::shared_ptr<DescriptorPool> Device::CreateDescriptorPoolState(VkDescriptorPool handle,
-                                                                  const VkDescriptorPoolCreateInfo *create_info) {
-    return std::make_shared<DescriptorPool>(*this, handle, create_info);
-}
-
 std::shared_ptr<DescriptorSet> Device::CreateDescriptorSet(VkDescriptorSet handle, DescriptorPool *pool,
                                                            const std::shared_ptr<DescriptorSetLayout const> &layout,
                                                            uint32_t variable_count) {
@@ -1944,7 +1938,7 @@ void Device::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescrip
                                                 const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
                                                 const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    Add(CreateDescriptorPoolState(*pDescriptorPool, pCreateInfo));
+    Add(std::make_shared<DescriptorPool>(*this, *pDescriptorPool, pCreateInfo));
 }
 
 void Device::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
@@ -3696,10 +3690,6 @@ void Device::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquire
                                 pAcquireInfo->fence, pImageIndex, record_obj.location.function);
 }
 
-std::shared_ptr<PhysicalDevice> Instance::CreatePhysicalDeviceState(VkPhysicalDevice handle) {
-    return std::make_shared<PhysicalDevice>(handle);
-}
-
 void Instance::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                             VkInstance *pInstance, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
@@ -3719,7 +3709,7 @@ void Instance::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateI
     }
 
     for (auto physdev : physdev_handles) {
-        Add(CreatePhysicalDeviceState(physdev));
+        Add(std::make_shared<PhysicalDevice>(physdev));
     }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -3920,6 +3910,10 @@ void Instance::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalD
                                                                      VkSurfaceCapabilitiesKHR *pSurfaceCapabilities,
                                                                      const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
+    auto pd_state = Get<PhysicalDevice>(physicalDevice);
+    ASSERT_AND_RETURN(pd_state);
+    pd_state->call_state[record_obj.location.function] = QUERY_DETAILS;
+
     auto surface_state = Get<Surface>(surface);
     ASSERT_AND_RETURN(surface_state);
     surface_state->UpdateCapabilitiesCache(physicalDevice, *pSurfaceCapabilities);
@@ -3930,6 +3924,11 @@ void Instance::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysical
                                                                       VkSurfaceCapabilities2KHR *pSurfaceCapabilities,
                                                                       const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
+
+    auto pd_state = Get<PhysicalDevice>(physicalDevice);
+    ASSERT_AND_RETURN(pd_state);
+
+    pd_state->call_state[record_obj.location.function] = QUERY_DETAILS;
 
     if (pSurfaceInfo->surface) {
         auto surface_state = Get<Surface>(pSurfaceInfo->surface);
@@ -3951,8 +3950,6 @@ void Instance::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysical
         }
     } else if (IsExtEnabled(extensions.vk_google_surfaceless_query) &&
                vku::FindStructInPNextChain<VkSurfaceProtectedCapabilitiesKHR>(pSurfaceCapabilities->pNext)) {
-        auto pd_state = Get<PhysicalDevice>(physicalDevice);
-        ASSERT_AND_RETURN(pd_state);
         pd_state->surfaceless_query_state.capabilities = vku::safe_VkSurfaceCapabilities2KHR(pSurfaceCapabilities);
     }
 }
@@ -3960,6 +3957,10 @@ void Instance::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysical
 void Instance::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                       VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
                                                                       const RecordObject &record_obj) {
+    auto pd_state = Get<PhysicalDevice>(physicalDevice);
+    ASSERT_AND_RETURN(pd_state);
+    pd_state->call_state[record_obj.location.function] = QUERY_DETAILS;
+
     const VkSurfaceCapabilitiesKHR caps{
         pSurfaceCapabilities->minImageCount,           pSurfaceCapabilities->maxImageCount,
         pSurfaceCapabilities->currentExtent,           pSurfaceCapabilities->minImageExtent,
@@ -3986,14 +3987,17 @@ void Instance::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalD
                                                                      const RecordObject &record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) return;
 
+    auto pd_state = Get<PhysicalDevice>(physicalDevice);
+    ASSERT_AND_RETURN(pd_state);
+
+    pd_state->SetCallState(record_obj.location.function, pPresentModes != nullptr);
+
     if (pPresentModes) {
         if (surface) {
             auto surface_state = Get<Surface>(surface);
             ASSERT_AND_RETURN(surface_state);
             surface_state->SetPresentModes(physicalDevice, span<const VkPresentModeKHR>(pPresentModes, *pPresentModeCount));
         } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
-            auto pd_state = Get<PhysicalDevice>(physicalDevice);
-            ASSERT_AND_RETURN(pd_state);
             pd_state->surfaceless_query_state.present_modes =
                 std::vector<VkPresentModeKHR>(pPresentModes, pPresentModes + *pPresentModeCount);
         }
@@ -4005,6 +4009,16 @@ void Instance::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice
                                                                 const RecordObject &record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) return;
 
+    auto pd_state = Get<PhysicalDevice>(physicalDevice);
+    if (!pd_state) {
+        return;
+    }
+
+    pd_state->SetCallState(record_obj.location.function, pSurfaceFormats != nullptr);
+
+    if (pSurfaceFormatCount) {
+        pd_state->surface_formats_count = *pSurfaceFormatCount;
+    }
     if (pSurfaceFormats) {
         std::vector<vku::safe_VkSurfaceFormat2KHR> formats2(*pSurfaceFormatCount);
         for (uint32_t surface_format_index = 0; surface_format_index < *pSurfaceFormatCount; surface_format_index++) {
@@ -4015,7 +4029,6 @@ void Instance::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice
             ASSERT_AND_RETURN(surface_state);
             surface_state->SetFormats(physicalDevice, std::move(formats2));
         } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
-            auto pd_state = Get<PhysicalDevice>(physicalDevice);
             ASSERT_AND_RETURN(pd_state);
             pd_state->surfaceless_query_state.formats = std::move(formats2);
         }
@@ -4029,6 +4042,12 @@ void Instance::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevic
                                                                  const RecordObject &record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) return;
 
+    auto pd_state = Get<PhysicalDevice>(physicalDevice);
+    ASSERT_AND_RETURN(pd_state);
+    pd_state->SetCallState(record_obj.location.function, pSurfaceFormats != nullptr);
+    if (*pSurfaceFormatCount) {
+        pd_state->surface_formats_count = *pSurfaceFormatCount;
+    }
     if (pSurfaceFormats) {
         if (pSurfaceInfo->surface) {
             auto surface_state = Get<Surface>(pSurfaceInfo->surface);
@@ -4039,8 +4058,6 @@ void Instance::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevic
             }
             surface_state->SetFormats(physicalDevice, std::move(formats2));
         } else if (IsExtEnabled(extensions.vk_google_surfaceless_query)) {
-            auto pd_state = Get<PhysicalDevice>(physicalDevice);
-            ASSERT_AND_RETURN(pd_state);
             pd_state->surfaceless_query_state.formats.clear();
             pd_state->surfaceless_query_state.formats.reserve(*pSurfaceFormatCount);
             for (uint32_t surface_format_index = 0; surface_format_index < *pSurfaceFormatCount; ++surface_format_index) {
@@ -4192,13 +4209,12 @@ void Device::PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
 }
 
 void Instance::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                  void *pProperties) {
+                                                                  void *pProperties, const RecordObject &record_obj) {
     auto pd_state = Get<PhysicalDevice>(physicalDevice);
+    pd_state->SetCallState(record_obj.location.function, pProperties != nullptr);
+
     if (*pPropertyCount) {
         pd_state->display_plane_property_count = *pPropertyCount;
-    }
-    if (*pPropertyCount || pProperties) {
-        pd_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = true;
     }
 }
 
@@ -4206,14 +4222,14 @@ void Instance::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysic
                                                                         VkDisplayPlanePropertiesKHR *pProperties,
                                                                         const RecordObject &record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) return;
-    RecordGetPhysicalDeviceDisplayPlanePropertiesState(physicalDevice, pPropertyCount, pProperties);
+    RecordGetPhysicalDeviceDisplayPlanePropertiesState(physicalDevice, pPropertyCount, pProperties, record_obj);
 }
 
 void Instance::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                          VkDisplayPlaneProperties2KHR *pProperties,
                                                                          const RecordObject &record_obj) {
     if ((VK_SUCCESS != record_obj.result) && (VK_INCOMPLETE != record_obj.result)) return;
-    RecordGetPhysicalDeviceDisplayPlanePropertiesState(physicalDevice, pPropertyCount, pProperties);
+    RecordGetPhysicalDeviceDisplayPlanePropertiesState(physicalDevice, pPropertyCount, pProperties, record_obj);
 }
 
 void Device::PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
@@ -5452,15 +5468,6 @@ std::shared_ptr<CommandBuffer> Device::CreateCmdBufferState(VkCommandBuffer hand
                                                             const VkCommandBufferAllocateInfo *allocate_info,
                                                             const CommandPool *pool) {
     return std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool);
-}
-
-std::shared_ptr<DeviceMemory> Device::CreateDeviceMemoryState(VkDeviceMemory handle, const VkMemoryAllocateInfo *allocate_info,
-                                                              uint64_t fake_address, const VkMemoryType &memory_type,
-                                                              const VkMemoryHeap &memory_heap,
-                                                              std::optional<DedicatedBinding> &&dedicated_binding,
-                                                              uint32_t physical_device_count) {
-    return std::make_shared<DeviceMemory>(handle, allocate_info, fake_address, memory_type, memory_heap,
-                                          std::move(dedicated_binding), physical_device_count);
 }
 
 void Device::PostCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,

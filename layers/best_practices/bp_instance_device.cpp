@@ -167,8 +167,9 @@ bool bp_state::Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDe
         skip |= ValidateSpecialUseExtensions(error_obj.location, extension);
     }
 
-    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
-    if (bp_pd_state && (bp_pd_state->vkGetPhysicalDeviceFeaturesState == UNCALLED) && (pCreateInfo->pEnabledFeatures != NULL)) {
+    const auto bp_pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
+    if (bp_pd_state && (bp_pd_state->GetCallState(error_obj.location.function) == vvl::UNCALLED) &&
+        (pCreateInfo->pEnabledFeatures != NULL)) {
         skip |= LogWarning("BestPractices-vkCreateDevice-physical-device-features-not-retrieved", instance, error_obj.location,
                            "called before getting physical device features from vkGetPhysicalDeviceFeatures().");
     }
@@ -201,7 +202,6 @@ bool bp_state::Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDe
 // Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
 bool bp_state::Instance::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const vvl::PhysicalDevice& bp_pd_state,
                                                                               uint32_t requested_queue_family_property_count,
-                                                                              const CALL_STATE call_state,
                                                                               const Location& loc) const {
     bool skip = false;
     if (bp_pd_state.queue_family_known_count != requested_queue_family_property_count) {
@@ -221,11 +221,9 @@ bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(V
                                                                                uint32_t* pQueueFamilyPropertyCount,
                                                                                VkQueueFamilyProperties* pQueueFamilyProperties,
                                                                                const ErrorObject& error_obj) const {
-    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
+    const auto bp_pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
-        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(*bp_pd_state, *pQueueFamilyPropertyCount,
-                                                                    bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
-                                                                    error_obj.location);
+        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(*bp_pd_state, *pQueueFamilyPropertyCount, error_obj.location);
     }
     return false;
 }
@@ -234,11 +232,9 @@ bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(
                                                                                 uint32_t* pQueueFamilyPropertyCount,
                                                                                 VkQueueFamilyProperties2* pQueueFamilyProperties,
                                                                                 const ErrorObject& error_obj) const {
-    const auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice);
+    const auto bp_pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
     if (pQueueFamilyProperties && bp_pd_state) {
-        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(*bp_pd_state, *pQueueFamilyPropertyCount,
-                                                                    bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
-                                                                    error_obj.location);
+        return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(*bp_pd_state, *pQueueFamilyPropertyCount, error_obj.location);
     }
     return false;
 }
@@ -249,72 +245,6 @@ bool bp_state::Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2K
                                                                                    const ErrorObject& error_obj) const {
     return PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
                                                                   error_obj);
-}
-
-void bp_state::Instance::CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(CALL_STATE& call_state, bool no_pointer) {
-    if (no_pointer) {
-        if (UNCALLED == call_state) {
-            call_state = QUERY_COUNT;
-        }
-    } else {  // Save queue family properties
-        call_state = QUERY_DETAILS;
-    }
-}
-
-void bp_state::Instance::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                              uint32_t* pQueueFamilyPropertyCount,
-                                                                              VkQueueFamilyProperties* pQueueFamilyProperties,
-                                                                              const RecordObject& record_obj) {
-    BaseClass::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount,
-                                                                                 pQueueFamilyProperties, record_obj);
-    if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState,
-                                                                   nullptr == pQueueFamilyProperties);
-    }
-}
-
-void bp_state::Instance::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                               uint32_t* pQueueFamilyPropertyCount,
-                                                                               VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                               const RecordObject& record_obj) {
-    BaseClass::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount,
-                                                                                  pQueueFamilyProperties, record_obj);
-    if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        CommonPostCallRecordGetPhysicalDeviceQueueFamilyProperties(bp_pd_state->vkGetPhysicalDeviceQueueFamilyProperties2State,
-                                                                   nullptr == pQueueFamilyProperties);
-    }
-}
-
-void bp_state::Instance::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                                  uint32_t* pQueueFamilyPropertyCount,
-                                                                                  VkQueueFamilyProperties2* pQueueFamilyProperties,
-                                                                                  const RecordObject& record_obj) {
-    PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties,
-                                                          record_obj);
-}
-
-void bp_state::Instance::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice,
-                                                                 VkPhysicalDeviceFeatures* pFeatures,
-                                                                 const RecordObject& record_obj) {
-    BaseClass::PostCallRecordGetPhysicalDeviceFeatures(physicalDevice, pFeatures, record_obj);
-    if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
-    }
-}
-
-void bp_state::Instance::PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
-                                                                  VkPhysicalDeviceFeatures2* pFeatures,
-                                                                  const RecordObject& record_obj) {
-    BaseClass::PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
-    if (auto bp_pd_state = Get<bp_state::PhysicalDevice>(physicalDevice)) {
-        bp_pd_state->vkGetPhysicalDeviceFeaturesState = QUERY_DETAILS;
-    }
-}
-
-void bp_state::Instance::PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
-                                                                     VkPhysicalDeviceFeatures2* pFeatures,
-                                                                     const RecordObject& record_obj) {
-    PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
 }
 
 void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
@@ -556,15 +486,4 @@ void BestPractices::ManualPostCallRecordQueueSubmit(VkQueue queue, uint32_t subm
                                                     VkFence fence, const RecordObject& record_obj) {
     // AMD best practice
     num_queue_submissions_ += submitCount;
-}
-
-std::shared_ptr<vvl::PhysicalDevice> bp_state::Instance::CreatePhysicalDeviceState(VkPhysicalDevice handle) {
-    return std::static_pointer_cast<vvl::PhysicalDevice>(std::make_shared<bp_state::PhysicalDevice>(handle));
-}
-
-bp_state::PhysicalDevice* BestPractices::GetPhysicalDeviceState() {
-    return static_cast<bp_state::PhysicalDevice*>(physical_device_state);
-}
-const bp_state::PhysicalDevice* BestPractices::GetPhysicalDeviceState() const {
-    return static_cast<const bp_state::PhysicalDevice*>(physical_device_state);
 }

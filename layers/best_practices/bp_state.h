@@ -78,43 +78,6 @@ class Image : public vvl::Image {
     std::vector<std::vector<Usage>> usages_;
 };
 
-class PhysicalDevice : public vvl::PhysicalDevice {
-  public:
-    PhysicalDevice(VkPhysicalDevice phys_dev) : vvl::PhysicalDevice(phys_dev) {}
-
-    // Track the call state and array sizes for various query functions
-    CALL_STATE vkGetPhysicalDeviceQueueFamilyPropertiesState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceQueueFamilyProperties2State = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceQueueFamilyProperties2KHRState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceLayerPropertiesState = UNCALLED;      // Currently unused
-    CALL_STATE vkGetPhysicalDeviceExtensionPropertiesState = UNCALLED;  // Currently unused
-    CALL_STATE vkGetPhysicalDeviceFeaturesState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceSurfacePresentModesKHRState = UNCALLED;
-    CALL_STATE vkGetPhysicalDeviceSurfaceFormatsKHRState = UNCALLED;
-    uint32_t surface_formats_count = 0;
-    CALL_STATE vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = UNCALLED;
-};
-
-class Swapchain : public vvl::Swapchain {
-  public:
-    Swapchain(vvl::Device& dev_data, const VkSwapchainCreateInfoKHR* create_info, VkSwapchainKHR handle)
-        : vvl::Swapchain(dev_data, create_info, handle) {}
-
-    CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
-};
-
-class DeviceMemory : public vvl::DeviceMemory {
-  public:
-    DeviceMemory(VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_info, uint64_t fake_address,
-                 const VkMemoryType& memory_type, const VkMemoryHeap& memory_heap,
-                 std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count)
-        : vvl::DeviceMemory(handle, allocate_info, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
-                            physical_device_count) {}
-
-    std::optional<float> dynamic_priority;  // VK_EXT_pageable_device_local_memory priority
-};
-
 struct AttachmentInfo {
     uint32_t framebufferAttachment;
     VkImageAspectFlags aspects;
@@ -219,20 +182,4 @@ class CommandBuffer : public vvl::CommandBuffer {
     vvl::unordered_map<VkEvent, SignalingInfo> event_signaling_state;
 };
 
-class DescriptorPool : public vvl::DescriptorPool {
-  public:
-    DescriptorPool(vvl::Device& dev, const VkDescriptorPool handle, const VkDescriptorPoolCreateInfo* create_info)
-        : vvl::DescriptorPool(dev, handle, create_info) {}
-
-    uint32_t freed_count{0};
-};
-
-class Pipeline : public vvl::Pipeline {
-  public:
-    Pipeline(const vvl::Device& state_data, const VkGraphicsPipelineCreateInfo* create_info,
-             std::shared_ptr<const vvl::PipelineCache>&& pipe_cache, std::shared_ptr<const vvl::RenderPass>&& rpstate,
-             std::shared_ptr<const vvl::PipelineLayout>&& layout);
-
-    const std::vector<AttachmentInfo> access_framebuffer_attachments;
-};
 }  // namespace bp_state
