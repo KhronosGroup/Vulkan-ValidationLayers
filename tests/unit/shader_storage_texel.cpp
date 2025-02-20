@@ -142,7 +142,7 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &ds.set_, 0, nullptr);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageWrite-04469");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageWrite-04469", 2);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

@@ -4208,7 +4208,8 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
                               &descriptor_set_storage_image.set_, 0, nullptr);
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
                               &descriptor_set_input_attachment.set_, 0, nullptr);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06539");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06537");  // write
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06539");  // read
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
