@@ -204,7 +204,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
     // BDA snapshot
     if (gpuav->gpuav_settings.shader_instrumentation.buffer_device_address) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         buffer_info.size = GetBdaRangesBufferByteSize();
         // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
@@ -346,6 +346,10 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
     bda_ranges_snapshot_.FlushAllocation(loc);
     bda_ranges_snapshot_.UnmapMemory();
     bda_ranges_snapshot_version_ = gpuav->buffer_device_address_ranges_version;
+
+    auto root_node_ptr = (glsl::RootNode *)gpuav->root_node_.MapMemory(loc);
+    root_node_ptr->binding_buffer_device_address = bda_ranges_snapshot_.Address();
+    gpuav->root_node_.UnmapMemory();
 
     return true;
 }
