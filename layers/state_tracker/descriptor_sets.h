@@ -21,6 +21,7 @@
 #include "state_tracker/state_object.h"
 #include "utils/hash_util.h"
 #include "state_tracker/shader_stage_state.h"
+#include "chassis/dispatch_object.h"
 #include "generated/vk_object_types.h"
 #include "generated/error_location_helper.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
@@ -801,6 +802,17 @@ struct DecodedTemplateUpdate {
  *   those maps is performed externally. The set class relies on their contents to
  *   be correct at the time of update.
  */
+class DescriptorSetProxy {
+  public:
+    DescriptorSetProxy(const DescriptorSet &set_) : set(set_) {}
+    virtual ~DescriptorSetProxy() {}
+
+    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+    virtual void NotifyUpdate() {}
+
+    const DescriptorSet &set;
+};
+
 class DescriptorSet : public StateObject {
   public:
     using BaseClass = StateObject;
@@ -831,11 +843,11 @@ class DescriptorSet : public StateObject {
     bool HasBinding(const uint32_t binding) const { return layout_->HasBinding(binding); };
 
     // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
-    virtual void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs);
+    void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
-    virtual void PerformWriteUpdate(const VkWriteDescriptorSet &);
+    void PerformWriteUpdate(const VkWriteDescriptorSet &);
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
-    virtual void PerformCopyUpdate(const VkCopyDescriptorSet &, const DescriptorSet &src_set);
+    void PerformCopyUpdate(const VkCopyDescriptorSet &, const DescriptorSet &src_set);
 
     const std::shared_ptr<DescriptorSetLayout const> &GetLayout() const { return layout_; };
     VkDescriptorSet VkHandle() const { return handle_.Cast<VkDescriptorSet>(); };
@@ -997,6 +1009,12 @@ class DescriptorSet : public StateObject {
 
     bool ValidateBindingOnGPU(const DescriptorBinding &binding, bool is_runtime_descriptor_array) const;
 
+    void SetSubState(LayerObjectTypeId id, std::unique_ptr<DescriptorSetProxy> &&substate) {
+        substates.emplace(id, std::move(substate));
+    }
+
+    DescriptorSetProxy *SubState(LayerObjectTypeId id) { return substates[id].get(); }
+
   protected:
     union AnyBinding {
         SamplerBinding sampler;
@@ -1037,6 +1055,8 @@ class DescriptorSet : public StateObject {
     // If this descriptor set is a push descriptor set, the descriptor
     // set writes that were last pushed.
     std::vector<vku::safe_VkWriteDescriptorSet> push_descriptor_set_writes;
+
+    std::map<LayerObjectTypeId, std::unique_ptr<DescriptorSetProxy>> substates;
 };
 
 // When updating a descriptor the VkDescriptorSetLayout can be sourced from 2 spots

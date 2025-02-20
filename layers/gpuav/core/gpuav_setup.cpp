@@ -30,38 +30,16 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 namespace gpuav {
 
-std::shared_ptr<vvl::Buffer> Validator::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *create_info) {
-    return std::make_shared<Buffer>(*this, handle, create_info, *desc_heap_);
-}
-
-std::shared_ptr<vvl::BufferView> Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &buffer, VkBufferView handle,
-                                                                  const VkBufferViewCreateInfo *create_info,
-                                                                  VkFormatFeatureFlags2 format_features) {
-    return std::make_shared<BufferView>(buffer, handle, create_info, format_features, *desc_heap_);
-}
-
-std::shared_ptr<vvl::ImageView> Validator::CreateImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
-                                                                const VkImageViewCreateInfo *create_info,
-                                                                VkFormatFeatureFlags2 format_features,
-                                                                const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
-    return std::make_shared<ImageView>(image_state, handle, create_info, format_features, cubic_props, *desc_heap_);
-}
-
-std::shared_ptr<vvl::Sampler> Validator::CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo *create_info) {
-    return std::make_shared<Sampler>(handle, create_info, *desc_heap_);
-}
-
-std::shared_ptr<vvl::AccelerationStructureKHR> Validator::CreateAccelerationStructureState(
-    VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *create_info,
-    std::shared_ptr<vvl::Buffer> &&buf_state) {
-    return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state), *desc_heap_);
-}
-
-std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool *pool,
-                                                                   const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
-                                                                   uint32_t variable_count) {
-    return std::static_pointer_cast<vvl::DescriptorSet>(
-        std::make_shared<DescriptorSet>(handle, pool, layout, variable_count, this));
+void Validator::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                                     VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj,
+                                                     vvl::AllocateDescriptorSetsData &ads_state) {
+    const auto alloc_count = pAllocateInfo->descriptorSetCount;
+    for (uint32_t i = 0; i < alloc_count; i++) {
+        auto set = Get<vvl::DescriptorSet>(pDescriptorSets[i]);
+        if (set) {
+            set->SetSubState(container_type, std::make_unique<DescriptorSet>(*set, *this));
+        }
+    }
 }
 
 std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuffer handle,

@@ -584,6 +584,9 @@ void vvl::DescriptorSet::LinkChildNodes() {
 
 void vvl::DescriptorSet::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
     BaseClass::NotifyInvalidate(invalid_nodes, unlink);
+    for (auto &item : substates) {
+        item.second->NotifyInvalidate(invalid_nodes, unlink);
+    }
     for (auto &binding : bindings_) {
         binding->NotifyInvalidate(invalid_nodes, unlink);
     }
