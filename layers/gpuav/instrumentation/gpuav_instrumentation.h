@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+/* Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,11 @@ struct LogObjectList;
 
 namespace vvl {
 struct LabelCommand;
+class DescriptorSet;
 }
 
 namespace gpuav {
 
-class DescriptorSet;
 class Validator;
 class CommandBuffer;
 class Queue;
@@ -68,18 +68,19 @@ bool LogInstrumentationError(Validator& gpuav, const CommandBuffer& cb_state, co
                              const InstrumentationErrorBlob& instrumentation_error_blob,
                              const std::vector<std::string>& initial_label_stack, uint32_t label_command_i,
                              uint32_t operation_index, const uint32_t* error_record,
-                             const std::vector<std::shared_ptr<DescriptorSet>>& descriptor_sets,
+                             const std::vector<std::shared_ptr<vvl::DescriptorSet>>& descriptor_sets,
                              VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
                              const Location& loc);
 
 // Return true iff an error has been found in error_record, among the list of errors this function manages
 bool LogMessageInstDescriptorIndexingOOB(Validator& gpuav, const uint32_t* error_record, std::string& out_error_msg,
                                          std::string& out_vuid_msg,
-                                         const std::vector<std::shared_ptr<DescriptorSet>>& descriptor_sets, const Location& loc,
-                                         bool uses_shader_object, bool& out_oob_access);
+                                         const std::vector<std::shared_ptr<vvl::DescriptorSet>>& descriptor_sets,
+                                         const Location& loc, bool uses_shader_object, bool& out_oob_access);
 bool LogMessageInstDescriptorClass(Validator& gpuav, const uint32_t* error_record, std::string& out_error_msg,
-                                   std::string& out_vuid_msg, const std::vector<std::shared_ptr<DescriptorSet>>& descriptor_sets,
-                                   const Location& loc, bool uses_shader_object, bool& out_oob_access);
+                                   std::string& out_vuid_msg,
+                                   const std::vector<std::shared_ptr<vvl::DescriptorSet>>& descriptor_sets, const Location& loc,
+                                   bool uses_shader_object, bool& out_oob_access);
 bool LogMessageInstBufferDeviceAddress(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg,
                                        bool& out_oob_access);
 bool LogMessageInstRayQuery(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg);

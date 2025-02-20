@@ -100,8 +100,7 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBuffer &cb_state
             continue;  // can have gaps in descriptor sets
         }
 
-        auto bound_descriptor_set = static_cast<DescriptorSet *>(ds_slot.ds_state.get());
-        ssbo_buffer_ptr->descriptor_index_post_process_buffers[i] = bound_descriptor_set->GetPostProcessBuffer(gpuav, loc);
+        ssbo_buffer_ptr->descriptor_index_post_process_buffers[i] = SubState(*ds_slot.ds_state).GetPostProcessBuffer(gpuav, loc);
     }
 
     descriptor_command_binding.post_process_ssbo_buffer.UnmapMemory();
@@ -137,10 +136,9 @@ void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBuffer &cb_
             continue;  // can have gaps in descriptor sets
         }
 
-        auto bound_descriptor_set = static_cast<DescriptorSet *>(ds_slot.ds_state.get());
         // If update after bind, wait until we process things in UpdateDescriptorStateSSBO()
-        if (!bound_descriptor_set->IsUpdateAfterBind()) {
-            ssbo_buffer_ptr->descriptor_set_types[i] = bound_descriptor_set->GetTypeAddress(gpuav, loc);
+        if (!ds_slot.ds_state->IsUpdateAfterBind()) {
+            ssbo_buffer_ptr->descriptor_set_types[i] = SubState(*ds_slot.ds_state).GetTypeAddress(gpuav, loc);
         }
     }
 
@@ -174,8 +172,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         if (!ds_slot.ds_state) {
             continue;  // can have gaps in descriptor sets
         }
-        std::shared_ptr<DescriptorSet> bound_descriptor_set = std::static_pointer_cast<DescriptorSet>(ds_slot.ds_state);
-        descriptor_command_binding.bound_descriptor_sets.emplace_back(std::move(bound_descriptor_set));
+        descriptor_command_binding.bound_descriptor_sets.emplace_back(ds_slot.ds_state);
     }
 
     UpdateBoundDescriptorsPostProcess(gpuav, cb_state, last_bound, descriptor_command_binding, loc);
@@ -192,8 +189,8 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     for (auto &descriptor_command_binding : cb_state.descriptor_command_bindings) {
         auto ssbo_buffer_ptr = (glsl::DescriptorStateSSBO *)descriptor_command_binding.descritpor_state_ssbo_buffer.MapMemory(loc);
         for (size_t i = 0; i < descriptor_command_binding.bound_descriptor_sets.size(); i++) {
-            DescriptorSet &ds_state = *descriptor_command_binding.bound_descriptor_sets[i];
-            ssbo_buffer_ptr->descriptor_set_types[i] = ds_state.GetTypeAddress(gpuav, loc);
+            auto &substate = SubState(*descriptor_command_binding.bound_descriptor_sets[i]);
+            ssbo_buffer_ptr->descriptor_set_types[i] = substate.GetTypeAddress(gpuav, loc);
         }
         descriptor_command_binding.descritpor_state_ssbo_buffer.UnmapMemory();
     }
@@ -219,6 +216,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         // For each descriptor set ...
         for (uint32_t set_index = 0; set_index < descriptor_command_binding.bound_descriptor_sets.size(); set_index++) {
             auto &bound_descriptor_set = descriptor_command_binding.bound_descriptor_sets[set_index];
+            auto &substate = SubState(*bound_descriptor_set);
             if (set_index >= action_command_snapshot.binding_req_maps.size()) {
                 // This can occure if binding 2 sets, but then a pipeline layout only uses the first set, so the remaining sets are
                 // now not valid to use
@@ -232,8 +230,8 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 continue;
             }
 
-            if (!bound_descriptor_set->HasPostProcessBuffer()) {
-                if (!bound_descriptor_set->CanPostProcess()) {
+            if (!substate.HasPostProcessBuffer()) {
+                if (!substate.CanPostProcess()) {
                     continue;  // hit a dummy object used as a placeholder
                 }
 
@@ -250,7 +248,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set, set_index, VK_NULL_HANDLE /*framebuffer*/,
                                              draw_loc);
 
-            auto descriptor_accesses = bound_descriptor_set->GetDescriptorAccesses(loc, set_index);
+            auto descriptor_accesses = SubState(*bound_descriptor_set).GetDescriptorAccesses(loc, set_index);
             for (const auto &descriptor_access : descriptor_accesses) {
                 auto descriptor_binding = bound_descriptor_set->GetBinding(descriptor_access.binding);
                 ASSERT_AND_CONTINUE(descriptor_binding);

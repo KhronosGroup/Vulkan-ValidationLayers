@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ struct DescriptorCommandBinding {
 
     // Note: The index here is from vkCmdBindDescriptorSets::firstSet
     // for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
-    std::vector<std::shared_ptr<DescriptorSet>> bound_descriptor_sets;
+    std::vector<std::shared_ptr<vvl::DescriptorSet>> bound_descriptor_sets;
 
     DescriptorCommandBinding(Validator &gpuav) : descritpor_state_ssbo_buffer(gpuav), post_process_ssbo_buffer(gpuav) {}
 };

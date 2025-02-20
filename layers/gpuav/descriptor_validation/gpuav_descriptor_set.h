@@ -24,6 +24,7 @@
 #include "gpuav/spirv/interface.h"
 
 namespace gpuav {
+class DescriptorHeap;
 class Validator;
 
 // Information about how each descriptor was accessed
@@ -33,14 +34,13 @@ struct DescriptorAccess {
     uint32_t variable_id;  // OpVariable of descriptor accessed;
 };
 
-class DescriptorSet : public vvl::DescriptorSet {
+class DescriptorSetSubState : public vvl::DescriptorSetSubState {
   public:
-    DescriptorSet(const VkDescriptorSet set, vvl::DescriptorPool *pool,
-                  const std::shared_ptr<vvl::DescriptorSetLayout const> &layout, uint32_t variable_count, vvl::Device *state_data);
-    virtual ~DescriptorSet();
-    void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) override;
-    void PerformWriteUpdate(const VkWriteDescriptorSet &) override;
-    void PerformCopyUpdate(const VkCopyDescriptorSet &, const vvl::DescriptorSet &) override;
+    DescriptorSetSubState(const vvl::DescriptorSet &set, Validator &state_data);
+    virtual ~DescriptorSetSubState();
+
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+    void NotifyUpdate() override;
 
     VkDeviceAddress GetTypeAddress(Validator &gpuav, const Location &loc);
     VkDeviceAddress GetPostProcessBuffer(Validator &gpuav, const Location &loc);
@@ -65,15 +65,23 @@ class DescriptorSet : public vvl::DescriptorSet {
     vko::Buffer input_buffer_;
 
     mutable std::mutex state_lock_;
+    DescriptorHeap *heap_{};
 };
+
+static inline DescriptorSetSubState &SubState(vvl::DescriptorSet &set) {
+    return static_cast<DescriptorSetSubState &>(*set.SubState(LayerObjectTypeGpuAssisted));
+}
 
 typedef uint32_t DescriptorId;
 class DescriptorHeap {
   public:
     DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const Location &loc);
     ~DescriptorHeap();
-    DescriptorId NextId(const VulkanTypedHandle &handle);
-    void DeleteId(DescriptorId id);
+
+    DescriptorId GetId(const VulkanTypedHandle &handle);
+    const VulkanTypedHandle GetHandle(DescriptorId id) const;
+
+    void Delete(const VulkanTypedHandle &handle);
 
     VkDeviceAddress GetDeviceAddress() const { return buffer_.Address(); }
 
@@ -85,6 +93,7 @@ class DescriptorHeap {
     const uint32_t max_descriptors_;
     DescriptorId next_id_{1};
     vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
+    vvl::unordered_map<VulkanTypedHandle, DescriptorId> handle_map_;
 
     vko::Buffer buffer_;
     uint32_t *gpu_heap_state_{nullptr};

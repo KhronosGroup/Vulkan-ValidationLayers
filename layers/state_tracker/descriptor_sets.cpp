@@ -583,9 +583,15 @@ void vvl::DescriptorSet::LinkChildNodes() {
 }
 
 void vvl::DescriptorSet::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
-    BaseClass::NotifyInvalidate(invalid_nodes, unlink);
+    bool notify_parents = false;
+    for (auto &item : substates) {
+        item.second->NotifyInvalidate(invalid_nodes, unlink);
+    }
     for (auto &binding : bindings_) {
-        binding->NotifyInvalidate(invalid_nodes, unlink);
+        notify_parents |= binding->NotifyInvalidate(invalid_nodes, unlink);
+    }
+    if (notify_parents) {
+        BaseClass::NotifyInvalidate(invalid_nodes, unlink);
     }
 }
 
@@ -746,13 +752,13 @@ bool vvl::DescriptorSet::ValidateBindingOnGPU(const DescriptorBinding &binding, 
 // src and dst are shared pointers.
 template <typename T>
 static void ReplaceStatePtr(DescriptorSet &set_state, T &dst, const T &src, bool is_bindless) {
-    if (dst && !is_bindless) {
+    if (dst) {
         dst->RemoveParent(&set_state);
     }
     dst = src;
     // For descriptor bindings with UPDATE_AFTER_BIND or PARTIALLY_BOUND only set the object as a child, but not the descriptor as a
     // parent, so that destroying the object wont invalidate the descriptor
-    if (dst && !is_bindless) {
+    if (dst) {
         dst->AddParent(&set_state);
     }
 }
@@ -851,6 +857,19 @@ void vvl::ImageSamplerDescriptor::RemoveParent(StateObject *state_object) {
     }
 }
 
+bool vvl::ImageSamplerDescriptor::InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) {
+    if (ImageDescriptor::InvalidateNode(invalid_node, unlink)) {
+        return true;
+    }
+    if (sampler_state_ == invalid_node) {
+        if (unlink) {
+            sampler_state_.reset();
+        }
+        return true;
+    }
+    return false;
+}
+
 bool vvl::ImageSamplerDescriptor::Invalid() const {
     return ImageDescriptor::Invalid() || !sampler_state_ || sampler_state_->Invalid();
 }
@@ -905,13 +924,15 @@ void vvl::ImageDescriptor::RemoveParent(StateObject *state_object) {
         image_view_state_->RemoveParent(state_object);
     }
 }
-void vvl::ImageDescriptor::InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) {
+bool vvl::ImageDescriptor::InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) {
     if (invalid_node == image_view_state_) {
         known_valid_view_ = false;
         if (unlink) {
             image_view_state_.reset();
         }
+        return true;
     }
+    return false;
 }
 
 bool vvl::ImageDescriptor::Invalid() const { return !known_valid_view_ && ComputeInvalid(); }
@@ -956,6 +977,17 @@ void vvl::BufferDescriptor::RemoveParent(StateObject *state_object) {
         buffer_state_->RemoveParent(state_object);
     }
 }
+
+bool vvl::BufferDescriptor::InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) {
+    if (buffer_state_ == invalid_node) {
+        if (unlink) {
+            buffer_state_.reset();
+        }
+        return true;
+    }
+    return false;
+}
+
 bool vvl::BufferDescriptor::Invalid() const { return !buffer_state_ || buffer_state_->Invalid(); }
 
 VkDeviceSize vvl::BufferDescriptor::GetEffectiveRange() const {
@@ -1000,6 +1032,16 @@ void vvl::TexelDescriptor::RemoveParent(StateObject *state_object) {
     if (buffer_view_state_) {
         buffer_view_state_->RemoveParent(state_object);
     }
+}
+
+bool vvl::TexelDescriptor::InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) {
+    if (buffer_view_state_ == invalid_node) {
+        if (unlink) {
+            buffer_view_state_.reset();
+        }
+        return true;
+    }
+    return false;
 }
 
 bool vvl::TexelDescriptor::Invalid() const { return !buffer_view_state_ || buffer_view_state_->Invalid(); }
@@ -1063,6 +1105,24 @@ void vvl::AccelerationStructureDescriptor::RemoveParent(StateObject *state_objec
         acc_state_nv_->RemoveParent(state_object);
     }
 }
+
+bool vvl::AccelerationStructureDescriptor::InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) {
+    if (acc_state_ == invalid_node) {
+        if (unlink) {
+            acc_state_.reset();
+        }
+        return true;
+    }
+
+    if (acc_state_nv_ == invalid_node) {
+        if (unlink) {
+            acc_state_nv_.reset();
+        }
+        return true;
+    }
+    return false;
+}
+
 bool vvl::AccelerationStructureDescriptor::Invalid() const {
     if (is_khr_) {
         return !acc_state_ || acc_state_->Invalid();
@@ -1365,6 +1425,81 @@ void vvl::MutableDescriptor::RemoveParent(StateObject *state_object) {
     if (acc_state_nv_) {
         acc_state_nv_->RemoveParent(state_object);
     }
+}
+
+bool vvl::MutableDescriptor::InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) {
+    switch (ActiveClass()) {
+        case DescriptorClass::PlainSampler:
+            if (sampler_state_ == invalid_node) {
+                if (unlink) {
+                    sampler_state_.reset();
+                }
+                return true;
+            }
+            break;
+
+        case DescriptorClass::ImageSampler:
+            if (image_view_state_ == invalid_node) {
+                if (unlink) {
+                    image_view_state_.reset();
+                }
+                return true;
+            }
+            if (sampler_state_ == invalid_node) {
+                if (unlink) {
+                    sampler_state_.reset();
+                }
+                return true;
+            }
+            break;
+
+        case DescriptorClass::TexelBuffer:
+            if (buffer_view_state_ == invalid_node) {
+                if (unlink) {
+                    buffer_view_state_.reset();
+                }
+                return true;
+            }
+            break;
+
+        case DescriptorClass::Image:
+            if (image_view_state_ == invalid_node) {
+                if (unlink) {
+                    image_view_state_.reset();
+                }
+                return true;
+            }
+            break;
+
+        case DescriptorClass::GeneralBuffer:
+            if (buffer_state_ == invalid_node) {
+                if (unlink) {
+                    buffer_state_.reset();
+                }
+                return true;
+            }
+            break;
+
+        case DescriptorClass::AccelerationStructure:
+            if (acc_state_ == invalid_node) {
+                if (unlink) {
+                    acc_state_.reset();
+                }
+                return true;
+            }
+            if (acc_state_nv_ == invalid_node) {
+                if (unlink) {
+                    acc_state_nv_.reset();
+                }
+                return true;
+            }
+            break;
+        case DescriptorClass::InlineUniform:
+        case DescriptorClass::Mutable:
+        case DescriptorClass::Invalid:
+            break;
+    }
+    return false;
 }
 
 bool vvl::MutableDescriptor::Invalid() const {

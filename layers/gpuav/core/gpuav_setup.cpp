@@ -30,50 +30,14 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 namespace gpuav {
 
-std::shared_ptr<vvl::Buffer> Validator::CreateBufferState(VkBuffer handle, const VkBufferCreateInfo *create_info) {
-    return std::make_shared<Buffer>(*this, handle, create_info, *desc_heap_);
-}
-
-std::shared_ptr<vvl::BufferView> Validator::CreateBufferViewState(const std::shared_ptr<vvl::Buffer> &buffer, VkBufferView handle,
-                                                                  const VkBufferViewCreateInfo *create_info,
-                                                                  VkFormatFeatureFlags2 format_features) {
-    return std::make_shared<BufferView>(buffer, handle, create_info, format_features, *desc_heap_);
-}
-
-std::shared_ptr<vvl::ImageView> Validator::CreateImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle,
-                                                                const VkImageViewCreateInfo *create_info,
-                                                                VkFormatFeatureFlags2 format_features,
-                                                                const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) {
-    return std::make_shared<ImageView>(image_state, handle, create_info, format_features, cubic_props, *desc_heap_);
-}
-
-std::shared_ptr<vvl::Sampler> Validator::CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo *create_info) {
-    return std::make_shared<Sampler>(handle, create_info, *desc_heap_);
-}
-
-std::shared_ptr<vvl::AccelerationStructureKHR> Validator::CreateAccelerationStructureState(
-    VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *create_info,
-    std::shared_ptr<vvl::Buffer> &&buf_state) {
-    // If the buffer's device address has not been queried,
-    // get it here. Since it is used for the purpose of
-    // validation, do not try to update buffer_state, since
-    // it only tracks application state.
-    VkDeviceAddress buffer_address = 0;
-    if (buf_state) {
-        if (buf_state->deviceAddress != 0) {
-            buffer_address = buf_state->deviceAddress;
-        } else if (buf_state->Binding()) {
-            buffer_address = GetBufferDeviceAddressHelper(buf_state->VkHandle());
-        }
-    }
-    return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state), buffer_address, *desc_heap_);
-}
-
 std::shared_ptr<vvl::DescriptorSet> Validator::CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool *pool,
                                                                    const std::shared_ptr<vvl::DescriptorSetLayout const> &layout,
                                                                    uint32_t variable_count) {
-    return std::static_pointer_cast<vvl::DescriptorSet>(
-        std::make_shared<DescriptorSet>(handle, pool, layout, variable_count, this));
+    auto set = BaseClass::CreateDescriptorSet(handle, pool, layout, variable_count);
+    if (set) {
+        set->SetSubState(container_type, std::make_unique<DescriptorSetSubState>(*set, *this));
+    }
+    return set;
 }
 
 std::shared_ptr<vvl::CommandBuffer> Validator::CreateCmdBufferState(VkCommandBuffer handle,
