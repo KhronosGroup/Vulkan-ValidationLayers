@@ -495,8 +495,7 @@ class CommandBuffer : public RefcountedStateObject {
     // If primary, the secondary command buffers we will call.
     vvl::unordered_set<CommandBuffer *> linkedCommandBuffers;
     // Validation functions run at primary CB queue submit time
-    using QueueCallback =
-        std::function<bool(const Device &device_data, const class vvl::Queue &queue_state, const CommandBuffer &cb_state)>;
+    using QueueCallback = std::function<bool(const class vvl::Queue &queue_state, const CommandBuffer &cb_state)>;
     std::vector<QueueCallback> queue_submit_functions;
     // Used by some layers to defer actions until vkCmdEndRenderPass time.
     // Layers using this are responsible for inserting the callbacks into queue_submit_functions.

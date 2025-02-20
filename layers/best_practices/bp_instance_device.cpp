@@ -327,7 +327,7 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
         for (uint32_t cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
             auto cb = GetWrite<bp_state::CommandBuffer>(submit_info.pCommandBuffers[cb_index]);
             for (auto& func : cb->queue_submit_functions) {
-                func(*this, *queue_state, *cb);
+                func(*queue_state, *cb);
             }
             cb->num_submits++;
         }

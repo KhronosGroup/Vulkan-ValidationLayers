@@ -820,8 +820,7 @@ void CommandBuffer::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo
 
             // Enqueue submission time DPB slot deactivation
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [deactivated_slots](const Device &dev_data, const vvl::VideoSession *vs_state,
-                                    vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                [deactivated_slots](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                     for (const auto &slot_index : deactivated_slots) {
                         dev_state.Deactivate(slot_index);
                     }
@@ -851,8 +850,7 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
 
             // Enqueue submission time video session state reset/initialization
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [](const Device &dev_data, const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
-                   bool do_validate) {
+                [](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                     dev_state.Reset();
                     return false;
                 });
@@ -865,8 +863,7 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
 
                 // Enqueue rate control specific device state changes
                 video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                    [state](const Device &dev_data, const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
-                            bool do_validate) {
+                    [state](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                         dev_state.SetRateControlState(state);
                         return false;
                     });
@@ -881,8 +878,7 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
 
                 // Enqueue encode quality level device state change
                 video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                    [quality_level](const Device &dev_data, const vvl::VideoSession *vs_state,
-                                    vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                    [quality_level](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
                         dev_state.SetEncodeQualityLevel(quality_level);
                         return false;
                     });
@@ -917,8 +913,8 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
             // Enqueue submission time reference slot setup or invalidation
             bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(*pDecodeInfo);
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [setup_slot, reference_setup_requested](const Device &dev_data, const vvl::VideoSession *vs_state,
-                                                        vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                [setup_slot, reference_setup_requested](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
+                                                        bool do_validate) {
                     if (reference_setup_requested) {
                         dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
                     } else {
@@ -957,8 +953,8 @@ void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
             // Enqueue submission time reference slot setup or invalidation
             bool reference_setup_requested = bound_video_session->ReferenceSetupRequested(*pEncodeInfo);
             video_session_updates[bound_video_session->VkHandle()].emplace_back(
-                [setup_slot, reference_setup_requested](const Device &dev_data, const vvl::VideoSession *vs_state,
-                                                        vvl::VideoSessionDeviceState &dev_state, bool do_validate) {
+                [setup_slot, reference_setup_requested](const vvl::VideoSession *vs_state, vvl::VideoSessionDeviceState &dev_state,
+                                                        bool do_validate) {
                     if (reference_setup_requested) {
                         dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
                     } else {
@@ -1640,7 +1636,7 @@ void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Locat
         auto video_session_state = dev_data.Get<vvl::VideoSession>(it.first);
         auto device_state = video_session_state->DeviceStateWrite();
         for (const auto &function : it.second) {
-            function(dev_data, video_session_state.get(), *device_state, /*do_validate*/ false);
+            function(video_session_state.get(), *device_state, /*do_validate*/ false);
         }
     }
 }
