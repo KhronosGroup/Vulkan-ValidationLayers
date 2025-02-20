@@ -1761,7 +1761,7 @@ TEST_F(NegativeSyncVal, TexelBufferDescriptorHazard) {
 
     vkt::Buffer buffer(*m_device, 2048, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer source_buffer(*m_device, 2048, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-    vkt::BufferView buffer_view(*m_device, vkt::BufferView::CreateInfo(buffer, VK_FORMAT_R32_SFLOAT));
+    vkt::BufferView buffer_view(*m_device, buffer, VK_FORMAT_R32_SFLOAT);
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -4230,14 +4230,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     buffer_a.init(*m_device, buffer_a.CreateInfo(2048, buffer_usage), mem_prop);
     buffer_b.init(*m_device, buffer_b.CreateInfo(2048, buffer_usage), mem_prop);
 
-    vkt::BufferView bufferview;
-    VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = buffer_a.handle();
-    bvci.format = VK_FORMAT_R32_SFLOAT;
-    bvci.offset = 0;
-    bvci.range = VK_WHOLE_SIZE;
-
-    bufferview.init(*m_device, bvci);
+    vkt::BufferView buffer_view(*m_device, buffer_a, VK_FORMAT_R32_SFLOAT);
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -4252,7 +4245,7 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
                                             VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.WriteDescriptorImageInfo(2, imageview_s, sampler_s.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                             VK_IMAGE_LAYOUT_GENERAL);
-    descriptor_set.WriteDescriptorBufferView(3, bufferview.handle());
+    descriptor_set.WriteDescriptorBufferView(3, buffer_view.handle());
     descriptor_set.UpdateDescriptorSets();
 
     // Dispatch

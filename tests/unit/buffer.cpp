@@ -139,12 +139,7 @@ TEST_F(NegativeBuffer, CreateBufferViewNoMemoryBoundToBuffer) {
     buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
     buff_ci.size = 256;
     vkt::Buffer buffer(*m_device, buff_ci, vkt::no_mem);
-
-    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
-    buff_view_ci.buffer = buffer;
-    buff_view_ci.format = VK_FORMAT_R8_UNORM;
-    buff_view_ci.range = VK_WHOLE_SIZE;
-    vkt::BufferView buffer_view(*m_device, buff_view_ci);
+    vkt::BufferView buffer_view(*m_device, buffer, VK_FORMAT_R8_UNORM);
     m_errorMonitor->VerifyFound();
 }
 

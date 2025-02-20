@@ -132,12 +132,7 @@ TEST_F(NegativeShaderStorageTexel, UnknownWriteLessComponent) {
     }
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
-
-    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
-    buff_view_ci.buffer = buffer.handle();
-    buff_view_ci.format = format;
-    buff_view_ci.range = VK_WHOLE_SIZE;
-    vkt::BufferView buffer_view(*m_device, buff_view_ci);
+    vkt::BufferView buffer_view(*m_device, buffer, format);
 
     ds.WriteDescriptorBufferView(0, buffer_view);
     ds.UpdateDescriptorSets();
@@ -230,12 +225,7 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     cs_pipeline.CreateComputePipeline(false);                      // need false to prevent late binding
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
-
-    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
-    buff_view_ci.buffer = buffer.handle();
-    buff_view_ci.format = format;
-    buff_view_ci.range = VK_WHOLE_SIZE;
-    vkt::BufferView buffer_view(*m_device, buff_view_ci);
+    vkt::BufferView buffer_view(*m_device, buffer, format);
     if (!buffer_view.initialized()) {
         // device profile layer might hide fact this is not a supported buffer view format
         GTEST_SKIP() << "Device will not be able to initialize buffer view skipped";

@@ -183,12 +183,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
     // Texel Buffer Case
     {
         vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
-
-        VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
-        buff_view_ci.buffer = buffer.handle();
-        buff_view_ci.format = format_texel_case;
-        buff_view_ci.range = VK_WHOLE_SIZE;
-        vkt::BufferView buffer_view(*m_device, buff_view_ci);
+        vkt::BufferView buffer_view(*m_device, buffer, format_texel_case);
 
         OneOffDescriptorSet descriptor_set(m_device,
                                            {
@@ -983,12 +978,7 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;  // would be wrong, but ignored
     vkt::Buffer buffer(*m_device, buffer_create_info);
-
-    VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
-    buff_view_ci.buffer = buffer.handle();
-    buff_view_ci.format = buffer_format;
-    buff_view_ci.range = VK_WHOLE_SIZE;
-    vkt::BufferView buffer_view(*m_device, buff_view_ci);
+    vkt::BufferView buffer_view(*m_device, buffer, buffer_format);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
