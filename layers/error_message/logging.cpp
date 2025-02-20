@@ -210,26 +210,31 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
     }
 
     if (text_vuid != nullptr) {
-        oss << "[ " << text_vuid << " ] ";
+        oss << "[ " << text_vuid << " ]";
     }
-    uint32_t index = 0;
-    for (const auto &src_object : object_name_infos) {
+
+    if (!object_name_infos.empty()) {
+        oss << " Objects: ";
+    }
+    for (uint32_t i = 0; i < object_name_infos.size(); i++) {
+        const VkDebugUtilsObjectNameInfoEXT &src_object = object_name_infos[i];
         if (0 != src_object.objectHandle) {
-            oss << "Object " << index++ << ": ";
+            oss << string_VkObjectTypeHandleName(src_object.objectType) << " ";
             if (!debug_stable_messages) {
-                oss << "handle = 0x" << std::hex << src_object.objectHandle << ", ";
+                oss << "0x" << std::hex << src_object.objectHandle;
             }
             if (src_object.pObjectName) {
-                oss << "name = " << src_object.pObjectName << ", type = ";
-            } else {
-                oss << "type = ";
+                oss << "[" << src_object.pObjectName << "]";
             }
-            oss << string_VkObjectType(src_object.objectType) << "; ";
         } else {
-            oss << "Object " << index++ << ": VK_NULL_HANDLE, type = " << string_VkObjectType(src_object.objectType) << "; ";
+            oss << string_VkObjectTypeHandleName(src_object.objectType) << " VK_NULL_HANDLE";
+        }
+
+        if (i + 1 != object_name_infos.size()) {
+            oss << "; ";
         }
     }
-    oss << "| MessageID = 0x" << std::hex << message_id_number << " | " << msg;
+    oss << " | MessageID = 0x" << std::hex << message_id_number << "\n" << msg;
     std::string composite = oss.str();
 
     const auto callback_list = &debug_callback_list;
@@ -340,7 +345,9 @@ std::string DebugReport::FormatHandle(const char *handle_type_name, uint64_t han
     if (print_handle) {
         str << "0x" << std::hex << handle;
     }
-    str << "[" << handle_name.c_str() << "]";
+    if (!handle_name.empty()) {
+        str << "[" << handle_name.c_str() << "]";
+    }
     return str.str();
 }
 
