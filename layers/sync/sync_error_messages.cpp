@@ -111,7 +111,7 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
                                          (hazard_info.IsPriorRead() && read_barriers == VK_PIPELINE_STAGE_2_NONE);
 
     // Brief description of what happened
-    ss << "\n" << string_SyncHazard(hazard_type) << " hazard detected. ";
+    ss << string_SyncHazard(hazard_type) << " hazard detected. ";
     ss << (additional_info.access_initiator.empty() ? vvl::String(command) : additional_info.access_initiator);
     ss << " ";
     if (!additional_info.access_action.empty()) {
