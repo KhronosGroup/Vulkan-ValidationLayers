@@ -641,6 +641,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_arm_pipeline_opacity_micromap{kNotEnabled};
     ExtEnabled vk_ext_external_memory_metal{kNotEnabled};
     ExtEnabled vk_ext_vertex_attribute_robustness{kNotEnabled};
+    ExtEnabled vk_nv_present_metering{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
@@ -995,8 +996,7 @@ struct DeviceExtensions : public InstanceExtensions {
              Info(&DeviceExtensions::vk_khr_maintenance8, {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
             {vvl::Extension::_VK_KHR_video_maintenance2,
              Info(&DeviceExtensions::vk_khr_video_maintenance2,
-                  {{{&DeviceExtensions::vk_khr_video_decode_queue, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME},
-                    {&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
+                  {{{&DeviceExtensions::vk_khr_video_queue, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_depth_clamp_zero_one,
              Info(&DeviceExtensions::vk_khr_depth_clamp_zero_one, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -1752,6 +1752,7 @@ struct DeviceExtensions : public InstanceExtensions {
              Info(&DeviceExtensions::vk_ext_vertex_attribute_robustness,
                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {vvl::Extension::_VK_NV_present_metering, Info(&DeviceExtensions::vk_nv_present_metering, {})},
             {vvl::Extension::_VK_KHR_acceleration_structure,
              Info(&DeviceExtensions::vk_khr_acceleration_structure,
                   {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
@@ -2196,6 +2197,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_ARM_pipeline_opacity_micromap:
         case vvl::Extension::_VK_EXT_external_memory_metal:
         case vvl::Extension::_VK_EXT_vertex_attribute_robustness:
+        case vvl::Extension::_VK_NV_present_metering:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

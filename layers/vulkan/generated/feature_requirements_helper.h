@@ -644,6 +644,8 @@ enum class Feature {
     presentBarrier,
     // VkPhysicalDevicePresentIdFeaturesKHR
     presentId,
+    // VkPhysicalDevicePresentMeteringFeaturesNV
+    presentMetering,
     // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT
     presentModeFifoLatestReady,
     // VkPhysicalDevicePresentWaitFeaturesKHR
