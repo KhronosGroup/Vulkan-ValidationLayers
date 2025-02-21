@@ -625,13 +625,8 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     if (image_properties_result != VK_SUCCESS) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-imageFormat-01778", device, create_info_loc,
                      "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, "
-                     "with following params: "
-                     "format: %s, imageType: %s, "
-                     "tiling: %s, usage: %s, "
-                     "flags: %s.",
-                     string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
-                     string_VkImageTiling(image_create_info.tiling), string_VkImageUsageFlags(image_create_info.usage).c_str(),
-                     string_VkImageCreateFlags(image_create_info.flags).c_str())) {
+                     "with following VkImageCreateInfo\n%s",
+                     string_VkPhysicalDeviceImageFormatInfo2(image_create_info).c_str())) {
             return true;
         }
     }

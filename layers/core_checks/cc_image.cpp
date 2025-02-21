@@ -268,16 +268,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                    ? Func::vkGetPhysicalDeviceImageFormatProperties2
                                    : Func::vkGetPhysicalDeviceImageFormatProperties;
                 skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, create_info_loc,
-                                 "The following parameters -\n"
-                                 "format (%s)\n"
-                                 "type (%s)\n"
-                                 "tiling (%s)\n"
-                                 "usage (%s)\n"
-                                 "flags (%s)\n"
+                                 "The following VkImageCreateInfo\n%s"
                                  "returned (%s) when calling %s.",
-                                 string_VkFormat(pCreateInfo->format), string_VkImageType(pCreateInfo->imageType),
-                                 string_VkImageTiling(pCreateInfo->tiling), string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
-                                 string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkResult(result), String(command));
+                                 string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(), string_VkResult(result),
+                                 String(command));
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
             }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
@@ -312,19 +306,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             // Will not have to worry about VkExternalFormatANDROID if using DRM format modifier
             std::string drm_source = modifier_list ? "pDrmFormatModifiers[]" : "VkImageDrmFormatModifierExplicitCreateInfoEXT";
             skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, create_info_loc,
-                             "The following parameters -\n"
-                             "format (%s)\n"
-                             "type (%s)\n"
-                             "tiling (%s)\n"
-                             "usage (%s)\n"
-                             "flags (%s)\n"
+                             "The following VkImageCreateInfo\n%s"
                              "drmFormatModifier (%" PRIu64
                              ") from %s\n"
                              "returned (%s) when calling VkGetPhysicalDeviceImageFormatProperties2.",
-                             string_VkFormat(pCreateInfo->format), string_VkImageType(pCreateInfo->imageType),
-                             string_VkImageTiling(pCreateInfo->tiling), string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
-                             string_VkImageCreateFlags(pCreateInfo->flags).c_str(), drm_format_modifier.drmFormatModifier,
-                             drm_source.c_str(), string_VkResult(result));
+                             string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(),
+                             drm_format_modifier.drmFormatModifier, drm_source.c_str(), string_VkResult(result));
         }
     }
 
@@ -633,12 +620,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         if (result != VK_SUCCESS) {
             skip |= LogError(
                 "VUID-VkImageCreateInfo-pNext-00990", device, create_info_loc,
-                "The handle type (%s), format (%s), type (%s), tiling (%s), usage (%s), flags (%s) "
+                "The handle type (%s) with VkImageCreateInfo\n%s"
                 "is not supported combination of parameters and vkGetPhysicalDeviceImageFormatProperties2 returned back %s.",
                 string_VkExternalMemoryHandleTypeFlagBits(external_image_info.handleType),
-                string_VkFormat(image_format_info.format), string_VkImageType(image_format_info.type),
-                string_VkImageTiling(image_format_info.tiling), string_VkImageUsageFlags(image_format_info.usage).c_str(),
-                string_VkImageCreateFlags(image_format_info.flags).c_str(), string_VkResult(result));
+                string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(), string_VkResult(result));
         } else if ((external_memory_create_info->handleTypes & compatible_types) != external_memory_create_info->handleTypes) {
             skip |= LogError(
                 "VUID-VkImageCreateInfo-pNext-00990", device,
@@ -665,13 +650,11 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
         if (result != VK_SUCCESS) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-00991", device, create_info_loc,
-                             "The handle type (%s), format (%s), type (%s), tiling (%s), usage (%s), flags (%s) "
+                             "The handle type (%s) with VkImageCreateInfo\n%s"
                              "is not supported combination of parameters and vkGetPhysicalDeviceExternalImageFormatPropertiesNV "
                              "returned back %s.",
-                             string_VkExternalMemoryHandleTypeFlagBitsNV(handle_type), string_VkFormat(pCreateInfo->format),
-                             string_VkImageType(pCreateInfo->imageType), string_VkImageTiling(pCreateInfo->tiling),
-                             string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
-                             string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkResult(result));
+                             string_VkExternalMemoryHandleTypeFlagBitsNV(handle_type),
+                             string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(), string_VkResult(result));
         } else if ((external_memory_create_info_nv->handleTypes & compatible_types) !=
                    external_memory_create_info_nv->handleTypes) {
             skip |= LogError("VUID-VkImageCreateInfo-pNext-00991", device,
