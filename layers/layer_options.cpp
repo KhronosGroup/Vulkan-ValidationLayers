@@ -226,6 +226,7 @@ const char *VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES_PRETTY_PRINT = "syncval_me
 
 // Message Formatting
 // ---
+const char *VK_LAYER_MESSAGE_FORMAT_VERBOSE = "message_format_verbose";
 const char *VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME = "message_format_display_application_name";
 // Until post 1.3.290 SDK release, these were not possible to set via environment variables
 const char *VK_LAYER_LOG_FILENAME = "log_filename";
@@ -629,6 +630,8 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *la
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_SYNCVAL_MESSAGE_EXTRA_PROPERTIES_PRETTY_PRINT, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_MESSAGE_FORMAT_VERBOSE, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_LOG_FILENAME, setting.pSettingName) == 0) {
@@ -763,6 +766,10 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
         duplicate_message_limit = 0;
     }
     debug_report->duplicate_message_limit = duplicate_message_limit;
+
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_VERBOSE)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_VERBOSE, debug_report->message_format_settings.verbose);
+    }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_MESSAGE_FORMAT_DISPLAY_APPLICATION_NAME,

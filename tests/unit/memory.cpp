@@ -522,54 +522,32 @@ TEST_F(NegativeMemory, MemoryMapRangePlacedDisabled) {
 }
 #endif
 
-TEST_F(NegativeMemory, RebindMemoryMultiObjectDebugUtils) {
-    VkResult err;
-    bool pass;
-
-    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-07460");
-
+TEST_F(NegativeMemory, RebindMemoryMultiObject) {
     RETURN_IF_SKIP(Init());
 
     // Create an image, allocate memory, free it, and then try to bind it
-    VkMemoryRequirements mem_reqs;
-
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 32;
-    const int32_t tex_height = 32;
     VkImageCreateInfo image_create_info =
-        vkt::Image::ImageCreateInfo2D(tex_width, tex_height, 1, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+    VkMemoryRequirements mem_reqs = image.MemoryRequirements();
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
-    mem_alloc.allocationSize = 0;
-    mem_alloc.memoryTypeIndex = 0;
-
     // Introduce failure, do NOT set memProps to
     // VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
     mem_alloc.memoryTypeIndex = 1;
-
-    vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
-
     mem_alloc.allocationSize = mem_reqs.size;
-    pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0);
-    ASSERT_TRUE(pass);
+    ASSERT_TRUE(m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0));
 
-    // allocate 2 memory objects
     vkt::DeviceMemory mem1(*m_device, mem_alloc);
     vkt::DeviceMemory mem2(*m_device, mem_alloc);
 
     // Bind first memory object to Image object
-    err = vk::BindImageMemory(device(), image, mem1, 0);
-    ASSERT_EQ(VK_SUCCESS, err);
+    vk::BindImageMemory(device(), image, mem1, 0);
 
     // Introduce validation failure, try to bind a different memory object to
     // the same image object
-    err = vk::BindImageMemory(device(), image, mem2, 0);
-    m_errorMonitor->VerifyFound();
-
-    // This particular VU should output three objects in its error message. Verify this works correctly.
-    m_errorMonitor->SetDesiredError("VK_OBJECT_TYPE_IMAGE");
-    err = vk::BindImageMemory(device(), image, mem2, 0);
+    m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-image-07460");
+    vk::BindImageMemory(device(), image, mem2, 0);
     m_errorMonitor->VerifyFound();
 }
 

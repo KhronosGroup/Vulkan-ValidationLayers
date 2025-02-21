@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+ * Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -452,7 +452,7 @@ TEST_F(NegativeLayerSettings, WrongSettingType) {
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     Monitor().ExpectSuccess(kErrorBit | kWarningBit);
     Monitor().SetDesiredWarning(
-        " The setting enable_message_limit in VkLayerSettingsCreateInfoEXT was set to type VK_LAYER_SETTING_TYPE_UINT32_EXT but "
+        "The setting enable_message_limit in VkLayerSettingsCreateInfoEXT was set to type VK_LAYER_SETTING_TYPE_UINT32_EXT but "
         "requires type VK_LAYER_SETTING_TYPE_BOOL32_EXT and the value may be parsed incorrectly.");
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());
@@ -466,7 +466,7 @@ TEST_F(NegativeLayerSettings, WrongSettingType2) {
     VkLayerSettingsCreateInfoEXT create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &setting};
     Monitor().ExpectSuccess(kErrorBit | kWarningBit);
     Monitor().SetDesiredWarning(
-        " The setting thread_safety in VkLayerSettingsCreateInfoEXT was set to type VK_LAYER_SETTING_TYPE_UINT32_EXT but requires "
+        "The setting thread_safety in VkLayerSettingsCreateInfoEXT was set to type VK_LAYER_SETTING_TYPE_UINT32_EXT but requires "
         "type VK_LAYER_SETTING_TYPE_BOOL32_EXT and the value may be parsed incorrectly.");
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());
@@ -487,4 +487,23 @@ TEST_F(NegativeLayerSettings, DuplicateSettings) {
     RETURN_IF_SKIP(InitFramework(&create_info));
     RETURN_IF_SKIP(InitState());
     Monitor().VerifyFound();
+}
+
+TEST_F(NegativeLayerSettings, MessageFormatVerbose) {
+    VkBool32 disable = VK_FALSE;
+    const VkLayerSettingEXT setting[] = {
+        {OBJECT_LAYER_NAME, "message_format_verbose", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable}};
+    VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
+                                                              setting};
+    RETURN_IF_SKIP(InitFramework(&layer_setting_create_info));
+    RETURN_IF_SKIP(InitState());
+
+    VkBufferCreateInfo info = vku::InitStructHelper();
+    info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    info.size = 0;
+    m_errorMonitor->SetDesiredError(
+        "[ VUID-VkBufferCreateInfo-size-00912 ] vkCreateBuffer(): pCreateInfo->size is zero.\nThe Vulkan spec states: size must be "
+        "greater than 0");
+    vkt::Buffer buffer(*m_device, info, vkt::no_mem);
+    m_errorMonitor->VerifyFound();
 }
