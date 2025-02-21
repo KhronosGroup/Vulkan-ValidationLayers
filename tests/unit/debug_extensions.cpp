@@ -584,3 +584,34 @@ TEST_F(NegativeDebugExtensions, SwapchainImagesDebugMarker) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeDebugExtensions, MultiObjectBindImage) {
+    TEST_DESCRIPTION("Make sure both VkDeviceMemory and VkImage are displayed in error message");
+    RETURN_IF_SKIP(Init());
+
+    // Create an image, allocate memory, free it, and then try to bind it
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+    VkMemoryRequirements mem_reqs = image.MemoryRequirements();
+
+    VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
+    // Introduce failure, do NOT set memProps to
+    // VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+    mem_alloc.memoryTypeIndex = 1;
+    mem_alloc.allocationSize = mem_reqs.size;
+    ASSERT_TRUE(m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &mem_alloc, 0));
+
+    vkt::DeviceMemory mem1(*m_device, mem_alloc);
+    vkt::DeviceMemory mem2(*m_device, mem_alloc);
+
+    // Bind first memory object to Image object
+    vk::BindImageMemory(device(), image, mem1, 0);
+
+    // Introduce validation failure, try to bind a different memory object to
+    // the same image object
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkBindImageMemory-image-07460",
+                                         "Objects: VkDeviceMemory 0x[a-f0-9]+, VkImage 0x[a-f0-9]+, VkDeviceMemory 0x[a-f0-9]+");
+    vk::BindImageMemory(device(), image, mem2, 0);
+    m_errorMonitor->VerifyFound();
+}

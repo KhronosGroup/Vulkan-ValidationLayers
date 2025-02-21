@@ -154,6 +154,11 @@ khronos_validation.enables =
 # performance in multithreaded applications.
 khronos_validation.fine_grained_locking = true
 
+# Verbose error messages
+# =====================
+# Display Validation Type, Object Handles, Message ID, Spec Link
+#khronos_validation.message_format_verbose = true
+
 # Display Application Name
 # =====================
 # Useful when running multiple instances to know which instance the message is from

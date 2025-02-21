@@ -197,44 +197,60 @@ bool DebugReport::DebugLogMsg(VkFlags msg_flags, const LogObjectList &objects, c
         oss << "[AppName: " << message_format_settings.application_name << "] ";
     }
 
-    if (msg_flags & kErrorBit) {
-        oss << "Validation Error: ";
-    } else if (msg_flags & kWarningBit) {
-        oss << "Validation Warning: ";
-    } else if (msg_flags & kPerformanceWarningBit) {
-        oss << "Validation Performance Warning: ";
-    } else if (msg_flags & kInformationBit) {
-        oss << "Validation Information: ";
-    } else if (msg_flags & kVerboseBit) {
-        oss << "Verbose Information: ";
+    // User can get this from VkDebugUtilsMessageSeverityFlagBitsEXT if desired
+    if (message_format_settings.verbose) {
+        if (msg_flags & kErrorBit) {
+            oss << "Validation Error: ";
+        } else if (msg_flags & kWarningBit) {
+            oss << "Validation Warning: ";
+        } else if (msg_flags & kPerformanceWarningBit) {
+            oss << "Validation Performance Warning: ";
+        } else if (msg_flags & kInformationBit) {
+            oss << "Validation Information: ";
+        } else if (msg_flags & kVerboseBit) {
+            oss << "Verbose Information: ";
+        }
     }
 
     if (text_vuid != nullptr) {
         oss << "[ " << text_vuid << " ]";
     }
 
-    if (!object_name_infos.empty()) {
-        oss << " Objects: ";
-    }
-    for (uint32_t i = 0; i < object_name_infos.size(); i++) {
-        const VkDebugUtilsObjectNameInfoEXT &src_object = object_name_infos[i];
-        if (0 != src_object.objectHandle) {
-            oss << string_VkObjectTypeHandleName(src_object.objectType) << " ";
-            if (!debug_stable_messages) {
-                oss << "0x" << std::hex << src_object.objectHandle;
+    // User can get these from VkDebugUtilsMessengerCallbackDataEXT::pObjects if desired
+    if (message_format_settings.verbose) {
+        if (!object_name_infos.empty()) {
+            oss << " Objects: ";
+        }
+        for (uint32_t i = 0; i < object_name_infos.size(); i++) {
+            const VkDebugUtilsObjectNameInfoEXT &src_object = object_name_infos[i];
+            if (0 != src_object.objectHandle) {
+                oss << string_VkObjectTypeHandleName(src_object.objectType) << " ";
+                if (!debug_stable_messages) {
+                    oss << "0x" << std::hex << src_object.objectHandle;
+                }
+                if (src_object.pObjectName) {
+                    oss << "[" << src_object.pObjectName << "]";
+                }
+            } else {
+                oss << string_VkObjectTypeHandleName(src_object.objectType) << " VK_NULL_HANDLE";
             }
-            if (src_object.pObjectName) {
-                oss << "[" << src_object.pObjectName << "]";
+
+            if (i + 1 != object_name_infos.size()) {
+                oss << ", ";
             }
-        } else {
-            oss << string_VkObjectTypeHandleName(src_object.objectType) << " VK_NULL_HANDLE";
         }
 
-        if (i + 1 != object_name_infos.size()) {
-            oss << "; ";
-        }
+        oss << " | MessageID = 0x" << std::hex << message_id_number;
     }
-    oss << " | MessageID = 0x" << std::hex << message_id_number << "\n" << msg;
+
+    // Add a new line to seperate everything from the start of the "real" error message
+    if (message_format_settings.verbose) {
+        oss << "\n";
+    } else {
+        oss << " ";
+    }
+
+    oss << msg;
     std::string composite = oss.str();
 
     const auto callback_list = &debug_callback_list;
@@ -627,12 +643,18 @@ bool DebugReport::LogMsg(VkFlags msg_flags, const LogObjectList &objects, const 
 
             full_message.append("The Vulkan spec states: ");
             full_message.append(spec_text);
-            full_message.append(" (");
-            full_message.append(spec_url_base);
-            full_message.append(spec_url_section);
-            full_message.append("#");  // CMake hates hashes
-            full_message.append(vuid_text);
-            full_message.append(")");
+
+            // Spec link can always be found searching the VUID.
+            // But regardless of "verbose" setting, print the spec text as sometime it the error message in the layer is designed to
+            // compliment it.
+            if (message_format_settings.verbose) {
+                full_message.append(" (");
+                full_message.append(spec_url_base);
+                full_message.append(spec_url_section);
+                full_message.append("#");  // CMake hates hashes
+                full_message.append(vuid_text);
+                full_message.append(")");
+            }
         }
     }
 
