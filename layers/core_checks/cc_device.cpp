@@ -33,6 +33,7 @@
 #include "state_tracker/render_pass_state.h"
 #include <spirv-tools/libspirv.h>
 #include "generated/dispatch_functions.h"
+#include "error_message/error_strings.h"
 
 bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const Location &loc, const char *vuid,
                                            bool optional = false) const {
@@ -107,14 +108,9 @@ bool CoreChecks::GetPhysicalDeviceImageFormatProperties(vvl::Image &image_state,
         skip |= LogError(vuid_string, device, loc,
                          "internal call to %s unexpectedly "
                          "failed with result = %s, "
-                         "when called for validation with following params: "
-                         "format: %s, imageType: %s, "
-                         "tiling: %s, usage: %s, "
-                         "flags: %s.",
-                         String(command), string_VkResult(image_properties_result), string_VkFormat(image_create_info.format),
-                         string_VkImageType(image_create_info.imageType), string_VkImageTiling(image_create_info.tiling),
-                         string_VkImageUsageFlags(image_create_info.usage).c_str(),
-                         string_VkImageCreateFlags(image_create_info.flags).c_str());
+                         "when called for validation with following VkImageCreateInfo\n%s",
+                         String(command), string_VkResult(image_properties_result),
+                         string_VkPhysicalDeviceImageFormatInfo2(image_create_info).c_str());
     }
     return skip;
 }

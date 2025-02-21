@@ -4239,17 +4239,11 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
             if (!(image_state->image_format_properties.sampleCounts & sample_count)) {
                 skip |= LogError(
                     "VUID-VkFramebufferCreateInfo-samples-07009", device, create_info_loc,
-                    "Renderpass subpass %" PRIu32
-                    " enables "
-                    "multisampled-render-to-single-sampled and attachment %" PRIu32
-                    ", is specified from with "
-                    "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) created with format %s imageType: %s, "
-                    "tiling: %s, usage: %s, "
-                    "flags: %s does not support a rasterizationSamples count of %s",
-                    subpass, fb_attachment, FormatHandle(*image_state).c_str(), string_VkFormat(image_create_info.format),
-                    string_VkImageType(image_create_info.imageType), string_VkImageTiling(image_create_info.tiling),
-                    string_VkImageUsageFlags(image_create_info.usage).c_str(),
-                    string_VkImageCreateFlags(image_create_info.flags).c_str(), string_VkSampleCountFlagBits(sample_count));
+                    "Renderpass subpass %" PRIu32 " enables multisampled-render-to-single-sampled and attachment %" PRIu32
+                    ", is specified from with VK_SAMPLE_COUNT_1_BIT samples, but %s was created with\n%s"
+                    "which does not support a rasterizationSamples count of %s",
+                    subpass, fb_attachment, FormatHandle(*image_state).c_str(),
+                    string_VkPhysicalDeviceImageFormatInfo2(image_create_info).c_str(), string_VkSampleCountFlagBits(sample_count));
             }
         }
     }

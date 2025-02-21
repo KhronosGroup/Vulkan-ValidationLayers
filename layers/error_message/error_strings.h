@@ -123,3 +123,25 @@
 }
 
 [[maybe_unused]] static std::string string_VkBool32(VkBool32 value) { return value ? "VK_TRUE" : "VK_FALSE"; }
+
+// Some VUs use the subset in VkPhysicalDeviceImageFormatInfo2 to refer to an VkImageCreateInfo
+[[maybe_unused]] static std::string string_VkPhysicalDeviceImageFormatInfo2(VkPhysicalDeviceImageFormatInfo2 info) {
+    std::stringstream ss;
+    ss << "format (" << string_VkFormat(info.format) << ")\n";
+    ss << "type (" << string_VkImageType(info.type) << ")\n";
+    ss << "tiling (" << string_VkImageTiling(info.tiling) << ")\n";
+    ss << "usage (" << string_VkImageUsageFlags(info.usage) << ")\n";
+    ss << "flags (" << string_VkImageCreateFlags(info.flags) << ")\n";
+    return ss.str();
+}
+
+// Same thing as VkPhysicalDeviceImageFormatInfo2 but given the actual VkImageCreateInfo
+[[maybe_unused]] static std::string string_VkPhysicalDeviceImageFormatInfo2(VkImageCreateInfo info) {
+    std::stringstream ss;
+    ss << "format (" << string_VkFormat(info.format) << ")\n";
+    ss << "type (" << string_VkImageType(info.imageType) << ")\n";
+    ss << "tiling (" << string_VkImageTiling(info.tiling) << ")\n";
+    ss << "usage (" << string_VkImageUsageFlags(info.usage) << ")\n";
+    ss << "flags (" << string_VkImageCreateFlags(info.flags) << ")\n";
+    return ss.str();
+}
